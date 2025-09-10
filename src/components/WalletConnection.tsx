@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MiniKit, tokenToDecimals, Tokens, PayCommandInput, VerificationLevel } from '@worldcoin/minikit-js';
+import { MiniKit } from '@worldcoin/minikit-js';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -26,45 +26,64 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!MiniKit.isInstalled()) {
-      // Running outside World App - this is expected in development
-      return;
+    // Check if we're running in World App
+    const isInWorldApp = MiniKit.isInstalled();
+    
+    if (isInWorldApp) {
+      console.log('✅ Running in World App - MiniKit is available');
+    } else {
+      console.log('❌ Not running in World App - MiniKit is not available');
     }
-
-    // Initialize MiniKit when running in World App
-    MiniKit.install();
   }, []);
 
   const handleConnect = async () => {
     if (!MiniKit.isInstalled()) {
-      alert('Please open this app in World App');
+      console.warn('MiniKit is not installed. This app should be opened in World App.');
+      // For development/testing purposes, show a more user-friendly message
+      if (window.confirm('This app works best when opened in World App. Would you like to continue anyway for testing?')) {
+        // Mock authentication for testing outside World App
+        const mockUser = {
+          walletAddress: '0x1234567890123456789012345678901234567890',
+          username: undefined
+        };
+        setUser(mockUser);
+      }
       return;
     }
 
     setIsLoading(true);
     try {
       const nonce = generateNonce();
-      const expirationTime = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+      const expirationTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      const notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
       
-      const response = await MiniKit.commandsAsync.walletAuth({
+      console.log('🔄 Initiating wallet authentication...');
+      
+      const { commandPayload, finalPayload } = await MiniKit.commandsAsync.walletAuth({
         nonce,
-        requestId: 'auth-request',
+        requestId: 'vanity-box-auth',
         expirationTime,
-        notBefore: new Date(),
+        notBefore,
         statement: 'Connect to Vanity.₿ox to manage your Web3 identity'
       });
 
-      if (response.finalPayload && 'address' in response.finalPayload) {
+      console.log('📦 Wallet auth response:', { commandPayload, finalPayload });
+
+      if (finalPayload && 'address' in finalPayload) {
         const userData = {
-          walletAddress: response.finalPayload.address,
-          username: response.finalPayload.address ? getENSName(response.finalPayload.address) : undefined
+          walletAddress: finalPayload.address,
+          username: finalPayload.address ? getENSName(finalPayload.address) : undefined
         };
         setUser(userData);
+        console.log('✅ User authenticated successfully:', userData);
       } else {
-        console.error('Authentication failed:', response);
+        console.error('❌ Authentication failed - no address in response:', { commandPayload, finalPayload });
+        throw new Error('Authentication failed: No address returned');
       }
     } catch (error) {
-      console.error('Error connecting wallet:', error);
+      console.error('❌ Error during wallet authentication:', error);
+      // Show user-friendly error
+      alert('Failed to connect wallet. Please try again.');
     } finally {
       setIsLoading(false);
     }
