@@ -27,11 +27,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   useEffect(() => {
     if (!MiniKit.isInstalled()) {
-      console.log('MiniKit is not installed');
+      // Running outside World App - this is expected in development
       return;
     }
 
-    // Initialize MiniKit
+    // Initialize MiniKit when running in World App
     MiniKit.install();
   }, []);
 
