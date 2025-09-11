@@ -47,7 +47,7 @@ export const SearchInterface = () => {
     <>
       <div className="w-full">
         <Input
-          placeholder="Search your digital ID..."
+          placeholder="Search for a name"
           className="h-12 text-lg text-center border-primary/30 focus:border-primary bg-card/50 backdrop-blur-sm"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

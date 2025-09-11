@@ -7,27 +7,18 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-secondary flex flex-col">
       <Header />
       
-      {/* Hero Section - Full screen centered */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 space-y-8">
-        {/* Logo Image */}
-        <div className="mb-8">
-          <img 
-            src="/lovable-uploads/39208f04-ef97-495d-b4bb-78351dbaf695.png" 
-            alt="Vanity.box Logo" 
-            className="w-32 h-32 object-contain"
-          />
-        </div>
-
-        {/* Main Heading */}
-        <div className="text-center space-y-6 max-w-4xl">
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight">
+      {/* Hero Section - Top aligned for mobile */}
+      <main className="flex-1 px-4 pt-8 md:pt-16">
+        <div className="max-w-2xl mx-auto text-center space-y-8">
+          {/* Main Heading */}
+          <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
             Your Digital ID
           </h1>
-        </div>
 
-        {/* Search Interface */}
-        <div className="w-full max-w-md">
-          <SearchInterface />
+          {/* Search Interface */}
+          <div className="w-full max-w-md mx-auto">
+            <SearchInterface />
+          </div>
         </div>
       </main>
 
@@ -36,7 +27,7 @@ const Index = () => {
         <img 
           src="/lovable-uploads/39208f04-ef97-495d-b4bb-78351dbaf695.png" 
           alt="Vanity.box Logo" 
-          className="w-16 h-16 object-contain opacity-50"
+          className="w-16 h-16 object-contain"
         />
       </footer>
     </div>
