@@ -45,97 +45,51 @@ export const SearchInterface = () => {
 
   return (
     <>
-      <Card className="p-6 shadow-xl bg-card/50 backdrop-blur-sm border-primary/20">
-        <CardContent className="p-0 space-y-6">
-          {/* Search Header */}
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">Search ENS Subdomains</h2>
-            <p className="text-muted-foreground">Find your perfect Web3 identity on vanity.₿ox</p>
-          </div>
-
-          {/* Search Input */}
-          <div className="relative">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Enter subdomain name"
-                  className="pl-10 h-12 text-lg border-primary/30 focus:border-primary"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">
-                  .vanity.₿ox
-                </span>
-              </div>
-              <Button 
-                onClick={handleSearch}
-                disabled={!searchQuery.trim() || isLoading}
-                className="h-12 px-6"
-                variant="default"
-              >
-                {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Search className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Search Results */}
-          {searchResults && (
-            <div className="space-y-4 animate-in slide-in-from-bottom duration-300">
-              <div className={cn(
-                "p-4 rounded-lg border-2 transition-colors",
-                isAvailable 
-                  ? "border-success/50 bg-success/5" 
-                  : "border-destructive/50 bg-destructive/5"
-              )}>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-mono text-lg">{searchQuery}.vanity.₿ox</span>
-                      <Badge variant={isAvailable ? "default" : "destructive"}>
-                        {isAvailable ? "Available" : "Taken"}
-                      </Badge>
-                    </div>
-                    {isAvailable && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Zap className="w-3 h-3" />
-                        <span>${price} USD</span>
-                      </div>
-                    )}
+      <div className="w-full">
+        <Input
+          placeholder="Search your digital ID..."
+          className="h-12 text-lg text-center border-primary/30 focus:border-primary bg-card/50 backdrop-blur-sm"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+        />
+        
+        {/* Search Results */}
+        {searchResults && (
+          <div className="mt-4 space-y-4 animate-in slide-in-from-bottom duration-300">
+            <div className={cn(
+              "p-4 rounded-lg border-2 transition-colors",
+              isAvailable 
+                ? "border-success/50 bg-success/5" 
+                : "border-destructive/50 bg-destructive/5"
+            )}>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-mono text-lg">{searchQuery}.vanity.₿ox</span>
+                    <Badge variant={isAvailable ? "default" : "destructive"}>
+                      {isAvailable ? "Available" : "Taken"}
+                    </Badge>
                   </div>
                   {isAvailable && (
-                    <Button onClick={handleMint} className="gap-2">
-                      <Zap className="w-4 h-4" />
-                      Mint Now
-                    </Button>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Zap className="w-3 h-3" />
+                      <span>${price} USD</span>
+                    </div>
                   )}
                 </div>
+                {isAvailable && (
+                  <Button onClick={handleMint} className="gap-2">
+                    <Zap className="w-4 h-4" />
+                    Mint Now
+                  </Button>
+                )}
               </div>
             </div>
-          )}
-
-          {/* Quick Suggestions */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {['alice', 'bob', 'crypto', 'web3'].map((suggestion) => (
-              <Button
-                key={suggestion}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => setSearchQuery(suggestion)}
-              >
-                {suggestion}
-              </Button>
-            ))}
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
       <SubdomainMintModal
         isOpen={showMintModal}
