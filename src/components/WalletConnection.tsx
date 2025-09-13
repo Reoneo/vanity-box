@@ -98,8 +98,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const getENSName = (address: string): string => {
-    // Placeholder for ENS resolution - in a real app, you'd use ENS resolver
-    return address.slice(0, 6) + '...' + address.slice(-4);
+    // Mock ENS domain for demo - in production use actual ENS resolver
+    return `${address.slice(2, 8)}.vanity.₿ox`;
   };
 
   const formatAddress = (address: string): string => {
@@ -109,11 +109,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   if (!user) {
     return (
       <Button
-        variant="connect"
+        variant="secondary"
         size="default"
         onClick={handleConnect}
         disabled={isLoading}
-        className={cn("shadow-lg hover:shadow-primary/25", className)}
+        className={cn("bg-white text-black hover:bg-white/90 border border-gray-200", className)}
       >
         <Wallet className="w-4 h-4" />
         {isLoading ? 'Connecting...' : 'Connect'}

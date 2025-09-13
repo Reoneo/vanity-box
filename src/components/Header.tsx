@@ -9,9 +9,9 @@ export const Header: React.FC = () => {
       className="w-full border-b border-border/50 sticky top-0 z-50"
       style={{
         backgroundImage: `url('/pattern-bg.jpeg')`,
-        backgroundRepeat: 'repeat-x',
-        backgroundSize: 'auto 100%',
-        backgroundPosition: 'center'
+        backgroundRepeat: 'repeat',
+        backgroundSize: '120px 64px',
+        backgroundPosition: 'left center'
       }}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-end">
