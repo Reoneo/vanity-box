@@ -4,7 +4,7 @@ import { EthereumPattern } from './EthereumPattern';
 
 export const Header: React.FC = () => {
   return (
-    <header className="w-full border-b border-white/10 sticky top-0 z-50 relative overflow-hidden bg-black">
+    <header className="w-full border-b border-[#D4AF37]/20 sticky top-0 z-50 relative overflow-hidden">
       {/* Luxury Ethereum Pattern Background */}
       <EthereumPattern />
       
