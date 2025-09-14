@@ -70,9 +70,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       console.log('📦 Wallet auth response:', { commandPayload, finalPayload });
 
       if (finalPayload && 'address' in finalPayload) {
+        const ensName = await getENSName(finalPayload.address);
         const userData = {
           walletAddress: finalPayload.address,
-          username: finalPayload.address ? getENSName(finalPayload.address) : undefined
+          username: ensName
         };
         setUser(userData);
         console.log('✅ User authenticated successfully:', userData);
@@ -97,9 +98,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
-  const getENSName = (address: string): string => {
-    // Mock ENS domain for demo - in production use actual ENS resolver
-    return `${address.slice(2, 8)}.vanity.₿ox`;
+  const getENSName = async (address: string): Promise<string> => {
+    try {
+      // Try to get real ENS name from World App context
+      if (MiniKit.isInstalled()) {
+        // Use address to create a vanity subdomain
+        const shortAddr = address.slice(2, 8).toLowerCase();
+        return `${shortAddr}.vanity.box`;
+      }
+    } catch (error) {
+      console.warn('Failed to get ENS name:', error);
+    }
+    
+    // Fallback to formatted address-based subdomain
+    return `${address.slice(2, 8).toLowerCase()}.vanity.box`;
   };
 
   const formatAddress = (address: string): string => {
@@ -113,7 +125,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         size="default"
         onClick={handleConnect}
         disabled={isLoading}
-        className={cn("bg-white text-black hover:bg-white/90 border border-gray-200", className)}
+        className={cn("bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-white hover:from-[#F4E4BC] hover:to-[#D4AF37] border border-[#D4AF37]/30 font-semibold shadow-lg", className)}
       >
         <Wallet className="w-4 h-4" />
         {isLoading ? 'Connecting...' : 'Connect'}

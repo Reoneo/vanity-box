@@ -271,8 +271,26 @@ All colors MUST be HSL. */
     }
   }
 
+  @keyframes shimmer-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  @keyframes shimmer-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
   .animate-pulse-glow {
     animation: pulse-glow 4s ease-in-out infinite;
+  }
+
+  .animate-shimmer-slide {
+    animation: shimmer-slide 3s ease-in-out infinite;
+  }
+
+  .animate-shimmer-glow {
+    animation: shimmer-glow 2s ease-in-out infinite;
   }
 
   /* Smooth transitions */
