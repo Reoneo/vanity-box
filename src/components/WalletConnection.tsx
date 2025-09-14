@@ -125,7 +125,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         size="default"
         onClick={handleConnect}
         disabled={isLoading}
-        className={cn("bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-white hover:from-[#F4E4BC] hover:to-[#D4AF37] border border-[#D4AF37]/30 font-semibold shadow-lg", className)}
+        className={cn("bg-white/20 text-white hover:bg-white/30 border border-white/30 font-semibold shadow-lg backdrop-blur-sm", className)}
       >
         <Wallet className="w-4 h-4" />
         {isLoading ? 'Connecting...' : 'Connect'}
@@ -138,7 +138,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       <DropdownMenuTrigger asChild>
         <Button
           variant="subtle"
-          className={cn("h-10 px-3 gap-2", className)}
+          className={cn("h-10 px-3 gap-2 bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-sm", className)}
         >
           <Avatar className="w-6 h-6">
             <AvatarImage src="" alt="User" />

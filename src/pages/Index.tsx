@@ -4,16 +4,7 @@ import { SearchInterface } from '@/components/SearchInterface';
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1A1A2E] via-[#16213E] to-[#1A1A2E] flex flex-col relative overflow-hidden">
-      {/* Background Pattern with Gold Dots */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-3 h-3 rounded-full bg-gradient-to-br from-[#F4E4BC] to-[#C9A876] animate-float opacity-80" />
-        <div className="absolute top-32 right-20 w-2 h-2 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#C9A876] animate-subtleFloat" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-60 left-1/4 w-4 h-4 rounded-full bg-gradient-to-br from-[#F4E4BC] to-[#D4AF37] animate-shimmer opacity-70" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-40 right-1/3 w-3 h-3 rounded-full bg-gradient-to-br from-[#E6C77F] to-[#C9A876] animate-float" style={{ animationDelay: '0.5s' }} />
-        <div className="absolute bottom-60 left-20 w-2 h-2 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F4E4BC] animate-subtleFloat" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-80 right-10 w-5 h-5 rounded-full bg-gradient-to-br from-[#F4E4BC] to-[#C9A876] animate-shimmer opacity-60" style={{ animationDelay: '3s' }} />
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-[#1A1A2E] flex flex-col relative overflow-hidden">
       
       <Header />
       
@@ -32,13 +23,19 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="py-8 flex justify-center relative z-10">
-        <img 
-          src="/lovable-uploads/39208f04-ef97-495d-b4bb-78351dbaf695.png" 
-          alt="Vanity.box Logo" 
-          className="w-16 h-16 object-contain drop-shadow-lg"
-        />
+      {/* Footer with Floating Gold Dots */}
+      <footer className="py-16 relative z-10 overflow-hidden">
+        {/* Floating Gold Dots */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute bottom-8 left-10 w-3 h-3 rounded-full bg-gradient-to-br from-[#F4E4BC] to-[#C9A876] animate-float opacity-80" />
+          <div className="absolute bottom-12 right-20 w-2 h-2 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#C9A876] animate-subtleFloat" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-20 left-1/4 w-4 h-4 rounded-full bg-gradient-to-br from-[#F4E4BC] to-[#D4AF37] animate-shimmer opacity-70" style={{ animationDelay: '2s' }} />
+          <div className="absolute bottom-16 right-1/3 w-3 h-3 rounded-full bg-gradient-to-br from-[#E6C77F] to-[#C9A876] animate-float" style={{ animationDelay: '0.5s' }} />
+          <div className="absolute bottom-24 left-20 w-2 h-2 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F4E4BC] animate-subtleFloat" style={{ animationDelay: '1.5s' }} />
+          <div className="absolute bottom-28 right-10 w-5 h-5 rounded-full bg-gradient-to-br from-[#F4E4BC] to-[#C9A876] animate-shimmer opacity-60" style={{ animationDelay: '3s' }} />
+          <div className="absolute bottom-6 left-1/2 w-3 h-3 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#E6C77F] animate-float" style={{ animationDelay: '2.5s' }} />
+          <div className="absolute bottom-14 left-1/3 w-2 h-2 rounded-full bg-gradient-to-br from-[#F4E4BC] to-[#D4AF37] animate-subtleFloat" style={{ animationDelay: '0.8s' }} />
+        </div>
       </footer>
     </div>
   );
