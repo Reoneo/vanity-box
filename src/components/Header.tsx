@@ -1,26 +1,23 @@
 import React from 'react';
 import { WalletConnection } from './WalletConnection';
-import luxuryPattern from '../assets/luxury-pattern.jpeg';
+import vanityLogo from '../assets/vanity-logo.png';
 
 export const Header: React.FC = () => {
   return (
     <header className="w-full sticky top-0 z-50 relative bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37]">
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 h-16 flex items-center">
-        {/* Logo and Title */}
-        <div className="flex items-center space-x-3">
+      <div className="relative z-10 container mx-auto px-4 h-16 flex items-center justify-center">
+        {/* Centered Logo */}
+        <div className="flex items-center">
           <img 
-            src={luxuryPattern} 
-            alt="Luxury Pattern" 
-            className="w-8 h-8 object-cover rounded"
+            src={vanityLogo} 
+            alt="Vanity.box Logo" 
+            className="h-10 w-auto object-contain"
           />
-          <h1 className="font-playfair text-2xl font-bold text-white tracking-wide drop-shadow-lg">
-            Vanity.box
-          </h1>
         </div>
         
         {/* Wallet Connection */}
-        <div className="ml-auto flex items-center">
+        <div className="absolute right-4 flex items-center">
           <WalletConnection />
         </div>
       </div>

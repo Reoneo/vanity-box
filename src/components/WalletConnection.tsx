@@ -98,20 +98,35 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
-  const getENSName = async (address: string): Promise<string> => {
+  const getENSName = async (address: string): Promise<string | undefined> => {
     try {
-      // Try to get real ENS name from World App context
-      if (MiniKit.isInstalled()) {
-        // Use address to create a vanity subdomain
-        const shortAddr = address.slice(2, 8).toLowerCase();
-        return `${shortAddr}.vanity.box`;
+      // Try to fetch actual ENS name from a public resolver
+      const response = await fetch(`https://api.ensideas.com/ens/resolve/${address}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.name) {
+          return data.name;
+        }
       }
     } catch (error) {
-      console.warn('Failed to get ENS name:', error);
+      console.warn('Failed to get ENS name from resolver:', error);
     }
     
-    // Fallback to formatted address-based subdomain
-    return `${address.slice(2, 8).toLowerCase()}.vanity.box`;
+    try {
+      // Alternative: Try reverse ENS lookup via public API
+      const response = await fetch(`https://api.web3.bio/profile/${address}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ens) {
+          return data.ens;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get ENS name from web3.bio:', error);
+    }
+    
+    // No ENS name found
+    return undefined;
   };
 
   const formatAddress = (address: string): string => {
