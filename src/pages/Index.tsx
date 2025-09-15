@@ -14,7 +14,7 @@ const Index = () => {
         <div className="max-w-2xl mx-auto text-center space-y-8">
           {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl font-bold text-gray-800 leading-tight drop-shadow-lg">
-            Your Digital ID
+            Coming 🔜
           </h1>
 
           {/* Search Interface */}

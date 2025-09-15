@@ -39,15 +39,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const handleConnect = async () => {
     if (!MiniKit.isInstalled()) {
       console.warn('MiniKit is not installed. This app should be opened in World App.');
-      // For development/testing purposes, show a more user-friendly message
-      if (window.confirm('This app works best when opened in World App. Would you like to continue anyway for testing?')) {
-        // Mock authentication for testing outside World App
-        const mockUser = {
-          walletAddress: '0x1234567890123456789012345678901234567890',
-          username: undefined
-        };
-        setUser(mockUser);
-      }
+      alert('This app requires World App. Please open it in World App to connect your wallet.');
       return;
     }
 
@@ -70,7 +62,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       console.log('📦 Wallet auth response:', { commandPayload, finalPayload });
 
       if (finalPayload && 'address' in finalPayload) {
-        const ensName = await getENSName(finalPayload.address);
+        const ensName = await getWorldChainENS(finalPayload.address);
         const userData = {
           walletAddress: finalPayload.address,
           username: ensName
@@ -98,22 +90,30 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
-  const getENSName = async (address: string): Promise<string | undefined> => {
+  const getWorldChainENS = async (address: string): Promise<string | undefined> => {
     try {
-      // Try to fetch actual ENS name from a public resolver
-      const response = await fetch(`https://api.ensideas.com/ens/resolve/${address}`);
+      // Try to fetch World Chain ENS from NameStone API
+      const response = await fetch(`https://api.namestone.com/api/public_v1/get-names?address=${address}`);
       if (response.ok) {
         const data = await response.json();
-        if (data.name) {
-          return data.name;
+        if (data.names && data.names.length > 0) {
+          // Return the first World Chain domain found
+          const worldChainDomain = data.names.find((name: any) => 
+            name.domain && (name.domain.includes('worldchain') || name.domain.includes('.world'))
+          );
+          if (worldChainDomain) {
+            return worldChainDomain.name;
+          }
+          // Fallback to first available name
+          return data.names[0].name;
         }
       }
     } catch (error) {
-      console.warn('Failed to get ENS name from resolver:', error);
+      console.warn('Failed to get World Chain ENS from NameStone:', error);
     }
     
     try {
-      // Alternative: Try reverse ENS lookup via public API
+      // Fallback: Try reverse ENS lookup for regular ENS
       const response = await fetch(`https://api.web3.bio/profile/${address}`);
       if (response.ok) {
         const data = await response.json();
@@ -155,12 +155,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           variant="subtle"
           className={cn("h-10 px-3 gap-2 bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-sm", className)}
         >
-          <Avatar className="w-6 h-6">
-            <AvatarImage src="" alt="User" />
-            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-              {user.username?.charAt(0) || '?'}
-            </AvatarFallback>
-          </Avatar>
           <span className="font-medium">
             {user.username || formatAddress(user.walletAddress || '')}
           </span>
