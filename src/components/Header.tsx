@@ -45,7 +45,7 @@ export const Header: React.FC = () => {
 
       {/* Slide-over Menu */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="right" className="w-80">
+        <SheetContent side="right" className="w-64">
           <nav className="mt-8 space-y-4">
             <a href="#" className="block text-foreground hover:underline">Home</a>
             <a href="#" className="block text-foreground hover:underline">Features</a>

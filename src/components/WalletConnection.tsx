@@ -149,16 +149,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   if (!user) {
     return (
-      <Button
-        variant="ghost"
-        size="icon"
+      <button
         onClick={handleConnect}
         disabled={isLoading}
         aria-label="Connect wallet"
-        className={cn("text-foreground", className)}
+        className={cn("p-0 border-0 bg-transparent text-foreground hover:opacity-70 transition-opacity", className)}
       >
         <Wallet className="w-5 h-5" />
-      </Button>
+      </button>
     );
   }
 
