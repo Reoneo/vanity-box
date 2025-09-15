@@ -36,6 +36,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   }, []);
 
+  // Auto-prompt World App wallet connect on page load (once)
+  const autoAuthAttempted = React.useRef(false);
+  useEffect(() => {
+    if (!autoAuthAttempted.current && MiniKit.isInstalled() && !user) {
+      autoAuthAttempted.current = true;
+      setTimeout(() => {
+        handleConnect();
+      }, 300);
+    }
+  }, [user]);
+
   const handleConnect = async () => {
     if (!MiniKit.isInstalled()) {
       console.warn('MiniKit is not installed. This app should be opened in World App.');
@@ -98,11 +109,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         const data = await response.json();
         if (data.names && data.names.length > 0) {
           // Return the first World Chain domain found
-          const worldChainDomain = data.names.find((name: any) => 
+          const worldChainDomainPreferred = data.names.find((name: any) =>
+            name.domain && (name.domain.includes('.world.id') || name.name?.includes('.world.id'))
+          );
+          const worldChainDomainFallback = worldChainDomainPreferred || data.names.find((name: any) =>
             name.domain && (name.domain.includes('worldchain') || name.domain.includes('.world'))
           );
-          if (worldChainDomain) {
-            return worldChainDomain.name;
+          if (worldChainDomainFallback) {
+            return worldChainDomainFallback.name;
           }
           // Fallback to first available name
           return data.names[0].name;
@@ -136,14 +150,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   if (!user) {
     return (
       <Button
-        variant="secondary"
-        size="default"
+        variant="ghost"
+        size="icon"
         onClick={handleConnect}
         disabled={isLoading}
-        className={cn("bg-white/20 text-white hover:bg-white/30 border border-white/30 font-semibold shadow-lg backdrop-blur-sm", className)}
+        aria-label="Connect wallet"
+        className={cn("text-foreground", className)}
       >
-        <Wallet className="w-4 h-4" />
-        {isLoading ? 'Connecting...' : 'Connect'}
+        <Wallet className="w-5 h-5" />
       </Button>
     );
   }
