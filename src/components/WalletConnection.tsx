@@ -91,6 +91,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   const handleDisconnect = () => {
     setUser(null);
+    // Reset auto-auth flag so the prompt shows again on next connect
+    autoAuthAttempted.current = false;
   };
 
   const generateNonce = (): string => {
@@ -98,44 +100,67 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const getWorldChainENS = async (address: string): Promise<string | undefined> => {
+    console.log('🔍 Fetching ENS for address:', address);
+    
     try {
       // Try to fetch World Chain ENS from NameStone API
       const response = await fetch(`https://api.namestone.com/api/public_v1/get-names?address=${address}`);
+      console.log('📡 NameStone API response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 NameStone API data:', data);
+        
         if (data.names && data.names.length > 0) {
-          // Return the first World Chain domain found
-          const worldChainDomainPreferred = data.names.find((name: any) =>
-            name.domain && (name.domain.includes('.world.id') || name.name?.includes('.world.id'))
+          console.log('✅ Found names:', data.names);
+          
+          // Look for .world domains first (primary World Chain domains)
+          const worldDomain = data.names.find((name: any) =>
+            name.name && name.name.endsWith('.world')
           );
-          const worldChainDomainFallback = worldChainDomainPreferred || data.names.find((name: any) =>
-            name.domain && (name.domain.includes('worldchain') || name.domain.includes('.world'))
-          );
-          if (worldChainDomainFallback) {
-            return worldChainDomainFallback.name;
+          
+          if (worldDomain) {
+            console.log('🌍 Found .world domain:', worldDomain.name);
+            return worldDomain.name;
           }
-          // Fallback to first available name
-          return data.names[0].name;
+          
+          // Look for .world.id domains
+          const worldIdDomain = data.names.find((name: any) =>
+            name.name && name.name.includes('.world.id')
+          );
+          
+          if (worldIdDomain) {
+            console.log('🆔 Found .world.id domain:', worldIdDomain.name);
+            return worldIdDomain.name;
+          }
+          
+          // Return the first available name as fallback
+          const primaryName = data.names[0].name;
+          console.log('📝 Using primary name:', primaryName);
+          return primaryName;
         }
       }
     } catch (error) {
-      console.warn('Failed to get World Chain ENS from NameStone:', error);
+      console.error('❌ Failed to get ENS from NameStone:', error);
     }
     
     try {
       // Fallback: Try reverse ENS lookup for regular ENS
+      console.log('🔄 Trying web3.bio fallback...');
       const response = await fetch(`https://api.web3.bio/profile/${address}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 Web3.bio data:', data);
         if (data.ens) {
+          console.log('✅ Found ENS from web3.bio:', data.ens);
           return data.ens;
         }
       }
     } catch (error) {
-      console.warn('Failed to get ENS name from web3.bio:', error);
+      console.error('❌ Failed to get ENS from web3.bio:', error);
     }
     
-    // No ENS name found
+    console.log('❌ No ENS name found for address:', address);
     return undefined;
   };
 
@@ -173,8 +198,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-2">
-          <p className="text-sm font-medium">{user.username || 'Anonymous'}</p>
-          <p className="text-xs text-muted-foreground">{formatAddress(user.walletAddress || '')}</p>
+          <p className="text-sm font-medium">{user.username || formatAddress(user.walletAddress || '')}</p>
+          <p className="text-xs text-muted-foreground">{user.walletAddress}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
