@@ -49,7 +49,7 @@ export const SearchInterface = () => {
         <div className="relative">
           <Input
             placeholder="Search for a name"
-            className="h-12 text-lg text-center border-primary/30 focus:border-primary bg-card/50 backdrop-blur-sm pr-20"
+            className="h-12 text-lg text-center border-border dark:border-white focus:border-border dark:focus:border-white bg-card/50 backdrop-blur-sm pr-20"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -67,7 +67,7 @@ export const SearchInterface = () => {
             <Button
               onClick={handleSearch}
               size="sm"
-              className="h-8 px-3"
+              className="h-8 px-3 bg-gold hover:bg-gold/90 text-white"
               disabled={!searchQuery.trim() || isLoading}
             >
               <Search className="w-4 h-4" />

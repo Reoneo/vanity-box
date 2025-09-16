@@ -13,7 +13,7 @@ const Index = () => {
       <main className="flex-1 px-4 pt-8 md:pt-16 relative z-10">
         <div className="max-w-2xl mx-auto text-center space-y-8">
           {/* Main Heading */}
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-800 leading-tight drop-shadow-lg">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-800 dark:text-gold leading-tight drop-shadow-lg">
             Coming 🔜
           </h1>
 

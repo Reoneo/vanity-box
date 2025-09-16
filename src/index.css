@@ -50,9 +50,9 @@ All colors MUST be HSL. */
     --success-foreground: 0 0% 98%;
 
     /* Borders & inputs */
-    --border: 217 32% 91%;
-    --input: 217 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 0 0% 0%;
+    --input: 0 0% 0%;
+    --ring: 0 0% 0%;
 
     --radius: 0.5rem;
 
@@ -74,8 +74,8 @@ All colors MUST be HSL. */
   }
 
   .dark {
-    /* Dark theme - Deep crypto aesthetic */
-    --background: 224 71% 4%;
+    /* Dark theme - Navy blue aesthetic */
+    --background: 220 30% 15%;
     --foreground: 0 0% 98%;
 
     /* Dark gradients */
@@ -115,9 +115,9 @@ All colors MUST be HSL. */
     --success-foreground: 0 0% 98%;
 
     /* Dark borders */
-    --border: 217 32% 15%;
-    --input: 217 32% 15%;
-    --ring: 217 91% 70%;
+    --border: 0 0% 100%;
+    --input: 0 0% 100%;
+    --ring: 0 0% 100%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

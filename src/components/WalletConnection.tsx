@@ -145,14 +145,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   if (!user) {
     return (
-      <button
+      <Button
         onClick={handleConnect}
         disabled={isLoading}
-        aria-label="Connect wallet"
-        className={cn("p-0 border-0 bg-transparent text-foreground hover:opacity-70 transition-opacity", className)}
+        variant="outline"
+        size="sm"
+        className={cn("h-10 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
       >
-        <Wallet className="w-5 h-5" />
-      </button>
+        {isLoading ? 'Connecting...' : 'Connect'}
+      </Button>
     );
   }
 
@@ -160,8 +161,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="subtle"
-          className={cn("h-10 px-3 gap-2 bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-sm", className)}
+          variant="outline"
+          size="sm"
+          className={cn("h-10 px-3 gap-2 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
         >
           <span className="font-medium">
             {user.username || formatAddress(user.walletAddress || '')}

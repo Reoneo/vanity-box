@@ -2,7 +2,40 @@ import React, { useState } from 'react';
 import { WalletConnection } from './WalletConnection';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+  
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium text-muted-foreground">Theme</h3>
+      <div className="flex gap-2">
+        <Button
+          variant={theme === 'light' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setTheme('light')}
+          className="flex items-center gap-2"
+        >
+          <Sun className="w-4 h-4" />
+          Light
+        </Button>
+        <Button
+          variant={theme === 'dark' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setTheme('dark')}
+          className="flex items-center gap-2"
+        >
+          <Moon className="w-4 h-4" />
+          Dark
+        </Button>
+      </div>
+    </div>
+  );
+};
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
@@ -12,17 +45,37 @@ export const Header: React.FC = () => {
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-center">
-        {/* Menu Button - Hamburger to X */}
+        {/* Menu Button - Gold background with white X when open */}
         <button
           type="button"
           aria-label="Toggle menu"
           onClick={() => setMenuOpen((v) => !v)}
-          className="absolute left-4 p-0 border-0 bg-transparent text-foreground hover:opacity-70 transition-opacity w-5 h-5"
+          className={cn(
+            "absolute left-4 w-10 h-10 flex items-center justify-center transition-all duration-300",
+            menuOpen 
+              ? "bg-gold rounded-md" 
+              : "bg-transparent"
+          )}
         >
           <div className="relative w-5 h-5">
-            <span className={cn("absolute left-0 top-0 w-5 h-0.5 bg-foreground transition-transform duration-300", menuOpen ? "translate-y-2 rotate-45" : "translate-y-0")} />
-            <span className={cn("absolute left-0 top-2 w-5 h-0.5 bg-foreground transition-all duration-300", menuOpen ? "opacity-0" : "opacity-100")} />
-            <span className={cn("absolute left-0 top-4 w-5 h-0.5 bg-foreground transition-transform duration-300", menuOpen ? "-translate-y-2 -rotate-45" : "translate-y-0")} />
+            <span className={cn(
+              "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
+              menuOpen 
+                ? "translate-y-2 rotate-45 bg-white" 
+                : "translate-y-0 bg-foreground"
+            )} />
+            <span className={cn(
+              "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
+              menuOpen 
+                ? "opacity-0 bg-white" 
+                : "opacity-100 bg-foreground"
+            )} />
+            <span className={cn(
+              "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
+              menuOpen 
+                ? "-translate-y-2 -rotate-45 bg-white" 
+                : "translate-y-0 bg-foreground"
+            )} />
           </div>
         </button>
 
@@ -47,10 +100,7 @@ export const Header: React.FC = () => {
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="left" className="w-64">
           <nav className="mt-8 space-y-4">
-            <a href="#" className="block text-foreground hover:underline">Home</a>
-            <a href="#" className="block text-foreground hover:underline">Features</a>
-            <a href="#" className="block text-foreground hover:underline">Pricing</a>
-            <a href="#" className="block text-foreground hover:underline">Contact</a>
+            <ThemeToggle />
           </nav>
         </SheetContent>
       </Sheet>
