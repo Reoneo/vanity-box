@@ -56,23 +56,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
     setIsLoading(true);
     try {
-      const nonce = generateNonce();
-      const expirationTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-      const notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
+      console.log('🔄 Initiating wallet authentication with World App native UI...');
       
-      console.log('🔄 Initiating wallet authentication...');
-      
+      // Use the official World App wallet auth that shows the native modal
       const { commandPayload, finalPayload } = await MiniKit.commandsAsync.walletAuth({
-        nonce,
-        requestId: 'vanity-box-auth',
-        expirationTime,
-        notBefore,
-        statement: 'Connect to Vanity.₿ox to manage your Web3 identity'
+        nonce: generateNonce(),
+        requestId: 'vanity-box-auth-' + Date.now(),
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        notBefore: new Date(Date.now() - 60 * 1000), // 1 minute ago
+        statement: 'Sign in to Vanity.₿ox'
       });
 
       console.log('📦 Wallet auth response:', { commandPayload, finalPayload });
 
-      if (finalPayload && 'address' in finalPayload) {
+      if (finalPayload?.status === 'success' && finalPayload.address) {
         const ensName = await getWorldChainENS(finalPayload.address);
         const userData = {
           walletAddress: finalPayload.address,
@@ -81,12 +78,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         setUser(userData);
         console.log('✅ User authenticated successfully:', userData);
       } else {
-        console.error('❌ Authentication failed - no address in response:', { commandPayload, finalPayload });
-        throw new Error('Authentication failed: No address returned');
+        console.error('❌ Authentication failed:', { commandPayload, finalPayload });
+        throw new Error('Authentication failed');
       }
     } catch (error) {
       console.error('❌ Error during wallet authentication:', error);
-      // Show user-friendly error
       alert('Failed to connect wallet. Please try again.');
     } finally {
       setIsLoading(false);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Globe, Zap } from 'lucide-react';
+import { Search, Globe, Zap, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,13 +46,34 @@ export const SearchInterface = () => {
   return (
     <>
       <div className="w-full">
-        <Input
-          placeholder="Search for a name"
-          className="h-12 text-lg text-center border-primary/30 focus:border-primary bg-card/50 backdrop-blur-sm"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-        />
+        <div className="relative">
+          <Input
+            placeholder="Search for a name"
+            className="h-12 text-lg text-center border-primary/30 focus:border-primary bg-card/50 backdrop-blur-sm pr-20"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          />
+          <div className="absolute right-1 top-1 flex items-center gap-1 h-10">
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="p-2 rounded-md hover:bg-muted/50 transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <Button
+              onClick={handleSearch}
+              size="sm"
+              className="h-8 px-3"
+              disabled={!searchQuery.trim() || isLoading}
+            >
+              <Search className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
         
         {/* Search Results */}
         {searchResults && (
