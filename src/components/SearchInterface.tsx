@@ -67,10 +67,10 @@ export const SearchInterface = () => {
             <Button
               onClick={handleSearch}
               size="sm"
-              className="h-8 px-3 bg-gold hover:bg-gold/90 text-white"
+              className="h-8 px-3 bg-gold hover:bg-gold/90 text-black"
               disabled={!searchQuery.trim() || isLoading}
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-4 h-4 text-black" />
             </Button>
           </div>
         </div>

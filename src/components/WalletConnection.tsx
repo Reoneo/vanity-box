@@ -104,7 +104,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     
     try {
       // Try to fetch World Chain ENS from NameStone API
-      const response = await fetch(`https://api.namestone.com/api/public_v1/get-names?address=${address}`);
+      const response = await fetch(`https://namestone.com/api/public_v1/get-names?address=${address}`);
       console.log('📡 NameStone API response status:', response.status);
       
       if (response.ok) {
@@ -114,17 +114,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         if (data.names && data.names.length > 0) {
           console.log('✅ Found names:', data.names);
           
-          // Look for .world domains first (primary World Chain domains)
-          const worldDomain = data.names.find((name: any) =>
-            name.name && name.name.endsWith('.world')
+          // Look for primary domain first
+          const primaryDomain = data.names.find((name: any) =>
+            name.primary || name.isPrimary || name.is_primary
           );
           
-          if (worldDomain) {
-            console.log('🌍 Found .world domain:', worldDomain.name);
-            return worldDomain.name;
+          if (primaryDomain) {
+            console.log('⭐ Found primary domain:', primaryDomain.name);
+            return primaryDomain.name;
           }
           
-          // Look for .world.id domains
+          // Look for .world.id domains first (World ID domains)
           const worldIdDomain = data.names.find((name: any) =>
             name.name && name.name.includes('.world.id')
           );
@@ -132,6 +132,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           if (worldIdDomain) {
             console.log('🆔 Found .world.id domain:', worldIdDomain.name);
             return worldIdDomain.name;
+          }
+          
+          // Look for .world domains
+          const worldDomain = data.names.find((name: any) =>
+            name.name && name.name.endsWith('.world')
+          );
+          
+          if (worldDomain) {
+            console.log('🌍 Found .world domain:', worldDomain.name);
+            return worldDomain.name;
           }
           
           // Return the first available name as fallback
@@ -191,15 +201,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           className={cn("h-10 px-3 gap-2 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
         >
           <span className="font-medium">
-            {user.username || formatAddress(user.walletAddress || '')}
+            {user.username || 'Connected'}
           </span>
           <ChevronDown className="w-3 h-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-2">
-          <p className="text-sm font-medium">{user.username || formatAddress(user.walletAddress || '')}</p>
-          <p className="text-xs text-muted-foreground">{user.walletAddress}</p>
+          <p className="text-sm font-medium">{user.username || 'Connected'}</p>
+          <p className="text-xs text-muted-foreground">{formatAddress(user.walletAddress || '')}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
