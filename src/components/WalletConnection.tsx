@@ -24,6 +24,15 @@ interface WalletConnectionProps {
 // Cache for ENS names to avoid repeated API calls
 const ensCache = new Map<string, string>();
 
+// LocalStorage cache helpers (persist across sessions)
+const nameCacheKey = (addr: string) => `ns:name:${addr.toLowerCase()}`;
+const getNameFromStorage = (addr: string): string | null => {
+  try { return localStorage.getItem(nameCacheKey(addr)); } catch { return null; }
+};
+const setNameInStorage = (addr: string, name: string) => {
+  try { localStorage.setItem(nameCacheKey(addr), name); } catch {}
+};
+
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,15 +83,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       console.log('📦 Wallet auth response:', { commandPayload, finalPayload });
 
       if (finalPayload?.status === 'success' && finalPayload.address) {
+        const addr = finalPayload.address;
+        // Try local cache immediately to avoid any placeholder text
+        const cachedName = getNameFromStorage(addr);
         const userData = {
-          walletAddress: finalPayload.address,
-          username: undefined
+          walletAddress: addr,
+          username: cachedName ?? undefined,
         };
         setUser(userData);
         console.log('✅ User authenticated successfully:', userData);
-        
-        // Fetch ENS name after authentication
-        fetchAndUpdateENS(finalPayload.address);
+        // Fetch ENS/World ID name in background to refresh cache
+        fetchAndUpdateENS(addr);
       } else {
         console.error('❌ Authentication failed:', { commandPayload, finalPayload });
         throw new Error('Authentication failed');
@@ -106,19 +117,27 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const fetchAndUpdateENS = async (address: string) => {
-    // Check cache first
-    if (ensCache.has(address)) {
-      const cachedName = ensCache.get(address);
-      setUser(prev => prev ? { ...prev, username: cachedName } : null);
+    const addr = address.toLowerCase();
+    // Check in-memory cache first
+    if (ensCache.has(addr)) {
+      const cachedName = ensCache.get(addr);
+      setUser(prev => (prev ? { ...prev, username: cachedName } : null));
       return;
     }
-
+    // Check localStorage cache next
+    const stored = getNameFromStorage(addr);
+    if (stored) {
+      ensCache.set(addr, stored);
+      setUser(prev => (prev ? { ...prev, username: stored } : null));
+      // Continue to refresh in background
+    }
     setIsFetchingName(true);
     try {
-      const ensName = await getWorldChainENS(address);
+      const ensName = await getWorldChainENS(addr);
       if (ensName) {
-        ensCache.set(address, ensName);
-        setUser(prev => prev ? { ...prev, username: ensName } : null);
+        ensCache.set(addr, ensName);
+        setNameInStorage(addr, ensName);
+        setUser(prev => (prev ? { ...prev, username: ensName } : null));
       }
     } finally {
       setIsFetchingName(false);
@@ -127,76 +146,49 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   const getWorldChainENS = async (address: string): Promise<string | undefined> => {
     console.log('🔍 Fetching ENS for address:', address);
-    
+    const addr = address.toLowerCase();
     try {
-      // Try to fetch World Chain ENS from NameStone API (correct URL)
-      const response = await fetch(`https://namestone.com/api/public_v1/get-names?address=${address}`);
-      console.log('📡 NameStone API response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch(`https://namestone.com/api/public_v1/get-names?address=${addr}`);
+      console.log('📡 NameStone API response status:', res.status);
+      if (res.ok) {
+        const data = await res.json();
         console.log('📦 NameStone API data:', data);
-        
-        if (data.names && data.names.length > 0) {
-          console.log('✅ Found names:', data.names);
-          
-          // Look for primary domain first
-          const primaryName = data.names.find((name: any) => 
-            name.primary || name.isPrimary || name.is_primary
-          );
-          
-          if (primaryName?.name) {
-            console.log('👑 Found primary domain:', primaryName.name);
-            return primaryName.name;
-          }
-          
-          // Look for .world.id domains first (World Chain subdomains)
-          const worldIdDomain = data.names.find((name: any) =>
-            name.name && name.name.includes('.world.id')
-          );
-          
-          if (worldIdDomain) {
-            console.log('🆔 Found .world.id domain:', worldIdDomain.name);
-            return worldIdDomain.name;
-          }
-          
-          // Look for .world domains
-          const worldDomain = data.names.find((name: any) =>
-            name.name && name.name.endsWith('.world')
-          );
-          
-          if (worldDomain) {
-            console.log('🌍 Found .world domain:', worldDomain.name);
-            return worldDomain.name;
-          }
-          
-          // Return the first available name as fallback
-          const firstAvailable = data.names[0].name;
-          console.log('📝 Using first available name:', firstAvailable);
-          return firstAvailable;
+        // 1) Root-level primary
+        const primaryRoot = (data?.primary && (data.primary.name || data.primary)) as string | undefined;
+        if (primaryRoot && typeof primaryRoot === 'string') {
+          return primaryRoot;
+        }
+        const names: any[] = Array.isArray(data?.names) ? data.names : [];
+        if (names.length) {
+          // 2) Primary within names
+          const primaryEntry = names.find((n) => n?.primary || n?.isPrimary || n?.is_primary || n?.isPrimaryForDomain);
+          if (primaryEntry?.name) return primaryEntry.name as string;
+          // 3) Prefer .world.id
+          const worldId = names.find((n) => typeof n?.name === 'string' && n.name.endsWith('.world.id'));
+          if (worldId?.name) return worldId.name as string;
+          // 4) Then .world
+          const world = names.find((n) => typeof n?.name === 'string' && n.name.endsWith('.world'));
+          if (world?.name) return world.name as string;
+          // 5) Fallback: first
+          if (typeof names[0]?.name === 'string') return names[0].name as string;
         }
       }
     } catch (error) {
       console.error('❌ Failed to get ENS from NameStone:', error);
     }
-    
     try {
       // Fallback: Try reverse ENS lookup for regular ENS
       console.log('🔄 Trying web3.bio fallback...');
-      const response = await fetch(`https://api.web3.bio/profile/${address}`);
+      const response = await fetch(`https://api.web3.bio/profile/${addr}`);
       if (response.ok) {
         const data = await response.json();
         console.log('📦 Web3.bio data:', data);
-        if (data.ens) {
-          console.log('✅ Found ENS from web3.bio:', data.ens);
-          return data.ens;
-        }
+        if (data?.ens) return data.ens as string;
       }
     } catch (error) {
       console.error('❌ Failed to get ENS from web3.bio:', error);
     }
-    
-    console.log('❌ No ENS name found for address:', address);
+    console.log('❌ No ENS name found for address:', addr);
     return undefined;
   };
 
@@ -227,7 +219,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           className={cn("h-10 px-3 gap-2 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
         >
           <span className="font-medium">
-            {isFetchingName ? 'Fetching name...' : user.username || 'Connected'}
+            {user.username || 'Connected'}
           </span>
           <ChevronDown className="w-3 h-3 opacity-50" />
         </Button>
@@ -235,9 +227,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-2">
           <p className="text-sm font-medium">
-            {isFetchingName ? 'Fetching name...' : user.username || 'Connected'}
+            {user.username || 'Connected'}
           </p>
-          <p className="text-xs text-muted-foreground">{user.walletAddress}</p>
+          <p className="text-xs text-muted-foreground">{user.walletAddress ? formatAddress(user.walletAddress) : ''}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
