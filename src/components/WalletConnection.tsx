@@ -21,9 +21,13 @@ interface WalletConnectionProps {
   className?: string;
 }
 
+// Cache for ENS names to avoid repeated API calls
+const ensCache = new Map<string, string>();
+
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingName, setIsFetchingName] = useState(false);
 
   useEffect(() => {
     // Check if we're running in World App
@@ -70,13 +74,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       console.log('📦 Wallet auth response:', { commandPayload, finalPayload });
 
       if (finalPayload?.status === 'success' && finalPayload.address) {
-        const ensName = await getWorldChainENS(finalPayload.address);
         const userData = {
           walletAddress: finalPayload.address,
-          username: ensName
+          username: undefined
         };
         setUser(userData);
         console.log('✅ User authenticated successfully:', userData);
+        
+        // Fetch ENS name after authentication
+        fetchAndUpdateENS(finalPayload.address);
       } else {
         console.error('❌ Authentication failed:', { commandPayload, finalPayload });
         throw new Error('Authentication failed');
@@ -99,12 +105,32 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
+  const fetchAndUpdateENS = async (address: string) => {
+    // Check cache first
+    if (ensCache.has(address)) {
+      const cachedName = ensCache.get(address);
+      setUser(prev => prev ? { ...prev, username: cachedName } : null);
+      return;
+    }
+
+    setIsFetchingName(true);
+    try {
+      const ensName = await getWorldChainENS(address);
+      if (ensName) {
+        ensCache.set(address, ensName);
+        setUser(prev => prev ? { ...prev, username: ensName } : null);
+      }
+    } finally {
+      setIsFetchingName(false);
+    }
+  };
+
   const getWorldChainENS = async (address: string): Promise<string | undefined> => {
     console.log('🔍 Fetching ENS for address:', address);
     
     try {
-      // Try to fetch World Chain ENS from NameStone API
-      const response = await fetch(`https://api.namestone.com/api/public_v1/get-names?address=${address}`);
+      // Try to fetch World Chain ENS from NameStone API (correct URL)
+      const response = await fetch(`https://namestone.com/api/public_v1/get-names?address=${address}`);
       console.log('📡 NameStone API response status:', response.status);
       
       if (response.ok) {
@@ -114,17 +140,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         if (data.names && data.names.length > 0) {
           console.log('✅ Found names:', data.names);
           
-          // Look for .world domains first (primary World Chain domains)
-          const worldDomain = data.names.find((name: any) =>
-            name.name && name.name.endsWith('.world')
+          // Look for primary domain first
+          const primaryName = data.names.find((name: any) => 
+            name.primary || name.isPrimary || name.is_primary
           );
           
-          if (worldDomain) {
-            console.log('🌍 Found .world domain:', worldDomain.name);
-            return worldDomain.name;
+          if (primaryName?.name) {
+            console.log('👑 Found primary domain:', primaryName.name);
+            return primaryName.name;
           }
           
-          // Look for .world.id domains
+          // Look for .world.id domains first (World Chain subdomains)
           const worldIdDomain = data.names.find((name: any) =>
             name.name && name.name.includes('.world.id')
           );
@@ -134,10 +160,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             return worldIdDomain.name;
           }
           
+          // Look for .world domains
+          const worldDomain = data.names.find((name: any) =>
+            name.name && name.name.endsWith('.world')
+          );
+          
+          if (worldDomain) {
+            console.log('🌍 Found .world domain:', worldDomain.name);
+            return worldDomain.name;
+          }
+          
           // Return the first available name as fallback
-          const primaryName = data.names[0].name;
-          console.log('📝 Using primary name:', primaryName);
-          return primaryName;
+          const firstAvailable = data.names[0].name;
+          console.log('📝 Using first available name:', firstAvailable);
+          return firstAvailable;
         }
       }
     } catch (error) {
@@ -191,14 +227,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           className={cn("h-10 px-3 gap-2 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
         >
           <span className="font-medium">
-            {user.username || formatAddress(user.walletAddress || '')}
+            {isFetchingName ? 'Fetching name...' : user.username || 'Connected'}
           </span>
           <ChevronDown className="w-3 h-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-2">
-          <p className="text-sm font-medium">{user.username || formatAddress(user.walletAddress || '')}</p>
+          <p className="text-sm font-medium">
+            {isFetchingName ? 'Fetching name...' : user.username || 'Connected'}
+          </p>
           <p className="text-xs text-muted-foreground">{user.walletAddress}</p>
         </div>
         <DropdownMenuSeparator />
