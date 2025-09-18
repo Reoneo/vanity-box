@@ -36,17 +36,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   }, []);
 
-  // Auto-prompt World App wallet connect on page load (once)
-  const autoAuthAttempted = React.useRef(false);
-  useEffect(() => {
-    const skip = sessionStorage.getItem('skipAutoAuth') === '1';
-    if (!autoAuthAttempted.current && MiniKit.isInstalled() && !user && !skip) {
-      autoAuthAttempted.current = true;
-      setTimeout(() => {
-        handleConnect();
-      }, 300);
-    }
-  }, [user]);
+  // Remove auto-connect - users must manually connect
 
   const handleConnect = async () => {
     if (!MiniKit.isInstalled()) {
@@ -78,6 +68,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         };
         setUser(userData);
         sessionStorage.removeItem('skipAutoAuth');
+        
+        // Dispatch event for Index component
+        window.dispatchEvent(new CustomEvent('wallet-connected', { detail: userData }));
+        
         console.log('✅ User authenticated successfully:', userData);
       } else {
         console.error('❌ Authentication failed:', { commandPayload, finalPayload });
@@ -94,8 +88,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const handleDisconnect = () => {
     setUser(null);
     // Prevent immediate auto-reconnect after manual disconnect (this session only)
-    autoAuthAttempted.current = true;
     sessionStorage.setItem('skipAutoAuth', '1');
+    
+    // Dispatch event for Index component
+    window.dispatchEvent(new CustomEvent('wallet-disconnected'));
   };
 
   const generateNonce = (): string => {

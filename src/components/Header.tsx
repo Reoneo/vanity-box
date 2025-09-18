@@ -12,13 +12,13 @@ const ThemeToggle = () => {
   
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-muted-foreground">Theme</h3>
+      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</h3>
       <div className="flex gap-2">
         <Button
           variant={theme === 'light' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setTheme('light')}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-500"
         >
           <Sun className="w-4 h-4" />
           Light
@@ -27,7 +27,7 @@ const ThemeToggle = () => {
           variant={theme === 'dark' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setTheme('dark')}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-500"
         >
           <Moon className="w-4 h-4" />
           Dark
@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
 
       {/* Slide-over Menu */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-64 bg-background border-border">
+        <SheetContent side="left" className="w-64 bg-white dark:bg-[#334155] border-gray-200 dark:border-gray-600">
           <nav className="mt-8 space-y-4">
             <ThemeToggle />
           </nav>
