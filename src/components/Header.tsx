@@ -62,19 +62,19 @@ export const Header: React.FC = () => {
               "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
               menuOpen 
                 ? "translate-y-2 rotate-45 bg-white" 
-                : "translate-y-0 bg-foreground"
+                : "translate-y-0 bg-black"
             )} />
             <span className={cn(
               "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
               menuOpen 
                 ? "opacity-0 bg-white" 
-                : "opacity-100 bg-foreground"
+                : "opacity-100 bg-black"
             )} />
             <span className={cn(
               "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
               menuOpen 
                 ? "-translate-y-2 -rotate-45 bg-white" 
-                : "translate-y-0 bg-foreground"
+                : "translate-y-0 bg-black"
             )} />
           </div>
         </button>
@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
 
       {/* Slide-over Menu */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-64">
+        <SheetContent side="left" className="w-64 bg-background border-border">
           <nav className="mt-8 space-y-4">
             <ThemeToggle />
           </nav>

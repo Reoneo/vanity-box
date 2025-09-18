@@ -188,7 +188,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         disabled={isLoading}
         variant="outline"
         size="sm"
-        className={cn("h-10 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
+        className={cn("h-10 bg-transparent border-black text-black hover:bg-muted/50", className)}
       >
         {isLoading ? 'Connecting...' : 'Connect'}
       </Button>
@@ -201,7 +201,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         <Button
           variant="outline"
           size="sm"
-          className={cn("h-10 px-3 gap-2 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
+          className={cn("h-10 px-3 gap-2 bg-transparent border-black text-black hover:bg-muted/50", className)}
         >
           <span className="font-medium">
             {user.username || formatAddress(user.walletAddress || '')}

@@ -49,7 +49,7 @@ export const SearchInterface = () => {
         <div className="relative">
           <Input
             placeholder="Search for a name"
-            className="h-12 text-lg text-center border-border focus:border-border search-input backdrop-blur-sm pl-20 pr-20"
+            className="h-12 text-lg text-center bg-white border-gray-300 focus:border-gray-300 text-gray-600 placeholder-gray-400 pl-20 pr-20"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -58,16 +58,16 @@ export const SearchInterface = () => {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="p-2 rounded-md hover:bg-muted/50 transition-colors"
+                className="p-2 rounded-md hover:bg-gray-100 transition-colors"
                 aria-label="Clear search"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 text-black" />
               </button>
             )}
             <Button
               onClick={handleSearch}
               size="sm"
-              className="h-8 px-3 bg-gold hover:bg-gold/90 text-black"
+              className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
               disabled={!searchQuery.trim() || isLoading}
             >
               <Search className="w-4 h-4 text-black" />
