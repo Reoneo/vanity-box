@@ -39,7 +39,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Auto-prompt World App wallet connect on page load (once)
   const autoAuthAttempted = React.useRef(false);
   useEffect(() => {
-    if (!autoAuthAttempted.current && MiniKit.isInstalled() && !user) {
+    const skip = localStorage.getItem('skipAutoAuth') === '1';
+    if (!autoAuthAttempted.current && MiniKit.isInstalled() && !user && !skip) {
       autoAuthAttempted.current = true;
       setTimeout(() => {
         handleConnect();
@@ -76,6 +77,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           username: ensName
         };
         setUser(userData);
+        localStorage.removeItem('skipAutoAuth');
         console.log('✅ User authenticated successfully:', userData);
       } else {
         console.error('❌ Authentication failed:', { commandPayload, finalPayload });
@@ -91,8 +93,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   const handleDisconnect = () => {
     setUser(null);
-    // Reset auto-auth flag so the prompt shows again on next connect
-    autoAuthAttempted.current = false;
+    // Prevent immediate auto-reconnect after manual disconnect
+    autoAuthAttempted.current = true;
+    localStorage.setItem('skipAutoAuth', '1');
   };
 
   const generateNonce = (): string => {
@@ -201,14 +204,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           className={cn("h-10 px-3 gap-2 bg-transparent border-border text-foreground hover:bg-muted/50", className)}
         >
           <span className="font-medium">
-            {user.username || 'Connected'}
+            {user.username || formatAddress(user.walletAddress || '')}
           </span>
           <ChevronDown className="w-3 h-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-2">
-          <p className="text-sm font-medium">{user.username || 'Connected'}</p>
+          <p className="text-sm font-medium">{user.username || formatAddress(user.walletAddress || '')}</p>
           <p className="text-xs text-muted-foreground">{formatAddress(user.walletAddress || '')}</p>
         </div>
         <DropdownMenuSeparator />

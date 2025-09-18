@@ -71,6 +71,10 @@ All colors MUST be HSL. */
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Search bar - fixed across themes */
+    --search-bg: 0 0% 100%;
+    --search-border: 0 0% 80%;
   }
 
   .dark {
@@ -126,6 +130,10 @@ All colors MUST be HSL. */
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Keep search consistent in dark mode */
+    --search-bg: 0 0% 100%;
+    --search-border: 0 0% 80%;
   }
 }
 
@@ -296,5 +304,13 @@ All colors MUST be HSL. */
   /* Smooth transitions */
   * {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer components {
+  /* Search input surface and border do not change in dark mode */
+  .search-input {
+    background-color: hsl(var(--search-bg) / 0.5);
+    border-color: hsl(var(--search-border));
   }
 }
