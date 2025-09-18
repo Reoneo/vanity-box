@@ -39,7 +39,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Auto-prompt World App wallet connect on page load (once)
   const autoAuthAttempted = React.useRef(false);
   useEffect(() => {
-    const skip = localStorage.getItem('skipAutoAuth') === '1';
+    const skip = sessionStorage.getItem('skipAutoAuth') === '1';
     if (!autoAuthAttempted.current && MiniKit.isInstalled() && !user && !skip) {
       autoAuthAttempted.current = true;
       setTimeout(() => {
@@ -77,7 +77,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           username: ensName
         };
         setUser(userData);
-        localStorage.removeItem('skipAutoAuth');
+        sessionStorage.removeItem('skipAutoAuth');
         console.log('✅ User authenticated successfully:', userData);
       } else {
         console.error('❌ Authentication failed:', { commandPayload, finalPayload });
@@ -93,9 +93,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   const handleDisconnect = () => {
     setUser(null);
-    // Prevent immediate auto-reconnect after manual disconnect
+    // Prevent immediate auto-reconnect after manual disconnect (this session only)
     autoAuthAttempted.current = true;
-    localStorage.setItem('skipAutoAuth', '1');
+    sessionStorage.setItem('skipAutoAuth', '1');
   };
 
   const generateNonce = (): string => {
@@ -155,6 +155,22 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       }
     } catch (error) {
       console.error('❌ Failed to get ENS from NameStone:', error);
+    }
+
+    // Additional fallback: try NameStone get-domain endpoint
+    try {
+      const resp = await fetch(`https://namestone.com/api/public_v1/get-domain?address=${address}`);
+      console.log('📡 NameStone get-domain status:', resp.status);
+      if (resp.ok) {
+        const domainData = await resp.json();
+        console.log('📦 NameStone get-domain data:', domainData);
+        const name = domainData?.domain?.name || domainData?.name;
+        if (typeof name === 'string' && name.length > 0) {
+          return name;
+        }
+      }
+    } catch (e) {
+      console.error('❌ Failed NameStone get-domain fallback:', e);
     }
     
     try {

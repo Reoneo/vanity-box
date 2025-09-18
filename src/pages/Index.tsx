@@ -2,6 +2,7 @@ import React from 'react';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
+import { Clock } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -14,7 +15,9 @@ const Index = () => {
         <div className="max-w-2xl mx-auto text-center space-y-8">
           {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl font-bold text-gray-800 dark:text-white leading-tight drop-shadow-lg">
-            Coming 🔜
+            <span>Coming</span>{' '}
+            <span className="inline dark:hidden">🔜</span>
+            <Clock className="hidden dark:inline w-8 h-8 align-[-0.2em] text-white" aria-label="Soon" />
           </h1>
 
           {/* Search Interface */}
@@ -34,6 +37,9 @@ const Index = () => {
           </div>
         </div>
       </main>
+      <footer className="py-6 text-center text-xs text-muted-foreground">
+        © 2025 vanity.box. All rights reserved.
+      </footer>
     </div>
   );
 };
