@@ -140,19 +140,13 @@ export const SearchInterface = () => {
         <div className="relative">
           <div className="absolute left-1 top-1 z-10 h-10">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md"
+                  className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md"
                 >
                   <Filter className="w-4 h-4" />
-                  {totalFilters > 0 && (
-                    <Badge variant="secondary" className="ml-1 bg-black text-white">
-                      {totalFilters}
-                    </Badge>
-                  )}
-                  <ChevronDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
@@ -259,7 +253,7 @@ export const SearchInterface = () => {
                     backgroundPosition: 'center'
                   }}
                 />
-                <CardContent className="relative p-4 bg-black/30">
+                <CardContent className="relative p-6 bg-black/50 backdrop-blur-sm">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <img 
@@ -272,12 +266,12 @@ export const SearchInterface = () => {
                         alt="ENS" 
                         className="w-4 h-4 hidden dark:block"
                       />
-                      <span className="font-mono text-xl font-semibold text-white">{searchQuery}.{result.name}</span>
+                      <span className="font-mono text-xl font-semibold text-white drop-shadow-[0_0_2px_rgba(212,175,55,1)]">{searchQuery}.{result.name}</span>
                       <Badge variant="secondary" className="bg-white/20 text-white">{result.category}</Badge>
                     </div>
-                    <p className="text-sm text-white/90">{result.description}</p>
+                    <p className="text-sm text-white/90 drop-shadow-[0_0_1px_rgba(212,175,55,0.8)]">{result.description}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-white/90">
+                      <div className="flex items-center gap-2 text-sm text-white/90 drop-shadow-[0_0_1px_rgba(212,175,55,0.8)]">
                         <span>${getSubdomainPrice(searchQuery)} USD</span>
                       </div>
                       <Button size="sm" className="gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black">

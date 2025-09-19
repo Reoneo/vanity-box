@@ -276,8 +276,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+    <>
+      {isOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto z-50">
         <DialogHeader>
           <DialogTitle className="text-center">
             Mint ENS Subdomain
@@ -290,7 +292,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         {currentStep === 'verify' && renderVerifyStep()}
         {currentStep === 'payment' && renderPaymentStep()}
         {currentStep === 'confirm' && renderConfirmStep()}
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
