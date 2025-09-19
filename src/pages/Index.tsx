@@ -40,16 +40,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Pattern Tiles Row */}
-        <div className="mt-16 flex justify-center overflow-hidden">
-          <div className="flex space-x-2">
-            <img src={patternTiles} alt="Pattern Tile" className="w-32 h-32 object-cover" />
-            <img src={patternTiles} alt="Pattern Tile" className="w-32 h-32 object-cover" />
-            <img src={patternTiles} alt="Pattern Tile" className="w-32 h-32 object-cover" />
-            <img src={patternTiles} alt="Pattern Tile" className="w-32 h-32 object-cover" />
-            <img src={patternTiles} alt="Pattern Tile" className="w-32 h-32 object-cover" />
-          </div>
-        </div>
       </main>
       <footer className="py-6 text-center text-xs text-black">
         © 2025 vanity.box. All rights reserved.
