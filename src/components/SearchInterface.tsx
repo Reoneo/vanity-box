@@ -144,7 +144,7 @@ export const SearchInterface = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37]"
+                  className="h-8 px-3 gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md"
                 >
                   <Filter className="w-4 h-4" />
                   {totalFilters > 0 && (
@@ -252,52 +252,15 @@ export const SearchInterface = () => {
             {ensResults.map((result, index) => (
               <Card key={index} className="relative overflow-hidden">
                 <div 
-                  className="absolute inset-0 blur-sm opacity-30"
+                  className="absolute inset-0 blur-[2px] opacity-40"
                   style={{
                     backgroundImage: `url(${result.imageUrl})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
                   }}
                 />
-                <CardContent className="relative p-4 bg-black/40">
+                <CardContent className="relative p-4 bg-black/30">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <img 
-                        src={ensLogoWhite} 
-                        alt="ENS" 
-                        className="w-4 h-4"
-                      />
-                      <span className="font-mono text-xl font-semibold text-white">{result.name}</span>
-                      <Badge variant="secondary" className="bg-white/20 text-white">{result.category}</Badge>
-                    </div>
-                    <p className="text-sm text-white/90">{result.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-white/90">
-                        <Zap className="w-3 h-3" />
-                        <span>${result.price} USD</span>
-                      </div>
-                      <Button size="sm" className="gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black">
-                        <Zap className="w-4 h-4" />
-                        Mint Now
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Search Results */}
-        {searchResults && (
-          <div className="mt-4 space-y-4 animate-in slide-in-from-bottom duration-300">
-            {ensResults.length > 0 && ensResults.map((result, index) => (
-              <div key={index} className={cn(
-                "p-4 rounded-lg border-2 transition-colors",
-                "border-success/50 bg-success/5"
-              )}>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <img 
                         src={ensLogoBlue} 
@@ -309,23 +272,25 @@ export const SearchInterface = () => {
                         alt="ENS" 
                         className="w-4 h-4 hidden dark:block"
                       />
-                      <span className="font-mono text-lg">{searchQuery}.{result.name}</span>
-                      <Badge variant="default">Available</Badge>
+                      <span className="font-mono text-xl font-semibold text-white">{searchQuery}.{result.name}</span>
+                      <Badge variant="secondary" className="bg-white/20 text-white">{result.category}</Badge>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Zap className="w-3 h-3" />
-                      <span>${price} USD</span>
+                    <p className="text-sm text-white/90">{result.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-white/90">
+                        <span>${getSubdomainPrice(searchQuery)} USD</span>
+                      </div>
+                      <Button size="sm" className="gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black">
+                        Mint Now
+                      </Button>
                     </div>
                   </div>
-                  <Button onClick={handleMint} className="gap-2">
-                    <Zap className="w-4 h-4" />
-                    Mint Now
-                  </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
+
       </div>
 
       <SubdomainMintModal
