@@ -39,7 +39,7 @@ export const SearchInterface = () => {
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
 
   const protocols = ['ENS', 'Aptos Names', 'Avax Name Service'];
-  const clubs = ['ABC', 'Digits', 'Surname', 'DeFi'];
+  const clubs = ['Letters', 'Digits', 'Surname', 'DeFi', 'Influencers'];
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
@@ -115,6 +115,23 @@ export const SearchInterface = () => {
         });
       }
       
+      if (filters.club.includes('Influencers')) {
+        results.push({
+          name: 'EncryptedDegen.eth',
+          description: 'UI/UX Designer & Developer | Building the web3 social graph @efp.eth.',
+          imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/4ce70ef4eb1b2e7094cc4c7fee38e0/054ce70ef4eb1b2e7094cc4c7fee38e0.svg',
+          price: 5,
+          category: 'ENS'
+        });
+        results.push({
+          name: 'Caveman.eth',
+          description: 'Bringing onchain social profiles to 300 million EVM accounts, one follow at a time @efp.eth | Aaron | Onchain Maximilist | Prev: Sat.eth.',
+          imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/31c489e1c506b192e49026b893130b/2e31c489e1c506b192e49026b893130b.svg',
+          price: 5,
+          category: 'ENS'
+        });
+      }
+      
       setEnsResults(results);
     } else {
       setEnsResults([]);
@@ -138,18 +155,30 @@ export const SearchInterface = () => {
     <>
       <div className="w-full">
         <div className="relative">
-          <div className="absolute left-1 top-1 z-10 h-10">
+          <div className="absolute left-1 top-1 z-10 flex items-center h-10">
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md"
+                  className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
                 >
                   <Filter className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-600">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Filters</span>
+                  <div className="flex items-center gap-1">
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                      <X className="w-4 h-4 text-black dark:text-white" />
+                    </button>
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                      <div className="w-4 h-4 flex items-center justify-center text-[#D4AF37] text-xs font-bold">✓</div>
+                    </button>
+                  </div>
+                </div>
+                
                 <DropdownMenuLabel className="text-gray-900 dark:text-gray-100">Protocol</DropdownMenuLabel>
                 {protocols.map((protocol) => (
                   <DropdownMenuItem
@@ -158,6 +187,15 @@ export const SearchInterface = () => {
                     className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 border rounded ${
+                        filters.protocol.includes(protocol) 
+                          ? 'bg-[#D4AF37] border-[#D4AF37]' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}>
+                        {filters.protocol.includes(protocol) && (
+                          <div className="w-full h-full flex items-center justify-center text-black text-xs">✓</div>
+                        )}
+                      </div>
                       {protocol === 'ENS' && (
                         <img 
                           src={ensLogoBlue} 
@@ -172,15 +210,6 @@ export const SearchInterface = () => {
                           className="w-4 h-4 hidden dark:block"
                         />
                       )}
-                      <div className={`w-4 h-4 border rounded ${
-                        filters.protocol.includes(protocol) 
-                          ? 'bg-[#D4AF37] border-[#D4AF37]' 
-                          : 'border-gray-300 dark:border-gray-600'
-                      }`}>
-                        {filters.protocol.includes(protocol) && (
-                          <div className="w-full h-full flex items-center justify-center text-black text-xs">✓</div>
-                        )}
-                      </div>
                       {protocol}
                     </div>
                   </DropdownMenuItem>

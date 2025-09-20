@@ -20,7 +20,7 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) 
       );
     }
     return (
-      <span className="text-lg md:text-2xl lg:text-3xl xl:text-4xl">Your Personalised Digital ID</span>
+      <span className="text-xl md:text-3xl lg:text-4xl xl:text-5xl font-light tracking-wide">Your Personalised Digital ID</span>
     );
   };
 
