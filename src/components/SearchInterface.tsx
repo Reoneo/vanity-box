@@ -35,11 +35,12 @@ export const SearchInterface = () => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showMintModal, setShowMintModal] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
 
   const protocols = ['ENS', 'Aptos Names', 'Avax Name Service'];
-  const clubs = ['Letters', 'Digits', 'Surname', 'DeFi', 'Influencers'];
+  const clubs = ['DeFi', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
@@ -74,71 +75,91 @@ export const SearchInterface = () => {
     });
   };
 
+  const handleClearFilters = () => {
+    setFilters({ protocol: [], club: [] });
+    setShowFilterDropdown(false);
+    setEnsResults([]);
+  };
+
+  const handleApplyFilters = () => {
+    setShowFilterDropdown(false);
+    // Trigger search with current filters
+    if (filters.protocol.length > 0 || filters.club.length > 0) {
+      handleSearch();
+    }
+  };
+
+  const getAllResults = () => {
+    const allResults = [
+      {
+        name: '30315.eth',
+        description: '30315 is a ZIP code in Atlanta, Georgia. It covers neighbourhoods like Lakewood Heights, South Atlanta, and parts of Grant Park.',
+        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
+        price: 1,
+        category: 'ENS',
+        club: 'Digits'
+      },
+      {
+        name: 'MexiPay.eth',
+        description: 'A Mexican influenced digital identity for Web3 and stablecoin payments — enabling secure, accessible subdomains for everyday use.',
+        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/1b420ade2f21c60b34fe53f761d09a/551b420ade2f21c60b34fe53f761d09a.svg',
+        price: 5,
+        category: 'ENS',
+        club: 'DeFi'
+      },
+      {
+        name: 'GuavaPay.eth',
+        description: 'A Web3-native alternative to Apple Pay — providing a digital identity and subdomains for seamless payments and stablecoin transactions.',
+        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/44d2edb2482769d623f27e7c94cd46/7044d2edb2482769d623f27e7c94cd46.svg',
+        price: 5,
+        category: 'ENS',
+        club: 'DeFi'
+      },
+      {
+        name: 'EncryptedDegen.eth',
+        description: 'UI/UX Designer & Developer | Building the web3 social graph @efp.eth.',
+        imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/4ce70ef4eb1b2e7094cc4c7fee38e0/054ce70ef4eb1b2e7094cc4c7fee38e0.svg',
+        price: 5,
+        category: 'ENS',
+        club: 'Influencers'
+      },
+      {
+        name: 'Caveman.eth',
+        description: 'Bringing onchain social profiles to 300 million EVM accounts, one follow at a time @efp.eth | Aaron | Onchain Maximilist | Prev: Sat.eth.',
+        imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/31c489e1c506b192e49026b893130b/2e31c489e1c506b192e49026b893130b.svg',
+        price: 5,
+        category: 'ENS',
+        club: 'Influencers'
+      }
+    ];
+    return allResults;
+  };
+
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    
     setIsLoading(true);
-    
-    // Check if filters include ENS
-    const showENSResults = filters.protocol.includes('ENS');
     
     // Simulate search delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (showENSResults) {
-      const results = [];
-      
-      if (filters.club.includes('Digits')) {
-        results.push({
-          name: '30315.eth',
-          description: '30315 is a ZIP code in Atlanta, Georgia. It covers neighbourhoods like Lakewood Heights, South Atlanta, and parts of Grant Park.',
-          imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
-          price: 1,
-          category: 'ENS'
-        });
-      }
-      
-      if (filters.club.includes('DeFi')) {
-        results.push({
-          name: 'MexiPay.eth',
-          description: 'A Mexican influenced digital identity for Web3 and stablecoin payments — enabling secure, accessible subdomains for everyday use.',
-          imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/1b420ade2f21c60b34fe53f761d09a/551b420ade2f21c60b34fe53f761d09a.svg',
-          price: 5,
-          category: 'ENS'
-        });
-        results.push({
-          name: 'GuavaPay.eth',
-          description: 'A Web3-native alternative to Apple Pay — providing a digital identity and subdomains for seamless payments and stablecoin transactions.',
-          imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/44d2edb2482769d623f27e7c94cd46/7044d2edb2482769d623f27e7c94cd46.svg',
-          price: 5,
-          category: 'ENS'
-        });
-      }
-      
-      if (filters.club.includes('Influencers')) {
-        results.push({
-          name: 'EncryptedDegen.eth',
-          description: 'UI/UX Designer & Developer | Building the web3 social graph @efp.eth.',
-          imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/4ce70ef4eb1b2e7094cc4c7fee38e0/054ce70ef4eb1b2e7094cc4c7fee38e0.svg',
-          price: 5,
-          category: 'ENS'
-        });
-        results.push({
-          name: 'Caveman.eth',
-          description: 'Bringing onchain social profiles to 300 million EVM accounts, one follow at a time @efp.eth | Aaron | Onchain Maximilist | Prev: Sat.eth.',
-          imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/31c489e1c506b192e49026b893130b/2e31c489e1c506b192e49026b893130b.svg',
-          price: 5,
-          category: 'ENS'
-        });
-      }
-      
-      setEnsResults(results);
+    const allResults = getAllResults();
+    
+    // If no filters are applied, show all results
+    if (filters.protocol.length === 0 && filters.club.length === 0) {
+      setEnsResults(allResults);
     } else {
-      setEnsResults([]);
+      // Filter results based on selected filters
+      const filteredResults = allResults.filter(result => {
+        const protocolMatch = filters.protocol.length === 0 || filters.protocol.includes(result.category);
+        const clubMatch = filters.club.length === 0 || filters.club.includes(result.club);
+        return protocolMatch && clubMatch;
+      });
+      setEnsResults(filteredResults);
     }
     
     // For demo purposes, make it available if it doesn't contain "taken"
-    setIsAvailable(!searchQuery.toLowerCase().includes('taken'));
+    if (searchQuery) {
+      setIsAvailable(!searchQuery.toLowerCase().includes('taken'));
+    }
     setIsLoading(false);
   };
 
@@ -153,10 +174,15 @@ export const SearchInterface = () => {
 
   return (
     <>
+      {/* Blur overlay when filter dropdown is open */}
+      {showFilterDropdown && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />
+      )}
+      
       <div className="w-full">
         <div className="relative">
           <div className="absolute left-1 top-1 z-10 flex items-center h-10">
-            <DropdownMenu>
+            <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
             <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -166,14 +192,20 @@ export const SearchInterface = () => {
                   <Filter className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
                 <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-600">
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Filters</span>
                   <div className="flex items-center gap-1">
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                    <button 
+                      onClick={handleClearFilters}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    >
                       <X className="w-4 h-4 text-black dark:text-white" />
                     </button>
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                    <button 
+                      onClick={handleApplyFilters}
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                    >
                       <div className="w-4 h-4 flex items-center justify-center text-[#D4AF37] text-xs font-bold">✓</div>
                     </button>
                   </div>
@@ -269,41 +301,59 @@ export const SearchInterface = () => {
           </div>
         </div>
         
-        {/* ENS Results from Filters */}
-        {hasFilters && ensResults.length > 0 && (
+        {/* ENS Results */}
+        {ensResults.length > 0 && (
           <div className="mt-4 space-y-4 animate-in slide-in-from-bottom duration-300">
             {ensResults.map((result, index) => (
-              <Card key={index} className="relative overflow-hidden">
-                <div 
-                  className="absolute inset-0 blur-[2px] opacity-40"
-                  style={{
-                    backgroundImage: `url(${result.imageUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                />
-                <CardContent className="relative p-6 bg-black/50 backdrop-blur-sm">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+              <Card key={index} className="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <div className="flex-shrink-0">
                       <img 
-                        src={ensLogoBlue} 
-                        alt="ENS" 
-                        className="w-4 h-4 dark:hidden"
+                        src={result.imageUrl} 
+                        alt={result.name}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-[#D4AF37]"
                       />
-                      <img 
-                        src={ensLogoWhite} 
-                        alt="ENS" 
-                        className="w-4 h-4 hidden dark:block"
-                      />
-                      <span className="font-mono text-xl font-semibold text-white drop-shadow-[0_0_2px_rgba(212,175,55,1)]">{searchQuery}.{result.name}</span>
-                      <Badge variant="secondary" className="bg-white/20 text-white">{result.category}</Badge>
                     </div>
-                    <p className="text-sm text-white/90 drop-shadow-[0_0_1px_rgba(212,175,55,0.8)]">{result.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-white/90 drop-shadow-[0_0_1px_rgba(212,175,55,0.8)]">
-                        <span>${getSubdomainPrice(searchQuery)} USD</span>
+                    
+                    {/* Content */}
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <img 
+                          src={ensLogoBlue} 
+                          alt="ENS" 
+                          className="w-5 h-5 dark:hidden"
+                        />
+                        <img 
+                          src={ensLogoWhite} 
+                          alt="ENS" 
+                          className="w-5 h-5 hidden dark:block"
+                        />
+                        <span className="font-mono text-lg font-semibold text-gray-900 dark:text-white">
+                          {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                        </span>
+                        <Badge variant="secondary" className="bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20">
+                          {result.category}
+                        </Badge>
                       </div>
-                      <Button size="sm" className="gap-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black">
+                      
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {result.description}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="font-semibold">${searchQuery ? getSubdomainPrice(searchQuery) : result.price} USD</span>
+                        </div>
+                      </div>
+                      
+                      {/* Mint Button */}
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-medium"
+                        onClick={() => setShowMintModal(true)}
+                      >
                         Mint Now
                       </Button>
                     </div>
