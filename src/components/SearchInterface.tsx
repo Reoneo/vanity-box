@@ -28,6 +28,7 @@ interface ENSResult {
   imageUrl: string;
   price: number;
   category: string;
+  club: string;
 }
 
 export const SearchInterface = () => {
@@ -40,7 +41,7 @@ export const SearchInterface = () => {
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
 
   const protocols = ['ENS', 'Aptos Names', 'Avax Name Service'];
-  const clubs = ['DeFi', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
+  const clubs = ['Crypto', 'DeFi', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
@@ -130,6 +131,22 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Influencers'
+      },
+      {
+        name: 'TeamXRP.eth',
+        description: '<a href="https://www.facebook.com/groups/the.xrp.army/" target="_blank" rel="noopener noreferrer" class="text-[#D4AF37] hover:underline">https://www.facebook.com/groups/the.xrp.army/</a>',
+        imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/c1f98f3f469ba9be9e8dee87f4cfa7/a4c1f98f3f469ba9be9e8dee87f4cfa7.svg',
+        price: 5,
+        category: 'ENS',
+        club: 'Crypto'
+      },
+      {
+        name: '$mith.eth',
+        description: 'A distinctive surname domain perfect for creating personalized digital identities and professional subdomains.',
+        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/fe754f2d9414b8f5edd443ccd5ac92/2cfe754f2d9414b8f5edd443ccd5ac92.svg',
+        price: 5,
+        category: 'ENS',
+        club: 'Surname'
       }
     ];
     return allResults;
@@ -215,7 +232,10 @@ export const SearchInterface = () => {
                 {protocols.map((protocol) => (
                   <DropdownMenuItem
                     key={protocol}
-                    onClick={() => handleProtocolToggle(protocol)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleProtocolToggle(protocol);
+                    }}
                     className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <div className="flex items-center gap-2">
@@ -253,7 +273,10 @@ export const SearchInterface = () => {
                 {clubs.map((club) => (
                   <DropdownMenuItem
                     key={club}
-                    onClick={() => handleClubToggle(club)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleClubToggle(club);
+                    }}
                     className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <div className="flex items-center gap-2">
@@ -306,52 +329,56 @@ export const SearchInterface = () => {
           <div className="mt-4 space-y-4 animate-in slide-in-from-bottom duration-300">
             {ensResults.map((result, index) => (
               <Card key={index} className="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      <img 
-                        src={result.imageUrl} 
-                        alt={result.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-[#D4AF37]"
-                      />
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-2 flex-wrap">
+                <CardContent className="p-4">
+                  <div className="flex flex-col space-y-4">
+                    {/* Header with avatar and name */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
                         <img 
-                          src={ensLogoBlue} 
-                          alt="ENS" 
-                          className="w-5 h-5 dark:hidden"
+                          src={result.imageUrl} 
+                          alt={result.name}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-[#D4AF37]"
                         />
-                        <img 
-                          src={ensLogoWhite} 
-                          alt="ENS" 
-                          className="w-5 h-5 hidden dark:block"
-                        />
-                        <span className="font-mono text-lg font-semibold text-gray-900 dark:text-white">
-                          {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                        </span>
-                        <Badge variant="secondary" className="bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20">
-                          {result.category}
-                        </Badge>
                       </div>
-                      
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                        {result.description}
-                      </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-semibold">${searchQuery ? getSubdomainPrice(searchQuery) : result.price} USD</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <img 
+                            src={ensLogoBlue} 
+                            alt="ENS" 
+                            className="w-4 h-4 dark:hidden"
+                          />
+                          <img 
+                            src={ensLogoWhite} 
+                            alt="ENS" 
+                            className="w-4 h-4 hidden dark:block"
+                          />
+                          <span className="font-mono text-base font-semibold text-gray-900 dark:text-white truncate" style={{ textShadow: '0 0 2px #D4AF37, 0 0 4px #D4AF37, 0 0 8px #D4AF37' }}>
+                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                          </span>
                         </div>
                       </div>
-                      
-                      {/* Mint Button */}
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="secondary" className="bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 text-xs">
+                          {result.category}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600">
+                          {result.club}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    {/* Description */}
+                    <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: result.description }}>
+                    </div>
+                    
+                    {/* Price and Mint Button */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-sm font-semibold text-[#D4AF37]">
+                        ${searchQuery ? getSubdomainPrice(searchQuery) : result.price} USD
+                      </div>
                       <Button 
                         size="sm" 
-                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-medium"
+                        className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-medium px-6"
                         onClick={() => setShowMintModal(true)}
                       >
                         Mint Now
