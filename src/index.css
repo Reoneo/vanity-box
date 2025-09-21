@@ -8,132 +8,146 @@ All colors MUST be HSL. */
 
 @layer base {
   :root {
-    /* Core brand colors - crypto-native blues & purples */
-    --background: 0 0% 98%;
+    /* Ultra-luxurious crypto-native palette - Maximum luxury without breaking functionality */
+    --background: 0 0% 99%;
     --foreground: 224 71% 4%;
 
-    /* Web3 gradient backgrounds */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(267 84% 81%));
-    --gradient-secondary: linear-gradient(180deg, hsl(0 0% 98%), hsl(217 32% 96%));
-    --gradient-subtle: linear-gradient(135deg, hsl(217 91% 60% / 0.05), hsl(267 84% 81% / 0.05));
+    /* Premium Web3 gradients with luxury glow effects */
+    --gradient-primary: linear-gradient(135deg, hsl(43 96% 56%), hsl(45 100% 68%), hsl(38 92% 50%));
+    --gradient-secondary: linear-gradient(180deg, hsl(0 0% 99%), hsl(43 40% 96%));
+    --gradient-subtle: linear-gradient(135deg, hsl(43 96% 56% / 0.08), hsl(45 100% 68% / 0.06));
+    --gradient-luxury: linear-gradient(135deg, hsl(43 96% 56%), hsl(45 100% 68%), hsl(38 92% 50%), hsl(52 100% 70%));
+    --gradient-royal: linear-gradient(45deg, hsl(43 96% 56%), hsl(280 100% 80%), hsl(217 91% 60%));
 
-    /* Cards & surfaces */
+    /* Luxury gold cards & surfaces */
     --card: 0 0% 100%;
     --card-foreground: 224 71% 4%;
-    --card-subtle: 217 32% 98%;
+    --card-luxury: 43 50% 98%;
+    --card-premium: linear-gradient(135deg, hsl(0 0% 100%), hsl(43 30% 97%));
 
-    /* Interactive elements */
+    /* Interactive elements with gold accents */
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
 
-    /* Primary - Vibrant crypto blue */
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 98%;
-    --primary-glow: 217 91% 70%;
+    /* Primary - Luxury gold */
+    --primary: 43 96% 56%;
+    --primary-foreground: 0 0% 0%;
+    --primary-glow: 43 96% 70%;
+    --primary-luxury: 45 100% 68%;
 
-    /* Secondary - Soft backgrounds */
-    --secondary: 217 32% 96%;
+    /* Secondary - Platinum backgrounds */
+    --secondary: 43 30% 97%;
     --secondary-foreground: 224 71% 4%;
 
-    /* Muted content */
-    --muted: 217 32% 95%;
+    /* Muted with gold undertones */
+    --muted: 43 20% 96%;
     --muted-foreground: 215 16% 47%;
 
-    /* Accent - Purple highlights */
-    --accent: 267 84% 81%;
+    /* Accent - Royal purple */
+    --accent: 280 100% 80%;
     --accent-foreground: 224 71% 4%;
 
-    /* Status colors */
+    /* Status colors with luxury feel */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --success: 142 76% 36%;
     --success-foreground: 0 0% 98%;
 
-    /* Borders & inputs */
-    --border: 0 0% 0%;
-    --input: 0 0% 0%;
-    --ring: 0 0% 0%;
+    /* Premium borders */
+    --border: 43 96% 56%;
+    --border-luxury: linear-gradient(45deg, hsl(43 96% 56%), hsl(45 100% 68%));
+    --input: 43 96% 56%;
+    --ring: 43 96% 56%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-
+    --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 43 40% 96%;
     --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 43 30% 90%;
+    --sidebar-ring: 43 96% 56%;
 
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* Search bar - fixed across themes */
+    /* Search bar - luxury gold theme */
     --search-bg: 0 0% 100%;
-    --search-border: 0 0% 80%;
+    --search-border: 43 30% 85%;
+
+    /* New luxury variables */
+    --luxury-glow: 0 0 40px hsl(43 96% 56% / 0.4);
+    --luxury-shadow: 0 20px 60px hsl(43 96% 56% / 0.15);
+    --royal-shadow: 0 25px 80px hsl(280 100% 80% / 0.2);
   }
 
   .dark {
-    /* Dark theme - Navy blue aesthetic */
-    --background: 220 30% 15%;
-    --foreground: 0 0% 98%;
+    /* Ultra-luxurious dark theme - Maximum elegance */
+    --background: 224 71% 4%;
+    --foreground: 43 96% 90%;
 
-    /* Dark gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 70%), hsl(267 84% 85%));
-    --gradient-secondary: linear-gradient(180deg, hsl(224 71% 4%), hsl(217 32% 8%));
-    --gradient-subtle: linear-gradient(135deg, hsl(217 91% 60% / 0.1), hsl(267 84% 81% / 0.1));
+    /* Dark luxury gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(43 96% 65%), hsl(45 100% 75%), hsl(38 92% 60%));
+    --gradient-secondary: linear-gradient(180deg, hsl(224 71% 4%), hsl(224 40% 8%));
+    --gradient-subtle: linear-gradient(135deg, hsl(43 96% 56% / 0.12), hsl(45 100% 68% / 0.08));
+    --gradient-luxury: linear-gradient(135deg, hsl(43 96% 65%), hsl(45 100% 75%), hsl(38 92% 60%), hsl(52 100% 80%));
+    --gradient-royal: linear-gradient(45deg, hsl(43 96% 65%), hsl(280 100% 85%), hsl(217 91% 70%));
 
-    /* Dark cards */
-    --card: 217 32% 8%;
-    --card-foreground: 0 0% 98%;
-    --card-subtle: 217 32% 6%;
+    /* Dark luxury cards */
+    --card: 224 40% 8%;
+    --card-foreground: 43 96% 90%;
+    --card-luxury: 224 30% 10%;
+    --card-premium: linear-gradient(135deg, hsl(224 40% 8%), hsl(224 30% 12%));
 
-    --popover: 217 32% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 224 40% 8%;
+    --popover-foreground: 43 96% 90%;
 
-    /* Primary maintains vibrancy */
-    --primary: 217 91% 70%;
+    /* Primary maintains gold luxury */
+    --primary: 43 96% 70%;
     --primary-foreground: 224 71% 4%;
-    --primary-glow: 217 91% 80%;
+    --primary-glow: 43 96% 80%;
+    --primary-luxury: 45 100% 75%;
 
-    /* Dark secondary */
-    --secondary: 217 32% 15%;
-    --secondary-foreground: 0 0% 98%;
+    /* Dark secondary with gold undertones */
+    --secondary: 224 30% 12%;
+    --secondary-foreground: 43 96% 90%;
 
-    /* Dark muted */
-    --muted: 217 32% 12%;
-    --muted-foreground: 215 20% 65%;
+    /* Dark muted with luxury feel */
+    --muted: 224 25% 10%;
+    --muted-foreground: 215 20% 70%;
 
-    /* Accent purple */
-    --accent: 267 84% 75%;
+    /* Accent royal purple for dark */
+    --accent: 280 100% 85%;
     --accent-foreground: 224 71% 4%;
 
-    /* Dark status */
+    /* Dark luxury status */
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
-    --success: 142 76% 40%;
+    --success: 142 76% 45%;
     --success-foreground: 0 0% 98%;
 
-    /* Dark borders */
-    --border: 0 0% 100%;
-    --input: 0 0% 100%;
-    --ring: 0 0% 100%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Luxury gold borders in dark */
+    --border: 43 96% 70%;
+    --border-luxury: linear-gradient(45deg, hsl(43 96% 70%), hsl(45 100% 75%));
+    --input: 43 96% 70%;
+    --ring: 43 96% 70%;
+    
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 43 96% 90%;
+    --sidebar-primary: 43 96% 70%;
+    --sidebar-primary-foreground: 224 71% 4%;
+    --sidebar-accent: 224 30% 12%;
+    --sidebar-accent-foreground: 43 96% 90%;
+    --sidebar-border: 224 25% 15%;
+    --sidebar-ring: 43 96% 70%;
 
-    /* Keep search consistent in dark mode */
-    --search-bg: 0 0% 100%;
-    --search-border: 0 0% 80%;
+    /* Dark luxury search */
+    --search-bg: 224 40% 8%;
+    --search-border: 43 50% 25%;
+
+    /* Dark luxury effects */
+    --luxury-glow: 0 0 50px hsl(43 96% 70% / 0.5);
+    --luxury-shadow: 0 25px 80px hsl(43 96% 70% / 0.2);
+    --royal-shadow: 0 30px 100px hsl(280 100% 85% / 0.25);
   }
 }
 
@@ -145,165 +159,184 @@ All colors MUST be HSL. */
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background: hsl(var(--gradient-secondary));
+    background-image: 
+      radial-gradient(circle at 20% 80%, hsl(43 96% 56% / 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(280 100% 80% / 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsl(43 96% 56% / 0.02) 0%, transparent 30%);
   }
 
-  /* Custom animations */
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
-    50% { box-shadow: 0 0 30px hsl(var(--primary) / 0.5); }
+  /* Ultra-luxury animations */
+  @keyframes luxury-glow {
+    0%, 100% { 
+      box-shadow: 0 0 30px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--primary) / 0.2); 
+    }
+    50% { 
+      box-shadow: 0 0 50px hsl(var(--primary) / 0.6), 0 0 100px hsl(var(--primary) / 0.3); 
+    }
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+  @keyframes royal-float {
+    0%, 100% { 
+      transform: translateY(0px) scale(1) rotateZ(0deg); 
+      filter: drop-shadow(0 10px 30px hsl(43 96% 56% / 0.3));
+    }
+    33% { 
+      transform: translateY(-8px) scale(1.02) rotateZ(1deg); 
+      filter: drop-shadow(0 15px 40px hsl(43 96% 56% / 0.4));
+    }
+    66% { 
+      transform: translateY(-4px) scale(0.98) rotateZ(-1deg); 
+      filter: drop-shadow(0 12px 35px hsl(43 96% 56% / 0.35));
+    }
   }
 
-  @keyframes pulse-glow {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 1; }
+  @keyframes diamond-shimmer {
+    0% { 
+      background-position: -200% 0; 
+      opacity: 0.8;
+    }
+    50% { 
+      opacity: 1; 
+    }
+    100% { 
+      background-position: 200% 0; 
+      opacity: 0.8;
+    }
   }
 
-  /* Luxury Pattern Animations */
+  @keyframes golden-pulse {
+    0%, 100% { 
+      transform: scale(1);
+      box-shadow: 0 0 20px hsl(43 96% 56% / 0.5);
+    }
+    50% { 
+      transform: scale(1.05);
+      box-shadow: 0 0 40px hsl(43 96% 56% / 0.8), 0 0 80px hsl(43 96% 56% / 0.4);
+    }
+  }
+
+  @keyframes luxury-border {
+    0% { 
+      border-color: hsl(43 96% 56%);
+      box-shadow: 0 0 20px hsl(43 96% 56% / 0.3);
+    }
+    25% { 
+      border-color: hsl(45 100% 68%);
+      box-shadow: 0 0 30px hsl(45 100% 68% / 0.4);
+    }
+    50% { 
+      border-color: hsl(38 92% 50%);
+      box-shadow: 0 0 40px hsl(38 92% 50% / 0.5);
+    }
+    75% { 
+      border-color: hsl(52 100% 70%);
+      box-shadow: 0 0 35px hsl(52 100% 70% / 0.4);
+    }
+    100% { 
+      border-color: hsl(43 96% 56%);
+      box-shadow: 0 0 25px hsl(43 96% 56% / 0.3);
+    }
+  }
+
+  @keyframes royal-shimmer {
+    0% { 
+      background: linear-gradient(90deg, transparent, hsl(43 96% 56% / 0.4), transparent);
+      transform: translateX(-100%);
+    }
+    100% { 
+      background: linear-gradient(90deg, transparent, hsl(43 96% 56% / 0.4), transparent);
+      transform: translateX(100%);
+    }
+  }
+
+  /* Luxury Pattern Animations - Enhanced */
   .ethereum-logo {
     transform-style: preserve-3d;
-    animation: rotate3d 12s infinite linear;
+    animation: royal-float 15s infinite ease-in-out;
+    filter: drop-shadow(0 10px 30px hsl(43 96% 56% / 0.3));
   }
 
   .ethereum-float {
-    animation: float 8s ease-in-out infinite;
+    animation: royal-float 12s ease-in-out infinite;
   }
 
   .lv-flower {
     transform-style: preserve-3d;
-    animation: rotateFlower 10s infinite linear;
+    animation: diamond-shimmer 8s infinite ease-in-out, royal-float 20s infinite ease-in-out;
   }
 
   .lv-float {
-    animation: floatReverse 6s ease-in-out infinite;
+    animation: royal-float 18s ease-in-out infinite reverse;
   }
 
   .gold-dot {
-    animation: shimmer 4s ease-in-out infinite;
+    animation: golden-pulse 6s ease-in-out infinite;
   }
 
   .dot-float {
-    animation: subtleFloat 5s ease-in-out infinite;
+    animation: royal-float 10s ease-in-out infinite;
   }
 
-  .ethereum-pattern {
+  .luxury-pattern {
     background: 
-      radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.05) 1px, transparent 1px),
-      radial-gradient(circle at 75% 75%, rgba(244, 228, 188, 0.03) 1px, transparent 1px);
-    background-size: 80px 80px;
+      radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.08) 2px, transparent 2px),
+      radial-gradient(circle at 75% 75%, rgba(244, 228, 188, 0.06) 2px, transparent 2px),
+      linear-gradient(45deg, rgba(212, 175, 55, 0.02) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(244, 228, 188, 0.02) 25%, transparent 25%);
+    background-size: 120px 120px, 80px 80px, 40px 40px, 40px 40px;
   }
 
-  @keyframes rotate3d {
-    0% { 
-      transform: rotateY(0deg) rotateX(0deg) rotateZ(0deg);
-    }
-    25% { 
-      transform: rotateY(90deg) rotateX(10deg) rotateZ(5deg);
-    }
-    50% { 
-      transform: rotateY(180deg) rotateX(0deg) rotateZ(0deg);
-    }
-    75% { 
-      transform: rotateY(270deg) rotateX(-10deg) rotateZ(-5deg);
-    }
-    100% { 
-      transform: rotateY(360deg) rotateX(0deg) rotateZ(0deg);
-    }
+  /* Ultra-luxury utility classes */
+  .animate-luxury-glow {
+    animation: luxury-glow 4s ease-in-out infinite;
   }
 
-  @keyframes rotateFlower {
-    0% { 
-      transform: rotateZ(0deg) rotateY(0deg);
-    }
-    50% { 
-      transform: rotateZ(180deg) rotateY(90deg);
-    }
-    100% { 
-      transform: rotateZ(360deg) rotateY(180deg);
-    }
+  .animate-royal-float {
+    animation: royal-float 8s ease-in-out infinite;
   }
 
-  @keyframes float {
-    0%, 100% { 
-      transform: translateY(0px) translateX(0px) scale(1);
-    }
-    25% { 
-      transform: translateY(-6px) translateX(3px) scale(1.02);
-    }
-    50% { 
-      transform: translateY(-3px) translateX(-2px) scale(0.98);
-    }
-    75% { 
-      transform: translateY(-8px) translateX(4px) scale(1.01);
-    }
+  .animate-diamond-shimmer {
+    animation: diamond-shimmer 3s ease-in-out infinite;
   }
 
-  @keyframes floatReverse {
-    0%, 100% { 
-      transform: translateY(0px) translateX(0px) scale(1);
-    }
-    25% { 
-      transform: translateY(4px) translateX(-2px) scale(0.98);
-    }
-    50% { 
-      transform: translateY(2px) translateX(3px) scale(1.02);
-    }
-    75% { 
-      transform: translateY(6px) translateX(-3px) scale(0.99);
-    }
+  .animate-golden-pulse {
+    animation: golden-pulse 3s ease-in-out infinite;
   }
 
-  @keyframes subtleFloat {
-    0%, 100% { 
-      transform: translateY(0px) scale(1);
-      opacity: 0.8;
-    }
-    50% { 
-      transform: translateY(-2px) scale(1.1);
-      opacity: 1;
-    }
+  .animate-luxury-border {
+    animation: luxury-border 4s ease-in-out infinite;
   }
 
-  @keyframes shimmer {
-    0%, 100% { 
-      opacity: 0.6;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-    }
-    50% { 
-      opacity: 1;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.4);
-    }
+  .animate-royal-shimmer {
+    position: relative;
+    overflow: hidden;
   }
 
-  @keyframes shimmer-slide {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+  .animate-royal-shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, hsl(43 96% 56% / 0.3), transparent);
+    animation: royal-shimmer 3s ease-in-out infinite;
   }
 
-  @keyframes shimmer-glow {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-  }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 4s ease-in-out infinite;
-  }
-
-  .animate-shimmer-slide {
-    animation: shimmer-slide 3s ease-in-out infinite;
-  }
-
-  .animate-shimmer-glow {
-    animation: shimmer-glow 2s ease-in-out infinite;
-  }
-
-  /* Smooth transitions */
+  /* Enhanced smooth transitions */
   * {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Luxury interaction effects */
+  .luxury-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .luxury-hover:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 20px 60px hsl(43 96% 56% / 0.25);
+    filter: brightness(1.1);
   }
 }
 

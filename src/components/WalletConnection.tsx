@@ -200,9 +200,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         disabled={isLoading}
         variant="outline"
         size="sm"
-        className={cn("h-10 bg-transparent border-black text-black hover:bg-muted/50", className)}
+        className={cn("h-10 bg-transparent border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] transition-all duration-300 animate-luxury-border font-semibold", className)}
       >
-        {isLoading ? 'Connecting...' : 'Connect'}
+        {isLoading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            Connecting...
+          </>
+        ) : (
+          'Connect'
+        )}
       </Button>
     );
   }
@@ -213,28 +220,37 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         <Button
           variant="outline"
           size="sm"
-          className={cn("h-10 px-3 gap-2 bg-transparent border-black text-black hover:bg-muted/50", className)}
+          className={cn("h-10 px-4 gap-3 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10 border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/20 hover:border-[#D4AF37] transition-all duration-300 animate-luxury-border font-semibold shadow-lg hover:shadow-xl", className)}
         >
-          <span className="font-medium">
+          {/* User avatar placeholder */}
+          <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] flex items-center justify-center">
+            <span className="text-xs font-bold text-black">
+              {user.username ? user.username.charAt(0).toUpperCase() : user.walletAddress?.charAt(2).toUpperCase()}
+            </span>
+          </div>
+          <span className="font-bold truncate max-w-32">
             {user.username || formatAddress(user.walletAddress || '')}
           </span>
-          <ChevronDown className="w-3 h-3 opacity-50" />
+          <ChevronDown className="w-4 h-4 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-2 py-2">
-          <p className="text-sm font-medium">{user.username || formatAddress(user.walletAddress || '')}</p>
-          <p className="text-xs text-muted-foreground">{formatAddress(user.walletAddress || '')}</p>
+      <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-gray-900 border-2 border-[#D4AF37]/30 shadow-2xl">
+        <div className="px-4 py-3 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5">
+          <p className="text-base font-bold text-[#D4AF37]">{user.username || 'Connected Wallet'}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">{formatAddress(user.walletAddress || '')}</p>
+          {user.username && (
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">ENS Domain Connected</p>
+          )}
         </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="w-4 h-4 mr-2" />
-          Profile
+        <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
+        <DropdownMenuItem className="hover:bg-[#D4AF37]/10 cursor-pointer">
+          <User className="w-4 h-4 mr-3 text-[#D4AF37]" />
+          <span className="font-medium">Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleDisconnect} className="text-destructive focus:text-destructive">
-          <LogOut className="w-4 h-4 mr-2" />
-          Disconnect
+        <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
+        <DropdownMenuItem onClick={handleDisconnect} className="text-red-600 dark:text-red-400 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer">
+          <LogOut className="w-4 h-4 mr-3" />
+          <span className="font-medium">Disconnect</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
