@@ -306,7 +306,11 @@ export const SearchInterface = () => {
           <div className="absolute right-1 top-1 flex items-center gap-1 h-10">
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('');
+                  setEnsResults([]);
+                  setIsAvailable(null);
+                }}
                 className="p-2 rounded-md hover:bg-gray-100 transition-colors"
                 aria-label="Clear search"
               >
@@ -326,10 +330,10 @@ export const SearchInterface = () => {
         
         {/* ENS Results */}
         {ensResults.length > 0 && (
-          <div className="mt-4 space-y-4 animate-in slide-in-from-bottom duration-300">
+          <div className="mt-6 space-y-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => (
-              <Card key={index} className="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-                <CardContent className="p-4">
+              <Card key={index} className="relative overflow-hidden bg-gradient-to-br from-white via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 border-2 border-[#D4AF37]/20 shadow-2xl hover:shadow-[0_20px_50px_rgba(212,175,55,0.15)] transition-all duration-500 hover:scale-[1.02] hover:border-[#D4AF37]/40">
+                <CardContent className="p-6">
                   <div className="flex flex-col space-y-4">
                     {/* Header with avatar and name */}
                     <div className="flex items-center gap-3">
@@ -342,26 +346,29 @@ export const SearchInterface = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <img 
-                            src={ensLogoBlue} 
-                            alt="ENS" 
-                            className="w-4 h-4 dark:hidden"
-                          />
-                          <img 
-                            src={ensLogoWhite} 
-                            alt="ENS" 
-                            className="w-4 h-4 hidden dark:block"
-                          />
-                          <span className="font-mono text-base font-semibold text-gray-900 dark:text-white truncate" style={{ textShadow: '0 0 2px #D4AF37, 0 0 4px #D4AF37, 0 0 8px #D4AF37' }}>
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-xs px-2 py-1 flex items-center gap-1 backdrop-blur-sm"
+                          >
+                            <img 
+                              src={ensLogoBlue} 
+                              alt="ENS" 
+                              className="w-3 h-3 dark:hidden"
+                            />
+                            <img 
+                              src={ensLogoWhite} 
+                              alt="ENS" 
+                              className="w-3 h-3 hidden dark:block"
+                            />
+                            {result.category}
+                          </Badge>
+                          <span className="font-mono text-lg font-bold text-gray-900 dark:text-white truncate" style={{ textShadow: '0 0 3px #D4AF37, 0 0 6px #D4AF37, 0 0 12px #D4AF37/50' }}>
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <Badge variant="secondary" className="bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 text-xs">
-                          {result.category}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600">
+                        <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
                           {result.club}
                         </Badge>
                       </div>
@@ -371,14 +378,11 @@ export const SearchInterface = () => {
                     <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: result.description }}>
                     </div>
                     
-                    {/* Price and Mint Button */}
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-sm font-semibold text-[#D4AF37]">
-                        ${searchQuery ? getSubdomainPrice(searchQuery) : result.price} USD
-                      </div>
+                    {/* Mint Button */}
+                    <div className="flex justify-center pt-3 border-t border-gray-200 dark:border-gray-700">
                       <Button 
-                        size="sm" 
-                        className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-medium px-6"
+                        size="lg" 
+                        className="bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] hover:from-[#C4A027] hover:to-[#E7D05C] text-black font-bold px-8 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                         onClick={() => setShowMintModal(true)}
                       >
                         Mint Now

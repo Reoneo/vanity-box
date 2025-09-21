@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,8 @@ import {
   Wallet, 
   CheckCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorldIdVerification } from '@/components/WorldIdVerification';
@@ -38,6 +39,21 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [currentStep, setCurrentStep] = useState<MintStep>('details');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('WLD');
   const [isVerified, setIsVerified] = useState(false);
+  const [realTimePrice, setRealTimePrice] = useState(price);
+
+  // Simulate real-time price updates
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const interval = setInterval(() => {
+      // Simulate minor price fluctuations (±2%)
+      const fluctuation = (Math.random() - 0.5) * 0.04;
+      const newPrice = price * (1 + fluctuation);
+      setRealTimePrice(Math.max(0.5, newPrice)); // Minimum price of $0.50
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, price]);
 
   const paymentMethods = [
     { id: 'WLD' as PaymentMethod, name: 'World Token', icon: '🌍', rate: 1.0 },
@@ -46,7 +62,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   ];
 
   const selectedMethod = paymentMethods.find(m => m.id === paymentMethod)!;
-  const convertedPrice = price * selectedMethod.rate;
+  const convertedPrice = realTimePrice * selectedMethod.rate;
 
   const handleVerificationComplete = () => {
     setIsVerified(true);
@@ -63,28 +79,28 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   };
 
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center gap-2 mb-6">
+    <div className="flex items-center justify-center gap-3 mb-8">
       {['details', 'verify', 'payment', 'confirm'].map((step, index) => (
         <React.Fragment key={step}>
           <div className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium",
-            currentStep === step ? "bg-primary text-primary-foreground" :
+            "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-lg transition-all duration-300",
+            currentStep === step ? "bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] text-black scale-110" :
             ['details', 'verify', 'payment', 'confirm'].indexOf(currentStep) > index 
-              ? "bg-success text-success-foreground" 
-              : "bg-muted text-muted-foreground"
+              ? "bg-gradient-to-r from-green-500 to-green-600 text-white" 
+              : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
           )}>
             {['details', 'verify', 'payment', 'confirm'].indexOf(currentStep) > index ? (
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-5 h-5" />
             ) : (
               index + 1
             )}
           </div>
           {index < 3 && (
             <div className={cn(
-              "w-8 h-0.5",
+              "w-12 h-1 rounded-full transition-all duration-300",
               ['details', 'verify', 'payment', 'confirm'].indexOf(currentStep) > index 
-                ? "bg-success" 
-                : "bg-muted"
+                ? "bg-gradient-to-r from-green-500 to-green-600" 
+                : "bg-gray-200 dark:bg-gray-700"
             )} />
           )}
         </React.Fragment>
@@ -94,17 +110,27 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const renderDetailsStep = () => (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-primary" />
+      <Card className="bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/30">
+        <CardHeader className="pb-4 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Globe className="w-6 h-6 text-[#D4AF37]" />
             Subdomain Details
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-gradient-subtle rounded-lg">
-            <span className="font-mono text-lg">{subdomain}.vanity.₿ox</span>
-            <Badge variant="default">Available</Badge>
+        <CardContent className="space-y-6 p-6">
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5 rounded-xl border border-[#D4AF37]/20">
+            <span className="font-mono text-xl font-bold text-[#D4AF37]" style={{ textShadow: '0 0 10px #D4AF37' }}>{subdomain}.vanity.₿ox</span>
+            <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 px-3 py-1">Available</Badge>
+          </div>
+          
+          <div className="flex items-center justify-center p-4 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-xl border border-[#D4AF37]/20">
+            <div className="flex items-center gap-2 text-2xl font-bold text-[#D4AF37]">
+              <TrendingUp className="w-6 h-6" />
+              <span>${realTimePrice.toFixed(2)} USD</span>
+              <div className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                Live Price
+              </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -211,10 +237,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             Price Breakdown
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex justify-between">
+        <CardContent className="space-y-4 p-6">
+          <div className="flex justify-between items-center">
             <span>Subdomain ({subdomain.length} chars)</span>
-            <span>${price} USD</span>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[#D4AF37]" />
+              <span className="font-bold text-[#D4AF37]">${realTimePrice.toFixed(2)} USD</span>
+            </div>
           </div>
           <div className="flex justify-between">
             <span>Network Fee</span>
@@ -222,14 +251,14 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
           <div className="flex justify-between">
             <span>World ID Verification</span>
-            <span className="text-success">Free</span>
+            <span className="text-green-600 dark:text-green-400 font-medium">Free</span>
           </div>
-          <Separator />
-          <div className="flex justify-between font-bold">
+          <Separator className="bg-[#D4AF37]/20" />
+          <div className="flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span>${(price + 0.5).toFixed(2)} USD</span>
+            <span className="text-[#D4AF37]">${(realTimePrice + 0.5).toFixed(2)} USD</span>
           </div>
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400 bg-[#D4AF37]/5 p-2 rounded-lg">
             ≈ {convertedPrice.toFixed(selectedMethod.id === 'ETH' ? 6 : 2)} {selectedMethod.id}
           </div>
         </CardContent>
@@ -277,11 +306,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
+      {isOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-40" />}
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto z-50">
-        <DialogHeader>
-          <DialogTitle className="text-center">
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto z-50 bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/30 shadow-2xl">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] bg-clip-text text-transparent">
             Mint ENS Subdomain
           </DialogTitle>
         </DialogHeader>
