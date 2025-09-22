@@ -61,6 +61,12 @@ All colors MUST be HSL. */
 
     --radius: 0.75rem;
 
+    /* Additional Luxury Enhancements */
+    --gold: 45 85% 55%;
+    --gold-light: 50 90% 75%;
+    --gold-dark: 40 80% 45%;
+    --shimmer: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+
     --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 43 96% 56%;
@@ -337,6 +343,35 @@ All colors MUST be HSL. */
     transform: translateY(-2px) scale(1.02);
     box-shadow: 0 20px 60px hsl(43 96% 56% / 0.25);
     filter: brightness(1.1);
+  }
+
+  /* Additional Luxury Card Effects */
+  .luxury-card {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .luxury-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: var(--shimmer);
+    transition: left 0.5s ease-in-out;
+  }
+  
+  .luxury-card:hover::before {
+    left: 100%;
+  }
+  
+  .luxury-glow {
+    box-shadow: var(--luxury-glow);
+  }
+  
+  .luxury-border {
+    border-image: linear-gradient(45deg, hsl(var(--gold)), hsl(var(--gold-light)), hsl(var(--gold))) 1;
   }
 }
 

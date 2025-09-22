@@ -336,43 +336,41 @@ export const SearchInterface = () => {
                 <CardContent className="p-6">
                   <div className="flex flex-col space-y-4">
                     {/* Header with avatar and name */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0">
-                        <img 
-                          src={result.imageUrl} 
-                          alt={result.name}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-[#D4AF37]"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge 
-                            variant="secondary" 
-                            className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-xs px-2 py-1 flex items-center gap-1 backdrop-blur-sm"
-                          >
-                            <img 
-                              src={ensLogoBlue} 
-                              alt="ENS" 
-                              className="w-3 h-3 dark:hidden"
-                            />
-                            <img 
-                              src={ensLogoWhite} 
-                              alt="ENS" 
-                              className="w-3 h-3 hidden dark:block"
-                            />
-                            {result.category}
-                          </Badge>
-                          <span className="font-mono text-lg font-bold text-gray-900 dark:text-white truncate" style={{ textShadow: '0 0 3px #D4AF37, 0 0 6px #D4AF37, 0 0 12px #D4AF37/50' }}>
-                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
-                          {result.club}
-                        </Badge>
-                      </div>
-                    </div>
+                     <div className="flex items-center gap-4">
+                       <div className="flex-shrink-0">
+                         <img 
+                           src={result.imageUrl} 
+                           alt={result.name}
+                           className="w-16 h-16 rounded-full object-cover border-2 border-[#D4AF37] shadow-lg"
+                         />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <span className="font-mono text-xl font-bold text-gray-900 dark:text-white block mb-3" style={{ textShadow: '0 0 6px #D4AF37, 0 0 12px #D4AF37/50' }}>
+                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                         </span>
+                         <div className="flex items-center gap-2 flex-wrap">
+                           <Badge 
+                             variant="secondary" 
+                             className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-medium"
+                           >
+                             <img 
+                               src={ensLogoBlue} 
+                               alt="ENS" 
+                               className="w-3 h-3 dark:hidden"
+                             />
+                             <img 
+                               src={ensLogoWhite} 
+                               alt="ENS" 
+                               className="w-3 h-3 hidden dark:block"
+                             />
+                             {result.category}
+                           </Badge>
+                           <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm px-3 py-1.5 font-medium">
+                             {result.club}
+                           </Badge>
+                         </div>
+                       </div>
+                     </div>
                     
                     {/* Description */}
                     <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: result.description }}>

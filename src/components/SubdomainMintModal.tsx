@@ -140,9 +140,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 p-6">
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5 rounded-xl border border-[#D4AF37]/20">
-            <span className="font-mono text-xl font-bold text-[#D4AF37]" style={{ textShadow: '0 0 10px #D4AF37' }}>{subdomain}.vanity.₿ox</span>
-            <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 px-3 py-1">Available</Badge>
+          <div className="flex items-center justify-between p-6 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-xl border-2 border-[#D4AF37]/30 shadow-lg">
+            <span className="font-mono text-2xl font-bold text-[#D4AF37]" style={{ textShadow: '0 0 15px #D4AF37' }}>{subdomain}</span>
+            <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 px-4 py-2 text-sm font-medium">Available</Badge>
           </div>
           
           <div className="flex items-center justify-center p-4 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-xl border border-[#D4AF37]/20">
@@ -340,7 +340,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     <>
       {isOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-40" />}
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[95vw] sm:max-h-[95vh] md:max-w-[600px] md:max-h-[85vh] max-w-[100vw] max-h-[100vh] w-full h-full md:h-auto overflow-y-auto z-50 bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/30 shadow-2xl md:rounded-lg rounded-none p-0">
+        <DialogContent className="sm:max-w-[100vw] sm:max-h-[100vh] md:max-w-[700px] lg:max-w-[800px] xl:max-w-[900px] md:max-h-[90vh] max-w-[100vw] max-h-[100vh] w-full h-full md:h-auto overflow-y-auto z-50 bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/40 shadow-2xl md:rounded-xl rounded-none p-0">
           {/* Mobile-optimized header */}
           <DialogHeader className="pb-6 pt-6 px-6 md:pb-4 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5 border-b border-[#D4AF37]/20">
             <DialogTitle className="text-center text-xl md:text-2xl font-bold bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] bg-clip-text text-transparent">
@@ -348,8 +348,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             </DialogTitle>
           </DialogHeader>
           
-          {/* Content with mobile padding */}
-          <div className="px-4 md:px-6 pb-6 pt-2">
+          {/* Content with responsive padding */}
+          <div className="px-4 sm:px-6 lg:px-8 pb-6 pt-2">
             {renderStepIndicator()}
             
             {currentStep === 'details' && renderDetailsStep()}

@@ -200,7 +200,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         disabled={isLoading}
         variant="outline"
         size="sm"
-        className={cn("h-10 bg-transparent border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] transition-all duration-300 animate-luxury-border font-semibold", className)}
+        className={cn("h-10 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold", className)}
       >
         {isLoading ? (
           <>
