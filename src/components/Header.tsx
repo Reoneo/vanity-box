@@ -55,14 +55,14 @@ export const Header: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37]">
+    <header className="fixed top-0 left-0 right-0 z-[9999] w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] pt-safe-area-inset-top">
       {/* Preload the logo */}
       <link rel="preload" as="image" href={vanityLogo} />
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between md:justify-center">
         {/* Mobile: Logo, Menu Button, and Search Icon on left */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-1 md:hidden">
           {/* Logo - positioned at far left, moved slightly left */}
           <div className="flex items-center -ml-2">
             <img 
