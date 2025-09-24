@@ -205,11 +205,13 @@ export const Header: React.FC = () => {
           {/* Close button */}
           <button
             onClick={() => setMenuOpen(false)}
-            className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 z-50"
             aria-label="Close menu"
           >
-            <span className="w-4 h-0.5 bg-black absolute rotate-45" />
-            <span className="w-4 h-0.5 bg-black absolute -rotate-45" />
+            <div className="relative w-5 h-5">
+              <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 rotate-45" />
+              <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 -rotate-45" />
+            </div>
           </button>
           
           <nav className="space-y-6">
