@@ -220,10 +220,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         <Button
           variant="outline"
           size="sm"
-          className={cn("h-10 px-4 gap-3 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10 border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/20 hover:border-[#D4AF37] transition-all duration-300 animate-luxury-border font-semibold shadow-lg hover:shadow-xl", className)}
+          className={cn("h-10 px-4 gap-3 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold", className)}
         >
           {/* User avatar placeholder */}
-          <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
             <span className="text-xs font-bold text-black">
               {user.username ? user.username.charAt(0).toUpperCase() : user.walletAddress?.charAt(2).toUpperCase()}
             </span>
