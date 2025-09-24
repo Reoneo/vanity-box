@@ -11,14 +11,7 @@ interface PersonalizedHeaderProps {
 export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) => {
   const getHeaderText = () => {
     console.log('PersonalizedHeader rendering with user:', user);
-    if (user?.username) {
-      return (
-        <>
-          <span className="text-lg md:text-2xl lg:text-3xl xl:text-4xl">Hello </span>
-          <span className="text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#D4AF37]">{user.username}</span>
-        </>
-      );
-    }
+    // Always show the same text regardless of connection status
     return (
       <span className="text-xl md:text-3xl lg:text-4xl xl:text-5xl font-light tracking-wide">Your Personalised Digital ID</span>
     );
