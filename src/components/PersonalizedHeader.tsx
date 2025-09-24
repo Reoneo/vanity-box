@@ -21,16 +21,16 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) 
 
   return (
     <h1 className="relative text-center px-4 mb-4">
-      {/* Glow effect behind text */}
-      <div className="absolute inset-0 blur-2xl opacity-20 bg-gradient-to-r from-gray-600 via-gray-300 to-gray-600 rounded-2xl transform scale-110" />
+      {/* Glow effect behind text - only in light mode */}
+      <div className="absolute inset-0 blur-2xl opacity-20 bg-gradient-to-r from-gray-600 via-gray-300 to-gray-600 rounded-2xl transform scale-110 dark:opacity-0" />
       
       {/* Main heading with luxury styling */}
       <div className="relative z-10 leading-tight drop-shadow-2xl">
         {getHeaderText()}
       </div>
       
-      {/* Subtle shimmer effect */}
-      <div className="absolute inset-0 opacity-10 bg-gradient-to-r from-transparent via-gray-200 to-transparent animate-pulse rounded-xl dark:via-gray-400" />
+      {/* Subtle shimmer effect - only in light mode */}
+      <div className="absolute inset-0 opacity-10 bg-gradient-to-r from-transparent via-gray-200 to-transparent animate-pulse rounded-xl dark:opacity-0" />
     </h1>
   );
 };
