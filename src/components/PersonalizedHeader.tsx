@@ -13,7 +13,7 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) 
     console.log('PersonalizedHeader rendering with user:', user);
     // Always show the same text regardless of connection status
     return (
-      <span className="font-playfair text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold tracking-wide bg-gradient-to-r from-black via-gray-400 to-black bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-white">
+      <span className="font-playfair text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold tracking-wide text-black dark:text-white">
         Your Personalised Digital ID
       </span>
     );
