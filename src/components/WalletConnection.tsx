@@ -121,6 +121,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   const getWorldChainENS = async (address: string): Promise<string | undefined> => {
     console.log('🔍 Fetching World ID ENS for address:', address);
+
+    const normalize = (u?: string | null): string | undefined => {
+      if (!u) return undefined;
+      const lower = String(u).toLowerCase();
+      return lower.endsWith('.world.id') ? lower : `${lower}.world.id`;
+    };
     
     // Check cache first
     const cacheKey = `worldid_domain_${address.toLowerCase()}`;
@@ -129,92 +135,83 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       console.log('✅ Using cached domain:', cached);
       return cached;
     }
-    
+
+    // Primary: ask World App via MiniKit
     try {
-      // Primary: World Bridge API for World ID username
-      console.log('🌍 Fetching from World Bridge API...');
-      const worldBridgeResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
-      
+      // 1) Explicit fetch using MiniKit.getUserByAddress if available
+      const mkAny = MiniKit as any;
+      if (mkAny?.getUserByAddress) {
+        console.log('🌍 Using MiniKit.getUserByAddress...');
+        const worldIdUser = await mkAny.getUserByAddress(address);
+        const mkDomain = normalize(worldIdUser?.username || worldIdUser?.handle || worldIdUser?.name);
+        if (mkDomain) {
+          sessionStorage.setItem(cacheKey, mkDomain);
+          console.log('✅ Found username from MiniKit.getUserByAddress:', mkDomain);
+          return mkDomain;
+        }
+      }
+      // 2) Try MiniKit.user if populated after auth
+      const inlineUsername = (MiniKit as any)?.user?.username;
+      const inlineDomain = normalize(inlineUsername);
+      if (inlineDomain) {
+        sessionStorage.setItem(cacheKey, inlineDomain);
+        console.log('✅ Found username from MiniKit.user:', inlineDomain);
+        return inlineDomain;
+      }
+    } catch (e) {
+      console.error('❌ MiniKit username lookup failed:', e);
+    }
+
+    // Secondary: World Bridge API for World ID username
+    try {
+      console.log('🌐 Fetching from World Bridge API...');
+      const worldBridgeResp = await fetch(`https://usernames.worldcoin.org/v1/addresses/${address.toLowerCase()}`);
+      // usernames service: also try legacy bridge endpoint as fallback
       if (worldBridgeResp.ok) {
-        const worldBridgeData = await worldBridgeResp.json();
-        console.log('📦 World Bridge response:', JSON.stringify(worldBridgeData, null, 2));
-        
-        if (worldBridgeData?.username) {
-          const worldIdDomain = `${worldBridgeData.username}.world.id`;
-          sessionStorage.setItem(cacheKey, worldIdDomain);
-          console.log('✅ Found World ID domain:', worldIdDomain);
-          return worldIdDomain;
+        const data = await worldBridgeResp.json();
+        // Common shapes: { username: 'reon.0000' } or { handle: 'reon.0000' }
+        const bridgeDomain = normalize(data?.username || data?.handle || data?.name);
+        if (bridgeDomain) {
+          sessionStorage.setItem(cacheKey, bridgeDomain);
+          console.log('✅ Found username from usernames service:', bridgeDomain);
+          return bridgeDomain;
         }
-      } else {
-        console.log('❌ World Bridge API error:', worldBridgeResp.status, worldBridgeResp.statusText);
       }
     } catch (e) {
-      console.error('❌ Failed World Bridge lookup:', e);
+      console.error('❌ World usernames service lookup failed:', e);
     }
 
+    // Tertiary: Legacy Bridge endpoint
     try {
-      // Secondary: World Chain API (alternative endpoint)
-      console.log('🔄 Trying World Chain API...');
-      const worldChainResp = await fetch(`https://api.worldcoin.org/v1/profile/${address.toLowerCase()}`);
-      
-      if (worldChainResp.ok) {
-        const worldChainData = await worldChainResp.json();
-        console.log('📦 World Chain response:', JSON.stringify(worldChainData, null, 2));
-        
-        if (worldChainData?.username || worldChainData?.world_id) {
-          const username = worldChainData.username || worldChainData.world_id;
-          const worldIdDomain = `${username}.world.id`;
-          sessionStorage.setItem(cacheKey, worldIdDomain);
-          console.log('✅ Found World Chain domain:', worldIdDomain);
-          return worldIdDomain;
+      console.log('🔄 Trying legacy World Bridge endpoint...');
+      const legacyResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
+      if (legacyResp.ok) {
+        const legacyData = await legacyResp.json();
+        const legacyDomain = normalize(legacyData?.username || legacyData?.handle);
+        if (legacyDomain) {
+          sessionStorage.setItem(cacheKey, legacyDomain);
+          console.log('✅ Found legacy World Bridge username:', legacyDomain);
+          return legacyDomain;
         }
       }
     } catch (e) {
-      console.error('❌ Failed World Chain lookup:', e);
+      console.error('❌ Legacy World Bridge lookup failed:', e);
     }
 
+    // Retry MiniKit inline user after small delay (in case auth just populated it)
     try {
-      // Tertiary: World ID API direct lookup
-      console.log('🔄 Trying World ID API...');
-      const worldIdResp = await fetch(`https://id.worldcoin.org/api/v1/profile/${address.toLowerCase()}`);
-      
-      if (worldIdResp.ok) {
-        const worldIdData = await worldIdResp.json();
-        console.log('📦 World ID API response:', JSON.stringify(worldIdData, null, 2));
-        
-        if (worldIdData?.username || worldIdData?.handle) {
-          const username = worldIdData.username || worldIdData.handle;
-          const worldIdDomain = `${username}.world.id`;
-          sessionStorage.setItem(cacheKey, worldIdDomain);
-          console.log('✅ Found World ID API domain:', worldIdDomain);
-          return worldIdDomain;
-        }
+      console.log('⏳ Retrying MiniKit.user after delay...');
+      await new Promise((r) => setTimeout(r, 1200));
+      const retryInline = normalize((MiniKit as any)?.user?.username);
+      if (retryInline) {
+        sessionStorage.setItem(cacheKey, retryInline);
+        console.log('✅ Found username on retry:', retryInline);
+        return retryInline;
       }
     } catch (e) {
-      console.error('❌ Failed World ID API lookup:', e);
+      console.error('❌ Retry MiniKit.user failed:', e);
     }
 
-    // Retry World Bridge after delay for slow indexing
-    try {
-      console.log('🔄 Retrying World Bridge after delay...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const retryResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
-      if (retryResp.ok) {
-        const retryData = await retryResp.json();
-        console.log('📦 World Bridge retry response:', JSON.stringify(retryData, null, 2));
-        
-        if (retryData?.username) {
-          const worldIdDomain = `${retryData.username}.world.id`;
-          sessionStorage.setItem(cacheKey, worldIdDomain);
-          console.log('✅ Found World ID domain on retry:', worldIdDomain);
-          return worldIdDomain;
-        }
-      }
-    } catch (e) {
-      console.error('❌ Failed World Bridge retry:', e);
-    }
-    
     console.log('❌ No World ID domain found for address:', address);
     return undefined;
   };
