@@ -39,6 +39,7 @@ export const SearchInterface = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const protocols = ['ENS', 'Aptos Names', 'Avax Name Service'];
   const clubs = ['Crypto', 'DeFi', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
@@ -153,7 +154,10 @@ export const SearchInterface = () => {
   };
 
   const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
     setIsLoading(true);
+    setHasSearched(true);
     
     // Simulate search delay
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -310,6 +314,7 @@ export const SearchInterface = () => {
                   setSearchQuery('');
                   setEnsResults([]);
                   setIsAvailable(null);
+                  setHasSearched(false);
                 }}
                 className="p-2 rounded-md hover:bg-gray-100 transition-colors"
                 aria-label="Clear search"
@@ -329,7 +334,7 @@ export const SearchInterface = () => {
         </div>
         
         {/* ENS Results */}
-        {ensResults.length > 0 && (
+        {hasSearched && ensResults.length > 0 && (
           <div className="mt-6 space-y-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => (
               <Card key={index} className="relative overflow-hidden bg-gradient-to-br from-white via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 border-2 border-[#D4AF37]/20 shadow-2xl hover:shadow-[0_20px_50px_rgba(212,175,55,0.15)] transition-all duration-500 hover:scale-[1.02] hover:border-[#D4AF37]/40">

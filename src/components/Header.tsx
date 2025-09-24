@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Search } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +38,22 @@ const ThemeToggle = () => {
 };
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSearchIcon, setShowSearchIcon] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show search icon when user has scrolled past the search bar area
+      const searchBarArea = 200; // Approximate height where search bar becomes out of view
+      setShowSearchIcon(window.scrollY > searchBarArea);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSearch = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37]">
       {/* Preload the logo */}
@@ -78,6 +94,18 @@ export const Header: React.FC = () => {
             )} />
           </div>
         </button>
+
+        {/* Search Icon - appears when search bar is out of view */}
+        {showSearchIcon && (
+          <button
+            type="button"
+            aria-label="Scroll to search"
+            onClick={scrollToSearch}
+            className="absolute left-16 w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+          >
+            <Search className="w-5 h-5 text-black" />
+          </button>
+        )}
 
         {/* Centered Logo */}
         <div className="flex items-center">
