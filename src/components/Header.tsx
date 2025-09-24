@@ -13,30 +13,34 @@ const ThemeToggle = () => {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-playfair font-semibold text-gray-900 dark:text-white">Theme</h3>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex justify-center gap-4">
         <button
           onClick={() => setTheme('light')}
           className={cn(
-            "flex items-center justify-center gap-3 p-4 rounded-xl transition-all duration-300 font-medium",
+            "w-16 h-16 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-95",
             theme === 'light'
-              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg border-2 border-[#D4AF37]"
-              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-[#F4E4BC]/10"
+              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg border-2 border-[#D4AF37] scale-110"
+              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-[#F4E4BC]/10 hover:scale-105"
           )}
         >
-          <Sun className="w-5 h-5" />
-          <span className="font-playfair">Light</span>
+          <Sun className={cn(
+            "transition-all duration-300",
+            theme === 'light' ? "w-8 h-8 rotate-180" : "w-7 h-7"
+          )} />
         </button>
         <button
           onClick={() => setTheme('dark')}
           className={cn(
-            "flex items-center justify-center gap-3 p-4 rounded-xl transition-all duration-300 font-medium",
+            "w-16 h-16 rounded-xl flex items-center justify-center transition-all duration-300 transform active:scale-95",
             theme === 'dark'
-              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg border-2 border-[#D4AF37]"
-              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-[#F4E4BC]/10"
+              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg border-2 border-[#D4AF37] scale-110"
+              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-[#F4E4BC]/10 hover:scale-105"
           )}
         >
-          <Moon className="w-5 h-5" />
-          <span className="font-playfair">Dark</span>
+          <Moon className={cn(
+            "transition-all duration-300",
+            theme === 'dark' ? "w-8 h-8 rotate-12" : "w-7 h-7"
+          )} />
         </button>
       </div>
     </div>
