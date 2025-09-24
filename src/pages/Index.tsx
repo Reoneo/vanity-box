@@ -29,7 +29,7 @@ const Index = () => {
       <Header />
       
       {/* Hero Section - Top aligned for mobile */}
-      <main className="flex-1 px-4 pt-24 md:pt-24 relative z-10">
+      <main className="flex-1 px-4 pt-20 md:pt-24 relative z-10">
         <div className="max-w-2xl mx-auto text-center space-y-8">
           {/* Main Heading */}
           <PersonalizedHeader user={user} />
