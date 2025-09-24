@@ -61,8 +61,20 @@ export const Header: React.FC = () => {
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
-        {/* Left side: Menu Button, Search Icon, and Logo */}
-        <div className="flex items-center gap-3">
+        {/* Left side: Logo, Menu Button, and Search Icon */}
+        <div className="flex items-center gap-4">
+          {/* Logo - positioned at far left, 5% smaller */}
+          <div className="flex items-center">
+            <img 
+              src={vanityLogo} 
+              alt="Vanity.box Logo" 
+              className="h-24 w-auto object-contain transform scale-105"
+              loading="eager"
+              fetchPriority="high"
+              style={{ marginTop: '2px', marginBottom: '2px' }}
+            />
+          </div>
+
           {/* Menu Button */}
           <button
             type="button"
@@ -108,18 +120,6 @@ export const Header: React.FC = () => {
               <Search className="w-5 h-5 text-black" />
             </button>
           )}
-          
-          {/* Logo - larger but within the same navbar height */}
-          <div className="flex items-center ml-2">
-            <img 
-              src={vanityLogo} 
-              alt="Vanity.box Logo" 
-              className="h-24 w-auto object-contain transform scale-110"
-              loading="eager"
-              fetchPriority="high"
-              style={{ marginTop: '2px', marginBottom: '2px' }}
-            />
-          </div>
         </div>
 
         
