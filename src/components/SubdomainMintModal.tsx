@@ -15,6 +15,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SubdomainMintModalProps {
   isOpen: boolean;
@@ -32,13 +33,46 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   subdomain,
   price
 }) => {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState<MintStep>('details');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('WLD');
 
   const paymentMethods = [
-    { id: 'WLD' as PaymentMethod, name: 'World Token', icon: '🌍', rate: 7.58 },
-    { id: 'USDC' as PaymentMethod, name: 'USDC', icon: '💵', rate: 1.0 },
-    { id: 'ETH' as PaymentMethod, name: 'Ethereum', icon: '⟠', rate: 0.0004 }
+    { 
+      id: 'WLD' as PaymentMethod, 
+      name: t('worldcoin'), 
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+          <circle cx="12" cy="12" r="10" fill="#000"/>
+          <circle cx="12" cy="12" r="6" fill="none" stroke="#fff" strokeWidth="1.5"/>
+          <circle cx="12" cy="12" r="2" fill="#fff"/>
+        </svg>
+      ), 
+      rate: 7.58 
+    },
+    { 
+      id: 'USDC' as PaymentMethod, 
+      name: 'USDC', 
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+          <circle cx="12" cy="12" r="10" fill="#2775CA"/>
+          <path d="M12 4.5c-4.1 0-7.5 3.4-7.5 7.5s3.4 7.5 7.5 7.5 7.5-3.4 7.5-7.5-3.4-7.5-7.5-7.5zm0 13.5c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z" fill="white"/>
+          <path d="M10.5 8.5h3v7h-3z" fill="#2775CA"/>
+        </svg>
+      ), 
+      rate: 1.0 
+    },
+    { 
+      id: 'ETH' as PaymentMethod, 
+      name: 'Ethereum', 
+      icon: (
+        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+          <path d="M12 1L5.5 12.25L12 16l6.5-3.75L12 1z" fill="#627EEA"/>
+          <path d="M12 17.5L5.5 13.75L12 23l6.5-9.25L12 17.5z" fill="#627EEA"/>
+        </svg>
+      ), 
+      rate: 0.0004 
+    }
   ];
 
   const selectedMethod = paymentMethods.find(m => m.id === paymentMethod)!;
@@ -89,25 +123,25 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         <CardHeader className="pb-3 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Globe className="w-5 h-5 text-[#D4AF37]" />
-            Subdomain Details
+            {t('subdomain_details')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-4">
           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-xl border-2 border-[#D4AF37]/30 shadow-lg">
             <span className="font-mono text-xl font-bold text-[#D4AF37]" style={{ textShadow: '0 0 15px #D4AF37' }}>{subdomain}</span>
-            <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 px-3 py-1 text-sm font-medium">Available</Badge>
+            <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 px-3 py-1 text-sm font-medium">{t('available')}</Badge>
           </div>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Length:</span>
-              <span className="ml-2 font-medium">{subdomain.length} characters</span>
+              <span className="text-muted-foreground">{t('length')}:</span>
+              <span className="ml-2 font-medium">{subdomain.length} {t('characters')}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Tier:</span>
+              <span className="text-muted-foreground">{t('tier')}:</span>
               <span className="ml-2 font-medium">
-                {subdomain.length <= 3 ? 'Premium' : 
-                 subdomain.length <= 6 ? 'Standard' : 'Basic'}
+                {subdomain.length <= 3 ? t('premium') : 
+                 subdomain.length <= 6 ? t('standard') : t('basic')}
               </span>
             </div>
           </div>
@@ -115,19 +149,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           <Separator />
 
           <div className="space-y-2">
-            <h4 className="font-medium text-sm">What's included:</h4>
+            <h4 className="font-medium text-sm">{t('whats_included')}</h4>
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <CheckCircle className="w-3 h-3 text-success" />
-                ENS subdomain resolution
+                {t('ens_subdomain_resolution')}
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="w-3 h-3 text-success" />
-                Cross-chain address resolution
+                {t('cross_chain_address_resolution')}
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle className="w-3 h-3 text-success" />
-                Web3 profile management
+                {t('web3_profile_management')}
               </li>
             </ul>
           </div>
@@ -136,11 +170,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onClose}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button onClick={() => setCurrentStep('payment')} className="gap-2">
           <CreditCard className="w-4 h-4" />
-          Continue to Payment
+          {t('continue_to_payment')}
         </Button>
       </div>
     </div>
@@ -153,7 +187,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <CreditCard className="w-5 h-5 text-primary" />
-            Payment Method
+            {t('payment_method')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-4">
@@ -162,7 +196,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               <div key={method.id} className="flex items-center space-x-3 p-3 border-2 rounded-xl hover:bg-[#D4AF37]/5 transition-all duration-300 hover:border-[#D4AF37]/40 cursor-pointer group">
                 <RadioGroupItem value={method.id} id={method.id} className="border-[#D4AF37] text-[#D4AF37]" />
                 <Label htmlFor={method.id} className="flex-1 flex items-center gap-3 cursor-pointer">
-                  <span className="text-xl group-hover:scale-110 transition-transform duration-200">{method.icon}</span>
+                  <span className="text-gray-700 dark:text-gray-300 group-hover:scale-110 transition-transform duration-200">{method.icon}</span>
                   <div className="flex-1">
                     <div className="font-bold">{method.name}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
@@ -190,21 +224,21 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <DollarSign className="w-5 h-5 text-primary" />
-            Price Breakdown
+            {t('price_breakdown')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4">
           <div className="flex justify-between items-center">
-            <span>Subdomain ({subdomain.length} chars)</span>
+            <span>{t('subdomain')} ({subdomain.length} {t('characters')})</span>
             <span className="font-bold text-[#D4AF37]">${price.toFixed(2)} USD</span>
           </div>
           <div className="flex justify-between">
-            <span>Network Fee</span>
+            <span>{t('network_fee')}</span>
             <span>$0.50 USD</span>
           </div>
           <Separator className="bg-[#D4AF37]/20" />
           <div className="flex justify-between font-bold">
-            <span>Total</span>
+            <span>{t('total')}</span>
             <span className="text-[#D4AF37]">${(price + 0.5).toFixed(2)} USD</span>
           </div>
           <div className="text-center text-sm text-gray-600 dark:text-gray-400 bg-[#D4AF37]/5 p-2 rounded-lg">
@@ -215,11 +249,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => setCurrentStep('details')}>
-          Back
+          {t('back')}
         </Button>
         <Button onClick={handlePayment} className="gap-2">
           <Wallet className="w-4 h-4" />
-          Pay with {selectedMethod.name}
+          {t('pay_with')} {selectedMethod.name}
         </Button>
       </div>
     </div>
@@ -232,9 +266,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       </div>
       
       <div className="space-y-2">
-        <h3 className="text-xl font-bold">Payment Processing</h3>
+        <h3 className="text-xl font-bold">{t('payment_processing')}</h3>
         <p className="text-muted-foreground">
-          Your subdomain is being minted on the blockchain
+          {t('subdomain_being_minted')}
         </p>
       </div>
 
@@ -248,7 +282,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        This usually takes 1-2 minutes. You'll receive a confirmation once complete.
+        {t('usually_takes_time')}
       </p>
     </div>
   );
@@ -261,7 +295,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           {/* Header */}
           <DialogHeader className="pb-4 pt-6 px-6 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5 border-b border-[#D4AF37]/20">
             <DialogTitle className="text-center text-xl font-bold bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] bg-clip-text text-transparent">
-              Mint ENS Subdomain
+              {t('mint_ens_subdomain')}
             </DialogTitle>
           </DialogHeader>
           
