@@ -120,7 +120,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const getWorldChainENS = async (address: string): Promise<string | undefined> => {
-    console.log('🔍 Fetching ENS for address:', address);
+    console.log('🔍 Fetching World ID ENS for address:', address);
     
     // Check cache first
     const cacheKey = `worldid_domain_${address.toLowerCase()}`;
@@ -130,196 +130,92 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return cached;
     }
     
-    const NAMESTONE_API_KEY = import.meta.env.VITE_NAMESTONE_API_KEY;
-    
-    const fetchNameStone = async (url: string) => {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (NAMESTONE_API_KEY) {
-        headers['Authorization'] = `Bearer ${NAMESTONE_API_KEY}`;
-      }
-      
-      return fetch(url, { headers });
-    };
-    
     try {
-      // Primary: NameStone get-names endpoint
-      console.log('📡 Trying NameStone get-names...');
-      const getNamesResponse = await fetchNameStone(
-        `https://namestone.com/api/public_v1/get-names?address=${address.toLowerCase()}`
-      );
+      // Primary: World Bridge API for World ID username
+      console.log('🌍 Fetching from World Bridge API...');
+      const worldBridgeResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
       
-      if (getNamesResponse.ok) {
-        const data = await getNamesResponse.json();
-        console.log('📦 NameStone get-names response:', JSON.stringify(data, null, 2));
+      if (worldBridgeResp.ok) {
+        const worldBridgeData = await worldBridgeResp.json();
+        console.log('📦 World Bridge response:', JSON.stringify(worldBridgeData, null, 2));
         
-        const domain = extractDomainFromResponse(data);
-        if (domain) {
-          sessionStorage.setItem(cacheKey, domain);
-          console.log('✅ Found domain from get-names:', domain);
-          return domain;
-        }
-      }
-      
-      // Fallback 1: NameStone search-names endpoint (try both query variations)
-      const searchEndpoints = [
-        `https://namestone.com/api/public_v1/search-names?q=${address.toLowerCase()}`,
-        `https://namestone.com/api/public_v1/search-names?query=${address.toLowerCase()}`
-      ];
-      
-      for (const endpoint of searchEndpoints) {
-        try {
-          console.log('📡 Trying NameStone search:', endpoint);
-          const response = await fetchNameStone(endpoint);
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log('📦 NameStone search response:', JSON.stringify(data, null, 2));
-            
-            const domain = extractDomainFromResponse(data);
-            if (domain) {
-              sessionStorage.setItem(cacheKey, domain);
-              console.log('✅ Found domain from search:', domain);
-              return domain;
-            }
-          }
-        } catch (error) {
-          console.error(`❌ Failed to search NameStone ${endpoint}:`, error);
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Failed to get ENS from NameStone:', error);
-    }
-
-    // Fallback 2: World Bridge username lookup
-    try {
-      console.log('🔄 Trying World Bridge username lookup...');
-      const worldIdResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
-      if (worldIdResp.ok) {
-        const worldIdData = await worldIdResp.json();
-        console.log('📦 World Bridge data:', JSON.stringify(worldIdData, null, 2));
-        if (worldIdData?.username) {
-          const worldIdDomain = `${worldIdData.username}.world.id`;
+        if (worldBridgeData?.username) {
+          const worldIdDomain = `${worldBridgeData.username}.world.id`;
           sessionStorage.setItem(cacheKey, worldIdDomain);
-          console.log('✅ Found World Bridge domain:', worldIdDomain);
+          console.log('✅ Found World ID domain:', worldIdDomain);
           return worldIdDomain;
         }
+      } else {
+        console.log('❌ World Bridge API error:', worldBridgeResp.status, worldBridgeResp.statusText);
       }
     } catch (e) {
       console.error('❌ Failed World Bridge lookup:', e);
     }
-    
-    // Single retry after 1 second for slow indexers
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     try {
-      console.log('🔄 Retrying NameStone get-names after delay...');
-      const retryResponse = await fetchNameStone(
-        `https://namestone.com/api/public_v1/get-names?address=${address.toLowerCase()}`
-      );
+      // Secondary: World Chain API (alternative endpoint)
+      console.log('🔄 Trying World Chain API...');
+      const worldChainResp = await fetch(`https://api.worldcoin.org/v1/profile/${address.toLowerCase()}`);
       
-      if (retryResponse.ok) {
-        const data = await retryResponse.json();
-        console.log('📦 NameStone retry response:', JSON.stringify(data, null, 2));
+      if (worldChainResp.ok) {
+        const worldChainData = await worldChainResp.json();
+        console.log('📦 World Chain response:', JSON.stringify(worldChainData, null, 2));
         
-        const domain = extractDomainFromResponse(data);
-        if (domain) {
-          sessionStorage.setItem(cacheKey, domain);
-          console.log('✅ Found domain from retry:', domain);
-          return domain;
+        if (worldChainData?.username || worldChainData?.world_id) {
+          const username = worldChainData.username || worldChainData.world_id;
+          const worldIdDomain = `${username}.world.id`;
+          sessionStorage.setItem(cacheKey, worldIdDomain);
+          console.log('✅ Found World Chain domain:', worldIdDomain);
+          return worldIdDomain;
         }
       }
-    } catch (error) {
-      console.error('❌ Retry failed:', error);
+    } catch (e) {
+      console.error('❌ Failed World Chain lookup:', e);
+    }
+
+    try {
+      // Tertiary: World ID API direct lookup
+      console.log('🔄 Trying World ID API...');
+      const worldIdResp = await fetch(`https://id.worldcoin.org/api/v1/profile/${address.toLowerCase()}`);
+      
+      if (worldIdResp.ok) {
+        const worldIdData = await worldIdResp.json();
+        console.log('📦 World ID API response:', JSON.stringify(worldIdData, null, 2));
+        
+        if (worldIdData?.username || worldIdData?.handle) {
+          const username = worldIdData.username || worldIdData.handle;
+          const worldIdDomain = `${username}.world.id`;
+          sessionStorage.setItem(cacheKey, worldIdDomain);
+          console.log('✅ Found World ID API domain:', worldIdDomain);
+          return worldIdDomain;
+        }
+      }
+    } catch (e) {
+      console.error('❌ Failed World ID API lookup:', e);
+    }
+
+    // Retry World Bridge after delay for slow indexing
+    try {
+      console.log('🔄 Retrying World Bridge after delay...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const retryResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
+      if (retryResp.ok) {
+        const retryData = await retryResp.json();
+        console.log('📦 World Bridge retry response:', JSON.stringify(retryData, null, 2));
+        
+        if (retryData?.username) {
+          const worldIdDomain = `${retryData.username}.world.id`;
+          sessionStorage.setItem(cacheKey, worldIdDomain);
+          console.log('✅ Found World ID domain on retry:', worldIdDomain);
+          return worldIdDomain;
+        }
+      }
+    } catch (e) {
+      console.error('❌ Failed World Bridge retry:', e);
     }
     
     console.log('❌ No World ID domain found for address:', address);
-    return undefined;
-  };
-
-  // Helper method to extract domain from various response formats
-  const extractDomainFromResponse = (data: any): string | undefined => {
-    console.log('🔍 Extracting domain from response:', JSON.stringify(data, null, 2));
-    
-    // Helper function to construct domain from label + namespace
-    const constructDomain = (nameObj: any): string | undefined => {
-      if (nameObj?.label && nameObj?.namespace) {
-        return `${nameObj.label}.${nameObj.namespace}.world.id`;
-      }
-      return nameObj?.name || nameObj?.domain || nameObj?.fqdn || nameObj;
-    };
-    
-    // Helper function to prioritize .world.id domains
-    const prioritizeDomains = (domains: string[]): string | undefined => {
-      // Prefer domains with two labels before world.id (e.g., label.namespace.world.id)
-      const twoLabelWorldId = domains.find(d => 
-        d.endsWith('.world.id') && d.split('.').length === 4
-      );
-      if (twoLabelWorldId) return twoLabelWorldId;
-      
-      // Then any .world.id domain
-      const worldIdDomain = domains.find(d => d.endsWith('.world.id'));
-      if (worldIdDomain) return worldIdDomain;
-      
-      // Then .world domains
-      const worldDomain = domains.find(d => d.endsWith('.world'));
-      if (worldDomain) return worldDomain;
-      
-      // Finally, any domain
-      return domains[0];
-    };
-    
-    // Check multiple possible response formats
-    const possibleArrays = [
-      data?.names,
-      data?.data?.names, 
-      data?.results,
-      data?.data?.results
-    ].filter(arr => Array.isArray(arr) && arr.length > 0);
-    
-    for (const namesArray of possibleArrays) {
-      console.log('✅ Found names array:', namesArray);
-      
-      const domains: string[] = [];
-      
-      for (const nameObj of namesArray) {
-        const domain = constructDomain(nameObj);
-        if (typeof domain === 'string' && domain.length > 0) {
-          domains.push(domain);
-        }
-      }
-      
-      if (domains.length > 0) {
-        const selectedDomain = prioritizeDomains(domains);
-        if (selectedDomain) {
-          console.log('✅ Selected domain:', selectedDomain);
-          return selectedDomain;
-        }
-      }
-    }
-    
-    // Handle single domain response (not in array)
-    if (data && typeof data === 'object') {
-      const singleDomain = constructDomain(data);
-      if (typeof singleDomain === 'string' && singleDomain.length > 0) {
-        console.log('📝 Found single domain:', singleDomain);
-        return singleDomain;
-      }
-      
-      // Check nested data object
-      if (data.data) {
-        const nestedDomain = constructDomain(data.data);
-        if (typeof nestedDomain === 'string' && nestedDomain.length > 0) {
-          console.log('📝 Found nested domain:', nestedDomain);
-          return nestedDomain;
-        }
-      }
-    }
-    
-    console.log('❌ No domain found in response');
     return undefined;
   };
 
