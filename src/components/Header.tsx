@@ -67,6 +67,7 @@ export const Header: React.FC = () => {
   const scrollToSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
       <header className="fixed top-0 left-0 right-0 z-[9999] w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] pt-safe-area-inset-top">
@@ -90,7 +91,7 @@ export const Header: React.FC = () => {
             </div>
 
             {/* Menu Button */}
-            <SheetTrigger asChild>
+            <TriggerOrClose asChild>
               <button
                 type="button"
                 aria-label="Toggle menu"
@@ -122,7 +123,7 @@ export const Header: React.FC = () => {
                   )} />
                 </div>
               </button>
-            </SheetTrigger>
+            </TriggerOrClose>
 
             {/* Search Icon - appears when search bar is out of view */}
             {showSearchIcon && (
@@ -138,7 +139,7 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Desktop/Tablet: Menu Button on left */}
-          <SheetTrigger asChild>
+          <TriggerOrClose asChild>
             <button
               type="button"
               aria-label="Toggle menu"
@@ -170,7 +171,7 @@ export const Header: React.FC = () => {
                 )} />
               </div>
             </button>
-          </SheetTrigger>
+          </TriggerOrClose>
 
           {/* Desktop/Tablet: Search Icon next to menu button */}
           {showSearchIcon && (
