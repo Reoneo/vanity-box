@@ -11,27 +11,33 @@ const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
   
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</h3>
-      <div className="flex gap-2">
-        <Button
-          variant={theme === 'light' ? 'default' : 'outline'}
-          size="sm"
+    <div className="space-y-4">
+      <h3 className="text-lg font-playfair font-semibold text-gray-900 dark:text-white">Theme</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <button
           onClick={() => setTheme('light')}
-          className="flex items-center gap-2 bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-500"
+          className={cn(
+            "flex items-center justify-center gap-3 p-4 rounded-xl transition-all duration-300 font-medium",
+            theme === 'light'
+              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg border-2 border-[#D4AF37]"
+              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-[#F4E4BC]/10"
+          )}
         >
-          <Sun className="w-4 h-4" />
-          Light
-        </Button>
-        <Button
-          variant={theme === 'dark' ? 'default' : 'outline'}
-          size="sm"
+          <Sun className="w-5 h-5" />
+          <span className="font-playfair">Light</span>
+        </button>
+        <button
           onClick={() => setTheme('dark')}
-          className="flex items-center gap-2 bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-500"
+          className={cn(
+            "flex items-center justify-center gap-3 p-4 rounded-xl transition-all duration-300 font-medium",
+            theme === 'dark'
+              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg border-2 border-[#D4AF37]"
+              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 hover:border-[#D4AF37] hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-[#F4E4BC]/10"
+          )}
         >
-          <Moon className="w-4 h-4" />
-          Dark
-        </Button>
+          <Moon className="w-5 h-5" />
+          <span className="font-playfair">Dark</span>
+        </button>
       </div>
     </div>
   );
