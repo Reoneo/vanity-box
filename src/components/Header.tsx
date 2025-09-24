@@ -188,18 +188,18 @@ export const Header: React.FC = () => {
 
       {/* Slide-over Menu */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6">
+        <SheetContent side="left" className="w-[45vw] max-w-sm bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-28">
           {/* Close button */}
           <button
             onClick={() => setMenuOpen(false)}
             className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Close menu"
           >
-            <span className="w-4 h-0.5 bg-black dark:bg-white absolute rotate-45" />
-            <span className="w-4 h-0.5 bg-black dark:bg-white absolute -rotate-45" />
+            <span className="w-4 h-0.5 bg-black absolute rotate-45" />
+            <span className="w-4 h-0.5 bg-black absolute -rotate-45" />
           </button>
           
-          <nav className="mt-4 space-y-6">
+          <nav className="space-y-6">
             <ThemeToggle />
           </nav>
         </SheetContent>
