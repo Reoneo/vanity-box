@@ -254,7 +254,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-lg">
+      <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[9998]">
         <DropdownMenuItem 
           className="text-gray-700 hover:bg-gray-100 cursor-pointer"
           onClick={() => {
