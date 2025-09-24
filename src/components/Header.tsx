@@ -39,7 +39,7 @@ const ThemeToggle = () => {
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <header className="w-full sticky top-0 z-50 relative bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37]">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37]">
       {/* Preload the logo */}
       <link rel="preload" as="image" href={vanityLogo} />
       
