@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
+import { useLanguage } from '@/contexts/LanguageContext';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 
 const Index = () => {
+  const { t } = useLanguage();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
 
   // Listen for wallet connection events from WalletConnection component
@@ -42,7 +44,7 @@ const Index = () => {
         
       </main>
       <footer className="py-6 text-center text-xs text-foreground dark:text-white">
-        © 2025 vanity.box. All rights reserved.
+        {t('copyright')}
       </footer>
     </div>
   );

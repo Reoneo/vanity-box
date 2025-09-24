@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
+import { LanguageSelector } from './LanguageSelector';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun, Search } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
   
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-playfair font-semibold text-gray-900 dark:text-white">Theme</h3>
+      <h3 className="text-lg font-playfair font-semibold text-gray-900 dark:text-white">{t('theme')}</h3>
       <div className="flex justify-center gap-4">
         <button
           onClick={() => setTheme('light')}
@@ -211,6 +214,7 @@ export const Header: React.FC = () => {
           
           <nav className="space-y-6">
             <ThemeToggle />
+            <LanguageSelector />
           </nav>
         </SheetContent>
       </Sheet>

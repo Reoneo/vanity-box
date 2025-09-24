@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PersonalizedHeaderProps {
   user?: {
@@ -9,12 +10,14 @@ interface PersonalizedHeaderProps {
 }
 
 export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) => {
+  const { t } = useLanguage();
+  
   const getHeaderText = () => {
     console.log('PersonalizedHeader rendering with user:', user);
     // Always show the same text regardless of connection status
     return (
       <span className="font-playfair text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold tracking-wide text-black dark:text-white">
-        Your Personalised Digital ID
+        {t('your_personalized_digital_id')}
       </span>
     );
   };

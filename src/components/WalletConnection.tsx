@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Wallet, LogOut, User, ChevronDown } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -22,6 +23,7 @@ interface WalletConnectionProps {
 }
 
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -232,10 +234,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         {isLoading ? (
           <>
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-            Connecting...
+            {t('connecting')}
           </>
         ) : (
-          'Connect'
+          t('connect')
         )}
       </Button>
     );
@@ -263,7 +265,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           }}
         >
           <User className="mr-2 h-4 w-4" />
-          My Domains
+          {t('my_domains')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
@@ -271,7 +273,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           onClick={handleDisconnect}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Disconnect
+          {t('disconnect')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

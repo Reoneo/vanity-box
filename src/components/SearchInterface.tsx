@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import {
   DropdownMenu,
@@ -32,6 +33,7 @@ interface ENSResult {
 }
 
 export const SearchInterface = () => {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -215,7 +217,7 @@ export const SearchInterface = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
                 <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-600">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Filters</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('filters')}</span>
                   <div className="flex items-center gap-1">
                     <button 
                       onClick={handleClearFilters}
@@ -232,7 +234,7 @@ export const SearchInterface = () => {
                   </div>
                 </div>
                 
-                <DropdownMenuLabel className="text-gray-900 dark:text-gray-100">Protocol</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-gray-900 dark:text-gray-100">{t('protocol')}</DropdownMenuLabel>
                 {protocols.map((protocol) => (
                   <DropdownMenuItem
                     key={protocol}
@@ -273,7 +275,7 @@ export const SearchInterface = () => {
                 
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
                 
-                <DropdownMenuLabel className="text-gray-900 dark:text-gray-100">Club</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-gray-900 dark:text-gray-100">{t('club')}</DropdownMenuLabel>
                 {clubs.map((club) => (
                   <DropdownMenuItem
                     key={club}
@@ -301,7 +303,7 @@ export const SearchInterface = () => {
             </DropdownMenu>
           </div>
           <Input
-            placeholder="Search for a name"
+            placeholder={t('search_for_a_name')}
             className="h-12 text-lg text-center bg-white border-gray-300 focus:border-gray-300 text-gray-600 placeholder-gray-400 pl-20 pr-20"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -388,7 +390,7 @@ export const SearchInterface = () => {
                         className="bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] hover:from-[#C4A027] hover:to-[#E7D05C] text-black font-bold px-8 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                         onClick={() => setShowMintModal(true)}
                       >
-                        Mint Now
+                        {t('mint_now')}
                       </Button>
                     </div>
                   </div>
