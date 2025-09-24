@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Wallet, LogOut, User, ChevronDown } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -99,54 +91,62 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const getWorldChainENS = async (address: string): Promise<string | undefined> => {
-    console.log('🔍 Fetching ENS for address:', address);
+    console.log('🔍 Fetching World ID ENS for address:', address);
     
     try {
-      // Try to fetch World Chain ENS from NameStone API
-      const response = await fetch(`https://namestone.com/api/public_v1/get-names?address=${address}`);
+      // Primary method: NameStone API for World ID domains
+      const response = await fetch(`https://namestone.com/api/public_v1/get-names?address=${address.toLowerCase()}`);
       console.log('📡 NameStone API response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 NameStone API data:', data);
+        console.log('📦 NameStone API full response:', data);
         
-        if (data.names && data.names.length > 0) {
-          console.log('✅ Found names:', data.names);
+        if (data.names && Array.isArray(data.names) && data.names.length > 0) {
+          console.log('✅ Found names array:', data.names);
           
-          // Look for primary domain first
-          const primaryDomain = data.names.find((name: any) =>
-            name.primary || name.isPrimary || name.is_primary
-          );
-          
-          if (primaryDomain) {
-            console.log('⭐ Found primary domain:', primaryDomain.name);
-            return primaryDomain.name;
-          }
-          
-          // Look for .world.id domains first (World ID domains)
-          const worldIdDomain = data.names.find((name: any) =>
-            name.name && name.name.includes('.world.id')
-          );
+          // Priority 1: Look for .world.id domains (World ID domains)
+          const worldIdDomain = data.names.find((name: any) => {
+            const domain = name.name || name.domain || name;
+            return typeof domain === 'string' && domain.endsWith('.world.id');
+          });
           
           if (worldIdDomain) {
-            console.log('🆔 Found .world.id domain:', worldIdDomain.name);
-            return worldIdDomain.name;
+            const domain = worldIdDomain.name || worldIdDomain.domain || worldIdDomain;
+            console.log('🆔 Found .world.id domain:', domain);
+            return domain;
           }
           
-          // Look for .world domains
-          const worldDomain = data.names.find((name: any) =>
-            name.name && name.name.endsWith('.world')
-          );
+          // Priority 2: Look for primary domains
+          const primaryDomain = data.names.find((name: any) => {
+            return name.primary === true || name.isPrimary === true || name.is_primary === true;
+          });
+          
+          if (primaryDomain) {
+            const domain = primaryDomain.name || primaryDomain.domain || primaryDomain;
+            console.log('⭐ Found primary domain:', domain);
+            return domain;
+          }
+          
+          // Priority 3: Look for .world domains
+          const worldDomain = data.names.find((name: any) => {
+            const domain = name.name || name.domain || name;
+            return typeof domain === 'string' && domain.endsWith('.world');
+          });
           
           if (worldDomain) {
-            console.log('🌍 Found .world domain:', worldDomain.name);
-            return worldDomain.name;
+            const domain = worldDomain.name || worldDomain.domain || worldDomain;
+            console.log('🌍 Found .world domain:', domain);
+            return domain;
           }
           
-          // Return the first available name as fallback
-          const primaryName = data.names[0].name;
-          console.log('📝 Using primary name:', primaryName);
-          return primaryName;
+          // Priority 4: Return the first available name as fallback
+          const firstName = data.names[0];
+          const domain = firstName.name || firstName.domain || firstName;
+          if (typeof domain === 'string' && domain.length > 0) {
+            console.log('📝 Using first available name:', domain);
+            return domain;
+          }
         }
       }
     } catch (error) {
@@ -215,44 +215,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn("h-10 px-4 gap-3 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold", className)}
-        >
-          {/* User avatar placeholder */}
-          <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
-            <span className="text-xs font-bold text-black">
-              {user.username ? user.username.charAt(0).toUpperCase() : user.walletAddress?.charAt(2).toUpperCase()}
-            </span>
-          </div>
-          <span className="font-bold truncate max-w-32">
-            {user.username || formatAddress(user.walletAddress || '')}
-          </span>
-          <ChevronDown className="w-4 h-4 opacity-70" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-gray-900 border-2 border-[#D4AF37]/30 shadow-2xl">
-        <div className="px-4 py-3 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5">
-          <p className="text-base font-bold text-[#D4AF37]">{user.username || 'Connected Wallet'}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">{formatAddress(user.walletAddress || '')}</p>
-          {user.username && (
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">ENS Domain Connected</p>
-          )}
-        </div>
-        <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
-        <DropdownMenuItem className="hover:bg-[#D4AF37]/10 cursor-pointer">
-          <User className="w-4 h-4 mr-3 text-[#D4AF37]" />
-          <span className="font-medium">Profile</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
-        <DropdownMenuItem onClick={handleDisconnect} className="text-red-600 dark:text-red-400 focus:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer">
-          <LogOut className="w-4 h-4 mr-3" />
-          <span className="font-medium">Disconnect</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      onClick={handleDisconnect}
+      variant="outline"
+      size="sm"
+      className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold", className)}
+    >
+      <span className="font-bold text-white truncate max-w-40">
+        {user.username || formatAddress(user.walletAddress || '')}
+      </span>
+    </Button>
   );
 };
