@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
 import { LanguageSelector } from './LanguageSelector';
 import vanityLogo from '../assets/vanity-logo.png';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun, Search } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -89,12 +89,60 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Menu Button */}
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label="Toggle menu"
+              className={cn(
+                "w-10 h-10 flex items-center justify-center transition-all duration-300",
+                menuOpen 
+                  ? "bg-gold rounded-md relative z-[10001]" 
+                  : "bg-transparent"
+              )}
+            >
+              <div className="relative w-5 h-5">
+                <span className={cn(
+                  "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
+                  menuOpen 
+                    ? "translate-y-2 rotate-45 bg-black" 
+                    : "translate-y-0 bg-black"
+                )} />
+                <span className={cn(
+                  "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
+                  menuOpen 
+                    ? "opacity-0 bg-black" 
+                    : "opacity-100 bg-black"
+                )} />
+                <span className={cn(
+                  "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
+                  menuOpen 
+                    ? "-translate-y-2 -rotate-45 bg-black" 
+                    : "translate-y-0 bg-black"
+                )} />
+              </div>
+            </button>
+          </SheetTrigger>
+
+          {/* Search Icon - appears when search bar is out of view */}
+          {showSearchIcon && (
+            <button
+              type="button"
+              aria-label="Scroll to search"
+              onClick={scrollToSearch}
+              className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+            >
+              <Search className="w-5 h-5 text-black" />
+            </button>
+          )}
+        </div>
+
+        {/* Desktop/Tablet: Menu Button on left */}
+        <SheetTrigger asChild>
           <button
             type="button"
             aria-label="Toggle menu"
-            onClick={() => setMenuOpen((v) => !v)}
             className={cn(
-              "w-10 h-10 flex items-center justify-center transition-all duration-300",
+              "hidden md:flex absolute left-4 w-10 h-10 items-center justify-center transition-all duration-300",
               menuOpen 
                 ? "bg-gold rounded-md relative z-[10001]" 
                 : "bg-transparent"
@@ -121,53 +169,7 @@ export const Header: React.FC = () => {
               )} />
             </div>
           </button>
-
-          {/* Search Icon - appears when search bar is out of view */}
-          {showSearchIcon && (
-            <button
-              type="button"
-              aria-label="Scroll to search"
-              onClick={scrollToSearch}
-              className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-            >
-              <Search className="w-5 h-5 text-black" />
-            </button>
-          )}
-        </div>
-
-        {/* Desktop/Tablet: Menu Button on left */}
-        <button
-          type="button"
-          aria-label="Toggle menu"
-          onClick={() => setMenuOpen((v) => !v)}
-          className={cn(
-            "hidden md:flex absolute left-4 w-10 h-10 items-center justify-center transition-all duration-300",
-            menuOpen 
-              ? "bg-gold rounded-md relative z-[10001]" 
-              : "bg-transparent"
-          )}
-        >
-          <div className="relative w-5 h-5">
-            <span className={cn(
-              "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
-              menuOpen 
-                ? "translate-y-2 rotate-45 bg-black" 
-                : "translate-y-0 bg-black"
-            )} />
-            <span className={cn(
-              "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
-              menuOpen 
-                ? "opacity-0 bg-black" 
-                : "opacity-100 bg-black"
-            )} />
-            <span className={cn(
-              "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
-              menuOpen 
-                ? "-translate-y-2 -rotate-45 bg-black" 
-                : "translate-y-0 bg-black"
-            )} />
-          </div>
-        </button>
+        </SheetTrigger>
 
         {/* Desktop/Tablet: Search Icon next to menu button */}
         {showSearchIcon && (
@@ -203,16 +205,17 @@ export const Header: React.FC = () => {
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-28">
           {/* Close button */}
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 z-50"
-            aria-label="Close menu"
-          >
-            <div className="relative w-5 h-5">
-              <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 rotate-45" />
-              <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 -rotate-45" />
-            </div>
-          </button>
+          <SheetClose asChild>
+            <button
+              className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 z-50"
+              aria-label="Close menu"
+            >
+              <div className="relative w-5 h-5">
+                <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 rotate-45" />
+                <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 -rotate-45" />
+              </div>
+            </button>
+          </SheetClose>
           
           <nav className="space-y-6">
             <ThemeToggle />
