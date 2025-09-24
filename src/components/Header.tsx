@@ -201,7 +201,7 @@ export const Header: React.FC = () => {
 
       {/* Slide-over Menu */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-[45vw] max-w-sm bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-28">
+        <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-28">
           {/* Close button */}
           <button
             onClick={() => setMenuOpen(false)}
