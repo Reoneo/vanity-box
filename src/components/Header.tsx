@@ -62,13 +62,13 @@ export const Header: React.FC = () => {
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
         {/* Left side: Logo, Menu Button, and Search Icon */}
-        <div className="flex items-center gap-4">
-          {/* Logo - positioned at far left, 5% smaller */}
-          <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          {/* Logo - positioned at far left, moved slightly left */}
+          <div className="flex items-center -ml-2">
             <img 
               src={vanityLogo} 
               alt="Vanity.box Logo" 
-              className="h-24 w-auto object-contain transform scale-105"
+              className="h-24 w-auto object-contain transform scale-100"
               loading="eager"
               fetchPriority="high"
               style={{ marginTop: '2px', marginBottom: '2px' }}
