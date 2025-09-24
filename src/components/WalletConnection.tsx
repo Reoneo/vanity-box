@@ -48,19 +48,35 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     setIsLoading(true);
     try {
       console.log('🔄 Initiating wallet authentication with World App native UI...');
+      console.log('📱 Platform info:', { 
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        isInstalled: MiniKit.isInstalled()
+      });
       
-      // Use the official World App wallet auth that shows the native modal
-      const { commandPayload, finalPayload } = await MiniKit.commandsAsync.walletAuth({
-        nonce: generateNonce(),
+      // Enhanced authentication with better iOS support
+      const nonce = generateNonce();
+      console.log('🎲 Generated nonce:', nonce);
+      
+      const authParams = {
+        nonce,
         requestId: 'vanity-box-auth-' + Date.now(),
         expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         notBefore: new Date(Date.now() - 60 * 1000), // 1 minute ago
-        statement: 'Sign in to Vanity.₿ox'
-      });
+        statement: 'Sign in to Vanity.₿ox to access your World ID domains and personalized features.'
+      };
+      
+      console.log('📝 Auth parameters:', authParams);
+      
+      // Use the official World App wallet auth that shows the native modal
+      const result = await MiniKit.commandsAsync.walletAuth(authParams);
+      const { commandPayload, finalPayload } = result;
 
-      console.log('📦 Wallet auth response:', { commandPayload, finalPayload });
+      console.log('📦 Wallet auth response:', { commandPayload, finalPayload, fullResult: result });
 
       if (finalPayload?.status === 'success' && finalPayload.address) {
+        console.log('✅ Authentication successful, fetching ENS...');
         const ensName = await getWorldChainENS(finalPayload.address);
         const userData = {
           walletAddress: finalPayload.address,
@@ -75,11 +91,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         console.log('✅ User authenticated successfully:', userData);
       } else {
         console.error('❌ Authentication failed:', { commandPayload, finalPayload });
-        throw new Error('Authentication failed');
+        if (finalPayload?.status === 'error') {
+          throw new Error(`Authentication failed: ${JSON.stringify(finalPayload)}`);
+        } else {
+          throw new Error('Authentication failed - no success status received');
+        }
       }
     } catch (error) {
       console.error('❌ Error during wallet authentication:', error);
-      alert('Failed to connect wallet. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to connect wallet: ${errorMessage}\n\nPlease ensure you're using the latest version of World App and try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -102,95 +123,56 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     console.log('🔍 Fetching ENS for address:', address);
     
     try {
-      // Try to fetch World Chain ENS from NameStone API - enhanced for World ID domains
-      const response = await fetch(`https://namestone.com/api/public_v1/get-names?address=${address.toLowerCase()}`);
-      console.log('📡 NameStone API response status:', response.status);
+      // Enhanced NameStone API call with multiple endpoints
+      const endpoints = [
+        `https://namestone.com/api/public_v1/get-names?address=${address.toLowerCase()}`,
+        `https://namestone.com/api/public_v1/get-domain?address=${address.toLowerCase()}`
+      ];
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📦 NameStone API response data:', JSON.stringify(data, null, 2));
+      for (const endpoint of endpoints) {
+        try {
+          console.log('📡 Trying endpoint:', endpoint);
+          const response = await fetch(endpoint);
+          console.log('📡 NameStone API response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('📦 NameStone API response data:', JSON.stringify(data, null, 2));
         
-        // Check if the response has names array
-        if (data && Array.isArray(data.names) && data.names.length > 0) {
-          console.log('✅ Found names array:', data.names);
-          
-          // Priority 1: Look for .world.id domains (World ID domains) 
-          const worldIdDomain = data.names.find((nameObj: any) => {
-            const name = nameObj?.name || nameObj?.domain || nameObj;
-            return typeof name === 'string' && name.endsWith('.world.id');
-          });
-          
-          if (worldIdDomain) {
-            const domainName = worldIdDomain.name || worldIdDomain.domain || worldIdDomain;
-            console.log('🆔 Found .world.id domain:', domainName);
-            return domainName;
+            // Enhanced domain parsing logic
+            const domainFromResponse = extractDomainFromResponse(data);
+            if (domainFromResponse) {
+              console.log('✅ Found domain from response:', domainFromResponse);
+              return domainFromResponse;
+            }
+          } else {
+            console.log('❌ NameStone API error response:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.log('❌ Error details:', errorText);
           }
-          
-          // Priority 2: Look for .world domains
-          const worldDomain = data.names.find((nameObj: any) => {
-            const name = nameObj?.name || nameObj?.domain || nameObj;
-            return typeof name === 'string' && name.endsWith('.world');
-          });
-          
-          if (worldDomain) {
-            const domainName = worldDomain.name || worldDomain.domain || worldDomain;
-            console.log('🌍 Found .world domain:', domainName);
-            return domainName;
-          }
-          
-          // Priority 3: Look for primary domain
-          const primaryDomain = data.names.find((nameObj: any) =>
-            nameObj.primary || nameObj.isPrimary || nameObj.is_primary
-          );
-          
-          if (primaryDomain) {
-            const domainName = primaryDomain.name || primaryDomain.domain || primaryDomain;
-            console.log('⭐ Found primary domain:', domainName);
-            return domainName;
-          }
-          
-          // Priority 4: Return the first available name as fallback
-          const firstNameObj = data.names[0];
-          const firstDomainName = firstNameObj?.name || firstNameObj?.domain || firstNameObj;
-          if (typeof firstDomainName === 'string' && firstDomainName.length > 0) {
-            console.log('📝 Using first available name:', firstDomainName);
-            return firstDomainName;
-          }
+        } catch (error) {
+          console.error(`❌ Failed to fetch from ${endpoint}:`, error);
         }
-        
-        // Handle case where data.names is not an array but data itself contains domain info
-        if (data && typeof data === 'object' && !Array.isArray(data.names)) {
-          const directName = data.name || data.domain;
-          if (typeof directName === 'string' && directName.length > 0) {
-            console.log('📝 Found direct domain name:', directName);
-            return directName;
-          }
-        }
-      } else {
-        console.log('❌ NameStone API error response:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.log('❌ Error details:', errorText);
       }
     } catch (error) {
-      console.error('❌ Failed to get ENS from NameStone get-names:', error);
+      console.error('❌ Failed to get ENS from NameStone:', error);
     }
 
-    // Fallback: try NameStone get-domain endpoint
+    // Final fallback: Direct World ID API lookup
     try {
-      console.log('🔄 Trying NameStone get-domain fallback...');
-      const resp = await fetch(`https://namestone.com/api/public_v1/get-domain?address=${address.toLowerCase()}`);
-      console.log('📡 NameStone get-domain status:', resp.status);
-      if (resp.ok) {
-        const domainData = await resp.json();
-        console.log('📦 NameStone get-domain data:', JSON.stringify(domainData, null, 2));
-        const name = domainData?.domain?.name || domainData?.name;
-        if (typeof name === 'string' && name.length > 0) {
-          console.log('✅ Found domain from get-domain:', name);
-          return name;
+      console.log('🔄 Trying World ID direct lookup...');
+      const worldIdResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
+      if (worldIdResp.ok) {
+        const worldIdData = await worldIdResp.json();
+        console.log('📦 World ID API data:', JSON.stringify(worldIdData, null, 2));
+        if (worldIdData?.username) {
+          const worldIdDomain = `${worldIdData.username}.world.id`;
+          console.log('✅ Found World ID domain:', worldIdDomain);
+          return worldIdDomain;
         }
       }
     } catch (e) {
-      console.error('❌ Failed NameStone get-domain fallback:', e);
+      console.error('❌ Failed World ID API lookup:', e);
     }
     
     try {
@@ -210,6 +192,68 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
     
     console.log('❌ No ENS/domain name found for address:', address);
+    return undefined;
+  };
+
+  // Helper method to extract domain from various response formats
+  const extractDomainFromResponse = (data: any): string | undefined => {
+    // Check if the response has names array
+    if (data && Array.isArray(data.names) && data.names.length > 0) {
+      console.log('✅ Found names array:', data.names);
+      
+      // Priority 1: Look for .world.id domains (World ID domains) 
+      const worldIdDomain = data.names.find((nameObj: any) => {
+        const name = nameObj?.name || nameObj?.domain || nameObj;
+        return typeof name === 'string' && name.endsWith('.world.id');
+      });
+      
+      if (worldIdDomain) {
+        const domainName = worldIdDomain.name || worldIdDomain.domain || worldIdDomain;
+        console.log('🆔 Found .world.id domain:', domainName);
+        return domainName;
+      }
+      
+      // Priority 2: Look for .world domains
+      const worldDomain = data.names.find((nameObj: any) => {
+        const name = nameObj?.name || nameObj?.domain || nameObj;
+        return typeof name === 'string' && name.endsWith('.world');
+      });
+      
+      if (worldDomain) {
+        const domainName = worldDomain.name || worldDomain.domain || worldDomain;
+        console.log('🌍 Found .world domain:', domainName);
+        return domainName;
+      }
+      
+      // Priority 3: Look for primary domain
+      const primaryDomain = data.names.find((nameObj: any) =>
+        nameObj.primary || nameObj.isPrimary || nameObj.is_primary
+      );
+      
+      if (primaryDomain) {
+        const domainName = primaryDomain.name || primaryDomain.domain || primaryDomain;
+        console.log('⭐ Found primary domain:', domainName);
+        return domainName;
+      }
+      
+      // Priority 4: Return the first available name as fallback
+      const firstNameObj = data.names[0];
+      const firstDomainName = firstNameObj?.name || firstNameObj?.domain || firstNameObj;
+      if (typeof firstDomainName === 'string' && firstDomainName.length > 0) {
+        console.log('📝 Using first available name:', firstDomainName);
+        return firstDomainName;
+      }
+    }
+    
+    // Handle case where data.names is not an array but data itself contains domain info
+    if (data && typeof data === 'object' && !Array.isArray(data.names)) {
+      const directName = data.name || data.domain || data.domain?.name;
+      if (typeof directName === 'string' && directName.length > 0) {
+        console.log('📝 Found direct domain name:', directName);
+        return directName;
+      }
+    }
+    
     return undefined;
   };
 
@@ -239,15 +283,38 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }
 
   return (
-    <Button
-      onClick={handleDisconnect}
-      variant="outline"
-      size="sm"
-      className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold", className)}
-    >
-      <span className="font-bold text-white truncate max-w-48">
-        {user.username || formatAddress(user.walletAddress || '')}
-      </span>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold", className)}
+        >
+          <span className="font-bold text-white truncate max-w-48">
+            {user.username || formatAddress(user.walletAddress || '')}
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-lg">
+        <DropdownMenuItem 
+          className="text-gray-700 hover:bg-gray-100 cursor-pointer"
+          onClick={() => {
+            // TODO: Implement My Domains functionality
+            alert('My Domains feature coming soon!');
+          }}
+        >
+          <User className="mr-2 h-4 w-4" />
+          My Domains
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          className="text-red-600 hover:bg-red-50 cursor-pointer"
+          onClick={handleDisconnect}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Disconnect
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
