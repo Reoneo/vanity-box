@@ -41,7 +41,7 @@ const Index = () => {
         </div>
         
       </main>
-      <footer className="py-6 text-center text-xs text-black">
+      <footer className="py-6 text-center text-xs text-foreground">
         © 2025 vanity.box. All rights reserved.
       </footer>
     </div>
