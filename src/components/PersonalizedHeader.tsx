@@ -13,13 +13,24 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) 
     console.log('PersonalizedHeader rendering with user:', user);
     // Always show the same text regardless of connection status
     return (
-      <span className="text-xl md:text-3xl lg:text-4xl xl:text-5xl font-light tracking-wide">Your Personalised Digital ID</span>
+      <span className="font-playfair text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold tracking-wide bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent">
+        Your Personalised Digital ID
+      </span>
     );
   };
 
   return (
-    <h1 className="text-lg md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-800 dark:text-white leading-tight drop-shadow-lg text-center px-4 whitespace-nowrap">
-      {getHeaderText()}
+    <h1 className="relative text-center px-4 mb-8">
+      {/* Glow effect behind text */}
+      <div className="absolute inset-0 blur-2xl opacity-30 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] rounded-2xl transform scale-110" />
+      
+      {/* Main heading with luxury styling */}
+      <div className="relative z-10 leading-tight drop-shadow-2xl">
+        {getHeaderText()}
+      </div>
+      
+      {/* Subtle shimmer effect */}
+      <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse rounded-xl" />
     </h1>
   );
 };
