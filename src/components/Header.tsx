@@ -55,22 +55,23 @@ export const Header: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] safe-area-inset-top">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37]">
       {/* Preload the logo */}
       <link rel="preload" as="image" href={vanityLogo} />
       
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 h-16 md:h-20 flex items-center justify-between md:justify-center">
+      <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between md:justify-center">
         {/* Mobile: Logo, Menu Button, and Search Icon on left */}
         <div className="flex items-center gap-2 md:hidden">
-          {/* Logo - positioned at far left, optimized for mobile */}
-          <div className="flex items-center -ml-1">
+          {/* Logo - positioned at far left, moved slightly left */}
+          <div className="flex items-center -ml-2">
             <img 
               src={vanityLogo} 
               alt="Vanity.box Logo" 
-              className="h-12 md:h-16 w-auto object-contain"
+              className="h-24 w-auto object-contain transform scale-100"
               loading="eager"
               fetchPriority="high"
+              style={{ marginTop: '2px', marginBottom: '2px' }}
             />
           </div>
 
@@ -80,29 +81,29 @@ export const Header: React.FC = () => {
             aria-label="Toggle menu"
             onClick={() => setMenuOpen((v) => !v)}
             className={cn(
-              "w-8 h-8 md:w-10 md:h-10 flex items-center justify-center transition-all duration-300",
+              "w-10 h-10 flex items-center justify-center transition-all duration-300",
               menuOpen 
                 ? "bg-gold rounded-md" 
                 : "bg-transparent"
             )}
           >
-            <div className="relative w-4 h-4 md:w-5 md:h-5">
+            <div className="relative w-5 h-5">
               <span className={cn(
-                "absolute left-0 top-0 w-4 h-0.5 md:w-5 md:h-0.5 transition-transform duration-300",
+                "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
                 menuOpen 
-                  ? "translate-y-1.5 md:translate-y-2 rotate-45 bg-white" 
+                  ? "translate-y-2 rotate-45 bg-white" 
                   : "translate-y-0 bg-black"
               )} />
               <span className={cn(
-                "absolute left-0 top-1.5 md:top-2 w-4 h-0.5 md:w-5 md:h-0.5 transition-all duration-300",
+                "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
                 menuOpen 
                   ? "opacity-0 bg-white" 
                   : "opacity-100 bg-black"
               )} />
               <span className={cn(
-                "absolute left-0 top-3 md:top-4 w-4 h-0.5 md:w-5 md:h-0.5 transition-transform duration-300",
+                "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
                 menuOpen 
-                  ? "-translate-y-1.5 md:-translate-y-2 -rotate-45 bg-white" 
+                  ? "-translate-y-2 -rotate-45 bg-white" 
                   : "translate-y-0 bg-black"
               )} />
             </div>
@@ -114,9 +115,9 @@ export const Header: React.FC = () => {
               type="button"
               aria-label="Scroll to search"
               onClick={scrollToSearch}
-              className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+              className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
             >
-              <Search className="w-4 h-4 md:w-5 md:h-5 text-black" />
+              <Search className="w-5 h-5 text-black" />
             </button>
           )}
         </div>
