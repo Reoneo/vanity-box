@@ -61,18 +61,8 @@ export const Header: React.FC = () => {
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
-        {/* Left side: Logo and Menu Button */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center">
-            <img 
-              src={vanityLogo} 
-              alt="Vanity.box Logo" 
-              className="h-16 md:h-20 w-auto object-contain"
-              loading="eager"
-              fetchPriority="high"
-            />
-          </div>
-          
+        {/* Left side: Menu Button, Search Icon, and Logo */}
+        <div className="flex items-center gap-3">
           {/* Menu Button */}
           <button
             type="button"
@@ -106,19 +96,32 @@ export const Header: React.FC = () => {
               )} />
             </div>
           </button>
+
+          {/* Search Icon - appears when search bar is out of view */}
+          {showSearchIcon && (
+            <button
+              type="button"
+              aria-label="Scroll to search"
+              onClick={scrollToSearch}
+              className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+            >
+              <Search className="w-5 h-5 text-black" />
+            </button>
+          )}
+          
+          {/* Logo - larger but within the same navbar height */}
+          <div className="flex items-center ml-2">
+            <img 
+              src={vanityLogo} 
+              alt="Vanity.box Logo" 
+              className="h-24 w-auto object-contain transform scale-110"
+              loading="eager"
+              fetchPriority="high"
+              style={{ marginTop: '2px', marginBottom: '2px' }}
+            />
+          </div>
         </div>
 
-        {/* Search Icon - appears when search bar is out of view */}
-        {showSearchIcon && (
-          <button
-            type="button"
-            aria-label="Scroll to search"
-            onClick={scrollToSearch}
-            className="absolute left-20 md:left-24 w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-          >
-            <Search className="w-5 h-5 text-black" />
-          </button>
-        )}
         
         {/* Wallet Connection */}
         <div className="flex items-center">
