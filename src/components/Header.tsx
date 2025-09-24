@@ -60,14 +60,14 @@ export const Header: React.FC = () => {
       <link rel="preload" as="image" href={vanityLogo} />
       
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between md:justify-center">
-        {/* Mobile: Logo and Menu Button on left side */}
-        <div className="flex items-center gap-4 md:hidden">
+      <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
+        {/* Left side: Logo and Menu Button */}
+        <div className="flex items-center gap-4">
           <div className="flex items-center">
             <img 
               src={vanityLogo} 
               alt="Vanity.box Logo" 
-              className="h-16 w-auto object-contain"
+              className="h-16 md:h-20 w-auto object-contain"
               loading="eager"
               fetchPriority="high"
             />
@@ -108,62 +108,17 @@ export const Header: React.FC = () => {
           </button>
         </div>
 
-        {/* Desktop: Menu Button on left */}
-        <button
-          type="button"
-          aria-label="Toggle menu"
-          onClick={() => setMenuOpen((v) => !v)}
-          className={cn(
-            "hidden md:block absolute left-4 w-10 h-10 flex items-center justify-center transition-all duration-300",
-            menuOpen 
-              ? "bg-gold rounded-md" 
-              : "bg-transparent"
-          )}
-        >
-          <div className="relative w-5 h-5">
-            <span className={cn(
-              "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
-              menuOpen 
-                ? "translate-y-2 rotate-45 bg-white" 
-                : "translate-y-0 bg-black"
-            )} />
-            <span className={cn(
-              "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
-              menuOpen 
-                ? "opacity-0 bg-white" 
-                : "opacity-100 bg-black"
-            )} />
-            <span className={cn(
-              "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
-              menuOpen 
-                ? "-translate-y-2 -rotate-45 bg-white" 
-                : "translate-y-0 bg-black"
-            )} />
-          </div>
-        </button>
-
         {/* Search Icon - appears when search bar is out of view */}
         {showSearchIcon && (
           <button
             type="button"
             aria-label="Scroll to search"
             onClick={scrollToSearch}
-            className="absolute left-16 w-10 h-10 hidden md:flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+            className="absolute left-20 md:left-24 w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
           >
             <Search className="w-5 h-5 text-black" />
           </button>
         )}
-
-        {/* Desktop: Centered Logo */}
-        <div className="hidden md:flex items-center">
-          <img 
-            src={vanityLogo} 
-            alt="Vanity.box Logo" 
-            className="h-20 w-auto object-contain"
-            loading="eager"
-            fetchPriority="high"
-          />
-        </div>
         
         {/* Wallet Connection */}
         <div className="flex items-center">
