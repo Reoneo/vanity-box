@@ -341,47 +341,46 @@ export const SearchInterface = () => {
             {ensResults.map((result, index) => (
               <Card key={index} className="relative overflow-hidden bg-gradient-to-br from-white via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 border-2 border-[#D4AF37]/20 shadow-2xl hover:shadow-[0_20px_50px_rgba(212,175,55,0.15)] transition-all duration-500 hover:scale-[1.02] hover:border-[#D4AF37]/40">
                 <CardContent className="p-6">
-                  <div className="flex flex-col space-y-4">
-                    {/* Header with avatar and name */}
-                     <div className="flex items-center gap-4">
-                       <div className="flex-shrink-0">
-                         <img 
-                           src={result.imageUrl} 
-                           alt={result.name}
-                           className="w-16 h-16 rounded-full object-cover border-2 border-[#D4AF37] shadow-lg"
-                         />
-                       </div>
-                       <div className="flex-1 min-w-0">
-                         <span className="font-mono text-xl font-bold text-gray-900 dark:text-white block mb-3" style={{ textShadow: '0 0 6px #D4AF37, 0 0 12px #D4AF37/50' }}>
-                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                         </span>
-                         <div className="flex items-center gap-2 flex-wrap">
-                           <Badge 
-                             variant="secondary" 
-                             className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-medium"
-                           >
-                             <img 
-                               src={ensLogoBlue} 
-                               alt="ENS" 
-                               className="w-3 h-3 dark:hidden"
-                             />
-                             <img 
-                               src={ensLogoWhite} 
-                               alt="ENS" 
-                               className="w-3 h-3 hidden dark:block"
-                             />
-                             {result.category}
-                           </Badge>
-                           <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm px-3 py-1.5 font-medium">
-                             {result.club}
-                           </Badge>
-                         </div>
-                       </div>
-                     </div>
-                    
-                    {/* Description */}
-                    <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: result.description }}>
-                    </div>
+                   <div className="flex flex-col space-y-2">
+                     {/* Header with avatar and name */}
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <img 
+                            src={result.imageUrl} 
+                            alt={result.name}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-[#D4AF37] shadow-lg"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <span className="font-mono text-xl font-bold text-gray-900 dark:text-white block" style={{ textShadow: '0 0 6px #D4AF37, 0 0 12px #D4AF37/50' }}>
+                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge 
+                              variant="secondary" 
+                              className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-medium"
+                            >
+                              <img 
+                                src={ensLogoBlue} 
+                                alt="ENS" 
+                                className="w-3 h-3 dark:hidden"
+                              />
+                              <img 
+                                src={ensLogoWhite} 
+                                alt="ENS" 
+                                className="w-3 h-3 hidden dark:block"
+                              />
+                              {result.category}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm px-3 py-1.5 font-medium">
+                              {result.club}
+                            </Badge>
+                          </div>
+                          {/* Description moved closer to avatar */}
+                          <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed pt-1" dangerouslySetInnerHTML={{ __html: result.description }}>
+                          </div>
+                        </div>
+                      </div>
                     
                     {/* Mint Button */}
                     <div className="flex justify-center pt-3 border-t border-gray-200 dark:border-gray-700">
