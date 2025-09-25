@@ -337,56 +337,61 @@ export const SearchInterface = () => {
         
         {/* ENS Results */}
         {hasSearched && ensResults.length > 0 && (
-          <div className="mt-6 space-y-6 animate-in slide-in-from-bottom duration-500">
+          <div className="mt-6 space-y-4 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => (
-              <Card key={index} className="relative overflow-hidden bg-gradient-to-br from-white via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 border-2 border-[#D4AF37]/20 shadow-2xl hover:shadow-[0_20px_50px_rgba(212,175,55,0.15)] transition-all duration-500 hover:scale-[1.02] hover:border-[#D4AF37]/40">
-                <CardContent className="p-6">
-                   <div className="flex flex-col space-y-2">
-                     {/* Header with avatar and name */}
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <img 
-                            src={result.imageUrl} 
-                            alt={result.name}
-                            className="w-16 h-16 rounded-full object-cover border-2 border-[#D4AF37] shadow-lg"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0 space-y-2">
-                          <span className="font-mono text-xl font-bold text-gray-900 dark:text-white block" style={{ textShadow: '0 0 6px #D4AF37, 0 0 12px #D4AF37/50' }}>
-                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                          </span>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge 
-                              variant="secondary" 
-                              className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-medium"
-                            >
-                              <img 
-                                src={ensLogoBlue} 
-                                alt="ENS" 
-                                className="w-3 h-3 dark:hidden"
-                              />
-                              <img 
-                                src={ensLogoWhite} 
-                                alt="ENS" 
-                                className="w-3 h-3 hidden dark:block"
-                              />
-                              {result.category}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm px-3 py-1.5 font-medium">
-                              {result.club}
-                            </Badge>
-                          </div>
-                          {/* Description moved closer to avatar */}
-                          <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed pt-1" dangerouslySetInnerHTML={{ __html: result.description }}>
-                          </div>
+              <Card key={index} className="relative overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5"></div>
+                <CardContent className="relative p-6">
+                  <div className="space-y-4">
+                    {/* Header Section */}
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex-shrink-0">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
+                        <img 
+                          src={result.imageUrl} 
+                          alt={result.name}
+                          className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-mono text-2xl font-bold text-gray-900 dark:text-white mb-2 truncate" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                          {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                        </h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
+                          >
+                            <img 
+                              src={ensLogoBlue} 
+                              alt="ENS" 
+                              className="w-3 h-3 dark:hidden"
+                            />
+                            <img 
+                              src={ensLogoWhite} 
+                              alt="ENS" 
+                              className="w-3 h-3 hidden dark:block"
+                            />
+                            {result.category}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
+                            {result.club}
+                          </Badge>
                         </div>
                       </div>
+                    </div>
                     
-                    {/* Mint Button */}
-                    <div className="flex justify-center pt-3 border-t border-gray-200 dark:border-gray-700">
+                    {/* Description Section */}
+                    <div className="px-1">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed text-center" dangerouslySetInnerHTML={{ __html: result.description }}>
+                      </p>
+                    </div>
+                    
+                    {/* Mint Button Section */}
+                    <div className="flex justify-center pt-4 border-t border-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent">
                       <Button 
                         size="lg" 
-                        className="bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] hover:from-[#C4A027] hover:to-[#E7D05C] text-black font-bold px-8 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-10 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
                         onClick={() => setShowMintModal(true)}
                       >
                         {t('mint_now')}
