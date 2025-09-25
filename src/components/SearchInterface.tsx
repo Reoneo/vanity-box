@@ -354,7 +354,7 @@ export const SearchInterface = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-mono text-2xl font-bold text-gray-900 dark:text-white mb-2 truncate" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                        <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-2 break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         <div className="flex items-center gap-2 flex-wrap">
