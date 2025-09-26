@@ -354,32 +354,34 @@ export const SearchInterface = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-3 break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                        <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4 break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge 
-                            variant="secondary" 
-                            className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
-                          >
-                            <img 
-                              src={ensLogoBlue} 
-                              alt="ENS" 
-                              className="w-3 h-3 dark:hidden"
-                            />
-                            <img 
-                              src={ensLogoWhite} 
-                              alt="ENS" 
-                              className="w-3 h-3 hidden dark:block"
-                            />
-                            {result.category}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
-                            {result.club}
-                          </Badge>
-                        </div>
                       </div>
                     </div>
+                    
+                    {/* Protocol and Category Badges */}
+                     <div className="flex items-center gap-2 flex-wrap mb-4">
+                           <Badge 
+                             variant="secondary" 
+                             className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
+                           >
+                             <img 
+                               src={ensLogoBlue} 
+                               alt="ENS" 
+                               className="w-3 h-3 dark:hidden"
+                             />
+                             <img 
+                               src={ensLogoWhite} 
+                               alt="ENS" 
+                               className="w-3 h-3 hidden dark:block"
+                             />
+                             {result.category}
+                           </Badge>
+                           <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
+                             {result.club}
+                           </Badge>
+                         </div>
                     
                     {/* Description Section */}
                     <div className="px-1">
