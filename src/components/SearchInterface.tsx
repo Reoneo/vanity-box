@@ -342,55 +342,62 @@ export const SearchInterface = () => {
               <Card key={index} className="relative overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5"></div>
                 <CardContent className="relative p-6">
-                  <div className="space-y-4">
-                    {/* Header Section */}
-                    <div className="flex items-start gap-4">
-                      <div className="relative flex-shrink-0">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
-                        <img 
-                          src={result.imageUrl} 
-                          alt={result.name}
-                          className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4 break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
-                          {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                        </h3>
-                      </div>
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    {/* Centered Avatar */}
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
+                      <img 
+                        src={result.imageUrl} 
+                        alt={result.name}
+                        className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                      />
                     </div>
                     
-                    {/* Protocol and Category Badges */}
-                     <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
-                           <Badge 
-                             variant="secondary" 
-                             className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
-                           >
-                             <img 
-                               src={ensLogoBlue} 
-                               alt="ENS" 
-                               className="w-3 h-3 dark:hidden"
-                             />
-                             <img 
-                               src={ensLogoWhite} 
-                               alt="ENS" 
-                               className="w-3 h-3 hidden dark:block"
-                             />
-                             {result.category}
-                           </Badge>
-                           <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
-                             {result.club}
-                           </Badge>
-                         </div>
+                    {/* Centered Subdomain */}
+                    <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                      {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                    </h3>
                     
-                    {/* Description Section */}
-                    <div className="px-1">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed text-center" dangerouslySetInnerHTML={{ __html: result.description }}>
-                      </p>
+                    {/* Centered Protocol and Category Badges */}
+                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
+                      >
+                        <img 
+                          src={ensLogoBlue} 
+                          alt="ENS" 
+                          className="w-3 h-3 dark:hidden"
+                        />
+                        <img 
+                          src={ensLogoWhite} 
+                          alt="ENS" 
+                          className="w-3 h-3 hidden dark:block"
+                        />
+                        {result.category}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
+                        {result.club}
+                      </Badge>
+                      {/* Info Bubble for Description */}
+                      <div className="group relative">
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs cursor-help w-6 h-6 rounded-full p-0 flex items-center justify-center border-[#D4AF37]/40 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 transition-colors duration-200"
+                        >
+                          <span className="text-[#D4AF37] font-bold text-xs">i</span>
+                        </Badge>
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-3 bg-white dark:bg-gray-800 border border-[#D4AF37]/30 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 w-64">
+                          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: result.description }}>
+                          </p>
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-[#D4AF37]/30"></div>
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Mint Button Section */}
-                    <div className="flex justify-center pt-4 border-t border-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent">
+                    <div className="pt-4 border-t border-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent w-full">
                       <Button 
                         size="lg" 
                         className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-10 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
