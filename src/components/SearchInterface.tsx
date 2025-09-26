@@ -435,9 +435,9 @@ export const SearchInterface = () => {
                             </button>
                           </div>
 
-                          {/* Description Content */}
-                          <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6">
-                            <div className="relative">
+                          {/* Description Content - Centered */}
+                          <div className="flex-1 flex flex-col justify-center items-center text-center px-4">
+                            <div className="relative mb-6">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                               <img 
                                 src={result.imageUrl} 
@@ -446,11 +446,11 @@ export const SearchInterface = () => {
                               />
                             </div>
                             
-                            <h4 className="font-mono text-lg font-bold text-gray-900 dark:text-white mb-4" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                            <h4 className="font-mono text-lg font-bold text-gray-900 dark:text-white mb-6" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                               {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                             </h4>
                             
-                            <div className="prose prose-sm max-w-none text-center">
+                            <div className="max-w-xs">
                               <p 
                                 className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium" 
                                 dangerouslySetInnerHTML={{ __html: result.description }}
