@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Zap, X, Filter, ChevronDown } from 'lucide-react';
+import { Search, Zap, X, Filter, ChevronDown, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +38,7 @@ export const SearchInterface = () => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showMintModal, setShowMintModal] = useState(false);
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
@@ -190,6 +191,18 @@ export const SearchInterface = () => {
     setShowMintModal(true);
   };
 
+  const handleFlipCard = (index: number) => {
+    setFlippedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
   const searchResults = searchQuery && !isLoading && isAvailable !== null;
   const price = searchQuery ? getSubdomainPrice(searchQuery) : 0;
   const hasFilters = filters.protocol.length > 0 || filters.club.length > 0;
@@ -338,78 +351,119 @@ export const SearchInterface = () => {
         {/* ENS Results */}
         {hasSearched && ensResults.length > 0 && (
           <div className="mt-6 space-y-4 animate-in slide-in-from-bottom duration-500">
-            {ensResults.map((result, index) => (
-              <Card key={index} className="relative overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5"></div>
-                <CardContent className="relative p-6">
-                  <div className="flex flex-col items-center text-center space-y-4">
-                    {/* Centered Avatar */}
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
-                      <img 
-                        src={result.imageUrl} 
-                        alt={result.name}
-                        className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
-                      />
-                    </div>
-                    
-                    {/* Centered Subdomain */}
-                    <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
-                      {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                    </h3>
-                    
-                    {/* Centered Protocol and Category Badges */}
-                    <div className="flex items-center justify-center gap-2 flex-wrap">
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
-                      >
-                        <img 
-                          src={ensLogoBlue} 
-                          alt="ENS" 
-                          className="w-3 h-3 dark:hidden"
-                        />
-                        <img 
-                          src={ensLogoWhite} 
-                          alt="ENS" 
-                          className="w-3 h-3 hidden dark:block"
-                        />
-                        {result.category}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
-                        {result.club}
-                      </Badge>
-                      {/* Info Bubble for Description */}
-                      <div className="group relative">
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs cursor-help w-6 h-6 rounded-full p-0 flex items-center justify-center border-[#D4AF37]/40 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 transition-colors duration-200"
-                        >
-                          <span className="text-[#D4AF37] font-bold text-xs">i</span>
-                        </Badge>
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-3 bg-white dark:bg-gray-800 border border-[#D4AF37]/30 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 w-64">
-                          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: result.description }}>
-                          </p>
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-[#D4AF37]/30"></div>
+            {ensResults.map((result, index) => {
+              const isFlipped = flippedCards.has(index);
+              return (
+                <div key={index} className="perspective-1000 h-[300px]">
+                  <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                    {/* Front of Card */}
+                    <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm`}>
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5"></div>
+                      <CardContent className="relative p-6 h-full">
+                        <div className="flex flex-col items-center text-center space-y-4 h-full">
+                          {/* Centered Avatar */}
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
+                            <img 
+                              src={result.imageUrl} 
+                              alt={result.name}
+                              className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                            />
+                          </div>
+                          
+                          {/* Centered Subdomain */}
+                          <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                          </h3>
+                          
+                          {/* Centered Protocol and Category Badges */}
+                          <div className="flex items-center justify-center gap-2 flex-wrap">
+                            <Badge 
+                              variant="secondary" 
+                              className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
+                            >
+                              <img 
+                                src={ensLogoBlue} 
+                                alt="ENS" 
+                                className="w-3 h-3 dark:hidden"
+                              />
+                              <img 
+                                src={ensLogoWhite} 
+                                alt="ENS" 
+                                className="w-3 h-3 hidden dark:block"
+                              />
+                              {result.category}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
+                              {result.club}
+                            </Badge>
+                            {/* Info Bubble */}
+                            <button
+                              onClick={() => handleFlipCard(index)}
+                              className="w-8 h-8 rounded-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 border border-[#D4AF37]/40 flex items-center justify-center hover:from-[#D4AF37]/30 hover:to-[#F7E06C]/30 transition-all duration-300 hover:scale-110 hover:shadow-lg backdrop-blur-sm"
+                            >
+                              <Info size={14} className="text-[#D4AF37]" />
+                            </button>
+                          </div>
+                          
+                          {/* Mint Button Section */}
+                          <div className="flex-1 flex items-end justify-center pt-4 w-full">
+                            <Button 
+                              size="lg" 
+                              className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-10 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
+                              onClick={() => setShowMintModal(true)}
+                            >
+                              {t('mint_now')}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    
-                    {/* Mint Button Section */}
-                    <div className="pt-4 border-t border-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent w-full">
-                      <Button 
-                        size="lg" 
-                        className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-10 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
-                        onClick={() => setShowMintModal(true)}
-                      >
-                        {t('mint_now')}
-                      </Button>
-                    </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Back of Card */}
+                    <Card className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-amber-50/95 via-amber-50 to-white/95 dark:from-amber-900/95 dark:via-amber-900 dark:to-gray-900/95 border-2 border-[#D4AF37]/50 shadow-[0_8px_32px_rgba(212,175,55,0.2)] backdrop-blur-sm`}>
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 via-transparent to-[#D4AF37]/10"></div>
+                      <CardContent className="relative p-6 h-full">
+                        <div className="flex flex-col h-full">
+                          {/* Close Button */}
+                          <div className="flex justify-end mb-4">
+                            <button
+                              onClick={() => handleFlipCard(index)}
+                              className="w-8 h-8 rounded-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 border border-[#D4AF37]/40 flex items-center justify-center hover:from-[#D4AF37]/30 hover:to-[#F7E06C]/30 transition-all duration-300 hover:scale-110 hover:shadow-lg backdrop-blur-sm"
+                            >
+                              <X size={14} className="text-[#D4AF37]" />
+                            </button>
+                          </div>
+
+                          {/* Description Content */}
+                          <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6">
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
+                              <img 
+                                src={result.imageUrl} 
+                                alt={result.name}
+                                className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                              />
+                            </div>
+                            
+                            <h4 className="font-mono text-lg font-bold text-gray-900 dark:text-white mb-4" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                              {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                            </h4>
+                            
+                            <div className="prose prose-sm max-w-none text-center">
+                              <p 
+                                className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium" 
+                                dangerouslySetInnerHTML={{ __html: result.description }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
 
