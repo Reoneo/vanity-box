@@ -361,7 +361,7 @@ export const SearchInterface = () => {
                     </div>
                     
                     {/* Protocol and Category Badges */}
-                     <div className="flex items-center gap-2 flex-wrap mb-4">
+                     <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
                            <Badge 
                              variant="secondary" 
                              className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
