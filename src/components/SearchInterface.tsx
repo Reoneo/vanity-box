@@ -435,8 +435,8 @@ export const SearchInterface = () => {
                             </button>
                           </div>
 
-                          {/* Description Content - Centered */}
-                          <div className="flex-1 flex flex-col justify-center items-center text-center px-4">
+                          {/* Description Content - Positioned Higher */}
+                          <div className="flex flex-col items-center text-center mt-8 px-4">
                             <div className="relative mb-6">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                               <img 
