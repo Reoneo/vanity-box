@@ -344,7 +344,7 @@ export const SearchInterface = () => {
                 <CardContent className="relative p-6">
                   <div className="space-y-4">
                     {/* Header Section */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-start gap-4">
                       <div className="relative flex-shrink-0">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                         <img 
@@ -353,8 +353,8 @@ export const SearchInterface = () => {
                           className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
                         />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-2 break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-3 break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         <div className="flex items-center gap-2 flex-wrap">
