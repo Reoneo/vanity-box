@@ -205,11 +205,18 @@ export const Header: React.FC = () => {
       </header>
 
       {/* Slide-over Menu */}
-      <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-28">
-        {/* Close button */}
+      <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-20">
+        <nav className="space-y-6">
+          <ThemeToggle />
+          <LanguageSelector />
+        </nav>
+      </SheetContent>
+
+      {/* Close button positioned on the blurred overlay */}
+      {menuOpen && (
         <SheetClose asChild>
           <button
-            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 z-50"
+            className="fixed top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-all duration-200 hover:scale-110 z-[9999]"
             aria-label="Close menu"
           >
             <div className="relative w-5 h-5">
@@ -218,12 +225,7 @@ export const Header: React.FC = () => {
             </div>
           </button>
         </SheetClose>
-        
-        <nav className="space-y-6">
-          <ThemeToggle />
-          <LanguageSelector />
-        </nav>
-      </SheetContent>
+      )}
     </Sheet>
   );
 };
