@@ -67,7 +67,7 @@ export const Header: React.FC = () => {
   const scrollToSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
+  
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
       <header className="fixed top-0 left-0 right-0 z-[9999] w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] pt-safe-area-inset-top">
@@ -90,22 +90,20 @@ export const Header: React.FC = () => {
               />
             </div>
 
-            {/* Menu Button - Only show when menu is closed */}
-            {!menuOpen && (
-              <SheetTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Toggle menu"
-                  className="w-10 h-10 flex items-center justify-center bg-transparent"
-                >
-                  <div className="relative w-5 h-5">
-                    <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                    <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                    <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
-                  </div>
-                </button>
-              </SheetTrigger>
-            )}
+            {/* Menu Button */}
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label="Toggle menu"
+                className="w-10 h-10 flex items-center justify-center bg-transparent"
+              >
+                <div className="relative w-5 h-5">
+                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                </div>
+              </button>
+            </SheetTrigger>
 
             {/* Search Icon - appears when search bar is out of view */}
             {showSearchIcon && (
@@ -120,22 +118,20 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Desktop/Tablet: Menu Button on left - Only show when menu is closed */}
-          {!menuOpen && (
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                aria-label="Toggle menu"
-                className="hidden md:flex absolute left-4 w-10 h-10 items-center justify-center bg-transparent"
-              >
-                <div className="relative w-5 h-5">
-                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
-                </div>
-              </button>
-            </SheetTrigger>
-          )}
+          {/* Desktop/Tablet: Menu Button on left */}
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label="Toggle menu"
+              className="hidden md:flex absolute left-4 w-10 h-10 items-center justify-center bg-transparent"
+            >
+              <div className="relative w-5 h-5">
+                <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+              </div>
+            </button>
+          </SheetTrigger>
 
           {/* Desktop/Tablet: Search Icon next to menu button */}
           {showSearchIcon && (
