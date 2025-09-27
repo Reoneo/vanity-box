@@ -213,8 +213,8 @@ export const Header: React.FC = () => {
             aria-label="Close menu"
           >
             <div className="relative w-5 h-5">
-              <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 rotate-45" />
-              <span className="absolute w-5 h-0.5 bg-black dark:bg-black top-1/2 left-0 transform -translate-y-1/2 -rotate-45" />
+              <span className="absolute w-5 h-0.5 bg-white top-1/2 left-0 transform -translate-y-1/2 rotate-45" />
+              <span className="absolute w-5 h-0.5 bg-white top-1/2 left-0 transform -translate-y-1/2 -rotate-45" />
             </div>
           </button>
         </SheetClose>
