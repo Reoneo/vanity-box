@@ -90,40 +90,22 @@ export const Header: React.FC = () => {
               />
             </div>
 
-            {/* Menu Button */}
-            <TriggerOrClose asChild>
-              <button
-                type="button"
-                aria-label="Toggle menu"
-                className={cn(
-                  "w-10 h-10 flex items-center justify-center transition-all duration-300",
-                  menuOpen 
-                    ? "bg-gold rounded-md relative z-[10001]" 
-                    : "bg-transparent"
-                )}
-              >
-                <div className="relative w-5 h-5">
-                  <span className={cn(
-                    "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
-                    menuOpen 
-                      ? "translate-y-2 rotate-45 bg-black" 
-                      : "translate-y-0 bg-black"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
-                    menuOpen 
-                      ? "opacity-0 bg-black" 
-                      : "opacity-100 bg-black"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
-                    menuOpen 
-                      ? "-translate-y-2 -rotate-45 bg-black" 
-                      : "translate-y-0 bg-black"
-                  )} />
-                </div>
-              </button>
-            </TriggerOrClose>
+            {/* Menu Button - Only show when menu is closed */}
+            {!menuOpen && (
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Toggle menu"
+                  className="w-10 h-10 flex items-center justify-center bg-transparent"
+                >
+                  <div className="relative w-5 h-5">
+                    <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                  </div>
+                </button>
+              </SheetTrigger>
+            )}
 
             {/* Search Icon - appears when search bar is out of view */}
             {showSearchIcon && (
@@ -138,40 +120,22 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Desktop/Tablet: Menu Button on left */}
-          <TriggerOrClose asChild>
-            <button
-              type="button"
-              aria-label="Toggle menu"
-              className={cn(
-                "hidden md:flex absolute left-4 w-10 h-10 items-center justify-center transition-all duration-300",
-                menuOpen 
-                  ? "bg-gold rounded-md relative z-[10001]" 
-                  : "bg-transparent"
-              )}
-            >
-              <div className="relative w-5 h-5">
-                <span className={cn(
-                  "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
-                  menuOpen 
-                    ? "translate-y-2 rotate-45 bg-black" 
-                    : "translate-y-0 bg-black"
-                )} />
-                <span className={cn(
-                  "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
-                  menuOpen 
-                    ? "opacity-0 bg-black" 
-                    : "opacity-100 bg-black"
-                )} />
-                <span className={cn(
-                  "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
-                  menuOpen 
-                    ? "-translate-y-2 -rotate-45 bg-black" 
-                    : "translate-y-0 bg-black"
-                )} />
-              </div>
-            </button>
-          </TriggerOrClose>
+          {/* Desktop/Tablet: Menu Button on left - Only show when menu is closed */}
+          {!menuOpen && (
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label="Toggle menu"
+                className="hidden md:flex absolute left-4 w-10 h-10 items-center justify-center bg-transparent"
+              >
+                <div className="relative w-5 h-5">
+                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                </div>
+              </button>
+            </SheetTrigger>
+          )}
 
           {/* Desktop/Tablet: Search Icon next to menu button */}
           {showSearchIcon && (
@@ -205,18 +169,11 @@ export const Header: React.FC = () => {
       </header>
 
       {/* Slide-over Menu */}
-      <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-20">
-        <nav className="space-y-6">
-          <ThemeToggle />
-          <LanguageSelector />
-        </nav>
-      </SheetContent>
-
-      {/* Close button positioned on the blurred overlay */}
-      {menuOpen && (
+      <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-20 relative">
+        {/* Close button positioned at top-right of menu content, aligned with language selector */}
         <SheetClose asChild>
           <button
-            className="fixed top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-all duration-200 hover:scale-110 z-[9999]"
+            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110"
             aria-label="Close menu"
           >
             <div className="relative w-5 h-5">
@@ -225,7 +182,12 @@ export const Header: React.FC = () => {
             </div>
           </button>
         </SheetClose>
-      )}
+        
+        <nav className="space-y-6">
+          <ThemeToggle />
+          <LanguageSelector />
+        </nav>
+      </SheetContent>
     </Sheet>
   );
 };
