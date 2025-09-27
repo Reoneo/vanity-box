@@ -67,7 +67,7 @@ export const Header: React.FC = () => {
   const scrollToSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
+  const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
       <header className="fixed top-0 left-0 right-0 z-[9999] w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] pt-safe-area-inset-top">
@@ -91,19 +91,39 @@ export const Header: React.FC = () => {
             </div>
 
             {/* Menu Button */}
-            <SheetTrigger asChild>
+            <TriggerOrClose asChild>
               <button
                 type="button"
                 aria-label="Toggle menu"
-                className="w-10 h-10 flex items-center justify-center bg-transparent"
+                className={cn(
+                  "w-10 h-10 flex items-center justify-center transition-all duration-300",
+                  menuOpen 
+                    ? "bg-gold rounded-md relative z-[10001]" 
+                    : "bg-transparent"
+                )}
               >
                 <div className="relative w-5 h-5">
-                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                  <span className={cn(
+                    "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
+                    menuOpen 
+                      ? "translate-y-2 rotate-45 bg-black" 
+                      : "translate-y-0 bg-black"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
+                    menuOpen 
+                      ? "opacity-0 bg-black" 
+                      : "opacity-100 bg-black"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
+                    menuOpen 
+                      ? "-translate-y-2 -rotate-45 bg-black" 
+                      : "translate-y-0 bg-black"
+                  )} />
                 </div>
               </button>
-            </SheetTrigger>
+            </TriggerOrClose>
 
             {/* Search Icon - appears when search bar is out of view */}
             {showSearchIcon && (
@@ -119,19 +139,39 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Desktop/Tablet: Menu Button on left */}
-          <SheetTrigger asChild>
+          <TriggerOrClose asChild>
             <button
               type="button"
               aria-label="Toggle menu"
-              className="hidden md:flex absolute left-4 w-10 h-10 items-center justify-center bg-transparent"
+              className={cn(
+                "hidden md:flex absolute left-4 w-10 h-10 items-center justify-center transition-all duration-300",
+                menuOpen 
+                  ? "bg-gold rounded-md relative z-[10001]" 
+                  : "bg-transparent"
+              )}
             >
               <div className="relative w-5 h-5">
-                <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                <span className={cn(
+                  "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
+                  menuOpen 
+                    ? "translate-y-2 rotate-45 bg-black" 
+                    : "translate-y-0 bg-black"
+                )} />
+                <span className={cn(
+                  "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
+                  menuOpen 
+                    ? "opacity-0 bg-black" 
+                    : "opacity-100 bg-black"
+                )} />
+                <span className={cn(
+                  "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
+                  menuOpen 
+                    ? "-translate-y-2 -rotate-45 bg-black" 
+                    : "translate-y-0 bg-black"
+                )} />
               </div>
             </button>
-          </SheetTrigger>
+          </TriggerOrClose>
 
           {/* Desktop/Tablet: Search Icon next to menu button */}
           {showSearchIcon && (
@@ -165,11 +205,11 @@ export const Header: React.FC = () => {
       </header>
 
       {/* Slide-over Menu */}
-      <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-20 relative">
-        {/* Close button positioned at top-right of menu content, aligned with language selector */}
+      <SheetContent side="left" className="w-[65vw] max-w-md bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-28">
+        {/* Close button */}
         <SheetClose asChild>
           <button
-            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110"
+            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-110 z-50"
             aria-label="Close menu"
           >
             <div className="relative w-5 h-5">
