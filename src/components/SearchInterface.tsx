@@ -435,24 +435,24 @@ export const SearchInterface = () => {
                             </button>
                           </div>
 
-                          {/* Description Content - Positioned Higher */}
-                          <div className="flex flex-col items-center text-center pt-6 px-6 h-full">
-                            <div className="relative mb-4">
+                          {/* Description Content */}
+                          <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6">
+                            <div className="relative">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                               <img 
                                 src={result.imageUrl} 
                                 alt={result.name}
-                                className="relative w-12 h-12 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                                className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
                               />
                             </div>
                             
-                            <h4 className="font-mono text-base font-bold text-gray-900 dark:text-white mb-3" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                            <h4 className="font-mono text-lg font-bold text-gray-900 dark:text-white mb-4" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                               {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                             </h4>
                             
-                            <div className="flex-1 flex items-start justify-center max-w-full px-2">
+                            <div className="prose prose-sm max-w-none text-center">
                               <p 
-                                className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium text-center" 
+                                className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium" 
                                 dangerouslySetInnerHTML={{ __html: result.description }}
                               />
                             </div>
