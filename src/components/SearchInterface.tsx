@@ -496,40 +496,39 @@ export const SearchInterface = () => {
                     {/* Back of Card */}
                     <Card className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-amber-50/95 via-amber-50 to-white/95 dark:from-amber-900/95 dark:via-amber-900 dark:to-gray-900/95 border-2 border-[#D4AF37]/50 shadow-[0_8px_32px_rgba(212,175,55,0.2)] backdrop-blur-sm`}>
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 via-transparent to-[#D4AF37]/10"></div>
-                      <CardContent className="relative p-6 h-full">
-                        <div className="flex flex-col h-full">
-                          {/* Close Button */}
-                          <div className="flex justify-end mb-4">
-                            <button
-                              onClick={() => handleFlipCard(index)}
-                              className="w-8 h-8 rounded-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 border border-[#D4AF37]/40 flex items-center justify-center hover:from-[#D4AF37]/30 hover:to-[#F7E06C]/30 transition-all duration-300 hover:scale-110 hover:shadow-lg backdrop-blur-sm"
-                            >
-                              <X size={14} className="text-[#D4AF37]" />
-                            </button>
-                          </div>
+                      <CardContent className="relative p-4 h-full flex flex-col">
+                        {/* Close Button */}
+                        <div className="flex justify-end mb-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleFlipCard(index)}
+                            className="w-8 h-8 rounded-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 border border-[#D4AF37]/40 flex items-center justify-center hover:from-[#D4AF37]/30 hover:to-[#F7E06C]/30 transition-all duration-300 hover:scale-110 hover:shadow-lg backdrop-blur-sm"
+                          >
+                            <X size={14} className="text-[#D4AF37]" />
+                          </button>
+                        </div>
 
-                          {/* Description Content - Positioned Higher */}
-                          <div className="flex flex-col items-center text-center pt-2 px-4 h-full overflow-y-auto">
-                            <div className="relative mb-4 flex-shrink-0">
-                              <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
-                              <img 
-                                src={result.imageUrl} 
-                                alt={result.name}
-                                className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
-                              />
-                            </div>
-                            
-                            <h4 className="font-mono text-base font-bold text-gray-900 dark:text-white mb-3 flex-shrink-0 break-words w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
-                              {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                            </h4>
-                            
-                            <div className="flex-1 w-full overflow-y-auto px-2">
-                              <p 
-                                className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed font-medium text-center break-words whitespace-normal" 
-                                dangerouslySetInnerHTML={{ __html: result.description }}
-                              />
-                            </div>
+                        {/* Avatar and Name */}
+                        <div className="flex flex-col items-center text-center mb-3 flex-shrink-0">
+                          <div className="relative mb-3">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
+                            <img 
+                              src={result.imageUrl} 
+                              alt={result.name}
+                              className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                            />
                           </div>
+                          
+                          <h4 className="font-mono text-base font-bold text-gray-900 dark:text-white break-words w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                          </h4>
+                        </div>
+                        
+                        {/* Description - Fills remaining space */}
+                        <div className="flex-1 overflow-y-auto px-2 min-h-0">
+                          <p 
+                            className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed font-medium text-center break-words whitespace-normal" 
+                            dangerouslySetInnerHTML={{ __html: result.description }}
+                          />
                         </div>
                       </CardContent>
                     </Card>
