@@ -1,10 +1,11 @@
-import React from 'react';
-import { Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
 export const LanguageSelector: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const languages: { code: Language; name: string; nativeName: string }[] = [
     { code: 'en', name: t('english'), nativeName: 'English' },
@@ -25,40 +26,51 @@ export const LanguageSelector: React.FC = () => {
     { code: 'zh-TW', name: t('traditional_chinese_taiwan'), nativeName: '繁體中文' },
   ];
 
+  const currentLanguage = languages.find(lang => lang.code === language);
+
   return (
     <div className="space-y-3">
       <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">
         {t('language')}
       </h3>
-      <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-        {languages.map((lang) => (
-          <button
-            key={lang.code}
-            onClick={() => setLanguage(lang.code)}
-            className={cn(
-              "w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center justify-between",
-              language === lang.code
-                ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-md"
-                : "bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-            )}
-          >
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className={cn(
-                "text-sm font-medium truncate",
-                language === lang.code ? "text-black" : "text-gray-900 dark:text-gray-100"
-              )}>{lang.nativeName}</span>
-              {language !== lang.code && (
-                <span className="text-xs opacity-60 truncate text-gray-600 dark:text-gray-400">
+      
+      {/* Current Language Button */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-md flex items-center justify-between transition-all duration-200"
+      >
+        <div className="flex flex-col items-start">
+          <span className="text-sm font-medium">{currentLanguage?.nativeName}</span>
+          <span className="text-xs opacity-70">{currentLanguage?.name}</span>
+        </div>
+        <ChevronDown className={cn(
+          "w-5 h-5 transition-transform duration-200",
+          isExpanded && "rotate-180"
+        )} />
+      </button>
+
+      {/* Language List */}
+      {isExpanded && (
+        <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent animate-in slide-in-from-top-2 duration-200">
+          {languages.filter(lang => lang.code !== language).map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => {
+                setLanguage(lang.code);
+                setIsExpanded(false);
+              }}
+              className="w-full text-left px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+            >
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{lang.nativeName}</span>
+                <span className="text-xs opacity-60 text-gray-600 dark:text-gray-400">
                   {lang.name}
                 </span>
-              )}
-            </div>
-            {language === lang.code && (
-              <Check className="w-4 h-4 text-black flex-shrink-0 ml-2" />
-            )}
-          </button>
-        ))}
-      </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
