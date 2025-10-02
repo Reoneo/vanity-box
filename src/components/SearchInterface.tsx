@@ -250,7 +250,9 @@ export const SearchInterface = () => {
       )}
       
       <div className="w-full">
-        <div className="relative">
+        {/* Search bar container - constrained width on all devices */}
+        <div className="w-full max-w-md mx-auto">
+          <div className="relative">
           <div className="absolute left-1 top-1 z-10 flex items-center h-10">
             <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
             <DropdownMenuTrigger asChild>
@@ -375,7 +377,10 @@ export const SearchInterface = () => {
             </Button>
           </div>
         </div>
+        </div>
         
+        {/* Results container - wider on desktop/tablet, normal on mobile */}
+        <div className="w-full sm:max-w-4xl sm:mx-auto">
         {hasSearched && ensResults.length > 0 && (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
@@ -496,6 +501,7 @@ export const SearchInterface = () => {
             })}
           </div>
         )}
+        </div>
 
       </div>
 

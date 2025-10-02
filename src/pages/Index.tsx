@@ -37,9 +37,7 @@ const Index = () => {
           <PersonalizedHeader user={user} />
 
           {/* Search Interface */}
-          <div className="w-full max-w-md mx-auto">
-            <SearchInterface />
-          </div>
+          <SearchInterface />
         </div>
         
       </main>
