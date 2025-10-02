@@ -417,7 +417,12 @@ export const SearchInterface = () => {
                               <Badge 
                                 key={`cat-${catIndex}`}
                                 variant="secondary" 
-                                className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
+                                className={cn(
+                                  "text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm",
+                                  cat === 'ENS' && "bg-[#D4AF37] text-black border border-[#D4AF37]",
+                                  cat === 'DNS' && "bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40",
+                                  cat === 'Aptos Names' && "bg-purple-600 text-white border border-purple-600"
+                                )}
                               >
                                 {cat === 'ENS' && (
                                   <>
@@ -452,7 +457,15 @@ export const SearchInterface = () => {
                               <Badge 
                                 key={`club-${clubIndex}`}
                                 variant="outline" 
-                                className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm"
+                                className={cn(
+                                  "text-xs px-3 py-1.5 font-medium shadow-sm",
+                                  clubName === 'Surname' && "bg-purple-600 text-white border-purple-600",
+                                  clubName === 'DeFi' && "bg-green-600 text-white border-green-600",
+                                  clubName === 'Influencers' && "bg-blue-600 text-white border-blue-600",
+                                  clubName === 'Digits' && "bg-purple-600 text-white border-purple-600",
+                                  clubName === 'Crypto' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm",
+                                  clubName === 'Letters' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+                                )}
                               >
                                 {clubName}
                               </Badge>
@@ -460,9 +473,9 @@ export const SearchInterface = () => {
                             {/* Info Bubble */}
                             <button
                               onClick={() => handleFlipCard(index)}
-                              className="w-8 h-8 rounded-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 border border-[#D4AF37]/40 flex items-center justify-center hover:from-[#D4AF37]/30 hover:to-[#F7E06C]/30 transition-all duration-300 hover:scale-110 hover:shadow-lg backdrop-blur-sm"
+                              className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-all duration-300 hover:scale-110 hover:shadow-lg"
                             >
-                              <Info size={14} className="text-[#D4AF37]" />
+                              <Info size={14} className="text-black" />
                             </button>
                           </div>
                           
