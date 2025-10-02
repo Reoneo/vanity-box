@@ -403,6 +403,15 @@ export const SearchInterface = () => {
                     {/* Front of Card */}
                     <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm`}>
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5"></div>
+                      
+                      {/* Info Button - Top Right */}
+                      <button
+                        onClick={() => handleFlipCard(index)}
+                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                      >
+                        <Info size={14} className="text-black dark:text-white" />
+                      </button>
+                      
                       <CardContent className="relative p-6 h-full flex flex-col">
                         <div className="flex flex-col items-center text-center h-full">
                           {/* Centered Avatar */}
@@ -467,15 +476,6 @@ export const SearchInterface = () => {
                             ))}
                           </div>
                           
-                          {/* Second Row: Centered Info Button */}
-                          <div className="flex items-center justify-center min-h-[32px] flex-shrink-0 mb-3">
-                            <button
-                              onClick={() => handleFlipCard(index)}
-                              className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110 hover:shadow-lg"
-                            >
-                              <Info size={14} className="text-black dark:text-white" />
-                            </button>
-                          </div>
                           
                           {/* Mint Button Section */}
                           <div className="flex-1 flex items-end justify-center w-full mt-auto">
