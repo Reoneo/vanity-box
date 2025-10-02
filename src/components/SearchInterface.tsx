@@ -408,20 +408,20 @@ export const SearchInterface = () => {
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         
-                        <div className="flex items-center justify-center gap-2 mb-6 overflow-x-auto max-w-full">
+                        <div className="flex items-center justify-center gap-1 mb-6 overflow-x-auto max-w-full flex-nowrap">
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                             <Badge 
                               key={`cat-${catIndex}`}
                               className={cn(
-                                "text-sm px-3 py-1.5 flex items-center gap-1.5 font-semibold rounded-full border-2",
+                                "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap",
                                 cat === 'ENS' && "bg-transparent text-white border-[#D4AF37]",
                                 cat === 'DNS' && "bg-transparent text-white border-blue-500",
                                 cat === 'Aptos Names' && "bg-transparent text-white border-purple-500"
                               )}
                             >
-                              {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3.5 h-3.5" />}
-                              {cat === 'DNS' && <Globe className="w-3.5 h-3.5" />}
-                              {cat === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-3.5 h-3.5 rounded-sm" />}
+                              {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
+                              {cat === 'DNS' && <Globe className="w-3 h-3" />}
+                              {cat === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-3 h-3 rounded-sm" />}
                               {cat}
                             </Badge>
                           ))}
@@ -430,7 +430,7 @@ export const SearchInterface = () => {
                             <Badge 
                               key={`club-${clubIndex}`}
                               className={cn(
-                                "text-sm px-3 py-1.5 font-semibold rounded-full",
+                                "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap",
                                 clubName === 'Surname' && "bg-purple-600 text-white border-0",
                                 clubName === 'DeFi' && "bg-green-600 text-white border-0",
                                 clubName === 'Digits' && "bg-purple-600 text-white border-0",
