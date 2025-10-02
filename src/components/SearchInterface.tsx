@@ -509,8 +509,8 @@ export const SearchInterface = () => {
                           </div>
 
                           {/* Description Content - Positioned Higher */}
-                          <div className="flex flex-col items-center text-center pt-6 px-6 h-full">
-                            <div className="relative mb-4">
+                          <div className="flex flex-col items-center text-center pt-2 px-4 h-full overflow-y-auto">
+                            <div className="relative mb-3 flex-shrink-0">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                               <img 
                                 src={result.imageUrl} 
@@ -519,13 +519,13 @@ export const SearchInterface = () => {
                               />
                             </div>
                             
-                            <h4 className="font-mono text-base font-bold text-gray-900 dark:text-white mb-3" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                            <h4 className="font-mono text-base font-bold text-gray-900 dark:text-white mb-3 flex-shrink-0 break-words w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                               {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                             </h4>
                             
-                            <div className="flex-1 flex items-start justify-center max-w-full px-2">
+                            <div className="flex-1 w-full overflow-y-auto px-2">
                               <p 
-                                className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium text-center" 
+                                className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed font-medium text-center break-words whitespace-normal" 
                                 dangerouslySetInnerHTML={{ __html: result.description }}
                               />
                             </div>
