@@ -510,12 +510,12 @@ export const SearchInterface = () => {
 
                           {/* Description Content - Positioned Higher */}
                           <div className="flex flex-col items-center text-center pt-2 px-4 h-full overflow-y-auto">
-                            <div className="relative mb-3 flex-shrink-0">
+                            <div className="relative mb-4 flex-shrink-0">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                               <img 
                                 src={result.imageUrl} 
                                 alt={result.name}
-                                className="relative w-12 h-12 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                                className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
                               />
                             </div>
                             
