@@ -58,11 +58,6 @@ const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Con
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
         {children}
       </SheetPrimitive.Content>
-      {/* Fixed close button in the blurred overlay area */}
-      <SheetPrimitive.Close className="fixed z-[10001] top-1/2 left-[92.5%] -translate-x-1/2 -translate-y-1/2 rounded-full w-14 h-14 flex items-center justify-center bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white">
-        <X className="h-7 w-7 text-white" strokeWidth={2.5} />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
     </SheetPortal>
   ),
 );
