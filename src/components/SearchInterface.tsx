@@ -413,7 +413,7 @@ export const SearchInterface = () => {
                           </h3>
                           
                           {/* First Row: Centered Protocol and Category Badges */}
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap min-h-[32px] flex-shrink-0 mb-1">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap min-h-[32px] flex-shrink-0">
                             {/* Protocol Badges */}
                             {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                               <Badge 
@@ -461,7 +461,7 @@ export const SearchInterface = () => {
                           
                           
                           {/* Mint Button Section */}
-                          <div className="flex-1 flex items-end justify-center w-full mt-2">
+                          <div className="flex-1 flex items-end justify-center w-full mt-1">
                             <Button 
                               size="default" 
                               className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-8 py-2 text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
