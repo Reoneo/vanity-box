@@ -384,8 +384,8 @@ export const SearchInterface = () => {
                 <div key={index} className="perspective-1000 h-[280px]">
                   <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
-                    <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm`}>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5"></div>
+                    <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white via-amber-50/20 to-white dark:from-gray-900 dark:via-amber-900/20 dark:to-gray-900 border-2 border-[#D4AF37]/40 shadow-[0_4px_24px_rgba(212,175,55,0.15),0_0_40px_rgba(212,175,55,0.05)] hover:shadow-[0_8px_40px_rgba(212,175,55,0.25),0_0_60px_rgba(212,175,55,0.1)] transition-all duration-500 hover:scale-[1.02] hover:border-[#D4AF37]/60 backdrop-blur-sm`}>
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/8 via-transparent to-[#D4AF37]/8"></div>
                       
                       {/* Info Button - Top Right */}
                       <button
@@ -399,11 +399,11 @@ export const SearchInterface = () => {
                         <div className="flex flex-col items-center text-center h-full">
                           {/* Centered Avatar */}
                           <div className="relative flex-shrink-0 mb-2">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-md opacity-40 animate-pulse"></div>
                             <img 
                               src={result.imageUrl} 
                               alt={result.name}
-                              className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                              className="relative w-16 h-16 rounded-full object-cover border-[3px] border-[#D4AF37] shadow-[0_4px_20px_rgba(212,175,55,0.4)] ring-4 ring-[#D4AF37]/10"
                             />
                           </div>
                           
@@ -461,10 +461,10 @@ export const SearchInterface = () => {
                           
                           
                           {/* Mint Button Section */}
-                          <div className="flex-1 flex items-end justify-center w-full mt-1">
+                          <div className="flex items-end justify-center w-full pt-3">
                             <Button 
                               size="default" 
-                              className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-8 py-2 text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
+                              className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-8 py-2 text-sm shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 border-2 border-[#D4AF37]/50 hover:border-[#D4AF37]"
                               onClick={() => setShowMintModal(true)}
                             >
                               {t('mint_now')}
