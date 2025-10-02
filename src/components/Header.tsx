@@ -4,10 +4,11 @@ import { LanguageSelector } from './LanguageSelector';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Search } from 'lucide-react';
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
@@ -161,10 +162,72 @@ export const Header: React.FC = () => {
       </header>
 
       {/* Slide-over Menu */}
-      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-24">
+      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-24 overflow-y-auto">
         <nav className="space-y-6">
           <ThemeToggle />
           <LanguageSelector />
+          
+          {/* Legal Links */}
+          <div className="space-y-3">
+            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Legal</h3>
+            <div className="flex flex-col gap-2">
+              <Link 
+                to="/privacy-policy"
+                onClick={() => setMenuOpen(false)}
+                className="text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200 text-base"
+              >
+                Privacy Policy
+              </Link>
+              <Link 
+                to="/terms-of-use"
+                onClick={() => setMenuOpen(false)}
+                className="text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200 text-base"
+              >
+                Terms of Use
+              </Link>
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div className="space-y-3">
+            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Contact</h3>
+            <div className="flex flex-col gap-3">
+              <a 
+                href="mailto:R@vanity.box"
+                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+              >
+                <Mail className="w-5 h-5 text-[#D4AF37]" />
+                <span>R@vanity.box</span>
+              </a>
+              <a 
+                href="https://t.me/portofspain"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+              >
+                <Send className="w-5 h-5 text-[#D4AF37]" />
+                <span>@portofspain</span>
+              </a>
+              <a 
+                href="https://www.linkedin.com/company/105790273/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+              >
+                <Linkedin className="w-5 h-5 text-[#D4AF37]" />
+                <span>Vanity.box</span>
+              </a>
+              <a 
+                href="https://twitter.com/smithdotbox"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+              >
+                <Twitter className="w-5 h-5 text-[#D4AF37]" />
+                <span>@smithdotbox</span>
+              </a>
+            </div>
+          </div>
         </nav>
       </SheetContent>
     </Sheet>
