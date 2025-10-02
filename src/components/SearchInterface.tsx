@@ -472,7 +472,7 @@ export const SearchInterface = () => {
                                   clubName === 'DeFi' && "bg-green-600 text-white border-green-600",
                                   clubName === 'Influencers' && "bg-blue-600 text-white border-blue-600",
                                   clubName === 'Digits' && "bg-purple-600 text-white border-purple-600",
-                                  clubName === 'Dev' && "bg-orange-600 text-white border-orange-600",
+                                  clubName === 'Dev' && "bg-blue-600 text-white border-blue-600",
                                   clubName === 'Crypto' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm",
                                   clubName === 'Letters' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
                                 )}
