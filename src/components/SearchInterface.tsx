@@ -103,7 +103,7 @@ export const SearchInterface = () => {
     const allResults = [
       {
         name: '30315.eth',
-        description: '30315 is a ZIP code in Atlanta, Georgia. It covers neighbourhoods like Lakewood Heights, South Atlanta, and parts of Grant Park.',
+        description: t('desc_30315'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
         price: 1,
         category: 'ENS',
@@ -111,7 +111,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'MexiPay.eth',
-        description: 'A Mexican influenced digital identity for Web3 and stablecoin payments — enabling secure, accessible subdomains for everyday use.',
+        description: t('desc_mexipay'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/1b420ade2f21c60b34fe53f761d09a/551b420ade2f21c60b34fe53f761d09a.svg',
         price: 5,
         category: 'ENS',
@@ -119,7 +119,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'GuavaPay.eth',
-        description: 'A Web3-native alternative to Apple Pay — providing a digital identity and subdomains for seamless payments and stablecoin transactions.',
+        description: t('desc_guavapay'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/44d2edb2482769d623f27e7c94cd46/7044d2edb2482769d623f27e7c94cd46.svg',
         price: 5,
         category: 'ENS',
@@ -127,7 +127,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'EncryptedDegen.eth',
-        description: 'UI/UX Designer & Developer | Building the web3 social graph @efp.eth.',
+        description: t('desc_encrypteddegen'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/4ce70ef4eb1b2e7094cc4c7fee38e0/054ce70ef4eb1b2e7094cc4c7fee38e0.svg',
         price: 5,
         category: 'ENS',
@@ -135,7 +135,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'Caveman.eth',
-        description: 'Bringing onchain social profiles to 300 million EVM accounts, one follow at a time @efp.eth | Aaron | Onchain Maximilist | Prev: Sat.eth.',
+        description: t('desc_caveman'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/31c489e1c506b192e49026b893130b/2e31c489e1c506b192e49026b893130b.svg',
         price: 5,
         category: 'ENS',
@@ -143,7 +143,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'TeamXRP.eth',
-        description: '<a href="https://www.facebook.com/groups/the.xrp.army/" target="_blank" rel="noopener noreferrer" class="text-[#D4AF37] hover:underline">https://www.facebook.com/groups/the.xrp.army/</a>',
+        description: t('desc_teamxrp'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/c1f98f3f469ba9be9e8dee87f4cfa7/a4c1f98f3f469ba9be9e8dee87f4cfa7.svg',
         price: 5,
         category: 'ENS',
@@ -151,7 +151,7 @@ export const SearchInterface = () => {
       },
       {
         name: '$mith.eth',
-        description: 'A distinctive surname domain perfect for creating personalized digital identities and professional subdomains.',
+        description: t('desc_smith'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/fe754f2d9414b8f5edd443ccd5ac92/2cfe754f2d9414b8f5edd443ccd5ac92.svg',
         price: 5,
         category: 'ENS',
@@ -159,7 +159,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'smith.cash',
-        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
+        description: t('desc_smith_cash'),
         imageUrl: smithCashAvatar,
         price: 5,
         category: ['ENS', 'DNS'],
@@ -167,7 +167,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'smith.apt',
-        description: 'Modern digital identity on Aptos Names protocol — combining a classic surname with next-generation blockchain technology.',
+        description: t('desc_smith_apt'),
         imageUrl: smithAptAvatar,
         price: 5,
         category: 'Aptos Names',
@@ -175,7 +175,7 @@ export const SearchInterface = () => {
       },
       {
         name: 'Termux.eth',
-        description: 'A developer-focused Web3 identity for terminal enthusiasts and blockchain builders — perfect for creating technical subdomains and dev tools.',
+        description: t('desc_termux'),
         imageUrl: termuxAvatar,
         price: 5,
         category: 'ENS',
@@ -420,8 +420,8 @@ export const SearchInterface = () => {
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h3>
                           
-                          {/* Centered Protocol and Category Badges */}
-                          <div className="flex items-center justify-center gap-2 flex-wrap min-h-[60px] flex-shrink-0 mb-3">
+                          {/* First Row: Centered Protocol and Category Badges */}
+                          <div className="flex items-center justify-center gap-2 flex-wrap min-h-[40px] flex-shrink-0 mb-2">
                             {/* Protocol Badges */}
                             {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                               <Badge 
@@ -436,28 +436,12 @@ export const SearchInterface = () => {
                               >
                                 {cat === 'ENS' && (
                                   <>
-                                    <img 
-                                      src={ensLogoBlue} 
-                                      alt="ENS" 
-                                      className="w-3 h-3 dark:hidden"
-                                    />
-                                    <img 
-                                      src={ensLogoWhite} 
-                                      alt="ENS" 
-                                      className="w-3 h-3 hidden dark:block"
-                                    />
+                                    <img src={ensLogoBlue} alt="ENS" className="w-3 h-3 dark:hidden" />
+                                    <img src={ensLogoWhite} alt="ENS" className="w-3 h-3 hidden dark:block" />
                                   </>
                                 )}
-                                {cat === 'DNS' && (
-                                  <Globe className="w-3 h-3 text-blue-500" />
-                                )}
-                                {cat === 'Aptos Names' && (
-                                  <img 
-                                    src={aptosNamesIcon} 
-                                    alt="Aptos Names" 
-                                    className="w-3 h-3 rounded-sm"
-                                  />
-                                )}
+                                {cat === 'DNS' && <Globe className="w-3 h-3 text-blue-500" />}
+                                {cat === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-3 h-3 rounded-sm" />}
                                 {cat}
                               </Badge>
                             ))}
@@ -481,12 +465,15 @@ export const SearchInterface = () => {
                                 {clubName}
                               </Badge>
                             ))}
-                            {/* Info Bubble */}
+                          </div>
+                          
+                          {/* Second Row: Centered Info Button */}
+                          <div className="flex items-center justify-center min-h-[32px] flex-shrink-0 mb-3">
                             <button
                               onClick={() => handleFlipCard(index)}
-                              className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-all duration-300 hover:scale-110 hover:shadow-lg flex-shrink-0"
+                              className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110 hover:shadow-lg"
                             >
-                              <Info size={14} className="text-black" />
+                              <Info size={14} className="text-black dark:text-white" />
                             </button>
                           </div>
                           
