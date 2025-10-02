@@ -89,32 +89,12 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 aria-label="Toggle menu"
-                className={cn(
-                  "w-10 h-10 flex items-center justify-center transition-all duration-300",
-                  menuOpen 
-                    ? "bg-gold rounded-md relative z-[10001]" 
-                    : "bg-transparent"
-                )}
+                className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
               >
                 <div className="relative w-5 h-5">
-                  <span className={cn(
-                    "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
-                    menuOpen 
-                      ? "translate-y-2 rotate-45 bg-black" 
-                      : "translate-y-0 bg-black"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
-                    menuOpen 
-                      ? "opacity-0 bg-black" 
-                      : "opacity-100 bg-black"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
-                    menuOpen 
-                      ? "-translate-y-2 -rotate-45 bg-black" 
-                      : "translate-y-0 bg-black"
-                  )} />
+                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
                 </div>
               </button>
             </TriggerOrClose>
@@ -138,32 +118,12 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 aria-label="Toggle menu"
-                className={cn(
-                  "w-10 h-10 flex items-center justify-center transition-all duration-300",
-                  menuOpen 
-                    ? "bg-gold rounded-md relative z-[10001]" 
-                    : "bg-transparent"
-                )}
+                className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
               >
                 <div className="relative w-5 h-5">
-                  <span className={cn(
-                    "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
-                    menuOpen 
-                      ? "translate-y-2 rotate-45 bg-black" 
-                      : "translate-y-0 bg-black"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
-                    menuOpen 
-                      ? "opacity-0 bg-black" 
-                      : "opacity-100 bg-black"
-                  )} />
-                  <span className={cn(
-                    "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
-                    menuOpen 
-                      ? "-translate-y-2 -rotate-45 bg-black" 
-                      : "translate-y-0 bg-black"
-                  )} />
+                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
                 </div>
               </button>
             </TriggerOrClose>
