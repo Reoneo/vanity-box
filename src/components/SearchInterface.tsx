@@ -50,7 +50,7 @@ export const SearchInterface = () => {
   const [hasSearched, setHasSearched] = useState(false);
 
   const protocols = ['ENS', 'DNS', 'Aptos Names', 'Avax Name Service'];
-  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
+  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname']; // Alphabetical order
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
@@ -124,22 +124,6 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'DeFi'
-      },
-      {
-        name: 'EncryptedDegen.eth',
-        description: t('desc_encrypteddegen'),
-        imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/4ce70ef4eb1b2e7094cc4c7fee38e0/054ce70ef4eb1b2e7094cc4c7fee38e0.svg',
-        price: 5,
-        category: 'ENS',
-        club: 'Influencers'
-      },
-      {
-        name: 'Caveman.eth',
-        description: t('desc_caveman'),
-        imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/31c489e1c506b192e49026b893130b/2e31c489e1c506b192e49026b893130b.svg',
-        price: 5,
-        category: 'ENS',
-        club: 'Influencers'
       },
       {
         name: 'TeamXRP.eth',
