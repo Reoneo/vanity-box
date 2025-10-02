@@ -380,9 +380,9 @@ export const SearchInterface = () => {
         </div>
         
         {/* Results container - wider on desktop/tablet, normal on mobile */}
-        <div className="w-full sm:max-w-4xl sm:mx-auto">
+        <div className="w-full sm:max-w-5xl sm:mx-auto">
         {hasSearched && ensResults.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 animate-in slide-in-from-bottom duration-500">
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 md:gap-10 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
@@ -409,7 +409,7 @@ export const SearchInterface = () => {
                           </div>
                         </div>
                         
-                        <h3 className="font-mono text-xl font-bold text-white mb-4 break-words leading-tight px-2 w-full sm:whitespace-nowrap sm:text-2xl">
+                        <h3 className="font-mono text-xl font-bold text-white mb-4 leading-tight px-4 w-full sm:whitespace-nowrap sm:text-2xl flex items-center justify-center">
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         
@@ -482,7 +482,7 @@ export const SearchInterface = () => {
                             </div>
                           </div>
                           
-                          <h4 className="font-mono text-xl font-bold text-white break-words leading-tight px-2 sm:whitespace-nowrap sm:text-2xl">
+                          <h4 className="font-mono text-xl font-bold text-white leading-tight px-4 sm:whitespace-nowrap sm:text-2xl flex items-center justify-center">
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h4>
                         </div>
