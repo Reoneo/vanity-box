@@ -54,16 +54,15 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
   ({ side = "right", className, children, ...props }, ref) => (
     <SheetPortal>
-      <SheetOverlay>
-        {/* Close button centered in the blurred overlay */}
-        <SheetPrimitive.Close className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full w-12 h-12 flex items-center justify-center bg-white/10 backdrop-blur-sm border border-white/20 opacity-90 hover:opacity-100 transition-opacity focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 disabled:pointer-events-none">
-          <X className="h-6 w-6 text-white" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
-      </SheetOverlay>
+      <SheetOverlay />
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
         {children}
       </SheetPrimitive.Content>
+      {/* Fixed close button always visible on the right side (overlays above panel) */}
+      <SheetPrimitive.Close className="fixed z-[10001] top-1/2 right-4 -translate-y-1/2 rounded-full w-12 h-12 flex items-center justify-center bg-white/10 backdrop-blur-sm border border-white/30 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2">
+        <X className="h-6 w-6 text-white" />
+        <span className="sr-only">Close</span>
+      </SheetPrimitive.Close>
     </SheetPortal>
   ),
 );
