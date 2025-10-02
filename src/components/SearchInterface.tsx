@@ -18,7 +18,7 @@ import {
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoWhite from '@/assets/ens-logo-white.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
-import aptosLogo from '@/assets/aptos-logo.jpeg';
+import aptosLogo from '@/assets/aptos-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 
 export interface FilterState {
