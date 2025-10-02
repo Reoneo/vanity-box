@@ -514,11 +514,11 @@ export const SearchInterface = () => {
                             <img 
                               src={result.imageUrl} 
                               alt={result.name}
-                              className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                              className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
                             />
                           </div>
                           
-                          <h4 className="font-mono text-base font-bold text-gray-900 dark:text-white break-words w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                          <h4 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h4>
                         </div>
