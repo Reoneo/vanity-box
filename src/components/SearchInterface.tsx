@@ -376,13 +376,12 @@ export const SearchInterface = () => {
           </div>
         </div>
         
-        {/* ENS Results */}
         {hasSearched && ensResults.length > 0 && (
-          <div className="mt-6 space-y-4 animate-in slide-in-from-bottom duration-500">
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000 h-[340px]">
+                <div key={index} className="perspective-1000 h-[280px]">
                   <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm`}>
@@ -396,32 +395,32 @@ export const SearchInterface = () => {
                         <Info size={14} className="text-black dark:text-white" />
                       </button>
                       
-                      <CardContent className="relative p-6 h-full flex flex-col">
+                      <CardContent className="relative p-4 h-full flex flex-col">
                         <div className="flex flex-col items-center text-center h-full">
                           {/* Centered Avatar */}
-                          <div className="relative flex-shrink-0 mb-3">
+                          <div className="relative flex-shrink-0 mb-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                             <img 
                               src={result.imageUrl} 
                               alt={result.name}
-                              className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                              className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
                             />
                           </div>
                           
                           {/* Centered Subdomain */}
-                          <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight flex-shrink-0 mb-3" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                          <h3 className="font-mono text-lg md:text-xl font-bold text-gray-900 dark:text-white break-words leading-tight flex-shrink-0 mb-2" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h3>
                           
                           {/* First Row: Centered Protocol and Category Badges */}
-                          <div className="flex items-center justify-center gap-2 flex-wrap min-h-[40px] flex-shrink-0 mb-2">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap min-h-[32px] flex-shrink-0 mb-2">
                             {/* Protocol Badges */}
                             {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                               <Badge 
                                 key={`cat-${catIndex}`}
                                 variant="secondary" 
                                 className={cn(
-                                  "text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm",
+                                  "text-xs px-2 py-1 flex items-center gap-1 backdrop-blur-sm font-semibold shadow-sm",
                                   cat === 'ENS' && "bg-transparent text-black dark:text-white border-2 border-[#D4AF37] animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(212,175,55,0.5)]",
                                   cat === 'DNS' && "bg-transparent text-black dark:text-white border-2 border-blue-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(59,130,246,0.5)]",
                                   cat === 'Aptos Names' && "bg-transparent text-purple-600 dark:text-white border-2 border-purple-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(168,85,247,0.5)]"
@@ -445,7 +444,7 @@ export const SearchInterface = () => {
                                 key={`club-${clubIndex}`}
                                 variant="outline" 
                                 className={cn(
-                                  "text-xs px-3 py-1.5 font-medium shadow-sm",
+                                  "text-xs px-2 py-1 font-medium shadow-sm",
                                   clubName === 'Surname' && "bg-purple-600 text-white border-purple-600",
                                   clubName === 'DeFi' && "bg-green-600 text-white border-green-600",
                                   clubName === 'Influencers' && "bg-blue-600 text-white border-blue-600",
@@ -464,8 +463,8 @@ export const SearchInterface = () => {
                           {/* Mint Button Section */}
                           <div className="flex-1 flex items-end justify-center w-full mt-auto">
                             <Button 
-                              size="lg" 
-                              className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-10 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
+                              size="default" 
+                              className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-8 py-2 text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
                               onClick={() => setShowMintModal(true)}
                             >
                               {t('mint_now')}
@@ -490,17 +489,17 @@ export const SearchInterface = () => {
                         </div>
 
                         {/* Avatar and Name */}
-                        <div className="flex flex-col items-center text-center mb-3 flex-shrink-0">
-                          <div className="relative mb-3">
+                        <div className="flex flex-col items-center text-center mb-2 flex-shrink-0">
+                          <div className="relative mb-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                             <img 
                               src={result.imageUrl} 
                               alt={result.name}
-                              className="relative w-20 h-20 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
+                              className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
                             />
                           </div>
                           
-                          <h4 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                          <h4 className="font-mono text-lg md:text-xl font-bold text-gray-900 dark:text-white break-words leading-tight w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h4>
                         </div>
