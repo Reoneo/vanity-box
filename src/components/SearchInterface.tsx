@@ -419,9 +419,9 @@ export const SearchInterface = () => {
                                 variant="secondary" 
                                 className={cn(
                                   "text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm",
-                                  cat === 'ENS' && "bg-[#D4AF37] text-black border border-[#D4AF37]",
+                                  cat === 'ENS' && "bg-transparent text-[#D4AF37] dark:text-[#F7E06C] border-2 border-[#D4AF37] animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(212,175,55,0.5)]",
                                   cat === 'DNS' && "bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40",
-                                  cat === 'Aptos Names' && "bg-purple-600 text-white border border-purple-600"
+                                  cat === 'Aptos Names' && "bg-transparent text-purple-600 dark:text-purple-400 border-2 border-purple-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(168,85,247,0.5)]"
                                 )}
                               >
                                 {cat === 'ENS' && (
