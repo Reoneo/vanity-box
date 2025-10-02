@@ -191,40 +191,40 @@ export const Header: React.FC = () => {
           {/* Contact */}
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Contact</h3>
-            <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-4">
               <a 
                 href="mailto:R@vanity.box"
-                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+                className="hover:scale-110 transition-transform duration-200"
+                aria-label="Email"
               >
-                <Mail className="w-5 h-5 text-[#D4AF37]" />
-                <span>R@vanity.box</span>
+                <Mail className="w-6 h-6 text-[#D4AF37]" />
               </a>
               <a 
                 href="https://t.me/portofspain"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+                className="hover:scale-110 transition-transform duration-200"
+                aria-label="Telegram"
               >
-                <Send className="w-5 h-5 text-[#D4AF37]" />
-                <span>@portofspain</span>
+                <Send className="w-6 h-6 text-[#D4AF37]" />
               </a>
               <a 
                 href="https://www.linkedin.com/company/105790273/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+                className="hover:scale-110 transition-transform duration-200"
+                aria-label="LinkedIn"
               >
-                <Linkedin className="w-5 h-5 text-[#D4AF37]" />
-                <span>Vanity.box</span>
+                <Linkedin className="w-6 h-6 text-[#D4AF37]" />
               </a>
               <a 
                 href="https://twitter.com/smithdotbox"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200"
+                className="hover:scale-110 transition-transform duration-200"
+                aria-label="Twitter"
               >
-                <Twitter className="w-5 h-5 text-[#D4AF37]" />
-                <span>@smithdotbox</span>
+                <Twitter className="w-6 h-6 text-[#D4AF37]" />
               </a>
             </div>
           </div>

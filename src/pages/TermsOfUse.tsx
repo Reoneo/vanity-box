@@ -1,13 +1,25 @@
 import { Header } from '@/components/Header';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function TermsOfUse() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted">
       <Header />
       <main className="container mx-auto px-4 py-24 max-w-4xl">
+        <Button
+          onClick={() => navigate(-1)}
+          variant="ghost"
+          className="mb-6 -ml-2 hover:bg-muted"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
         <h1 className="text-4xl md:text-5xl font-playfair font-bold mb-4 bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] bg-clip-text text-transparent">
           Terms of Use
         </h1>
@@ -130,8 +142,8 @@ export default function TermsOfUse() {
             <h2 className="text-2xl font-playfair font-semibold mb-4">9. Contact Information</h2>
             <p className="text-foreground/80">
               If you have any questions about these Terms of Use, please contact us at:{' '}
-              <a href="mailto:legal@vanity.box" className="text-[#D4AF37] hover:underline">
-                legal@vanity.box
+              <a href="mailto:r@vanity.box" className="text-[#D4AF37] hover:underline">
+                r@vanity.box
               </a>
             </p>
           </section>

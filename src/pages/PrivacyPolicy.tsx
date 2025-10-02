@@ -1,13 +1,25 @@
 import { Header } from '@/components/Header';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function PrivacyPolicy() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted">
       <Header />
       <main className="container mx-auto px-4 py-24 max-w-4xl">
+        <Button
+          onClick={() => navigate(-1)}
+          variant="ghost"
+          className="mb-6 -ml-2 hover:bg-muted"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
         <h1 className="text-4xl md:text-5xl font-playfair font-bold mb-4 bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] bg-clip-text text-transparent">
           Privacy Policy
         </h1>
@@ -33,7 +45,7 @@ export default function PrivacyPolicy() {
                 This Policy applies in conjunction with any other notices, contractual clauses and consent clauses that apply in relation to the collection, use and disclosure of your Personal Data by us.
               </li>
               <li>
-                If you have any comments on, or questions about this Policy, please email them to our data protection officer at privacy@vanity.box.
+                If you have any comments on, or questions about this Policy, please email them to our data protection officer at r@vanity.box.
               </li>
             </ol>
           </section>
@@ -112,8 +124,8 @@ export default function PrivacyPolicy() {
             <h2 className="text-2xl font-playfair font-semibold mb-4">07. Contact Us</h2>
             <p className="text-foreground/80">
               If you have any questions about this Privacy Policy or our data practices, please contact us at:{' '}
-              <a href="mailto:privacy@vanity.box" className="text-[#D4AF37] hover:underline">
-                privacy@vanity.box
+              <a href="mailto:r@vanity.box" className="text-[#D4AF37] hover:underline">
+                r@vanity.box
               </a>
             </p>
           </section>
