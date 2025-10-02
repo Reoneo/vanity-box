@@ -69,7 +69,7 @@ export const Header: React.FC = () => {
         <link rel="preload" as="image" href={vanityLogo} />
         
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between md:justify-center">
+        <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
           {/* Mobile: Logo, Menu Button, and Search Icon on left */}
           <div className="flex items-center gap-1 md:hidden">
             {/* Logo - positioned at far left, moved slightly left */}
@@ -132,55 +132,57 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Desktop/Tablet: Menu Button on left */}
-          <TriggerOrClose asChild>
-            <button
-              type="button"
-              aria-label="Toggle menu"
-              className={cn(
-                "hidden md:flex absolute left-4 w-10 h-10 items-center justify-center transition-all duration-300",
-                menuOpen 
-                  ? "bg-gold rounded-md relative z-[10001]" 
-                  : "bg-transparent"
-              )}
-            >
-              <div className="relative w-5 h-5">
-                <span className={cn(
-                  "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
+          {/* Desktop/Tablet: Left Side Controls */}
+          <div className="hidden md:flex items-center gap-2">
+            <TriggerOrClose asChild>
+              <button
+                type="button"
+                aria-label="Toggle menu"
+                className={cn(
+                  "w-10 h-10 flex items-center justify-center transition-all duration-300",
                   menuOpen 
-                    ? "translate-y-2 rotate-45 bg-black" 
-                    : "translate-y-0 bg-black"
-                )} />
-                <span className={cn(
-                  "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
-                  menuOpen 
-                    ? "opacity-0 bg-black" 
-                    : "opacity-100 bg-black"
-                )} />
-                <span className={cn(
-                  "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
-                  menuOpen 
-                    ? "-translate-y-2 -rotate-45 bg-black" 
-                    : "translate-y-0 bg-black"
-                )} />
-              </div>
-            </button>
-          </TriggerOrClose>
+                    ? "bg-gold rounded-md relative z-[10001]" 
+                    : "bg-transparent"
+                )}
+              >
+                <div className="relative w-5 h-5">
+                  <span className={cn(
+                    "absolute left-0 top-0 w-5 h-0.5 transition-transform duration-300",
+                    menuOpen 
+                      ? "translate-y-2 rotate-45 bg-black" 
+                      : "translate-y-0 bg-black"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 top-2 w-5 h-0.5 transition-all duration-300",
+                    menuOpen 
+                      ? "opacity-0 bg-black" 
+                      : "opacity-100 bg-black"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 top-4 w-5 h-0.5 transition-transform duration-300",
+                    menuOpen 
+                      ? "-translate-y-2 -rotate-45 bg-black" 
+                      : "translate-y-0 bg-black"
+                  )} />
+                </div>
+              </button>
+            </TriggerOrClose>
 
-          {/* Desktop/Tablet: Search Icon next to menu button */}
-          {showSearchIcon && (
-            <button
-              type="button"
-              aria-label="Scroll to search"
-              onClick={scrollToSearch}
-              className="hidden md:flex absolute left-16 w-10 h-10 items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-            >
-              <Search className="w-5 h-5 text-black" />
-            </button>
-          )}
+            {/* Search Icon */}
+            {showSearchIcon && (
+              <button
+                type="button"
+                aria-label="Scroll to search"
+                onClick={scrollToSearch}
+                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+              >
+                <Search className="w-5 h-5 text-black" />
+              </button>
+            )}
+          </div>
 
           {/* Desktop/Tablet: Centered Logo */}
-          <div className="hidden md:flex items-center">
+          <div className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2">
             <img 
               src={vanityLogo} 
               alt="Vanity.box Logo" 
@@ -191,8 +193,8 @@ export const Header: React.FC = () => {
           </div>
 
           
-          {/* Wallet Connection */}
-          <div className="flex items-center md:absolute md:right-4">
+          {/* Wallet Connection - Right Side */}
+          <div className="flex items-center">
             <WalletConnection />
           </div>
         </div>
