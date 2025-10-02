@@ -381,8 +381,8 @@ export const SearchInterface = () => {
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000 min-h-[340px] sm:min-h-[360px]">
-                  <div className={`relative w-full h-full min-h-[340px] sm:min-h-[360px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                <div key={index} className="perspective-1000 min-h-[280px] sm:min-h-[300px]">
+                  <div className={`relative w-full h-full min-h-[280px] sm:min-h-[300px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                       <button
@@ -392,7 +392,7 @@ export const SearchInterface = () => {
                         <Info size={18} className="text-white" />
                       </button>
                       
-                      <div className="relative p-6 flex flex-col items-center text-center min-h-[340px] sm:min-h-[360px]">
+                      <div className="relative p-4 flex flex-col items-center text-center min-h-[280px] sm:min-h-[300px]">
                         <div className="relative mb-4 sm:mb-6">
                           <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
                           <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
