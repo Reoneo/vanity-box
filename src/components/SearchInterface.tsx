@@ -381,7 +381,7 @@ export const SearchInterface = () => {
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000 h-[280px]">
+                <div key={index} className="perspective-1000 h-[240px]">
                   <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white via-amber-50/20 to-white dark:from-gray-900 dark:via-amber-900/20 dark:to-gray-900 border-2 border-[#D4AF37]/40 shadow-[0_4px_24px_rgba(212,175,55,0.15),0_0_40px_rgba(212,175,55,0.05)] hover:shadow-[0_8px_40px_rgba(212,175,55,0.25),0_0_60px_rgba(212,175,55,0.1)] transition-all duration-500 hover:scale-[1.02] hover:border-[#D4AF37]/60 backdrop-blur-sm`}>
