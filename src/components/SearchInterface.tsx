@@ -20,6 +20,7 @@ import ensLogoWhite from '@/assets/ens-logo-white.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import aptosLogo from '@/assets/aptos-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
+import termuxAvatar from '@/assets/termux-avatar.png';
 
 export interface FilterState {
   protocol: string[];
@@ -48,7 +49,7 @@ export const SearchInterface = () => {
   const [hasSearched, setHasSearched] = useState(false);
 
   const protocols = ['ENS', 'DNS', 'Aptos Names', 'Avax Name Service'];
-  const clubs = ['Crypto', 'DeFi', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
+  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
@@ -170,6 +171,14 @@ export const SearchInterface = () => {
         price: 5,
         category: 'Aptos Names',
         club: 'Surname'
+      },
+      {
+        name: 'Termux.eth',
+        description: 'A developer-focused Web3 identity for terminal enthusiasts and blockchain builders — perfect for creating technical subdomains and dev tools.',
+        imageUrl: termuxAvatar,
+        price: 5,
+        category: 'ENS',
+        club: 'Dev'
       }
     ];
     return allResults;
@@ -463,6 +472,7 @@ export const SearchInterface = () => {
                                   clubName === 'DeFi' && "bg-green-600 text-white border-green-600",
                                   clubName === 'Influencers' && "bg-blue-600 text-white border-blue-600",
                                   clubName === 'Digits' && "bg-purple-600 text-white border-purple-600",
+                                  clubName === 'Dev' && "bg-orange-600 text-white border-orange-600",
                                   clubName === 'Crypto' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm",
                                   clubName === 'Letters' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
                                 )}
