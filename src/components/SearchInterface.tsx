@@ -377,12 +377,12 @@ export const SearchInterface = () => {
         </div>
         
         {hasSearched && ensResults.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 animate-in slide-in-from-bottom duration-500">
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000 min-h-[280px] sm:min-h-[300px]">
-                  <div className={`relative w-full h-full min-h-[280px] sm:min-h-[300px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                <div key={index} className="perspective-1000 min-h-[320px]">
+                  <div className={`relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                       <button
@@ -392,10 +392,10 @@ export const SearchInterface = () => {
                         <Info size={18} className="text-white" />
                       </button>
                       
-                      <div className="relative p-4 flex flex-col items-center text-center min-h-[280px] sm:min-h-[300px]">
-                        <div className="relative mb-4 sm:mb-6">
+                      <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
+                        <div className="relative mb-6">
                           <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
-                          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
+                          <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
                             <img 
                               src={result.imageUrl} 
                               alt={result.name}
@@ -404,7 +404,7 @@ export const SearchInterface = () => {
                           </div>
                         </div>
                         
-                        <h3 className="font-mono text-xl sm:text-2xl font-bold text-white mb-4 break-words leading-tight">
+                        <h3 className="font-mono text-xl font-bold text-white mb-4 break-words leading-tight px-2 w-full">
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         
@@ -455,7 +455,7 @@ export const SearchInterface = () => {
 
                     {/* Back of Card */}
                     <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
-                      <div className="relative p-6 h-full flex flex-col min-h-[340px] sm:min-h-[360px]">
+                      <div className="relative p-6 h-full flex flex-col min-h-[320px]">
                         <div className="flex justify-end mb-4 flex-shrink-0">
                           <button
                             onClick={() => handleFlipCard(index)}
@@ -468,7 +468,7 @@ export const SearchInterface = () => {
                         <div className="flex flex-col items-center text-center mb-4 flex-shrink-0">
                           <div className="relative mb-3">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-lg opacity-40"></div>
-                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-3 border-[#D4AF37] overflow-hidden shadow-lg">
+                            <div className="relative w-24 h-24 rounded-full border-3 border-[#D4AF37] overflow-hidden shadow-lg">
                               <img 
                                 src={result.imageUrl} 
                                 alt={result.name}
@@ -477,14 +477,14 @@ export const SearchInterface = () => {
                             </div>
                           </div>
                           
-                          <h4 className="font-mono text-xl sm:text-2xl font-bold text-white break-words leading-tight">
+                          <h4 className="font-mono text-xl font-bold text-white break-words leading-tight px-2">
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h4>
                         </div>
                         
                         <div className="flex-1 overflow-y-auto px-2">
                           <p 
-                            className="text-sm sm:text-base text-gray-300 leading-relaxed text-center break-words" 
+                            className="text-sm text-gray-300 leading-relaxed text-center break-words" 
                             dangerouslySetInnerHTML={{ __html: result.description }}
                           />
                         </div>
