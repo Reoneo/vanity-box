@@ -18,6 +18,8 @@ import {
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoWhite from '@/assets/ens-logo-white.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
+import aptosLogo from '@/assets/aptos-logo.jpeg';
+import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 
 export interface FilterState {
   protocol: string[];
@@ -160,6 +162,14 @@ export const SearchInterface = () => {
         price: 5,
         category: ['ENS', 'DNS'],
         club: ['Surname', 'DeFi']
+      },
+      {
+        name: 'smith.apt',
+        description: 'Modern digital identity on Aptos Names protocol — combining a classic surname with next-generation blockchain technology.',
+        imageUrl: smithAptAvatar,
+        price: 5,
+        category: 'Aptos Names',
+        club: 'Surname'
       }
     ];
     return allResults;
@@ -295,6 +305,16 @@ export const SearchInterface = () => {
                           className="w-4 h-4 hidden dark:block"
                         />
                       )}
+                      {protocol === 'DNS' && (
+                        <Globe className="w-4 h-4 text-blue-500" />
+                      )}
+                      {protocol === 'Aptos Names' && (
+                        <img 
+                          src={aptosLogo} 
+                          alt="Aptos Names" 
+                          className="w-4 h-4 rounded-sm"
+                        />
+                      )}
                       {protocol}
                     </div>
                   </DropdownMenuItem>
@@ -414,7 +434,14 @@ export const SearchInterface = () => {
                                   </>
                                 )}
                                 {cat === 'DNS' && (
-                                  <Globe className="w-3 h-3" />
+                                  <Globe className="w-3 h-3 text-blue-500" />
+                                )}
+                                {cat === 'Aptos Names' && (
+                                  <img 
+                                    src={aptosLogo} 
+                                    alt="Aptos Names" 
+                                    className="w-3 h-3 rounded-sm"
+                                  />
                                 )}
                                 {cat}
                               </Badge>
