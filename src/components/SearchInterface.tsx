@@ -408,7 +408,7 @@ export const SearchInterface = () => {
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         
-                        <div className="flex items-center justify-center gap-1 mb-2 overflow-x-auto max-w-full flex-nowrap">
+                        <div className="flex items-center justify-center gap-1 mb-6 overflow-x-auto max-w-full flex-nowrap">
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                             <Badge 
                               key={`cat-${catIndex}`}
@@ -445,7 +445,7 @@ export const SearchInterface = () => {
                         </div>
                         
                         <Button 
-                          className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto"
+                          className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105"
                           onClick={() => setShowMintModal(true)}
                         >
                           {t('mint_now')}
