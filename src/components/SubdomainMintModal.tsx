@@ -48,7 +48,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           <circle cx="12" cy="12" r="2" fill="#fff"/>
         </svg>
       ), 
-      rate: 7.58 
+      rate: 0.5 
     },
     { 
       id: 'USDC' as PaymentMethod, 
