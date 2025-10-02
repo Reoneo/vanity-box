@@ -4,7 +4,7 @@ import { LanguageSelector } from './LanguageSelector';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter } from 'lucide-react';
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -170,20 +170,22 @@ export const Header: React.FC = () => {
           {/* Legal Links */}
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Legal</h3>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <Link 
                 to="/privacy-policy"
                 onClick={() => setMenuOpen(false)}
-                className="text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200 text-base"
+                className="h-14 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between transition-all duration-300 hover:shadow-lg"
               >
-                Privacy Policy
+                <span className="font-medium">Privacy Policy</span>
+                <ChevronRight className="w-5 h-5" />
               </Link>
               <Link 
                 to="/terms-of-use"
                 onClick={() => setMenuOpen(false)}
-                className="text-gray-700 dark:text-gray-300 hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors duration-200 text-base"
+                className="h-14 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between transition-all duration-300 hover:shadow-lg"
               >
-                Terms of Use
+                <span className="font-medium">Terms of Use</span>
+                <ChevronRight className="w-5 h-5" />
               </Link>
             </div>
           </div>
