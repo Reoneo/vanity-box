@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Zap, X, Filter, ChevronDown, Info } from 'lucide-react';
+import { Search, Zap, X, Filter, ChevronDown, Info, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,8 +29,8 @@ interface ENSResult {
   description: string;
   imageUrl: string;
   price: number;
-  category: string;
-  club: string;
+  category: string | string[];
+  club: string | string[];
 }
 
 export const SearchInterface = () => {
@@ -158,32 +158,8 @@ export const SearchInterface = () => {
         description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
         imageUrl: smithCashAvatar,
         price: 5,
-        category: 'ENS',
-        club: 'Surname'
-      },
-      {
-        name: 'smith.cash',
-        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
-        imageUrl: smithCashAvatar,
-        price: 5,
-        category: 'ENS',
-        club: 'DeFi'
-      },
-      {
-        name: 'smith.cash',
-        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
-        imageUrl: smithCashAvatar,
-        price: 5,
-        category: 'DNS',
-        club: 'Surname'
-      },
-      {
-        name: 'smith.cash',
-        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
-        imageUrl: smithCashAvatar,
-        price: 5,
-        category: 'DNS',
-        club: 'DeFi'
+        category: ['ENS', 'DNS'],
+        club: ['Surname', 'DeFi']
       }
     ];
     return allResults;
@@ -206,8 +182,13 @@ export const SearchInterface = () => {
     } else {
       // Filter results based on selected filters
       const filteredResults = allResults.filter(result => {
-        const protocolMatch = filters.protocol.length === 0 || filters.protocol.includes(result.category);
-        const clubMatch = filters.club.length === 0 || filters.club.includes(result.club);
+        const categories = Array.isArray(result.category) ? result.category : [result.category];
+        const clubs = Array.isArray(result.club) ? result.club : [result.club];
+        
+        const protocolMatch = filters.protocol.length === 0 || 
+          filters.protocol.some(p => categories.includes(p));
+        const clubMatch = filters.club.length === 0 || 
+          filters.club.some(c => clubs.includes(c));
         return protocolMatch && clubMatch;
       });
       setEnsResults(filteredResults);
@@ -411,25 +392,44 @@ export const SearchInterface = () => {
                           
                           {/* Centered Protocol and Category Badges */}
                           <div className="flex items-center justify-center gap-2 flex-wrap">
-                            <Badge 
-                              variant="secondary" 
-                              className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
-                            >
-                              <img 
-                                src={ensLogoBlue} 
-                                alt="ENS" 
-                                className="w-3 h-3 dark:hidden"
-                              />
-                              <img 
-                                src={ensLogoWhite} 
-                                alt="ENS" 
-                                className="w-3 h-3 hidden dark:block"
-                              />
-                              {result.category}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm">
-                              {result.club}
-                            </Badge>
+                            {/* Protocol Badges */}
+                            {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
+                              <Badge 
+                                key={`cat-${catIndex}`}
+                                variant="secondary" 
+                                className="bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm"
+                              >
+                                {cat === 'ENS' && (
+                                  <>
+                                    <img 
+                                      src={ensLogoBlue} 
+                                      alt="ENS" 
+                                      className="w-3 h-3 dark:hidden"
+                                    />
+                                    <img 
+                                      src={ensLogoWhite} 
+                                      alt="ENS" 
+                                      className="w-3 h-3 hidden dark:block"
+                                    />
+                                  </>
+                                )}
+                                {cat === 'DNS' && (
+                                  <Globe className="w-3 h-3" />
+                                )}
+                                {cat}
+                              </Badge>
+                            ))}
+                            
+                            {/* Club Badges */}
+                            {(Array.isArray(result.club) ? result.club : [result.club]).map((clubName, clubIndex) => (
+                              <Badge 
+                                key={`club-${clubIndex}`}
+                                variant="outline" 
+                                className="text-xs text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 font-medium shadow-sm"
+                              >
+                                {clubName}
+                              </Badge>
+                            ))}
                             {/* Info Bubble */}
                             <button
                               onClick={() => handleFlipCard(index)}
