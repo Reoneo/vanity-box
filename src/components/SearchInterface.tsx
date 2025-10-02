@@ -388,7 +388,7 @@ export const SearchInterface = () => {
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000 h-[340px]">
+                <div key={index} className="perspective-1000 h-[420px]">
                   <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm`}>
@@ -470,17 +470,17 @@ export const SearchInterface = () => {
                                 {clubName}
                               </Badge>
                             ))}
-                            {/* Info Bubble */}
-                            <button
-                              onClick={() => handleFlipCard(index)}
-                              className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-all duration-300 hover:scale-110 hover:shadow-lg flex-shrink-0"
-                            >
-                              <Info size={14} className="text-black" />
-                            </button>
+                            </div>
+                          
+                          {/* Description Section */}
+                          <div className="flex-1 w-full overflow-y-auto px-2 py-3">
+                            <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 break-words whitespace-normal leading-relaxed"
+                               dangerouslySetInnerHTML={{ __html: result.description }}
+                            />
                           </div>
                           
                           {/* Mint Button Section */}
-                          <div className="flex-1 flex items-end justify-center w-full mt-auto">
+                          <div className="flex-shrink-0 flex items-end justify-center w-full mt-2">
                             <Button 
                               size="lg" 
                               className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-10 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
