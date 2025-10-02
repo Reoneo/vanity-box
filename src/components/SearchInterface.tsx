@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoWhite from '@/assets/ens-logo-white.png';
+import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 
 export interface FilterState {
   protocol: string[];
@@ -44,7 +45,7 @@ export const SearchInterface = () => {
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const protocols = ['ENS', 'Aptos Names', 'Avax Name Service'];
+  const protocols = ['ENS', 'DNS', 'Aptos Names', 'Avax Name Service'];
   const clubs = ['Crypto', 'DeFi', 'Digits', 'Influencers', 'Letters', 'Surname']; // Alphabetical order
 
   const getSubdomainPrice = (subdomain: string) => {
@@ -151,6 +152,38 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Surname'
+      },
+      {
+        name: 'smith.cash',
+        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
+        imageUrl: smithCashAvatar,
+        price: 5,
+        category: 'ENS',
+        club: 'Surname'
+      },
+      {
+        name: 'smith.cash',
+        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
+        imageUrl: smithCashAvatar,
+        price: 5,
+        category: 'ENS',
+        club: 'DeFi'
+      },
+      {
+        name: 'smith.cash',
+        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
+        imageUrl: smithCashAvatar,
+        price: 5,
+        category: 'DNS',
+        club: 'Surname'
+      },
+      {
+        name: 'smith.cash',
+        description: 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
+        imageUrl: smithCashAvatar,
+        price: 5,
+        category: 'DNS',
+        club: 'DeFi'
       }
     ];
     return allResults;
