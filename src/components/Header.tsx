@@ -84,40 +84,17 @@ export const Header: React.FC = () => {
               />
             </div>
 
-            {/* Menu Button with luxury X transformation */}
+            {/* Menu Button */}
             <TriggerOrClose asChild>
               <button
                 type="button"
                 aria-label="Toggle menu"
-                className={cn(
-                  "w-12 h-12 flex items-center justify-center rounded-lg transition-all duration-500 ease-out relative overflow-hidden",
-                  menuOpen 
-                    ? "bg-gradient-to-br from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] shadow-[0_4px_20px_rgba(212,175,55,0.4)] scale-105" 
-                    : "bg-transparent hover:bg-black/5"
-                )}
+                className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
               >
-                <div className="relative w-6 h-6">
-                  {/* Top line */}
-                  <span className={cn(
-                    "absolute left-0 top-1 w-6 h-0.5 bg-black rounded-full transition-all duration-500 ease-out",
-                    menuOpen 
-                      ? "top-[11px] rotate-45 shadow-sm" 
-                      : "top-1 rotate-0"
-                  )} />
-                  {/* Middle line */}
-                  <span className={cn(
-                    "absolute left-0 top-[11px] w-6 h-0.5 bg-black rounded-full transition-all duration-500 ease-out",
-                    menuOpen 
-                      ? "scale-0 opacity-0" 
-                      : "scale-100 opacity-100"
-                  )} />
-                  {/* Bottom line */}
-                  <span className={cn(
-                    "absolute left-0 bottom-1 w-6 h-0.5 bg-black rounded-full transition-all duration-500 ease-out",
-                    menuOpen 
-                      ? "bottom-[11px] -rotate-45 shadow-sm" 
-                      : "bottom-1 rotate-0"
-                  )} />
+                <div className="relative w-5 h-5">
+                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
                 </div>
               </button>
             </TriggerOrClose>
@@ -137,40 +114,16 @@ export const Header: React.FC = () => {
 
           {/* Desktop/Tablet: Left Side Controls */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Menu Button with luxury X transformation */}
             <TriggerOrClose asChild>
               <button
                 type="button"
                 aria-label="Toggle menu"
-                className={cn(
-                  "w-12 h-12 flex items-center justify-center rounded-lg transition-all duration-500 ease-out relative overflow-hidden",
-                  menuOpen 
-                    ? "bg-gradient-to-br from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] shadow-[0_4px_20px_rgba(212,175,55,0.4)] scale-105" 
-                    : "bg-transparent hover:bg-black/5"
-                )}
+                className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
               >
-                <div className="relative w-6 h-6">
-                  {/* Top line */}
-                  <span className={cn(
-                    "absolute left-0 top-1 w-6 h-0.5 bg-black rounded-full transition-all duration-500 ease-out",
-                    menuOpen 
-                      ? "top-[11px] rotate-45 shadow-sm" 
-                      : "top-1 rotate-0"
-                  )} />
-                  {/* Middle line */}
-                  <span className={cn(
-                    "absolute left-0 top-[11px] w-6 h-0.5 bg-black rounded-full transition-all duration-500 ease-out",
-                    menuOpen 
-                      ? "scale-0 opacity-0" 
-                      : "scale-100 opacity-100"
-                  )} />
-                  {/* Bottom line */}
-                  <span className={cn(
-                    "absolute left-0 bottom-1 w-6 h-0.5 bg-black rounded-full transition-all duration-500 ease-out",
-                    menuOpen 
-                      ? "bottom-[11px] -rotate-45 shadow-sm" 
-                      : "bottom-1 rotate-0"
-                  )} />
+                <div className="relative w-5 h-5">
+                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
                 </div>
               </button>
             </TriggerOrClose>
