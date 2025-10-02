@@ -408,7 +408,7 @@ export const SearchInterface = () => {
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         
-                        <div className="flex items-center justify-center gap-1 mb-3 overflow-x-auto max-w-full flex-nowrap">
+                        <div className="flex items-center justify-center gap-1 mb-2 overflow-x-auto max-w-full flex-nowrap">
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                             <Badge 
                               key={`cat-${catIndex}`}
