@@ -72,7 +72,7 @@ export const SearchInterface = () => {
       }
     }
   }, [language]);
-  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname']; // Alphabetical order
+  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname'];
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
@@ -115,7 +115,6 @@ export const SearchInterface = () => {
 
   const handleApplyFilters = () => {
     setShowFilterDropdown(false);
-    // Trigger search with current filters
     if (filters.protocol.length > 0 || filters.club.length > 0) {
       handleSearch();
     }
@@ -197,16 +196,13 @@ export const SearchInterface = () => {
     setIsLoading(true);
     setHasSearched(true);
     
-    // Simulate search delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const allResults = getAllResults();
     
-    // If no filters are applied, show all results
     if (filters.protocol.length === 0 && filters.club.length === 0) {
       setEnsResults(allResults);
     } else {
-      // Filter results based on selected filters
       const filteredResults = allResults.filter(result => {
         const categories = Array.isArray(result.category) ? result.category : [result.category];
         const clubs = Array.isArray(result.club) ? result.club : [result.club];
@@ -220,7 +216,6 @@ export const SearchInterface = () => {
       setEnsResults(filteredResults);
     }
     
-    // For demo purposes, make it available if it doesn't contain "taken"
     if (searchQuery) {
       setIsAvailable(!searchQuery.toLowerCase().includes('taken'));
     }
@@ -250,7 +245,6 @@ export const SearchInterface = () => {
 
   return (
     <>
-      {/* Blur overlay when filter dropdown is open */}
       {showFilterDropdown && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />
       )}
@@ -308,29 +302,13 @@ export const SearchInterface = () => {
                         )}
                       </div>
                       {protocol === 'ENS' && (
-                        <img 
-                          src={ensLogoBlue} 
-                          alt="ENS" 
-                          className="w-4 h-4 dark:hidden"
-                        />
+                        <>
+                          <img src={ensLogoBlue} alt="ENS" className="w-4 h-4 dark:hidden" />
+                          <img src={ensLogoWhite} alt="ENS" className="w-4 h-4 hidden dark:block" />
+                        </>
                       )}
-                      {protocol === 'ENS' && (
-                        <img 
-                          src={ensLogoWhite} 
-                          alt="ENS" 
-                          className="w-4 h-4 hidden dark:block"
-                        />
-                      )}
-                      {protocol === 'DNS' && (
-                        <Globe className="w-4 h-4 text-blue-500" />
-                      )}
-                      {protocol === 'Aptos Names' && (
-                        <img 
-                          src={aptosNamesIcon} 
-                          alt="Aptos Names" 
-                          className="w-4 h-4 rounded-sm"
-                        />
-                      )}
+                      {protocol === 'DNS' && <Globe className="w-4 h-4 text-blue-500" />}
+                      {protocol === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-4 h-4 rounded-sm" />}
                       {protocol}
                     </div>
                   </DropdownMenuItem>
@@ -403,11 +381,10 @@ export const SearchInterface = () => {
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000">
-                  <div className={`relative w-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                <div key={index} className="perspective-1000 min-h-[340px] sm:min-h-[360px]">
+                  <div className={`relative w-full h-full min-h-[340px] sm:min-h-[360px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
-                    <Card className="absolute inset-0 w-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
-                      {/* Info Button - Top Right */}
+                    <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                       <button
                         onClick={() => handleFlipCard(index)}
                         className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-gray-700/80 backdrop-blur-sm border border-gray-600 flex items-center justify-center hover:bg-gray-600/80 transition-all duration-300 hover:scale-110"
@@ -415,8 +392,7 @@ export const SearchInterface = () => {
                         <Info size={18} className="text-white" />
                       </button>
                       
-                      <CardContent className="relative p-6 flex flex-col items-center text-center min-h-[320px] sm:min-h-[340px]">
-                        {/* Avatar with Glow */}
+                      <div className="relative p-6 flex flex-col items-center text-center min-h-[340px] sm:min-h-[360px]">
                         <div className="relative mb-4 sm:mb-6">
                           <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
                           <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
@@ -428,14 +404,11 @@ export const SearchInterface = () => {
                           </div>
                         </div>
                         
-                        {/* Domain Name */}
                         <h3 className="font-mono text-xl sm:text-2xl font-bold text-white mb-4 break-words leading-tight">
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         
-                        {/* Badges Row */}
                         <div className="flex items-center justify-center gap-2 flex-wrap mb-6">
-                          {/* Protocol Badges */}
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                             <Badge 
                               key={`cat-${catIndex}`}
@@ -446,16 +419,13 @@ export const SearchInterface = () => {
                                 cat === 'Aptos Names' && "bg-transparent text-white border-purple-500"
                               )}
                             >
-                              {cat === 'ENS' && (
-                                <img src={ensLogoWhite} alt="ENS" className="w-3.5 h-3.5" />
-                              )}
+                              {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3.5 h-3.5" />}
                               {cat === 'DNS' && <Globe className="w-3.5 h-3.5" />}
                               {cat === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-3.5 h-3.5 rounded-sm" />}
                               {cat}
                             </Badge>
                           ))}
                           
-                          {/* Club Badges */}
                           {(Array.isArray(result.club) ? result.club : [result.club]).map((clubName, clubIndex) => (
                             <Badge 
                               key={`club-${clubIndex}`}
@@ -474,20 +444,18 @@ export const SearchInterface = () => {
                           ))}
                         </div>
                         
-                        {/* Mint Button */}
                         <Button 
                           className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105"
                           onClick={() => setShowMintModal(true)}
                         >
                           {t('mint_now')}
                         </Button>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
 
                     {/* Back of Card */}
-                    <Card className="absolute inset-0 w-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
-                      <CardContent className="relative p-6 h-full flex flex-col min-h-[320px] sm:min-h-[340px]">
-                        {/* Close Button */}
+                    <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                      <div className="relative p-6 h-full flex flex-col min-h-[340px] sm:min-h-[360px]">
                         <div className="flex justify-end mb-4 flex-shrink-0">
                           <button
                             onClick={() => handleFlipCard(index)}
@@ -497,7 +465,6 @@ export const SearchInterface = () => {
                           </button>
                         </div>
 
-                        {/* Avatar and Name */}
                         <div className="flex flex-col items-center text-center mb-4 flex-shrink-0">
                           <div className="relative mb-3">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-lg opacity-40"></div>
@@ -515,15 +482,14 @@ export const SearchInterface = () => {
                           </h4>
                         </div>
                         
-                        {/* Description */}
                         <div className="flex-1 overflow-y-auto px-2">
                           <p 
                             className="text-sm sm:text-base text-gray-300 leading-relaxed text-center break-words" 
                             dangerouslySetInnerHTML={{ __html: result.description }}
                           />
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
