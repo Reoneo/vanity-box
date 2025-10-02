@@ -388,15 +388,15 @@ export const SearchInterface = () => {
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000 h-[300px]">
+                <div key={index} className="perspective-1000 h-[340px]">
                   <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white/95 via-white to-amber-50/30 dark:from-gray-900/95 dark:via-gray-900 dark:to-amber-900/10 border-2 border-[#D4AF37]/30 shadow-[0_8px_32px_rgba(212,175,55,0.12)] hover:shadow-[0_16px_48px_rgba(212,175,55,0.25)] transition-all duration-500 hover:scale-[1.01] hover:border-[#D4AF37]/50 backdrop-blur-sm`}>
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5"></div>
-                      <CardContent className="relative p-6 h-full">
-                        <div className="flex flex-col items-center text-center space-y-4 h-full">
+                      <CardContent className="relative p-6 h-full flex flex-col">
+                        <div className="flex flex-col items-center text-center h-full">
                           {/* Centered Avatar */}
-                          <div className="relative">
+                          <div className="relative flex-shrink-0 mb-3">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
                             <img 
                               src={result.imageUrl} 
@@ -406,12 +406,12 @@ export const SearchInterface = () => {
                           </div>
                           
                           {/* Centered Subdomain */}
-                          <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                          <h3 className="font-mono text-xl md:text-2xl font-bold text-gray-900 dark:text-white break-words leading-tight flex-shrink-0 mb-3" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h3>
                           
                           {/* Centered Protocol and Category Badges */}
-                          <div className="flex items-center justify-center gap-2 flex-wrap">
+                          <div className="flex items-center justify-center gap-2 flex-wrap min-h-[60px] flex-shrink-0 mb-3">
                             {/* Protocol Badges */}
                             {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                               <Badge 
@@ -473,14 +473,14 @@ export const SearchInterface = () => {
                             {/* Info Bubble */}
                             <button
                               onClick={() => handleFlipCard(index)}
-                              className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                              className="w-8 h-8 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-all duration-300 hover:scale-110 hover:shadow-lg flex-shrink-0"
                             >
                               <Info size={14} className="text-black" />
                             </button>
                           </div>
                           
                           {/* Mint Button Section */}
-                          <div className="flex-1 flex items-end justify-center pt-4 w-full">
+                          <div className="flex-1 flex items-end justify-center w-full mt-auto">
                             <Button 
                               size="lg" 
                               className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-10 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
