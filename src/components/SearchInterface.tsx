@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Zap, X, Filter, ChevronDown, Info, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,7 @@ interface ENSResult {
 }
 
 export const SearchInterface = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +50,28 @@ export const SearchInterface = () => {
   const [hasSearched, setHasSearched] = useState(false);
 
   const protocols = ['ENS', 'DNS', 'Aptos Names', 'Avax Name Service'];
+
+  // Re-fetch results when language changes
+  useEffect(() => {
+    if (hasSearched && ensResults.length > 0) {
+      const allResults = getAllResults();
+      if (filters.protocol.length === 0 && filters.club.length === 0) {
+        setEnsResults(allResults);
+      } else {
+        const filteredResults = allResults.filter(result => {
+          const categories = Array.isArray(result.category) ? result.category : [result.category];
+          const clubs = Array.isArray(result.club) ? result.club : [result.club];
+          
+          const protocolMatch = filters.protocol.length === 0 || 
+            filters.protocol.some(p => categories.includes(p));
+          const clubMatch = filters.club.length === 0 || 
+            filters.club.some(c => clubs.includes(c));
+          return protocolMatch && clubMatch;
+        });
+        setEnsResults(filteredResults);
+      }
+    }
+  }, [language]);
   const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname']; // Alphabetical order
 
   const getSubdomainPrice = (subdomain: string) => {
