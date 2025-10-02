@@ -19,6 +19,7 @@ import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoWhite from '@/assets/ens-logo-white.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import aptosLogo from '@/assets/aptos-logo.png';
+import aptosNamesIcon from '@/assets/aptos-names-icon.jpeg';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 
@@ -319,7 +320,7 @@ export const SearchInterface = () => {
                       )}
                       {protocol === 'Aptos Names' && (
                         <img 
-                          src={aptosLogo} 
+                          src={aptosNamesIcon} 
                           alt="Aptos Names" 
                           className="w-4 h-4 rounded-sm"
                         />
@@ -428,7 +429,7 @@ export const SearchInterface = () => {
                                 variant="secondary" 
                                 className={cn(
                                   "text-xs px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-sm font-semibold shadow-sm",
-                                  cat === 'ENS' && "bg-transparent text-black dark:text-black border-2 border-[#D4AF37] animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(212,175,55,0.5)]",
+                                  cat === 'ENS' && "bg-transparent text-black dark:text-white border-2 border-[#D4AF37] animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(212,175,55,0.5)]",
                                   cat === 'DNS' && "bg-transparent text-black dark:text-black border-2 border-blue-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(59,130,246,0.5)]",
                                   cat === 'Aptos Names' && "bg-transparent text-purple-600 dark:text-purple-400 border-2 border-purple-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(168,85,247,0.5)]"
                                 )}
@@ -452,7 +453,7 @@ export const SearchInterface = () => {
                                 )}
                                 {cat === 'Aptos Names' && (
                                   <img 
-                                    src={aptosLogo} 
+                                    src={aptosNamesIcon} 
                                     alt="Aptos Names" 
                                     className="w-3 h-3 rounded-sm"
                                   />
