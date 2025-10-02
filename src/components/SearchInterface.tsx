@@ -404,7 +404,7 @@ export const SearchInterface = () => {
                           </div>
                         </div>
                         
-                        <h3 className="font-mono text-xl sm:text-2xl font-bold text-white mb-4 break-words leading-tight px-2 w-full">
+                        <h3 className="font-mono text-xl sm:text-2xl font-bold text-white mb-4 break-words leading-tight">
                           {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                         </h3>
                         
