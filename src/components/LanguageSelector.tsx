@@ -26,20 +26,20 @@ export const LanguageSelector: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-playfair font-semibold text-gray-900 dark:text-white">
+    <div className="space-y-3">
+      <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">
         {t('language')}
       </h3>
-      <div className="grid grid-cols-1 gap-1.5 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+      <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
         {languages.map((lang) => (
           <button
             key={lang.code}
             onClick={() => setLanguage(lang.code)}
             className={cn(
-              "w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group hover:scale-[1.02]",
+              "w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center justify-between",
               language === lang.code
-                ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black font-medium shadow-md border-2 border-[#D4AF37]"
-                : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 hover:border-[#D4AF37] hover:shadow-sm"
+                ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-md"
+                : "bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             )}
           >
             <div className="flex flex-col min-w-0 flex-1">
@@ -48,14 +48,13 @@ export const LanguageSelector: React.FC = () => {
                 language === lang.code ? "text-black" : "text-gray-900 dark:text-gray-100"
               )}>{lang.nativeName}</span>
               {language !== lang.code && (
-                <span className={cn(
-                  "text-xs opacity-70 truncate",
-                  "text-gray-600 dark:text-gray-400"
-                )}>{lang.name}</span>
+                <span className="text-xs opacity-60 truncate text-gray-600 dark:text-gray-400">
+                  {lang.name}
+                </span>
               )}
             </div>
             {language === lang.code && (
-              <Check className="w-5 h-5 text-black flex-shrink-0 ml-2" />
+              <Check className="w-4 h-4 text-black flex-shrink-0 ml-2" />
             )}
           </button>
         ))}
