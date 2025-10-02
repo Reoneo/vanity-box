@@ -399,137 +399,126 @@ export const SearchInterface = () => {
         </div>
         
         {hasSearched && ensResults.length > 0 && (
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 animate-in slide-in-from-bottom duration-500">
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
-                <div key={index} className="perspective-1000 h-[240px]">
-                  <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                <div key={index} className="perspective-1000">
+                  <div className={`relative w-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
-                    <Card className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-white via-amber-50/20 to-white dark:from-gray-900 dark:via-amber-900/20 dark:to-gray-900 border-2 border-[#D4AF37]/40 shadow-[0_4px_24px_rgba(212,175,55,0.15),0_0_40px_rgba(212,175,55,0.05)] hover:shadow-[0_8px_40px_rgba(212,175,55,0.25),0_0_60px_rgba(212,175,55,0.1)] transition-all duration-500 hover:scale-[1.02] hover:border-[#D4AF37]/60 backdrop-blur-sm`}>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/8 via-transparent to-[#D4AF37]/8"></div>
-                      
+                    <Card className="absolute inset-0 w-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                       {/* Info Button - Top Right */}
                       <button
                         onClick={() => handleFlipCard(index)}
-                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                        className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-gray-700/80 backdrop-blur-sm border border-gray-600 flex items-center justify-center hover:bg-gray-600/80 transition-all duration-300 hover:scale-110"
                       >
-                        <Info size={14} className="text-black dark:text-white" />
+                        <Info size={18} className="text-white" />
                       </button>
                       
-                      <CardContent className="relative p-4 h-full flex flex-col">
-                        <div className="flex flex-col items-center text-center h-full">
-                          {/* Centered Avatar */}
-                          <div className="relative flex-shrink-0 mb-2">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-md opacity-40 animate-pulse"></div>
+                      <CardContent className="relative p-6 flex flex-col items-center text-center min-h-[320px] sm:min-h-[340px]">
+                        {/* Avatar with Glow */}
+                        <div className="relative mb-4 sm:mb-6">
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
+                          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
                             <img 
                               src={result.imageUrl} 
                               alt={result.name}
-                              className="relative w-16 h-16 rounded-full object-cover border-[3px] border-[#D4AF37] shadow-[0_4px_20px_rgba(212,175,55,0.4)] ring-4 ring-[#D4AF37]/10"
+                              className="w-full h-full object-cover"
                             />
                           </div>
-                          
-                          {/* Centered Subdomain */}
-                          <h3 className="font-mono text-lg md:text-xl font-bold text-gray-900 dark:text-white break-words leading-tight flex-shrink-0 mb-2" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
-                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                          </h3>
-                          
-                          {/* First Row: Centered Protocol and Category Badges */}
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap min-h-[32px] flex-shrink-0">
-                            {/* Protocol Badges */}
-                            {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
-                              <Badge 
-                                key={`cat-${catIndex}`}
-                                variant="secondary" 
-                                className={cn(
-                                  "text-xs px-2 py-1 flex items-center gap-1 backdrop-blur-sm font-semibold shadow-sm",
-                                  cat === 'ENS' && "bg-transparent text-black dark:text-white border-2 border-[#D4AF37] animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(212,175,55,0.5)]",
-                                  cat === 'DNS' && "bg-transparent text-black dark:text-white border-2 border-blue-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(59,130,246,0.5)]",
-                                  cat === 'Aptos Names' && "bg-transparent text-purple-600 dark:text-white border-2 border-purple-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-                                )}
-                              >
-                                {cat === 'ENS' && (
-                                  <>
-                                    <img src={ensLogoBlue} alt="ENS" className="w-3 h-3 dark:hidden" />
-                                    <img src={ensLogoWhite} alt="ENS" className="w-3 h-3 hidden dark:block" />
-                                  </>
-                                )}
-                                {cat === 'DNS' && <Globe className="w-3 h-3 text-blue-500" />}
-                                {cat === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-3 h-3 rounded-sm" />}
-                                {cat}
-                              </Badge>
-                            ))}
-                            
-                            {/* Club Badges */}
-                            {(Array.isArray(result.club) ? result.club : [result.club]).map((clubName, clubIndex) => (
-                              <Badge 
-                                key={`club-${clubIndex}`}
-                                variant="outline" 
-                                className={cn(
-                                  "text-xs px-2 py-1 font-medium shadow-sm",
-                                  clubName === 'Surname' && "bg-purple-600 text-white border-purple-600",
-                                  clubName === 'DeFi' && "bg-green-600 text-white border-green-600",
-                                  clubName === 'Influencers' && "bg-blue-600 text-white border-blue-600",
-                                  clubName === 'Digits' && "bg-purple-600 text-white border-purple-600",
-                                  clubName === 'Dev' && "bg-blue-600 text-white border-blue-600",
-                                  clubName === 'Crypto' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm",
-                                  clubName === 'Letters' && "text-gray-600 dark:text-gray-400 border-gray-300/60 dark:border-gray-600/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
-                                )}
-                              >
-                                {clubName}
-                              </Badge>
-                            ))}
-                          </div>
-                          
-                          
-                          {/* Mint Button Section */}
-                          <div className="flex items-end justify-center w-full pt-3">
-                            <Button 
-                              size="default" 
-                              className="bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold px-8 py-2 text-sm shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 border-2 border-[#D4AF37]/50 hover:border-[#D4AF37]"
-                              onClick={() => setShowMintModal(true)}
-                            >
-                              {t('mint_now')}
-                            </Button>
-                          </div>
                         </div>
+                        
+                        {/* Domain Name */}
+                        <h3 className="font-mono text-xl sm:text-2xl font-bold text-white mb-4 break-words leading-tight">
+                          {searchQuery ? `${searchQuery}.${result.name}` : result.name}
+                        </h3>
+                        
+                        {/* Badges Row */}
+                        <div className="flex items-center justify-center gap-2 flex-wrap mb-6">
+                          {/* Protocol Badges */}
+                          {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
+                            <Badge 
+                              key={`cat-${catIndex}`}
+                              className={cn(
+                                "text-sm px-3 py-1.5 flex items-center gap-1.5 font-semibold rounded-full border-2",
+                                cat === 'ENS' && "bg-transparent text-white border-[#D4AF37]",
+                                cat === 'DNS' && "bg-transparent text-white border-blue-500",
+                                cat === 'Aptos Names' && "bg-transparent text-white border-purple-500"
+                              )}
+                            >
+                              {cat === 'ENS' && (
+                                <img src={ensLogoWhite} alt="ENS" className="w-3.5 h-3.5" />
+                              )}
+                              {cat === 'DNS' && <Globe className="w-3.5 h-3.5" />}
+                              {cat === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-3.5 h-3.5 rounded-sm" />}
+                              {cat}
+                            </Badge>
+                          ))}
+                          
+                          {/* Club Badges */}
+                          {(Array.isArray(result.club) ? result.club : [result.club]).map((clubName, clubIndex) => (
+                            <Badge 
+                              key={`club-${clubIndex}`}
+                              className={cn(
+                                "text-sm px-3 py-1.5 font-semibold rounded-full",
+                                clubName === 'Surname' && "bg-purple-600 text-white border-0",
+                                clubName === 'DeFi' && "bg-green-600 text-white border-0",
+                                clubName === 'Digits' && "bg-purple-600 text-white border-0",
+                                clubName === 'Dev' && "bg-blue-600 text-white border-0",
+                                clubName === 'Crypto' && "bg-gray-600 text-white border-0",
+                                clubName === 'Letters' && "bg-gray-600 text-white border-0"
+                              )}
+                            >
+                              {clubName}
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        {/* Mint Button */}
+                        <Button 
+                          className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105"
+                          onClick={() => setShowMintModal(true)}
+                        >
+                          {t('mint_now')}
+                        </Button>
                       </CardContent>
                     </Card>
 
                     {/* Back of Card */}
-                    <Card className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-amber-50/95 via-amber-50 to-white/95 dark:from-amber-900/95 dark:via-amber-900 dark:to-gray-900/95 border-2 border-[#D4AF37]/50 shadow-[0_8px_32px_rgba(212,175,55,0.2)] backdrop-blur-sm`}>
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 via-transparent to-[#D4AF37]/10"></div>
-                      <CardContent className="relative p-4 h-full flex flex-col">
+                    <Card className="absolute inset-0 w-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                      <CardContent className="relative p-6 h-full flex flex-col min-h-[320px] sm:min-h-[340px]">
                         {/* Close Button */}
-                        <div className="flex justify-end mb-2 flex-shrink-0">
+                        <div className="flex justify-end mb-4 flex-shrink-0">
                           <button
                             onClick={() => handleFlipCard(index)}
-                            className="w-8 h-8 rounded-full bg-gradient-to-r from-[#D4AF37]/20 to-[#F7E06C]/20 border border-[#D4AF37]/40 flex items-center justify-center hover:from-[#D4AF37]/30 hover:to-[#F7E06C]/30 transition-all duration-300 hover:scale-110 hover:shadow-lg backdrop-blur-sm"
+                            className="w-10 h-10 rounded-full bg-gray-700/80 backdrop-blur-sm border border-gray-600 flex items-center justify-center hover:bg-gray-600/80 transition-all duration-300 hover:scale-110"
                           >
-                            <X size={14} className="text-[#D4AF37]" />
+                            <X size={18} className="text-white" />
                           </button>
                         </div>
 
                         {/* Avatar and Name */}
-                        <div className="flex flex-col items-center text-center mb-2 flex-shrink-0">
-                          <div className="relative mb-2">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-sm opacity-30"></div>
-                            <img 
-                              src={result.imageUrl} 
-                              alt={result.name}
-                              className="relative w-16 h-16 rounded-full object-cover border-3 border-[#D4AF37] shadow-lg ring-2 ring-[#D4AF37]/20"
-                            />
+                        <div className="flex flex-col items-center text-center mb-4 flex-shrink-0">
+                          <div className="relative mb-3">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-lg opacity-40"></div>
+                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-3 border-[#D4AF37] overflow-hidden shadow-lg">
+                              <img 
+                                src={result.imageUrl} 
+                                alt={result.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
                           </div>
                           
-                          <h4 className="font-mono text-lg md:text-xl font-bold text-gray-900 dark:text-white break-words leading-tight w-full" style={{ textShadow: '0 0 8px rgba(212,175,55,0.4)' }}>
+                          <h4 className="font-mono text-xl sm:text-2xl font-bold text-white break-words leading-tight">
                             {searchQuery ? `${searchQuery}.${result.name}` : result.name}
                           </h4>
                         </div>
                         
-                        {/* Description - Fills remaining space */}
-                        <div className="flex-1 overflow-y-auto px-2 min-h-0">
+                        {/* Description */}
+                        <div className="flex-1 overflow-y-auto px-2">
                           <p 
-                            className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed font-medium text-center break-words whitespace-normal" 
+                            className="text-sm sm:text-base text-gray-300 leading-relaxed text-center break-words" 
                             dangerouslySetInnerHTML={{ __html: result.description }}
                           />
                         </div>
