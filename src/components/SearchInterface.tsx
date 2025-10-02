@@ -163,7 +163,7 @@ export const SearchInterface = () => {
         club: 'Surname'
       },
       {
-        name: 'smith.cash',
+        name: 'Smith.cash',
         description: t('desc_smith_cash'),
         imageUrl: smithCashAvatar,
         price: 5,
