@@ -39,13 +39,16 @@ export const LanguageSelector: React.FC = () => {
           
           <button
             onClick={() => setShowLanguagePanel(true)}
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 flex items-center justify-between group"
+            className={cn(
+              "w-full px-4 py-3 rounded-xl transition-all duration-200 flex items-center justify-between group",
+              "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg"
+            )}
           >
             <div className="flex flex-col items-start">
               <span className="text-sm font-medium">{currentLanguage?.nativeName}</span>
-              <span className="text-xs opacity-60">{currentLanguage?.name}</span>
+              <span className="text-xs opacity-70">{currentLanguage?.name}</span>
             </div>
-            <ChevronRight className="w-5 h-5 opacity-60 group-hover:opacity-100 transition-opacity" />
+            <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
           </button>
         </div>
       )}
@@ -68,7 +71,16 @@ export const LanguageSelector: React.FC = () => {
 
           {/* Language List */}
           <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-2">
+            <div className="p-4 space-y-1">
+              {/* Back button as first item */}
+              <button
+                onClick={() => setShowLanguagePanel(false)}
+                className="w-full text-left px-4 py-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 mb-3"
+              >
+                <ArrowLeft className="w-5 h-5 flex-shrink-0" />
+                <span className="text-base font-medium">Back</span>
+              </button>
+              
               {languages.map((lang) => (
                 <button
                   key={lang.code}
