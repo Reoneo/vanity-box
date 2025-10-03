@@ -16,21 +16,25 @@ import usdcLogo from '@/assets/usdc-logo.png';
 import ethLogoLight from '@/assets/eth-logo-light.png';
 import ethLogoDark from '@/assets/eth-logo-dark.svg';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
+import wldLogoDark from '@/assets/wld-logo-dark.svg';
+import wldLogoLight from '@/assets/wld-logo-light.png';
 
 interface SubdomainMintModalProps {
   isOpen: boolean;
   onClose: () => void;
   subdomain: string;
   price: number;
+  resultAvatar?: string;
 }
 
-type PaymentMethod = 'USDC' | 'ETH';
+type PaymentMethod = 'USDC' | 'ETH' | 'WLD';
 
 export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   isOpen,
   onClose,
   subdomain,
-  price
+  price,
+  resultAvatar
 }) => {
   const { t } = useLanguage();
   const { theme } = useTheme();
@@ -49,6 +53,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       name: 'ETH', 
       icon: theme === 'dark' ? ethLogoDark : ethLogoLight,
       rate: 0.0004 
+    },
+    { 
+      id: 'WLD' as PaymentMethod, 
+      name: 'WLD', 
+      icon: theme === 'dark' ? wldLogoDark : wldLogoLight,
+      rate: 0.5 
     }
   ];
 
@@ -94,9 +104,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 p-6 flex flex-col items-center space-y-6">
-          {/* ENS Logo */}
-          <div className="w-32 h-32 flex items-center justify-center">
-            <img src={ensLogoBlue} alt="ENS" className="w-full h-full object-contain" />
+          {/* Result Avatar */}
+          <div className="w-32 h-32 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
+            <img src={resultAvatar || ensLogoBlue} alt="Name" className="w-full h-full object-cover" />
           </div>
 
           {/* Subdomain Name */}
@@ -116,7 +126,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               </button>
               
               <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-4xl font-bold text-[#D4AF37]">
                   {registrationYears} year{registrationYears > 1 ? 's' : ''}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -143,7 +153,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 className={cn(
                   "px-6 py-2 rounded-full font-medium transition-all duration-200",
                   paymentMethod === method.id
-                    ? "bg-blue-600 text-white shadow-md"
+                    ? "bg-[#D4AF37] text-black shadow-md"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 )}
               >
@@ -153,7 +163,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
 
           {/* Price Display */}
-          <div className="text-5xl font-bold text-blue-600 dark:text-blue-400">
+          <div className="text-5xl font-bold text-[#D4AF37]">
             ${grandTotal.toFixed(2)}
           </div>
 
@@ -190,13 +200,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 <span className="font-bold text-gray-900 dark:text-white">${grandTotal.toFixed(2)}</span>
               </div>
             </div>
-          </div>
-
-          {/* Minting Chain */}
-          <div className="text-center">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Minting on: <span className="font-medium text-gray-900 dark:text-white">Ethereum</span>
-            </span>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SubdomainMintModal } from '@/components/SubdomainMintModal';
+import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -266,9 +267,13 @@ export const SearchInterface = () => {
             onClose={handleBackToResults}
             subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
             price={price}
+            resultAvatar={selectedResult.imageUrl}
           />
         ) : (
           <>
+            {/* Main Heading - hidden when mint is open */}
+            {!showMintInterface && <PersonalizedHeader user={null} />}
+            
             {/* Search bar container - constrained width on all devices */}
             <div className="w-full max-w-md mx-auto">
               <div className="relative">
