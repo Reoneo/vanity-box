@@ -82,7 +82,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find(m => m.id === paymentMethod)!;
   const totalPrice = price * registrationYears;
-  const networkFee = 1.26;
+  const networkFee = 0.03; // World Chain L2 network fee (much lower than ETH L1)
   const grandTotal = totalPrice + networkFee;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
