@@ -21,7 +21,7 @@ import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import aptosLogo from '@/assets/aptos-logo.png';
 import aptosNamesIcon from '@/assets/aptos-names-icon.jpeg';
 import aptosNamesLight from '@/assets/aptos-names-light.png';
-import avalancheLogo from '@/assets/avalanche-logo.png';
+import avvyLogo from '@/assets/avvy-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 
@@ -318,7 +318,7 @@ export const SearchInterface = () => {
                           <img src={aptosNamesIcon} alt="Aptos Names" className="w-4 h-4 rounded-sm hidden dark:block" />
                         </>
                       )}
-                      {protocol === 'Avvy Domains' && <img src={avalancheLogo} alt="Avvy Domains" className="w-4 h-4" />}
+                      {protocol === 'Avvy Domains' && <img src={avvyLogo} alt="Avvy Domains" className="w-4 h-4" />}
                       {protocol}
                     </div>
                   </DropdownMenuItem>
