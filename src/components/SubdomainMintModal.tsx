@@ -18,8 +18,8 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
 import usdcLogo from '@/assets/usdc-logo.png';
-import wldLogo from '@/assets/wld-logo.png';
 import wldLogoLight from '@/assets/wld-logo-light.png';
+import wldLogoDark from '@/assets/wld-logo-dark.svg';
 import ethLogo from '@/assets/eth-logo.png';
 
 interface SubdomainMintModalProps {
@@ -47,7 +47,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     { 
       id: 'WLD' as PaymentMethod, 
       name: t('worldcoin'), 
-      icon: <img src={theme === 'dark' ? wldLogo : wldLogoLight} alt="Worldcoin" className="w-6 h-6" />, 
+      icon: <img src={theme === 'dark' ? wldLogoDark : wldLogoLight} alt="Worldcoin" className="w-6 h-6" />, 
       rate: 0.5 
     },
     { 
