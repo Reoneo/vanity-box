@@ -47,19 +47,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     { 
       id: 'WLD' as PaymentMethod, 
       name: t('worldcoin'), 
-      icon: <img src={theme === 'dark' ? wldLogoDark : wldLogoLight} alt="Worldcoin" className={theme === 'dark' ? 'w-12 h-12' : 'w-6 h-6'} />, 
+      icon: <div className="w-12 h-12 flex items-center justify-center"><img src={theme === 'dark' ? wldLogoDark : wldLogoLight} alt="Worldcoin" className={theme === 'dark' ? 'w-12 h-12' : 'w-6 h-6'} /></div>, 
       rate: 0.5 
     },
     { 
       id: 'USDC' as PaymentMethod, 
       name: 'USDC', 
-      icon: <img src={usdcLogo} alt="USDC" className="w-6 h-6 rounded-full" />, 
+      icon: <div className="w-12 h-12 flex items-center justify-center"><img src={usdcLogo} alt="USDC" className="w-6 h-6 rounded-full" /></div>, 
       rate: 1.0 
     },
     { 
       id: 'ETH' as PaymentMethod, 
       name: 'Ethereum', 
-      icon: <img src={ethLogo} alt="Ethereum" className="w-6 h-6" />, 
+      icon: <div className="w-12 h-12 flex items-center justify-center"><img src={ethLogo} alt="Ethereum" className="w-6 h-6" /></div>, 
       rate: 0.0004 
     }
   ];
