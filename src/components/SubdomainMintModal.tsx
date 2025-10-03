@@ -106,15 +106,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     <div className="w-full max-w-md mx-auto mt-4 animate-in slide-in-from-right duration-500 fade-in">
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden min-h-[600px] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-[#D4AF37] bg-[#D4AF37]">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors"
+            className="flex items-center gap-2 text-black hover:text-black/80 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
           </button>
-          <button className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition-colors">
+          <button className="flex items-center gap-2 text-black hover:text-black/80 transition-colors">
             <Share2 className="w-5 h-5" />
             <span className="font-medium">Share</span>
           </button>
