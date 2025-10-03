@@ -16,8 +16,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from 'next-themes';
 import usdcLogo from '@/assets/usdc-logo.png';
 import wldLogo from '@/assets/wld-logo.png';
+import wldLogoLight from '@/assets/wld-logo-light.png';
 import ethLogo from '@/assets/eth-logo.png';
 
 interface SubdomainMintModalProps {
@@ -37,6 +39,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   price
 }) => {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [currentStep, setCurrentStep] = useState<MintStep>('details');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('WLD');
 
@@ -44,7 +47,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     { 
       id: 'WLD' as PaymentMethod, 
       name: t('worldcoin'), 
-      icon: <img src={wldLogo} alt="Worldcoin" className="w-6 h-6" />, 
+      icon: <img src={theme === 'dark' ? wldLogo : wldLogoLight} alt="Worldcoin" className="w-6 h-6" />, 
       rate: 0.5 
     },
     { 
