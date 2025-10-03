@@ -492,7 +492,8 @@ export const SearchInterface = () => {
             })}
           </div>
         )}
-        </div>
+            </div>
+          </>
         )}
       </div>
     </>
