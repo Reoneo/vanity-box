@@ -50,7 +50,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     { 
       id: 'USDC' as PaymentMethod, 
       name: 'USDC', 
-      icon: <img src={usdcLogo} alt="USDC" className="w-6 h-6" />, 
+      icon: <img src={usdcLogo} alt="USDC" className="w-6 h-6 rounded-full" />, 
       rate: 1.0 
     },
     { 
