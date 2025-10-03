@@ -223,9 +223,11 @@ export const SearchInterface = () => {
   };
 
   const handleMint = () => {
+    console.log('handleMint called with:', { searchQuery, price });
     const event = new CustomEvent('open-mint-modal', {
       detail: { subdomain: searchQuery, price }
     });
+    console.log('Dispatching open-mint-modal event:', event.detail);
     window.dispatchEvent(event);
   };
 

@@ -32,12 +32,15 @@ const Index = () => {
   // Listen for mint modal events from SearchInterface
   useEffect(() => {
     const handleMintRequest = (event: CustomEvent) => {
+      console.log('open-mint-modal event received:', event.detail);
       setSelectedSubdomain(event.detail.subdomain);
       setSubdomainPrice(event.detail.price);
       setShowMintModal(true);
+      console.log('Modal state set to true');
     };
 
     window.addEventListener('open-mint-modal', handleMintRequest as EventListener);
+    console.log('Mint modal listener registered');
 
     return () => {
       window.removeEventListener('open-mint-modal', handleMintRequest as EventListener);
