@@ -58,7 +58,12 @@ serve(async (req) => {
     console.log('Minting subdomain via Namestone API');
     console.log('API Key configured:', !!NAMESTONE_API_KEY);
     
-    const subdomainLabel = subdomain.replace('.smith.cash', '');
+    // Extract the subdomain label (everything before the first dot)
+    // e.g., "g.smith.cash" -> "g"
+    const subdomainLabel = subdomain.split('.')[0];
+    
+    console.log('Full subdomain:', subdomain);
+    console.log('Subdomain label:', subdomainLabel);
     
     const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/set-name', {
       method: 'POST',
