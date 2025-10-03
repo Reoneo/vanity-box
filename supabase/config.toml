@@ -1,1 +1,7 @@
 project_id = "gdjjboorqviobvvygpca"
+
+[functions.mint-subdomain]
+verify_jwt = false
+
+[functions.get-user-domains]
+verify_jwt = false

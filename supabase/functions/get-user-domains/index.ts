@@ -6,7 +6,6 @@ const corsHeaders = {
 };
 
 const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
-const PAYMENT_ADDRESS = '0x71ab0b01e3ff45551e25b208e2a90298f73f7040';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,37 +14,27 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain, walletAddress, txHash } = await req.json();
+    const { walletAddress } = await req.json();
 
-    console.log('Minting subdomain:', { subdomain, walletAddress, txHash });
+    console.log('Fetching domains for wallet:', walletAddress);
 
     if (!NAMESTONE_API_KEY) {
       throw new Error('NAMESTONE_API_KEY is not configured');
     }
 
-    if (!subdomain || !walletAddress) {
-      throw new Error('Missing required parameters');
+    if (!walletAddress) {
+      throw new Error('Missing wallet address');
     }
 
-    // Step 1: Verify the transaction on World Chain (skip for free mints)
-    if (txHash) {
-      console.log('Verifying transaction:', txHash);
-      // Note: In production, you'd verify the transaction amount, recipient, etc.
-    } else {
-      console.log('Free mint - no transaction to verify');
-    }
-
-    // Step 2: Mint subdomain using Namestone API
-    console.log('Minting subdomain via Namestone API');
-    const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/set-name', {
+    // Fetch domains from Namestone API
+    console.log('Calling Namestone get-names API');
+    const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/get-names', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${NAMESTONE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        domain: 'smith.cash',
-        name: subdomain.replace('.smith.cash', ''),
         address: walletAddress,
         chain_id: 480, // World Chain network ID
       }),
@@ -60,19 +49,18 @@ serve(async (req) => {
     const namestoneData = await namestoneResponse.json();
     console.log('Namestone response:', namestoneData);
 
-    // Step 3: Wrap the subdomain using Durin on World Chain
-    console.log('Wrapping subdomain using Durin');
-    // Note: The actual Durin wrapping implementation would go here
-    // This is a placeholder for the wrapping logic
-    
+    // Filter for smith.cash domains
+    const smithDomains = namestoneData.names?.filter((name: any) => 
+      name.domain === 'smith.cash'
+    ) || [];
+
+    console.log('Found smith.cash domains:', smithDomains.length);
+
     return new Response(
       JSON.stringify({
         success: true,
-        subdomain,
-        address: walletAddress,
-        txHash,
-        namestoneData,
-        message: 'Subdomain minted and wrapped successfully'
+        domains: smithDomains,
+        totalCount: smithDomains.length
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -80,7 +68,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in mint-subdomain function:', error);
+    console.error('Error in get-user-domains function:', error);
     return new Response(
       JSON.stringify({
         success: false,

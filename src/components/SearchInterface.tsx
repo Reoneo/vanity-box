@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
+import { UserDomainsDisplay } from '@/components/UserDomainsDisplay';
+import { MiniKit } from '@worldcoin/minikit-js';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +55,30 @@ export const SearchInterface = () => {
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
+
+  // Get wallet address from MiniKit
+  useEffect(() => {
+    const checkWallet = () => {
+      const address = MiniKit.user?.walletAddress;
+      setWalletAddress(address);
+    };
+    
+    checkWallet();
+    
+    // Listen for wallet connection events
+    const handleWalletChange = (event: CustomEvent) => {
+      setWalletAddress(event.detail?.walletAddress);
+    };
+    
+    window.addEventListener('wallet-connected', handleWalletChange as EventListener);
+    window.addEventListener('wallet-disconnected', () => setWalletAddress(undefined));
+    
+    return () => {
+      window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
+      window.removeEventListener('wallet-disconnected', () => setWalletAddress(undefined));
+    };
+  }, []);
 
   const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
   const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname'];
@@ -371,6 +397,13 @@ export const SearchInterface = () => {
               </div>
             </div>
             
+            {/* My Domains Section */}
+            {walletAddress && !hasSearched && (
+              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
+                <UserDomainsDisplay walletAddress={walletAddress} />
+              </div>
+            )}
+
             {/* Results container - same width as search bar */}
             <div className="w-full sm:max-w-3xl sm:mx-auto">
               {hasSearched && ensResults.length > 0 && (

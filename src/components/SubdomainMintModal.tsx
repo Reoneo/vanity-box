@@ -109,58 +109,36 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     try {
       setIsMinting(true);
 
-      // Get token address based on payment method
-      const tokenAddresses = {
-        'USDC': '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1', // USDC on World Chain
-        'ETH': '0x0000000000000000000000000000000000000000', // Native ETH
-        'WLD': '0x2cFc85d8E48F8EAB294be644d9E25C3030863003', // WLD on World Chain
-      };
+      // Get wallet address from MiniKit
+      const walletAddress = MiniKit.user?.walletAddress;
+      
+      if (!walletAddress) {
+        throw new Error('Please connect your wallet first');
+      }
 
-      const tokenAddress = tokenAddresses[paymentMethod];
-      const paymentAddress = '0x71ab0b01e3ff45551e25b208e2a90298f73f7040';
+      // Since minting is completely free, skip payment and go directly to minting
+      toast.success('Minting your subdomain...');
 
-      // Send transaction using MiniKit
-      const result = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [{
-          address: paymentAddress,
-          abi: [],
-          functionName: 'transfer',
-          args: [
-            paymentAddress,
-            Math.floor(convertedPrice * (paymentMethod === 'ETH' ? 1e18 : 1e6))
-          ],
-        }],
+      // Call edge function to mint subdomain (no txHash needed for free mints)
+      const { data, error } = await supabase.functions.invoke('mint-subdomain', {
+        body: {
+          subdomain,
+          walletAddress,
+          // No txHash for free mints
+        },
       });
 
-      if (result.finalPayload?.status === 'success') {
-        const txHash = result.finalPayload.transaction_id;
-        
-        toast.success('Payment sent! Minting your subdomain...');
+      if (error) {
+        throw error;
+      }
 
-        // Get wallet address from MiniKit
-        const walletAddress = await MiniKit.user?.walletAddress;
-
-        // Call edge function to mint subdomain
-        const { data, error } = await supabase.functions.invoke('mint-subdomain', {
-          body: {
-            subdomain,
-            walletAddress,
-            txHash,
-          },
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        if (data?.success) {
-          toast.success('Subdomain minted successfully!');
-          onClose();
-        } else {
-          throw new Error(data?.error || 'Failed to mint subdomain');
-        }
+      if (data?.success) {
+        toast.success('Subdomain minted successfully!');
+        // Dispatch event to refresh user domains
+        window.dispatchEvent(new CustomEvent('domains-updated'));
+        onClose();
       } else {
-        throw new Error('Payment failed or was cancelled');
+        throw new Error(data?.error || 'Failed to mint subdomain');
       }
     } catch (error) {
       console.error('Minting error:', error);
