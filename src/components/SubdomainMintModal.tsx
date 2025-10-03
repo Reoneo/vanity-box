@@ -188,8 +188,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               ) : (
                 <>
                   {paymentMethod === 'USDC' && `$${grandTotal.toFixed(2)}`}
-                  {paymentMethod === 'ETH' && `${convertedPrice.toFixed(6)} ETH`}
-                  {paymentMethod === 'WLD' && `${convertedPrice.toFixed(4)} WLD`}
+                  {paymentMethod === 'ETH' && convertedPrice.toFixed(6)}
+                  {paymentMethod === 'WLD' && convertedPrice.toFixed(4)}
                 </>
               )}
             </div>
