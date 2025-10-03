@@ -87,7 +87,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const selectedMethod = paymentMethods.find(m => m.id === paymentMethod)!;
   const domainPrice = 0; // smith.cash subdomains are FREE
   const totalPrice = domainPrice * registrationYears;
-  const networkFee = 0.03; // World Chain L2 network fee (much lower than ETH L1)
+  const networkFee = 0; // No network fee - completely FREE
   const grandTotal = totalPrice + networkFee;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
@@ -277,7 +277,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Network Fee</span>
-                <span className="font-medium text-gray-900 dark:text-white">${networkFee.toFixed(2)}</span>
+                <span className="font-medium text-[#D4AF37]">FREE</span>
               </div>
 
               <div className="flex items-center justify-between">
