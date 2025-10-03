@@ -31,7 +31,7 @@ serve(async (req) => {
     const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/get-names', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${NAMESTONE_API_KEY}`,
+        'Authorization': NAMESTONE_API_KEY!,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
