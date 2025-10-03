@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import usdcLogo from '@/assets/usdc-logo.png';
+import wldLogo from '@/assets/wld-logo.png';
+import ethLogo from '@/assets/eth-logo.png';
 
 interface SubdomainMintModalProps {
   isOpen: boolean;
@@ -41,36 +44,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     { 
       id: 'WLD' as PaymentMethod, 
       name: t('worldcoin'), 
-      icon: (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-          <circle cx="12" cy="12" r="10" fill="#000"/>
-          <circle cx="12" cy="12" r="6" fill="none" stroke="#fff" strokeWidth="1.5"/>
-          <circle cx="12" cy="12" r="2" fill="#fff"/>
-        </svg>
-      ), 
+      icon: <img src={wldLogo} alt="Worldcoin" className="w-6 h-6" />, 
       rate: 0.5 
     },
     { 
       id: 'USDC' as PaymentMethod, 
       name: 'USDC', 
-      icon: (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-          <circle cx="12" cy="12" r="10" fill="#2775CA"/>
-          <path d="M12 4.5c-4.1 0-7.5 3.4-7.5 7.5s3.4 7.5 7.5 7.5 7.5-3.4 7.5-7.5-3.4-7.5-7.5-7.5zm0 13.5c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z" fill="white"/>
-          <path d="M10.5 8.5h3v7h-3z" fill="#2775CA"/>
-        </svg>
-      ), 
+      icon: <img src={usdcLogo} alt="USDC" className="w-6 h-6" />, 
       rate: 1.0 
     },
     { 
       id: 'ETH' as PaymentMethod, 
       name: 'Ethereum', 
-      icon: (
-        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-          <path d="M12 1L5.5 12.25L12 16l6.5-3.75L12 1z" fill="#627EEA"/>
-          <path d="M12 17.5L5.5 13.75L12 23l6.5-9.25L12 17.5z" fill="#627EEA"/>
-        </svg>
-      ), 
+      icon: <img src={ethLogo} alt="Ethereum" className="w-6 h-6" />, 
       rate: 0.0004 
     }
   ];
