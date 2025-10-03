@@ -380,9 +380,9 @@ export const SearchInterface = () => {
         </div>
         
         {/* Results container - same width as search bar */}
-        <div className="w-full max-w-md mx-auto">
+        <div className="w-full sm:max-w-3xl sm:mx-auto">
         {hasSearched && ensResults.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-bottom duration-500">
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
               return (
