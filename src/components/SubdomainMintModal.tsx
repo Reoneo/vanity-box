@@ -21,6 +21,7 @@ import usdcLogo from '@/assets/usdc-logo.png';
 import wldLogoLight from '@/assets/wld-logo-light.png';
 import wldLogoDark from '@/assets/wld-logo-dark.svg';
 import ethLogo from '@/assets/eth-logo.png';
+import ethLogoLight from '@/assets/eth-logo-light.png';
 
 interface SubdomainMintModalProps {
   isOpen: boolean;
@@ -59,7 +60,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     { 
       id: 'ETH' as PaymentMethod, 
       name: 'Ethereum', 
-      icon: <div className="w-12 h-12 flex items-center justify-center"><img src={ethLogo} alt="Ethereum" className="w-6 h-6" /></div>, 
+      icon: <div className="w-12 h-12 flex items-center justify-center"><img src={theme === 'dark' ? ethLogo : ethLogoLight} alt="Ethereum" className="w-6 h-6" /></div>, 
       rate: 0.0004 
     }
   ];
