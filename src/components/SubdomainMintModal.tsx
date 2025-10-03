@@ -167,12 +167,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             ${grandTotal.toFixed(2)}
           </div>
 
-          {/* Edit Records Button */}
-          <button className="w-full max-w-sm py-3 px-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <Edit className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-            <span className="font-medium text-gray-700 dark:text-gray-300">Edit Records & Owner</span>
-          </button>
-
           {/* Cost Breakdown */}
           <div className="w-full max-w-sm space-y-3">
             <h3 className="font-semibold text-gray-900 dark:text-white text-center">Cost Breakdown:</h3>
@@ -200,6 +194,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 <span className="font-bold text-gray-900 dark:text-white">${grandTotal.toFixed(2)}</span>
               </div>
             </div>
+
+            {/* Mint Now Button */}
+            <Button className="w-full mt-4 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-6 text-lg">
+              Mint Now
+            </Button>
           </div>
         </div>
       </div>
