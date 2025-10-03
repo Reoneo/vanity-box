@@ -54,8 +54,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     };
     loadPrices();
     
-    // Refresh prices every 30 seconds
-    const interval = setInterval(loadPrices, 30000);
+    // Refresh prices every 60 seconds (safer for API rate limits)
+    const interval = setInterval(loadPrices, 60000);
     return () => clearInterval(interval);
   }, []);
 
