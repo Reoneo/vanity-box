@@ -51,7 +51,7 @@ export const SearchInterface = () => {
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const protocols = ['ENS', 'DNS', 'Aptos Names', 'Avvy Domains'];
+  const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
 
   // Re-fetch results when language changes
   useEffect(() => {
