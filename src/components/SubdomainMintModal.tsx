@@ -47,7 +47,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     { 
       id: 'WLD' as PaymentMethod, 
       name: t('worldcoin'), 
-      icon: <img src={theme === 'dark' ? wldLogoDark : wldLogoLight} alt="Worldcoin" className="w-6 h-6" />, 
+      icon: <img src={theme === 'dark' ? wldLogoDark : wldLogoLight} alt="Worldcoin" className={theme === 'dark' ? 'w-12 h-12' : 'w-6 h-6'} />, 
       rate: 0.5 
     },
     { 
