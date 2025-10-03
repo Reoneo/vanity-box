@@ -279,9 +279,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-[10000]" />}
+      {isOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-40" />}
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md mx-auto max-h-[95vh] overflow-y-auto z-[10001] bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/40 shadow-2xl rounded-xl p-0 [&>button]:hidden">
+        <DialogContent className="max-w-md mx-auto max-h-[95vh] overflow-y-auto z-50 bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/40 shadow-2xl rounded-xl p-0 [&>button]:hidden">
           {/* Header */}
           <DialogHeader className="pb-4 pt-6 px-6 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5 border-b border-[#D4AF37]/20">
             <DialogTitle className="text-center text-xl font-bold bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] bg-clip-text text-transparent">
