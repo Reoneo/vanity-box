@@ -51,7 +51,7 @@ export const SearchInterface = () => {
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const protocols = ['ENS', 'DNS', 'Aptos Names', 'Abby Domains'];
+  const protocols = ['ENS', 'DNS', 'Aptos Names', 'Avvy Domains'];
 
   // Re-fetch results when language changes
   useEffect(() => {
@@ -318,7 +318,7 @@ export const SearchInterface = () => {
                           <img src={aptosNamesIcon} alt="Aptos Names" className="w-4 h-4 rounded-sm hidden dark:block" />
                         </>
                       )}
-                      {protocol === 'Abby Domains' && <img src={avalancheLogo} alt="Abby Domains" className="w-4 h-4" />}
+                      {protocol === 'Avvy Domains' && <img src={avalancheLogo} alt="Avvy Domains" className="w-4 h-4" />}
                       {protocol}
                     </div>
                   </DropdownMenuItem>
