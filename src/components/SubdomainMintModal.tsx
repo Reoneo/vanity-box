@@ -21,7 +21,7 @@ import usdcLogo from '@/assets/usdc-logo.png';
 import wldLogoLight from '@/assets/wld-logo-light.png';
 import wldLogoDark from '@/assets/wld-logo-dark.svg';
 import ethLogoLight from '@/assets/eth-logo-light.png';
-import ethLogoDark from '@/assets/eth-logo-dark.png';
+import ethLogoDark from '@/assets/eth-logo-dark.svg';
 
 interface SubdomainMintModalProps {
   isOpen: boolean;
