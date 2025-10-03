@@ -36,7 +36,13 @@ serve(async (req) => {
   try {
     const { subdomain, walletAddress, txHash } = await req.json();
 
-    console.log('Minting subdomain:', { subdomain, walletAddress, txHash });
+    console.log('==========================================');
+    console.log('🚀 STARTING SUBDOMAIN MINTING PROCESS');
+    console.log('==========================================');
+    console.log('📝 Subdomain:', subdomain);
+    console.log('👛 Wallet Address:', walletAddress);
+    console.log('🔗 Transaction Hash:', txHash || 'N/A (Free Mint)');
+    console.log('==========================================');
 
     if (!NAMESTONE_API_KEY) {
       throw new Error('NAMESTONE_API_KEY is not configured');
@@ -48,22 +54,33 @@ serve(async (req) => {
 
     // Step 1: Verify the transaction on World Chain (skip for free mints)
     if (txHash) {
-      console.log('Verifying transaction:', txHash);
+      console.log('\n✅ STEP 1: Transaction Verification');
+      console.log('🔍 Verifying transaction:', txHash);
       // Note: In production, you'd verify the transaction amount, recipient, etc.
+      console.log('⚠️ Note: Transaction verification is a placeholder - implement full verification in production');
     } else {
-      console.log('Free mint - no transaction to verify');
+      console.log('\n✅ STEP 1: Free Mint (Skipping Transaction Verification)');
     }
 
     // Step 2: Mint subdomain using Namestone API
-    console.log('Minting subdomain via Namestone API');
-    console.log('API Key configured:', !!NAMESTONE_API_KEY);
+    console.log('\n✅ STEP 2: Minting via Namestone API');
     
     // Extract the subdomain label (everything before the first dot)
     // e.g., "g.smith.cash" -> "g"
     const subdomainLabel = subdomain.split('.')[0];
     
-    console.log('Full subdomain:', subdomain);
-    console.log('Subdomain label:', subdomainLabel);
+    console.log('📋 Full subdomain:', subdomain);
+    console.log('🏷️  Subdomain label:', subdomainLabel);
+    console.log('🔑 API Key configured:', !!NAMESTONE_API_KEY);
+    
+    const namestonePayload = {
+      domain: 'smith.cash',
+      name: subdomainLabel,
+      address: walletAddress,
+      chain_id: 480, // World Chain network ID
+    };
+    
+    console.log('📤 Sending request to Namestone with payload:', JSON.stringify(namestonePayload, null, 2));
     
     const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/set-name', {
       method: 'POST',
@@ -71,45 +88,76 @@ serve(async (req) => {
         'Authorization': NAMESTONE_API_KEY!,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        domain: 'smith.cash',
-        name: subdomainLabel,
-        address: walletAddress,
-        chain_id: 480, // World Chain network ID
-      }),
+      body: JSON.stringify(namestonePayload),
     });
 
-    console.log('Namestone response status:', namestoneResponse.status);
+    console.log('📥 Namestone response status:', namestoneResponse.status);
     
     if (!namestoneResponse.ok) {
       const errorText = await namestoneResponse.text();
-      console.error('Namestone API error:', errorText);
-      console.error('Request body:', JSON.stringify({
-        domain: 'smith.cash',
-        name: subdomainLabel,
-        address: walletAddress,
-        chain_id: 480,
-      }));
+      console.error('❌ NAMESTONE API ERROR');
+      console.error('Status:', namestoneResponse.status);
+      console.error('Error message:', errorText);
+      console.error('Request payload:', JSON.stringify(namestonePayload, null, 2));
       throw new Error(`Namestone API error: ${namestoneResponse.status} - ${errorText}`);
     }
 
     const namestoneData = await namestoneResponse.json();
-    console.log('Namestone response:', namestoneData);
+    console.log('✅ Namestone response:', JSON.stringify(namestoneData, null, 2));
+    console.log('✅ Subdomain registered successfully via Namestone');
 
     // Step 3: Wrap the subdomain using Durin on World Chain
-    console.log('Wrapping subdomain using Durin on World Chain');
+    console.log('\n✅ STEP 3: Durin Wrapping on World Chain');
     
-    // Note: For Durin wrapping, you need to:
-    // 1. Deploy a Registry using the Registry Factory at 0xDddddDdDDD8Aa1f237b4fa0669cb46892346d22d
-    // 2. Deploy a custom L2Registrar contract
-    // 3. Add the Registrar to the Registry's approved list
-    // 4. Call createSubnode() on the Registrar contract
-    // 
-    // This is a multi-step process that requires deploying contracts first.
-    // For now, Namestone handles the name resolution, and Durin wrapping 
-    // can be added once the Registry and Registrar contracts are deployed.
+    let durinWrappingStatus = {
+      success: false,
+      error: null as string | null,
+      message: 'Durin wrapping not yet implemented'
+    };
     
-    console.log('Subdomain minted successfully via Namestone');
+    try {
+      console.log('📦 Attempting to wrap subdomain using Durin...');
+      
+      // Note: For Durin wrapping, you need to:
+      // 1. Deploy a Registry using the Registry Factory at 0xDddddDdDDD8Aa1f237b4fa0669cb46892346d22d
+      // 2. Deploy a custom L2Registrar contract
+      // 3. Add the Registrar to the Registry's approved list
+      // 4. Call createSubnode() on the Registrar contract
+      
+      console.log('⚠️ Durin wrapping requires the following contracts to be deployed:');
+      console.log('  1. Registry (via Registry Factory at', REGISTRY_FACTORY_ADDRESS + ')');
+      console.log('  2. Custom L2Registrar contract');
+      console.log('  3. Registrar must be added to Registry approved list');
+      console.log('⚠️ These contracts are not yet deployed. Skipping wrapping for now.');
+      console.log('📝 Namestone handles name resolution. Durin wrapping can be added later.');
+      
+      durinWrappingStatus = {
+        success: false,
+        error: 'Contracts not deployed',
+        message: 'Durin wrapping infrastructure not yet deployed. Domain registered via Namestone only.'
+      };
+      
+    } catch (durinError) {
+      console.error('❌ DURIN WRAPPING ERROR');
+      console.error('Error:', durinError instanceof Error ? durinError.message : String(durinError));
+      console.error('Stack:', durinError instanceof Error ? durinError.stack : 'N/A');
+      
+      durinWrappingStatus = {
+        success: false,
+        error: durinError instanceof Error ? durinError.message : 'Unknown Durin error',
+        message: 'Failed to wrap subdomain with Durin, but domain was registered via Namestone'
+      };
+    }
+    
+    console.log('\n==========================================');
+    console.log('🎉 SUBDOMAIN MINTING COMPLETE');
+    console.log('==========================================');
+    console.log('✅ Namestone Registration: SUCCESS');
+    console.log('📦 Durin Wrapping:', durinWrappingStatus.success ? 'SUCCESS' : 'PENDING/FAILED');
+    if (durinWrappingStatus.error) {
+      console.log('⚠️ Durin Error:', durinWrappingStatus.error);
+    }
+    console.log('==========================================');
     
     return new Response(
       JSON.stringify({
@@ -118,7 +166,10 @@ serve(async (req) => {
         address: walletAddress,
         txHash,
         namestoneData,
-        message: 'Subdomain minted and wrapped successfully'
+        durinWrapping: durinWrappingStatus,
+        message: durinWrappingStatus.success 
+          ? 'Subdomain minted and wrapped successfully'
+          : 'Subdomain minted via Namestone (Durin wrapping pending)'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
