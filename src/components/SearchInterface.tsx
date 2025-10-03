@@ -20,6 +20,7 @@ import ensLogoWhite from '@/assets/ens-logo-white.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import aptosLogo from '@/assets/aptos-logo.png';
 import aptosNamesIcon from '@/assets/aptos-names-icon.jpeg';
+import aptosNamesLight from '@/assets/aptos-names-light.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 
@@ -310,7 +311,12 @@ export const SearchInterface = () => {
                         </>
                       )}
                       {protocol === 'DNS' && <Globe className="w-4 h-4 text-blue-500" />}
-                      {protocol === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-4 h-4 rounded-sm" />}
+                      {protocol === 'Aptos Names' && (
+                        <>
+                          <img src={aptosNamesLight} alt="Aptos Names" className="w-4 h-4 dark:hidden" />
+                          <img src={aptosNamesIcon} alt="Aptos Names" className="w-4 h-4 rounded-sm hidden dark:block" />
+                        </>
+                      )}
                       {protocol}
                     </div>
                   </DropdownMenuItem>
@@ -426,7 +432,12 @@ export const SearchInterface = () => {
                             >
                               {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
                               {cat === 'DNS' && <Globe className="w-3 h-3" />}
-                              {cat === 'Aptos Names' && <img src={aptosNamesIcon} alt="Aptos Names" className="w-3 h-3 rounded-sm" />}
+                              {cat === 'Aptos Names' && (
+                                <>
+                                  <img src={aptosNamesLight} alt="Aptos Names" className="w-3 h-3 dark:hidden" />
+                                  <img src={aptosNamesIcon} alt="Aptos Names" className="w-3 h-3 rounded-sm hidden dark:block" />
+                                </>
+                              )}
                               {cat}
                             </Badge>
                           ))}
