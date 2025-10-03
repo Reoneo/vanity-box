@@ -193,11 +193,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 </>
               )}
             </div>
-            {!isLoadingPrices && paymentMethod !== 'USDC' && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                ≈ ${grandTotal.toFixed(2)} USD
-              </div>
-            )}
           </div>
 
           {/* Cost Breakdown */}
