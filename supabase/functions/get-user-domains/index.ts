@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createPublicClient, http, namehash } from 'npm:viem';
+import { worldchain } from 'npm:viem/chains';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,6 +8,25 @@ const corsHeaders = {
 };
 
 const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
+
+// ENS Name Wrapper contract address (standard across networks)
+const NAME_WRAPPER_ADDRESS = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
+
+const NAME_WRAPPER_ABI = [
+  {
+    inputs: [{ name: 'id', type: 'bytes32' }],
+    name: 'ownerOf',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
+// Create viem client for World Chain
+const viemClient = createPublicClient({
+  chain: worldchain,
+  transport: http(),
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -63,11 +84,45 @@ serve(async (req) => {
     console.log('Found smith.cash domains:', smithDomains.length);
     console.log('Smith domains:', smithDomains);
 
+    // Check wrapped status for each domain
+    const domainsWithWrappedStatus = await Promise.all(
+      smithDomains.map(async (domain: any) => {
+        try {
+          const fullDomain = `${domain.name}.${domain.domain}`;
+          const nameHash = namehash(fullDomain);
+          
+          console.log(`Checking wrapped status for ${fullDomain}, hash: ${nameHash}`);
+          
+          const owner = await viemClient.readContract({
+            address: NAME_WRAPPER_ADDRESS,
+            abi: NAME_WRAPPER_ABI,
+            functionName: 'ownerOf',
+            args: [nameHash as `0x${string}`],
+          });
+
+          const isWrapped = owner !== '0x0000000000000000000000000000000000000000';
+          console.log(`Domain ${fullDomain} wrapped status: ${isWrapped}`);
+
+          return {
+            ...domain,
+            isWrapped,
+          };
+        } catch (error) {
+          console.error(`Error checking wrapped status for ${domain.name}:`, error);
+          // If we can't check, assume not wrapped
+          return {
+            ...domain,
+            isWrapped: false,
+          };
+        }
+      })
+    );
+
     return new Response(
       JSON.stringify({
         success: true,
-        domains: smithDomains,
-        totalCount: smithDomains.length
+        domains: domainsWithWrappedStatus,
+        totalCount: domainsWithWrappedStatus.length
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Gift } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -12,6 +14,7 @@ interface Domain {
   address: string;
   created_at?: string;
   updated_at?: string;
+  isWrapped?: boolean;
 }
 
 interface UserDomainsDisplayProps {
@@ -120,9 +123,27 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-900 dark:text-white truncate">
-                  {domain.name}.{domain.domain}
-                </h4>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                    {domain.name}.{domain.domain}
+                  </h4>
+                  {domain.isWrapped && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge 
+                          variant="secondary" 
+                          className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 flex items-center gap-1"
+                        >
+                          <Gift className="w-3 h-3" />
+                          Wrapped
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">This domain has been wrapped as an ERC-1155 NFT with enhanced features</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {domain.address.slice(0, 6)}...{domain.address.slice(-4)}
                 </p>
