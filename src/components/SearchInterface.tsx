@@ -21,6 +21,7 @@ import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import aptosLogo from '@/assets/aptos-logo.png';
 import aptosNamesIcon from '@/assets/aptos-names-icon.jpeg';
 import aptosNamesLight from '@/assets/aptos-names-light.png';
+import avalancheLogo from '@/assets/avalanche-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 
@@ -50,7 +51,7 @@ export const SearchInterface = () => {
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const protocols = ['ENS', 'DNS', 'Aptos Names', 'Avax Name Service'];
+  const protocols = ['ENS', 'DNS', 'Aptos Names', 'Abby Domains'];
 
   // Re-fetch results when language changes
   useEffect(() => {
@@ -317,6 +318,7 @@ export const SearchInterface = () => {
                           <img src={aptosNamesIcon} alt="Aptos Names" className="w-4 h-4 rounded-sm hidden dark:block" />
                         </>
                       )}
+                      {protocol === 'Abby Domains' && <img src={avalancheLogo} alt="Abby Domains" className="w-4 h-4" />}
                       {protocol}
                     </div>
                   </DropdownMenuItem>
