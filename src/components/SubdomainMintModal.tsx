@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +11,8 @@ import {
   Wallet, 
   CheckCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -277,28 +277,35 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     </div>
   );
 
+  if (!isOpen) return null;
+
   return (
-    <>
-      {isOpen && <div className="fixed inset-0 bg-black/40 backdrop-blur-lg z-40" />}
-      <Dialog open={isOpen} onOpenChange={onClose} modal={false}>
-          <DialogContent className="max-w-md mx-auto max-h-[95vh] overflow-y-auto z-50 bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/40 shadow-2xl rounded-xl p-0 [&>button]:hidden">
-          {/* Header */}
-          <DialogHeader className="pb-4 pt-6 px-6 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5 border-b border-[#D4AF37]/20">
-            <DialogTitle className="text-center text-xl font-bold bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] bg-clip-text text-transparent">
-              {t('mint_ens_subdomain')}
-            </DialogTitle>
-          </DialogHeader>
+    <div className="w-full max-w-2xl mx-auto mt-8 animate-in slide-in-from-bottom duration-500 fade-in">
+      <div className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 border-2 border-[#D4AF37]/40 shadow-2xl rounded-xl overflow-hidden">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center transition-all duration-200"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Header */}
+        <div className="pb-4 pt-6 px-6 bg-gradient-to-r from-[#D4AF37]/5 to-[#F7E06C]/5 border-b border-[#D4AF37]/20">
+          <h2 className="text-center text-xl font-bold bg-gradient-to-r from-[#D4AF37] to-[#F7E06C] bg-clip-text text-transparent">
+            {t('mint_ens_subdomain')}
+          </h2>
+        </div>
+        
+        {/* Content */}
+        <div className="px-6 pb-6 pt-2">
+          {renderStepIndicator()}
           
-          {/* Content */}
-          <div className="px-6 pb-6 pt-2">
-            {renderStepIndicator()}
-            
-            {currentStep === 'details' && renderDetailsStep()}
-            {currentStep === 'payment' && renderPaymentStep()}
-            {currentStep === 'confirm' && renderConfirmStep()}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          {currentStep === 'details' && renderDetailsStep()}
+          {currentStep === 'payment' && renderPaymentStep()}
+          {currentStep === 'confirm' && renderConfirmStep()}
+        </div>
+      </div>
+    </div>
   );
 };

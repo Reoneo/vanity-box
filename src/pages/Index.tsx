@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
+import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
@@ -9,6 +10,9 @@ import { MiniKit } from '@worldcoin/minikit-js';
 const Index = () => {
   const { t } = useLanguage();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
+  const [showMintModal, setShowMintModal] = useState(false);
+  const [selectedSubdomain, setSelectedSubdomain] = useState('');
+  const [subdomainPrice, setSubdomainPrice] = useState(0);
 
   // Listen for wallet connection events from WalletConnection component
   useEffect(() => {
@@ -25,6 +29,21 @@ const Index = () => {
     };
   }, []);
 
+  // Listen for mint modal events from SearchInterface
+  useEffect(() => {
+    const handleMintRequest = (event: CustomEvent) => {
+      setSelectedSubdomain(event.detail.subdomain);
+      setSubdomainPrice(event.detail.price);
+      setShowMintModal(true);
+    };
+
+    window.addEventListener('open-mint-modal', handleMintRequest as EventListener);
+
+    return () => {
+      window.removeEventListener('open-mint-modal', handleMintRequest as EventListener);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       
@@ -38,6 +57,14 @@ const Index = () => {
 
           {/* Search Interface */}
           <SearchInterface />
+
+          {/* Mint Modal - Inline */}
+          <SubdomainMintModal
+            isOpen={showMintModal}
+            onClose={() => setShowMintModal(false)}
+            subdomain={selectedSubdomain}
+            price={subdomainPrice}
+          />
         </div>
         
       </main>
