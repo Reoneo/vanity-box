@@ -48,13 +48,20 @@ serve(async (req) => {
 
     const namestoneData = await namestoneResponse.json();
     console.log('Namestone response:', namestoneData);
+    console.log('Namestone response type:', typeof namestoneData);
+    console.log('Is array:', Array.isArray(namestoneData));
 
+    // Handle both response formats: direct array or {names: [...]}
+    const namesArray = Array.isArray(namestoneData) ? namestoneData : (namestoneData.names || []);
+    console.log('Names array:', namesArray);
+    
     // Filter for smith.cash domains
-    const smithDomains = namestoneData.names?.filter((name: any) => 
+    const smithDomains = namesArray.filter((name: any) => 
       name.domain === 'smith.cash'
-    ) || [];
+    );
 
     console.log('Found smith.cash domains:', smithDomains.length);
+    console.log('Smith domains:', smithDomains);
 
     return new Response(
       JSON.stringify({
