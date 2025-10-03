@@ -28,7 +28,7 @@ const Index = () => {
   // No longer needed - mint flow is handled directly in SearchInterface
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden border-l-2 border-r-2 border-b-2 border-[#D4AF37]">
       
       <Header />
       
