@@ -22,6 +22,7 @@ import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import aptosLogo from '@/assets/aptos-logo.png';
 import aptosNamesIcon from '@/assets/aptos-names-icon.jpeg';
 import aptosNamesLight from '@/assets/aptos-names-light.png';
+import aptosNamesNew from '@/assets/aptos-names-new.jpeg';
 import avvyLogo from '@/assets/avvy-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
@@ -418,10 +419,7 @@ export const SearchInterface = () => {
                               {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
                               {cat === 'DNS' && <Globe className="w-3 h-3" />}
                               {cat === 'Aptos Names' && (
-                                <>
-                                  <img src={aptosNamesLight} alt="Aptos Names" className="w-3 h-3 dark:hidden" />
-                                  <img src={aptosNamesIcon} alt="Aptos Names" className="w-3 h-3 rounded-sm hidden dark:block" />
-                                </>
+                                <img src={aptosNamesNew} alt="Aptos Names" className="w-3 h-3 rounded-sm" />
                               )}
                               {cat}
                             </Badge>
