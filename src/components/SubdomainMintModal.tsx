@@ -13,6 +13,9 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
 import { fetchCryptoPrices, CryptoPrices } from '@/utils/cryptoPrices';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { MiniKit } from '@worldcoin/minikit-js';
 import usdcLogo from '@/assets/usdc-logo.png';
 import ethLogoLight from '@/assets/eth-logo-light.png';
 import ethLogoDark from '@/assets/eth-logo-dark.svg';
@@ -43,6 +46,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('USDC');
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({ eth: 2500, wld: 2.0, usdc: 1.0 });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [isMinting, setIsMinting] = useState(false);
 
   // Fetch real-time crypto prices on mount
   useEffect(() => {
@@ -98,6 +102,71 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     const date = new Date();
     date.setFullYear(date.getFullYear() + registrationYears);
     return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  };
+
+  const handleMintNow = async () => {
+    try {
+      setIsMinting(true);
+
+      // Get token address based on payment method
+      const tokenAddresses = {
+        'USDC': '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1', // USDC on World Chain
+        'ETH': '0x0000000000000000000000000000000000000000', // Native ETH
+        'WLD': '0x2cFc85d8E48F8EAB294be644d9E25C3030863003', // WLD on World Chain
+      };
+
+      const tokenAddress = tokenAddresses[paymentMethod];
+      const paymentAddress = '0x71ab0b01e3ff45551e25b208e2a90298f73f7040';
+
+      // Send transaction using MiniKit
+      const result = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [{
+          address: paymentAddress,
+          abi: [],
+          functionName: 'transfer',
+          args: [
+            paymentAddress,
+            Math.floor(convertedPrice * (paymentMethod === 'ETH' ? 1e18 : 1e6))
+          ],
+        }],
+      });
+
+      if (result.finalPayload?.status === 'success') {
+        const txHash = result.finalPayload.transaction_id;
+        
+        toast.success('Payment sent! Minting your subdomain...');
+
+        // Get wallet address from MiniKit
+        const walletAddress = await MiniKit.user?.walletAddress;
+
+        // Call edge function to mint subdomain
+        const { data, error } = await supabase.functions.invoke('mint-subdomain', {
+          body: {
+            subdomain,
+            walletAddress,
+            txHash,
+          },
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data?.success) {
+          toast.success('Subdomain minted successfully!');
+          onClose();
+        } else {
+          throw new Error(data?.error || 'Failed to mint subdomain');
+        }
+      } else {
+        throw new Error('Payment failed or was cancelled');
+      }
+    } catch (error) {
+      console.error('Minting error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to mint subdomain');
+    } finally {
+      setIsMinting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -224,8 +293,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             </div>
 
             {/* Mint Now Button */}
-            <Button className="w-full mt-4 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-6 text-lg">
-              Mint Now
+            <Button 
+              onClick={handleMintNow}
+              disabled={isMinting}
+              className="w-full mt-4 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-6 text-lg disabled:opacity-50"
+            >
+              {isMinting ? 'Minting...' : 'Mint Now'}
             </Button>
           </div>
         </div>
