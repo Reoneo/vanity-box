@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,12 +45,15 @@ export const SearchInterface = () => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+  const [showMintInterface, setShowMintInterface] = useState(false);
+  const [selectedResult, setSelectedResult] = useState<ENSResult | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
   const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
+  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname'];
 
   // Re-fetch results when language changes
   useEffect(() => {
@@ -72,7 +76,6 @@ export const SearchInterface = () => {
       }
     }
   }, [language]);
-  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname'];
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
@@ -222,13 +225,14 @@ export const SearchInterface = () => {
     setIsLoading(false);
   };
 
-  const handleMint = () => {
-    console.log('handleMint called with:', { searchQuery, price });
-    const event = new CustomEvent('open-mint-modal', {
-      detail: { subdomain: searchQuery, price }
-    });
-    console.log('Dispatching open-mint-modal event:', event.detail);
-    window.dispatchEvent(event);
+  const handleMint = (result: ENSResult) => {
+    setSelectedResult(result);
+    setShowMintInterface(true);
+  };
+
+  const handleBackToResults = () => {
+    setShowMintInterface(false);
+    setSelectedResult(null);
   };
 
   const handleFlipCard = (index: number) => {
@@ -255,144 +259,115 @@ export const SearchInterface = () => {
       )}
       
       <div className="w-full">
-        {/* Search bar container - constrained width on all devices */}
-        <div className="w-full max-w-md mx-auto">
-          <div className="relative">
-          <div className="absolute left-1 top-1 z-10 flex items-center h-10">
-            <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
-            <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
-                >
-                  <Filter className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
-                <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-600">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('filters')}</span>
-                  <div className="flex items-center gap-1">
-                    <button 
-                      onClick={handleClearFilters}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                    >
-                      <X className="w-5 h-5 text-black dark:text-white" />
-                    </button>
-                    <button 
-                      onClick={handleApplyFilters}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                    >
-                      <div className="w-5 h-5 flex items-center justify-center text-[#D4AF37] text-base font-bold">✓</div>
-                    </button>
-                  </div>
-                </div>
-                
-                <DropdownMenuLabel className="text-gray-900 dark:text-gray-100">{t('protocol')}</DropdownMenuLabel>
-                {protocols.map((protocol) => (
-                  <DropdownMenuItem
-                    key={protocol}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleProtocolToggle(protocol);
-                    }}
-                    className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 border rounded ${
-                        filters.protocol.includes(protocol) 
-                          ? 'bg-[#D4AF37] border-[#D4AF37]' 
-                          : 'border-gray-300 dark:border-gray-600'
-                      }`}>
-                        {filters.protocol.includes(protocol) && (
-                          <div className="w-full h-full flex items-center justify-center text-black text-xs">✓</div>
-                        )}
-                      </div>
-                      {protocol === 'ENS' && (
-                        <>
-                          <img src={ensLogoBlue} alt="ENS" className="w-4 h-4 dark:hidden" />
-                          <img src={ensLogoWhite} alt="ENS" className="w-4 h-4 hidden dark:block" />
-                        </>
-                      )}
-                      {protocol === 'DNS' && <Globe className="w-4 h-4 text-blue-500" />}
-                      {protocol === 'Aptos Names' && (
-                        <>
-                          <img src={aptosNamesLight} alt="Aptos Names" className="w-4 h-4 dark:hidden" />
-                          <img src={aptosNamesIcon} alt="Aptos Names" className="w-4 h-4 rounded-sm hidden dark:block" />
-                        </>
-                      )}
-                      {protocol === 'Avvy Domains' && <img src={avvyLogo} alt="Avvy Domains" className="w-4 h-4" />}
-                      {protocol}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-                
-                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
-                
-                <DropdownMenuLabel className="text-gray-900 dark:text-gray-100">{t('club')}</DropdownMenuLabel>
-                {clubs.map((club) => (
-                  <DropdownMenuItem
-                    key={club}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleClubToggle(club);
-                    }}
-                    className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 border rounded ${
-                        filters.club.includes(club) 
-                          ? 'bg-[#D4AF37] border-[#D4AF37]' 
-                          : 'border-gray-300 dark:border-gray-600'
-                      }`}>
-                        {filters.club.includes(club) && (
-                          <div className="w-full h-full flex items-center justify-center text-black text-xs">✓</div>
-                        )}
-                      </div>
-                      {club}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <Input
-            placeholder={t('search_for_a_name')}
-            className="h-12 text-lg text-center bg-white border-black focus:border-black text-gray-600 placeholder-gray-400 pl-20 pr-20"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+        {/* Show mint interface when a result is selected */}
+        {showMintInterface && selectedResult ? (
+          <SubdomainMintModal
+            isOpen={true}
+            onClose={handleBackToResults}
+            subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
+            price={price}
           />
-          <div className="absolute right-1 top-1 flex items-center gap-1 h-10">
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setEnsResults([]);
-                  setIsAvailable(null);
-                  setHasSearched(false);
-                }}
-                className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-                aria-label="Clear search"
-              >
-                <X className="w-4 h-4 text-black" />
-              </button>
-            )}
-            <Button
-              onClick={handleSearch}
-              size="sm"
-              className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
-              disabled={!searchQuery.trim() || isLoading}
-            >
-              <Search className="w-4 h-4 text-black" />
-            </Button>
-          </div>
-        </div>
-        </div>
-        
-        {/* Results container - same width as search bar */}
-        <div className="w-full sm:max-w-3xl sm:mx-auto">
-        {hasSearched && ensResults.length > 0 && (
+        ) : (
+          <>
+            {/* Search bar container - constrained width on all devices */}
+            <div className="w-full max-w-md mx-auto">
+              <div className="relative">
+                <div className="absolute left-1 top-1 z-10 flex items-center h-10">
+                  <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
+                      >
+                        <Filter className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
+                      <DropdownMenuLabel>{t('filter_by')}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('protocol')}</p>
+                        {protocols.map(protocol => (
+                          <DropdownMenuItem key={protocol} className="cursor-pointer">
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                className="mr-2"
+                                checked={filters.protocol.includes(protocol)}
+                                onChange={() => handleProtocolToggle(protocol)}
+                              />
+                              {protocol}
+                            </label>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('club')}</p>
+                        {clubs.map(club => (
+                          <DropdownMenuItem key={club} className="cursor-pointer">
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                className="mr-2"
+                                checked={filters.club.includes(club)}
+                                onChange={() => handleClubToggle(club)}
+                              />
+                              {club}
+                            </label>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="flex justify-between px-2 py-1">
+                        <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+                          {t('clear')}
+                        </Button>
+                        <Button size="sm" onClick={handleApplyFilters}>
+                          {t('apply')}
+                        </Button>
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <Input
+                  placeholder={t('search_for_a_name')}
+                  className="h-12 text-lg text-center bg-white border-black focus:border-black text-gray-600 placeholder-gray-400 pl-20 pr-20"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                <div className="absolute right-1 top-1 flex items-center gap-1 h-10">
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setEnsResults([]);
+                        setIsAvailable(null);
+                        setHasSearched(false);
+                      }}
+                      className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4 text-black" />
+                    </button>
+                  )}
+                  <Button
+                    onClick={handleSearch}
+                    size="sm"
+                    className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                    disabled={!searchQuery.trim() || isLoading}
+                  >
+                    <Search className="w-4 h-4 text-black" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Results container - same width as search bar */}
+            <div className="w-full sm:max-w-3xl sm:mx-auto">
+              {hasSearched && ensResults.length > 0 && (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
@@ -467,7 +442,7 @@ export const SearchInterface = () => {
                         
                         <Button 
                           className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto"
-                          onClick={handleMint}
+                          onClick={() => handleMint(result)}
                         >
                           {t('mint_now')}
                         </Button>
@@ -518,7 +493,7 @@ export const SearchInterface = () => {
           </div>
         )}
         </div>
-
+        )}
       </div>
     </>
   );
