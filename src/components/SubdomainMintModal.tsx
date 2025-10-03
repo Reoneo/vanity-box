@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
+import { fetchCryptoPrices, CryptoPrices } from '@/utils/cryptoPrices';
 import usdcLogo from '@/assets/usdc-logo.png';
 import ethLogoLight from '@/assets/eth-logo-light.png';
 import ethLogoDark from '@/assets/eth-logo-dark.svg';
@@ -40,25 +41,42 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const { theme } = useTheme();
   const [registrationYears, setRegistrationYears] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('USDC');
+  const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({ eth: 2500, wld: 2.0, usdc: 1.0 });
+  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+
+  // Fetch real-time crypto prices on mount
+  useEffect(() => {
+    const loadPrices = async () => {
+      setIsLoadingPrices(true);
+      const prices = await fetchCryptoPrices();
+      setCryptoPrices(prices);
+      setIsLoadingPrices(false);
+    };
+    loadPrices();
+    
+    // Refresh prices every 30 seconds
+    const interval = setInterval(loadPrices, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const paymentMethods = [
     { 
       id: 'USDC' as PaymentMethod, 
       name: 'USDC', 
       icon: usdcLogo,
-      rate: 1.0 
+      rate: 1 / cryptoPrices.usdc
     },
     { 
       id: 'ETH' as PaymentMethod, 
       name: 'ETH', 
       icon: theme === 'dark' ? ethLogoDark : ethLogoLight,
-      rate: 0.0004 
+      rate: 1 / cryptoPrices.eth
     },
     { 
       id: 'WLD' as PaymentMethod, 
       name: 'WLD', 
       icon: theme === 'dark' ? wldLogoDark : wldLogoLight,
-      rate: 0.5 
+      rate: 1 / cryptoPrices.wld
     }
   ];
 
@@ -163,8 +181,23 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
 
           {/* Price Display */}
-          <div className="text-5xl font-bold text-[#D4AF37]">
-            ${grandTotal.toFixed(2)}
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-5xl font-bold text-[#D4AF37]">
+              {isLoadingPrices ? (
+                <span className="text-2xl">Loading...</span>
+              ) : (
+                <>
+                  {paymentMethod === 'USDC' && `$${grandTotal.toFixed(2)}`}
+                  {paymentMethod === 'ETH' && `${convertedPrice.toFixed(6)} ETH`}
+                  {paymentMethod === 'WLD' && `${convertedPrice.toFixed(4)} WLD`}
+                </>
+              )}
+            </div>
+            {!isLoadingPrices && paymentMethod !== 'USDC' && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                ≈ ${grandTotal.toFixed(2)} USD
+              </div>
+            )}
           </div>
 
           {/* Cost Breakdown */}

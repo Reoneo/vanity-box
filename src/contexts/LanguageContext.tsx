@@ -102,7 +102,7 @@ function getTranslations(language: Language): Record<string, string> {
       'my_domains': 'My Domains',
       'disconnect': 'Disconnect',
       'copyright': '© 2025 vanity.box. All rights reserved.',
-      'mint_now': 'Mint Now',
+      'mint_now': 'Select',
       'filters': 'Filters',
       'protocol': 'Protocol',
       'club': 'Club',
