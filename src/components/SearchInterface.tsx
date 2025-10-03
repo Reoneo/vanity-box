@@ -397,12 +397,12 @@ export const SearchInterface = () => {
               </div>
             </div>
             
-            {/* My Domains Section - Commented out to prevent auto-fetch */}
-            {/* {walletAddress && !hasSearched && (
+            {/* My Domains Section */}
+            {walletAddress && !hasSearched && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
                 <UserDomainsDisplay walletAddress={walletAddress} />
               </div>
-            )} */}
+            )}
 
             {/* Results container - same width as search bar */}
             <div className="w-full sm:max-w-3xl sm:mx-auto">
