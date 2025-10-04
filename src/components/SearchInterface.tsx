@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Zap, X, Filter, ChevronDown, Info, Globe } from 'lucide-react';
+import { Search, Zap, X, Filter, ChevronDown, Info, Globe, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,6 +56,7 @@ export const SearchInterface = () => {
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
+  const [showMyIDs, setShowMyIDs] = useState(false);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -397,9 +398,29 @@ export const SearchInterface = () => {
               </div>
             </div>
             
-            {/* My Domains Section */}
-            {walletAddress && !hasSearched && (
+            {/* My ID's Button */}
+            {walletAddress && !hasSearched && !showMyIDs && (
+              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8 text-center">
+                <Button
+                  onClick={() => setShowMyIDs(true)}
+                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold px-8 py-6 text-lg"
+                >
+                  My ID's
+                </Button>
+              </div>
+            )}
+
+            {/* My ID's Section */}
+            {walletAddress && showMyIDs && !hasSearched && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
+                <Button
+                  onClick={() => setShowMyIDs(false)}
+                  variant="outline"
+                  className="mb-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Search
+                </Button>
                 <UserDomainsDisplay walletAddress={walletAddress} />
               </div>
             )}

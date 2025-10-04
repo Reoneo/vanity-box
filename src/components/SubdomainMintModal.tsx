@@ -84,10 +84,30 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     }
   ];
 
+  // Calculate pricing based on subdomain length
+  const getSubdomainPrice = (fullSubdomain: string) => {
+    // Extract the subdomain label (everything before .smith.cash)
+    const subdomainLabel = fullSubdomain.split('.')[0];
+    
+    // Special exception for Test321
+    if (subdomainLabel.toLowerCase() === 'test321') {
+      return 0;
+    }
+    
+    const length = subdomainLabel.length;
+    if (length === 1) return 100;
+    if (length === 2) return 50;
+    if (length === 3) return 25;
+    if (length === 4) return 15;
+    if (length === 5) return 10;
+    if (length >= 6 && length <= 9) return 5;
+    return 1; // 10+ characters
+  };
+
   const selectedMethod = paymentMethods.find(m => m.id === paymentMethod)!;
-  const domainPrice = 0; // smith.cash subdomains are FREE
+  const domainPrice = getSubdomainPrice(subdomain);
   const totalPrice = domainPrice * registrationYears;
-  const networkFee = 0; // No network fee - completely FREE
+  const networkFee = domainPrice > 0 ? 0.50 : 0; // $0.50 network fee for World Chain (free for Test321)
   const grandTotal = totalPrice + networkFee;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
@@ -116,15 +136,49 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         throw new Error('Please connect your wallet first');
       }
 
-      // Since minting is completely free, skip payment and go directly to minting
-      toast.success('Minting your subdomain...');
+      let txHash: string | undefined;
 
-      // Call edge function to mint subdomain (no txHash needed for free mints)
+      // Only process payment if not free
+      if (grandTotal > 0) {
+        toast.info('Processing payment...');
+
+        // Map payment method to MiniKit token symbol
+        const tokenSymbol = paymentMethod === 'USDC' ? 'USDCE' : paymentMethod;
+        
+        // Initiate payment via MiniKit
+        const paymentPayload = {
+          reference: `subdomain-${subdomain}-${Date.now()}`,
+          to: '0x71ab0b01e3ff45551e25b208e2a90298f73f7040', // Payment recipient address
+          tokens: [
+            {
+              symbol: tokenSymbol as any,
+              token_amount: convertedPrice.toString(),
+            },
+          ],
+          description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? 's' : ''}`,
+        };
+
+        const { finalPayload } = await MiniKit.commandsAsync.pay(paymentPayload);
+
+        if (finalPayload.status === 'success') {
+          txHash = finalPayload.transaction_id;
+          toast.success('Payment successful!');
+        } else {
+          throw new Error('Payment failed or was cancelled');
+        }
+      } else {
+        // Free mint (Test321)
+        toast.success('Free mint - processing...');
+      }
+
+      toast.info('Minting your subdomain...');
+
+      // Call edge function to mint subdomain
       const { data, error } = await supabase.functions.invoke('mint-subdomain', {
         body: {
           subdomain,
           walletAddress,
-          // No txHash for free mints
+          txHash, // Will be undefined for free mints
         },
       });
 
@@ -250,12 +304,16 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Domain ({registrationYears} year{registrationYears > 1 ? 's' : ''})</span>
-                <span className="font-medium text-[#D4AF37]">FREE</span>
+                <span className="font-medium text-[#D4AF37]">
+                  {domainPrice === 0 ? 'FREE' : `$${totalPrice.toFixed(2)}`}
+                </span>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Network Fee</span>
-                <span className="font-medium text-[#D4AF37]">FREE</span>
+                <span className="text-gray-600 dark:text-gray-400">Network Fee (World Chain)</span>
+                <span className="font-medium text-[#D4AF37]">
+                  {networkFee === 0 ? 'FREE' : `$${networkFee.toFixed(2)}`}
+                </span>
               </div>
 
               <div className="flex items-center justify-between">
