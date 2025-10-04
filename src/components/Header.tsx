@@ -47,6 +47,7 @@ const ThemeToggle = () => {
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
+  const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,8 +56,18 @@ export const Header: React.FC = () => {
       setShowSearchIcon(window.scrollY > searchBarArea);
     };
 
+    const handleMintOpen = () => setIsMintWindowOpen(true);
+    const handleMintClose = () => setIsMintWindowOpen(false);
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('mint-window-open', handleMintOpen);
+    window.addEventListener('mint-window-close', handleMintClose);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mint-window-open', handleMintOpen);
+      window.removeEventListener('mint-window-close', handleMintClose);
+    };
   }, []);
 
   const scrollToSearch = () => {
@@ -100,8 +111,8 @@ export const Header: React.FC = () => {
               </button>
             </TriggerOrClose>
 
-            {/* Search Icon - appears when search bar is out of view */}
-            {showSearchIcon && (
+            {/* Search Icon - appears when search bar is out of view or mint window is open */}
+            {(showSearchIcon || isMintWindowOpen) && (
               <button
                 type="button"
                 aria-label="Scroll to search"
@@ -130,7 +141,7 @@ export const Header: React.FC = () => {
             </TriggerOrClose>
 
             {/* Search Icon */}
-            {showSearchIcon && (
+            {(showSearchIcon || isMintWindowOpen) && (
               <button
                 type="button"
                 aria-label="Scroll to search"

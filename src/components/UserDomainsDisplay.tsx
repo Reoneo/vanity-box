@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Gift } from 'lucide-react';
+import { Loader2, Gift, Pencil, Send, Trash2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
+import { DomainManagementModal } from './DomainManagementModal';
 
 interface Domain {
   name: string;
@@ -26,6 +28,8 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   const [domains, setDomains] = useState<Domain[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
+  const [showManagementModal, setShowManagementModal] = useState(false);
 
   const fetchDomains = async () => {
     if (!walletAddress) {
@@ -103,62 +107,101 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     );
   }
 
+  const handleManageDomain = (domain: Domain) => {
+    setSelectedDomain(domain);
+    setShowManagementModal(true);
+  };
+
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-        My ID's ({domains.length})
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {domains.map((domain, index) => (
-          <Card
-            key={`${domain.name}-${index}`}
-            className="p-4 hover:shadow-lg transition-shadow border-[#D4AF37]/20 hover:border-[#D4AF37]/50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden">
-                <img
-                  src={smithCashAvatar}
-                  alt={domain.name}
-                  className="w-full h-full object-cover"
-                />
+    <>
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+          My ID's ({domains.length})
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          {domains.map((domain, index) => (
+            <div 
+              key={`${domain.name}-${index}`}
+              className="relative w-full h-full min-h-[280px] overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]"
+            >
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl" />
+                <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-[#D4AF37]/5 rounded-full blur-3xl" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-gray-900 dark:text-white truncate">
-                    {domain.name}.{domain.domain}
-                  </h4>
-                  {domain.isWrapped && (
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Badge 
-                          variant="secondary" 
-                          className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 flex items-center gap-1"
-                        >
-                          <Gift className="w-3 h-3" />
-                          Wrapped
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">This domain has been wrapped as an ERC-1155 NFT with enhanced features</p>
-                      </TooltipContent>
-                    </Tooltip>
+
+              <div className="relative z-10 p-6 flex flex-col h-full">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
+                    <img
+                      src={smithCashAvatar}
+                      alt={domain.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-bold text-lg text-white truncate">
+                        {domain.name}.{domain.domain}
+                      </h4>
+                    </div>
+                    {domain.isWrapped && (
+                      <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 flex items-center gap-1 w-fit">
+                        <Gift className="w-3 h-3" />
+                        Wrapped
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-3">
+                  <div className="text-sm text-gray-300">
+                    <span className="text-gray-400">Address:</span>
+                    <p className="font-mono text-white">
+                      {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
+                    </p>
+                  </div>
+                  {domain.created_at && (
+                    <div className="text-sm text-gray-400">
+                      Registered: {new Date(domain.created_at).toLocaleDateString()}
+                    </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {domain.address.slice(0, 6)}...{domain.address.slice(-4)}
-                </p>
+
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <Button
+                    onClick={() => handleManageDomain(domain)}
+                    size="sm"
+                    className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                  >
+                    <Pencil className="w-3 h-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    onClick={() => handleManageDomain(domain)}
+                    size="sm"
+                    variant="outline"
+                    className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                  >
+                    <Send className="w-3 h-3 mr-1" />
+                    Transfer
+                  </Button>
+                </div>
               </div>
             </div>
-            {domain.created_at && (
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Registered: {new Date(domain.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            )}
-          </Card>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {selectedDomain && (
+        <DomainManagementModal
+          isOpen={showManagementModal}
+          onClose={() => {
+            setShowManagementModal(false);
+            setSelectedDomain(null);
+          }}
+          domain={selectedDomain}
+        />
+      )}
+    </>
   );
 };

@@ -260,12 +260,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         <DropdownMenuItem 
           className="text-gray-700 hover:bg-gray-100 cursor-pointer"
           onClick={() => {
-            // TODO: Implement My Domains functionality
-            alert('My Domains feature coming soon!');
+            window.dispatchEvent(new CustomEvent('show-my-ids'));
           }}
         >
           <User className="mr-2 h-4 w-4" />
-          {t('my_domains')}
+          My ID's
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 

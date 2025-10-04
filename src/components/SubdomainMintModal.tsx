@@ -48,6 +48,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
 
+  // Dispatch events when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      window.dispatchEvent(new Event('mint-window-open'));
+    } else {
+      window.dispatchEvent(new Event('mint-window-close'));
+    }
+  }, [isOpen]);
+
   // Fetch real-time crypto prices on mount
   useEffect(() => {
     const loadPrices = async () => {

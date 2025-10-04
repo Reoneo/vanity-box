@@ -72,12 +72,27 @@ export const SearchInterface = () => {
       setWalletAddress(event.detail?.walletAddress);
     };
     
+    const handleShowMyIDs = () => {
+      setShowMyIDs(true);
+      setHasSearched(false);
+      setEnsResults([]);
+      setSearchQuery('');
+    };
+    
     window.addEventListener('wallet-connected', handleWalletChange as EventListener);
-    window.addEventListener('wallet-disconnected', () => setWalletAddress(undefined));
+    window.addEventListener('wallet-disconnected', () => {
+      setWalletAddress(undefined);
+      setShowMyIDs(false);
+    });
+    window.addEventListener('show-my-ids', handleShowMyIDs);
     
     return () => {
       window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
-      window.removeEventListener('wallet-disconnected', () => setWalletAddress(undefined));
+      window.removeEventListener('wallet-disconnected', () => {
+        setWalletAddress(undefined);
+        setShowMyIDs(false);
+      });
+      window.removeEventListener('show-my-ids', handleShowMyIDs);
     };
   }, []);
 
@@ -398,25 +413,13 @@ export const SearchInterface = () => {
               </div>
             </div>
             
-            {/* My ID's Button */}
-            {walletAddress && !hasSearched && !showMyIDs && (
-              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8 text-center">
-                <Button
-                  onClick={() => setShowMyIDs(true)}
-                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold px-8 py-6 text-lg"
-                >
-                  My ID's
-                </Button>
-              </div>
-            )}
-
             {/* My ID's Section */}
-            {walletAddress && showMyIDs && !hasSearched && (
+            {walletAddress && showMyIDs && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
                 <Button
                   onClick={() => setShowMyIDs(false)}
                   variant="outline"
-                  className="mb-4"
+                  className="mb-4 border-[#D4AF37] text-gray-900 dark:text-white hover:bg-[#D4AF37]/10"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Search
