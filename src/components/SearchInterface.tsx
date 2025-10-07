@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Zap, X, Filter, ChevronDown, Info, Globe, ArrowLeft, Key, Wrench, Link } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, Info, ArrowLeft, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -416,74 +416,49 @@ export const SearchInterface = () => {
             
             {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
             {!hasSearched && !showMyIDs && (
-              <div className="w-full max-w-2xl mx-auto mt-12 px-4">
+              <div className="w-full max-w-2xl mx-auto mt-6 px-4">
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
-                  <CardContent className="p-8 md:p-12">
+                  <CardContent className="p-6 md:p-8">
                     {/* Logo */}
-                    <div className="flex justify-center mb-12">
-                      <img src={ensV2Logo} alt="ENS V2" className="h-24 w-auto" />
+                    <div className="flex justify-center mb-6">
+                      <img src={ensV2Logo} alt="ENS V2" className="h-16 md:h-20 w-auto" />
                     </div>
                     
                     {/* Benefits List */}
-                    <div className="space-y-8 text-white">
-                      <div className="flex gap-6 items-start">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
-                          <Key className="w-5 h-5 text-[#D4AF37]" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-xl mb-2 text-white">One Name, Any Chain</h3>
-                          <p className="text-gray-300 text-base leading-relaxed">Your ENS name and subdomains work across Ethereum L1 and all L2s, including World Chain.</p>
-                        </div>
+                    <div className="space-y-4 text-white text-center">
+                      <div>
+                        <h3 className="font-semibold text-lg md:text-xl mb-1 text-white">One Name, Any Chain</h3>
+                        <p className="text-gray-300 text-sm md:text-base leading-relaxed">Your ENS name and subdomains work across Ethereum L1 and all L2s, including World Chain.</p>
                       </div>
                       
-                      <div className="flex gap-6 items-start">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
-                          <Zap className="w-5 h-5 text-[#D4AF37]" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-xl mb-2 text-white">Low Fees, Fast Updates</h3>
-                          <p className="text-gray-300 text-base leading-relaxed">Manage your name instantly with near-zero gas fees.</p>
-                        </div>
+                      <div>
+                        <h3 className="font-semibold text-lg md:text-xl mb-1 text-white">Low Fees, Fast Updates</h3>
+                        <p className="text-gray-300 text-sm md:text-base leading-relaxed">Manage your name instantly with near-zero gas fees.</p>
                       </div>
                       
-                      <div className="flex gap-6 items-start">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
-                          <Wrench className="w-5 h-5 text-[#D4AF37]" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-xl mb-2 text-white">Full ENS Functionality</h3>
-                          <p className="text-gray-300 text-base leading-relaxed">Update profiles, records, wallets, and metadata — all from World App.</p>
-                        </div>
+                      <div>
+                        <h3 className="font-semibold text-lg md:text-xl mb-1 text-white">Full ENS Functionality</h3>
+                        <p className="text-gray-300 text-sm md:text-base leading-relaxed">Update profiles, records, wallets, and metadata — all from World App.</p>
                       </div>
                       
-                      <div className="flex gap-6 items-start">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
-                          <Globe className="w-5 h-5 text-[#D4AF37]" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-xl mb-2 text-white">Future-Proof Identity</h3>
-                          <p className="text-gray-300 text-base leading-relaxed">ENS v2 uses the Namechain registry — making your identity portable and interoperable.</p>
-                        </div>
+                      <div>
+                        <h3 className="font-semibold text-lg md:text-xl mb-1 text-white">Future-Proof Identity</h3>
+                        <p className="text-gray-300 text-sm md:text-base leading-relaxed">ENS v2 uses the Namechain registry — making your identity portable and interoperable.</p>
                       </div>
                       
-                      <div className="flex gap-6 items-start">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
-                          <Link className="w-5 h-5 text-[#D4AF37]" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-xl mb-2 text-white">Subdomain Value</h3>
-                          <p className="text-gray-300 text-base leading-relaxed">Holding an ENS subdomain is like holding a digital asset that gains utility and value as ENS expands.</p>
-                        </div>
+                      <div>
+                        <h3 className="font-semibold text-lg md:text-xl mb-1 text-white">Subdomain Value</h3>
+                        <p className="text-gray-300 text-sm md:text-base leading-relaxed">Holding an ENS subdomain is like holding a digital asset that gains utility and value as ENS expands.</p>
                       </div>
                     </div>
                     
                     {/* Learn More Button */}
-                    <div className="mt-10 flex justify-center">
+                    <div className="mt-6 flex justify-center">
                       <a
                         href="https://ens.domains/ensv2"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-base"
+                        className="px-6 py-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-base"
                       >
                         Learn More
                       </a>
