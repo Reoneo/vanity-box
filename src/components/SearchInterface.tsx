@@ -28,6 +28,7 @@ import aptosNamesNew from '@/assets/aptos-names-new.jpeg';
 import avvyLogo from '@/assets/avvy-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
+import ensV2Logo from '@/assets/ens-v2-logo.png';
 
 export interface FilterState {
   protocol: string[];
@@ -413,6 +414,76 @@ export const SearchInterface = () => {
               </div>
             </div>
             
+            {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
+            {!hasSearched && !showMyIDs && (
+              <div className="w-full max-w-2xl mx-auto mt-12 px-4">
+                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                  <CardContent className="p-8">
+                    {/* Logo */}
+                    <div className="flex justify-center mb-8">
+                      <img src={ensV2Logo} alt="ENS V2" className="h-20 w-auto" />
+                    </div>
+                    
+                    {/* Benefits List */}
+                    <div className="space-y-6 text-white">
+                      <div className="flex gap-4">
+                        <span className="text-2xl flex-shrink-0">🔑</span>
+                        <div>
+                          <h3 className="font-semibold text-lg mb-1">One Name, Any Chain</h3>
+                          <p className="text-gray-300 text-sm">Your .eth name and subdomains work across Ethereum L1 and all L2s, including World Chain.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-4">
+                        <span className="text-2xl flex-shrink-0">⚡</span>
+                        <div>
+                          <h3 className="font-semibold text-lg mb-1">Low Fees, Fast Updates</h3>
+                          <p className="text-gray-300 text-sm">Manage your name instantly with near-zero gas fees.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-4">
+                        <span className="text-2xl flex-shrink-0">🛠️</span>
+                        <div>
+                          <h3 className="font-semibold text-lg mb-1">Full ENS Functionality</h3>
+                          <p className="text-gray-300 text-sm">Update profiles, records, wallets, and metadata — all from World App.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-4">
+                        <span className="text-2xl flex-shrink-0">🌍</span>
+                        <div>
+                          <h3 className="font-semibold text-lg mb-1">Future-Proof Identity</h3>
+                          <p className="text-gray-300 text-sm">ENS v2 uses the Namechain registry — making your identity portable and interoperable.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-4">
+                        <span className="text-2xl flex-shrink-0">🔗</span>
+                        <div>
+                          <h3 className="font-semibold text-lg mb-1">Subdomain Value</h3>
+                          <p className="text-gray-300 text-sm">Holding an ENS subdomain is like holding a digital asset that gains utility and value as ENS expands.</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Learn More Button */}
+                    <div className="mt-8 flex justify-center">
+                      <a
+                        href="https://ens.domains/ensv2"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg"
+                      >
+                        Learn More
+                        <Globe className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {/* My ID's Section */}
             {walletAddress && showMyIDs && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
