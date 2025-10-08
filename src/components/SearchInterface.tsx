@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, Info, ArrowLeft, Globe } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, Info, ArrowLeft, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,13 @@ import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { UserDomainsDisplay } from '@/components/UserDomainsDisplay';
 import { MiniKit } from '@worldcoin/minikit-js';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -414,57 +421,132 @@ export const SearchInterface = () => {
               </div>
             </div>
             
-            {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
+            {/* Information Carousel - Shows when no search results and not showing My IDs */}
             {!hasSearched && !showMyIDs && (
-              <div className="w-full max-w-2xl mx-auto mt-4 px-4">
-                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
-                  <CardContent className="p-3 md:p-8">
-                    {/* Logo */}
-                    <div className="flex justify-center mb-3 md:mb-6">
-                      <img src={ensV2Logo} alt="ENS V2" className="h-10 md:h-20 w-auto" />
-                    </div>
-                    
-                    {/* Benefits List */}
-                    <div className="space-y-2 md:space-y-4 text-white text-center">
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-0.5 md:mb-1 text-white">One Name, Any Chain</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug md:leading-relaxed">Your ENS name and subdomains work across Ethereum L1 and all L2s, including World Chain.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-0.5 md:mb-1 text-white">Low Fees, Fast Updates</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug md:leading-relaxed">Manage your name instantly with near-zero gas fees.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-0.5 md:mb-1 text-white">Full ENS Functionality</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug md:leading-relaxed">Update profiles, records, wallets, and metadata — all from World App.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-0.5 md:mb-1 text-white">Future-Proof Identity</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug md:leading-relaxed">ENS v2 uses the Namechain registry — making your identity portable and interoperable.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-0.5 md:mb-1 text-white">Subdomain Value</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug md:leading-relaxed">Holding an ENS subdomain is like holding a digital asset that gains utility and value as ENS expands.</p>
-                      </div>
-                    </div>
-                    
-                    {/* Learn More Button */}
-                    <div className="mt-3 md:mt-6 flex justify-center">
-                      <a
-                        href="https://ens.domains/ensv2"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 md:px-6 md:py-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-sm md:text-base"
-                      >
-                        Learn More
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="w-full max-w-2xl mx-auto mt-8 mb-8 px-4">
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {/* ENS V2 Slide */}
+                    <CarouselItem>
+                      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                        <CardContent className="p-3 md:p-6">
+                          <div className="flex justify-center mb-2 md:mb-4">
+                            <img src={ensV2Logo} alt="ENS V2" className="h-8 md:h-12 w-auto" />
+                          </div>
+                          
+                          <div className="space-y-1.5 md:space-y-2 text-white text-center">
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">One Name, Any Chain</h3>
+                              <p className="text-gray-300 text-[10px] md:text-xs leading-snug">Your ENS name and subdomains work across Ethereum L1 and all L2s, including World Chain.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Low Fees, Fast Updates</h3>
+                              <p className="text-gray-300 text-[10px] md:text-xs leading-snug">Manage your name instantly with near-zero gas fees.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Full ENS Functionality</h3>
+                              <p className="text-gray-300 text-[10px] md:text-xs leading-snug">Update profiles, records, wallets, and metadata — all from World App.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Future-Proof Identity</h3>
+                              <p className="text-gray-300 text-[10px] md:text-xs leading-snug">ENS v2 uses the Namechain registry — making your identity portable and interoperable.</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-2 md:mt-4 flex justify-center">
+                            <a
+                              href="https://ens.domains/ensv2"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 md:px-4 md:py-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-xs md:text-sm"
+                            >
+                              Learn More
+                            </a>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+
+                    {/* Stablecoin News Slide */}
+                    <CarouselItem>
+                      <Card className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 border-2 border-blue-400/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                        <CardContent className="p-3 md:p-6">
+                          <div className="flex justify-center mb-2 md:mb-4">
+                            <h2 className="text-base md:text-2xl font-bold text-white">💰 Stablecoin News</h2>
+                          </div>
+                          
+                          <div className="space-y-1.5 md:space-y-2 text-white text-center">
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">USDC Integration Expanding</h3>
+                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">Circle's USDC is now supported across 15+ blockchains, including World Chain, enabling seamless cross-chain payments.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Stablecoins Reach $200B Market Cap</h3>
+                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">Total stablecoin market capitalization surpasses $200 billion, driven by institutional adoption and DeFi growth.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">PayPal USD Gains Traction</h3>
+                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">PYUSD sees increasing adoption in payment platforms and Web3 applications.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Regulation Creates Clarity</h3>
+                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">New regulatory frameworks provide clearer guidelines for stablecoin issuers globally.</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+
+                    {/* Digital ID News Slide */}
+                    <CarouselItem>
+                      <Card className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 border-2 border-purple-400/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                        <CardContent className="p-3 md:p-6">
+                          <div className="flex justify-center mb-2 md:mb-4">
+                            <h2 className="text-base md:text-2xl font-bold text-white">🆔 Digital ID News</h2>
+                          </div>
+                          
+                          <div className="space-y-1.5 md:space-y-2 text-white text-center">
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">World ID Reaches 10M Verifications</h3>
+                              <p className="text-purple-100 text-[10px] md:text-xs leading-snug">World ID surpasses 10 million verified humans, establishing the largest proof-of-personhood network.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">ENS Names as Digital Identity</h3>
+                              <p className="text-purple-100 text-[10px] md:text-xs leading-snug">ENS names are becoming the standard for Web3 identity, linking wallets, social profiles, and metadata.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Zero-Knowledge Proofs Go Mainstream</h3>
+                              <p className="text-purple-100 text-[10px] md:text-xs leading-snug">ZK technology enables privacy-preserving identity verification without exposing personal data.</p>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Decentralized Identity Standards</h3>
+                              <p className="text-purple-100 text-[10px] md:text-xs leading-snug">New W3C standards for decentralized identifiers (DIDs) improve interoperability across platforms.</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  </CarouselContent>
+                  
+                  <CarouselPrevious className="hidden md:flex -left-12 bg-white/10 border-white/20 hover:bg-white/20 text-white" />
+                  <CarouselNext className="hidden md:flex -right-12 bg-white/10 border-white/20 hover:bg-white/20 text-white" />
+                </Carousel>
+                
+                {/* Swipe Indicator */}
+                <div className="flex justify-center mt-3 gap-2 items-center">
+                  <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground animate-pulse" />
+                  <p className="text-[10px] md:text-xs text-muted-foreground">Swipe for more info</p>
+                  <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground animate-pulse" />
+                </div>
               </div>
             )}
 
