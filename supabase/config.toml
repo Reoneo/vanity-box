@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.get-user-domains]
 verify_jwt = false
+
+[functions.fetch-stablecoin-news]
+verify_jwt = false

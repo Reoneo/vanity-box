@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, Info, ArrowLeft, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, Info, ArrowLeft, Globe, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -65,6 +66,8 @@ export const SearchInterface = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
   const [showMyIDs, setShowMyIDs] = useState(false);
+  const [stablecoinNews, setStablecoinNews] = useState<any[]>([]);
+  const [loadingNews, setLoadingNews] = useState(false);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -104,32 +107,120 @@ export const SearchInterface = () => {
     };
   }, []);
 
-  const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
-  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname'];
-
-  // Re-fetch results when language changes
+  // Fetch stablecoin news on mount
   useEffect(() => {
-    if (hasSearched && ensResults.length > 0) {
-      const allResults = getAllResults();
-      if (filters.protocol.length === 0 && filters.club.length === 0) {
-        setEnsResults(allResults);
-      } else {
-        const filteredResults = allResults.filter(result => {
-          const categories = Array.isArray(result.category) ? result.category : [result.category];
-          const clubs = Array.isArray(result.club) ? result.club : [result.club];
-          
-          const protocolMatch = filters.protocol.length === 0 || 
-            filters.protocol.some(p => categories.includes(p));
-          const clubMatch = filters.club.length === 0 || 
-            filters.club.some(c => clubs.includes(c));
-          return protocolMatch && clubMatch;
-        });
-        setEnsResults(filteredResults);
+    const fetchNews = async () => {
+      setLoadingNews(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-stablecoin-news');
+        if (error) {
+          console.error('Error fetching news:', error);
+        } else {
+          setStablecoinNews(data?.items || []);
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        setLoadingNews(false);
       }
+    };
+    
+    fetchNews();
+  }, []);
+
+  // Re-fetch and filter results when language changes
+  useEffect(() => {
+    if (hasSearched && searchQuery) {
+      const allResults = getAllResultsData();
+      const filteredResults = allResults.filter(result => {
+        const searchLower = searchQuery.toLowerCase();
+        const matchesSearch = result.name.toLowerCase().includes(searchLower) ||
+                            result.description.toLowerCase().includes(searchLower);
+        
+        const matchesProtocol = filters.protocol.length === 0 || 
+                               filters.protocol.some(p => {
+                                 if (Array.isArray(result.category)) {
+                                   return result.category.includes(p);
+                                 }
+                                 return result.category === p;
+                               });
+        
+        const matchesClub = filters.club.length === 0 || 
+                           filters.club.some(c => {
+                             if (Array.isArray(result.club)) {
+                               return result.club.includes(c);
+                             }
+                             return result.club === c;
+                           });
+        
+        return matchesSearch && matchesProtocol && matchesClub;
+      });
+      setEnsResults(filteredResults);
     }
   }, [language]);
 
-  const getSubdomainPrice = (subdomain: string) => {
+  const protocols = ['ENS', 'Aptos Names', 'Avvy Domains'];
+  const clubs = ['100 club', 'emoji club', '999 club', '10k club'];
+
+  const handleProtocolToggle = (protocol: string) => {
+    setFilters(prev => ({
+      ...prev,
+      protocol: prev.protocol.includes(protocol)
+        ? prev.protocol.filter(p => p !== protocol)
+        : [...prev.protocol, protocol]
+    }));
+  };
+
+  const handleClubToggle = (club: string) => {
+    setFilters(prev => ({
+      ...prev,
+      club: prev.club.includes(club)
+        ? prev.club.filter(c => c !== club)
+        : [...prev.club, club]
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ protocol: [], club: [] });
+  };
+
+  const handleApplyFilters = () => {
+    if (hasSearched) {
+      handleSearch();
+    }
+    setShowFilterDropdown(false);
+  };
+
+  const getAllResults = (): ENSResult[] => {
+    return [
+      {
+        name: "smith.cash",
+        description: t('smith_cash_desc'),
+        imageUrl: smithCashAvatar,
+        price: 1,
+        category: 'ENS',
+        club: '100 club'
+      },
+      {
+        name: "smith.apt",
+        description: t('smith_apt_desc'),
+        imageUrl: smithAptAvatar,
+        price: 5,
+        category: 'Aptos Names',
+        club: '999 club'
+      },
+      {
+        name: "termux.avax",
+        description: t('termux_avax_desc'),
+        imageUrl: termuxAvatar,
+        price: 10,
+        category: 'Avvy Domains',
+        club: 'emoji club'
+      }
+    ];
+  };
+
+  const getSubdomainPrice = (subdomain: string): number => {
     const length = subdomain.length;
     if (length === 1) return 100;
     if (length === 2) return 50;
@@ -140,42 +231,7 @@ export const SearchInterface = () => {
     return 1;
   };
 
-  const handleProtocolToggle = (protocol: string) => {
-    const newProtocols = filters.protocol.includes(protocol)
-      ? filters.protocol.filter(p => p !== protocol)
-      : [...filters.protocol, protocol];
-    
-    setFilters({
-      ...filters,
-      protocol: newProtocols
-    });
-  };
-
-  const handleClubToggle = (club: string) => {
-    const newClubs = filters.club.includes(club)
-      ? filters.club.filter(c => c !== club)
-      : [...filters.club, club];
-    
-    setFilters({
-      ...filters,
-      club: newClubs
-    });
-  };
-
-  const handleClearFilters = () => {
-    setFilters({ protocol: [], club: [] });
-    setShowFilterDropdown(false);
-    setEnsResults([]);
-  };
-
-  const handleApplyFilters = () => {
-    setShowFilterDropdown(false);
-    if (filters.protocol.length > 0 || filters.club.length > 0) {
-      handleSearch();
-    }
-  };
-
-  const getAllResults = () => {
+  const getAllResultsData = () => {
     const allResults = [
       {
         name: '30315.eth',
@@ -253,7 +309,7 @@ export const SearchInterface = () => {
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const allResults = getAllResults();
+    const allResults = getAllResultsData();
     
     if (filters.protocol.length === 0 && filters.club.length === 0) {
       setEnsResults(allResults);
@@ -470,34 +526,52 @@ export const SearchInterface = () => {
                       </Card>
                     </CarouselItem>
 
-                    {/* Stablecoin News Slide */}
+                     {/* Stablecoin News Slide */}
                     <CarouselItem>
-                      <Card className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 border-2 border-blue-400/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                         <CardContent className="p-3 md:p-6">
-                          <div className="flex justify-center mb-2 md:mb-4">
-                            <h2 className="text-base md:text-2xl font-bold text-white">💰 Stablecoin News</h2>
+                          <div className="flex justify-center mb-3 md:mb-4">
+                            <h2 className="text-base md:text-2xl font-bold text-[#D4AF37]">Stablecoin News</h2>
                           </div>
                           
-                          <div className="space-y-1.5 md:space-y-2 text-white text-center">
-                            <div>
-                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">USDC Integration Expanding</h3>
-                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">Circle's USDC is now supported across 15+ blockchains, including World Chain, enabling seamless cross-chain payments.</p>
+                          {loadingNews ? (
+                            <div className="text-center text-white text-xs md:text-sm py-4">Loading latest news...</div>
+                          ) : stablecoinNews.length > 0 ? (
+                            <div className="space-y-2 md:space-y-3 max-h-[280px] md:max-h-[320px] overflow-y-auto">
+                              {stablecoinNews.slice(0, 8).map((item, idx) => (
+                                <div key={idx} className="border-b border-gray-700 pb-2">
+                                  <a
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block group"
+                                  >
+                                    <h3 className="font-semibold text-[10px] md:text-sm mb-1 text-white group-hover:text-[#D4AF37] transition-colors flex items-start gap-1">
+                                      <span className="flex-1">{item.title}</span>
+                                      <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-50 group-hover:opacity-100" />
+                                    </h3>
+                                    <p className="text-gray-400 text-[9px] md:text-xs">
+                                      {item.source} • {new Date(item.time).toLocaleDateString()}
+                                    </p>
+                                  </a>
+                                </div>
+                              ))}
                             </div>
-                            
-                            <div>
-                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Stablecoins Reach $200B Market Cap</h3>
-                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">Total stablecoin market capitalization surpasses $200 billion, driven by institutional adoption and DeFi growth.</p>
+                          ) : (
+                            <div className="text-center text-white text-xs md:text-sm py-4">
+                              No recent stablecoin news available
                             </div>
-                            
-                            <div>
-                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">PayPal USD Gains Traction</h3>
-                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">PYUSD sees increasing adoption in payment platforms and Web3 applications.</p>
-                            </div>
-                            
-                            <div>
-                              <h3 className="font-semibold text-xs md:text-base mb-0.5 text-white">Regulation Creates Clarity</h3>
-                              <p className="text-blue-100 text-[10px] md:text-xs leading-snug">New regulatory frameworks provide clearer guidelines for stablecoin issuers globally.</p>
-                            </div>
+                          )}
+                          
+                          <div className="mt-3 md:mt-4 flex justify-center">
+                            <a
+                              href="https://www.coindesk.com/"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 md:px-4 md:py-2 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-xs md:text-sm"
+                            >
+                              More on CoinDesk
+                            </a>
                           </div>
                         </CardContent>
                       </Card>
@@ -505,10 +579,10 @@ export const SearchInterface = () => {
 
                     {/* Digital ID News Slide */}
                     <CarouselItem>
-                      <Card className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 border-2 border-purple-400/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                      <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                         <CardContent className="p-3 md:p-6">
                           <div className="flex justify-center mb-2 md:mb-4">
-                            <h2 className="text-base md:text-2xl font-bold text-white">🆔 Digital ID News</h2>
+                            <h2 className="text-base md:text-2xl font-bold text-[#D4AF37]">Digital ID News</h2>
                           </div>
                           
                           <div className="space-y-1.5 md:space-y-2 text-white text-center">
