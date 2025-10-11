@@ -32,13 +32,13 @@ const Index = () => {
       
       <Header />
       
-      {/* Hero Section - Optimized for mobile (no scroll) */}
-      <main className="flex-1 px-4 py-4 md:pt-24 relative z-10 overflow-hidden">
+      {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
+      <main className="flex-1 px-4 pt-24 md:pt-28 pb-2 relative z-10 overflow-hidden">
         <div className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <SearchInterface />
         </div>
       </main>
-      <footer className="py-2 text-center text-xs text-foreground dark:text-white">
+      <footer className="py-2 text-center text-[10px] md:text-xs text-foreground dark:text-white">
         {t('copyright')}
       </footer>
     </div>
