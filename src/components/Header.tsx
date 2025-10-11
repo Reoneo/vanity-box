@@ -48,6 +48,7 @@ export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,15 +59,22 @@ export const Header: React.FC = () => {
 
     const handleMintOpen = () => setIsMintWindowOpen(true);
     const handleMintClose = () => setIsMintWindowOpen(false);
+    
+    const handleWalletConnected = () => setIsWalletConnected(true);
+    const handleWalletDisconnected = () => setIsWalletConnected(false);
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('mint-window-open', handleMintOpen);
     window.addEventListener('mint-window-close', handleMintClose);
+    window.addEventListener('wallet-connected', handleWalletConnected);
+    window.addEventListener('wallet-disconnected', handleWalletDisconnected);
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('mint-window-open', handleMintOpen);
       window.removeEventListener('mint-window-close', handleMintClose);
+      window.removeEventListener('wallet-connected', handleWalletConnected);
+      window.removeEventListener('wallet-disconnected', handleWalletDisconnected);
     };
   }, []);
 
@@ -82,47 +90,94 @@ export const Header: React.FC = () => {
         
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
-          {/* Mobile: Logo, Menu Button, and Search Icon on left */}
-          <div className="flex items-center gap-1 md:hidden">
-            {/* Logo - positioned at far left, moved slightly left */}
-            <div className="flex items-center -ml-2">
-              <img 
-                src={vanityLogo} 
-                alt="Vanity.box Logo" 
-                className="h-24 w-auto object-contain transform scale-100"
-                loading="eager"
-                fetchPriority="high"
-                style={{ marginTop: '2px', marginBottom: '2px' }}
-              />
+          {/* Mobile: Show left-aligned controls when wallet is connected */}
+          {isWalletConnected && (
+            <div className="flex items-center gap-1 md:hidden">
+              {/* Logo - positioned at far left, moved slightly left */}
+              <div className="flex items-center -ml-2">
+                <img 
+                  src={vanityLogo} 
+                  alt="Vanity.box Logo" 
+                  className="h-24 w-auto object-contain transform scale-100"
+                  loading="eager"
+                  fetchPriority="high"
+                  style={{ marginTop: '2px', marginBottom: '2px' }}
+                />
+              </div>
+
+              {/* Menu Button */}
+              <TriggerOrClose asChild>
+                <button
+                  type="button"
+                  aria-label="Toggle menu"
+                  className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
+                >
+                  <div className="relative w-5 h-5">
+                    <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                  </div>
+                </button>
+              </TriggerOrClose>
+
+              {/* Search Icon - appears when search bar is out of view or mint window is open */}
+              {(showSearchIcon || isMintWindowOpen) && (
+                <button
+                  type="button"
+                  aria-label="Scroll to search"
+                  onClick={scrollToSearch}
+                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                >
+                  <Search className="w-5 h-5 text-black" />
+                </button>
+              )}
             </div>
+          )}
 
-            {/* Menu Button */}
-            <TriggerOrClose asChild>
-              <button
-                type="button"
-                aria-label="Toggle menu"
-                className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
-              >
-                <div className="relative w-5 h-5">
-                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
-                </div>
-              </button>
-            </TriggerOrClose>
+          {/* Mobile: Show centered logo when wallet is NOT connected (desktop/tablet mode) */}
+          {!isWalletConnected && (
+            <>
+              {/* Left Side Controls */}
+              <div className="flex items-center gap-2 md:hidden">
+                <TriggerOrClose asChild>
+                  <button
+                    type="button"
+                    aria-label="Toggle menu"
+                    className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
+                  >
+                    <div className="relative w-5 h-5">
+                      <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                      <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                      <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                    </div>
+                  </button>
+                </TriggerOrClose>
 
-            {/* Search Icon - appears when search bar is out of view or mint window is open */}
-            {(showSearchIcon || isMintWindowOpen) && (
-              <button
-                type="button"
-                aria-label="Scroll to search"
-                onClick={scrollToSearch}
-                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-              >
-                <Search className="w-5 h-5 text-black" />
-              </button>
-            )}
-          </div>
+                {/* Search Icon */}
+                {(showSearchIcon || isMintWindowOpen) && (
+                  <button
+                    type="button"
+                    aria-label="Scroll to search"
+                    onClick={scrollToSearch}
+                    className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                  >
+                    <Search className="w-5 h-5 text-black" />
+                  </button>
+                )}
+              </div>
+
+              {/* Centered Logo (Mobile when wallet disconnected) */}
+              <div className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden">
+                <img 
+                  src={vanityLogo} 
+                  alt="Vanity.box Logo" 
+                  className="h-20 w-auto object-contain"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </div>
+            </>
+          )}
 
           {/* Desktop/Tablet: Left Side Controls */}
           <div className="hidden md:flex items-center gap-2">
