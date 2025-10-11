@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.get-user-domains]
 verify_jwt = false
+
+[functions.set-namestone-records]
+verify_jwt = false
+
+[functions.delete-namestone-name]
+verify_jwt = false

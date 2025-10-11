@@ -315,10 +315,18 @@ export const SearchInterface = () => {
           />
         ) : (
           <>
-            {/* Main Heading - hidden when mint is open */}
-            {!showMintInterface && <PersonalizedHeader user={null} />}
+            {/* Main Heading - hidden when mint is open or showing My IDs */}
+            {!showMintInterface && !showMyIDs && <PersonalizedHeader user={null} />}
             
-            {/* Search bar container - constrained width on all devices */}
+            {/* My IDs Header - shown when displaying IDs */}
+            {!showMintInterface && showMyIDs && (
+              <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-gray-900 dark:text-white">
+                My ID's
+              </h1>
+            )}
+            
+            {/* Search bar container - hidden when showing My IDs */}
+            {!showMyIDs && (
             <div className="w-full max-w-md mx-auto">
               <div className="relative">
                 <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -382,7 +390,7 @@ export const SearchInterface = () => {
                 </div>
                 <Input
                   placeholder={t('search_for_a_name')}
-                  className="h-12 text-lg text-center bg-white border-black focus:border-black text-gray-600 placeholder-gray-400 pl-20 pr-20"
+                  className="h-12 text-lg text-center bg-white dark:bg-gray-900 border-black focus:border-black text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -413,6 +421,7 @@ export const SearchInterface = () => {
                 </div>
               </div>
             </div>
+            )}
             
             {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
             {!hasSearched && !showMyIDs && (

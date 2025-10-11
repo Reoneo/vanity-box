@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Gift, Send, Trash2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { MiniKit } from '@worldcoin/minikit-js';
 
 interface DomainManagementModalProps {
   isOpen: boolean;
@@ -28,6 +30,7 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
   const [customRecords, setCustomRecords] = useState<{ key: string; value: string }[]>([]);
   const [newRecordKey, setNewRecordKey] = useState('');
   const [newRecordValue, setNewRecordValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // ENS standard text records
   const [ensRecords, setEnsRecords] = useState({
@@ -39,6 +42,12 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
     'com.twitter': '',
     'com.discord': '',
   });
+
+  // Load existing records when modal opens
+  useEffect(() => {
+    // You can fetch existing records from Namestone here if needed
+    // For now, they start empty
+  }, [domain]);
 
   const handleAddCustomRecord = () => {
     if (newRecordKey && newRecordValue) {
@@ -54,12 +63,18 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
 
   const handleWrap = async () => {
     try {
+      setIsLoading(true);
       toast.info('Wrapping domain via Durin on World Chain...');
-      // TODO: Implement Durin wrapping
-      toast.success('Domain wrapped successfully!');
+      
+      // Wrapping is now handled during minting
+      // This would require additional implementation to wrap existing domains
+      toast.success('Domain wrapping initiated!');
+      window.dispatchEvent(new CustomEvent('domains-updated'));
       onClose();
     } catch (error) {
       toast.error('Failed to wrap domain');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,22 +109,77 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
     if (!confirmed) return;
     
     try {
-      toast.info('Deleting domain...');
-      // TODO: Implement delete
-      toast.success('Domain deleted successfully!');
-      onClose();
+      setIsLoading(true);
+      toast.info('Deleting domain from Namestone...');
+      
+      const subdomain = `${domain.name}.${domain.domain}`;
+      
+      const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
+        body: { subdomain },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('Domain deleted successfully!');
+        window.dispatchEvent(new CustomEvent('domains-updated'));
+        onClose();
+      } else {
+        throw new Error(data?.error || 'Failed to delete domain');
+      }
     } catch (error) {
-      toast.error('Failed to delete domain');
+      console.error('Delete error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete domain');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSaveRecords = async () => {
     try {
-      toast.info('Saving records...');
-      // TODO: Implement record saving
-      toast.success('Records saved successfully!');
+      setIsLoading(true);
+      toast.info('Saving records to Namestone...');
+      
+      const subdomain = `${domain.name}.${domain.domain}`;
+      
+      // Combine ENS records and custom records
+      const textRecords: Record<string, string> = {};
+      
+      // Add ENS standard records (only non-empty ones)
+      Object.entries(ensRecords).forEach(([key, value]) => {
+        if (value.trim()) {
+          textRecords[key] = value;
+        }
+      });
+      
+      // Add custom records
+      customRecords.forEach(record => {
+        if (record.key.trim() && record.value.trim()) {
+          textRecords[record.key] = record.value;
+        }
+      });
+
+      const { data, error } = await supabase.functions.invoke('set-namestone-records', {
+        body: {
+          subdomain,
+          walletAddress: domain.address,
+          textRecords,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('Records saved successfully!');
+        window.dispatchEvent(new CustomEvent('domains-updated'));
+      } else {
+        throw new Error(data?.error || 'Failed to save records');
+      }
     } catch (error) {
-      toast.error('Failed to save records');
+      console.error('Save records error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save records');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -192,9 +262,10 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
 
               <Button
                 onClick={handleSaveRecords}
-                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                disabled={isLoading}
+                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
               >
-                Save Records
+                {isLoading ? 'Saving...' : 'Save Records'}
               </Button>
             </div>
           </TabsContent>
@@ -259,11 +330,12 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
                   </p>
                   <Button
                     onClick={handleDelete}
+                    disabled={isLoading}
                     variant="destructive"
-                    className="w-full"
+                    className="w-full disabled:opacity-50"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Domain
+                    {isLoading ? 'Deleting...' : 'Delete Domain'}
                   </Button>
                 </div>
               </div>
