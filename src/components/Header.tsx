@@ -49,6 +49,7 @@ export const Header: React.FC = () => {
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [showBackButton, setShowBackButton] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,12 +63,20 @@ export const Header: React.FC = () => {
     
     const handleWalletConnected = () => setIsWalletConnected(true);
     const handleWalletDisconnected = () => setIsWalletConnected(false);
+    
+    const handleEditModeChange = (event: CustomEvent) => {
+      setShowBackButton(event.detail.isEditing);
+      if (event.detail.isEditing) {
+        setShowSearchIcon(true);
+      }
+    };
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('mint-window-open', handleMintOpen);
     window.addEventListener('mint-window-close', handleMintClose);
     window.addEventListener('wallet-connected', handleWalletConnected);
     window.addEventListener('wallet-disconnected', handleWalletDisconnected);
+    window.addEventListener('edit-mode-change', handleEditModeChange as EventListener);
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -75,12 +84,18 @@ export const Header: React.FC = () => {
       window.removeEventListener('mint-window-close', handleMintClose);
       window.removeEventListener('wallet-connected', handleWalletConnected);
       window.removeEventListener('wallet-disconnected', handleWalletDisconnected);
+      window.removeEventListener('edit-mode-change', handleEditModeChange as EventListener);
     };
   }, []);
 
   const scrollToSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  
+  const handleBackClick = () => {
+    window.dispatchEvent(new CustomEvent('back-to-domains'));
+  };
+  
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -120,8 +135,17 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {/* Search Icon - appears when search bar is out of view or mint window is open */}
-              {(showSearchIcon || isMintWindowOpen) && (
+              {/* Search Icon or Back Button */}
+              {showBackButton ? (
+                <button
+                  type="button"
+                  aria-label="Back to My IDs"
+                  onClick={handleBackClick}
+                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                >
+                  <span className="text-black font-semibold">←</span>
+                </button>
+              ) : (showSearchIcon || isMintWindowOpen) && (
                 <button
                   type="button"
                   aria-label="Scroll to search"
