@@ -118,13 +118,17 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
         body: { subdomain },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       if (data?.success) {
         toast.success('Domain deleted successfully!');
         window.dispatchEvent(new CustomEvent('domains-updated'));
         onClose();
       } else {
+        console.error('Delete failed:', data);
         throw new Error(data?.error || 'Failed to delete domain');
       }
     } catch (error) {
@@ -185,9 +189,9 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 mt-20 md:mt-0">
+        <DialogHeader className="pt-4 md:pt-0">
+          <DialogTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
             {domain.name}.{domain.domain}
             {domain.isWrapped && (
               <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30">

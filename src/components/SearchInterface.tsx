@@ -320,7 +320,7 @@ export const SearchInterface = () => {
             
             {/* My IDs Header - shown when displaying IDs */}
             {!showMintInterface && showMyIDs && (
-              <h1 className="text-3xl md:text-5xl font-bold text-center mb-4 md:mb-8 text-gray-900 dark:text-white">
+              <h1 className="text-2xl md:text-5xl font-bold text-center mb-3 md:mb-8 text-gray-900 dark:text-white whitespace-nowrap">
                 My ID's
               </h1>
             )}
@@ -425,44 +425,44 @@ export const SearchInterface = () => {
             
             {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
             {!hasSearched && !showMyIDs && (
-              <div className="w-full max-w-2xl mx-auto mt-3 md:mt-4 px-2 md:px-4">
+              <div className="w-full max-w-2xl mx-auto mt-2 md:mt-4 px-2 md:px-4">
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
-                  <CardContent className="p-4 md:p-8">
+                  <CardContent className="p-3 md:p-8">
                     {/* Logo */}
-                    <div className="flex justify-center mb-4 md:mb-6">
-                      <img src={ensV2Logo} alt="ENS V2" className="h-12 md:h-20 w-auto" />
+                    <div className="flex justify-center mb-3 md:mb-6">
+                      <img src={ensV2Logo} alt="ENS V2" className="h-10 md:h-20 w-auto" />
                     </div>
                     
                     {/* Benefits List */}
-                    <div className="space-y-3 md:space-y-4 text-white text-center">
+                    <div className="space-y-2 md:space-y-4 text-white text-center">
                       <div>
-                        <h3 className="font-semibold text-base md:text-xl mb-1 md:mb-1 text-white">One Name, Any Chain</h3>
-                        <p className="text-gray-300 text-sm md:text-base leading-snug md:leading-relaxed">Your ENS name and subdomains work across Ethereum L1 and all L2s, including World Chain.</p>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">One Name, Any Chain</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS names and subdomains across Ethereum L1, all L2s, and World Chain.</p>
                       </div>
                       
                       <div>
-                        <h3 className="font-semibold text-base md:text-xl mb-1 md:mb-1 text-white">Low Fees, Fast Updates</h3>
-                        <p className="text-gray-300 text-sm md:text-base leading-snug md:leading-relaxed">Manage your name instantly with near-zero gas fees.</p>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Low Fees, Fast Updates</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">Instant management with near-zero gas fees.</p>
                       </div>
                       
                       <div>
-                        <h3 className="font-semibold text-base md:text-xl mb-1 md:mb-1 text-white">Full ENS Functionality</h3>
-                        <p className="text-gray-300 text-sm md:text-base leading-snug md:leading-relaxed">Update profiles, records, wallets, and metadata — all from World App.</p>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Full ENS Functionality</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">Manage profiles, records, wallets, metadata—all from World App.</p>
                       </div>
                       
                       <div>
-                        <h3 className="font-semibold text-base md:text-xl mb-1 md:mb-1 text-white">Future-Proof Identity</h3>
-                        <p className="text-gray-300 text-sm md:text-base leading-snug md:leading-relaxed">ENS v2 uses the Namechain registry — making your identity portable and interoperable.</p>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Future-Proof Identity</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">Namechain registry makes your identity portable and interoperable.</p>
                       </div>
                       
                       <div>
-                        <h3 className="font-semibold text-base md:text-xl mb-1 md:mb-1 text-white">Subdomain Value</h3>
-                        <p className="text-gray-300 text-sm md:text-base leading-snug md:leading-relaxed">Holding an ENS subdomain is like holding a digital asset that gains utility and value as ENS expands.</p>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Subdomain Value</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS subdomains are digital assets gaining utility and value.</p>
                       </div>
                     </div>
                     
                     {/* Learn More Button */}
-                    <div className="mt-4 md:mt-6 flex justify-center">
+                    <div className="mt-3 md:mt-6 flex justify-center">
                       <a
                         href="https://ens.domains/ensv2"
                         target="_blank"

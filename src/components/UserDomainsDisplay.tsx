@@ -115,7 +115,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   return (
     <>
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
           My ID's ({domains.length})
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -144,12 +144,17 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                         {domain.name}.{domain.domain}
                       </h4>
                     </div>
-                    {domain.isWrapped && (
-                      <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 flex items-center gap-1 w-fit">
-                        <Gift className="w-3 h-3" />
-                        Wrapped
+                    <div className="flex gap-2 flex-wrap">
+                      <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30 hover:bg-blue-500/20 flex items-center gap-1 w-fit">
+                        ENS L2 (Durin)
                       </Badge>
-                    )}
+                      {domain.isWrapped && (
+                        <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 flex items-center gap-1 w-fit">
+                          <Gift className="w-3 h-3" />
+                          Wrapped
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
 
