@@ -154,20 +154,28 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         // Map payment method to MiniKit token symbol
         const tokenSymbol = paymentMethod === 'USDC' ? 'USDCE' : paymentMethod;
         
-        // Initiate payment via MiniKit
+        // Initiate payment via MiniKit with proper error handling
         const paymentPayload = {
           reference: `subdomain-${subdomain}-${Date.now()}`,
           to: '0x71ab0b01e3ff45551e25b208e2a90298f73f7040', // Payment recipient address
           tokens: [
             {
               symbol: tokenSymbol as any,
-              token_amount: convertedPrice.toString(),
+              token_amount: convertedPrice.toFixed(6), // Ensure proper decimal formatting
             },
           ],
           description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? 's' : ''}`,
         };
 
-        const { finalPayload } = await MiniKit.commandsAsync.pay(paymentPayload);
+        console.log('Initiating payment:', paymentPayload);
+        
+        const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
+        
+        if (!paymentResponse || !paymentResponse.finalPayload) {
+          throw new Error('Payment was cancelled or failed to initialize');
+        }
+        
+        const { finalPayload } = paymentResponse;
 
         if (finalPayload.status === 'success') {
           txHash = finalPayload.transaction_id;

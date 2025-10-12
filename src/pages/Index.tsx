@@ -33,7 +33,7 @@ const Index = () => {
       <Header />
       
       {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
-      <main className="flex-1 px-4 pt-20 md:pt-28 pb-2 relative z-10 overflow-hidden">
+      <main className="flex-1 px-4 pt-16 md:pt-28 pb-2 relative z-10 overflow-hidden">
         <div className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <SearchInterface />
         </div>

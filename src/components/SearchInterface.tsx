@@ -320,14 +320,14 @@ export const SearchInterface = () => {
             
             {/* My IDs Header - shown when displaying IDs */}
             {!showMintInterface && showMyIDs && (
-              <h1 className="text-2xl md:text-5xl font-bold text-center mb-3 md:mb-8 text-gray-900 dark:text-white whitespace-nowrap">
+              <h1 className="text-3xl md:text-5xl font-bold text-center mb-4 text-gray-900 dark:text-white whitespace-nowrap">
                 My ID's
               </h1>
             )}
             
             {/* Search bar container - hidden when showing My IDs */}
             {!showMyIDs && (
-            <div className="w-full max-w-md mx-auto mb-4 md:mb-0">
+            <div className="w-full max-w-md mx-auto mb-4 md:mb-0 mt-4">
               <div className="relative">
                 <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                   <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
@@ -437,7 +437,7 @@ export const SearchInterface = () => {
                     <div className="space-y-2 md:space-y-4 text-white text-center">
                       <div>
                         <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">One Name, Any Chain</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS names and subdomains across Ethereum L1, all L2s, and World Chain.</p>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS names work across Ethereum L1, all L2s and World Chain.</p>
                       </div>
                       
                       <div>

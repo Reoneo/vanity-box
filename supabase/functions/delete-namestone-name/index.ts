@@ -14,12 +14,13 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain } = await req.json();
+    const { subdomain, domain = 'smith.cash' } = await req.json();
 
     console.log('==========================================');
     console.log('🗑️  DELETING NAMESTONE NAME');
     console.log('==========================================');
     console.log('📝 Subdomain:', subdomain);
+    console.log('📝 Domain:', domain);
     console.log('==========================================');
 
     if (!NAMESTONE_API_KEY) {
@@ -34,7 +35,7 @@ serve(async (req) => {
     const subdomainLabel = subdomain.split('.')[0];
     
     const payload = {
-      domain: 'smith.cash',
+      domain,
       name: subdomainLabel
     };
 
