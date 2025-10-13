@@ -16,10 +16,9 @@ interface DomainEditPanelProps {
     address: string;
     isWrapped?: boolean;
   };
-  onBack: () => void;
 }
 
-export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain, onBack }) => {
+export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const [transferAddress, setTransferAddress] = useState('');
   const [customRecords, setCustomRecords] = useState<{ key: string; value: string }[]>([]);
   const [newRecordKey, setNewRecordKey] = useState('');
@@ -154,7 +153,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain, onBack
       if (data?.success) {
         toast.success('Domain deleted successfully!');
         window.dispatchEvent(new CustomEvent('domains-updated'));
-        onBack();
+        window.dispatchEvent(new CustomEvent('back-to-domains'));
       } else {
         console.error('Delete failed:', data);
         throw new Error(data?.error || 'Failed to delete domain');
@@ -217,15 +216,6 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain, onBack
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6">
-      {/* Back Button */}
-      <button
-        onClick={onBack}
-        className="mb-4 flex items-center gap-2 text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
-      >
-        <span className="text-xl">←</span>
-        <span className="font-medium">Back to My ID's</span>
-      </button>
-      
       {/* Domain Header */}
       <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-700">
         <div className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
@@ -243,13 +233,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain, onBack
             <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30">
               ENS L2 (Durin)
             </Badge>
-            {domain.isWrapped ? (
-              <Badge className="bg-purple-500/10 text-purple-400 border-purple-400/30">
-                ERC-1155
-              </Badge>
-            ) : (
-              <Badge className="bg-green-500/10 text-green-400 border-green-400/30">
-                ERC-20
+            {domain.isWrapped && (
+              <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30">
+                <Gift className="w-3 h-3 mr-1" />
+                Wrapped
               </Badge>
             )}
           </div>
@@ -353,31 +340,29 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain, onBack
           <div className="space-y-4">
             {!domain.isWrapped ? (
               <div className="p-4 bg-gray-800 rounded-lg">
-                <h4 className="font-semibold text-white mb-2">Wrap Domain with Durin</h4>
+                <h4 className="font-semibold text-white mb-2">Wrap Domain</h4>
                 <p className="text-sm text-gray-400 mb-4">
-                  Wrapping your domain converts it from ERC-20 to an ERC-1155 NFT via Durin on World Chain, enabling enhanced features.
+                  Wrapping your domain converts it to an ERC-1155 NFT via Durin on World Chain, enabling enhanced features.
                 </p>
                 <Button
                   onClick={handleWrap}
-                  disabled={isLoading}
-                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
+                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                 >
                   <Gift className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Wrapping...' : 'Wrap with Durin'}
+                  Wrap Domain
                 </Button>
               </div>
             ) : (
               <div className="p-4 bg-gray-800 rounded-lg">
                 <h4 className="font-semibold text-white mb-2">Unwrap Domain</h4>
                 <p className="text-sm text-gray-400 mb-4">
-                  Unwrapping will convert your domain from ERC-1155 back to ERC-20.
+                  Unwrapping will convert your domain back to a standard subdomain.
                 </p>
                 <Button
                   onClick={handleUnwrap}
-                  disabled={isLoading}
-                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
+                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                 >
-                  {isLoading ? 'Unwrapping...' : 'Unwrap'}
+                  Unwrap Domain
                 </Button>
               </div>
             )}
