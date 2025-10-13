@@ -4,7 +4,7 @@ import { LanguageSelector } from './LanguageSelector';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, ShoppingCart } from 'lucide-react';
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -49,7 +49,6 @@ export const Header: React.FC = () => {
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [showCart, setShowCart] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,14 +57,8 @@ export const Header: React.FC = () => {
       setShowSearchIcon(window.scrollY > searchBarArea);
     };
 
-    const handleMintOpen = () => {
-      setIsMintWindowOpen(true);
-      setShowCart(true);
-    };
-    const handleMintClose = () => {
-      setIsMintWindowOpen(false);
-      setShowCart(false);
-    };
+    const handleMintOpen = () => setIsMintWindowOpen(true);
+    const handleMintClose = () => setIsMintWindowOpen(false);
     
     const handleWalletConnected = () => setIsWalletConnected(true);
     const handleWalletDisconnected = () => setIsWalletConnected(false);
@@ -87,10 +80,6 @@ export const Header: React.FC = () => {
 
   const scrollToSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  
-  const handleCartClick = () => {
-    window.dispatchEvent(new CustomEvent('show-mint-modal'));
   };
   
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
@@ -132,17 +121,7 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {/* Cart Icon and Search Icon */}
-              {showCart && (
-                <button
-                  type="button"
-                  aria-label="View cart"
-                  onClick={handleCartClick}
-                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                >
-                  <ShoppingCart className="w-5 h-5 text-black" />
-                </button>
-              )}
+              {/* Search Icon */}
               {showSearchIcon && (
                 <button
                   type="button"
@@ -217,17 +196,7 @@ export const Header: React.FC = () => {
               </button>
             </TriggerOrClose>
 
-            {/* Cart and Search Icons */}
-            {showCart && (
-              <button
-                type="button"
-                aria-label="View cart"
-                onClick={handleCartClick}
-                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-              >
-                <ShoppingCart className="w-5 h-5 text-black" />
-              </button>
-            )}
+            {/* Search Icon */}
             {showSearchIcon && (
               <button
                 type="button"

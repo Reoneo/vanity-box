@@ -77,12 +77,21 @@ const Index = () => {
       {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
       <main className="flex-1 px-4 pt-20 md:pt-24 pb-2 relative z-10 overflow-hidden">
         <div className="max-w-2xl mx-auto text-center h-full flex flex-col">
-          <SearchInterface 
-            onDomainSelect={handleDomainSelect}
-            onViewMyIds={handleViewMyIds}
-          />
+          {!isMintModalOpen && !showMyIds && (
+            <SearchInterface 
+              onDomainSelect={handleDomainSelect}
+              onViewMyIds={handleViewMyIds}
+            />
+          )}
           
-          {showMyIds && <UserDomainsDisplay walletAddress={walletAddress} />}
+          {showMyIds && !isMintModalOpen && (
+            <>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 text-gray-900 dark:text-white whitespace-nowrap px-2">
+                My ID's
+              </h1>
+              <UserDomainsDisplay walletAddress={walletAddress} />
+            </>
+          )}
           
           {isMintModalOpen && selectedDomain && (
             <SubdomainMintModal
