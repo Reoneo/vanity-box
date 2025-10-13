@@ -66,24 +66,18 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     fetchDomains();
   }, [walletAddress]);
 
-  // Listen for domain updates and back button
+  // Listen for domain updates
   useEffect(() => {
     const handleDomainsUpdated = () => {
       fetchDomains();
-    };
-    
-    const handleBackToDomains = () => {
       setIsEditMode(false);
       setSelectedDomain(null);
-      window.dispatchEvent(new CustomEvent('edit-mode-change', { detail: { isEditing: false } }));
     };
 
     window.addEventListener('domains-updated', handleDomainsUpdated);
-    window.addEventListener('back-to-domains', handleBackToDomains);
     
     return () => {
       window.removeEventListener('domains-updated', handleDomainsUpdated);
-      window.removeEventListener('back-to-domains', handleBackToDomains);
     };
   }, [walletAddress]);
 
@@ -121,12 +115,16 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   const handleManageDomain = (domain: Domain) => {
     setSelectedDomain(domain);
     setIsEditMode(true);
-    window.dispatchEvent(new CustomEvent('edit-mode-change', { detail: { isEditing: true } }));
+  };
+
+  const handleBackToDomains = () => {
+    setIsEditMode(false);
+    setSelectedDomain(null);
   };
 
   // Show edit panel if in edit mode
   if (isEditMode && selectedDomain) {
-    return <DomainEditPanel domain={selectedDomain} />;
+    return <DomainEditPanel domain={selectedDomain} onBack={handleBackToDomains} />;
   }
 
   return (
@@ -164,10 +162,13 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                     <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30 hover:bg-blue-500/20 flex items-center gap-1 w-fit">
                       ENS L2 (Durin)
                     </Badge>
-                    {domain.isWrapped && (
-                      <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 flex items-center gap-1 w-fit">
-                        <Gift className="w-3 h-3" />
-                        Wrapped
+                     {domain.isWrapped ? (
+                      <Badge className="bg-purple-500/10 text-purple-400 border-purple-400/30 hover:bg-purple-500/20 flex items-center gap-1 w-fit">
+                        ERC-1155
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-green-500/10 text-green-400 border-green-400/30 hover:bg-green-500/20 flex items-center gap-1 w-fit">
+                        ERC-20
                       </Badge>
                     )}
                   </div>

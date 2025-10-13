@@ -44,7 +44,12 @@ interface ENSResult {
   club: string | string[];
 }
 
-export const SearchInterface = () => {
+interface SearchInterfaceProps {
+  onDomainSelect: (domain: string, price: number, avatar?: string) => void;
+  onViewMyIds: () => void;
+}
+
+export const SearchInterface: React.FC<SearchInterfaceProps> = ({ onDomainSelect, onViewMyIds }) => {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -56,46 +61,7 @@ export const SearchInterface = () => {
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
-  const [showMyIDs, setShowMyIDs] = useState(false);
 
-  // Get wallet address from MiniKit
-  useEffect(() => {
-    const checkWallet = () => {
-      const address = MiniKit.user?.walletAddress;
-      setWalletAddress(address);
-    };
-    
-    checkWallet();
-    
-    // Listen for wallet connection events
-    const handleWalletChange = (event: CustomEvent) => {
-      setWalletAddress(event.detail?.walletAddress);
-    };
-    
-    const handleShowMyIDs = () => {
-      setShowMyIDs(true);
-      setHasSearched(false);
-      setEnsResults([]);
-      setSearchQuery('');
-    };
-    
-    window.addEventListener('wallet-connected', handleWalletChange as EventListener);
-    window.addEventListener('wallet-disconnected', () => {
-      setWalletAddress(undefined);
-      setShowMyIDs(false);
-    });
-    window.addEventListener('show-my-ids', handleShowMyIDs);
-    
-    return () => {
-      window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
-      window.removeEventListener('wallet-disconnected', () => {
-        setWalletAddress(undefined);
-        setShowMyIDs(false);
-      });
-      window.removeEventListener('show-my-ids', handleShowMyIDs);
-    };
-  }, []);
 
   const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
   const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname'];
@@ -272,13 +238,10 @@ export const SearchInterface = () => {
 
   const handleMint = (result: ENSResult) => {
     setSelectedResult(result);
-    setShowMintInterface(true);
+    const fullSubdomain = searchQuery ? `${searchQuery}.${result.name}` : result.name;
+    onDomainSelect(fullSubdomain, price, result.imageUrl);
   };
 
-  const handleBackToResults = () => {
-    setShowMintInterface(false);
-    setSelectedResult(null);
-  };
 
   const handleFlipCard = (index: number) => {
     setFlippedCards(prev => {
@@ -304,29 +267,12 @@ export const SearchInterface = () => {
       )}
       
       <div className="w-full">
-        {/* Show mint interface when a result is selected */}
-        {showMintInterface && selectedResult ? (
-          <SubdomainMintModal
-            isOpen={true}
-            onClose={handleBackToResults}
-            subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
-            price={price}
-            resultAvatar={selectedResult.imageUrl}
-          />
-        ) : (
+        {!showMintInterface && (
           <>
-            {/* Main Heading - hidden when mint is open or showing My IDs */}
-            {!showMintInterface && !showMyIDs && <PersonalizedHeader user={null} />}
+            {/* Main Heading */}
+            <PersonalizedHeader user={null} />
             
-            {/* My IDs Header - shown when displaying IDs */}
-            {!showMintInterface && showMyIDs && (
-              <h1 className="text-3xl md:text-5xl font-bold text-center mb-4 text-gray-900 dark:text-white whitespace-nowrap">
-                My ID's
-              </h1>
-            )}
-            
-            {/* Search bar container - hidden when showing My IDs */}
-            {!showMyIDs && (
+            {/* Search bar container */}
             <div className="w-full max-w-md mx-auto mb-4 md:mb-0 mt-4">
               <div className="relative">
                 <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -421,10 +367,9 @@ export const SearchInterface = () => {
                 </div>
               </div>
             </div>
-            )}
             
-            {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
-            {!hasSearched && !showMyIDs && (
+            {/* ENS V2 Info Section - Shows when no search results */}
+            {!hasSearched && (
               <div className="w-full max-w-2xl mx-auto mt-2 md:mt-4 px-2 md:px-4">
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                   <CardContent className="p-3 md:p-8">
@@ -477,20 +422,6 @@ export const SearchInterface = () => {
               </div>
             )}
 
-            {/* My ID's Section */}
-            {walletAddress && showMyIDs && (
-              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
-                <Button
-                  onClick={() => setShowMyIDs(false)}
-                  variant="outline"
-                  className="mb-4 border-[#D4AF37] text-gray-900 dark:text-white hover:bg-[#D4AF37]/10"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Search
-                </Button>
-                <UserDomainsDisplay walletAddress={walletAddress} />
-              </div>
-            )}
 
             {/* Results container - same width as search bar */}
             <div className="w-full sm:max-w-3xl sm:mx-auto">
