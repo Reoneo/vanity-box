@@ -417,3 +417,5 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     </div>
   );
 };
+
+export default SubdomainMintModal;
