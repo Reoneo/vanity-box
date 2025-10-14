@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Send, Trash2, Plus, X } from 'lucide-react';
+import { Trash2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -19,7 +19,6 @@ interface DomainEditPanelProps {
 }
 
 export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
-  const [transferAddress, setTransferAddress] = useState('');
   const [customRecords, setCustomRecords] = useState<{ key: string; value: string }[]>([]);
   const [newRecordKey, setNewRecordKey] = useState('');
   const [newRecordValue, setNewRecordValue] = useState('');
@@ -96,40 +95,6 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     setCustomRecords(customRecords.filter((_, i) => i !== index));
   };
 
-  const handleWrap = async () => {
-    try {
-      setIsLoading(true);
-      toast.info('Wrapping domain via Durin on World Chain...');
-      toast.success('Domain wrapping initiated!');
-      window.dispatchEvent(new CustomEvent('domains-updated'));
-    } catch (error) {
-      toast.error('Failed to wrap domain');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUnwrap = async () => {
-    try {
-      toast.info('Unwrapping domain...');
-      toast.success('Domain unwrapped successfully!');
-    } catch (error) {
-      toast.error('Failed to unwrap domain');
-    }
-  };
-
-  const handleTransfer = async () => {
-    if (!transferAddress) {
-      toast.error('Please enter a valid address');
-      return;
-    }
-    try {
-      toast.info('Transferring domain...');
-      toast.success('Domain transferred successfully!');
-    } catch (error) {
-      toast.error('Failed to transfer domain');
-    }
-  };
 
   const handleDelete = async () => {
     const confirmed = window.confirm(`Are you sure you want to delete ${domain.name}.${domain.domain}? This action cannot be undone.`);
@@ -231,23 +196,16 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
           </h2>
           <div className="flex gap-2 flex-wrap">
             <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30">
-              ENS L2 (Durin)
+              Namestone ENS
             </Badge>
-            {domain.isWrapped && (
-              <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30">
-                <Gift className="w-3 h-3 mr-1" />
-                Wrapped
-              </Badge>
-            )}
           </div>
         </div>
       </div>
 
       <Tabs defaultValue="records" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-800">
+        <TabsList className="grid w-full grid-cols-2 bg-gray-800">
           <TabsTrigger value="records" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Records</TabsTrigger>
-          <TabsTrigger value="transfer" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Transfer</TabsTrigger>
-          <TabsTrigger value="wrap" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Wrap/Delete</TabsTrigger>
+          <TabsTrigger value="delete" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Delete</TabsTrigger>
         </TabsList>
 
         <TabsContent value="records" className="space-y-4 mt-4">
@@ -315,74 +273,28 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
           </div>
         </TabsContent>
 
-        <TabsContent value="transfer" className="space-y-4 mt-4">
+        <TabsContent value="delete" className="space-y-4 mt-4">
           <div className="space-y-4">
-            <div>
-              <Label className="text-gray-300">Transfer to Address</Label>
-              <Input
-                value={transferAddress}
-                onChange={(e) => setTransferAddress(e.target.value)}
-                placeholder="0x..."
-                className="mt-2 bg-gray-800 border-gray-700 text-white"
-              />
+            <div className="p-4 bg-red-900/20 rounded-lg">
+              <h4 className="font-semibold text-red-400 mb-2">Danger Zone</h4>
+              <p className="text-sm text-red-400 mb-4">
+                Deleting a domain is permanent and cannot be undone. This will remove the subdomain from Namestone.
+              </p>
+              <Button
+                onClick={handleDelete}
+                disabled={isLoading}
+                variant="destructive"
+                className="w-full disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isLoading ? 'Deleting...' : 'Delete Domain'}
+              </Button>
             </div>
-            <Button
-              onClick={handleTransfer}
-              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Transfer Domain
-            </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="wrap" className="space-y-4 mt-4">
-          <div className="space-y-4">
-            {!domain.isWrapped ? (
-              <div className="p-4 bg-gray-800 rounded-lg">
-                <h4 className="font-semibold text-white mb-2">Wrap Domain</h4>
-                <p className="text-sm text-gray-400 mb-4">
-                  Wrapping your domain converts it to an ERC-1155 NFT via Durin on World Chain, enabling enhanced features.
-                </p>
-                <Button
-                  onClick={handleWrap}
-                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-                >
-                  <Gift className="w-4 h-4 mr-2" />
-                  Wrap Domain
-                </Button>
-              </div>
-            ) : (
-              <div className="p-4 bg-gray-800 rounded-lg">
-                <h4 className="font-semibold text-white mb-2">Unwrap Domain</h4>
-                <p className="text-sm text-gray-400 mb-4">
-                  Unwrapping will convert your domain back to a standard subdomain.
-                </p>
-                <Button
-                  onClick={handleUnwrap}
-                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-                >
-                  Unwrap Domain
-                </Button>
-              </div>
-            )}
-
-            <div className="pt-4 border-t border-gray-700">
-              <div className="p-4 bg-red-900/20 rounded-lg">
-                <h4 className="font-semibold text-red-400 mb-2">Danger Zone</h4>
-                <p className="text-sm text-red-400 mb-4">
-                  Deleting a domain is permanent and cannot be undone.
-                </p>
-                <Button
-                  onClick={handleDelete}
-                  disabled={isLoading}
-                  variant="destructive"
-                  className="w-full disabled:opacity-50"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Deleting...' : 'Delete Domain'}
-                </Button>
-              </div>
+            <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-500/30">
+              <h4 className="font-semibold text-blue-400 mb-2">Annual Renewal</h4>
+              <p className="text-sm text-gray-300">
+                Each subdomain requires an annual renewal fee (same as mint price). The renewal timer will begin once ENS v2 is available and implemented in vanity.box.
+              </p>
             </div>
           </div>
         </TabsContent>

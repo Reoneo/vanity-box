@@ -73,10 +73,11 @@ export const SearchInterface = () => {
       setWalletAddress(event.detail?.walletAddress);
     };
     
-    const handleShowMyIDs = () => {
-      setShowMyIDs(true);
-      setShowMintInterface(false);
-    };
+  const handleShowMyIDs = () => {
+    setShowMyIDs(true);
+    setShowMintInterface(false);
+    window.dispatchEvent(new CustomEvent('show-my-ids'));
+  };
     
     window.addEventListener('wallet-connected', handleWalletChange as EventListener);
     window.addEventListener('wallet-disconnected', () => {

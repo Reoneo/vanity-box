@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Gift, Pencil, Send, Trash2 } from 'lucide-react';
+import { Loader2, Pencil, Send, Trash2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -75,7 +75,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     const handleBackToDomains = () => {
       setIsEditMode(false);
       setSelectedDomain(null);
-      window.dispatchEvent(new CustomEvent('edit-mode-change', { detail: { isEditing: false } }));
     };
 
     window.addEventListener('domains-updated', handleDomainsUpdated);
@@ -121,7 +120,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   const handleManageDomain = (domain: Domain) => {
     setSelectedDomain(domain);
     setIsEditMode(true);
-    window.dispatchEvent(new CustomEvent('edit-mode-change', { detail: { isEditing: true } }));
   };
 
   // Show edit panel if in edit mode
@@ -162,14 +160,8 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30 hover:bg-blue-500/20 flex items-center gap-1 w-fit">
-                      ENS L2 (Durin)
+                      Namestone ENS
                     </Badge>
-                    {domain.isWrapped && (
-                      <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 flex items-center gap-1 w-fit">
-                        <Gift className="w-3 h-3" />
-                        Wrapped
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>

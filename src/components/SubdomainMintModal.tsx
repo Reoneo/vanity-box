@@ -169,19 +169,28 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
         console.log('Initiating payment:', paymentPayload);
         
-        const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
-        
-        if (!paymentResponse || !paymentResponse.finalPayload) {
-          throw new Error('Payment was cancelled or failed to initialize');
-        }
-        
-        const { finalPayload } = paymentResponse;
+        try {
+          const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
+          
+          if (!paymentResponse || !paymentResponse.finalPayload) {
+            throw new Error('Payment was cancelled or failed to initialize');
+          }
+          
+          const { finalPayload } = paymentResponse;
 
-        if (finalPayload.status === 'success') {
-          txHash = finalPayload.transaction_id;
-          toast.success('Payment successful!');
-        } else {
-          throw new Error('Payment failed or was cancelled');
+          if (finalPayload.status === 'success') {
+            txHash = finalPayload.transaction_id;
+            toast.success('Payment successful!');
+          } else {
+            throw new Error('Payment failed or was cancelled');
+          }
+        } catch (payError) {
+          console.error('Payment error:', payError);
+          // More specific error handling for iOS
+          if (payError instanceof Error && payError.message.includes('cancelled')) {
+            throw new Error('Payment was cancelled');
+          }
+          throw new Error('Payment processing failed. Please try again.');
         }
       } else {
         // Free mint (Test321)

@@ -49,7 +49,7 @@ export const Header: React.FC = () => {
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [showBackButton, setShowBackButton] = useState(false);
+  const [showMyIds, setShowMyIds] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,19 +64,16 @@ export const Header: React.FC = () => {
     const handleWalletConnected = () => setIsWalletConnected(true);
     const handleWalletDisconnected = () => setIsWalletConnected(false);
     
-    const handleEditModeChange = (event: CustomEvent) => {
-      setShowBackButton(event.detail.isEditing);
-      if (event.detail.isEditing) {
-        setShowSearchIcon(true);
-      }
-    };
+    const handleShowMyIds = () => setShowMyIds(true);
+    const handleHideMyIds = () => setShowMyIds(false);
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('mint-window-open', handleMintOpen);
     window.addEventListener('mint-window-close', handleMintClose);
     window.addEventListener('wallet-connected', handleWalletConnected);
     window.addEventListener('wallet-disconnected', handleWalletDisconnected);
-    window.addEventListener('edit-mode-change', handleEditModeChange as EventListener);
+    window.addEventListener('show-my-ids', handleShowMyIds);
+    window.addEventListener('back-to-domains', handleHideMyIds);
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -84,16 +81,13 @@ export const Header: React.FC = () => {
       window.removeEventListener('mint-window-close', handleMintClose);
       window.removeEventListener('wallet-connected', handleWalletConnected);
       window.removeEventListener('wallet-disconnected', handleWalletDisconnected);
-      window.removeEventListener('edit-mode-change', handleEditModeChange as EventListener);
+      window.removeEventListener('show-my-ids', handleShowMyIds);
+      window.removeEventListener('back-to-domains', handleHideMyIds);
     };
   }, []);
 
   const scrollToSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  
-  const handleBackClick = () => {
-    window.dispatchEvent(new CustomEvent('back-to-domains'));
   };
   
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
@@ -135,7 +129,7 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {(showSearchIcon || isMintWindowOpen) && (
+              {(showSearchIcon || isMintWindowOpen || showMyIds) && (
                 <button
                   type="button"
                   aria-label="Scroll to search"
@@ -168,7 +162,7 @@ export const Header: React.FC = () => {
                 </TriggerOrClose>
 
                 {/* Search Icon */}
-                {(showSearchIcon || isMintWindowOpen) && (
+                {(showSearchIcon || isMintWindowOpen || showMyIds) && (
                   <button
                     type="button"
                     aria-label="Scroll to search"
@@ -210,7 +204,7 @@ export const Header: React.FC = () => {
             </TriggerOrClose>
 
             {/* Search Icon */}
-            {(showSearchIcon || isMintWindowOpen) && (
+            {(showSearchIcon || isMintWindowOpen || showMyIds) && (
               <button
                 type="button"
                 aria-label="Scroll to search"
