@@ -75,9 +75,7 @@ export const SearchInterface = () => {
     
     const handleShowMyIDs = () => {
       setShowMyIDs(true);
-      setHasSearched(false);
-      setEnsResults([]);
-      setSearchQuery('');
+      setShowMintInterface(false);
     };
     
     window.addEventListener('wallet-connected', handleWalletChange as EventListener);

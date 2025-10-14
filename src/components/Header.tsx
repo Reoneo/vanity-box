@@ -135,17 +135,7 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {/* Search Icon or Back Button */}
-              {showBackButton ? (
-                <button
-                  type="button"
-                  aria-label="Back to My IDs"
-                  onClick={handleBackClick}
-                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                >
-                  <span className="text-black font-semibold">←</span>
-                </button>
-              ) : (showSearchIcon || isMintWindowOpen) && (
+              {(showSearchIcon || isMintWindowOpen) && (
                 <button
                   type="button"
                   aria-label="Scroll to search"
