@@ -41,7 +41,7 @@ serve(async (req) => {
 
     console.log('📤 Sending delete request to Namestone:', JSON.stringify(payload, null, 2));
 
-    const response = await fetch('https://namestone.xyz/api/public_v1/delete-name', {
+    const response = await fetch('https://namestone.com/api/public_v1/delete-name', {
       method: 'POST',
       headers: {
         'Authorization': NAMESTONE_API_KEY,
