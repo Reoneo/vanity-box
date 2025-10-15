@@ -51,23 +51,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // --- Helpers ---------------------------------------------------------------
 
-  const initMiniKitIfNeeded = async () => {
-    try {
-      if (!miniKitReadyRef.current) {
-        await MiniKit.init({
-          app_id: import.meta.env.VITE_MINIKIT_APP_ID,
-          // environment: import.meta.env.VITE_MINIKIT_ENV ?? 'production',
-        });
-        miniKitReadyRef.current = true;
-      }
-
-      // Ensure a connected user/wallet
-      if (!MiniKit.user?.walletAddress) {
-        await MiniKit.commandsAsync.connect();
-      }
-    } catch (e) {
-      console.error("MiniKit init/connect failed:", e);
-      throw new Error("Unable to connect to World App. Please try again.");
+  const initMiniKitIfNeeded = () => {
+    if (!miniKitReadyRef.current) {
+      MiniKit.install();
+      miniKitReadyRef.current = true;
+    }
+    
+    // Check if wallet is available (no explicit connect needed in MiniKit)
+    if (!MiniKit.user?.walletAddress) {
+      throw new Error("Please open this app in World App to connect your wallet.");
     }
   };
 
@@ -94,9 +86,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     if (isOpen) {
       window.dispatchEvent(new Event("mint-window-open"));
       // Pre-initialize MiniKit when the modal opens for smoother UX
-      initMiniKitIfNeeded().catch(() => {
-        /* handled in initMiniKitIfNeeded */
-      });
+      try {
+        initMiniKitIfNeeded();
+      } catch (e) {
+        // Wallet not available yet - user will see error when they try to mint
+      }
     } else {
       window.dispatchEvent(new Event("mint-window-close"));
     }
@@ -185,7 +179,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       }
 
       // Ensure MiniKit is ready + user connected
-      await initMiniKitIfNeeded();
+      initMiniKitIfNeeded();
 
       const walletAddress = MiniKit.user?.walletAddress;
       if (!walletAddress) {
@@ -217,19 +211,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         try {
           const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
 
-          if (!paymentResponse || !paymentResponse.finalPayload) {
-            throw new Error("Payment was cancelled or failed to initialize.");
-          }
-
-          const { finalPayload } = paymentResponse;
-
-          if (finalPayload.status === "success") {
-            txHash = finalPayload.transaction_id;
+          if (paymentResponse?.finalPayload?.status === "success") {
+            txHash = paymentResponse.finalPayload.transaction_id;
             toast.success("Payment successful!");
-          } else if (finalPayload.status === "cancelled") {
-            throw new Error("Payment was cancelled.");
           } else {
-            throw new Error("Payment failed.");
+            throw new Error("Payment was cancelled or failed.");
           }
         } catch (payError: any) {
           console.error("Payment error:", payError);
