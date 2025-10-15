@@ -8,7 +8,8 @@ import { useTheme } from "next-themes";
 import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MiniKit } from "@worldcoin/minikit-js";
+// ⬇︎ MiniKit v0.5+ (uses install(), not init())
+import MiniKit from "@worldcoin/minikit-js";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ethLogoLight from "@/assets/eth-logo-light.png";
@@ -46,24 +47,29 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
 
-  // Prevent double MiniKit init
-  const miniKitReadyRef = useRef(false);
+  // Prevent double MiniKit install
+  const miniKitInstalledRef = useRef(false);
 
   // --------------------- helpers ---------------------
 
+  /**
+   * MiniKit v0.5+ bootstrap:
+   * - await MiniKit.install({ app_id })
+   * - then ensure a wallet session with commandsAsync.connect()
+   */
   const ensureMiniKitReady = async () => {
     try {
-      // 1) Properly initialize MiniKit ONCE with your app id
-      if (!miniKitReadyRef.current) {
-        // Some builds expose isInitialized, but guard either way
-        const alreadyInit = (MiniKit as any).isInitialized === true;
-        if (!alreadyInit) {
-          await MiniKit.init({
-            app_id: import.meta.env.VITE_MINIKIT_APP_ID, // <-- set in .env
-            // environment: import.meta.env.VITE_MINIKIT_ENV ?? "production",
-          });
+      // 1) Install MiniKit ONCE with your app id
+      if (!miniKitInstalledRef.current) {
+        const appId = import.meta.env.VITE_MINIKIT_APP_ID;
+        if (!appId) {
+          throw new Error("Missing VITE_MINIKIT_APP_ID");
         }
-        miniKitReadyRef.current = true;
+        await MiniKit.install({
+          app_id: appId,
+          // environment: import.meta.env.VITE_MINIKIT_ENV ?? "production",
+        });
+        miniKitInstalledRef.current = true;
       }
 
       // 2) Ensure a connected wallet (opens World App if needed)
@@ -74,7 +80,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         }
       }
     } catch (e: any) {
-      console.error("[MiniKit] init/connect failed:", e);
+      console.error("[MiniKit] install/connect failed:", e);
       throw new Error(e?.message || "Unable to connect to World App. Please try again.");
     }
   };
@@ -95,19 +101,17 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // --------------------- effects ---------------------
 
-  // Dispatch events when modal opens/closes + warm up MiniKit
   useEffect(() => {
     if (isOpen) {
       window.dispatchEvent(new Event("mint-window-open"));
-      ensureMiniKitReady().catch(() => {
-        // Swallow here; user will see a toast if it fails on click
-      });
+      // Warm-up MiniKit silently; user sees toast on click if it fails
+      ensureMiniKitReady().catch(() => {});
     } else {
       window.dispatchEvent(new Event("mint-window-close"));
     }
   }, [isOpen]);
 
-  // Fetch real-time crypto prices and refresh every 60s
+  // Fetch live prices and refresh every 60s
   useEffect(() => {
     let mounted = true;
 
@@ -176,13 +180,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     try {
       setIsMinting(true);
 
-      // Guard race condition on first open
+      // Guard: avoid race while prices are loading
       if (grandTotal > 0 && isLoadingPrices) {
         toast.info("Fetching prices — try again in a moment.");
         return;
       }
 
-      // Ensure MiniKit is ready and connected (opens World App if needed)
+      // Ensure MiniKit is installed and the wallet is connected
       await ensureMiniKitReady();
 
       const walletAddress = MiniKit.user?.walletAddress;
@@ -193,7 +197,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       if (grandTotal > 0) {
         toast.info("Processing payment...");
 
-        // Use canonical symbols
+        // Use canonical symbols expected by MiniKit / World App
         const tokenSymbol: PaymentMethod = paymentMethod; // 'USDC' | 'ETH' | 'WLD'
 
         const paymentPayload = {
