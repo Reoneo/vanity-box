@@ -51,15 +51,48 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // --- Helpers ---------------------------------------------------------------
 
-  const initMiniKitIfNeeded = () => {
-    if (!miniKitReadyRef.current) {
-      MiniKit.install();
-      miniKitReadyRef.current = true;
-    }
+  const ensureMiniKitReady = async () => {
+    console.debug("[MiniKit] Ensuring MiniKit is ready...");
     
-    // Check if wallet is available (no explicit connect needed in MiniKit)
-    if (!MiniKit.user?.walletAddress) {
-      throw new Error("Please open this app in World App to connect your wallet.");
+    try {
+      // Initialize MiniKit if not already done
+      if (!miniKitReadyRef.current) {
+        console.debug("[MiniKit] Installing MiniKit...");
+        MiniKit.install();
+        miniKitReadyRef.current = true;
+        console.debug("[MiniKit] Installation complete");
+      }
+
+      // Check if wallet is available
+      if (!MiniKit.user?.walletAddress) {
+        console.debug("[MiniKit] No wallet address found");
+        
+        // Try walletAuth to prompt connection
+        try {
+          if (typeof (MiniKit.commandsAsync as any).walletAuth === "function") {
+            console.debug("[MiniKit] Calling walletAuth()...");
+            await (MiniKit.commandsAsync as any).walletAuth();
+            
+            // Re-check after auth attempt
+            if (!MiniKit.user?.walletAddress) {
+              throw new Error("Failed to connect wallet. Please try again.");
+            }
+            
+            console.debug("[MiniKit] Wallet connected:", MiniKit.user.walletAddress);
+          } else {
+            console.debug("[MiniKit] walletAuth not available");
+            throw new Error("Please open this app in World App to connect your wallet.");
+          }
+        } catch (connectError: any) {
+          console.error("[MiniKit] Connection error:", connectError);
+          throw new Error(connectError?.message || "Unable to connect to World App. Please try again.");
+        }
+      } else {
+        console.debug("[MiniKit] Wallet already connected:", MiniKit.user.walletAddress);
+      }
+    } catch (error: any) {
+      console.error("[MiniKit] ensureMiniKitReady failed:", error);
+      throw error;
     }
   };
 
@@ -85,12 +118,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       window.dispatchEvent(new Event("mint-window-open"));
-      // Pre-initialize MiniKit when the modal opens for smoother UX
-      try {
-        initMiniKitIfNeeded();
-      } catch (e) {
-        // Wallet not available yet - user will see error when they try to mint
-      }
+      // Pre-initialize MiniKit when the modal opens for smoother UX (silent fail)
+      ensureMiniKitReady().catch((e) => {
+        console.debug("[MiniKit] Pre-init failed (expected if not in World App yet):", e);
+        // Don't show error toast here - user will see it when they click Mint Now
+      });
     } else {
       window.dispatchEvent(new Event("mint-window-close"));
     }
@@ -179,12 +211,14 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       }
 
       // Ensure MiniKit is ready + user connected
-      initMiniKitIfNeeded();
+      await ensureMiniKitReady();
 
       const walletAddress = MiniKit.user?.walletAddress;
       if (!walletAddress) {
         throw new Error("Please connect your wallet first.");
       }
+      
+      console.debug("[Mint] Starting mint for wallet:", walletAddress);
 
       let txHash: string | undefined;
 
@@ -206,24 +240,49 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? "s" : ""}`,
         };
 
-        console.log("Initiating payment:", paymentPayload);
+        console.debug("[Payment] Initiating payment:", paymentPayload);
 
         try {
           const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
+          console.debug("[Payment] Response received:", paymentResponse);
 
-          if (paymentResponse?.finalPayload?.status === "success") {
-            txHash = paymentResponse.finalPayload.transaction_id;
+          // Check the finalPayload status
+          const finalStatus = paymentResponse?.finalPayload?.status;
+
+          if (finalStatus === "success") {
+            // Type assertion for success payload
+            const successPayload = paymentResponse.finalPayload as any;
+            txHash = successPayload.transaction_hash || successPayload.transaction_id;
+            console.debug("[Payment] Success! Transaction hash:", txHash);
             toast.success("Payment successful!");
           } else {
-            throw new Error("Payment was cancelled or failed.");
+            // Handle error or cancelled states
+            const errorPayload = paymentResponse.finalPayload as any;
+            console.debug("[Payment] Payment not successful. Status:", finalStatus);
+            
+            const errorMessage = errorPayload?.error_message || errorPayload?.error_code || "Payment failed";
+            throw new Error(errorMessage);
           }
         } catch (payError: any) {
-          console.error("Payment error:", payError);
-          const msg =
-            typeof payError?.message === "string" && payError.message.toLowerCase().includes("cancel")
-              ? "Payment was cancelled."
-              : "Payment processing failed. Please try again.";
-          throw new Error(msg);
+          console.error("[Payment] Error during payment:", payError);
+          
+          // Provide user-friendly error messages
+          let errorMsg = "Payment processing failed. Please try again.";
+          
+          if (typeof payError?.message === "string") {
+            if (payError.message.toLowerCase().includes("cancel")) {
+              errorMsg = "Payment was cancelled.";
+            } else if (payError.message.toLowerCase().includes("insufficient")) {
+              errorMsg = "Insufficient balance. Please add funds to your World App wallet.";
+            } else if (payError.message.toLowerCase().includes("rejected")) {
+              errorMsg = "Payment was rejected.";
+            } else {
+              errorMsg = payError.message;
+            }
+          }
+          
+          toast.error(errorMsg);
+          throw new Error(errorMsg);
         }
       } else {
         toast.success("Free mint - processing...");
