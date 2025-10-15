@@ -21,7 +21,7 @@ interface SubdomainMintModalProps {
   isOpen: boolean;
   onClose: () => void;
   subdomain: string;
-  price: number; // kept for backwards compatibility (not used; price recalculated by length)
+  price: number; // kept for compatibility; actual price computed from length
   resultAvatar?: string;
 }
 
@@ -46,60 +46,41 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
 
-  // Track MiniKit init so we don't double-init
+  // Prevent double MiniKit init
   const miniKitReadyRef = useRef(false);
 
-  // --- Helpers ---------------------------------------------------------------
+  // --------------------- helpers ---------------------
 
   const ensureMiniKitReady = async () => {
-    console.debug("[MiniKit] Ensuring MiniKit is ready...");
-    
     try {
-      // Initialize MiniKit if not already done
+      // 1) Properly initialize MiniKit ONCE with your app id
       if (!miniKitReadyRef.current) {
-        console.debug("[MiniKit] Installing MiniKit...");
-        MiniKit.install();
+        // Some builds expose isInitialized, but guard either way
+        const alreadyInit = (MiniKit as any).isInitialized === true;
+        if (!alreadyInit) {
+          await MiniKit.init({
+            app_id: import.meta.env.VITE_MINIKIT_APP_ID, // <-- set in .env
+            // environment: import.meta.env.VITE_MINIKIT_ENV ?? "production",
+          });
+        }
         miniKitReadyRef.current = true;
-        console.debug("[MiniKit] Installation complete");
       }
 
-      // Check if wallet is available
+      // 2) Ensure a connected wallet (opens World App if needed)
       if (!MiniKit.user?.walletAddress) {
-        console.debug("[MiniKit] No wallet address found");
-        
-        // Try walletAuth to prompt connection
-        try {
-          if (typeof (MiniKit.commandsAsync as any).walletAuth === "function") {
-            console.debug("[MiniKit] Calling walletAuth()...");
-            await (MiniKit.commandsAsync as any).walletAuth();
-            
-            // Re-check after auth attempt
-            if (!MiniKit.user?.walletAddress) {
-              throw new Error("Failed to connect wallet. Please try again.");
-            }
-            
-            console.debug("[MiniKit] Wallet connected:", MiniKit.user.walletAddress);
-          } else {
-            console.debug("[MiniKit] walletAuth not available");
-            throw new Error("Please open this app in World App to connect your wallet.");
-          }
-        } catch (connectError: any) {
-          console.error("[MiniKit] Connection error:", connectError);
-          throw new Error(connectError?.message || "Unable to connect to World App. Please try again.");
+        await MiniKit.commandsAsync.connect();
+        if (!MiniKit.user?.walletAddress) {
+          throw new Error("Failed to connect wallet. Please try again.");
         }
-      } else {
-        console.debug("[MiniKit] Wallet already connected:", MiniKit.user.walletAddress);
       }
-    } catch (error: any) {
-      console.error("[MiniKit] ensureMiniKitReady failed:", error);
-      throw error;
+    } catch (e: any) {
+      console.error("[MiniKit] init/connect failed:", e);
+      throw new Error(e?.message || "Unable to connect to World App. Please try again.");
     }
   };
 
   const getSubdomainPrice = (fullSubdomain: string) => {
     const subdomainLabel = fullSubdomain.split(".")[0];
-
-    // Free test
     if (subdomainLabel.toLowerCase() === "test321") return 0;
 
     const length = subdomainLabel.length;
@@ -112,47 +93,45 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     return 1;
   };
 
-  // --- Effects ---------------------------------------------------------------
+  // --------------------- effects ---------------------
 
-  // Dispatch events when modal opens/closes
+  // Dispatch events when modal opens/closes + warm up MiniKit
   useEffect(() => {
     if (isOpen) {
       window.dispatchEvent(new Event("mint-window-open"));
-      // Pre-initialize MiniKit when the modal opens for smoother UX (silent fail)
-      ensureMiniKitReady().catch((e) => {
-        console.debug("[MiniKit] Pre-init failed (expected if not in World App yet):", e);
-        // Don't show error toast here - user will see it when they click Mint Now
+      ensureMiniKitReady().catch(() => {
+        // Swallow here; user will see a toast if it fails on click
       });
     } else {
       window.dispatchEvent(new Event("mint-window-close"));
     }
   }, [isOpen]);
 
-  // Fetch real-time crypto prices on mount and poll every 60s
+  // Fetch real-time crypto prices and refresh every 60s
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
-    const loadPrices = async () => {
+    const load = async () => {
       try {
         setIsLoadingPrices(true);
         const prices = await fetchCryptoPrices();
-        if (isMounted) setCryptoPrices(prices);
+        if (mounted) setCryptoPrices(prices);
       } catch (e) {
-        console.error("Failed to fetch prices:", e);
+        console.error("Price fetch failed:", e);
       } finally {
-        if (isMounted) setIsLoadingPrices(false);
+        if (mounted) setIsLoadingPrices(false);
       }
     };
 
-    loadPrices();
-    const interval = setInterval(loadPrices, 60_000);
+    load();
+    const id = setInterval(load, 60_000);
     return () => {
-      isMounted = false;
-      clearInterval(interval);
+      mounted = false;
+      clearInterval(id);
     };
   }, []);
 
-  // --- Pricing ---------------------------------------------------------------
+  // --------------------- pricing ---------------------
 
   const paymentMethods = [
     {
@@ -178,111 +157,76 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
   const totalPrice = domainPrice * registrationYears;
-  const networkFee = domainPrice > 0 ? 0.5 : 0; // $0.50 on paid mints
+  const networkFee = domainPrice > 0 ? 0.5 : 0; // $0.50 only for paid mints
   const grandTotal = totalPrice + networkFee;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
-  // --- Handlers --------------------------------------------------------------
+  // --------------------- handlers ---------------------
 
-  const handleIncreaseYears = () => {
-    setRegistrationYears((prev) => Math.min(prev + 1, 10));
-  };
-  const handleDecreaseYears = () => {
-    setRegistrationYears((prev) => Math.max(prev - 1, 1));
-  };
+  const handleIncreaseYears = () => setRegistrationYears((p) => Math.min(p + 1, 10));
+  const handleDecreaseYears = () => setRegistrationYears((p) => Math.max(p - 1, 1));
+
   const getExpirationDate = () => {
-    const date = new Date();
-    date.setFullYear(date.getFullYear() + registrationYears);
-    return date.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + registrationYears);
+    return d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
   };
 
   const handleMintNow = async () => {
     try {
       setIsMinting(true);
 
-      // Avoid minting while prices are loading for paid flows
+      // Guard race condition on first open
       if (grandTotal > 0 && isLoadingPrices) {
-        toast.info("Fetching prices—please try again in a moment.");
+        toast.info("Fetching prices — try again in a moment.");
         return;
       }
 
-      // Ensure MiniKit is ready + user connected
+      // Ensure MiniKit is ready and connected (opens World App if needed)
       await ensureMiniKitReady();
 
       const walletAddress = MiniKit.user?.walletAddress;
-      if (!walletAddress) {
-        throw new Error("Please connect your wallet first.");
-      }
-      
-      console.debug("[Mint] Starting mint for wallet:", walletAddress);
+      if (!walletAddress) throw new Error("Please connect your wallet first.");
 
       let txHash: string | undefined;
 
       if (grandTotal > 0) {
         toast.info("Processing payment...");
 
-        // Use canonical symbols expected by MiniKit
+        // Use canonical symbols
         const tokenSymbol: PaymentMethod = paymentMethod; // 'USDC' | 'ETH' | 'WLD'
 
         const paymentPayload = {
           reference: `subdomain-${subdomain}-${Date.now()}`,
-          to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040", // recipient
+          to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040",
           tokens: [
             {
               symbol: tokenSymbol as any,
-              token_amount: convertedPrice.toFixed(6), // keep precision for ETH; OK for USDC/WLD too
+              token_amount: convertedPrice.toFixed(6),
             },
           ],
           description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? "s" : ""}`,
         };
 
-        console.debug("[Payment] Initiating payment:", paymentPayload);
-
         try {
           const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
-          console.debug("[Payment] Response received:", paymentResponse);
+          const status = paymentResponse?.finalPayload?.status;
 
-          // Check the finalPayload status
-          const finalStatus = paymentResponse?.finalPayload?.status;
-
-          if (finalStatus === "success") {
-            // Type assertion for success payload
-            const successPayload = paymentResponse.finalPayload as any;
-            txHash = successPayload.transaction_hash || successPayload.transaction_id;
-            console.debug("[Payment] Success! Transaction hash:", txHash);
+          if (status === "success") {
+            const fp: any = paymentResponse.finalPayload;
+            txHash = fp.transaction_hash || fp.transaction_id;
             toast.success("Payment successful!");
+          } else if (status === "cancelled") {
+            throw new Error("Payment was cancelled.");
           } else {
-            // Handle error or cancelled states
-            const errorPayload = paymentResponse.finalPayload as any;
-            console.debug("[Payment] Payment not successful. Status:", finalStatus);
-            
-            const errorMessage = errorPayload?.error_message || errorPayload?.error_code || "Payment failed";
-            throw new Error(errorMessage);
+            const err: any = paymentResponse?.finalPayload;
+            throw new Error(err?.error_message || "Payment failed.");
           }
-        } catch (payError: any) {
-          console.error("[Payment] Error during payment:", payError);
-          
-          // Provide user-friendly error messages
-          let errorMsg = "Payment processing failed. Please try again.";
-          
-          if (typeof payError?.message === "string") {
-            if (payError.message.toLowerCase().includes("cancel")) {
-              errorMsg = "Payment was cancelled.";
-            } else if (payError.message.toLowerCase().includes("insufficient")) {
-              errorMsg = "Insufficient balance. Please add funds to your World App wallet.";
-            } else if (payError.message.toLowerCase().includes("rejected")) {
-              errorMsg = "Payment was rejected.";
-            } else {
-              errorMsg = payError.message;
-            }
-          }
-          
-          toast.error(errorMsg);
-          throw new Error(errorMsg);
+        } catch (payErr: any) {
+          const msg =
+            typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
+          toast.error(msg);
+          throw new Error(msg);
         }
       } else {
         toast.success("Free mint - processing...");
@@ -291,11 +235,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       toast.info("Minting your subdomain...");
 
       const { data, error } = await supabase.functions.invoke("mint-subdomain", {
-        body: {
-          subdomain,
-          walletAddress,
-          txHash, // undefined for free mints
-        },
+        body: { subdomain, walletAddress, txHash },
       });
 
       if (error) throw error;
@@ -307,15 +247,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       } else {
         throw new Error(data?.error || "Failed to mint subdomain.");
       }
-    } catch (error: any) {
-      console.error("Minting error:", error);
-      toast.error(error?.message ?? "Failed to mint subdomain.");
+    } catch (e: any) {
+      console.error("Minting error:", e);
+      toast.error(e?.message ?? "Failed to mint subdomain.");
     } finally {
       setIsMinting(false);
     }
   };
 
-  // --- Render ----------------------------------------------------------------
+  // --------------------- render ---------------------
 
   if (!isOpen) return null;
 
@@ -430,7 +370,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Network Fee (World Chain)</span>
-                <span className="font-medium text[#D4AF37]">
+                <span className="font-medium text-[#D4AF37]">
                   {networkFee === 0 ? "FREE" : `$${networkFee.toFixed(2)}`}
                 </span>
               </div>
