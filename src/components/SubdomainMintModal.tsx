@@ -9,7 +9,7 @@ import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 // ⬇︎ MiniKit v0.5+ (uses install(), not init())
-import { MiniKit } from "@worldcoin/minikit-js";
+import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from "@worldcoin/minikit-js";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ethLogoLight from "@/assets/eth-logo-light.png";
@@ -49,6 +49,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // Prevent double MiniKit install
   const miniKitInstalledRef = useRef(false);
+  // Prevent duplicate pay calls
+  const payInFlightRef = useRef(false);
 
   // --------------------- helpers ---------------------
 
@@ -145,12 +147,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       icon: usdcLogo,
       rate: 1 / cryptoPrices.usdc, // $ → USDC
     },
-    {
-      id: "ETH" as PaymentMethod,
-      name: "ETH",
-      icon: theme === "dark" ? ethLogoDark : ethLogoLight,
-      rate: 1 / cryptoPrices.eth, // $ → ETH
-    },
+    // ETH removed - not supported by MiniKit pay command
     {
       id: "WLD" as PaymentMethod,
       name: "WLD",
@@ -200,36 +197,45 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
       // Process payment only if grand total > 0
       if (grandTotal > 0) {
-        toast.info("Processing payment...");
-
-        const tokenSymbol: PaymentMethod = paymentMethod; // 'USDC' | 'ETH' | 'WLD'
-
-        const paymentPayload = {
-          reference: `subdomain-${subdomain}-${Date.now()}`,
-          to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040",
-          tokens: [
-            {
-              symbol: tokenSymbol as any,
-              token_amount: convertedPrice.toFixed(6),
-            },
-          ],
-          description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? "s" : ""}`,
-        };
+        // Guard: prevent duplicate pay calls
+        if (payInFlightRef.current) {
+          console.debug("[MiniKit] Payment already in flight, ignoring");
+          return;
+        }
+        payInFlightRef.current = true;
 
         try {
-          const paymentResponse: any = await MiniKit.commandsAsync.pay(paymentPayload);
-          console.debug("[MiniKit] Payment response:", paymentResponse);
-          
-          // Check both possible status locations
-          const status = paymentResponse?.status ?? paymentResponse?.finalPayload?.status;
+          toast.info("Processing payment...");
 
-          if (status === "success") {
-            // Extract transaction hash from multiple possible locations
-            const fp: any = paymentResponse?.finalPayload || paymentResponse;
-            txHash = fp.transaction_id || fp.transaction_hash || paymentResponse?.transaction_id;
+          // Map payment method to Tokens enum
+          const tokenEnum = paymentMethod === "USDC" ? Tokens.USDC : Tokens.WLD;
+
+          // Convert dollar amount to smallest token unit (integer string)
+          const amountAtomic = tokenToDecimals(Number(convertedPrice), tokenEnum).toString();
+
+          // Build PayCommandInput payload per docs
+          const paymentPayload: PayCommandInput = {
+            reference: `subdomain-${subdomain}-${Date.now()}`,
+            to: walletAddress, // send to the connected wallet
+            tokens: [
+              {
+                symbol: tokenEnum,
+                token_amount: amountAtomic,
+              },
+            ],
+            description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? "s" : ""}`,
+          };
+
+          console.debug("[MiniKit] Payment payload:", paymentPayload);
+
+          const { finalPayload } = await MiniKit.commandsAsync.pay(paymentPayload);
+          console.debug("[MiniKit] Payment finalPayload:", finalPayload);
+
+          if (finalPayload.status === "success") {
+            txHash = finalPayload.transaction_id;
             toast.success("Payment successful!");
-          } else if (status === "error") {
-            const errorMsg = paymentResponse?.error_message || paymentResponse?.finalPayload?.error_message || "Payment failed.";
+          } else if (finalPayload.status === "error") {
+            const errorMsg = (finalPayload as any).error_message || "Payment failed.";
             toast.error(errorMsg);
             return; // Don't proceed to minting
           } else {
@@ -241,6 +247,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           const msg = typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
           toast.error(msg);
           return; // Don't proceed to minting
+        } finally {
+          payInFlightRef.current = false;
         }
       } else {
         // Free mint path - skip payment entirely
@@ -362,7 +370,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               ) : (
                 <>
                   {paymentMethod === "USDC" && `$${grandTotal.toFixed(2)}`}
-                  {paymentMethod === "ETH" && convertedPrice.toFixed(6)}
                   {paymentMethod === "WLD" && convertedPrice.toFixed(4)}
                 </>
               )}
