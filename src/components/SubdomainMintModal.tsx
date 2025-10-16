@@ -9,7 +9,7 @@ import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 // ⬇︎ MiniKit v0.5+ (uses install(), not init())
-import MiniKit from "@worldcoin/minikit-js";
+import { MiniKit } from "@worldcoin/minikit-js";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ethLogoLight from "@/assets/eth-logo-light.png";
@@ -59,28 +59,35 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
    */
   const ensureMiniKitReady = async () => {
     try {
-      // 1) Install MiniKit ONCE with your app id
+      // 1) Install MiniKit ONCE (no app_id needed for install)
       if (!miniKitInstalledRef.current) {
-        const appId = import.meta.env.VITE_MINIKIT_APP_ID;
-        if (!appId) {
-          throw new Error("Missing VITE_MINIKIT_APP_ID");
-        }
-        await MiniKit.install({
-          app_id: appId,
-          // environment: import.meta.env.VITE_MINIKIT_ENV ?? "production",
-        });
+        MiniKit.install();
         miniKitInstalledRef.current = true;
+        console.debug("[MiniKit] Installed successfully");
       }
 
-      // 2) Ensure a connected wallet (opens World App if needed)
+      // 2) Ensure wallet is available
       if (!MiniKit.user?.walletAddress) {
-        await MiniKit.commandsAsync.connect();
+        console.debug("[MiniKit] No wallet address found, prompting walletAuth");
+        // walletAuth is a command that triggers wallet connection
+        MiniKit.commands.walletAuth({
+          nonce: Date.now().toString(),
+          expirationTime: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
+          notBefore: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
+          statement: 'Connect your wallet to mint subdomains',
+        });
+        
+        // Give user time to connect, then check again
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         if (!MiniKit.user?.walletAddress) {
-          throw new Error("Failed to connect wallet. Please try again.");
+          throw new Error("Please connect your wallet in World App to continue.");
         }
       }
+      
+      console.debug("[MiniKit] Wallet ready:", MiniKit.user?.walletAddress);
     } catch (e: any) {
-      console.error("[MiniKit] install/connect failed:", e);
+      console.error("[MiniKit] Setup failed:", e);
       throw new Error(e?.message || "Unable to connect to World App. Please try again.");
     }
   };
@@ -214,17 +221,20 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
         try {
           const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
+          console.debug("[MiniKit] Payment response:", paymentResponse);
+          
           const status = paymentResponse?.finalPayload?.status;
 
           if (status === "success") {
             const fp: any = paymentResponse.finalPayload;
             txHash = fp.transaction_hash || fp.transaction_id;
             toast.success("Payment successful!");
-          } else if (status === "cancelled") {
-            throw new Error("Payment was cancelled.");
-          } else {
+          } else if (status === "error") {
             const err: any = paymentResponse?.finalPayload;
             throw new Error(err?.error_message || "Payment failed.");
+          } else {
+            // Cancelled or other status
+            throw new Error("Payment was cancelled or failed.");
           }
         } catch (payErr: any) {
           const msg =
