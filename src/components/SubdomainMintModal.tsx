@@ -53,42 +53,37 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   // --------------------- helpers ---------------------
 
   /**
-   * MiniKit v0.5+ bootstrap:
-   * - await MiniKit.install({ app_id })
-   * - then ensure a wallet session with commandsAsync.connect()
+   * Ensure wallet is connected - call walletAuth if needed
    */
-  const ensureMiniKitReady = async () => {
+  const ensureWalletConnected = async (): Promise<string> => {
     try {
-      // 1) Install MiniKit ONCE (no app_id needed for install)
-      if (!miniKitInstalledRef.current) {
-        MiniKit.install();
-        miniKitInstalledRef.current = true;
-        console.debug("[MiniKit] Installed successfully");
+      // Check if wallet is already connected
+      if (MiniKit.user?.walletAddress) {
+        console.debug("[MiniKit] Wallet already connected:", MiniKit.user.walletAddress);
+        return MiniKit.user.walletAddress;
       }
 
-      // 2) Ensure wallet is available
-      if (!MiniKit.user?.walletAddress) {
-        console.debug("[MiniKit] No wallet address found, prompting walletAuth");
-        // walletAuth is a command that triggers wallet connection
-        MiniKit.commands.walletAuth({
-          nonce: Date.now().toString(),
-          expirationTime: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
-          notBefore: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
-          statement: 'Connect your wallet to mint subdomains',
-        });
-        
-        // Give user time to connect, then check again
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (!MiniKit.user?.walletAddress) {
-          throw new Error("Please connect your wallet in World App to continue.");
-        }
-      }
+      console.debug("[MiniKit] No wallet found, initiating walletAuth");
       
-      console.debug("[MiniKit] Wallet ready:", MiniKit.user?.walletAddress);
+      // Trigger walletAuth command
+      const authResult = await MiniKit.commandsAsync.walletAuth({
+        nonce: Date.now().toString(),
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        notBefore: new Date(Date.now() - 60 * 1000),
+        statement: 'Connect your wallet to mint subdomains',
+      });
+
+      console.debug("[MiniKit] walletAuth result:", authResult);
+
+      if (authResult?.finalPayload?.status === "success" && authResult.finalPayload.address) {
+        console.debug("[MiniKit] Wallet connected:", authResult.finalPayload.address);
+        return authResult.finalPayload.address;
+      }
+
+      throw new Error("Wallet authentication failed. Please try again.");
     } catch (e: any) {
-      console.error("[MiniKit] Setup failed:", e);
-      throw new Error(e?.message || "Unable to connect to World App. Please try again.");
+      console.error("[MiniKit] Wallet connection failed:", e);
+      throw new Error(e?.message || "Unable to connect wallet. Please try again.");
     }
   };
 
@@ -111,8 +106,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       window.dispatchEvent(new Event("mint-window-open"));
-      // Warm-up MiniKit silently; user sees toast on click if it fails
-      ensureMiniKitReady().catch(() => {});
+      // Don't auto-auth on modal open - prevents deep-link loops
     } else {
       window.dispatchEvent(new Event("mint-window-close"));
     }
@@ -184,6 +178,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   };
 
   const handleMintNow = async () => {
+    // Prevent double-minting
+    if (isMinting) {
+      console.debug("[Mint] Already minting, ignoring duplicate click");
+      return;
+    }
+
     try {
       setIsMinting(true);
 
@@ -193,18 +193,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      // Ensure MiniKit is installed and the wallet is connected
-      await ensureMiniKitReady();
-
-      const walletAddress = MiniKit.user?.walletAddress;
-      if (!walletAddress) throw new Error("Please connect your wallet first.");
+      // Ensure wallet is connected - will trigger walletAuth if needed
+      const walletAddress = await ensureWalletConnected();
 
       let txHash: string | undefined;
 
+      // Process payment only if grand total > 0
       if (grandTotal > 0) {
         toast.info("Processing payment...");
 
-        // Use canonical symbols expected by MiniKit / World App
         const tokenSymbol: PaymentMethod = paymentMethod; // 'USDC' | 'ETH' | 'WLD'
 
         const paymentPayload = {
@@ -220,29 +217,33 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         };
 
         try {
-          const paymentResponse = await MiniKit.commandsAsync.pay(paymentPayload);
+          const paymentResponse: any = await MiniKit.commandsAsync.pay(paymentPayload);
           console.debug("[MiniKit] Payment response:", paymentResponse);
           
-          const status = paymentResponse?.finalPayload?.status;
+          // Check both possible status locations
+          const status = paymentResponse?.status ?? paymentResponse?.finalPayload?.status;
 
           if (status === "success") {
-            const fp: any = paymentResponse.finalPayload;
-            txHash = fp.transaction_hash || fp.transaction_id;
+            // Extract transaction hash from multiple possible locations
+            const fp: any = paymentResponse?.finalPayload || paymentResponse;
+            txHash = fp.transaction_id || fp.transaction_hash || paymentResponse?.transaction_id;
             toast.success("Payment successful!");
           } else if (status === "error") {
-            const err: any = paymentResponse?.finalPayload;
-            throw new Error(err?.error_message || "Payment failed.");
+            const errorMsg = paymentResponse?.error_message || paymentResponse?.finalPayload?.error_message || "Payment failed.";
+            toast.error(errorMsg);
+            return; // Don't proceed to minting
           } else {
             // Cancelled or other status
-            throw new Error("Payment was cancelled or failed.");
+            toast.error("Payment was cancelled.");
+            return; // Don't proceed to minting
           }
         } catch (payErr: any) {
-          const msg =
-            typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
+          const msg = typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
           toast.error(msg);
-          throw new Error(msg);
+          return; // Don't proceed to minting
         }
       } else {
+        // Free mint path - skip payment entirely
         toast.success("Free mint - processing...");
       }
 

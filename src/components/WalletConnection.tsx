@@ -41,10 +41,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Remove auto-connect - users must manually connect
 
   const handleConnect = async () => {
+    // Allow deep-link auth from WKWebView (Capacitor) - don't block on isInstalled()
     if (!MiniKit.isInstalled()) {
-      console.warn('MiniKit is not installed. This app should be opened in World App.');
-      alert('This app requires World App. Please open it in World App to connect your wallet.');
-      return;
+      console.log('Running outside World App (WKWebView). Proceeding with walletAuth via deep link.');
     }
 
     setIsLoading(true);

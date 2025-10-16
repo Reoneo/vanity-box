@@ -1,9 +1,10 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { MiniKitProvider } from "@worldcoin/minikit-js/minikit-provider";
+import { MiniKit } from "@worldcoin/minikit-js";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
@@ -13,8 +14,25 @@ import TermsOfUse from "./pages/TermsOfUse";
 
 const queryClient = new QueryClient();
 
+// Bootstrap MiniKit globally with app_id
+const MiniKitBootstrap = ({ children }: { children: React.ReactNode }) => {
+  useEffect(() => {
+    const appId = import.meta.env.VITE_MINIKIT_APP_ID as string;
+    const env = (import.meta.env.VITE_MINIKIT_ENV as string) || "production";
+    
+    if (!appId) {
+      console.warn("[MiniKit] Missing VITE_MINIKIT_APP_ID in environment variables");
+    }
+    
+    (MiniKit as any).install({ app_id: appId, environment: env });
+    console.debug("[MiniKit] install() called with app_id:", appId, "environment:", env);
+  }, []);
+
+  return children as any;
+};
+
 const App = () => (
-  <MiniKitProvider>
+  <MiniKitBootstrap>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <LanguageProvider>
@@ -34,7 +52,7 @@ const App = () => (
         </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
-  </MiniKitProvider>
+  </MiniKitBootstrap>
 );
 
 export default App;
