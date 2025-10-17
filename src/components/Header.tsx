@@ -87,9 +87,15 @@ export const Header: React.FC = () => {
   }, []);
 
   const scrollToSearch = () => {
-    // Reset to main page state
+    // If mint window is open, just close it and stay on search results
+    if (isMintWindowOpen) {
+      window.dispatchEvent(new Event('mint-window-close'));
+      setIsMintWindowOpen(false);
+      return;
+    }
+    
+    // Otherwise, reset to main page state
     setShowMyIds(false);
-    setIsMintWindowOpen(false);
     window.dispatchEvent(new Event('back-to-domains'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

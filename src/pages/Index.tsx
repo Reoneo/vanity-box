@@ -38,7 +38,7 @@ const Index = () => {
           <SearchInterface />
         </div>
       </main>
-      <footer className="py-2 text-center text-[10px] md:text-xs text-foreground dark:text-white">
+      <footer className="py-2 text-center text-[10px] md:text-xs text-foreground/80 dark:text-white/80">
         {t('copyright')}
       </footer>
     </div>

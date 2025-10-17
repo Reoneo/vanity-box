@@ -496,7 +496,7 @@ export const SearchInterface = () => {
                       
                       <div>
                         <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Future-Proof Identity</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug">Namechain registry makes your identity portable and interoperable.</p>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS makes your identity portable and interoperable.</p>
                       </div>
                       
                       <div>

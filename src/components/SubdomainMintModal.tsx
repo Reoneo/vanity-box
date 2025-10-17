@@ -158,8 +158,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
-  const networkFee = domainPrice > 0 ? 0.5 : 0; // $0.50 only for paid mints
-  const totalPrice = (domainPrice + networkFee) * registrationYears; // Include network fee in total
+  // Network fee removed - now integrated into the domain price
+  const totalPrice = domainPrice * registrationYears;
   const grandTotal = totalPrice;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
@@ -210,8 +210,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           // Map payment method to Tokens enum
           const tokenEnum = paymentMethod === "USDC" ? Tokens.USDC : Tokens.WLD;
 
-          // Convert dollar amount to smallest token unit (integer string)
-          const amountAtomic = tokenToDecimals(Number(convertedPrice), tokenEnum).toString();
+          // Convert token amount to smallest unit (integer string)
+          // Round to 6 decimals to avoid floating point precision issues
+          const roundedAmount = Math.round(convertedPrice * 1000000) / 1000000;
+          const amountAtomic = tokenToDecimals(roundedAmount, tokenEnum).toString();
 
           // Build PayCommandInput payload per docs
           const paymentPayload: PayCommandInput = {
@@ -383,7 +385,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {registrationYears} year{registrationYears > 1 ? "s" : ""} registration
+                  {registrationYears} year{registrationYears > 1 ? "s" : ""} registration (includes network fee)
                 </span>
                 <span className="font-medium text-[#D4AF37]">
                   {domainPrice === 0 ? "FREE" : `$${totalPrice.toFixed(2)}`}
