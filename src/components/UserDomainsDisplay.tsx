@@ -129,9 +129,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
-        My ID's ({domains.length})
-      </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {domains.map((domain, index) => (
           <div 

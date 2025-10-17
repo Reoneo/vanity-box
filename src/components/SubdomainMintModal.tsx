@@ -158,9 +158,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
-  const totalPrice = domainPrice * registrationYears;
   const networkFee = domainPrice > 0 ? 0.5 : 0; // $0.50 only for paid mints
-  const grandTotal = totalPrice + networkFee;
+  const totalPrice = (domainPrice + networkFee) * registrationYears; // Include network fee in total
+  const grandTotal = totalPrice;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
   // --------------------- handlers ---------------------
@@ -284,7 +284,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   return (
     <div className="w-full max-w-md mx-auto mt-4 animate-in slide-in-from-right duration-500 fade-in">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden min-h-[600px] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden h-[calc(100vh-120px)] md:min-h-[600px] md:h-auto flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[#D4AF37] bg-[#D4AF37]">
           <button
@@ -383,17 +383,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  Domain ({registrationYears} year{registrationYears > 1 ? "s" : ""})
+                  {registrationYears} year{registrationYears > 1 ? "s" : ""} registration
                 </span>
                 <span className="font-medium text-[#D4AF37]">
                   {domainPrice === 0 ? "FREE" : `$${totalPrice.toFixed(2)}`}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Network Fee (World Chain)</span>
-                <span className="font-medium text-[#D4AF37]">
-                  {networkFee === 0 ? "FREE" : `$${networkFee.toFixed(2)}`}
                 </span>
               </div>
 

@@ -161,14 +161,22 @@ export const SearchInterface = () => {
   };
 
   const handleApplyFilters = () => {
-    setShowFilterDropdown(false);
     if (filters.protocol.length > 0 || filters.club.length > 0) {
       handleSearch();
     }
+    setShowFilterDropdown(false);
   };
 
   const getAllResults = () => {
     const allResults = [
+      {
+        name: 'Smith.cash',
+        description: t('desc_smith_cash'),
+        imageUrl: smithCashAvatar,
+        price: 5,
+        category: ['ENS', 'DNS'],
+        club: ['Surname', 'DeFi']
+      },
       {
         name: '30315.eth',
         description: t('desc_30315'),
@@ -208,14 +216,6 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Surname'
-      },
-      {
-        name: 'Smith.cash',
-        description: t('desc_smith_cash'),
-        imageUrl: smithCashAvatar,
-        price: 5,
-        category: ['ENS', 'DNS'],
-        club: ['Surname', 'DeFi']
       },
       {
         name: 'smith.apt',
@@ -339,50 +339,95 @@ export const SearchInterface = () => {
                         <Filter className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
-                      <DropdownMenuLabel>{t('filter_by')}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('protocol')}</p>
-                        {protocols.map(protocol => (
-                          <DropdownMenuItem key={protocol} className="cursor-pointer">
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                className="mr-2"
-                                checked={filters.protocol.includes(protocol)}
-                                onChange={() => handleProtocolToggle(protocol)}
-                              />
-                              {protocol}
-                            </label>
-                          </DropdownMenuItem>
-                        ))}
-                      </div>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('club')}</p>
-                        {clubs.map(club => (
-                          <DropdownMenuItem key={club} className="cursor-pointer">
-                            <label className="flex items-center">
-                              <input
-                                type="checkbox"
-                                className="mr-2"
-                                checked={filters.club.includes(club)}
-                                onChange={() => handleClubToggle(club)}
-                              />
-                              {club}
-                            </label>
-                          </DropdownMenuItem>
-                        ))}
-                      </div>
-                      <DropdownMenuSeparator />
-                      <div className="flex justify-between px-2 py-1">
-                        <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                          {t('clear')}
-                        </Button>
-                        <Button size="sm" onClick={handleApplyFilters}>
-                          {t('apply')}
-                        </Button>
+                    <DropdownMenuContent align="start" className="w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-50">
+                      <div className="relative">
+                        <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
+                        <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
+                        
+                        <div className="relative z-10 space-y-4">
+                          <DropdownMenuLabel className="text-lg font-semibold text-white">{t('filter_by')}</DropdownMenuLabel>
+                          <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                          
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium text-gray-300">{t('protocol')}</p>
+                            <div className="flex flex-wrap gap-2">
+                              {protocols.map(protocol => (
+                                <label
+                                  key={protocol}
+                                  className={cn(
+                                    "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                    filters.protocol.includes(protocol)
+                                      ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                      : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50"
+                                  )}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleProtocolToggle(protocol);
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="hidden"
+                                    checked={filters.protocol.includes(protocol)}
+                                    onChange={() => handleProtocolToggle(protocol)}
+                                  />
+                                  {protocol}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                          
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium text-gray-300">{t('club')}</p>
+                            <div className="flex flex-wrap gap-2">
+                              {clubs.map(club => (
+                                <label
+                                  key={club}
+                                  className={cn(
+                                    "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                    filters.club.includes(club)
+                                      ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                      : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50"
+                                  )}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleClubToggle(club);
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="hidden"
+                                    checked={filters.club.includes(club)}
+                                    onChange={() => handleClubToggle(club)}
+                                  />
+                                  {club}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                          
+                          <div className="flex justify-between gap-3 pt-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={handleClearFilters}
+                              className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]"
+                            >
+                              {t('clear')}
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              onClick={handleApplyFilters}
+                              className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                            >
+                              {t('apply')}
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -479,21 +524,13 @@ export const SearchInterface = () => {
             {/* My ID's Section */}
             {walletAddress && showMyIDs && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
-                <Button
-                  onClick={() => setShowMyIDs(false)}
-                  variant="outline"
-                  className="mb-4 border-[#D4AF37] text-gray-900 dark:text-white hover:bg-[#D4AF37]/10"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Search
-                </Button>
                 <UserDomainsDisplay walletAddress={walletAddress} />
               </div>
             )}
 
             {/* Results container - same width as search bar */}
             <div className="w-full sm:max-w-3xl sm:mx-auto">
-              {hasSearched && ensResults.length > 0 && (
+              {hasSearched && ensResults.length > 0 && !showMyIDs && (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);

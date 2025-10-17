@@ -87,6 +87,10 @@ export const Header: React.FC = () => {
   }, []);
 
   const scrollToSearch = () => {
+    // Reset to main page state
+    setShowMyIds(false);
+    setIsMintWindowOpen(false);
+    window.dispatchEvent(new Event('back-to-domains'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
