@@ -305,23 +305,45 @@ export const SearchInterface = () => {
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
         {showMintInterface && selectedResult ? (
-          <SubdomainMintModal
-            isOpen={true}
-            onClose={handleBackToResults}
-            subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
-            price={price}
-            resultAvatar={selectedResult.imageUrl}
-          />
+          <div className="space-y-4">
+            {/* Back button for mint modal */}
+            <button
+              onClick={handleBackToResults}
+              className="flex items-center gap-2 text-gray-900 dark:text-white hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back to Results</span>
+            </button>
+            <SubdomainMintModal
+              isOpen={true}
+              onClose={handleBackToResults}
+              subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
+              price={price}
+              resultAvatar={selectedResult.imageUrl}
+            />
+          </div>
         ) : (
           <>
             {/* Main Heading - hidden when mint is open or showing My IDs */}
             {!showMintInterface && !showMyIDs && <PersonalizedHeader user={null} />}
             
-            {/* My IDs Header - shown when displaying IDs */}
+            {/* My IDs Header with Back Button - shown when displaying IDs */}
             {!showMintInterface && showMyIDs && (
-              <h1 className="text-3xl md:text-5xl font-bold text-center mb-4 text-gray-900 dark:text-white whitespace-nowrap">
-                My ID's
-              </h1>
+              <div className="space-y-4">
+                <button
+                  onClick={() => {
+                    setShowMyIDs(false);
+                    window.dispatchEvent(new Event('back-to-domains'));
+                  }}
+                  className="flex items-center gap-2 text-gray-900 dark:text-white hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="font-medium">Back to Home</span>
+                </button>
+                <h1 className="text-3xl md:text-5xl font-bold text-center text-gray-900 dark:text-white whitespace-nowrap">
+                  My ID's
+                </h1>
+              </div>
             )}
             
             {/* Search bar container - hidden when showing My IDs */}

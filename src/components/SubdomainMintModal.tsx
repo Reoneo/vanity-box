@@ -163,8 +163,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
-  const networkFee = domainPrice > 0 ? 0.5 : 0; // $0.50 network fee for paid mints
-  const totalPrice = (domainPrice + networkFee) * registrationYears;
+  const networkFee = 0.5; // $0.50 network fee (covered by reducing domain price)
+  // Reduce the domain price by network fee, so user pays exactly the base domain price
+  const adjustedDomainPrice = domainPrice > 0 ? Math.max(0, domainPrice - networkFee) : 0;
+  const totalPrice = (adjustedDomainPrice + networkFee) * registrationYears;
   const grandTotal = totalPrice;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
@@ -410,16 +412,14 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                   {registrationYears} year{registrationYears > 1 ? "s" : ""} registration
                 </span>
                 <span className="font-medium text-[#D4AF37]">
-                  {domainPrice === 0 ? "FREE" : `$${(domainPrice * registrationYears).toFixed(2)}`}
+                  {domainPrice === 0 ? "FREE" : `$${(adjustedDomainPrice * registrationYears).toFixed(2)}`}
                 </span>
               </div>
 
-              {networkFee > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Network fee</span>
-                  <span className="font-medium text-[#D4AF37]">${(networkFee * registrationYears).toFixed(2)}</span>
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 dark:text-gray-400">Network fee</span>
+                <span className="font-medium text-[#D4AF37]">${(networkFee * registrationYears).toFixed(2)}</span>
+              </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Expires</span>

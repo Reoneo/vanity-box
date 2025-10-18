@@ -139,7 +139,8 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {(showSearchIcon || isMintWindowOpen || showMyIds) && (
+              {/* Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+              {showSearchIcon && !isMintWindowOpen && !showMyIds && (
                 <button
                   type="button"
                   aria-label="Scroll to search"
@@ -171,17 +172,17 @@ export const Header: React.FC = () => {
                   </button>
                 </TriggerOrClose>
 
-                {/* Search Icon */}
-                {(showSearchIcon || isMintWindowOpen || showMyIds) && (
-                  <button
-                    type="button"
-                    aria-label="Scroll to search"
-                    onClick={scrollToSearch}
-                    className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                  >
-                    <Search className="w-5 h-5 text-black" />
-                  </button>
-                )}
+            {/* Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
+              <button
+                type="button"
+                aria-label="Scroll to search"
+                onClick={scrollToSearch}
+                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+              >
+                <Search className="w-5 h-5 text-black" />
+              </button>
+            )}
               </div>
 
               {/* Centered Logo (Mobile when wallet disconnected) */}
@@ -213,8 +214,8 @@ export const Header: React.FC = () => {
               </button>
             </TriggerOrClose>
 
-            {/* Search Icon */}
-            {(showSearchIcon || isMintWindowOpen || showMyIds) && (
+            {/* Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
               <button
                 type="button"
                 aria-label="Scroll to search"
