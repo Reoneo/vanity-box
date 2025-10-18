@@ -147,7 +147,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       icon: usdcLogo,
       rate: 1 / cryptoPrices.usdc, // $ → USDC
     },
-    // ETH removed - not supported by MiniKit pay command
+    {
+      id: "ETH" as PaymentMethod,
+      name: "ETH",
+      icon: theme === "dark" ? ethLogoDark : ethLogoLight,
+      rate: 1 / cryptoPrices.eth, // $ → ETH
+    },
     {
       id: "WLD" as PaymentMethod,
       name: "WLD",
@@ -158,8 +163,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
-  // Network fee removed - now integrated into the domain price
-  const totalPrice = domainPrice * registrationYears;
+  const networkFee = domainPrice > 0 ? 0.5 : 0; // $0.50 network fee for paid mints
+  const totalPrice = (domainPrice + networkFee) * registrationYears;
   const grandTotal = totalPrice;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
@@ -207,48 +212,79 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         try {
           toast.info("Processing payment...");
 
-          // Map payment method to Tokens enum
-          const tokenEnum = paymentMethod === "USDC" ? Tokens.USDC : Tokens.WLD;
+          // ETH requires sendTransaction, USDC/WLD use pay command
+          if (paymentMethod === "ETH") {
+            // Custom ETH payment flow using sendTransaction
+            const recipientAddress = "0x71ab0b01e3ff45551e25b208e2a90298f73f7040";
+            const weiAmount = Math.floor(convertedPrice * 1e18).toString();
 
-          // Convert token amount to smallest unit (integer string)
-          // Round to 6 decimals to avoid floating point precision issues
-          const roundedAmount = Math.round(convertedPrice * 1000000) / 1000000;
-          const amountAtomic = tokenToDecimals(roundedAmount, tokenEnum).toString();
+            const txPayload = {
+              transaction: [
+                {
+                  address: recipientAddress,
+                  abi: [],
+                  functionName: "",
+                  args: [],
+                  value: weiAmount,
+                },
+              ],
+            };
 
-          // Build PayCommandInput payload per docs
-          const paymentPayload: PayCommandInput = {
-            reference: `subdomain-${subdomain}-${Date.now()}`,
-            to: walletAddress, // send to the connected wallet
-            tokens: [
-              {
-                symbol: tokenEnum,
-                token_amount: amountAtomic,
-              },
-            ],
-            description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? "s" : ""}`,
-          };
+            console.debug("[MiniKit] ETH transaction payload:", txPayload);
+            
+            const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload);
+            console.debug("[MiniKit] ETH transaction finalPayload:", finalPayload);
 
-          console.debug("[MiniKit] Payment payload:", paymentPayload);
-
-          const { finalPayload } = await MiniKit.commandsAsync.pay(paymentPayload);
-          console.debug("[MiniKit] Payment finalPayload:", finalPayload);
-
-          if (finalPayload.status === "success") {
-            txHash = finalPayload.transaction_id;
-            toast.success("Payment successful!");
-          } else if (finalPayload.status === "error") {
-            const errorMsg = (finalPayload as any).error_message || "Payment failed.";
-            toast.error(errorMsg);
-            return; // Don't proceed to minting
+            if (finalPayload.status === "success") {
+              txHash = finalPayload.transaction_id;
+              toast.success("ETH payment successful!");
+            } else if (finalPayload.status === "error") {
+              const errorMsg = (finalPayload as any).error_message || "ETH payment failed.";
+              toast.error(errorMsg);
+              return;
+            } else {
+              toast.error("ETH payment was cancelled.");
+              return;
+            }
           } else {
-            // Cancelled or other status
-            toast.error("Payment was cancelled.");
-            return; // Don't proceed to minting
+            // USDC/WLD payment flow using pay command
+            const tokenEnum = paymentMethod === "USDC" ? Tokens.USDC : Tokens.WLD;
+            const roundedAmount = Math.round(convertedPrice * 1000000) / 1000000;
+            const amountAtomic = tokenToDecimals(roundedAmount, tokenEnum).toString();
+
+            const paymentPayload: PayCommandInput = {
+              reference: `subdomain-${subdomain}-${Date.now()}`,
+              to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040",
+              tokens: [
+                {
+                  symbol: tokenEnum,
+                  token_amount: amountAtomic,
+                },
+              ],
+              description: `Register ${subdomain} for ${registrationYears} year${registrationYears > 1 ? "s" : ""}`,
+            };
+
+            console.debug("[MiniKit] Payment payload:", paymentPayload);
+
+            const { finalPayload } = await MiniKit.commandsAsync.pay(paymentPayload);
+            console.debug("[MiniKit] Payment finalPayload:", finalPayload);
+
+            if (finalPayload.status === "success") {
+              txHash = finalPayload.transaction_id;
+              toast.success("Payment successful!");
+            } else if (finalPayload.status === "error") {
+              const errorMsg = (finalPayload as any).error_message || "Payment failed.";
+              toast.error(errorMsg);
+              return;
+            } else {
+              toast.error("Payment was cancelled.");
+              return;
+            }
           }
         } catch (payErr: any) {
           const msg = typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
           toast.error(msg);
-          return; // Don't proceed to minting
+          return;
         } finally {
           payInFlightRef.current = false;
         }
@@ -287,23 +323,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   return (
     <div className="w-full max-w-md mx-auto mt-4 animate-in slide-in-from-right duration-500 fade-in">
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden h-[calc(100vh-120px)] md:min-h-[600px] md:h-auto flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#D4AF37] bg-[#D4AF37]">
-          <button
-            onClick={onClose}
-            className="flex items-center gap-2 text-black hover:text-black/80 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Back</span>
-          </button>
-          <button className="flex items-center gap-2 text-black hover:text-black/80 transition-colors">
-            <Share2 className="w-5 h-5" />
-            <span className="font-medium">Share</span>
-          </button>
-        </div>
-
         {/* Content */}
-        <div className="flex-1 p-6 flex flex-col items-center space-y-6">
+        <div className="flex-1 p-6 flex flex-col items-center space-y-6 overflow-y-auto">
           {/* Result Avatar */}
           <div className="w-32 h-32 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
             <img
@@ -372,7 +393,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               ) : (
                 <>
                   {paymentMethod === "USDC" && `$${grandTotal.toFixed(2)}`}
-                  {paymentMethod === "WLD" && convertedPrice.toFixed(4)}
+                  {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
+                  {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
                 </>
               )}
             </div>
@@ -385,12 +407,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {registrationYears} year{registrationYears > 1 ? "s" : ""} registration (includes network fee)
+                  {registrationYears} year{registrationYears > 1 ? "s" : ""} registration
                 </span>
                 <span className="font-medium text-[#D4AF37]">
-                  {domainPrice === 0 ? "FREE" : `$${totalPrice.toFixed(2)}`}
+                  {domainPrice === 0 ? "FREE" : `$${(domainPrice * registrationYears).toFixed(2)}`}
                 </span>
               </div>
+
+              {networkFee > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Network fee</span>
+                  <span className="font-medium text-[#D4AF37]">${(networkFee * registrationYears).toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Expires</span>
