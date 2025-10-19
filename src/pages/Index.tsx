@@ -34,6 +34,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative border-l-2 border-r-2 border-[#D4AF37]">
+      {/* Blur overlay when language selector is open */}
+      <div className="fixed inset-0 z-[9998] pointer-events-none">
+        <div className="absolute inset-0" id="page-blur-target"></div>
+      </div>
       
       <Header />
       
