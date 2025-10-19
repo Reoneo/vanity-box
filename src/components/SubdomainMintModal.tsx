@@ -323,10 +323,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="w-full max-w-md mx-auto mt-4 animate-in slide-in-from-right duration-500 fade-in">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden h-[calc(100vh-120px)] md:min-h-[600px] md:h-auto flex flex-col">
+    <div className="w-full max-w-md mx-auto animate-in slide-in-from-right duration-500 fade-in">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden md:min-h-[600px] md:h-auto flex flex-col relative">
+        {/* Back Button - Top Left Corner */}
+        <button
+          onClick={onClose}
+          className="absolute top-6 left-6 z-10 flex items-center gap-2 text-gray-900 dark:text-white hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Back</span>
+        </button>
+
         {/* Content */}
-        <div className="flex-1 p-6 flex flex-col items-center space-y-6 overflow-y-auto">
+        <div className="flex-1 p-6 pt-20 flex flex-col items-center space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
           {/* Result Avatar */}
           <div className="w-32 h-32 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
             <img

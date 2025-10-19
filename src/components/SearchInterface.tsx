@@ -305,23 +305,13 @@ export const SearchInterface = () => {
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
         {showMintInterface && selectedResult ? (
-          <div className="space-y-4">
-            {/* Back button for mint modal */}
-            <button
-              onClick={handleBackToResults}
-              className="flex items-center gap-2 text-gray-900 dark:text-white hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back to Results</span>
-            </button>
-            <SubdomainMintModal
-              isOpen={true}
-              onClose={handleBackToResults}
-              subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
-              price={price}
-              resultAvatar={selectedResult.imageUrl}
-            />
-          </div>
+          <SubdomainMintModal
+            isOpen={true}
+            onClose={handleBackToResults}
+            subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
+            price={price}
+            resultAvatar={selectedResult.imageUrl}
+          />
         ) : (
           <>
             {/* Main Heading - hidden when mint is open or showing My IDs */}
@@ -432,21 +422,24 @@ export const SearchInterface = () => {
                           
                           <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
                           
-                          <div className="flex justify-between gap-3 pt-2">
+                           <div className="flex justify-between gap-3 pt-2">
                             <Button 
                               variant="outline" 
                               size="sm" 
                               onClick={handleClearFilters}
                               className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]"
                             >
-                              {t('clear')}
+                              Clear
                             </Button>
                             <Button 
                               size="sm" 
-                              onClick={handleApplyFilters}
+                              onClick={() => {
+                                handleApplyFilters();
+                                setShowFilterDropdown(false);
+                              }}
                               className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                             >
-                              {t('apply')}
+                              Apply
                             </Button>
                           </div>
                         </div>

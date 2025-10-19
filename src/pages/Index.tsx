@@ -5,9 +5,13 @@ import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { useLanguage } from '@/contexts/LanguageContext';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
 
 const Index = () => {
   const { t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
 
   // Listen for wallet connection events from WalletConnection component
@@ -38,8 +42,31 @@ const Index = () => {
           <SearchInterface />
         </div>
       </main>
-      <footer className="py-2 text-center text-[10px] md:text-xs text-black dark:text-black bg-[#D4AF37]">
-        {t('copyright')}
+      <footer className="sticky bottom-0 py-3 bg-[#D4AF37] z-50">
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          {/* Theme Toggle on Left */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-5 h-5 text-black" />
+              ) : (
+                <Moon className="w-5 h-5 text-black" />
+              )}
+            </button>
+          </div>
+          
+          {/* Copyright in Center */}
+          <div className="text-[10px] md:text-xs text-black">
+            {t('copyright')}
+          </div>
+          
+          {/* Empty div for balance */}
+          <div className="w-10"></div>
+        </div>
       </footer>
     </div>
   );
