@@ -341,7 +341,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <img
               src={resultAvatar || (ensLogoBlue as unknown as string)}
               alt="Name"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
 

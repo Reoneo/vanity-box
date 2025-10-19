@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
-import { LanguageSelector } from './LanguageSelector';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -250,7 +249,6 @@ export const Header: React.FC = () => {
       <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-24 overflow-y-auto">
         <nav className="space-y-6">
           <ThemeToggle />
-          <LanguageSelector />
           
           {/* Legal Links */}
           <div className="space-y-3">

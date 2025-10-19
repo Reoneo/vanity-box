@@ -3,6 +3,7 @@ import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
@@ -32,29 +33,30 @@ const Index = () => {
   // No longer needed - mint flow is handled directly in SearchInterface
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden border-l-2 border-r-2 border-b-2 border-[#D4AF37]">
+    <div className="min-h-screen bg-background flex flex-col relative border-l-2 border-r-2 border-[#D4AF37]">
       
       <Header />
       
       {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
-      <main className="flex-1 px-4 pt-24 md:pt-24 pb-2 relative z-10 overflow-hidden">
+      <main className="flex-1 px-4 pt-24 md:pt-24 pb-24 relative z-10 overflow-y-auto">
         <div className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <SearchInterface />
         </div>
       </main>
-      <footer className="sticky bottom-0 py-3 bg-[#D4AF37] z-50">
+      <footer className="fixed bottom-0 left-0 right-0 py-1.5 bg-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999]">
         <div className="container mx-auto px-4 flex items-center justify-between">
-          {/* Theme Toggle on Left */}
+          {/* Language and Theme Toggle on Left */}
           <div className="flex items-center gap-2">
+            <LanguageSelector />
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
+              className="w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-black" />
+                <Sun className="w-4 h-4 text-black" />
               ) : (
-                <Moon className="w-5 h-5 text-black" />
+                <Moon className="w-4 h-4 text-black" />
               )}
             </button>
           </div>
@@ -65,7 +67,7 @@ const Index = () => {
           </div>
           
           {/* Empty div for balance */}
-          <div className="w-10"></div>
+          <div className="w-8"></div>
         </div>
       </footer>
     </div>
