@@ -162,7 +162,7 @@ function getTranslations(language: Language): Record<string, string> {
     ca: {
       'theme': 'Tema',
       'language': 'Idioma',
-      'your_personalized_digital_id': 'La Teva Identitat Digital Personalitzada',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Busca un nom',
       'connect': 'Connectar',
       'connecting': 'Connectant...',
@@ -229,7 +229,7 @@ function getTranslations(language: Language): Record<string, string> {
     'zh-CN': {
       'theme': '主题',
       'language': '语言',
-      'your_personalized_digital_id': '您的个性化数字身份',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': '搜索名称',
       'connect': '连接',
       'connecting': '连接中...',
@@ -296,7 +296,7 @@ function getTranslations(language: Language): Record<string, string> {
     fr: {
       'theme': 'Thème',
       'language': 'Langue',
-      'your_personalized_digital_id': 'Votre Identité Numérique Personnalisée',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Rechercher un nom',
       'connect': 'Connecter',
       'connecting': 'Connexion...',
@@ -363,7 +363,7 @@ function getTranslations(language: Language): Record<string, string> {
     de: {
       'theme': 'Design',
       'language': 'Sprache',
-      'your_personalized_digital_id': 'Ihre Personalisierte Digitale Identität',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Nach einem Namen suchen',
       'connect': 'Verbinden',
       'connecting': 'Verbinde...',
@@ -430,7 +430,7 @@ function getTranslations(language: Language): Record<string, string> {
     hi: {
       'theme': 'थीम',
       'language': 'भाषा',
-      'your_personalized_digital_id': 'आपकी व्यक्तिगत डिजिटल पहचान',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'नाम खोजें',
       'connect': 'कनेक्ट',
       'connecting': 'कनेक्ट हो रहा है...',
@@ -497,7 +497,7 @@ function getTranslations(language: Language): Record<string, string> {
     ja: {
       'theme': 'テーマ',
       'language': '言語',
-      'your_personalized_digital_id': 'あなたのパーソナライズされたデジタルID',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': '名前を検索',
       'connect': '接続',
       'connecting': '接続中...',
@@ -564,7 +564,7 @@ function getTranslations(language: Language): Record<string, string> {
     ko: {
       'theme': '테마',
       'language': '언어',
-      'your_personalized_digital_id': '당신의 개인화된 디지털 ID',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': '이름 검색',
       'connect': '연결',
       'connecting': '연결 중...',
@@ -631,7 +631,7 @@ function getTranslations(language: Language): Record<string, string> {
     pl: {
       'theme': 'Motyw',
       'language': 'Język',
-      'your_personalized_digital_id': 'Twoja Spersonalizowana Tożsamość Cyfrowa',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Wyszukaj nazwę',
       'connect': 'Połącz',
       'connecting': 'Łączenie...',
@@ -698,7 +698,7 @@ function getTranslations(language: Language): Record<string, string> {
     pt: {
       'theme': 'Tema',
       'language': 'Idioma',
-      'your_personalized_digital_id': 'Sua Identidade Digital Personalizada',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Pesquisar um nome',
       'connect': 'Conectar',
       'connecting': 'Conectando...',
@@ -765,7 +765,7 @@ function getTranslations(language: Language): Record<string, string> {
     es: {
       'theme': 'Tema',
       'language': 'Idioma',
-      'your_personalized_digital_id': 'Tu Identidad Digital Personalizada',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Buscar un nombre',
       'connect': 'Conectar',
       'connecting': 'Conectando...',
@@ -832,7 +832,7 @@ function getTranslations(language: Language): Record<string, string> {
     'es-419': {
       'theme': 'Tema',
       'language': 'Idioma',
-      'your_personalized_digital_id': 'Tu Identidad Digital Personalizada',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Buscar un nombre',
       'connect': 'Conectar',
       'connecting': 'Conectando...',
@@ -899,7 +899,7 @@ function getTranslations(language: Language): Record<string, string> {
     ms: {
       'theme': 'Tema',
       'language': 'Bahasa',
-      'your_personalized_digital_id': 'Identiti Digital Peribadi Anda',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Cari nama',
       'connect': 'Sambung',
       'connecting': 'Menyambung...',
@@ -966,7 +966,7 @@ function getTranslations(language: Language): Record<string, string> {
     th: {
       'theme': 'ธีม',
       'language': 'ภาษา',
-      'your_personalized_digital_id': 'ข้อมูลประจำตัวดิจิทัลส่วนบุคคลของคุณ',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'ค้นหาชื่อ',
       'connect': 'เชื่อมต่อ',
       'connecting': 'กำลังเชื่อมต่อ...',
@@ -1033,7 +1033,7 @@ function getTranslations(language: Language): Record<string, string> {
     id: {
       'theme': 'Tema',
       'language': 'Bahasa',
-      'your_personalized_digital_id': 'Identitas Digital Pribadi Anda',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': 'Cari nama',
       'connect': 'Hubungkan',
       'connecting': 'Menghubungkan...',
@@ -1100,7 +1100,7 @@ function getTranslations(language: Language): Record<string, string> {
     'zh-TW': {
       'theme': '主題',
       'language': '語言',
-      'your_personalized_digital_id': '您的個人化數位身份',
+      'your_personalized_digital_id': 'Your Digital ID',
       'search_for_a_name': '搜尋名稱',
       'connect': '連接',
       'connecting': '連接中...',

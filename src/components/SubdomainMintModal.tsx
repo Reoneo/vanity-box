@@ -321,7 +321,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="w-full max-w-md mx-auto animate-in slide-in-from-right duration-500 fade-in h-[calc(100vh-120px)]">
+    <div className="w-full max-w-md mx-auto animate-in slide-in-from-right duration-500 fade-in h-[calc(100vh-80px)]">
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden h-full flex flex-col relative">
         {/* Back Button - Top Left Corner */}
         <button
@@ -333,9 +333,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         </button>
 
         {/* Content */}
-        <div className="flex-1 p-6 pt-20 pb-6 flex flex-col items-center space-y-6 overflow-y-auto">
+        <div className="flex-1 p-4 pt-16 pb-4 flex flex-col items-center space-y-3 overflow-y-auto">
           {/* Result Avatar */}
-          <div className="w-32 h-32 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-white dark:bg-gray-800">
+          <div className="w-24 h-24 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-white dark:bg-gray-800">
             <img
               src={resultAvatar || (ensLogoBlue as unknown as string)}
               alt="Name"
@@ -344,46 +344,46 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
 
           {/* Subdomain Name */}
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white text-center">Register {subdomain}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white text-center">Register {subdomain}</h2>
 
           {/* Registration Duration Selector */}
-          <div className="w-full max-w-sm space-y-2">
-            <div className="flex items-center justify-center gap-4">
+          <div className="w-full max-w-sm space-y-1">
+            <div className="flex items-center justify-center gap-3">
               <button
                 onClick={handleDecreaseYears}
-                className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 disabled={registrationYears <= 1}
               >
-                <Minus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
 
               <div className="text-center">
-                <div className="text-4xl font-bold text-[#D4AF37]">
+                <div className="text-3xl font-bold text-[#D4AF37]">
                   {registrationYears} year{registrationYears > 1 ? "s" : ""}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-xs text-gray-600 dark:text-gray-400">
                   {registrationYears * 12} Month Registration
                 </div>
               </div>
 
               <button
                 onClick={handleIncreaseYears}
-                className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 disabled={registrationYears >= 10}
               >
-                <Plus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
           </div>
 
           {/* Payment Method Toggle */}
-          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+          <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full p-1">
             {paymentMethods.map((method) => (
               <button
                 key={method.id}
                 onClick={() => setPaymentMethod(method.id)}
                 className={cn(
-                  "px-6 py-2 rounded-full font-medium transition-all duration-200",
+                  "px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm",
                   paymentMethod === method.id
                     ? "bg-[#D4AF37] text-black shadow-md"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
@@ -395,10 +395,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
 
           {/* Price Display */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="text-5xl font-bold text-[#D4AF37]">
+          <div className="flex flex-col items-center gap-1">
+            <div className="text-4xl font-bold text-[#D4AF37]">
               {isLoadingPrices ? (
-                <span className="text-2xl">Loading...</span>
+                <span className="text-xl">Loading...</span>
               ) : (
                 <>
                   {paymentMethod === "USDC" && `$${grandTotal.toFixed(2)}`}
@@ -410,10 +410,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
 
           {/* Cost Breakdown */}
-          <div className="w-full max-w-sm space-y-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white text-center">Cost Breakdown:</h3>
+          <div className="w-full max-w-sm space-y-2">
+            <h3 className="font-semibold text-gray-900 dark:text-white text-center text-sm">Cost Breakdown:</h3>
 
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
                   {registrationYears} year{registrationYears > 1 ? "s" : ""} registration
@@ -433,9 +433,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 <span className="font-medium text-gray-900 dark:text-white">{getExpirationDate()}</span>
               </div>
 
-              <Separator className="my-2" />
+              <Separator className="my-1" />
 
-              <div className="flex items-center justify-between text-base">
+              <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-gray-900 dark:text-white">Total</span>
                 <span className="font-bold text-gray-900 dark:text-white">${grandTotal.toFixed(2)}</span>
               </div>
@@ -445,7 +445,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <Button
               onClick={handleMintNow}
               disabled={isMinting || (grandTotal > 0 && isLoadingPrices)}
-              className="w-full mt-4 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-6 text-lg disabled:opacity-50"
+              className="w-full mt-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-5 text-base disabled:opacity-50"
             >
               {isMinting ? "Minting..." : "Mint Now"}
             </Button>

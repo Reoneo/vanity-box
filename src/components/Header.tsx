@@ -3,43 +3,29 @@ import { WalletConnection } from './WalletConnection';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, ExternalLink } from 'lucide-react';
+import efpLogo from '../assets/efp-logo.png';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
-const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
-  const { t } = useLanguage();
-  
+const IntegrationsSection = () => {
   return (
     <div className="space-y-3">
-      <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">{t('theme')}</h3>
-      <div className="flex gap-3">
-        <button
-          onClick={() => setTheme('light')}
-          className={cn(
-            "flex-1 h-14 rounded-xl flex items-center justify-center transition-all duration-300",
-            theme === 'light'
-              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg"
-              : "bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-          )}
-        >
-          <Sun className="w-6 h-6" />
-        </button>
-        <button
-          onClick={() => setTheme('dark')}
-          className={cn(
-            "flex-1 h-14 rounded-xl flex items-center justify-center transition-all duration-300",
-            theme === 'dark'
-              ? "bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black shadow-lg"
-              : "bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-          )}
-        >
-          <Moon className="w-6 h-6" />
-        </button>
-      </div>
+      <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Integrations</h3>
+      <a 
+        href="https://efp.app/integrations"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:shadow-lg"
+      >
+        <img src={efpLogo} alt="Ethereum Follow Protocol" className="w-16 h-16 object-contain" />
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Ethereum Follow Protocol</span>
+          <ExternalLink className="w-4 h-4" />
+        </div>
+      </a>
     </div>
   );
 };
@@ -248,7 +234,7 @@ export const Header: React.FC = () => {
       {/* Slide-over Menu */}
       <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-24 overflow-y-auto">
         <nav className="space-y-6">
-          <ThemeToggle />
+          <IntegrationsSection />
           
           {/* Legal Links */}
           <div className="space-y-3">

@@ -4,6 +4,8 @@ import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { SoundToggle } from '@/components/SoundToggle';
+import { GasDisplay } from '@/components/GasDisplay';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
@@ -42,36 +44,39 @@ const Index = () => {
       <Header />
       
       {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
-      <main className="flex-1 px-4 pt-24 md:pt-24 pb-24 relative z-10 overflow-y-auto">
+      <main className="flex-1 px-4 pt-24 md:pt-24 pb-16 relative z-10 overflow-y-auto">
         <div className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <SearchInterface />
         </div>
       </main>
-      <footer className="fixed bottom-0 left-0 right-0 py-1.5 bg-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999]">
+      <footer className="fixed bottom-0 left-0 right-0 py-0.75 bg-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
         <div className="container mx-auto px-4 flex items-center justify-between">
-          {/* Language and Theme Toggle on Left */}
+          {/* Language, Sound and Theme Toggle on Left */}
           <div className="flex items-center gap-2">
             <LanguageSelector />
+            <SoundToggle />
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-black" />
+                <Sun className="w-4 h-4 text-white" />
               ) : (
-                <Moon className="w-4 h-4 text-black" />
+                <Moon className="w-4 h-4 text-white" />
               )}
             </button>
           </div>
           
           {/* Copyright in Center */}
-          <div className="text-[10px] md:text-xs text-black">
+          <div className="text-[10px] md:text-xs text-black font-bold">
             {t('copyright')}
           </div>
           
-          {/* Empty div for balance */}
-          <div className="w-8"></div>
+          {/* Gas Display on Right */}
+          <div className="flex items-center">
+            <GasDisplay />
+          </div>
         </div>
       </footer>
     </div>
