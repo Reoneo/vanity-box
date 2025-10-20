@@ -11,11 +11,15 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import { useSoundEffects } from '@/hooks/use-sound-effects';
 
 const Index = () => {
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
+  
+  // Enable global sound effects
+  useSoundEffects();
 
   // Listen for wallet connection events from WalletConnection component
   useEffect(() => {
@@ -35,7 +39,7 @@ const Index = () => {
   // No longer needed - mint flow is handled directly in SearchInterface
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative border-l-2 border-r-2 border-[#D4AF37]">
+    <div className="min-h-screen bg-background flex flex-col relative border-l-2 border-r-2 border-[#D4AF37] overflow-hidden">
       {/* Blur overlay when language selector is open */}
       <div className="fixed inset-0 z-[9998] pointer-events-none">
         <div className="absolute inset-0" id="page-blur-target"></div>
@@ -44,12 +48,12 @@ const Index = () => {
       <Header />
       
       {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
-      <main className="flex-1 px-4 pt-24 md:pt-24 pb-16 relative z-10 overflow-y-auto">
+      <main className="flex-1 px-4 pt-24 md:pt-24 pb-20 relative z-10">
         <div className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <SearchInterface />
         </div>
       </main>
-      <footer className="fixed bottom-0 left-0 right-0 py-0.75 bg-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
+      <footer className="fixed bottom-0 left-0 right-0 py-1.5 bg-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999]">
         <div className="container mx-auto px-4 flex items-center justify-between">
           {/* Language, Sound and Theme Toggle on Left */}
           <div className="flex items-center gap-2">
@@ -69,7 +73,7 @@ const Index = () => {
           </div>
           
           {/* Copyright in Center */}
-          <div className="text-[10px] md:text-xs text-black font-bold">
+          <div className="text-[10px] md:text-xs text-black">
             {t('copyright')}
           </div>
           

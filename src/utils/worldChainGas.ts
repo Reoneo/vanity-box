@@ -61,9 +61,11 @@ export async function calculateNetworkFee(gasLimit: number = 100000): Promise<nu
   const gasGwei = await fetchWorldChainGasPrice();
   const gasEth = (gasGwei * gasLimit) / 1e9;
   
-  // Fetch ETH price (simplified - you might want to use your existing price fetcher)
+  // Fetch ETH price from your crypto prices utility
   try {
-    const ethPrice = 2500; // Fallback - ideally fetch from your crypto prices utility
+    const { fetchCryptoPrices } = await import('./cryptoPrices');
+    const prices = await fetchCryptoPrices();
+    const ethPrice = prices.eth;
     return gasEth * ethPrice;
   } catch (e) {
     return 0.5; // Fallback network fee

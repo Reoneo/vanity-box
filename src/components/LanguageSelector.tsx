@@ -9,7 +9,7 @@ export const LanguageSelector: React.FC = () => {
   const [open, setOpen] = useState(false);
 
   const languages: { code: Language; flag: string }[] = [
-    { code: 'en', flag: '🇺🇸' },
+    { code: 'en', flag: '🇬🇧' },
     { code: 'ca', flag: '🇪🇸' },
     { code: 'zh-CN', flag: '🇨🇳' },
     { code: 'fr', flag: '🇫🇷' },
@@ -38,11 +38,11 @@ export const LanguageSelector: React.FC = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300 text-2xl overflow-hidden"
+          className="w-9 h-9 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300 text-2xl overflow-hidden border-2 border-white/30"
           aria-label="Change language"
           title={`Current: ${currentLanguage?.code}`}
         >
-          <span className="block w-full h-full flex items-center justify-center scale-150">
+          <span className="block w-full h-full flex items-center justify-center scale-[2]">
             {currentLanguage?.flag || '🌐'}
           </span>
         </button>

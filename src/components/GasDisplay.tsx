@@ -20,8 +20,8 @@ export const GasDisplay: React.FC = () => {
 
     fetchGas();
     
-    // Update every 30 seconds
-    const interval = setInterval(fetchGas, 30000);
+    // Update every 15 seconds
+    const interval = setInterval(fetchGas, 15000);
     
     return () => clearInterval(interval);
   }, []);

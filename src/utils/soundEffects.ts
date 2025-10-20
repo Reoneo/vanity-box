@@ -25,7 +25,7 @@ class SoundEffectsManager {
     return this.isMuted;
   }
 
-  private playTone(frequency: number, duration: number, volume: number = 0.3) {
+  private playTone(frequency: number, duration: number, volume: number = 0.5, type: OscillatorType = 'sine') {
     if (this.isMuted) return;
 
     try {
@@ -37,7 +37,7 @@ class SoundEffectsManager {
       gainNode.connect(ctx.destination);
 
       oscillator.frequency.value = frequency;
-      oscillator.type = 'sine';
+      oscillator.type = type;
 
       gainNode.gain.setValueAtTime(volume, ctx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
@@ -49,47 +49,53 @@ class SoundEffectsManager {
     }
   }
 
-  // PS5-inspired sound effects
+  // Luxurious digital sound effects
   playClick() {
-    this.playTone(800, 0.05, 0.2);
+    this.playTone(1200, 0.08, 0.6, 'triangle');
+    setTimeout(() => this.playTone(1400, 0.06, 0.4, 'sine'), 30);
   }
 
   playHover() {
-    this.playTone(600, 0.03, 0.1);
+    this.playTone(900, 0.05, 0.4, 'sine');
   }
 
   playSelect() {
-    this.playTone(1200, 0.08, 0.25);
-    setTimeout(() => this.playTone(1600, 0.06, 0.2), 50);
+    this.playTone(1400, 0.1, 0.6, 'triangle');
+    setTimeout(() => this.playTone(1800, 0.08, 0.5, 'sine'), 60);
+    setTimeout(() => this.playTone(2200, 0.06, 0.4, 'sine'), 120);
   }
 
   playSuccess() {
-    this.playTone(800, 0.1, 0.3);
-    setTimeout(() => this.playTone(1000, 0.1, 0.3), 100);
-    setTimeout(() => this.playTone(1200, 0.15, 0.3), 200);
+    this.playTone(1000, 0.12, 0.6, 'triangle');
+    setTimeout(() => this.playTone(1300, 0.12, 0.6, 'sine'), 100);
+    setTimeout(() => this.playTone(1600, 0.18, 0.6, 'sine'), 200);
+    setTimeout(() => this.playTone(2000, 0.2, 0.5, 'sine'), 300);
   }
 
   playError() {
-    this.playTone(300, 0.15, 0.3);
-    setTimeout(() => this.playTone(250, 0.2, 0.3), 100);
+    this.playTone(400, 0.18, 0.6, 'square');
+    setTimeout(() => this.playTone(300, 0.25, 0.6, 'square'), 120);
   }
 
   playOpen() {
-    this.playTone(600, 0.08, 0.2);
-    setTimeout(() => this.playTone(900, 0.08, 0.2), 60);
+    this.playTone(800, 0.1, 0.5, 'triangle');
+    setTimeout(() => this.playTone(1100, 0.1, 0.5, 'sine'), 70);
+    setTimeout(() => this.playTone(1400, 0.08, 0.4, 'sine'), 140);
   }
 
   playClose() {
-    this.playTone(900, 0.08, 0.2);
-    setTimeout(() => this.playTone(600, 0.08, 0.2), 60);
+    this.playTone(1400, 0.1, 0.5, 'triangle');
+    setTimeout(() => this.playTone(1100, 0.1, 0.5, 'sine'), 70);
+    setTimeout(() => this.playTone(800, 0.08, 0.4, 'sine'), 140);
   }
 
   playMint() {
-    // Special sound for minting
-    this.playTone(700, 0.1, 0.3);
-    setTimeout(() => this.playTone(900, 0.1, 0.3), 80);
-    setTimeout(() => this.playTone(1100, 0.15, 0.3), 160);
-    setTimeout(() => this.playTone(1400, 0.2, 0.3), 280);
+    // Special luxurious sound for minting
+    this.playTone(900, 0.12, 0.6, 'triangle');
+    setTimeout(() => this.playTone(1200, 0.12, 0.6, 'sine'), 90);
+    setTimeout(() => this.playTone(1500, 0.15, 0.6, 'sine'), 180);
+    setTimeout(() => this.playTone(1900, 0.18, 0.6, 'sine'), 300);
+    setTimeout(() => this.playTone(2300, 0.25, 0.5, 'sine'), 450);
   }
 }
 

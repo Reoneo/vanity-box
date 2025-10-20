@@ -46,6 +46,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
+  const [networkFeeUSD, setNetworkFeeUSD] = useState(0.50);
 
   // Prevent double MiniKit install
   const miniKitInstalledRef = useRef(false);
@@ -130,11 +131,26 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       }
     };
 
+    const loadNetworkFee = async () => {
+      try {
+        const { calculateNetworkFee } = await import('@/utils/worldChainGas');
+        const fee = await calculateNetworkFee();
+        if (mounted) setNetworkFeeUSD(fee);
+      } catch (error) {
+        console.error('Failed to fetch network fee:', error);
+      }
+    };
+
     load();
-    const id = setInterval(load, 60_000);
+    loadNetworkFee();
+    
+    const priceInterval = setInterval(load, 60_000);
+    const feeInterval = setInterval(loadNetworkFee, 15_000);
+    
     return () => {
       mounted = false;
-      clearInterval(id);
+      clearInterval(priceInterval);
+      clearInterval(feeInterval);
     };
   }, []);
 
@@ -163,8 +179,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
-  const networkFee = 0.5; // $0.50 network fee
-  const totalPrice = (domainPrice + networkFee) * registrationYears;
+  const totalPrice = (domainPrice * registrationYears) + networkFeeUSD;
   const grandTotal = totalPrice;
   const convertedPrice = grandTotal * selectedMethod.rate;
 
@@ -321,8 +336,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="w-full max-w-md mx-auto animate-in slide-in-from-right duration-500 fade-in h-[calc(100vh-80px)]">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden h-full flex flex-col relative">
+    <div className="w-full max-w-md mx-auto animate-in slide-in-from-right duration-500 fade-in max-h-[calc(100vh-100px)]">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
         {/* Back Button - Top Left Corner */}
         <button
           onClick={onClose}
@@ -333,7 +348,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         </button>
 
         {/* Content */}
-        <div className="flex-1 p-4 pt-16 pb-4 flex flex-col items-center space-y-3 overflow-y-auto">
+        <div className="p-4 pt-16 pb-4 flex flex-col items-center space-y-3">
           {/* Result Avatar */}
           <div className="w-24 h-24 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-white dark:bg-gray-800">
             <img
@@ -425,7 +440,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Network fee</span>
-                <span className="font-medium text-[#D4AF37]">${(networkFee * registrationYears).toFixed(2)}</span>
+                <span className="font-medium text-[#D4AF37]">${networkFeeUSD.toFixed(2)}</span>
               </div>
 
               <div className="flex items-center justify-between">
