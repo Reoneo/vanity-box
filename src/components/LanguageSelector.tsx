@@ -8,23 +8,23 @@ export const LanguageSelector: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
 
-  const languages: { code: Language; flag: string; icon: string }[] = [
-    { code: 'en', flag: '🇬🇧', icon: 'https://flagcdn.com/w80/gb.png' },
-    { code: 'ca', flag: 'CAT', icon: 'https://flagcdn.com/w80/es-ct.png' },
-    { code: 'zh-CN', flag: '🇨🇳', icon: 'https://flagcdn.com/w80/cn.png' },
-    { code: 'fr', flag: '🇫🇷', icon: 'https://flagcdn.com/w80/fr.png' },
-    { code: 'de', flag: '🇩🇪', icon: 'https://flagcdn.com/w80/de.png' },
-    { code: 'hi', flag: '🇮🇳', icon: 'https://flagcdn.com/w80/in.png' },
-    { code: 'ja', flag: '🇯🇵', icon: 'https://flagcdn.com/w80/jp.png' },
-    { code: 'ko', flag: '🇰🇷', icon: 'https://flagcdn.com/w80/kr.png' },
-    { code: 'pl', flag: '🇵🇱', icon: 'https://flagcdn.com/w80/pl.png' },
-    { code: 'pt', flag: '🇵🇹', icon: 'https://flagcdn.com/w80/pt.png' },
-    { code: 'es', flag: '🇪🇸', icon: 'https://flagcdn.com/w80/es.png' },
-    { code: 'es-419', flag: '🇲🇽', icon: 'https://flagcdn.com/w80/mx.png' },
-    { code: 'ms', flag: '🇲🇾', icon: 'https://flagcdn.com/w80/my.png' },
-    { code: 'th', flag: '🇹🇭', icon: 'https://flagcdn.com/w80/th.png' },
-    { code: 'id', flag: '🇮🇩', icon: 'https://flagcdn.com/w80/id.png' },
-    { code: 'zh-TW', flag: '🇹🇼', icon: 'https://flagcdn.com/w80/tw.png' },
+  const languages: { code: Language; name: string; icon: string }[] = [
+    { code: 'en', name: 'English', icon: 'https://flagcdn.com/w80/gb.png' },
+    { code: 'ca', name: 'Català', icon: 'https://flagcdn.com/w80/es-ct.png' },
+    { code: 'zh-CN', name: '简体中文', icon: 'https://flagcdn.com/w80/cn.png' },
+    { code: 'fr', name: 'Français', icon: 'https://flagcdn.com/w80/fr.png' },
+    { code: 'de', name: 'Deutsch', icon: 'https://flagcdn.com/w80/de.png' },
+    { code: 'hi', name: 'हिन्दी', icon: 'https://flagcdn.com/w80/in.png' },
+    { code: 'ja', name: '日本語', icon: 'https://flagcdn.com/w80/jp.png' },
+    { code: 'ko', name: '한국어', icon: 'https://flagcdn.com/w80/kr.png' },
+    { code: 'pl', name: 'Polski', icon: 'https://flagcdn.com/w80/pl.png' },
+    { code: 'pt', name: 'Português', icon: 'https://flagcdn.com/w80/pt.png' },
+    { code: 'es', name: 'Español', icon: 'https://flagcdn.com/w80/es.png' },
+    { code: 'es-419', name: 'Español (Latinoamérica)', icon: 'https://flagcdn.com/w80/mx.png' },
+    { code: 'ms', name: 'Bahasa Melayu', icon: 'https://flagcdn.com/w80/my.png' },
+    { code: 'th', name: 'ไทย', icon: 'https://flagcdn.com/w80/th.png' },
+    { code: 'id', name: 'Bahasa Indonesia', icon: 'https://flagcdn.com/w80/id.png' },
+    { code: 'zh-TW', name: '繁體中文', icon: 'https://flagcdn.com/w80/tw.png' },
   ];
 
   const currentLanguage = languages.find(lang => lang.code === language);
@@ -71,10 +71,10 @@ export const LanguageSelector: React.FC = () => {
               >
                 <img 
                   src={lang.icon} 
-                  alt={lang.code}
+                  alt={lang.name}
                   className="w-5 h-5 rounded-full object-cover"
                 />
-                <span className="text-xs">{lang.code}</span>
+                <span className="text-xs">{lang.name}</span>
               </button>
             ))}
           </div>

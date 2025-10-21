@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, ExternalLink } from 'lucide-react';
 import efpLogo from '../assets/efp-logo.png';
+import efp100Badge from '../assets/efp-100-badge.png';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -14,18 +15,32 @@ const IntegrationsSection = () => {
   return (
     <div className="space-y-3">
       <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Integrations</h3>
-      <a 
-        href="https://efp.app/integrations"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:shadow-lg"
-      >
-        <img src={efpLogo} alt="Ethereum Follow Protocol" className="w-16 h-16 object-contain" />
-        <div className="flex items-center gap-2">
-          <span className="font-medium">Ethereum Follow Protocol</span>
-          <ExternalLink className="w-4 h-4" />
-        </div>
-      </a>
+      <div className="flex items-center gap-4">
+        <a 
+          href="https://efp.app/integrations"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg"
+        >
+          <img src={efpLogo} alt="EFP" className="w-16 h-16 object-contain" />
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-sm">EFP.app</span>
+            <ExternalLink className="w-3 h-3" />
+          </div>
+        </a>
+        <a 
+          href="https://collectors.poap.xyz/token/7394409"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg"
+        >
+          <img src={efp100Badge} alt="First 100 Integrations" className="w-16 h-16 object-contain" />
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-sm">1st 100 Integrations</span>
+            <ExternalLink className="w-3 h-3" />
+          </div>
+        </a>
+      </div>
     </div>
   );
 };

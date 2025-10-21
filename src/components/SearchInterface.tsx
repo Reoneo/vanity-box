@@ -21,6 +21,7 @@ import {
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoWhite from '@/assets/ens-logo-white.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
+import smithBoxAvatar from '@/assets/smith-box-avatar.jpeg';
 import aptosLogo from '@/assets/aptos-logo.png';
 import aptosNamesIcon from '@/assets/aptos-names-icon.jpeg';
 import aptosNamesLight from '@/assets/aptos-names-light.png';
@@ -180,7 +181,7 @@ export const SearchInterface = () => {
       {
         name: 'Smith.box',
         description: t('desc_smith_cash'),
-        imageUrl: smithCashAvatar,
+        imageUrl: smithBoxAvatar,
         price: 5,
         category: ['ENS', 'DNS'],
         club: ['Surname', 'DeFi']
@@ -634,9 +635,9 @@ export const SearchInterface = () => {
                         <Button 
                           className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                           onClick={() => handleMint(result)}
-                          disabled={result.name !== 'Smith.cash' && result.name !== 'Smith.box'}
+                          disabled={result.name !== 'Smith.cash'}
                         >
-                          {(result.name === 'Smith.cash' || result.name === 'Smith.box') ? t('mint_now') : 'Coming Soon'}
+                          {result.name === 'Smith.cash' ? t('mint_now') : 'Coming Soon'}
                         </Button>
                       </div>
                     </div>
