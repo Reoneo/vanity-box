@@ -4,22 +4,17 @@ import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
-import { SoundToggle } from '@/components/SoundToggle';
 import { GasDisplay } from '@/components/GasDisplay';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
-import { useSoundEffects } from '@/hooks/use-sound-effects';
 
 const Index = () => {
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
-  
-  // Enable global sound effects
-  useSoundEffects();
 
   // Listen for wallet connection events from WalletConnection component
   useEffect(() => {
@@ -53,12 +48,16 @@ const Index = () => {
           <SearchInterface />
         </div>
       </main>
-      <footer className="fixed bottom-0 left-0 right-0 py-1.5 bg-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999]">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-          {/* Language, Sound and Theme Toggle on Left */}
+      <footer className="fixed bottom-0 left-0 right-0 py-1.5 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
+        <div className="container mx-auto px-4 flex items-center justify-between text-xs">
+          {/* Copyright on Left */}
+          <div className="text-black">
+            © 2025 vanity.box. All rights reserved.
+          </div>
+          
+          {/* Language and Theme Toggle in Center */}
           <div className="flex items-center gap-2">
             <LanguageSelector />
-            <SoundToggle />
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
@@ -70,11 +69,6 @@ const Index = () => {
                 <Moon className="w-4 h-4 text-white" />
               )}
             </button>
-          </div>
-          
-          {/* Copyright in Center */}
-          <div className="text-[10px] md:text-xs text-black">
-            {t('copyright')}
           </div>
           
           {/* Gas Display on Right */}

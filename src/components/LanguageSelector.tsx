@@ -8,23 +8,23 @@ export const LanguageSelector: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
 
-  const languages: { code: Language; flag: string }[] = [
-    { code: 'en', flag: '🇬🇧' },
-    { code: 'ca', flag: '🇪🇸' },
-    { code: 'zh-CN', flag: '🇨🇳' },
-    { code: 'fr', flag: '🇫🇷' },
-    { code: 'de', flag: '🇩🇪' },
-    { code: 'hi', flag: '🇮🇳' },
-    { code: 'ja', flag: '🇯🇵' },
-    { code: 'ko', flag: '🇰🇷' },
-    { code: 'pl', flag: '🇵🇱' },
-    { code: 'pt', flag: '🇵🇹' },
-    { code: 'es', flag: '🇪🇸' },
-    { code: 'es-419', flag: '🇲🇽' },
-    { code: 'ms', flag: '🇲🇾' },
-    { code: 'th', flag: '🇹🇭' },
-    { code: 'id', flag: '🇮🇩' },
-    { code: 'zh-TW', flag: '🇹🇼' },
+  const languages: { code: Language; flag: string; icon: string }[] = [
+    { code: 'en', flag: '🇬🇧', icon: 'https://flagcdn.com/w80/gb.png' },
+    { code: 'ca', flag: 'CAT', icon: 'https://flagcdn.com/w80/es-ct.png' },
+    { code: 'zh-CN', flag: '🇨🇳', icon: 'https://flagcdn.com/w80/cn.png' },
+    { code: 'fr', flag: '🇫🇷', icon: 'https://flagcdn.com/w80/fr.png' },
+    { code: 'de', flag: '🇩🇪', icon: 'https://flagcdn.com/w80/de.png' },
+    { code: 'hi', flag: '🇮🇳', icon: 'https://flagcdn.com/w80/in.png' },
+    { code: 'ja', flag: '🇯🇵', icon: 'https://flagcdn.com/w80/jp.png' },
+    { code: 'ko', flag: '🇰🇷', icon: 'https://flagcdn.com/w80/kr.png' },
+    { code: 'pl', flag: '🇵🇱', icon: 'https://flagcdn.com/w80/pl.png' },
+    { code: 'pt', flag: '🇵🇹', icon: 'https://flagcdn.com/w80/pt.png' },
+    { code: 'es', flag: '🇪🇸', icon: 'https://flagcdn.com/w80/es.png' },
+    { code: 'es-419', flag: '🇲🇽', icon: 'https://flagcdn.com/w80/mx.png' },
+    { code: 'ms', flag: '🇲🇾', icon: 'https://flagcdn.com/w80/my.png' },
+    { code: 'th', flag: '🇹🇭', icon: 'https://flagcdn.com/w80/th.png' },
+    { code: 'id', flag: '🇮🇩', icon: 'https://flagcdn.com/w80/id.png' },
+    { code: 'zh-TW', flag: '🇹🇼', icon: 'https://flagcdn.com/w80/tw.png' },
   ];
 
   const currentLanguage = languages.find(lang => lang.code === language);
@@ -38,13 +38,15 @@ export const LanguageSelector: React.FC = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="w-9 h-9 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300 text-2xl overflow-hidden border-2 border-white/30"
+          className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/30 bg-black/10 hover:bg-black/20 transition-all duration-300"
           aria-label="Change language"
           title={`Current: ${currentLanguage?.code}`}
         >
-          <span className="block w-full h-full flex items-center justify-center scale-[2]">
-            {currentLanguage?.flag || '🌐'}
-          </span>
+          <img 
+            src={currentLanguage?.icon || 'https://flagcdn.com/w80/un.png'} 
+            alt={currentLanguage?.code}
+            className="w-full h-full object-cover"
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent 
@@ -67,7 +69,11 @@ export const LanguageSelector: React.FC = () => {
                     : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700"
                 )}
               >
-                <span className="text-xl">{lang.flag}</span>
+                <img 
+                  src={lang.icon} 
+                  alt={lang.code}
+                  className="w-5 h-5 rounded-full object-cover"
+                />
                 <span className="text-xs">{lang.code}</span>
               </button>
             ))}

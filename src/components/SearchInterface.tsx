@@ -178,6 +178,14 @@ export const SearchInterface = () => {
         club: ['Surname', 'DeFi']
       },
       {
+        name: 'Smith.box',
+        description: t('desc_smith_cash'),
+        imageUrl: smithCashAvatar,
+        price: 5,
+        category: ['ENS', 'DNS'],
+        club: ['Surname', 'DeFi']
+      },
+      {
         name: '30315.eth',
         description: t('desc_30315'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
@@ -247,10 +255,12 @@ export const SearchInterface = () => {
     
     const allResults = getAllResults();
     
-    if (filters.protocol.length === 0 && filters.club.length === 0) {
-      setEnsResults(allResults);
-    } else {
-      const filteredResults = allResults.filter(result => {
+    // Filter results
+    let filteredResults = allResults;
+    
+    // Apply protocol and club filters if any are selected
+    if (filters.protocol.length > 0 || filters.club.length > 0) {
+      filteredResults = allResults.filter(result => {
         const categories = Array.isArray(result.category) ? result.category : [result.category];
         const clubs = Array.isArray(result.club) ? result.club : [result.club];
         
@@ -260,8 +270,14 @@ export const SearchInterface = () => {
           filters.club.some(c => clubs.includes(c));
         return protocolMatch && clubMatch;
       });
-      setEnsResults(filteredResults);
+    } else {
+      // If no filters are applied, only show Smith.cash and Smith.box by default
+      filteredResults = allResults.filter(result => 
+        result.name === 'Smith.cash' || result.name === 'Smith.box'
+      );
     }
+    
+    setEnsResults(filteredResults);
     
     if (searchQuery) {
       setIsAvailable(!searchQuery.toLowerCase().includes('taken'));
@@ -357,7 +373,7 @@ export const SearchInterface = () => {
                         <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
                         
                         <div className="relative z-10 space-y-4">
-                          <DropdownMenuLabel className="text-lg font-semibold text-white">{t('filter_by')}</DropdownMenuLabel>
+                          <DropdownMenuLabel className="text-lg font-semibold text-white">Filter</DropdownMenuLabel>
                           <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
                           
                           <div className="space-y-3">
@@ -618,9 +634,9 @@ export const SearchInterface = () => {
                         <Button 
                           className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                           onClick={() => handleMint(result)}
-                          disabled={result.name !== 'Smith.cash'}
+                          disabled={result.name !== 'Smith.cash' && result.name !== 'Smith.box'}
                         >
-                          {result.name === 'Smith.cash' ? t('mint_now') : 'Coming Soon'}
+                          {(result.name === 'Smith.cash' || result.name === 'Smith.box') ? t('mint_now') : 'Coming Soon'}
                         </Button>
                       </div>
                     </div>
