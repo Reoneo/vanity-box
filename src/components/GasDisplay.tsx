@@ -29,9 +29,7 @@ export const GasDisplay: React.FC = () => {
   return (
     <div className="flex items-center gap-1 text-[10px] md:text-xs text-black font-bold">
       <Fuel className="w-3 h-3" />
-      <span>
-        {isLoading ? '...' : gasPrice !== null ? `${gasPrice.toFixed(3)} Gwei` : 'N/A'}
-      </span>
+      <span>FREE</span>
     </div>
   );
 };

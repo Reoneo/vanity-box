@@ -203,9 +203,8 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       </div>
 
       <Tabs defaultValue="records" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-800">
+        <TabsList className="grid w-full grid-cols-1 bg-gray-800">
           <TabsTrigger value="records" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Records</TabsTrigger>
-          <TabsTrigger value="delete" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Delete</TabsTrigger>
         </TabsList>
 
         <TabsContent value="records" className="space-y-4 mt-4">
@@ -270,32 +269,6 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
             >
               {isLoading ? 'Saving...' : 'Save Records'}
             </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="delete" className="space-y-4 mt-4">
-          <div className="space-y-4">
-            <div className="p-4 bg-red-900/20 rounded-lg">
-              <h4 className="font-semibold text-red-400 mb-2">Danger Zone</h4>
-              <p className="text-sm text-red-400 mb-4">
-                Deleting a domain is permanent and cannot be undone. This will remove the subdomain from Namestone.
-              </p>
-              <Button
-                onClick={handleDelete}
-                disabled={isLoading}
-                variant="destructive"
-                className="w-full disabled:opacity-50"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {isLoading ? 'Deleting...' : 'Delete Domain'}
-              </Button>
-            </div>
-            <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-500/30">
-              <h4 className="font-semibold text-blue-400 mb-2">Annual Renewal</h4>
-              <p className="text-sm text-gray-300">
-                Each subdomain requires an annual renewal fee (same as mint price). The renewal timer will begin once ENS v2 is available and implemented in vanity.box.
-              </p>
-            </div>
           </div>
         </TabsContent>
       </Tabs>

@@ -10,7 +10,6 @@ export const LanguageSelector: React.FC = () => {
 
   const languages: { code: Language; name: string; icon: string }[] = [
     { code: 'en', name: 'English', icon: 'https://flagcdn.com/w80/gb.png' },
-    { code: 'ca', name: 'Català', icon: 'https://flagcdn.com/w80/es-ct.png' },
     { code: 'zh-CN', name: '简体中文', icon: 'https://flagcdn.com/w80/cn.png' },
     { code: 'fr', name: 'Français', icon: 'https://flagcdn.com/w80/fr.png' },
     { code: 'de', name: 'Deutsch', icon: 'https://flagcdn.com/w80/de.png' },
@@ -20,7 +19,7 @@ export const LanguageSelector: React.FC = () => {
     { code: 'pl', name: 'Polski', icon: 'https://flagcdn.com/w80/pl.png' },
     { code: 'pt', name: 'Português', icon: 'https://flagcdn.com/w80/pt.png' },
     { code: 'es', name: 'Español', icon: 'https://flagcdn.com/w80/es.png' },
-    { code: 'es-419', name: 'Español (Latinoamérica)', icon: 'https://flagcdn.com/w80/mx.png' },
+    { code: 'es-419', name: 'Español', icon: 'https://flagcdn.com/w80/mx.png' },
     { code: 'ms', name: 'Bahasa Melayu', icon: 'https://flagcdn.com/w80/my.png' },
     { code: 'th', name: 'ไทย', icon: 'https://flagcdn.com/w80/th.png' },
     { code: 'id', name: 'Bahasa Indonesia', icon: 'https://flagcdn.com/w80/id.png' },
@@ -35,8 +34,17 @@ export const LanguageSelector: React.FC = () => {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <>
+      {/* Blur overlay */}
+      {open && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998]"
+          onClick={() => setOpen(false)}
+        />
+      )}
+      
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
         <button
           className="w-7 h-7 rounded-full overflow-hidden border-2 border-white/30 bg-black/10 hover:bg-black/20 transition-all duration-300"
           aria-label="Change language"
@@ -81,5 +89,6 @@ export const LanguageSelector: React.FC = () => {
         </div>
       </PopoverContent>
     </Popover>
+    </>
   );
 };

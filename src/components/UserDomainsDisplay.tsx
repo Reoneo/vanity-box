@@ -50,7 +50,11 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
       }
 
       if (data?.success) {
-        setDomains(data.domains || []);
+        // Filter domains to only show those owned by the connected wallet
+        const filteredDomains = (data.domains || []).filter((domain: Domain) => 
+          domain.address.toLowerCase() === walletAddress.toLowerCase()
+        );
+        setDomains(filteredDomains);
       } else {
         throw new Error(data?.error || 'Failed to fetch domains');
       }
