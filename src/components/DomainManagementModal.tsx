@@ -9,6 +9,7 @@ import { Gift, Send, Trash2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniKit } from '@worldcoin/minikit-js';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DomainManagementModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
   onClose,
   domain
 }) => {
+  const { t } = useLanguage();
   const [transferAddress, setTransferAddress] = useState('');
   const [customRecords, setCustomRecords] = useState<{ key: string; value: string }[]>([]);
   const [newRecordKey, setNewRecordKey] = useState('');
@@ -204,9 +206,9 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
 
         <Tabs defaultValue="records" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="records">Records</TabsTrigger>
-            <TabsTrigger value="transfer">Transfer</TabsTrigger>
-            <TabsTrigger value="wrap">Wrap/Delete</TabsTrigger>
+            <TabsTrigger value="records">{t('records')}</TabsTrigger>
+            <TabsTrigger value="transfer">{t('transfer')}</TabsTrigger>
+            <TabsTrigger value="wrap">{t('wrap_delete')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="records" className="space-y-4">

@@ -22,21 +22,28 @@ const IntegrationsSection = () => {
           rel="noopener noreferrer"
           className="flex-1 h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg"
         >
-          <img src={efpLogo} alt="EFP" className="w-16 h-16 object-contain" />
+          <div className="flex items-center gap-2">
+            <img src={efpLogo} alt="EFP" className="w-12 h-12 object-contain" />
+            <img src={efp100Badge} alt="First 100" className="w-12 h-12 object-contain" />
+          </div>
           <div className="flex items-center gap-1">
-            <span className="font-medium text-sm">EFP.app</span>
+            <span className="font-medium text-sm">Ethereum Follow Protocol</span>
             <ExternalLink className="w-3 h-3" />
           </div>
         </a>
+      </div>
+      
+      <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white pt-2">Featured on</h3>
+      <div className="flex items-center gap-4">
         <a 
-          href="https://collectors.poap.xyz/token/7394409"
+          href="https://web3.bio/"
           target="_blank"
           rel="noopener noreferrer"
           className="flex-1 h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg"
         >
-          <img src={efp100Badge} alt="First 100 Integrations" className="w-16 h-16 object-contain" />
+          <img src="https://web3.bio/web3bio-logo.png" alt="Web3.bio" className="w-16 h-16 object-contain" />
           <div className="flex items-center gap-1">
-            <span className="font-medium text-sm">1st 100 Integrations</span>
+            <span className="font-medium text-sm">Web3.bio</span>
             <ExternalLink className="w-3 h-3" />
           </div>
         </a>
@@ -103,7 +110,7 @@ export const Header: React.FC = () => {
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-      <header className="fixed top-0 left-0 right-0 z-[9999] w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] pt-safe-area-inset-top">
+      <header className="fixed top-0 left-0 right-0 z-[100] w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] pt-safe-area-inset-top">
         {/* Preload the logo */}
         <link rel="preload" as="image" href={vanityLogo} />
         

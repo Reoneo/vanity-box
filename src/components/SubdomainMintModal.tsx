@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 // ⬇︎ MiniKit v0.5+ (uses install(), not init())
 import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from "@worldcoin/minikit-js";
 
@@ -36,6 +37,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   resultAvatar,
 }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   const [registrationYears, setRegistrationYears] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("USDC");
@@ -354,12 +356,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <img
               src={resultAvatar || (ensLogoBlue as unknown as string)}
               alt="Name"
-              className="w-full h-full object-contain p-2"
+              className="w-full h-full object-cover"
             />
           </div>
 
           {/* Subdomain Name */}
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white text-center">Register {subdomain}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white text-center">{t('register')} {subdomain}</h2>
 
           {/* Registration Duration Selector */}
           <div className="w-full max-w-sm space-y-1">

@@ -345,10 +345,10 @@ export const SearchInterface = () => {
                   className="flex items-center gap-2 text-gray-900 dark:text-white hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
-                  <span className="font-medium">Back to Home</span>
+                  <span className="font-medium">{t('back')}</span>
                 </button>
                 <h1 className="text-3xl md:text-5xl font-bold text-center text-gray-900 dark:text-white whitespace-nowrap">
-                  My ID's
+                  {t('my_ids')}
                 </h1>
               </div>
             )}
@@ -480,10 +480,10 @@ export const SearchInterface = () => {
                         setIsAvailable(null);
                         setHasSearched(false);
                       }}
-                      className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                      className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       aria-label="Clear search"
                     >
-                      <X className="w-4 h-4 text-black" />
+                      <X className="w-4 h-4 text-black dark:text-white" />
                     </button>
                   )}
                   <Button

@@ -48,26 +48,26 @@ const Index = () => {
           <SearchInterface />
         </div>
       </main>
-      <footer className="fixed bottom-0 left-0 right-0 py-1.5 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
+      <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
         <div className="container mx-auto px-4 flex items-center justify-between text-xs">
           {/* Language and Theme Toggle on Left */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <LanguageSelector />
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
+              className="w-7 h-7 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-white" />
+                <Sun className="w-3.5 h-3.5 text-white" />
               ) : (
-                <Moon className="w-4 h-4 text-white" />
+                <Moon className="w-3.5 h-3.5 text-white" />
               )}
             </button>
           </div>
           
           {/* Copyright Centered */}
-          <div className="text-black absolute left-1/2 transform -translate-x-1/2">
+          <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal">
             © 2025 vanity.box. All rights reserved.
           </div>
           

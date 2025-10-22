@@ -38,13 +38,13 @@ export const LanguageSelector: React.FC = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/30 bg-black/10 hover:bg-black/20 transition-all duration-300"
+          className="w-7 h-7 rounded-full overflow-hidden border-2 border-white/30 bg-black/10 hover:bg-black/20 transition-all duration-300"
           aria-label="Change language"
-          title={`Current: ${currentLanguage?.code}`}
+          title={`Current: ${currentLanguage?.name}`}
         >
           <img 
             src={currentLanguage?.icon || 'https://flagcdn.com/w80/un.png'} 
-            alt={currentLanguage?.code}
+            alt={currentLanguage?.name}
             className="w-full h-full object-cover"
           />
         </button>

@@ -157,7 +157,13 @@ function getTranslations(language: Language): Record<string, string> {
       'desc_smith': 'A distinctive surname domain perfect for creating personalized digital identities and professional subdomains.',
       'desc_smith_cash': 'Premium financial identity domain combining a classic surname with modern payment utility — perfect for DeFi and professional use.',
       'desc_smith_apt': 'Modern digital identity on Aptos Names protocol — combining a classic surname with next-generation blockchain technology.',
-      'desc_termux': 'A developer-focused Web3 identity for terminal enthusiasts and blockchain builders — perfect for creating technical subdomains and dev tools.'
+      'desc_termux': 'A developer-focused Web3 identity for terminal enthusiasts and blockchain builders — perfect for creating technical subdomains and dev tools.',
+      'my_ids': 'My ID\'s',
+      'register': 'Register',
+      'edit': 'Edit',
+      'records': 'Records',
+      'transfer': 'Transfer',
+      'wrap_delete': 'Wrap/Delete'
     },
     ca: {
       'theme': 'Tema',
@@ -224,7 +230,13 @@ function getTranslations(language: Language): Record<string, string> {
       'desc_smith': 'Un domini de cognom distintiu perfecte per crear identitats digitals personalitzades i subdominis professionals.',
       'desc_smith_cash': 'Domini d\'identitat financera premium combinant un cognom clàssic amb utilitat de pagament moderna — perfecte per a DeFi i ús professional.',
       'desc_smith_apt': 'Identitat digital moderna al protocol Aptos Names — combinant un cognom clàssic amb tecnologia blockchain de nova generació.',
-      'desc_termux': 'Una identitat Web3 enfocada al desenvolupador per a entusiastes del terminal i constructors de blockchain — perfecta per crear subdominis tècnics i eines de desenvolupament.'
+      'desc_termux': 'Una identitat Web3 enfocada al desenvolupador per a entusiastes del terminal i constructors de blockchain — perfecta per crear subdominis tècnics i eines de desenvolupament.',
+      'my_ids': 'Els Meus ID\'s',
+      'register': 'Registrar',
+      'edit': 'Editar',
+      'records': 'Registres',
+      'transfer': 'Transferir',
+      'wrap_delete': 'Empaquetar/Eliminar'
     },
     'zh-CN': {
       'theme': '主题',
@@ -291,7 +303,13 @@ function getTranslations(language: Language): Record<string, string> {
       'desc_smith': '独特的姓氏域名，非常适合创建个性化数字身份和专业子域。',
       'desc_smith_cash': '结合经典姓氏与现代支付实用性的高级金融身份域名 — 非常适合DeFi和专业用途。',
       'desc_smith_apt': 'Aptos Names协议上的现代数字身份 — 将经典姓氏与下一代区块链技术相结合。',
-      'desc_termux': '面向开发者的Web3身份，专为终端爱好者和区块链构建者而设 — 非常适合创建技术子域和开发工具。'
+      'desc_termux': '面向开发者的Web3身份，专为终端爱好者和区块链构建者而设 — 非常适合创建技术子域和开发工具。',
+      'my_ids': '我的ID',
+      'register': '注册',
+      'edit': '编辑',
+      'records': '记录',
+      'transfer': '转移',
+      'wrap_delete': '包装/删除'
     },
     fr: {
       'theme': 'Thème',
@@ -358,7 +376,13 @@ function getTranslations(language: Language): Record<string, string> {
       'desc_smith': 'Un domaine de nom de famille distinctif parfait pour créer des identités numériques personnalisées et des sous-domaines professionnels.',
       'desc_smith_cash': 'Domaine d\'identité financière premium combinant un nom de famille classique avec une utilité de paiement moderne — parfait pour DeFi et un usage professionnel.',
       'desc_smith_apt': 'Identité numérique moderne sur le protocole Aptos Names — combinant un nom de famille classique avec une technologie blockchain de nouvelle génération.',
-      'desc_termux': 'Une identité Web3 axée sur les développeurs pour les passionnés de terminal et les constructeurs blockchain — parfaite pour créer des sous-domaines techniques et des outils de développement.'
+      'desc_termux': 'Une identité Web3 axée sur les développeurs pour les passionnés de terminal et les constructeurs blockchain — parfaite pour créer des sous-domaines techniques et des outils de développement.',
+      'my_ids': 'Mes ID',
+      'register': 'Enregistrer',
+      'edit': 'Modifier',
+      'records': 'Enregistrements',
+      'transfer': 'Transférer',
+      'wrap_delete': 'Empaqueter/Supprimer'
     },
     de: {
       'theme': 'Design',
@@ -492,7 +516,13 @@ function getTranslations(language: Language): Record<string, string> {
       'desc_smith': 'व्यक्तिगत डिजिटल पहचान और पेशेवर सबडोमेन बनाने के लिए एक विशिष्ट उपनाम डोमेन।',
       'desc_smith_cash': 'क्लासिक उपनाम को आधुनिक भुगतान उपयोगिता के साथ जोड़ने वाला प्रीमियम वित्तीय पहचान डोमेन — DeFi और पेशेवर उपयोग के लिए बिल्कुल सही।',
       'desc_smith_apt': 'Aptos Names प्रोटोकॉल पर आधुनिक डिजिटल पहचान — अगली पीढ़ी की ब्लॉकचेन तकनीक के साथ एक क्लासिक उपनाम का संयोजन।',
-      'desc_termux': 'टर्मिनल उत्साही और ब्लॉकचेन बिल्डरों के लिए डेवलपर-केंद्रित Web3 पहचान — तकनीकी सबडोमेन और देव टूल बनाने के लिए बिल्कुल सही।'
+      'desc_termux': 'टर्मिनल उत्साही और ब्लॉकचेन बिल्डरों के लिए डेवलपर-केंद्रित Web3 पहचान — तकनीकी सबडोमेन और देव टूल बनाने के लिए बिल्कुल सही।',
+      'my_ids': 'मेरे ID',
+      'register': 'पंजीकरण',
+      'edit': 'संपादित करें',
+      'records': 'रिकॉर्ड',
+      'transfer': 'स्थानांतरण',
+      'wrap_delete': 'लपेटें/हटाएं'
     },
     ja: {
       'theme': 'テーマ',
