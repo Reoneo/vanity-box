@@ -37,6 +37,7 @@ import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
 import { DynamicMetaTags } from '@/components/DynamicMetaTags';
+import noResultsGif from '@/assets/no-results.gif';
 
 export interface FilterState {
   protocol: string[];
@@ -1489,6 +1490,21 @@ export const SearchInterface = () => {
             })}
           </div>
         )}
+              
+              {/* No Results State */}
+              {hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
+                <div className="text-center py-12 animate-in fade-in duration-500">
+                  <img 
+                    src={noResultsGif} 
+                    alt="No results found" 
+                    className="w-48 h-48 mx-auto mb-6 object-contain"
+                  />
+                  <p className="text-gray-400 text-lg mb-2">No results found</p>
+                  <p className="text-sm text-gray-500">
+                    Try searching with a different query
+                  </p>
+                </div>
+              )}
             </div>
           </>
         )}

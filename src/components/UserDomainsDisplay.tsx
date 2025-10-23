@@ -9,6 +9,7 @@ import { useTheme } from 'next-themes';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import { DomainEditPanel } from './DomainEditPanel';
+import noResultsGif from '@/assets/no-results.gif';
 
 interface Domain {
   name: string;
@@ -113,6 +114,11 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   if (domains.length === 0) {
     return (
       <div className="text-center py-8">
+        <img 
+          src={noResultsGif} 
+          alt="No domains found" 
+          className="w-48 h-48 mx-auto mb-4 object-contain"
+        />
         <p className="text-gray-600 dark:text-gray-400">No domains found</p>
         <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
           Mint your first smith.cash domain to get started!
