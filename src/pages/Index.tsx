@@ -63,13 +63,13 @@ const Index = () => {
           <div className="flex items-center">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-7 h-7 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
+              className="w-7 h-7 flex items-center justify-center transition-all duration-300 hover:opacity-80"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
-                <Sun className="w-3.5 h-3.5 text-white" />
+                <Sun className="w-4 h-4 text-black" />
               ) : (
-                <Moon className="w-3.5 h-3.5 text-white" />
+                <Moon className="w-4 h-4 text-black" />
               )}
             </button>
           </div>
