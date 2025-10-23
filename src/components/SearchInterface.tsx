@@ -298,13 +298,16 @@ export const SearchInterface = () => {
       return;
     }
     
+    // Instantly clear previous results
+    setEnsResults([]);
+    setWeb3BioProfile(null);
+    setEfpStats(null);
+    
     // Update the display query to match what's being searched
     setDisplayQuery(trimmedQuery);
     
     setIsLoading(true);
     setHasSearched(true);
-    setWeb3BioProfile(null);
-    setEfpStats(null);
     setIsSearchActive(true);
     
     // Check if query is a wallet address (starts with 0x and 42 characters)
@@ -815,29 +818,29 @@ export const SearchInterface = () => {
                        )}
                       
                        {/* Action Buttons */}
-                       <div className="flex gap-3 pt-4 w-full max-w-md">
+                       <div className="flex gap-3 pt-4 w-full max-w-md justify-between">
+                          <a
+                            href={`https://web3.bio/${searchQuery}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
+                          >
+                            <img 
+                              src={web3BioLogo} 
+                              alt="Web3.bio" 
+                              className="h-14 w-auto object-contain"
+                            />
+                          </a>
                           <a
                             href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
+                            className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
                           >
                             <img 
                               src={efpLogoFullDark} 
                               alt="EFP" 
                               className="h-14 w-auto object-contain"
-                            />
-                          </a>
-                          <a
-                            href={`https://web3.bio/${searchQuery}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-4 py-2 hover:opacity-80 rounded-xl transition-opacity"
-                          >
-                            <img 
-                              src={web3BioLogo} 
-                              alt="Web3.bio" 
-                              className="w-10 h-10 object-contain"
                             />
                           </a>
                        </div>
