@@ -442,8 +442,8 @@ export const SearchInterface = () => {
           />
         ) : (
           <>
-            {/* Main Heading - hidden when mint is open or showing My IDs or web3.bio profile */}
-            {!showMintInterface && !showMyIDs && !web3BioProfile && <PersonalizedHeader user={null} isSearchActive={isSearchActive} />}
+            {/* Main Heading - hidden only when web3.bio profile is displayed */}
+            {!showMintInterface && !showMyIDs && !web3BioProfile && <PersonalizedHeader user={null} isProfileDisplayed={!!web3BioProfile} />}
             
             {/* My IDs Header with Back Button - shown when displaying IDs */}
             {!showMintInterface && showMyIDs && (
