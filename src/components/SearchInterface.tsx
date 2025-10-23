@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from 'next-themes';
 import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { UserDomainsDisplay } from '@/components/UserDomainsDisplay';
@@ -93,6 +94,7 @@ interface ENSRecords {
 
 export const SearchInterface = () => {
   const { t, language } = useLanguage();
+  const { theme } = useTheme();
   const { username } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [displayQuery, setDisplayQuery] = useState(''); // The actual searched query for display
@@ -1494,11 +1496,13 @@ export const SearchInterface = () => {
               {/* No Results State */}
               {hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
                 <div className="text-center py-12 animate-in fade-in duration-500">
-                  <img 
-                    src={noResultsGif} 
-                    alt="No results found" 
-                    className="w-48 h-48 mx-auto mb-6 object-contain"
-                  />
+                  {theme === 'light' && (
+                    <img 
+                      src={noResultsGif} 
+                      alt="No results found" 
+                      className="w-48 h-48 mx-auto mb-6 object-contain"
+                    />
+                  )}
                   <p className="text-gray-400 text-lg mb-2">No results found</p>
                   <p className="text-sm text-gray-500">
                     Try searching with a different query
