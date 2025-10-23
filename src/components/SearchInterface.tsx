@@ -744,56 +744,53 @@ export const SearchInterface = () => {
                 <Card className="bg-gradient-to-br from-gray-950 via-gray-900 to-black border-2 border-[#D4AF37]/40 rounded-3xl shadow-[0_20px_60px_rgba(212,175,55,0.15)] overflow-hidden backdrop-blur-xl">
                   <CardContent className="p-4 md:p-6">
                     <div className="space-y-3 md:space-y-4">
-                      <div className="space-y-1">
-                        <h3 className="text-lg md:text-2xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent whitespace-nowrap">
-                          Getting Started with Vanity
-                        </h3>
-                        <p className="text-gray-400 text-xs md:text-sm">Your journey to premium digital identity</p>
-                      </div>
+                      <h3 className="text-lg md:text-2xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent text-center mb-6 md:mb-8">
+                        Getting Started with Vanity
+                      </h3>
                       
-                      <div className="space-y-2 md:space-y-3">
-                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                      <div className="space-y-4 md:space-y-6">
+                        <div className="flex gap-4 md:gap-5">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             1
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
-                            Create a multi-chain Ethereum wallet via World App
+                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
+                            Sign up to World App
                           </p>
                         </div>
 
-                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="flex gap-4 md:gap-5">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             2
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
-                            Stand out with a personalized digital ID
+                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
+                            Secure your a limited Digital ID
                           </p>
                         </div>
 
-                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="flex gap-4 md:gap-5">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             3
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
+                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
                             Build your onchain identity
                           </p>
                         </div>
 
-                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="flex gap-4 md:gap-5">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             4
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
-                            Full digital ID management coming soon via ENS v2
+                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
+                            Use your ID across all Dapps
                           </p>
                         </div>
 
-                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="flex gap-4 md:gap-5">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             5
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
-                            Search and load Ethereum and Solana wallet profiles
+                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
+                            Stay tuned for ENS v2 updates
                           </p>
                         </div>
                       </div>
