@@ -110,6 +110,7 @@ export const SearchInterface = () => {
   const [showFollowingList, setShowFollowingList] = useState(false);
   const [followersList, setFollowersList] = useState<EFPUser[]>([]);
   const [followingList, setFollowingList] = useState<EFPUser[]>([]);
+  const [takenSubdomains, setTakenSubdomains] = useState<Set<string>>(new Set());
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -411,9 +412,32 @@ export const SearchInterface = () => {
       }
     }
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Check which subdomains are already taken on Namestone
+    let allResults = getAllResults();
+    const checkPromises = allResults.map(async (result) => {
+      // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain)
+      if (result.name === 'Smith.cash' || result.name === 'Smith.box' || 
+          result.name === 'Vape.box' || result.name === 'altcoin.chain') {
+        const domain = result.name.toLowerCase();
+        try {
+          const { data } = await supabase.functions.invoke('check-namestone-subdomain', {
+            body: { subdomain: trimmedQuery, domain }
+          });
+          if (data?.exists) {
+            return domain;
+          }
+        } catch (error) {
+          console.error(`Error checking ${domain}:`, error);
+        }
+      }
+      return null;
+    });
     
-    const allResults = getAllResults();
+    const takenResults = await Promise.all(checkPromises);
+    const taken = new Set(takenResults.filter(Boolean) as string[]);
+    setTakenSubdomains(taken);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Filter results
     let filteredResults = allResults;
@@ -1049,6 +1073,10 @@ export const SearchInterface = () => {
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
+              const isTaken = takenSubdomains.has(result.name.toLowerCase());
+              const isUserOwned = displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase());
+              const isDisabled = result.name !== 'Smith.cash' || isTaken || isUserOwned;
+              
               return (
                 <div key={index} className="perspective-1000 min-h-[320px]">
                   <div className={`relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
@@ -1124,14 +1152,15 @@ export const SearchInterface = () => {
                          <Button 
                            className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                            onClick={() => handleMint(result)}
-                           disabled={result.name !== 'Smith.cash' || (displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase()))}
+                           disabled={isDisabled}
                          >
                            {result.name !== 'Smith.cash' 
                              ? 'Coming Soon' 
-                             : (displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase())
+                             : isTaken
                                ? 'Taken'
-                               : t('mint_now')
-                             )
+                               : isUserOwned
+                                 ? 'Taken'
+                                 : t('mint_now')
                            }
                          </Button>
                       </div>
