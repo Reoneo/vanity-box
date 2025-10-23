@@ -53,6 +53,25 @@ serve(async (req) => {
       console.error('❌ NAMESTONE API ERROR');
       console.error('Status:', response.status);
       console.error('Error message:', errorText);
+      
+      // If domain is not set up on Namestone (401 Unauthorized), return false (available)
+      if (response.status === 401) {
+        console.log('⚠️ Domain not set up on Namestone, treating as available');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            subdomain: subdomainLabel,
+            domain,
+            exists: false,
+            message: 'Domain not set up on Namestone - subdomain available'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        );
+      }
+      
       throw new Error(`Namestone API error: ${response.status} - ${errorText}`);
     }
 

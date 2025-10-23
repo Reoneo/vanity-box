@@ -488,6 +488,19 @@ export const SearchInterface = () => {
       filteredResults = allResults;
     }
     
+    // Sort results: "Select" domains first (Smith.cash, $mith.eth), then "Coming Soon", all alphabetically
+    filteredResults.sort((a, b) => {
+      const aIsSelect = a.name === 'Smith.cash' || a.name === '$mith.eth';
+      const bIsSelect = b.name === 'Smith.cash' || b.name === '$mith.eth';
+      
+      // Prioritize "Select" domains
+      if (aIsSelect && !bIsSelect) return -1;
+      if (!aIsSelect && bIsSelect) return 1;
+      
+      // Within same category, sort alphabetically
+      return a.name.localeCompare(b.name);
+    });
+    
     setEnsResults(filteredResults);
     
     if (searchQuery) {
