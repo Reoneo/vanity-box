@@ -55,6 +55,14 @@ interface Web3BioProfile {
   platform?: string;
   identity?: string;
   links?: any;
+  header?: string;
+  location?: string;
+  email?: string;
+}
+
+interface EFPStats {
+  followers_count?: number;
+  following_count?: number;
 }
 
 export const SearchInterface = () => {
@@ -72,6 +80,7 @@ export const SearchInterface = () => {
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
   const [showMyIDs, setShowMyIDs] = useState(false);
   const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
+  const [efpStats, setEfpStats] = useState<EFPStats | null>(null);
   const [isSearchActive, setIsSearchActive] = useState(false);
 
   // Get wallet address from MiniKit
@@ -288,6 +297,7 @@ export const SearchInterface = () => {
     setIsLoading(true);
     setHasSearched(true);
     setWeb3BioProfile(null);
+    setEfpStats(null);
     setIsSearchActive(true);
     
     // If query contains a dot, fetch web3.bio profile
@@ -299,8 +309,24 @@ export const SearchInterface = () => {
         
         if (error) throw error;
         
-        if (data && !data.error) {
-          setWeb3BioProfile(data);
+        if (data && !data.error && Array.isArray(data) && data.length > 0) {
+          const profileData = data[0];
+          setWeb3BioProfile(profileData);
+          
+          // Fetch EFP stats if we have an address
+          if (profileData.address) {
+            try {
+              const { data: efpData, error: efpError } = await supabase.functions.invoke('get-efp-stats', {
+                body: { address: profileData.address }
+              });
+              
+              if (!efpError && efpData) {
+                setEfpStats(efpData);
+              }
+            } catch (efpError) {
+              console.error('Error fetching EFP stats:', efpError);
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching web3.bio profile:', error);
@@ -618,44 +644,162 @@ export const SearchInterface = () => {
               </div>
             )}
 
-            {/* Web3.bio Profile Result - Only show when search is active */}
+            {/* Web3.bio Profile Result - Social Media Style - Only show when search is active */}
             {web3BioProfile && hasSearched && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
-                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      {web3BioProfile.avatar && (
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-lg opacity-40"></div>
-                          <div className="relative w-20 h-20 rounded-full border-3 border-[#D4AF37] overflow-hidden">
-                            <img 
-                              src={web3BioProfile.avatar} 
-                              alt={web3BioProfile.displayName || searchQuery}
-                              className="w-full h-full object-cover"
-                            />
+                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                  {/* Header/Banner */}
+                  <div className="relative h-32 sm:h-48 bg-gradient-to-r from-[#D4AF37]/20 via-[#F7E06C]/10 to-[#D4AF37]/20">
+                    {web3BioProfile.header && (
+                      <img 
+                        src={web3BioProfile.header} 
+                        alt="Profile header"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/60"></div>
+                  </div>
+                  
+                  <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6">
+                    {/* Avatar */}
+                    <div className="relative inline-block mb-4">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
+                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-gray-900 overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                        {web3BioProfile.avatar ? (
+                          <img 
+                            src={web3BioProfile.avatar} 
+                            alt={web3BioProfile.displayName || searchQuery}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold">
+                            {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
                           </div>
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-white mb-1">
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Profile Info */}
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">
                           {web3BioProfile.displayName || searchQuery}
                         </h3>
-                        {web3BioProfile.description && (
-                          <p className="text-gray-300 text-sm mb-3">{web3BioProfile.description}</p>
+                        {web3BioProfile.identity && (
+                          <p className="text-[#D4AF37] text-sm font-mono">@{web3BioProfile.identity}</p>
                         )}
-                        {web3BioProfile.address && (
-                          <p className="text-gray-400 text-xs font-mono mb-2">
-                            {web3BioProfile.address.slice(0, 6)}...{web3BioProfile.address.slice(-4)}
-                          </p>
+                      </div>
+                      
+                      {/* Bio/Description */}
+                      {web3BioProfile.description && (
+                        <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+                          {web3BioProfile.description}
+                        </p>
+                      )}
+                      
+                      {/* Location and Email */}
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-400">
+                        {web3BioProfile.location && (
+                          <div className="flex items-center gap-1">
+                            <Globe className="w-4 h-4" />
+                            <span>{web3BioProfile.location}</span>
+                          </div>
                         )}
+                        {web3BioProfile.email && (
+                          <div className="flex items-center gap-1">
+                            <span>✉️</span>
+                            <span>{web3BioProfile.email}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Address */}
+                      {web3BioProfile.address && (
+                        <p className="text-gray-400 text-xs sm:text-sm font-mono bg-gray-800/50 px-3 py-2 rounded-lg inline-block">
+                          {web3BioProfile.address.slice(0, 8)}...{web3BioProfile.address.slice(-6)}
+                        </p>
+                      )}
+                      
+                      {/* Follower Stats */}
+                      <div className="flex gap-6 pt-2">
+                        <div className="text-center">
+                          <div className="text-xl sm:text-2xl font-bold text-white">
+                            {efpStats?.following_count ?? 0}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-400">Following</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xl sm:text-2xl font-bold text-white">
+                            {efpStats?.followers_count ?? 0}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-400">Followers</div>
+                        </div>
+                      </div>
+                      
+                      {/* Social Links */}
+                      {web3BioProfile.links && Object.keys(web3BioProfile.links).length > 0 && (
+                        <div className="flex flex-wrap gap-3 pt-2">
+                          {web3BioProfile.links.twitter && (
+                            <a
+                              href={web3BioProfile.links.twitter.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <span>𝕏</span>
+                              <span>@{web3BioProfile.links.twitter.handle}</span>
+                            </a>
+                          )}
+                          {web3BioProfile.links.github && (
+                            <a
+                              href={web3BioProfile.links.github.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <span>⚙️</span>
+                              <span>@{web3BioProfile.links.github.handle}</span>
+                            </a>
+                          )}
+                          {web3BioProfile.links.website && (
+                            <a
+                              href={web3BioProfile.links.website.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <Globe className="w-4 h-4" />
+                              <span>{web3BioProfile.links.website.handle}</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          className="flex-1 bg-[#FFE066] hover:bg-[#FFE066]/90 text-black font-bold rounded-xl transition-all duration-300"
+                          onClick={() => {
+                            // Show toast notification
+                            const event = new CustomEvent('show-toast', {
+                              detail: {
+                                title: 'Coming Soon',
+                                description: 'WorldChain support coming soon',
+                              }
+                            });
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          Follow
+                        </Button>
                         <a
                           href={`https://web3.bio/${searchQuery}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-[#F7E06C] text-sm transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-white font-medium transition-all duration-300"
                         >
-                          View Full Profile
                           <ExternalLink className="w-4 h-4" />
+                          <span className="hidden sm:inline">View Full Profile</span>
                         </a>
                       </div>
                     </div>
