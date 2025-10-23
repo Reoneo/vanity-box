@@ -740,42 +740,82 @@ export const SearchInterface = () => {
             
             {/* Getting Started with Vanity - Shows when no search results and not showing My IDs */}
             {!hasSearched && !showMyIDs && (
-              <div className="w-full max-w-2xl mx-auto mt-2 md:mt-4 px-2 md:px-4">
-                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
-                  <CardContent className="p-3 md:p-8">
-                    <div className="space-y-3 md:space-y-4">
-                      <h3 className="text-lg md:text-2xl font-semibold text-white text-center">Getting Started with Vanity</h3>
-                      <ul className="text-gray-300 text-sm md:text-base space-y-2 md:space-y-3 list-none">
-                        <li className="flex items-start gap-3">
-                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">1.</span>
-                          <span>Create a multi-chain Ethereum wallet via World App</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">2.</span>
-                          <span>Stand out with a personalized digital ID</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">3.</span>
-                          <span>Build your onchain identity</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">4.</span>
-                          <span>Full digital ID management coming soon via ENS v2</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">5.</span>
-                          <span>Learn about the Ethereum Follow Protocol as it will be coming to World Chain soon</span>
-                        </li>
-                      </ul>
+              <div className="w-full max-w-3xl mx-auto mt-4 md:mt-8 px-2 md:px-4">
+                <Card className="bg-gradient-to-br from-gray-950 via-gray-900 to-black border-2 border-[#D4AF37]/40 rounded-3xl shadow-[0_20px_60px_rgba(212,175,55,0.15)] overflow-hidden backdrop-blur-xl">
+                  <CardContent className="p-6 md:p-12">
+                    <div className="space-y-6 md:space-y-8">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-2xl md:text-4xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent">
+                          Getting Started with Vanity
+                        </h3>
+                        <p className="text-gray-400 text-sm md:text-base">Your journey to premium digital identity</p>
+                      </div>
+                      
+                      <div className="space-y-4 md:space-y-5">
+                        <div className="group flex items-start gap-4 md:gap-5 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-lg md:text-xl shadow-lg">
+                            1
+                          </div>
+                          <div className="flex-1 pt-2">
+                            <p className="text-white text-sm md:text-lg font-medium leading-relaxed">
+                              Create a multi-chain Ethereum wallet via World App
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="group flex items-start gap-4 md:gap-5 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-lg md:text-xl shadow-lg">
+                            2
+                          </div>
+                          <div className="flex-1 pt-2">
+                            <p className="text-white text-sm md:text-lg font-medium leading-relaxed">
+                              Stand out with a personalized digital ID
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="group flex items-start gap-4 md:gap-5 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-lg md:text-xl shadow-lg">
+                            3
+                          </div>
+                          <div className="flex-1 pt-2">
+                            <p className="text-white text-sm md:text-lg font-medium leading-relaxed">
+                              Build your onchain identity
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="group flex items-start gap-4 md:gap-5 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-lg md:text-xl shadow-lg">
+                            4
+                          </div>
+                          <div className="flex-1 pt-2">
+                            <p className="text-white text-sm md:text-lg font-medium leading-relaxed">
+                              Full digital ID management coming soon via ENS v2
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="group flex items-start gap-4 md:gap-5 p-4 md:p-5 rounded-2xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
+                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-lg md:text-xl shadow-lg">
+                            5
+                          </div>
+                          <div className="flex-1 pt-2">
+                            <p className="text-white text-sm md:text-lg font-medium leading-relaxed">
+                              Learn about the Ethereum Follow Protocol as it will be coming to World Chain soon
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Learn More Button */}
-                    <div className="mt-4 md:mt-6 flex justify-center">
+                    <div className="mt-8 md:mt-10 flex justify-center">
                       <a
                         href="https://ens.domains/ensv2"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2 md:px-6 md:py-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-sm md:text-base"
+                        className="group px-8 py-4 md:px-10 md:py-5 bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-size-200 bg-pos-0 hover:bg-pos-100 text-black font-bold rounded-xl transition-all duration-500 hover:scale-105 shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_50px_rgba(212,175,55,0.5)] text-base md:text-lg"
                       >
                         Learn More
                       </a>
