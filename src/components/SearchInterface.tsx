@@ -752,53 +752,52 @@ export const SearchInterface = () => {
                       </div>
                       
                       <div className="space-y-2 md:space-y-3">
-                        <div className="group flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
                             1
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium">
+                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
                             Create a multi-chain Ethereum wallet via World App
                           </p>
                         </div>
 
-                        <div className="group flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
                             2
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium">
+                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
                             Stand out with a personalized digital ID
                           </p>
                         </div>
 
-                        <div className="group flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
                             3
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium">
+                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
                             Build your onchain identity
                           </p>
                         </div>
 
-                        <div className="group flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
                             4
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium">
+                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
                             Full digital ID management coming soon via ENS v2
                           </p>
                         </div>
 
-                        <div className="group flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
+                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
                             5
                           </div>
-                          <p className="text-white text-xs md:text-sm font-medium">
+                          <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
                             Learn about the Ethereum Follow Protocol as it will be coming to World Chain soon
                           </p>
                         </div>
                       </div>
                     </div>
-                    
                     {/* Learn More Button */}
                     <div className="mt-4 md:mt-5 flex justify-center">
                       <a
