@@ -738,46 +738,39 @@ export const SearchInterface = () => {
             </div>
             )}
             
-            {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
+            {/* Getting Started with Vanity - Shows when no search results and not showing My IDs */}
             {!hasSearched && !showMyIDs && (
               <div className="w-full max-w-2xl mx-auto mt-2 md:mt-4 px-2 md:px-4">
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                   <CardContent className="p-3 md:p-8">
-                    {/* Logo */}
-                    <div className="flex justify-center mb-3 md:mb-6">
-                      <img src={ensV2Logo} alt="ENS V2" className="h-10 md:h-20 w-auto" />
-                    </div>
-                    
-                    {/* Benefits List */}
-                    <div className="space-y-2 md:space-y-4 text-white text-center">
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">One Name, Any Chain</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS names work across Ethereum L1, all L2s and World Chain.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Low Fees, Fast Updates</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug">Instant management with near-zero gas fees.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Full ENS Functionality</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug">Manage profiles, records, wallets, metadata—all from World App.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Future-Proof Identity</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS makes your identity portable and interoperable.</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Subdomain Value</h3>
-                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS subdomains are digital assets gaining utility and value.</p>
-                      </div>
+                    <div className="space-y-3 md:space-y-4">
+                      <h3 className="text-lg md:text-2xl font-semibold text-white text-center">Getting Started with Vanity</h3>
+                      <ul className="text-gray-300 text-sm md:text-base space-y-2 md:space-y-3 list-none">
+                        <li className="flex items-start gap-3">
+                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">1.</span>
+                          <span>Create a multi-chain Ethereum wallet via World App</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">2.</span>
+                          <span>Stand out with a personalized digital ID</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">3.</span>
+                          <span>Build your onchain identity</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">4.</span>
+                          <span>Full digital ID management coming soon via ENS v2</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="text-[#D4AF37] font-bold text-lg md:text-xl flex-shrink-0">5.</span>
+                          <span>Learn about the Ethereum Follow Protocol as it will be coming to World Chain soon</span>
+                        </li>
+                      </ul>
                     </div>
                     
                     {/* Learn More Button */}
-                    <div className="mt-3 md:mt-6 flex justify-center">
+                    <div className="mt-4 md:mt-6 flex justify-center">
                       <a
                         href="https://ens.domains/ensv2"
                         target="_blank"
