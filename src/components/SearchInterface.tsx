@@ -320,7 +320,7 @@ export const SearchInterface = () => {
         imageUrl: mithEthAvatar,
         price: 5,
         category: 'ENS',
-        club: 'DeFi'
+        club: ['Surname', 'DeFi']
       },
       {
         name: 'smith.apt',
