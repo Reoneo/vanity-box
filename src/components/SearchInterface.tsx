@@ -70,6 +70,7 @@ interface EFPStats {
 export const SearchInterface = () => {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
+  const [displayQuery, setDisplayQuery] = useState(''); // The actual searched query for display
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
@@ -297,6 +298,9 @@ export const SearchInterface = () => {
       return;
     }
     
+    // Update the display query to match what's being searched
+    setDisplayQuery(trimmedQuery);
+    
     setIsLoading(true);
     setHasSearched(true);
     setWeb3BioProfile(null);
@@ -412,7 +416,7 @@ export const SearchInterface = () => {
   };
 
   const searchResults = searchQuery && !isLoading && isAvailable !== null;
-  const price = searchQuery ? getSubdomainPrice(searchQuery) : 0;
+  const price = displayQuery ? getSubdomainPrice(displayQuery) : 0;
   const hasFilters = filters.protocol.length > 0 || filters.club.length > 0;
   const totalFilters = filters.protocol.length + filters.club.length;
 
@@ -428,7 +432,7 @@ export const SearchInterface = () => {
           <SubdomainMintModal
             isOpen={true}
             onClose={handleBackToResults}
-            subdomain={searchQuery ? `${searchQuery}.${selectedResult.name}` : selectedResult.name}
+            subdomain={displayQuery ? `${displayQuery}.${selectedResult.name}` : selectedResult.name}
             price={price}
             resultAvatar={selectedResult.imageUrl}
           />
@@ -881,9 +885,9 @@ export const SearchInterface = () => {
                           </div>
                         </div>
                         
-                        <h3 className="font-mono text-xl font-bold text-white mb-4 leading-tight px-4 w-full break-words flex items-center justify-center">
-                          {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                        </h3>
+                         <h3 className="font-mono text-xl font-bold text-white mb-4 leading-tight px-4 w-full break-words flex items-center justify-center">
+                           {displayQuery ? `${displayQuery}.${result.name}` : result.name}
+                         </h3>
                         
                         <div className="flex items-center justify-center gap-1 mb-2 overflow-x-auto max-w-full flex-nowrap">
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
@@ -938,11 +942,11 @@ export const SearchInterface = () => {
                          <Button 
                            className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                            onClick={() => handleMint(result)}
-                           disabled={result.name !== 'Smith.cash' || (searchQuery && userDomains.includes(`${searchQuery}.${result.name}`.toLowerCase()))}
+                           disabled={result.name !== 'Smith.cash' || (displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase()))}
                          >
                            {result.name !== 'Smith.cash' 
                              ? 'Coming Soon' 
-                             : (searchQuery && userDomains.includes(`${searchQuery}.${result.name}`.toLowerCase())
+                             : (displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase())
                                ? 'Taken'
                                : t('mint_now')
                              )
@@ -975,9 +979,9 @@ export const SearchInterface = () => {
                             </div>
                           </div>
                           
-                          <h4 className="font-mono text-xl font-bold text-white leading-tight px-4 break-words flex items-center justify-center">
-                            {searchQuery ? `${searchQuery}.${result.name}` : result.name}
-                          </h4>
+                           <h4 className="font-mono text-xl font-bold text-white leading-tight px-4 break-words flex items-center justify-center">
+                             {displayQuery ? `${displayQuery}.${result.name}` : result.name}
+                           </h4>
                         </div>
                         
                         <div className="flex-1 overflow-y-auto px-2">
