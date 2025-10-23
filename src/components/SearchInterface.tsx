@@ -744,7 +744,7 @@ export const SearchInterface = () => {
                 <Card className="bg-gradient-to-br from-gray-950 via-gray-900 to-black border-2 border-[#D4AF37]/40 rounded-3xl shadow-[0_20px_60px_rgba(212,175,55,0.15)] overflow-hidden backdrop-blur-xl">
                   <CardContent className="p-4 md:p-6">
                     <div className="space-y-3 md:space-y-4">
-                      <div className="text-center space-y-1">
+                      <div className="space-y-1">
                         <h3 className="text-lg md:text-2xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent whitespace-nowrap">
                           Getting Started with Vanity
                         </h3>
