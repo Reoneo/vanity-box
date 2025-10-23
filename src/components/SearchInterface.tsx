@@ -1496,17 +1496,17 @@ export const SearchInterface = () => {
               {/* No Results State */}
               {hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
                 <div className="text-center py-12 animate-in fade-in duration-500">
-                  {theme === 'light' && (
-                    <img 
-                      src={noResultsGif} 
-                      alt="No results found" 
-                      className="w-48 h-48 mx-auto mb-6 object-contain"
-                    />
-                  )}
                   <p className="text-gray-400 text-lg mb-2">No results found</p>
                   <p className="text-sm text-gray-500">
                     Try searching with a different query
                   </p>
+                  {theme === 'light' && (
+                    <img 
+                      src={noResultsGif} 
+                      alt="No results found" 
+                      className="w-48 h-48 mx-auto mt-6 object-contain"
+                    />
+                  )}
                 </div>
               )}
             </div>

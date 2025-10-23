@@ -114,17 +114,17 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   if (domains.length === 0) {
     return (
       <div className="text-center py-8">
-        {theme === 'light' && (
-          <img 
-            src={noResultsGif} 
-            alt="No domains found" 
-            className="w-48 h-48 mx-auto mb-4 object-contain"
-          />
-        )}
         <p className="text-gray-600 dark:text-gray-400">No domains found</p>
         <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
           Mint your first smith.cash domain to get started!
         </p>
+        {theme === 'light' && (
+          <img 
+            src={noResultsGif} 
+            alt="No domains found" 
+            className="w-48 h-48 mx-auto mt-4 object-contain"
+          />
+        )}
       </div>
     );
   }
