@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github, Send, Eye, Hourglass } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github, Send, Eye, Hourglass, Share2 } from 'lucide-react';
 import { SiDiscord } from 'react-icons/si';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
@@ -36,6 +36,7 @@ import termuxAvatar from '@/assets/termux-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
+import { DynamicMetaTags } from '@/components/DynamicMetaTags';
 
 export interface FilterState {
   protocol: string[];
@@ -537,6 +538,13 @@ export const SearchInterface = () => {
           />
         ) : (
           <>
+            <DynamicMetaTags 
+              username={web3BioProfile?.identity || displayQuery}
+              displayName={web3BioProfile?.displayName}
+              description={web3BioProfile?.description}
+              avatar={web3BioProfile?.avatar}
+              banner={web3BioProfile?.header}
+            />
             {/* Main Heading - hidden only when web3.bio profile is displayed */}
             {!showMintInterface && !showMyIDs && !web3BioProfile && <PersonalizedHeader user={null} isProfileDisplayed={!!web3BioProfile} />}
             
@@ -781,6 +789,40 @@ export const SearchInterface = () => {
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/60"></div>
+                    
+                    {/* Share Button */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute top-4 right-4 h-10 w-10 p-0 bg-gray-900/60 hover:bg-gray-900/80 backdrop-blur-sm border border-[#D4AF37]/30"
+                      onClick={async () => {
+                        const shareUrl = `${window.location.origin}/${displayQuery || searchQuery}`;
+                        const shareData = {
+                          title: `${web3BioProfile.displayName || searchQuery} - Vanity.box`,
+                          text: `Check out ${web3BioProfile.displayName || searchQuery}'s profile on Vanity.box`,
+                          url: shareUrl,
+                        };
+                        
+                        try {
+                          if (navigator.share) {
+                            await navigator.share(shareData);
+                          } else {
+                            await navigator.clipboard.writeText(shareUrl);
+                            const event = new CustomEvent('show-toast', {
+                              detail: {
+                                title: 'Link Copied!',
+                                description: 'Profile link copied to clipboard',
+                              }
+                            });
+                            window.dispatchEvent(event);
+                          }
+                        } catch (err) {
+                          console.error('Error sharing:', err);
+                        }
+                      }}
+                    >
+                      <Share2 className="h-4 w-4 text-[#D4AF37]" />
+                    </Button>
                   </div>
                   
                    <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
