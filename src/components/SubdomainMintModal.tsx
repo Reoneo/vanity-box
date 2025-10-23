@@ -376,10 +376,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="text-center">
                 <div className="text-3xl font-bold text-[#D4AF37]">
-                  {registrationYears} year{registrationYears > 1 ? "s" : ""}
+                  {registrationYears} {registrationYears > 1 ? t('years') : t('year')}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">
-                  {registrationYears * 12} Month Registration
+                  {registrationYears * 12} {t('month_registration')}
                 </div>
               </div>
 
@@ -428,12 +428,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
           {/* Cost Breakdown */}
           <div className="w-full max-w-sm space-y-2">
-            <h3 className="font-semibold text-gray-900 dark:text-white text-center text-sm">Cost Breakdown:</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white text-center text-sm">{t('cost_breakdown')}</h3>
 
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {registrationYears} year{registrationYears > 1 ? "s" : ""} registration
+                  {registrationYears} {registrationYears > 1 ? t('years_registration') : t('year_registration')}
                 </span>
                 <span className="font-medium text-[#D4AF37]">
                   {domainPrice === 0 ? "FREE" : `$${(domainPrice * registrationYears).toFixed(2)}`}
@@ -441,19 +441,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Network fee</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('network_fee')}</span>
                 <span className="font-medium text-[#D4AF37]">${networkFeeUSD.toFixed(2)}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Expires</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('expires')}</span>
                 <span className="font-medium text-gray-900 dark:text-white">{getExpirationDate()}</span>
               </div>
 
               <Separator className="my-1" />
 
               <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-gray-900 dark:text-white">Total</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{t('total')}</span>
                 <span className="font-bold text-gray-900 dark:text-white">${grandTotal.toFixed(2)}</span>
               </div>
             </div>

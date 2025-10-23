@@ -745,7 +745,7 @@ export const SearchInterface = () => {
                   <CardContent className="p-4 md:p-6">
                     <div className="space-y-3 md:space-y-4">
                       <h3 className="text-lg md:text-2xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent text-center mb-6 md:mb-8">
-                        Getting Started with Vanity
+                        {t('getting_started_with_vanity')}
                       </h3>
                       
                       <div className="space-y-4 md:space-y-6">
@@ -754,7 +754,7 @@ export const SearchInterface = () => {
                             1
                           </div>
                           <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            Sign up to World App
+                            {t('getting_started_step1')}
                           </p>
                         </div>
 
@@ -763,7 +763,7 @@ export const SearchInterface = () => {
                             2
                           </div>
                           <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            Secure your a limited Digital ID
+                            {t('getting_started_step2')}
                           </p>
                         </div>
 
@@ -772,7 +772,7 @@ export const SearchInterface = () => {
                             3
                           </div>
                           <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            Build your onchain identity
+                            {t('getting_started_step3')}
                           </p>
                         </div>
 
@@ -781,7 +781,7 @@ export const SearchInterface = () => {
                             4
                           </div>
                           <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            Use your ID across all Dapps
+                            {t('getting_started_step4')}
                           </p>
                         </div>
 
@@ -790,7 +790,7 @@ export const SearchInterface = () => {
                             5
                           </div>
                           <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            Stay tuned for ENS v2 updates
+                            {t('getting_started_step5')}
                           </p>
                         </div>
                       </div>
@@ -803,7 +803,7 @@ export const SearchInterface = () => {
                         rel="noopener noreferrer"
                         className="group px-6 py-2 md:px-8 md:py-3 bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-size-200 bg-pos-0 hover:bg-pos-100 text-black font-bold rounded-xl transition-all duration-500 hover:scale-105 shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_50px_rgba(212,175,55,0.5)] text-sm md:text-base"
                       >
-                        Learn More
+                        {t('learn_more')}
                       </a>
                     </div>
                   </CardContent>

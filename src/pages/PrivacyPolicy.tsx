@@ -24,9 +24,9 @@ export default function PrivacyPolicy() {
           {t('back')}
         </Button>
         <h1 className="text-4xl md:text-5xl font-playfair font-bold mb-4 bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] bg-clip-text text-transparent">
-          Privacy Policy
+          {t('privacy_policy')}
         </h1>
-        <p className="text-sm text-muted-foreground mb-8">Last modified: {new Date().toLocaleDateString()}</p>
+        <p className="text-sm text-muted-foreground mb-8">{t('last_modified')}: {new Date().toLocaleDateString()}</p>
 
         <div className="prose prose-lg dark:prose-invert max-w-none space-y-8">
           <section>
