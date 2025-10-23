@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github, Send, Eye } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github, Send, Eye, Hourglass } from 'lucide-react';
 import { SiDiscord } from 'react-icons/si';
 import { supabase } from '@/integrations/supabase/client';
+import { useParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -90,6 +91,7 @@ interface ENSRecords {
 
 export const SearchInterface = () => {
   const { t, language } = useLanguage();
+  const { username } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [displayQuery, setDisplayQuery] = useState(''); // The actual searched query for display
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -120,6 +122,7 @@ export const SearchInterface = () => {
   const [followersSearchQuery, setFollowersSearchQuery] = useState('');
   const [followingSearchQuery, setFollowingSearchQuery] = useState('');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingEFP, setIsLoadingEFP] = useState(false);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -160,6 +163,17 @@ export const SearchInterface = () => {
 
   const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
   const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname', 'Startup', 'Artist'];
+
+  // Auto-search when username is in URL
+  useEffect(() => {
+    if (username && !hasSearched) {
+      setSearchQuery(username);
+      // Trigger search after a short delay to ensure component is mounted
+      setTimeout(() => {
+        handleSearch(username);
+      }, 100);
+    }
+  }, [username]);
 
   // Re-fetch results when language changes
   useEffect(() => {
@@ -323,8 +337,8 @@ export const SearchInterface = () => {
     return allResults;
   };
 
-  const handleSearch = async () => {
-    const trimmedQuery = searchQuery.trim();
+  const handleSearch = async (queryOverride?: string) => {
+    const trimmedQuery = (queryOverride || searchQuery).trim();
     if (!trimmedQuery) return;
     
     // Prevent searches with spaces
@@ -687,7 +701,7 @@ export const SearchInterface = () => {
                     </button>
                   )}
                   <Button
-                    onClick={handleSearch}
+                    onClick={() => handleSearch()}
                     size="sm"
                     className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
                     disabled={!searchQuery.trim() || isLoading}
@@ -1032,10 +1046,20 @@ export const SearchInterface = () => {
               </div>
             )}
 
+            {/* Loading Indicator */}
+            {isLoadingEFP && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                <div className="bg-gray-900/90 border-2 border-[#D4AF37] rounded-lg p-6 flex flex-col items-center gap-3">
+                  <Hourglass className="w-12 h-12 text-[#D4AF37] animate-pulse" />
+                  <p className="text-white font-medium">Loading...</p>
+                </div>
+              </div>
+            )}
+
             {/* Followers List Modal */}
             {showFollowersList && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
                     <h3 className="text-xl font-bold text-white">Followers ({totalFollowers})</h3>
                     <button
@@ -1046,12 +1070,22 @@ export const SearchInterface = () => {
                     </button>
                   </div>
                   <div className="p-4 border-b border-[#D4AF37]/30">
-                    <Input
-                      placeholder="Search followers..."
-                      value={followersSearchQuery}
-                      onChange={(e) => setFollowersSearchQuery(e.target.value)}
-                      className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500"
-                    />
+                    <div className="relative">
+                      <Input
+                        placeholder="Search followers..."
+                        value={followersSearchQuery}
+                        onChange={(e) => setFollowersSearchQuery(e.target.value)}
+                        className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500 pr-10"
+                      />
+                      {followersSearchQuery && (
+                        <button
+                          onClick={() => setFollowersSearchQuery('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="overflow-y-auto p-4 space-y-2 flex-1">
                     {followersList
@@ -1145,8 +1179,8 @@ export const SearchInterface = () => {
 
             {/* Following List Modal */}
             {showFollowingList && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
                     <h3 className="text-xl font-bold text-white">Following ({totalFollowing})</h3>
                     <button
@@ -1157,12 +1191,22 @@ export const SearchInterface = () => {
                     </button>
                   </div>
                   <div className="p-4 border-b border-[#D4AF37]/30">
-                    <Input
-                      placeholder="Search following..."
-                      value={followingSearchQuery}
-                      onChange={(e) => setFollowingSearchQuery(e.target.value)}
-                      className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500"
-                    />
+                    <div className="relative">
+                      <Input
+                        placeholder="Search following..."
+                        value={followingSearchQuery}
+                        onChange={(e) => setFollowingSearchQuery(e.target.value)}
+                        className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500 pr-10"
+                      />
+                      {followingSearchQuery && (
+                        <button
+                          onClick={() => setFollowingSearchQuery('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="overflow-y-auto p-4 space-y-2 flex-1">
                     {followingList
