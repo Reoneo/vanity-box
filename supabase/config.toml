@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.delete-namestone-name]
 verify_jwt = false
+
+[functions.get-web3bio-profile]
+verify_jwt = false

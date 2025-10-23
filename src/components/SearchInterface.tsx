@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, ArrowLeft, Globe } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,6 +47,16 @@ interface ENSResult {
   club: string | string[];
 }
 
+interface Web3BioProfile {
+  avatar?: string;
+  displayName?: string;
+  description?: string;
+  address?: string;
+  platform?: string;
+  identity?: string;
+  links?: any;
+}
+
 export const SearchInterface = () => {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,6 +71,7 @@ export const SearchInterface = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
   const [showMyIDs, setShowMyIDs] = useState(false);
+  const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -272,14 +284,28 @@ export const SearchInterface = () => {
       return;
     }
     
-    // If query contains a dot, redirect to web3.bio profile
-    if (trimmedQuery.includes('.')) {
-      window.open(`https://web3.bio/${trimmedQuery}`, '_blank');
-      return;
-    }
-    
     setIsLoading(true);
     setHasSearched(true);
+    setWeb3BioProfile(null);
+    
+    // If query contains a dot, fetch web3.bio profile
+    if (trimmedQuery.includes('.')) {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
+          body: { handle: trimmedQuery }
+        });
+        
+        if (error) throw error;
+        
+        if (data && !data.error) {
+          setWeb3BioProfile(data);
+        }
+      } catch (error) {
+        console.error('Error fetching web3.bio profile:', error);
+      }
+      setIsLoading(false);
+      return;
+    }
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -495,7 +521,7 @@ export const SearchInterface = () => {
                 </div>
                 <Input
                   placeholder="Search a new or existing name"
-                  className="h-12 text-lg text-center bg-white dark:bg-gray-900 border-black dark:border-[#D4AF37] focus:border-black dark:focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
+                  className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -576,6 +602,52 @@ export const SearchInterface = () => {
                       >
                         Learn More
                       </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Web3.bio Profile Result */}
+            {web3BioProfile && (
+              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
+                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      {web3BioProfile.avatar && (
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-lg opacity-40"></div>
+                          <div className="relative w-20 h-20 rounded-full border-3 border-[#D4AF37] overflow-hidden">
+                            <img 
+                              src={web3BioProfile.avatar} 
+                              alt={web3BioProfile.displayName || searchQuery}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-white mb-1">
+                          {web3BioProfile.displayName || searchQuery}
+                        </h3>
+                        {web3BioProfile.description && (
+                          <p className="text-gray-300 text-sm mb-3">{web3BioProfile.description}</p>
+                        )}
+                        {web3BioProfile.address && (
+                          <p className="text-gray-400 text-xs font-mono mb-2">
+                            {web3BioProfile.address.slice(0, 6)}...{web3BioProfile.address.slice(-4)}
+                          </p>
+                        )}
+                        <a
+                          href={`https://web3.bio/${searchQuery}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-[#F7E06C] text-sm transition-colors"
+                        >
+                          View Full Profile
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
