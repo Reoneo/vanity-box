@@ -752,8 +752,8 @@ export const SearchInterface = () => {
                       </div>
                       
                       <div className="space-y-2 md:space-y-3">
-                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
+                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
                             1
                           </div>
                           <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
@@ -761,8 +761,8 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
+                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
                             2
                           </div>
                           <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
@@ -770,8 +770,8 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
+                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
                             3
                           </div>
                           <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
@@ -779,8 +779,8 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
+                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
                             4
                           </div>
                           <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
@@ -788,12 +788,12 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="group flex items-start gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
-                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg mt-0.5">
+                        <div className="group flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl bg-gradient-to-r from-[#D4AF37]/5 to-transparent border border-[#D4AF37]/10 hover:border-[#D4AF37]/30 transition-all duration-300">
+                          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-sm md:text-base shadow-lg">
                             5
                           </div>
                           <p className="text-white text-xs md:text-sm font-medium pt-1.5 md:pt-2">
-                            Learn about the Ethereum Follow Protocol as it will be coming to World Chain soon
+                            Search and load Ethereum and Solana wallet profiles
                           </p>
                         </div>
                       </div>
