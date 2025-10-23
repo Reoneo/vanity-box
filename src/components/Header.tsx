@@ -3,54 +3,12 @@ import { WalletConnection } from './WalletConnection';
 import vanityLogo from '../assets/vanity-logo.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, ExternalLink } from 'lucide-react';
-import efpLogo from '../assets/efp-logo.png';
-import efp100Badge from '../assets/efp-100-badge.png';
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
-const IntegrationsSection = () => {
-  return (
-    <div className="space-y-3">
-      <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Integrations</h3>
-      <div className="flex items-center gap-4">
-        <a 
-          href="https://efp.app/integrations"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg"
-        >
-          <div className="flex items-center gap-2">
-            <img src={efpLogo} alt="EFP" className="w-12 h-12 object-contain" />
-            <img src={efp100Badge} alt="First 100" className="w-12 h-12 object-contain" />
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="font-medium text-sm">Ethereum Follow Protocol</span>
-            <ExternalLink className="w-3 h-3" />
-          </div>
-        </a>
-      </div>
-      
-      <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white pt-2">Featured on</h3>
-      <div className="flex items-center gap-4">
-        <a 
-          href="https://web3.bio/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 h-auto px-4 py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg"
-        >
-          <img src="https://web3.bio/web3bio-logo.png" alt="Web3.bio" className="w-16 h-16 object-contain" />
-          <div className="flex items-center gap-1">
-            <span className="font-medium text-sm">Web3.bio</span>
-            <ExternalLink className="w-3 h-3" />
-          </div>
-        </a>
-      </div>
-    </div>
-  );
-};
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
@@ -256,7 +214,6 @@ export const Header: React.FC = () => {
       {/* Slide-over Menu */}
       <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-24 overflow-y-auto">
         <nav className="space-y-6">
-          <IntegrationsSection />
           
           {/* Legal Links */}
           <div className="space-y-3">

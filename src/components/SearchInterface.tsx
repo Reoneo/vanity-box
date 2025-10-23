@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, Info, ArrowLeft, Globe } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -196,6 +196,14 @@ export const SearchInterface = () => {
         club: ['Startup', 'DeFi']
       },
       {
+        name: 'altcoin.chain',
+        description: t('desc_altcoin_chain'),
+        imageUrl: termuxAvatar,
+        price: 5,
+        category: ['ENS', 'DNS'],
+        club: ['Crypto', 'DeFi']
+      },
+      {
         name: '30315.eth',
         description: t('desc_30315'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
@@ -281,9 +289,9 @@ export const SearchInterface = () => {
         return protocolMatch && clubMatch;
       });
     } else {
-      // If no filters are applied, only show Smith.cash, Smith.box, and Vape.box by default
+      // If no filters are applied, only show Smith.cash, Smith.box, Vape.box, and altcoin.chain by default
       filteredResults = allResults.filter(result => 
-        result.name === 'Smith.cash' || result.name === 'Smith.box' || result.name === 'Vape.box'
+        result.name === 'Smith.cash' || result.name === 'Smith.box' || result.name === 'Vape.box' || result.name === 'altcoin.chain'
       );
     }
     
@@ -580,12 +588,6 @@ export const SearchInterface = () => {
                   <div className={`relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
-                      <button
-                        onClick={() => handleFlipCard(index)}
-                        className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-gray-700/80 backdrop-blur-sm border border-gray-600 flex items-center justify-center hover:bg-gray-600/80 transition-all duration-300 hover:scale-110"
-                      >
-                        <Info size={18} className="text-white" />
-                      </button>
                       
                       <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
                         <div className="relative mb-6">

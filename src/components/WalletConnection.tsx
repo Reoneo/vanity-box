@@ -44,7 +44,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     // Check if running in World App
     if (!MiniKit.isInstalled()) {
       console.log('Not in World App - redirecting to World App ecosystem page');
-      window.open('https://world.org/ecosystem/app_fff38af3b75650e10c5f9b96df4d0b70', '_blank');
+      window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
       return;
     }
 
