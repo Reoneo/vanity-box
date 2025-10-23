@@ -322,6 +322,7 @@ export const SearchInterface = () => {
         if (data && !data.error && Array.isArray(data) && data.length > 0) {
           const profileData = data[0];
           setWeb3BioProfile(profileData);
+          setEnsResults([]); // Clear ENS results when showing web3.bio profile
           
           // Fetch EFP stats if we have an address
           if (profileData.address) {
@@ -352,7 +353,7 @@ export const SearchInterface = () => {
           body: { walletAddress }
         });
         if (domainsData?.domains) {
-          setUserDomains(domainsData.domains.map((d: any) => d.subdomain.toLowerCase()));
+          setUserDomains(domainsData.domains.map((d: any) => `${d.name}.${d.domain}`.toLowerCase()));
         }
       } catch (error) {
         console.error('Error fetching user domains:', error);
@@ -756,16 +757,9 @@ export const SearchInterface = () => {
                              <span>{web3BioProfile.email}</span>
                            </div>
                          )}
-                       </div>
+                        </div>
                        
-                       {/* Address */}
-                       {web3BioProfile.address && (
-                         <p className="text-gray-400 text-xs sm:text-sm font-mono bg-gray-800/50 px-3 py-2 rounded-lg">
-                           {web3BioProfile.address.slice(0, 8)}...{web3BioProfile.address.slice(-6)}
-                         </p>
-                       )}
-                      
-                      {/* Follower Stats */}
+                       {/* Follower Stats */}
                       <div className="flex gap-6 pt-2">
                         <div className="text-center">
                           <div className="text-xl sm:text-2xl font-bold text-white">
@@ -822,31 +816,30 @@ export const SearchInterface = () => {
                       
                        {/* Action Buttons */}
                        <div className="flex gap-3 pt-4 w-full max-w-md">
-                         <a
-                           href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           className="flex-1 flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
-                         >
-                           <img 
-                             src={efpLogoFullDark} 
-                             alt="EFP" 
-                             className="h-8 w-auto object-contain"
-                           />
-                         </a>
-                         <a
-                           href={`https://web3.bio/${searchQuery}`}
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-white font-medium transition-all duration-300"
-                         >
-                           <img 
-                             src={web3BioLogo} 
-                             alt="Web3.bio" 
-                             className="w-5 h-5 object-contain"
-                           />
-                           <span className="hidden sm:inline">View Full Profile</span>
-                         </a>
+                          <a
+                            href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
+                          >
+                            <img 
+                              src={efpLogoFullDark} 
+                              alt="EFP" 
+                              className="h-14 w-auto object-contain"
+                            />
+                          </a>
+                          <a
+                            href={`https://web3.bio/${searchQuery}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 hover:opacity-80 rounded-xl transition-opacity"
+                          >
+                            <img 
+                              src={web3BioLogo} 
+                              alt="Web3.bio" 
+                              className="w-10 h-10 object-contain"
+                            />
+                          </a>
                        </div>
                     </div>
                   </CardContent>
@@ -863,7 +856,7 @@ export const SearchInterface = () => {
 
             {/* Results container - same width as search bar */}
             <div className="w-full sm:max-w-3xl sm:mx-auto">
-              {hasSearched && ensResults.length > 0 && !showMyIDs && (
+              {hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-500">
             {ensResults.map((result, index) => {
               const isFlipped = flippedCards.has(index);
