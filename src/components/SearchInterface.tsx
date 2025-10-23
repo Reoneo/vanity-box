@@ -72,6 +72,7 @@ export const SearchInterface = () => {
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
   const [showMyIDs, setShowMyIDs] = useState(false);
   const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -287,6 +288,7 @@ export const SearchInterface = () => {
     setIsLoading(true);
     setHasSearched(true);
     setWeb3BioProfile(null);
+    setIsSearchActive(true);
     
     // If query contains a dot, fetch web3.bio profile
     if (trimmedQuery.includes('.')) {
@@ -387,7 +389,7 @@ export const SearchInterface = () => {
         ) : (
           <>
             {/* Main Heading - hidden when mint is open or showing My IDs */}
-            {!showMintInterface && !showMyIDs && <PersonalizedHeader user={null} />}
+            {!showMintInterface && !showMyIDs && <PersonalizedHeader user={null} isSearchActive={isSearchActive} />}
             
             {/* My IDs Header with Back Button - shown when displaying IDs */}
             {!showMintInterface && showMyIDs && (
@@ -520,11 +522,17 @@ export const SearchInterface = () => {
                   </DropdownMenu>
                 </div>
                 <Input
-                  placeholder="Search a new or existing name"
+                  placeholder={t('search_for_a_name')}
                   className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                      setIsSearchActive(true);
+                    }
+                  }}
+                  onFocus={() => setIsSearchActive(true)}
                 />
                 <div className="absolute right-1 top-1 flex items-center gap-1 h-10">
                   {searchQuery && (
@@ -534,6 +542,8 @@ export const SearchInterface = () => {
                         setEnsResults([]);
                         setIsAvailable(null);
                         setHasSearched(false);
+                        setWeb3BioProfile(null);
+                        setIsSearchActive(false);
                       }}
                       className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       aria-label="Clear search"
@@ -608,8 +618,8 @@ export const SearchInterface = () => {
               </div>
             )}
 
-            {/* Web3.bio Profile Result */}
-            {web3BioProfile && (
+            {/* Web3.bio Profile Result - Only show when search is active */}
+            {web3BioProfile && hasSearched && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
                   <CardContent className="p-6">

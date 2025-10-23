@@ -1,15 +1,18 @@
-import { Header } from '@/components/Header';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from 'next-themes';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { Header } from '@/components/Header';
 
 export default function PrivacyPolicy() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted pb-20">
       <Header />
       <main className="container mx-auto px-4 py-24 max-w-4xl">
         <Button
@@ -18,7 +21,7 @@ export default function PrivacyPolicy() {
           className="mb-6 -ml-2 hover:bg-muted"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          {t('back')}
         </Button>
         <h1 className="text-4xl md:text-5xl font-playfair font-bold mb-4 bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] bg-clip-text text-transparent">
           Privacy Policy
@@ -131,6 +134,26 @@ export default function PrivacyPolicy() {
           </section>
         </div>
       </main>
+
+      {/* Fixed Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] py-4 px-4 pb-safe-area-inset-bottom">
+        <div className="container mx-auto flex items-center justify-between max-w-5xl">
+          <LanguageSelector />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-full hover:bg-black/10 transition-colors"
+            aria-label={t('toggle_theme')}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5 text-black" />
+            ) : (
+              <Moon className="h-5 w-5 text-black" />
+            )}
+          </Button>
+        </div>
+      </footer>
     </div>
   );
 }

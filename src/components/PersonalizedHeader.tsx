@@ -7,9 +7,10 @@ interface PersonalizedHeaderProps {
     username?: string;
     walletAddress?: string;
   } | null;
+  isSearchActive?: boolean;
 }
 
-export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) => {
+export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user, isSearchActive = false }) => {
   const { t } = useLanguage();
   
   const getHeaderText = () => {
@@ -23,7 +24,7 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user }) 
   };
 
   return (
-    <h1 className="text-center px-4 mb-4">
+    <h1 className={`text-center px-4 mb-4 transition-all duration-500 ${isSearchActive ? 'opacity-0 -translate-y-4 h-0' : 'opacity-100 translate-y-0'}`}>
       <div className="leading-tight">
         {getHeaderText()}
       </div>
