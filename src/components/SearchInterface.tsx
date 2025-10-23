@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,15 @@ interface EFPStats {
   following_count?: number;
 }
 
+interface ENSRecords {
+  name?: string;
+  address?: string;
+  avatar?: string;
+  records?: {
+    [key: string]: string;
+  };
+}
+
 export const SearchInterface = () => {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,6 +93,7 @@ export const SearchInterface = () => {
   const [showMyIDs, setShowMyIDs] = useState(false);
   const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
   const [efpStats, setEfpStats] = useState<EFPStats | null>(null);
+  const [ensRecords, setEnsRecords] = useState<ENSRecords | null>(null);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [userDomains, setUserDomains] = useState<string[]>([]);
 
@@ -302,6 +312,7 @@ export const SearchInterface = () => {
     setEnsResults([]);
     setWeb3BioProfile(null);
     setEfpStats(null);
+    setEnsRecords(null);
     
     // Update the display query to match what's being searched
     setDisplayQuery(trimmedQuery);
@@ -327,18 +338,41 @@ export const SearchInterface = () => {
           setWeb3BioProfile(profileData);
           setEnsResults([]); // Clear ENS results when showing web3.bio profile
           
-          // Fetch EFP stats if we have an address
-          if (profileData.address) {
+          // Fetch EFP stats and ENS records if we have an address or ENS name
+          if (profileData.address || trimmedQuery.includes('.eth')) {
+            const addressOrName = profileData.address || trimmedQuery;
+            
+            // Fetch EFP stats using the ethfollow.xyz API directly
             try {
-              const { data: efpData, error: efpError } = await supabase.functions.invoke('get-efp-stats', {
-                body: { address: profileData.address }
-              });
+              const efpResponse = await fetch(
+                `https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`
+              );
               
-              if (!efpError && efpData) {
-                setEfpStats(efpData);
+              if (efpResponse.ok) {
+                const efpData = await efpResponse.json();
+                setEfpStats({
+                  followers_count: parseInt(efpData.followers_count) || 0,
+                  following_count: parseInt(efpData.following_count) || 0
+                });
               }
             } catch (efpError) {
               console.error('Error fetching EFP stats:', efpError);
+            }
+            
+            // Fetch ENS records
+            try {
+              const ensResponse = await fetch(
+                `https://api.ethfollow.xyz/api/v1/users/${addressOrName}/ens`
+              );
+              
+              if (ensResponse.ok) {
+                const ensData = await ensResponse.json();
+                if (ensData.ens) {
+                  setEnsRecords(ensData.ens);
+                }
+              }
+            } catch (ensError) {
+              console.error('Error fetching ENS records:', ensError);
             }
           }
         }
@@ -739,28 +773,28 @@ export const SearchInterface = () => {
                          )}
                        </div>
                       
-                      {/* Bio/Description */}
-                      {web3BioProfile.description && (
-                        <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-                          {web3BioProfile.description}
-                        </p>
-                      )}
-                      
-                       {/* Location and Email */}
-                       <div className="flex flex-wrap gap-4 text-sm text-gray-400 justify-center">
-                         {web3BioProfile.location && (
-                           <div className="flex items-center gap-1">
-                             <Globe className="w-4 h-4" />
-                             <span>{web3BioProfile.location}</span>
-                           </div>
-                         )}
-                         {web3BioProfile.email && (
-                           <div className="flex items-center gap-1">
-                             <span>✉️</span>
-                             <span>{web3BioProfile.email}</span>
-                           </div>
-                         )}
-                        </div>
+                       {/* Bio/Description */}
+                       {web3BioProfile.description && (
+                         <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+                           {web3BioProfile.description}
+                         </p>
+                       )}
+                       
+                        {/* Email and Location - Email first, then location */}
+                        <div className="flex flex-col gap-2 text-sm text-gray-400 items-center">
+                          {(ensRecords?.records?.email || web3BioProfile.email) && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4" />
+                              <span>{ensRecords?.records?.email || web3BioProfile.email}</span>
+                            </div>
+                          )}
+                          {(ensRecords?.records?.location || web3BioProfile.location) && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              <span>{ensRecords?.records?.location || web3BioProfile.location}</span>
+                            </div>
+                          )}
+                         </div>
                        
                        {/* Follower Stats */}
                       <div className="flex gap-6 pt-2">
@@ -778,72 +812,96 @@ export const SearchInterface = () => {
                         </div>
                       </div>
                       
-                       {/* Social Links */}
-                       {web3BioProfile.links && Object.keys(web3BioProfile.links).length > 0 && (
-                         <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                           {web3BioProfile.links.twitter && (
-                             <a
-                               href={web3BioProfile.links.twitter.link}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                             >
-                               <span>𝕏</span>
-                               <span>@{web3BioProfile.links.twitter.handle}</span>
-                             </a>
-                           )}
-                           {web3BioProfile.links.github && (
-                             <a
-                               href={web3BioProfile.links.github.link}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                             >
-                               <span>⚙️</span>
-                               <span>@{web3BioProfile.links.github.handle}</span>
-                             </a>
-                           )}
-                           {web3BioProfile.links.website && (
-                             <a
-                               href={web3BioProfile.links.website.link}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                             >
-                               <Globe className="w-4 h-4" />
-                               <span>{web3BioProfile.links.website.handle}</span>
-                             </a>
-                           )}
-                         </div>
-                       )}
+                       {/* Social Links and ENS Records */}
+                        <div className="flex flex-wrap gap-3 pt-2 justify-center">
+                          {/* Twitter/X */}
+                          {(web3BioProfile.links?.twitter || ensRecords?.records?.['com.twitter']) && (
+                            <a
+                              href={web3BioProfile.links?.twitter?.link || `https://twitter.com/${ensRecords?.records?.['com.twitter']}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <span>𝕏</span>
+                              <span>@{web3BioProfile.links?.twitter?.handle || ensRecords?.records?.['com.twitter']}</span>
+                            </a>
+                          )}
+                          
+                          {/* GitHub */}
+                          {(web3BioProfile.links?.github || ensRecords?.records?.['com.github']) && (
+                            <a
+                              href={web3BioProfile.links?.github?.link || `https://github.com/${ensRecords?.records?.['com.github']}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <Github className="w-4 h-4" />
+                              <span>@{web3BioProfile.links?.github?.handle || ensRecords?.records?.['com.github']}</span>
+                            </a>
+                          )}
+                          
+                          {/* Website */}
+                          {(web3BioProfile.links?.website || ensRecords?.records?.url) && (
+                            <a
+                              href={web3BioProfile.links?.website?.link || ensRecords?.records?.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <Globe className="w-4 h-4" />
+                              <span>{web3BioProfile.links?.website?.handle || ensRecords?.records?.url}</span>
+                            </a>
+                          )}
+                          
+                          {/* Discord */}
+                          {ensRecords?.records?.['com.discord'] && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-lg text-sm text-gray-300">
+                              <span>💬</span>
+                              <span>{ensRecords.records['com.discord']}</span>
+                            </div>
+                          )}
+                          
+                          {/* Telegram */}
+                          {ensRecords?.records?.['org.telegram'] && (
+                            <a
+                              href={`https://t.me/${ensRecords.records['org.telegram']}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <span>✈️</span>
+                              <span>@{ensRecords.records['org.telegram']}</span>
+                            </a>
+                          )}
+                        </div>
                       
-                       {/* Action Buttons */}
-                       <div className="flex gap-3 pt-4 w-full max-w-md justify-between">
-                          <a
-                            href={`https://web3.bio/${searchQuery}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
-                          >
-                            <img 
-                              src={web3BioLogo} 
-                              alt="Web3.bio" 
-                              className="h-14 w-auto object-contain"
-                            />
-                          </a>
-                          <a
-                            href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
-                          >
-                            <img 
-                              src={efpLogoFullDark} 
-                              alt="EFP" 
-                              className="h-14 w-auto object-contain"
-                            />
-                          </a>
-                       </div>
+                       {/* Action Buttons - Centered side by side */}
+                        <div className="flex gap-6 pt-4 justify-center items-center">
+                           <a
+                             href={`https://web3.bio/${searchQuery}`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
+                           >
+                             <img 
+                               src={web3BioLogo} 
+                               alt="Web3.bio" 
+                               className="h-14 w-auto object-contain"
+                             />
+                           </a>
+                           <a
+                             href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
+                           >
+                             <img 
+                               src={efpLogoFullDark} 
+                               alt="EFP" 
+                               className="h-14 w-auto object-contain"
+                             />
+                           </a>
+                        </div>
                     </div>
                   </CardContent>
                 </Card>
