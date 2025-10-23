@@ -67,9 +67,9 @@ const Index = () => {
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-black" />
+                <Sun className="w-5 h-5 text-black" />
               ) : (
-                <Moon className="w-4 h-4 text-black" />
+                <Moon className="w-5 h-5 text-black" />
               )}
             </button>
           </div>
