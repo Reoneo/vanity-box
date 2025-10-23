@@ -116,7 +116,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
       <div className="text-center py-8">
         <p className="text-gray-600 dark:text-gray-400">No domains found</p>
         <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-          Mint your first smith.cash domain to get started!
+          Mint your first ID to get started!
         </p>
         {theme === 'light' && (
           <img 

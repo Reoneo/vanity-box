@@ -488,16 +488,17 @@ export const SearchInterface = () => {
       filteredResults = allResults;
     }
     
-    // Sort results: "Select" domains first (Smith.cash, $mith.eth), then "Coming Soon", all alphabetically
+    // Sort results: $mith.eth first, then Smith.cash, then "Coming Soon", all alphabetically within categories
     filteredResults.sort((a, b) => {
-      const aIsSelect = a.name === 'Smith.cash' || a.name === '$mith.eth';
-      const bIsSelect = b.name === 'Smith.cash' || b.name === '$mith.eth';
+      // Prioritize $mith.eth first
+      if (a.name === '$mith.eth') return -1;
+      if (b.name === '$mith.eth') return 1;
       
-      // Prioritize "Select" domains
-      if (aIsSelect && !bIsSelect) return -1;
-      if (!aIsSelect && bIsSelect) return 1;
+      // Then Smith.cash
+      if (a.name === 'Smith.cash') return -1;
+      if (b.name === 'Smith.cash') return 1;
       
-      // Within same category, sort alphabetically
+      // Within "Coming Soon" category, sort alphabetically
       return a.name.localeCompare(b.name);
     });
     
