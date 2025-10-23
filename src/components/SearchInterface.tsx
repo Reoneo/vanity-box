@@ -1371,7 +1371,7 @@ export const SearchInterface = () => {
               const isFlipped = flippedCards.has(index);
               const isTaken = takenSubdomains.has(result.name.toLowerCase());
               const isUserOwned = displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase());
-              const isDisabled = result.name !== 'Smith.cash' || isTaken || isUserOwned;
+              const isDisabled = !((result.name === 'Smith.cash' || result.name === '$mith.eth')) || isTaken || isUserOwned;
               
               return (
                 <div key={index} className="perspective-1000 min-h-[320px]">

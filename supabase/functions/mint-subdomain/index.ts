@@ -65,16 +65,19 @@ serve(async (req) => {
     // Step 2: Mint subdomain using Namestone API
     console.log('\n✅ STEP 2: Minting via Namestone API');
     
-    // Extract the subdomain label (everything before the first dot)
-    // e.g., "g.smith.cash" -> "g"
-    const subdomainLabel = subdomain.split('.')[0];
+    // Extract the subdomain label and domain from the full subdomain
+    // e.g., "g.$mith.eth" -> label: "g", domain: "$mith.eth"
+    const parts = subdomain.split('.');
+    const subdomainLabel = parts[0];
+    const domainFromSubdomain = parts.slice(1).join('.');
     
     console.log('📋 Full subdomain:', subdomain);
     console.log('🏷️  Subdomain label:', subdomainLabel);
+    console.log('🌐 Domain from subdomain:', domainFromSubdomain);
     console.log('🔑 API Key configured:', !!NAMESTONE_API_KEY);
     
     const namestonePayload = {
-      domain: 'smith.cash',
+      domain: domainFromSubdomain || 'smith.cash',
       name: subdomainLabel,
       address: walletAddress,
       chain_id: 480, // World Chain network ID
