@@ -264,7 +264,19 @@ export const SearchInterface = () => {
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
+    
+    // Prevent searches with spaces
+    if (trimmedQuery.includes(' ')) {
+      return;
+    }
+    
+    // If query contains a dot, redirect to web3.bio profile
+    if (trimmedQuery.includes('.')) {
+      window.open(`https://web3.bio/${trimmedQuery}`, '_blank');
+      return;
+    }
     
     setIsLoading(true);
     setHasSearched(true);
@@ -482,8 +494,8 @@ export const SearchInterface = () => {
                   </DropdownMenu>
                 </div>
                 <Input
-                  placeholder={t('search_for_a_name')}
-                  className="h-12 text-lg text-center bg-white dark:bg-gray-900 border-black dark:border-white focus:border-black dark:focus:border-white text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
+                  placeholder="Search a new or existing name"
+                  className="h-12 text-lg text-center bg-white dark:bg-gray-900 border-black dark:border-[#D4AF37] focus:border-black dark:focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -610,11 +622,16 @@ export const SearchInterface = () => {
                             <Badge 
                               key={`cat-${catIndex}`}
                               className={cn(
-                                "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap",
+                                "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity",
                                 cat === 'ENS' && "bg-transparent text-white border-[#D4AF37]",
                                 cat === 'DNS' && "bg-transparent text-white border-blue-500",
                                 cat === 'Aptos Names' && "bg-transparent text-white border-purple-500"
                               )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleProtocolToggle(cat);
+                                handleSearch();
+                              }}
                             >
                               {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
                               {cat === 'DNS' && <Globe className="w-3 h-3" />}
@@ -625,11 +642,11 @@ export const SearchInterface = () => {
                             </Badge>
                           ))}
                           
-                          {(Array.isArray(result.club) ? result.club : [result.club]).map((clubName, clubIndex) => (
+                           {(Array.isArray(result.club) ? result.club : [result.club]).map((clubName, clubIndex) => (
                             <Badge 
                               key={`club-${clubIndex}`}
                               className={cn(
-                                "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap",
+                                "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity",
                               clubName === 'Surname' && "bg-purple-600 text-white border-0",
                               clubName === 'DeFi' && "bg-green-600 text-white border-0",
                               clubName === 'Digits' && "bg-purple-600 text-white border-0",
@@ -639,6 +656,11 @@ export const SearchInterface = () => {
                               clubName === 'Startup' && "bg-orange-600 text-white border-0",
                               clubName === 'Artist' && "bg-pink-600 text-white border-0"
                               )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleClubToggle(clubName);
+                                handleSearch();
+                              }}
                             >
                               {clubName}
                             </Badge>

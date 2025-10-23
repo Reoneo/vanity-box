@@ -4,7 +4,6 @@ import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
-import { GasDisplay } from '@/components/GasDisplay';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
@@ -50,9 +49,18 @@ const Index = () => {
       </main>
       <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
         <div className="container mx-auto px-4 flex items-center justify-between text-xs">
-          {/* Language and Theme Toggle on Left */}
+          {/* Language Selector on Left */}
           <div className="flex items-center gap-1.5">
             <LanguageSelector />
+          </div>
+          
+          {/* Copyright Centered */}
+          <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal whitespace-nowrap">
+            © 2025 vanity.box. All rights reserved.
+          </div>
+          
+          {/* Theme Toggle on Right */}
+          <div className="flex items-center">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="w-7 h-7 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all duration-300"
@@ -64,16 +72,6 @@ const Index = () => {
                 <Moon className="w-3.5 h-3.5 text-white" />
               )}
             </button>
-          </div>
-          
-          {/* Copyright Centered */}
-          <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal whitespace-nowrap">
-            © 2025 vanity.box. All rights reserved.
-          </div>
-          
-          {/* Gas Display on Right */}
-          <div className="flex items-center">
-            <GasDisplay />
           </div>
         </div>
       </footer>
