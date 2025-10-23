@@ -320,7 +320,7 @@ export const SearchInterface = () => {
         imageUrl: mithEthAvatar,
         price: 5,
         category: 'ENS',
-        club: 'Surname'
+        club: 'DeFi'
       },
       {
         name: 'smith.apt',
@@ -443,9 +443,10 @@ export const SearchInterface = () => {
     // Check which subdomains are already taken on Namestone
     let allResults = getAllResults();
     const checkPromises = allResults.map(async (result) => {
-      // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain)
+      // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain, $mith.eth)
       if (result.name === 'Smith.cash' || result.name === 'Smith.box' || 
-          result.name === 'Vape.box' || result.name === 'altcoin.chain') {
+          result.name === 'Vape.box' || result.name === 'altcoin.chain' || 
+          result.name === '$mith.eth') {
         const domain = result.name.toLowerCase();
         try {
           const { data } = await supabase.functions.invoke('check-namestone-subdomain', {
@@ -483,10 +484,8 @@ export const SearchInterface = () => {
         return protocolMatch && clubMatch;
       });
     } else {
-      // If no filters are applied, only show Smith.cash, Smith.box, Vape.box, and altcoin.chain by default
-      filteredResults = allResults.filter(result => 
-        result.name === 'Smith.cash' || result.name === 'Smith.box' || result.name === 'Vape.box' || result.name === 'altcoin.chain'
-      );
+      // If no filters are applied, show all available subdomains
+      filteredResults = allResults;
     }
     
     setEnsResults(filteredResults);
