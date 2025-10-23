@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -685,8 +685,29 @@ export const SearchInterface = () => {
                         <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">
                           {web3BioProfile.displayName || searchQuery}
                         </h3>
-                        {web3BioProfile.identity && (
-                          <p className="text-[#D4AF37] text-sm font-mono">@{web3BioProfile.identity}</p>
+                       {web3BioProfile.address && (
+                          <div className="flex items-center gap-2">
+                            <p className="text-[#D4AF37] text-sm font-mono">
+                              {web3BioProfile.address.slice(0, 6)}...{web3BioProfile.address.slice(-4)}
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 hover:bg-[#D4AF37]/20"
+                              onClick={() => {
+                                navigator.clipboard.writeText(web3BioProfile.address);
+                                const event = new CustomEvent('show-toast', {
+                                  detail: {
+                                    title: 'Copied!',
+                                    description: 'Wallet address copied to clipboard',
+                                  }
+                                });
+                                window.dispatchEvent(event);
+                              }}
+                            >
+                              <Copy className="h-3 w-3 text-[#D4AF37]" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                       

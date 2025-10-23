@@ -19,8 +19,8 @@ serve(async (req) => {
 
     console.log('Fetching EFP stats for address:', address);
 
-    // First, get the user's details from leaderboard to find their stats
-    const leaderboardResponse = await fetch(
+    // Use the correct EFP API endpoint
+    const efpResponse = await fetch(
       `https://api.ethfollow.xyz/api/v1/users/${address}`,
       {
         headers: {
@@ -31,11 +31,20 @@ serve(async (req) => {
 
     let efpData = null;
     
-    if (leaderboardResponse.ok) {
-      efpData = await leaderboardResponse.json();
+    if (efpResponse.ok) {
+      efpData = await efpResponse.json();
       console.log('EFP data fetched successfully:', efpData);
+      
+      // The API returns an object with followers_count and following_count
+      // Return the data directly
+      return new Response(JSON.stringify({
+        followers_count: efpData.followers_count || 0,
+        following_count: efpData.following_count || 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     } else {
-      console.log('User not found in EFP, returning default values');
+      console.log('User not found in EFP or API error, returning default values');
       // Return default values if user not found
       efpData = {
         followers_count: 0,
