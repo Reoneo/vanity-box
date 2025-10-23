@@ -32,6 +32,8 @@ import avvyLogo from '@/assets/avvy-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
+import web3BioLogo from '@/assets/web3bio-logo.png';
+import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
 
 export interface FilterState {
   protocol: string[];
@@ -82,6 +84,7 @@ export const SearchInterface = () => {
   const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
   const [efpStats, setEfpStats] = useState<EFPStats | null>(null);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [userDomains, setUserDomains] = useState<string[]>([]);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -300,8 +303,11 @@ export const SearchInterface = () => {
     setEfpStats(null);
     setIsSearchActive(true);
     
-    // If query contains a dot, fetch web3.bio profile
-    if (trimmedQuery.includes('.')) {
+    // Check if query is a wallet address (starts with 0x and 42 characters)
+    const isWalletAddress = trimmedQuery.startsWith('0x') && trimmedQuery.length === 42;
+    
+    // If query contains a dot OR is a wallet address, fetch web3.bio profile
+    if (trimmedQuery.includes('.') || isWalletAddress) {
       try {
         const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
           body: { handle: trimmedQuery }
@@ -333,6 +339,20 @@ export const SearchInterface = () => {
       }
       setIsLoading(false);
       return;
+    }
+    
+    // Fetch user's domains if wallet is connected
+    if (walletAddress) {
+      try {
+        const { data: domainsData } = await supabase.functions.invoke('get-user-domains', {
+          body: { walletAddress }
+        });
+        if (domainsData?.domains) {
+          setUserDomains(domainsData.domains.map((d: any) => d.subdomain.toLowerCase()));
+        }
+      } catch (error) {
+        console.error('Error fetching user domains:', error);
+      }
     }
     
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -414,8 +434,8 @@ export const SearchInterface = () => {
           />
         ) : (
           <>
-            {/* Main Heading - hidden when mint is open or showing My IDs */}
-            {!showMintInterface && !showMyIDs && <PersonalizedHeader user={null} isSearchActive={isSearchActive} />}
+            {/* Main Heading - hidden when mint is open or showing My IDs or web3.bio profile */}
+            {!showMintInterface && !showMyIDs && !web3BioProfile && <PersonalizedHeader user={null} isSearchActive={isSearchActive} />}
             
             {/* My IDs Header with Back Button - shown when displaying IDs */}
             {!showMintInterface && showMyIDs && (
@@ -660,56 +680,56 @@ export const SearchInterface = () => {
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/60"></div>
                   </div>
                   
-                  <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6">
-                    {/* Avatar */}
-                    <div className="relative inline-block mb-4">
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-gray-900 overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
-                        {web3BioProfile.avatar ? (
-                          <img 
-                            src={web3BioProfile.avatar} 
-                            alt={web3BioProfile.displayName || searchQuery}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold">
-                            {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Profile Info */}
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-                          {web3BioProfile.displayName || searchQuery}
-                        </h3>
-                       {web3BioProfile.address && (
-                          <div className="flex items-center gap-2">
-                            <p className="text-[#D4AF37] text-sm font-mono">
-                              {web3BioProfile.address.slice(0, 6)}...{web3BioProfile.address.slice(-4)}
-                            </p>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0 hover:bg-[#D4AF37]/20"
-                              onClick={() => {
-                                navigator.clipboard.writeText(web3BioProfile.address);
-                                const event = new CustomEvent('show-toast', {
-                                  detail: {
-                                    title: 'Copied!',
-                                    description: 'Wallet address copied to clipboard',
-                                  }
-                                });
-                                window.dispatchEvent(event);
-                              }}
-                            >
-                              <Copy className="h-3 w-3 text-[#D4AF37]" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                   <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
+                     {/* Avatar */}
+                     <div className="relative inline-block mb-4">
+                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
+                       <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                         {web3BioProfile.avatar ? (
+                           <img 
+                             src={web3BioProfile.avatar} 
+                             alt={web3BioProfile.displayName || searchQuery}
+                             className="w-full h-full object-cover"
+                           />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold">
+                             {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                     
+                     {/* Profile Info - Centered */}
+                     <div className="space-y-3 flex flex-col items-center text-center w-full">
+                       <div className="flex flex-col items-center">
+                         <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                           {web3BioProfile.displayName || searchQuery}
+                         </h3>
+                        {web3BioProfile.address && (
+                           <div className="flex items-center gap-2 justify-center">
+                             <p className="text-[#D4AF37] text-sm font-mono">
+                               {web3BioProfile.address.slice(0, 6)}...{web3BioProfile.address.slice(-4)}
+                             </p>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               className="h-6 w-6 p-0 hover:bg-[#D4AF37]/20"
+                               onClick={() => {
+                                 navigator.clipboard.writeText(web3BioProfile.address);
+                                 const event = new CustomEvent('show-toast', {
+                                   detail: {
+                                     title: 'Copied!',
+                                     description: 'Wallet address copied to clipboard',
+                                   }
+                                 });
+                                 window.dispatchEvent(event);
+                               }}
+                             >
+                               <Copy className="h-3 w-3 text-[#D4AF37]" />
+                             </Button>
+                           </div>
+                         )}
+                       </div>
                       
                       {/* Bio/Description */}
                       {web3BioProfile.description && (
@@ -718,28 +738,28 @@ export const SearchInterface = () => {
                         </p>
                       )}
                       
-                      {/* Location and Email */}
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                        {web3BioProfile.location && (
-                          <div className="flex items-center gap-1">
-                            <Globe className="w-4 h-4" />
-                            <span>{web3BioProfile.location}</span>
-                          </div>
-                        )}
-                        {web3BioProfile.email && (
-                          <div className="flex items-center gap-1">
-                            <span>✉️</span>
-                            <span>{web3BioProfile.email}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Address */}
-                      {web3BioProfile.address && (
-                        <p className="text-gray-400 text-xs sm:text-sm font-mono bg-gray-800/50 px-3 py-2 rounded-lg inline-block">
-                          {web3BioProfile.address.slice(0, 8)}...{web3BioProfile.address.slice(-6)}
-                        </p>
-                      )}
+                       {/* Location and Email */}
+                       <div className="flex flex-wrap gap-4 text-sm text-gray-400 justify-center">
+                         {web3BioProfile.location && (
+                           <div className="flex items-center gap-1">
+                             <Globe className="w-4 h-4" />
+                             <span>{web3BioProfile.location}</span>
+                           </div>
+                         )}
+                         {web3BioProfile.email && (
+                           <div className="flex items-center gap-1">
+                             <span>✉️</span>
+                             <span>{web3BioProfile.email}</span>
+                           </div>
+                         )}
+                       </div>
+                       
+                       {/* Address */}
+                       {web3BioProfile.address && (
+                         <p className="text-gray-400 text-xs sm:text-sm font-mono bg-gray-800/50 px-3 py-2 rounded-lg">
+                           {web3BioProfile.address.slice(0, 8)}...{web3BioProfile.address.slice(-6)}
+                         </p>
+                       )}
                       
                       {/* Follower Stats */}
                       <div className="flex gap-6 pt-2">
@@ -757,72 +777,73 @@ export const SearchInterface = () => {
                         </div>
                       </div>
                       
-                      {/* Social Links */}
-                      {web3BioProfile.links && Object.keys(web3BioProfile.links).length > 0 && (
-                        <div className="flex flex-wrap gap-3 pt-2">
-                          {web3BioProfile.links.twitter && (
-                            <a
-                              href={web3BioProfile.links.twitter.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                            >
-                              <span>𝕏</span>
-                              <span>@{web3BioProfile.links.twitter.handle}</span>
-                            </a>
-                          )}
-                          {web3BioProfile.links.github && (
-                            <a
-                              href={web3BioProfile.links.github.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                            >
-                              <span>⚙️</span>
-                              <span>@{web3BioProfile.links.github.handle}</span>
-                            </a>
-                          )}
-                          {web3BioProfile.links.website && (
-                            <a
-                              href={web3BioProfile.links.website.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                            >
-                              <Globe className="w-4 h-4" />
-                              <span>{web3BioProfile.links.website.handle}</span>
-                            </a>
-                          )}
-                        </div>
-                      )}
+                       {/* Social Links */}
+                       {web3BioProfile.links && Object.keys(web3BioProfile.links).length > 0 && (
+                         <div className="flex flex-wrap gap-3 pt-2 justify-center">
+                           {web3BioProfile.links.twitter && (
+                             <a
+                               href={web3BioProfile.links.twitter.link}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                             >
+                               <span>𝕏</span>
+                               <span>@{web3BioProfile.links.twitter.handle}</span>
+                             </a>
+                           )}
+                           {web3BioProfile.links.github && (
+                             <a
+                               href={web3BioProfile.links.github.link}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                             >
+                               <span>⚙️</span>
+                               <span>@{web3BioProfile.links.github.handle}</span>
+                             </a>
+                           )}
+                           {web3BioProfile.links.website && (
+                             <a
+                               href={web3BioProfile.links.website.link}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                             >
+                               <Globe className="w-4 h-4" />
+                               <span>{web3BioProfile.links.website.handle}</span>
+                             </a>
+                           )}
+                         </div>
+                       )}
                       
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4">
-                        <Button
-                          className="flex-1 bg-[#FFE066] hover:bg-[#FFE066]/90 text-black font-bold rounded-xl transition-all duration-300"
-                          onClick={() => {
-                            // Show toast notification
-                            const event = new CustomEvent('show-toast', {
-                              detail: {
-                                title: 'Coming Soon',
-                                description: 'WorldChain support coming soon',
-                              }
-                            });
-                            window.dispatchEvent(event);
-                          }}
-                        >
-                          Follow
-                        </Button>
-                        <a
-                          href={`https://web3.bio/${searchQuery}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-white font-medium transition-all duration-300"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          <span className="hidden sm:inline">View Full Profile</span>
-                        </a>
-                      </div>
+                       {/* Action Buttons */}
+                       <div className="flex gap-3 pt-4 w-full max-w-md">
+                         <a
+                           href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="flex-1 flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
+                         >
+                           <img 
+                             src={efpLogoFullDark} 
+                             alt="EFP" 
+                             className="h-8 w-auto object-contain"
+                           />
+                         </a>
+                         <a
+                           href={`https://web3.bio/${searchQuery}`}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-white font-medium transition-all duration-300"
+                         >
+                           <img 
+                             src={web3BioLogo} 
+                             alt="Web3.bio" 
+                             className="w-5 h-5 object-contain"
+                           />
+                           <span className="hidden sm:inline">View Full Profile</span>
+                         </a>
+                       </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -914,13 +935,19 @@ export const SearchInterface = () => {
                           ))}
                         </div>
                         
-                        <Button 
-                          className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                          onClick={() => handleMint(result)}
-                          disabled={result.name !== 'Smith.cash'}
-                        >
-                          {result.name === 'Smith.cash' ? t('mint_now') : 'Coming Soon'}
-                        </Button>
+                         <Button 
+                           className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                           onClick={() => handleMint(result)}
+                           disabled={result.name !== 'Smith.cash' || (searchQuery && userDomains.includes(`${searchQuery}.${result.name}`.toLowerCase()))}
+                         >
+                           {result.name !== 'Smith.cash' 
+                             ? 'Coming Soon' 
+                             : (searchQuery && userDomains.includes(`${searchQuery}.${result.name}`.toLowerCase())
+                               ? 'Taken'
+                               : t('mint_now')
+                             )
+                           }
+                         </Button>
                       </div>
                     </div>
 
