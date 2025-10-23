@@ -34,6 +34,7 @@ import aptosNamesNew from '@/assets/aptos-names-new.jpeg';
 import avvyLogo from '@/assets/avvy-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
+import mithEthAvatar from '@/assets/mith-eth-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
@@ -316,7 +317,7 @@ export const SearchInterface = () => {
       {
         name: '$mith.eth',
         description: t('desc_smith'),
-        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/fe754f2d9414b8f5edd443ccd5ac92/2cfe754f2d9414b8f5edd443ccd5ac92.svg',
+        imageUrl: mithEthAvatar,
         price: 5,
         category: 'ENS',
         club: 'Surname'
@@ -1437,13 +1438,13 @@ export const SearchInterface = () => {
                            onClick={() => handleMint(result)}
                            disabled={isDisabled}
                          >
-                           {result.name !== 'Smith.cash' 
-                             ? 'Coming Soon' 
-                             : isTaken
-                               ? 'Taken'
-                               : isUserOwned
-                                 ? 'Taken'
-                                 : t('mint_now')
+                           {result.name === 'Smith.cash' || result.name === '$mith.eth'
+                              ? isTaken
+                                ? 'Taken'
+                                : isUserOwned
+                                  ? 'Taken'
+                                  : t('mint_now')
+                              : 'Coming Soon'
                            }
                          </Button>
                       </div>
