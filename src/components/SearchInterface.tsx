@@ -22,6 +22,7 @@ import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoWhite from '@/assets/ens-logo-white.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import smithBoxAvatar from '@/assets/smith-box-avatar.jpeg';
+import vapeBoxAvatar from '@/assets/vape-box-avatar.webp';
 import aptosLogo from '@/assets/aptos-logo.png';
 import aptosNamesIcon from '@/assets/aptos-names-icon.jpeg';
 import aptosNamesLight from '@/assets/aptos-names-light.png';
@@ -98,7 +99,7 @@ export const SearchInterface = () => {
   }, []);
 
   const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
-  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname'];
+  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname', 'Startup', 'Artist'];
 
   // Re-fetch results when language changes
   useEffect(() => {
@@ -187,6 +188,14 @@ export const SearchInterface = () => {
         club: ['Surname', 'DeFi']
       },
       {
+        name: 'Vape.box',
+        description: t('desc_vape_box'),
+        imageUrl: vapeBoxAvatar,
+        price: 5,
+        category: ['ENS', 'DNS'],
+        club: ['Startup', 'DeFi']
+      },
+      {
         name: '30315.eth',
         description: t('desc_30315'),
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
@@ -272,9 +281,9 @@ export const SearchInterface = () => {
         return protocolMatch && clubMatch;
       });
     } else {
-      // If no filters are applied, only show Smith.cash and Smith.box by default
+      // If no filters are applied, only show Smith.cash, Smith.box, and Vape.box by default
       filteredResults = allResults.filter(result => 
-        result.name === 'Smith.cash' || result.name === 'Smith.box'
+        result.name === 'Smith.cash' || result.name === 'Smith.box' || result.name === 'Vape.box'
       );
     }
     
@@ -619,12 +628,14 @@ export const SearchInterface = () => {
                               key={`club-${clubIndex}`}
                               className={cn(
                                 "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap",
-                                clubName === 'Surname' && "bg-purple-600 text-white border-0",
-                                clubName === 'DeFi' && "bg-green-600 text-white border-0",
-                                clubName === 'Digits' && "bg-purple-600 text-white border-0",
-                                clubName === 'Dev' && "bg-blue-600 text-white border-0",
-                                clubName === 'Crypto' && "bg-gray-600 text-white border-0",
-                                clubName === 'Letters' && "bg-gray-600 text-white border-0"
+                              clubName === 'Surname' && "bg-purple-600 text-white border-0",
+                              clubName === 'DeFi' && "bg-green-600 text-white border-0",
+                              clubName === 'Digits' && "bg-purple-600 text-white border-0",
+                              clubName === 'Dev' && "bg-blue-600 text-white border-0",
+                              clubName === 'Crypto' && "bg-gray-600 text-white border-0",
+                              clubName === 'Letters' && "bg-gray-600 text-white border-0",
+                              clubName === 'Startup' && "bg-orange-600 text-white border-0",
+                              clubName === 'Artist' && "bg-pink-600 text-white border-0"
                               )}
                             >
                               {clubName}

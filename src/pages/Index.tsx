@@ -67,7 +67,7 @@ const Index = () => {
           </div>
           
           {/* Copyright Centered */}
-          <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal">
+          <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal whitespace-nowrap">
             © 2025 vanity.box. All rights reserved.
           </div>
           
