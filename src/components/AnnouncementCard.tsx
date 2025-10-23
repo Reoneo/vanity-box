@@ -15,10 +15,29 @@ export const AnnouncementCard: React.FC = () => {
           </div>
           <div className="flex-1 space-y-3">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Web3 Identity Revolution!</h3>
-              <p className="text-muted-foreground text-sm">
-                Discover and manage all your Web3 identities in one place. Connect your ENS, Lens, Farcaster, and more.
-              </p>
+              <h3 className="text-lg font-semibold text-foreground">Getting Started with Vanity</h3>
+              <ul className="text-muted-foreground text-sm space-y-2 mt-3 list-none">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">1.</span>
+                  <span>Create a multi-chain Ethereum wallet via World App</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">2.</span>
+                  <span>Stand out with a personalized digital ID</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">3.</span>
+                  <span>Build your onchain identity</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">4.</span>
+                  <span>Full digital ID management coming soon via ENS v2</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">5.</span>
+                  <span>Learn about the Ethereum Follow Protocol as it will be coming to World Chain soon</span>
+                </li>
+              </ul>
             </div>
             <Button variant="default" size="sm" className="w-fit">
               <ExternalLink className="w-4 h-4 mr-2" />
