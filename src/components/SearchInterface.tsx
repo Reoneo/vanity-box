@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github, MessageCircle, Send, Eye } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github, Send, Eye } from 'lucide-react';
+import { SiDiscord } from 'react-icons/si';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,7 @@ interface EFPStats {
 interface EFPUser {
   address: string;
   ens?: { name?: string };
+  web3bio?: Web3BioProfile;
 }
 
 interface EFPListResponse {
@@ -111,6 +113,13 @@ export const SearchInterface = () => {
   const [followersList, setFollowersList] = useState<EFPUser[]>([]);
   const [followingList, setFollowingList] = useState<EFPUser[]>([]);
   const [takenSubdomains, setTakenSubdomains] = useState<Set<string>>(new Set());
+  const [followersPage, setFollowersPage] = useState(0);
+  const [followingPage, setFollowingPage] = useState(0);
+  const [totalFollowers, setTotalFollowers] = useState(0);
+  const [totalFollowing, setTotalFollowing] = useState(0);
+  const [followersSearchQuery, setFollowersSearchQuery] = useState('');
+  const [followingSearchQuery, setFollowingSearchQuery] = useState('');
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -850,11 +859,33 @@ export const SearchInterface = () => {
                         <button
                           onClick={async () => {
                             if (!web3BioProfile.address) return;
+                            setFollowingPage(0);
+                            setFollowingSearchQuery('');
                             try {
-                              const response = await fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following`);
+                              const response = await fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=20&offset=0`);
                               if (response.ok) {
                                 const data = await response.json();
-                                setFollowingList(data.following || []);
+                                const followingData = data.following || [];
+                                setTotalFollowing(efpStats?.following_count || 0);
+                                
+                                // Fetch web3.bio data for each user
+                                const enrichedFollowing = await Promise.all(
+                                  followingData.map(async (user: EFPUser) => {
+                                    try {
+                                      const { data: bioData } = await supabase.functions.invoke('get-web3bio-profile', {
+                                        body: { handle: user.address }
+                                      });
+                                      if (bioData && Array.isArray(bioData) && bioData.length > 0) {
+                                        return { ...user, web3bio: bioData[0] };
+                                      }
+                                    } catch (error) {
+                                      console.error('Error fetching web3.bio for user:', error);
+                                    }
+                                    return user;
+                                  })
+                                );
+                                
+                                setFollowingList(enrichedFollowing);
                                 setShowFollowingList(true);
                               }
                             } catch (error) {
@@ -871,11 +902,33 @@ export const SearchInterface = () => {
                         <button
                           onClick={async () => {
                             if (!web3BioProfile.address) return;
+                            setFollowersPage(0);
+                            setFollowersSearchQuery('');
                             try {
-                              const response = await fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers`);
+                              const response = await fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=20&offset=0`);
                               if (response.ok) {
                                 const data = await response.json();
-                                setFollowersList(data.followers || []);
+                                const followersData = data.followers || [];
+                                setTotalFollowers(efpStats?.followers_count || 0);
+                                
+                                // Fetch web3.bio data for each user
+                                const enrichedFollowers = await Promise.all(
+                                  followersData.map(async (user: EFPUser) => {
+                                    try {
+                                      const { data: bioData } = await supabase.functions.invoke('get-web3bio-profile', {
+                                        body: { handle: user.address }
+                                      });
+                                      if (bioData && Array.isArray(bioData) && bioData.length > 0) {
+                                        return { ...user, web3bio: bioData[0] };
+                                      }
+                                    } catch (error) {
+                                      console.error('Error fetching web3.bio for user:', error);
+                                    }
+                                    return user;
+                                  })
+                                );
+                                
+                                setFollowersList(enrichedFollowers);
                                 setShowFollowersList(true);
                               }
                             } catch (error) {
@@ -921,10 +974,15 @@ export const SearchInterface = () => {
                           
                           {/* Discord */}
                           {ensRecords?.records?.['com.discord'] && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-lg text-sm text-gray-300">
-                              <MessageCircle className="w-4 h-4" />
+                            <a
+                              href={`https://discord.com/users/${ensRecords.records['com.discord']}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              <SiDiscord className="w-4 h-4" />
                               <span>{ensRecords.records['com.discord']}</span>
-                            </div>
+                            </a>
                           )}
                           
                           {/* Telegram */}
@@ -979,7 +1037,7 @@ export const SearchInterface = () => {
               <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-xl font-bold text-white">Followers ({followersList.length})</h3>
+                    <h3 className="text-xl font-bold text-white">Followers ({totalFollowers})</h3>
                     <button
                       onClick={() => setShowFollowersList(false)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -987,32 +1045,100 @@ export const SearchInterface = () => {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="overflow-y-auto p-4 space-y-2">
-                    {followersList.map((user, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                      >
-                        <div className="flex flex-col">
-                          {user.ens?.name && (
-                            <span className="text-white font-medium">{user.ens.name}</span>
-                          )}
-                          <span className="text-gray-400 text-sm font-mono">
-                            {user.address.slice(0, 6)}...{user.address.slice(-4)}
-                          </span>
-                        </div>
-                        <a
-                          href={`https://ethfollow.xyz/${user.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </a>
-                      </div>
-                    ))}
+                  <div className="p-4 border-b border-[#D4AF37]/30">
+                    <Input
+                      placeholder="Search followers..."
+                      value={followersSearchQuery}
+                      onChange={(e) => setFollowersSearchQuery(e.target.value)}
+                      className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500"
+                    />
                   </div>
+                  <div className="overflow-y-auto p-4 space-y-2 flex-1">
+                    {followersList
+                      .filter(user => {
+                        if (!followersSearchQuery) return true;
+                        const query = followersSearchQuery.toLowerCase();
+                        return (
+                          user.address.toLowerCase().includes(query) ||
+                          user.ens?.name?.toLowerCase().includes(query) ||
+                          user.web3bio?.displayName?.toLowerCase().includes(query) ||
+                          user.web3bio?.identity?.toLowerCase().includes(query)
+                        );
+                      })
+                      .map((user, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                        >
+                          <div className="flex flex-col">
+                            {(user.web3bio?.displayName || user.ens?.name) && (
+                              <span className="text-white font-medium">
+                                {user.web3bio?.displayName || user.ens?.name}
+                              </span>
+                            )}
+                            <span className="text-gray-400 text-sm font-mono">
+                              {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                            </span>
+                          </div>
+                          <a
+                            href={`https://ethfollow.xyz/${user.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View
+                          </a>
+                        </div>
+                      ))}
+                  </div>
+                  {followersList.length < totalFollowers && (
+                    <div className="p-4 border-t border-[#D4AF37]/30">
+                      <Button
+                        onClick={async () => {
+                          if (!web3BioProfile?.address || isLoadingMore) return;
+                          setIsLoadingMore(true);
+                          try {
+                            const nextPage = followersPage + 1;
+                            const response = await fetch(
+                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=20&offset=${nextPage * 20}`
+                            );
+                            if (response.ok) {
+                              const data = await response.json();
+                              const newFollowers = data.followers || [];
+                              
+                              // Fetch web3.bio data for new users
+                              const enrichedFollowers = await Promise.all(
+                                newFollowers.map(async (user: EFPUser) => {
+                                  try {
+                                    const { data: bioData } = await supabase.functions.invoke('get-web3bio-profile', {
+                                      body: { handle: user.address }
+                                    });
+                                    if (bioData && Array.isArray(bioData) && bioData.length > 0) {
+                                      return { ...user, web3bio: bioData[0] };
+                                    }
+                                  } catch (error) {
+                                    console.error('Error fetching web3.bio for user:', error);
+                                  }
+                                  return user;
+                                })
+                              );
+                              
+                              setFollowersList([...followersList, ...enrichedFollowers]);
+                              setFollowersPage(nextPage);
+                            }
+                          } catch (error) {
+                            console.error('Error loading more followers:', error);
+                          }
+                          setIsLoadingMore(false);
+                        }}
+                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                        disabled={isLoadingMore}
+                      >
+                        {isLoadingMore ? 'Loading...' : 'Load More'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1022,7 +1148,7 @@ export const SearchInterface = () => {
               <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-xl font-bold text-white">Following ({followingList.length})</h3>
+                    <h3 className="text-xl font-bold text-white">Following ({totalFollowing})</h3>
                     <button
                       onClick={() => setShowFollowingList(false)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -1030,32 +1156,100 @@ export const SearchInterface = () => {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="overflow-y-auto p-4 space-y-2">
-                    {followingList.map((user, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                      >
-                        <div className="flex flex-col">
-                          {user.ens?.name && (
-                            <span className="text-white font-medium">{user.ens.name}</span>
-                          )}
-                          <span className="text-gray-400 text-sm font-mono">
-                            {user.address.slice(0, 6)}...{user.address.slice(-4)}
-                          </span>
-                        </div>
-                        <a
-                          href={`https://ethfollow.xyz/${user.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </a>
-                      </div>
-                    ))}
+                  <div className="p-4 border-b border-[#D4AF37]/30">
+                    <Input
+                      placeholder="Search following..."
+                      value={followingSearchQuery}
+                      onChange={(e) => setFollowingSearchQuery(e.target.value)}
+                      className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500"
+                    />
                   </div>
+                  <div className="overflow-y-auto p-4 space-y-2 flex-1">
+                    {followingList
+                      .filter(user => {
+                        if (!followingSearchQuery) return true;
+                        const query = followingSearchQuery.toLowerCase();
+                        return (
+                          user.address.toLowerCase().includes(query) ||
+                          user.ens?.name?.toLowerCase().includes(query) ||
+                          user.web3bio?.displayName?.toLowerCase().includes(query) ||
+                          user.web3bio?.identity?.toLowerCase().includes(query)
+                        );
+                      })
+                      .map((user, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                        >
+                          <div className="flex flex-col">
+                            {(user.web3bio?.displayName || user.ens?.name) && (
+                              <span className="text-white font-medium">
+                                {user.web3bio?.displayName || user.ens?.name}
+                              </span>
+                            )}
+                            <span className="text-gray-400 text-sm font-mono">
+                              {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                            </span>
+                          </div>
+                          <a
+                            href={`https://ethfollow.xyz/${user.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View
+                          </a>
+                        </div>
+                      ))}
+                  </div>
+                  {followingList.length < totalFollowing && (
+                    <div className="p-4 border-t border-[#D4AF37]/30">
+                      <Button
+                        onClick={async () => {
+                          if (!web3BioProfile?.address || isLoadingMore) return;
+                          setIsLoadingMore(true);
+                          try {
+                            const nextPage = followingPage + 1;
+                            const response = await fetch(
+                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=20&offset=${nextPage * 20}`
+                            );
+                            if (response.ok) {
+                              const data = await response.json();
+                              const newFollowing = data.following || [];
+                              
+                              // Fetch web3.bio data for new users
+                              const enrichedFollowing = await Promise.all(
+                                newFollowing.map(async (user: EFPUser) => {
+                                  try {
+                                    const { data: bioData } = await supabase.functions.invoke('get-web3bio-profile', {
+                                      body: { handle: user.address }
+                                    });
+                                    if (bioData && Array.isArray(bioData) && bioData.length > 0) {
+                                      return { ...user, web3bio: bioData[0] };
+                                    }
+                                  } catch (error) {
+                                    console.error('Error fetching web3.bio for user:', error);
+                                  }
+                                  return user;
+                                })
+                              );
+                              
+                              setFollowingList([...followingList, ...enrichedFollowing]);
+                              setFollowingPage(nextPage);
+                            }
+                          } catch (error) {
+                            console.error('Error loading more following:', error);
+                          }
+                          setIsLoadingMore(false);
+                        }}
+                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                        disabled={isLoadingMore}
+                      >
+                        {isLoadingMore ? 'Loading...' : 'Load More'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
