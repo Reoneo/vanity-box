@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, Mail, MapPin, Github, MessageCircle, Send, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,16 @@ interface EFPStats {
   following_count?: number;
 }
 
+interface EFPUser {
+  address: string;
+  ens?: { name?: string };
+}
+
+interface EFPListResponse {
+  followers?: EFPUser[];
+  following?: EFPUser[];
+}
+
 interface ENSRecords {
   name?: string;
   address?: string;
@@ -96,6 +106,10 @@ export const SearchInterface = () => {
   const [ensRecords, setEnsRecords] = useState<ENSRecords | null>(null);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [userDomains, setUserDomains] = useState<string[]>([]);
+  const [showFollowersList, setShowFollowersList] = useState(false);
+  const [showFollowingList, setShowFollowingList] = useState(false);
+  const [followersList, setFollowersList] = useState<EFPUser[]>([]);
+  const [followingList, setFollowingList] = useState<EFPUser[]>([]);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -780,13 +794,24 @@ export const SearchInterface = () => {
                          </p>
                        )}
                        
-                        {/* Email and Location - Email first, then location */}
+                        {/* Email, Website, and Location - Email first, then website, then location */}
                         <div className="flex flex-col gap-2 text-sm text-gray-400 items-center">
                           {(ensRecords?.records?.email || web3BioProfile.email) && (
                             <div className="flex items-center gap-2">
                               <Mail className="w-4 h-4" />
                               <span>{ensRecords?.records?.email || web3BioProfile.email}</span>
                             </div>
+                          )}
+                          {(web3BioProfile.links?.website || ensRecords?.records?.url) && (
+                            <a
+                              href={web3BioProfile.links?.website?.link || ensRecords?.records?.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors"
+                            >
+                              <Globe className="w-4 h-4" />
+                              <span>{web3BioProfile.links?.website?.handle || ensRecords?.records?.url}</span>
+                            </a>
                           )}
                           {(ensRecords?.records?.location || web3BioProfile.location) && (
                             <div className="flex items-center gap-2">
@@ -798,18 +823,48 @@ export const SearchInterface = () => {
                        
                        {/* Follower Stats */}
                       <div className="flex gap-6 pt-2">
-                        <div className="text-center">
-                          <div className="text-xl sm:text-2xl font-bold text-white">
+                        <button
+                          onClick={async () => {
+                            if (!web3BioProfile.address) return;
+                            try {
+                              const response = await fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following`);
+                              if (response.ok) {
+                                const data = await response.json();
+                                setFollowingList(data.following || []);
+                                setShowFollowingList(true);
+                              }
+                            } catch (error) {
+                              console.error('Error fetching following list:', error);
+                            }
+                          }}
+                          className="text-center hover:opacity-80 transition-opacity cursor-pointer"
+                        >
+                          <div className="text-xl sm:text-2xl font-bold text-[#D4AF37]">
                             {efpStats?.following_count ?? 0}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-400">Following</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xl sm:text-2xl font-bold text-white">
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!web3BioProfile.address) return;
+                            try {
+                              const response = await fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers`);
+                              if (response.ok) {
+                                const data = await response.json();
+                                setFollowersList(data.followers || []);
+                                setShowFollowersList(true);
+                              }
+                            } catch (error) {
+                              console.error('Error fetching followers list:', error);
+                            }
+                          }}
+                          className="text-center hover:opacity-80 transition-opacity cursor-pointer"
+                        >
+                          <div className="text-xl sm:text-2xl font-bold text-[#D4AF37]">
                             {efpStats?.followers_count ?? 0}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-400">Followers</div>
-                        </div>
+                        </button>
                       </div>
                       
                        {/* Social Links and ENS Records */}
@@ -840,23 +895,10 @@ export const SearchInterface = () => {
                             </a>
                           )}
                           
-                          {/* Website */}
-                          {(web3BioProfile.links?.website || ensRecords?.records?.url) && (
-                            <a
-                              href={web3BioProfile.links?.website?.link || ensRecords?.records?.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                            >
-                              <Globe className="w-4 h-4" />
-                              <span>{web3BioProfile.links?.website?.handle || ensRecords?.records?.url}</span>
-                            </a>
-                          )}
-                          
                           {/* Discord */}
                           {ensRecords?.records?.['com.discord'] && (
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-lg text-sm text-gray-300">
-                              <span>💬</span>
+                              <MessageCircle className="w-4 h-4" />
                               <span>{ensRecords.records['com.discord']}</span>
                             </div>
                           )}
@@ -869,7 +911,7 @@ export const SearchInterface = () => {
                               rel="noopener noreferrer"
                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                             >
-                              <span>✈️</span>
+                              <Send className="w-4 h-4" />
                               <span>@{ensRecords.records['org.telegram']}</span>
                             </a>
                           )}
@@ -905,6 +947,92 @@ export const SearchInterface = () => {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            )}
+
+            {/* Followers List Modal */}
+            {showFollowersList && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
+                    <h3 className="text-xl font-bold text-white">Followers ({followersList.length})</h3>
+                    <button
+                      onClick={() => setShowFollowersList(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto p-4 space-y-2">
+                    {followersList.map((user, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                      >
+                        <div className="flex flex-col">
+                          {user.ens?.name && (
+                            <span className="text-white font-medium">{user.ens.name}</span>
+                          )}
+                          <span className="text-gray-400 text-sm font-mono">
+                            {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                          </span>
+                        </div>
+                        <a
+                          href={`https://ethfollow.xyz/${user.address}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Following List Modal */}
+            {showFollowingList && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
+                    <h3 className="text-xl font-bold text-white">Following ({followingList.length})</h3>
+                    <button
+                      onClick={() => setShowFollowingList(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto p-4 space-y-2">
+                    {followingList.map((user, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                      >
+                        <div className="flex flex-col">
+                          {user.ens?.name && (
+                            <span className="text-white font-medium">{user.ens.name}</span>
+                          )}
+                          <span className="text-gray-400 text-sm font-mono">
+                            {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                          </span>
+                        </div>
+                        <a
+                          href={`https://ethfollow.xyz/${user.address}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
