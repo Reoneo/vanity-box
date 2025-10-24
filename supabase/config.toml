@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.get-namestone-records]
 verify_jwt = false
+
+[functions.transfer-namestone-name]
+verify_jwt = false

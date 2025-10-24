@@ -50,10 +50,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [isMinting, setIsMinting] = useState(false);
   const [networkFeeUSD, setNetworkFeeUSD] = useState(0.50);
 
-  // Prevent double MiniKit install
-  const miniKitInstalledRef = useRef(false);
   // Prevent duplicate pay calls
   const payInFlightRef = useRef(false);
+
+  // Free mint threshold
+  const EPSILON_FREE_USD = 0.01;
 
   // --------------------- helpers ---------------------
 
@@ -181,9 +182,17 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
-  const totalPrice = (domainPrice * registrationYears) + networkFeeUSD;
+  
+  // Special-case test321: always use effectiveNetworkFee = 0
+  const subdomainLabel = subdomain.split(".")[0];
+  const effectiveNetworkFee = subdomainLabel.toLowerCase() === "test321" ? 0 : networkFeeUSD;
+  
+  const totalPrice = (domainPrice * registrationYears) + effectiveNetworkFee;
   const grandTotal = totalPrice;
   const convertedPrice = grandTotal * selectedMethod.rate;
+  
+  // Determine if this is a free mint (total below threshold)
+  const isFree = grandTotal < EPSILON_FREE_USD;
 
   // --------------------- handlers ---------------------
 
@@ -207,8 +216,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       setIsMinting(true);
 
       // Guard: avoid race while prices are loading
-      if (grandTotal > 0 && isLoadingPrices) {
+      if (!isFree && isLoadingPrices) {
         toast.info("Fetching prices — try again in a moment.");
+        setIsMinting(false);
+        return;
+      }
+
+      // Guard: ensure MiniKit is installed
+      if (!MiniKit.isInstalled()) {
+        toast.error("MiniKit is not installed. Please open this app in World App.");
         setIsMinting(false);
         return;
       }
@@ -231,8 +247,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
       let txHash: string | undefined;
 
-      // Process payment only if grand total > 0
-      if (grandTotal > 0) {
+      // Process payment only if NOT free
+      if (!isFree) {
         // Guard: prevent duplicate pay calls
         if (payInFlightRef.current) {
           console.debug("[MiniKit] Payment already in flight, ignoring");
@@ -342,6 +358,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         }
       } else {
         // Free mint path - skip payment entirely
+        txHash = 'free-mint-' + Date.now();
         toast.success("Free mint - processing...");
       }
 
@@ -369,8 +386,14 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         if (data?.success) {
           toast.dismiss(mintingToast);
           toast.success("Subdomain minted successfully!");
+          
+          // Persist txHash to localStorage for display
+          const txMap = JSON.parse(localStorage.getItem('txMap') || '{}');
+          txMap[subdomain.toLowerCase()] = txHash;
+          localStorage.setItem('txMap', JSON.stringify(txMap));
+          
           window.dispatchEvent(new CustomEvent("domains-updated", { 
-            detail: { txHash: txHash || 'free-mint-' + Date.now() } 
+            detail: { subdomain, txHash } 
           }));
           onClose();
         } else {
@@ -498,7 +521,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">{t('network_fee')}</span>
-                <span className="font-medium text-[#D4AF37]">${networkFeeUSD.toFixed(2)}</span>
+                <span className="font-medium text-[#D4AF37]">${effectiveNetworkFee.toFixed(2)}</span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -517,7 +540,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             {/* Mint Now Button */}
             <Button
               onClick={handleMintNow}
-              disabled={isMinting || (grandTotal > 0 && isLoadingPrices)}
+              disabled={isMinting || (!isFree && isLoadingPrices)}
               className="w-full mt-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-5 text-base disabled:opacity-50"
             >
               {isMinting ? "Minting..." : "Mint Now"}

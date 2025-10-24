@@ -56,7 +56,18 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         const filteredDomains = (data.domains || []).filter((domain: Domain) => 
           domain.address.toLowerCase() === walletAddress.toLowerCase()
         );
-        setDomains(filteredDomains);
+        
+        // Merge txHash from localStorage
+        const txMap = JSON.parse(localStorage.getItem('txMap') || '{}');
+        const domainsWithTx = filteredDomains.map((d: Domain) => {
+          const key = `${d.name}.${d.domain}`.toLowerCase();
+          return {
+            ...d,
+            txHash: txMap[key] || d.txHash,
+          };
+        });
+        
+        setDomains(domainsWithTx);
       } else {
         throw new Error(data?.error || 'Failed to fetch domains');
       }

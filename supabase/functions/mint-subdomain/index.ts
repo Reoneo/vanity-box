@@ -77,7 +77,7 @@ serve(async (req) => {
     console.log('🔑 API Key configured:', !!NAMESTONE_API_KEY);
     
     const namestonePayload = {
-      domain: domainFromSubdomain || 'smith.cash',
+      domain: (domainFromSubdomain || 'smith.cash').toLowerCase(),
       name: subdomainLabel,
       address: walletAddress,
       chain_id: 480, // World Chain network ID
@@ -85,7 +85,7 @@ serve(async (req) => {
     
     console.log('📤 Sending request to Namestone with payload:', JSON.stringify(namestonePayload, null, 2));
     
-    const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/set-name', {
+    const namestoneResponse = await fetch('https://namestone.com/api/public_v1/set-name', {
       method: 'POST',
       headers: {
         'Authorization': NAMESTONE_API_KEY!,

@@ -162,11 +162,26 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       setIsLoading(true);
       toast.info('Transferring domain...');
 
-      // TODO: Implement actual transfer logic through Namestone API
-      // For now, show a success message
-      toast.success('Transfer initiated successfully!');
-      setTransferAddress('');
-      window.dispatchEvent(new CustomEvent('domains-updated'));
+      const subdomain = `${domain.name}.${domain.domain}`;
+
+      const { data, error } = await supabase.functions.invoke('transfer-namestone-name', {
+        body: { subdomain, toAddress: transferAddress },
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (data?.success) {
+        toast.success('Domain transferred successfully!');
+        setTransferAddress('');
+        window.dispatchEvent(new CustomEvent('domains-updated'));
+        window.dispatchEvent(new CustomEvent('back-to-domains'));
+      } else {
+        console.error('Transfer failed:', data);
+        throw new Error(data?.error || 'Failed to transfer domain');
+      }
     } catch (error) {
       console.error('Transfer error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to transfer domain');
