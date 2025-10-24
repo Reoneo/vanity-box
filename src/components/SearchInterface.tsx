@@ -36,6 +36,7 @@ import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 import mithEthAvatar from '@/assets/mith-eth-avatar.png';
 import teamxrpAvatar from '@/assets/teamxrp-avatar.png';
+import eth30315Avatar from '@/assets/30315-eth-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
@@ -286,7 +287,7 @@ export const SearchInterface = () => {
       {
         name: '30315.eth',
         description: t('desc_30315'),
-        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
+        imageUrl: eth30315Avatar,
         price: 1,
         category: 'ENS',
         club: 'Digits',
@@ -498,18 +499,18 @@ export const SearchInterface = () => {
       filteredResults = allResults;
     }
     
-    // Sort results: $mith.eth first, then Smith.cash, then "Coming Soon", all alphabetically within categories
+    // Sort results: Selectable items first ("Select"), then coming soon items, then alphabetically
     filteredResults.sort((a, b) => {
-      // Prioritize $mith.eth first
-      if (a.name === '$mith.eth') return -1;
-      if (b.name === '$mith.eth') return 1;
+      const aIsSelectable = (a as any).selectable === true || a.name === 'Smith.cash' || a.name === '$mith.eth';
+      const bIsSelectable = (b as any).selectable === true || b.name === 'Smith.cash' || b.name === '$mith.eth';
       
-      // Then Smith.cash
-      if (a.name === 'Smith.cash') return -1;
-      if (b.name === 'Smith.cash') return 1;
+      // If both selectable or both not, sort alphabetically
+      if (aIsSelectable === bIsSelectable) {
+        return a.name.localeCompare(b.name);
+      }
       
-      // Within "Coming Soon" category, sort alphabetically
-      return a.name.localeCompare(b.name);
+      // Selectable items come first
+      return aIsSelectable ? -1 : 1;
     });
     
     setEnsResults(filteredResults);
