@@ -1,4 +1,4 @@
-// Edge function to proxy CoinGecko API requests to avoid CORS issues
+// Edge function to fetch cryptocurrency prices using CryptoCompare API (more reliable from edge functions)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -14,9 +14,9 @@ serve(async (req) => {
   }
 
   try {
-    // Fetch prices from CoinGecko API
+    // Fetch prices from CryptoCompare API (free tier, no API key needed)
     const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum,worldcoin-wld,usd-coin&vs_currencies=usd',
+      'https://min-api.cryptocompare.com/data/pricemulti?fsyms=ETH,WLD,USDC&tsyms=USD',
       {
         headers: {
           'Accept': 'application/json',
@@ -25,16 +25,20 @@ serve(async (req) => {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch crypto prices from CoinGecko');
+      console.error('CryptoCompare API error:', response.status, await response.text());
+      throw new Error('Failed to fetch crypto prices from CryptoCompare');
     }
 
     const data = await response.json();
+    console.log('CryptoCompare response:', data);
     
     const prices = {
-      eth: data.ethereum?.usd || 2500,
-      wld: data['worldcoin-wld']?.usd || 2.0,
-      usdc: data['usd-coin']?.usd || 1.0,
+      eth: data.ETH?.USD || 2600,
+      wld: data.WLD?.USD || 1.85,
+      usdc: data.USDC?.USD || 1.0,
     };
+
+    console.log('Processed prices:', prices);
 
     return new Response(
       JSON.stringify({ success: true, prices }),
@@ -48,13 +52,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error fetching crypto prices:', error);
     
-    // Return fallback prices
+    // Return updated fallback prices (closer to current market)
     return new Response(
       JSON.stringify({
         success: true,
         prices: {
-          eth: 2500,
-          wld: 2.0,
+          eth: 2600,
+          wld: 1.85,
           usdc: 1.0,
         },
         fallback: true,

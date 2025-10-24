@@ -44,8 +44,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [registrationYears, setRegistrationYears] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("USDC");
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({
-    eth: 2500,
-    wld: 2.0,
+    eth: 2600,
+    wld: 1.85,
     usdc: 1.0,
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
