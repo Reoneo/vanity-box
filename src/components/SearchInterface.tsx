@@ -353,6 +353,9 @@ export const SearchInterface = () => {
     const trimmedQuery = (queryOverride || searchQuery).trim();
     if (!trimmedQuery) return;
     
+    console.log('Search start', { query: trimmedQuery });
+    setShowFilterDropdown(false);
+    
     // Prevent searches with spaces
     if (trimmedQuery.includes(' ')) {
       return;
@@ -473,7 +476,7 @@ export const SearchInterface = () => {
     const taken = new Set(takenResults.filter(Boolean) as string[]);
     setTakenSubdomains(taken);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 250));
     
     // Filter results
     let filteredResults = allResults;
@@ -510,6 +513,7 @@ export const SearchInterface = () => {
     });
     
     setEnsResults(filteredResults);
+    console.log('Results set', filteredResults.length);
     
     if (searchQuery) {
       setIsAvailable(!searchQuery.toLowerCase().includes('taken'));
@@ -714,9 +718,12 @@ export const SearchInterface = () => {
                       setIsSearchActive(true);
                     }
                   }}
-                  onFocus={() => setIsSearchActive(true)}
+                  onFocus={() => {
+                    setIsSearchActive(true);
+                    setShowFilterDropdown(false);
+                  }}
                 />
-                <div className="absolute right-1 top-1 flex items-center gap-1 h-10">
+                <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
                   {searchQuery && (
                     <button
                       onClick={() => {
