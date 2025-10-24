@@ -497,16 +497,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           {/* Price Display */}
           <div className="flex flex-col items-center gap-1">
             <div className="text-4xl font-bold text-[#D4AF37]">
-              {isLoadingPrices ? (
-                <span className="text-xl">Loading...</span>
-              ) : (
-                <>
-                  {paymentMethod === "USDC" && `$${grandTotal.toFixed(2)}`}
-                  {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
-                  {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
-                </>
-              )}
+              <>
+                {paymentMethod === "USDC" && `${grandTotal.toFixed(2)} USDC`}
+                {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
+                {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
+              </>
             </div>
+            {isLoadingPrices && (
+              <div className="text-xs text-gray-500">Updating prices…</div>
+            )}
           </div>
 
           {/* Cost Breakdown */}
@@ -544,7 +543,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             {/* Mint Now Button */}
             <Button
               onClick={handleMintNow}
-              disabled={isMinting || (!isFree && isLoadingPrices)}
+              disabled={isMinting}
               className="w-full mt-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-5 text-base disabled:opacity-50"
             >
               {isMinting ? "Minting..." : "Mint Now"}
