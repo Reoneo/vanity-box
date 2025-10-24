@@ -35,6 +35,7 @@ import avvyLogo from '@/assets/avvy-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 import mithEthAvatar from '@/assets/mith-eth-avatar.png';
+import teamxrpAvatar from '@/assets/teamxrp-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
@@ -311,7 +312,7 @@ export const SearchInterface = () => {
       {
         name: 'TeamXRP.eth',
         description: t('desc_teamxrp'),
-        imageUrl: require('@/assets/teamxrp-avatar.png'),
+        imageUrl: teamxrpAvatar,
         price: 5,
         category: 'ENS',
         club: 'Crypto',
