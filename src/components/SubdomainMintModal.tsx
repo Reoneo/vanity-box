@@ -209,11 +209,25 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       // Guard: avoid race while prices are loading
       if (grandTotal > 0 && isLoadingPrices) {
         toast.info("Fetching prices — try again in a moment.");
+        setIsMinting(false);
         return;
       }
 
       // Ensure wallet is connected - will trigger walletAuth if needed
-      const walletAddress = await ensureWalletConnected();
+      let walletAddress: string;
+      try {
+        walletAddress = await Promise.race([
+          ensureWalletConnected(),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error("Wallet connection timeout")), 30000)
+          )
+        ]);
+      } catch (connError: any) {
+        console.error("[Mint] Wallet connection error:", connError);
+        toast.error(connError?.message || "Failed to connect wallet. Please try again.");
+        setIsMinting(false);
+        return;
+      }
 
       let txHash: string | undefined;
 
@@ -227,7 +241,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         payInFlightRef.current = true;
 
         try {
-          toast.info("Processing payment...");
+          const paymentToast = toast.info("Processing payment...");
 
           // ETH requires sendTransaction, USDC/WLD use pay command
           if (paymentMethod === "ETH") {
@@ -249,18 +263,28 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
             console.debug("[MiniKit] ETH transaction payload:", txPayload);
             
-            const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload);
+            const { finalPayload } = await Promise.race([
+              MiniKit.commandsAsync.sendTransaction(txPayload),
+              new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error("Payment timeout - please try again")), 60000)
+              )
+            ]);
             console.debug("[MiniKit] ETH transaction finalPayload:", finalPayload);
 
             if (finalPayload.status === "success") {
               txHash = finalPayload.transaction_id;
+              toast.dismiss(paymentToast);
               toast.success("ETH payment successful!");
             } else if (finalPayload.status === "error") {
               const errorMsg = (finalPayload as any).error_message || "ETH payment failed.";
+              toast.dismiss(paymentToast);
               toast.error(errorMsg);
+              setIsMinting(false);
               return;
             } else {
+              toast.dismiss(paymentToast);
               toast.error("ETH payment was cancelled.");
+              setIsMinting(false);
               return;
             }
           } else {
@@ -283,24 +307,35 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
             console.debug("[MiniKit] Payment payload:", paymentPayload);
 
-            const { finalPayload } = await MiniKit.commandsAsync.pay(paymentPayload);
+            const { finalPayload } = await Promise.race([
+              MiniKit.commandsAsync.pay(paymentPayload),
+              new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error("Payment timeout - please try again")), 60000)
+              )
+            ]);
             console.debug("[MiniKit] Payment finalPayload:", finalPayload);
 
             if (finalPayload.status === "success") {
               txHash = finalPayload.transaction_id;
+              toast.dismiss(paymentToast);
               toast.success("Payment successful!");
             } else if (finalPayload.status === "error") {
               const errorMsg = (finalPayload as any).error_message || "Payment failed.";
+              toast.dismiss(paymentToast);
               toast.error(errorMsg);
+              setIsMinting(false);
               return;
             } else {
+              toast.dismiss(paymentToast);
               toast.error("Payment was cancelled.");
+              setIsMinting(false);
               return;
             }
           }
         } catch (payErr: any) {
           const msg = typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
           toast.error(msg);
+          setIsMinting(false);
           return;
         } finally {
           payInFlightRef.current = false;
@@ -310,30 +345,41 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         toast.success("Free mint - processing...");
       }
 
-      toast.info("Minting your subdomain...");
+      const mintingToast = toast.info("Minting your subdomain...");
 
-      const { data, error } = await supabase.functions.invoke("mint-subdomain", {
-        body: { 
-          subdomain, 
-          walletAddress, 
-          txHash: txHash || 'free-mint-' + Date.now() 
-        },
-      });
+      try {
+        const { data, error } = await Promise.race([
+          supabase.functions.invoke("mint-subdomain", {
+            body: { 
+              subdomain, 
+              walletAddress, 
+              txHash: txHash || 'free-mint-' + Date.now() 
+            },
+          }),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error("Minting timeout - please check My IDs in a moment")), 45000)
+          )
+        ]);
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Supabase function error:', error);
+          throw error;
+        }
 
-      if (data?.success) {
-        toast.success("Subdomain minted successfully!");
-        window.dispatchEvent(new CustomEvent("domains-updated", { 
-          detail: { txHash: txHash || 'free-mint-' + Date.now() } 
-        }));
-        onClose();
-      } else {
-        console.error('Mint failed:', data);
-        throw new Error(data?.error || "Failed to mint subdomain.");
+        if (data?.success) {
+          toast.dismiss(mintingToast);
+          toast.success("Subdomain minted successfully!");
+          window.dispatchEvent(new CustomEvent("domains-updated", { 
+            detail: { txHash: txHash || 'free-mint-' + Date.now() } 
+          }));
+          onClose();
+        } else {
+          console.error('Mint failed:', data);
+          throw new Error(data?.error || "Failed to mint subdomain.");
+        }
+      } catch (mintErr: any) {
+        toast.dismiss(mintingToast);
+        throw mintErr;
       }
     } catch (e: any) {
       console.error("Minting error:", e);

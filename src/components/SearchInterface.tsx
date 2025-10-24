@@ -741,12 +741,20 @@ export const SearchInterface = () => {
             {/* Getting Started with Vanity - Shows when no search results and not showing My IDs */}
             {!hasSearched && !showMyIDs && (
               <div className="w-full max-w-3xl mx-auto mt-2 md:mt-3 px-2 md:px-4">
-                <Card className="bg-gradient-to-br from-gray-950 via-gray-900 to-black border-2 border-[#D4AF37]/40 rounded-3xl shadow-[0_20px_60px_rgba(212,175,55,0.15)] overflow-hidden backdrop-blur-xl">
-                  <CardContent className="p-4 md:p-6">
-                    <div className="space-y-3 md:space-y-4">
-                      <h3 className="text-lg md:text-2xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent text-center mb-6 md:mb-8">
-                        {t('getting_started_with_vanity')}
-                      </h3>
+                <article>
+                  <h2 className="sr-only">Getting Started with Vanity.box</h2>
+                  <Card className="bg-gradient-to-br from-gray-950 via-gray-900 to-black border-2 border-[#D4AF37]/40 rounded-3xl shadow-[0_20px_60px_rgba(212,175,55,0.15)] overflow-hidden backdrop-blur-xl">
+                    <CardContent className="p-4 md:p-6">
+                      <div className="space-y-3 md:space-y-4">
+                        <h3 className="text-lg md:text-2xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent text-center mb-6 md:mb-8">
+                          {t('getting_started_with_vanity')}
+                        </h3>
+                        
+                        <section className="mb-6">
+                          <p className="text-white/90 text-sm md:text-base leading-relaxed text-center px-2">
+                            Vanity.₿ox is your premium Web3 digital identity platform. Create human-readable blockchain addresses across multiple protocols including ENS, DNS, and Aptos Names. Secure your unique subdomain on World Chain with verified World ID integration, enabling gasless transactions and human-priority blockspace. Build your decentralized identity for DeFi applications, NFT collections, and Web3 social platforms. Join thousands of users claiming their personalized digital identity in the decentralized web.
+                          </p>
+                        </section>
                       
                       <div className="space-y-4 md:space-y-6 flex flex-col items-center">
                         <div className="flex gap-4 md:gap-5 max-w-md w-full">
@@ -795,19 +803,20 @@ export const SearchInterface = () => {
                         </div>
                       </div>
                     </div>
-                    {/* Learn More Button */}
-                    <div className="mt-4 md:mt-5 flex justify-center">
-                      <a
-                        href="https://ens.domains/ensv2"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group px-6 py-2 md:px-8 md:py-3 bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-size-200 bg-pos-0 hover:bg-pos-100 text-black font-bold rounded-xl transition-all duration-500 hover:scale-105 shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_50px_rgba(212,175,55,0.5)] text-sm md:text-base"
-                      >
-                        {t('learn_more')}
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
+                      {/* Learn More Button */}
+                      <div className="mt-4 md:mt-5 flex justify-center">
+                        <a
+                          href="https://ens.domains/ensv2"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group px-6 py-2 md:px-8 md:py-3 bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-size-200 bg-pos-0 hover:bg-pos-100 text-black font-bold rounded-xl transition-all duration-500 hover:scale-105 shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_50px_rgba(212,175,55,0.5)] text-sm md:text-base"
+                        >
+                          {t('learn_more')}
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </article>
               </div>
             )}
 
