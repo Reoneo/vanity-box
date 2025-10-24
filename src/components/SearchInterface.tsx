@@ -748,8 +748,8 @@ export const SearchInterface = () => {
                         {t('getting_started_with_vanity')}
                       </h3>
                       
-                      <div className="space-y-4 md:space-y-6">
-                        <div className="flex gap-4 md:gap-5">
+                      <div className="space-y-4 md:space-y-6 flex flex-col items-center">
+                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
                           <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             1
                           </div>
@@ -758,7 +758,7 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="flex gap-4 md:gap-5">
+                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
                           <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             2
                           </div>
@@ -767,7 +767,7 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="flex gap-4 md:gap-5">
+                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
                           <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             3
                           </div>
@@ -776,7 +776,7 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="flex gap-4 md:gap-5">
+                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
                           <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             4
                           </div>
@@ -785,7 +785,7 @@ export const SearchInterface = () => {
                           </p>
                         </div>
 
-                        <div className="flex gap-4 md:gap-5">
+                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
                           <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
                             5
                           </div>
