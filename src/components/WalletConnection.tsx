@@ -67,7 +67,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         requestId: 'vanity-box-auth-' + Date.now(),
         expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         notBefore: new Date(Date.now() - 60 * 1000), // 1 minute ago
-        statement: 'Sign in to Vanity.₿ox to access your World ID domains and personalized features.'
+        statement: 'Sign in to Vanity.box to access your World ID domains and personalized features.'
       };
       
       console.log('📝 Auth parameters:', authParams);

@@ -44,7 +44,7 @@ const Index = () => {
       {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
       <main className="flex-1 px-4 pt-24 md:pt-24 pb-20 relative z-10">
         <article className="max-w-2xl mx-auto text-center h-full flex flex-col">
-          <h1 className="sr-only">Vanity.₿ox - Your Premium Web3 Digital Identity</h1>
+          <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
           <SearchInterface />
         </article>
       </main>

@@ -750,9 +750,9 @@ export const SearchInterface = () => {
                           {t('getting_started_with_vanity')}
                         </h3>
                         
-                        <section className="mb-6">
+                        <section className="mb-6 sr-only">
                           <p className="text-white/90 text-sm md:text-base leading-relaxed text-center px-2">
-                            Vanity.₿ox is your premium Web3 digital identity platform. Create human-readable blockchain addresses across multiple protocols including ENS, DNS, and Aptos Names. Secure your unique subdomain on World Chain with verified World ID integration, enabling gasless transactions and human-priority blockspace. Build your decentralized identity for DeFi applications, NFT collections, and Web3 social platforms. Join thousands of users claiming their personalized digital identity in the decentralized web.
+                            Vanity.box is your premium Web3 digital identity platform. Create human-readable blockchain addresses across multiple protocols including ENS, DNS, and Aptos Names. Secure your unique subdomain on World Chain with verified World ID integration, enabling gasless transactions and human-priority blockspace. Build your decentralized identity for DeFi applications, NFT collections, and Web3 social platforms. Join thousands of users claiming their personalized digital identity in the decentralized web.
                           </p>
                         </section>
                       
