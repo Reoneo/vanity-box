@@ -18,6 +18,7 @@ interface Domain {
   created_at?: string;
   updated_at?: string;
   isWrapped?: boolean;
+  txHash?: string;
 }
 
 interface UserDomainsDisplayProps {
@@ -129,9 +130,11 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     );
   }
 
-  const handleManageDomain = (domain: Domain) => {
+  const handleManageDomain = (domain: Domain, action: 'edit' | 'transfer') => {
     setSelectedDomain(domain);
     setIsEditMode(true);
+    // Dispatch event to tell DomainEditPanel which tab to show
+    window.dispatchEvent(new CustomEvent('domain-action', { detail: { action } }));
   };
 
   // Show edit panel if in edit mode
@@ -182,6 +185,14 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                     {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
                   </p>
                 </div>
+                {domain.txHash && (
+                  <div className="text-sm text-gray-300">
+                    <span className="text-gray-400">Transaction ID:</span>
+                    <p className="font-mono text-white text-xs break-all">
+                      {domain.txHash}
+                    </p>
+                  </div>
+                )}
                 {domain.created_at && (
                   <div className="text-sm text-gray-400">
                     Registered: {new Date(domain.created_at).toLocaleDateString()}
@@ -191,7 +202,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
 
               <div className="grid grid-cols-2 gap-2 mt-4">
                 <Button
-                  onClick={() => handleManageDomain(domain)}
+                  onClick={() => handleManageDomain(domain, 'edit')}
                   size="sm"
                   className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                 >
@@ -199,7 +210,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                   Edit
                 </Button>
                 <Button
-                  onClick={() => handleManageDomain(domain)}
+                  onClick={() => handleManageDomain(domain, 'transfer')}
                   size="sm"
                   variant="outline"
                   className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"

@@ -245,7 +245,19 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => {
+      if (open) {
+        document.body.style.overflow = 'hidden';
+        const backdrop = document.createElement('div');
+        backdrop.id = 'wallet-dropdown-backdrop';
+        backdrop.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]';
+        document.body.appendChild(backdrop);
+      } else {
+        document.body.style.overflow = '';
+        const backdrop = document.getElementById('wallet-dropdown-backdrop');
+        if (backdrop) backdrop.remove();
+      }
+    }}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
@@ -259,9 +271,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
         <DropdownMenuItem 
-          className="text-gray-700 hover:bg-gray-100 cursor-pointer"
+          className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
           onClick={() => {
             window.dispatchEvent(new CustomEvent('show-my-ids'));
+            const backdrop = document.getElementById('wallet-dropdown-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.style.overflow = '';
           }}
         >
           <User className="mr-2 h-4 w-4" />
@@ -269,7 +284,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          className="text-red-600 hover:bg-red-50 cursor-pointer"
+          className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
           onClick={handleDisconnect}
         >
           <LogOut className="mr-2 h-4 w-4" />

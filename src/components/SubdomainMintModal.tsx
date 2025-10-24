@@ -313,16 +313,26 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       toast.info("Minting your subdomain...");
 
       const { data, error } = await supabase.functions.invoke("mint-subdomain", {
-        body: { subdomain, walletAddress, txHash },
+        body: { 
+          subdomain, 
+          walletAddress, 
+          txHash: txHash || 'free-mint-' + Date.now() 
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       if (data?.success) {
         toast.success("Subdomain minted successfully!");
-        window.dispatchEvent(new CustomEvent("domains-updated"));
+        window.dispatchEvent(new CustomEvent("domains-updated", { 
+          detail: { txHash: txHash || 'free-mint-' + Date.now() } 
+        }));
         onClose();
       } else {
+        console.error('Mint failed:', data);
         throw new Error(data?.error || "Failed to mint subdomain.");
       }
     } catch (e: any) {

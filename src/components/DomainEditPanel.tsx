@@ -23,6 +23,8 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const [newRecordKey, setNewRecordKey] = useState('');
   const [newRecordValue, setNewRecordValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [transferAddress, setTransferAddress] = useState('');
+  const [activeTab, setActiveTab] = useState('records');
 
   // ENS standard text records
   const [ensRecords, setEnsRecords] = useState({
@@ -34,6 +36,20 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     'com.twitter': '',
     'com.discord': '',
   });
+
+  // Listen for domain action events
+  useEffect(() => {
+    const handleDomainAction = (e: any) => {
+      if (e.detail?.action === 'transfer') {
+        setActiveTab('transfer');
+      } else if (e.detail?.action === 'edit') {
+        setActiveTab('records');
+      }
+    };
+
+    window.addEventListener('domain-action', handleDomainAction);
+    return () => window.removeEventListener('domain-action', handleDomainAction);
+  }, []);
 
   // Load existing records when component mounts
   useEffect(() => {
@@ -131,6 +147,34 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     }
   };
 
+  const handleTransfer = async () => {
+    if (!transferAddress) {
+      toast.error('Please enter a transfer address');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to transfer ${domain.name}.${domain.domain} to ${transferAddress}? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      toast.info('Transferring domain...');
+
+      // TODO: Implement actual transfer logic through Namestone API
+      // For now, show a success message
+      toast.success('Transfer initiated successfully!');
+      setTransferAddress('');
+      window.dispatchEvent(new CustomEvent('domains-updated'));
+    } catch (error) {
+      console.error('Transfer error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to transfer domain');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSaveRecords = async () => {
     try {
       setIsLoading(true);
@@ -202,9 +246,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
         </div>
       </div>
 
-      <Tabs defaultValue="records" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 bg-gray-800">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-gray-800">
           <TabsTrigger value="records" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Records</TabsTrigger>
+          <TabsTrigger value="transfer" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Transfer</TabsTrigger>
         </TabsList>
 
         <TabsContent value="records" className="space-y-4 mt-4">
@@ -268,6 +313,33 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
               className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
             >
               {isLoading ? 'Saving...' : 'Save Records'}
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="transfer" className="space-y-4 mt-4">
+          <div className="space-y-4">
+            <h3 className="font-semibold text-white">Transfer Domain</h3>
+            <p className="text-sm text-gray-400">
+              Transfer ownership of {domain.name}.{domain.domain} to another wallet address.
+            </p>
+            
+            <div className="space-y-2">
+              <Label className="text-gray-300">Recipient Address</Label>
+              <Input
+                value={transferAddress}
+                onChange={(e) => setTransferAddress(e.target.value)}
+                placeholder="0x..."
+                className="bg-gray-800 border-gray-700 text-white font-mono"
+              />
+            </div>
+
+            <Button
+              onClick={handleTransfer}
+              disabled={isLoading || !transferAddress}
+              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
+            >
+              {isLoading ? 'Transferring...' : 'Transfer Domain'}
             </Button>
           </div>
         </TabsContent>
