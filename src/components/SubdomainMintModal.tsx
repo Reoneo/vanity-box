@@ -50,7 +50,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
-  const [networkFeeUSD, setNetworkFeeUSD] = useState(0.50);
+  const [networkFeeUSD, setNetworkFeeUSD] = useState(0.15);
 
   // Prevent duplicate pay calls
   const payInFlightRef = useRef(false);
@@ -140,10 +140,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     const loadNetworkFee = async () => {
       try {
         const { calculateNetworkFee } = await import('@/utils/worldChainGas');
-        const fee = await calculateNetworkFee();
+        const fee = await calculateNetworkFee(150000); // Realistic gas limit for subdomain mint
+        console.log('Loaded network fee:', fee);
         if (mounted) setNetworkFeeUSD(fee);
       } catch (error) {
         console.error('Failed to fetch network fee:', error);
+        if (mounted) setNetworkFeeUSD(0.15); // Fallback
       }
     };
 
@@ -151,7 +153,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     loadNetworkFee();
     
     const priceInterval = setInterval(load, 60_000);
-    const feeInterval = setInterval(loadNetworkFee, 15_000);
+    const feeInterval = setInterval(loadNetworkFee, 30_000); // Refresh network fee every 30s
     
     return () => {
       mounted = false;
@@ -523,8 +525,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">{t('network_fee')}</span>
-                <span className="font-medium text-[#D4AF37]">${effectiveNetworkFee.toFixed(2)}</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('network_fee')} (World Chain)</span>
+                <span className="font-medium text-[#D4AF37]">
+                  {effectiveNetworkFee === 0 ? "FREE" : `$${effectiveNetworkFee.toFixed(4)}`}
+                </span>
               </div>
 
               <div className="flex items-center justify-between">
