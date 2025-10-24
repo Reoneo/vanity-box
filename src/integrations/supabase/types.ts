@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      domain_configs: {
+        Row: {
+          api_key_secret_name: string
+          avatar_url: string | null
+          created_at: string | null
+          description: string | null
+          display_name: string | null
+          domain_name: string
+          id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_key_secret_name: string
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          domain_name: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_key_secret_name?: string
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          domain_name?: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
