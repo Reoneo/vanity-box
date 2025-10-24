@@ -9,6 +9,9 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import web3bioLogo from '@/assets/web3bio-logo.png';
+import efpAppIcon from '@/assets/efp-app-icon.png';
+import awesomeBoxIcon from '@/assets/awesome-box-icon.jpeg';
 
 const Index = () => {
   const { t } = useLanguage();
@@ -46,6 +49,24 @@ const Index = () => {
         <article className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
           <SearchInterface />
+
+          <section aria-label="Featured on" className="mt-6">
+            <h2 className="text-xs font-semibold tracking-wide text-gray-600 dark:text-gray-400">Featured on</h2>
+            <div className="mt-3 grid grid-cols-3 gap-4 justify-items-center">
+              <a href="https://web3.bio/" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center gap-1">
+                <img src={web3bioLogo} alt="Web3.bio logo" loading="lazy" className="h-10 w-10 object-contain opacity-90 group-hover:opacity-100 transition" />
+                <span className="text-[11px] text-gray-700 dark:text-gray-300">Web3.bio</span>
+              </a>
+              <a href="https://efp.app/" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center gap-1">
+                <img src={efpAppIcon} alt="EFP.app logo" loading="lazy" className="h-10 w-10 object-contain opacity-90 group-hover:opacity-100 transition" />
+                <span className="text-[11px] text-gray-700 dark:text-gray-300">EFP.app</span>
+              </a>
+              <a href="https://awesome.box" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center gap-1">
+                <img src={awesomeBoxIcon} alt="Awesome.box logo" loading="lazy" className="h-10 w-10 object-contain opacity-90 group-hover:opacity-100 transition rounded" />
+                <span className="text-[11px] text-gray-700 dark:text-gray-300">Awesome.box</span>
+              </a>
+            </div>
+          </section>
         </article>
       </main>
       <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">

@@ -140,7 +140,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     const loadNetworkFee = async () => {
       try {
         const { calculateNetworkFee } = await import('@/utils/worldChainGas');
-        const fee = await calculateNetworkFee(150000); // Realistic gas limit for subdomain mint
+        const gasLimitByMethod = paymentMethod === "ETH" ? 21000 : 80000; // closer to wallet prompt
+        const fee = await calculateNetworkFee(gasLimitByMethod);
         console.log('Loaded network fee:', fee);
         if (mounted) setNetworkFeeUSD(fee);
       } catch (error) {
@@ -160,7 +161,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       clearInterval(priceInterval);
       clearInterval(feeInterval);
     };
-  }, []);
+  }, [paymentMethod]);
 
   // --------------------- pricing ---------------------
 
@@ -192,9 +193,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const subdomainLabel = subdomain.split(".")[0];
   const effectiveNetworkFee = subdomainLabel.toLowerCase() === "test321" ? 0 : networkFeeUSD;
   
-  const totalPrice = (domainPrice * registrationYears) + effectiveNetworkFee;
-  const grandTotal = totalPrice;
-  const convertedPrice = grandTotal * selectedMethod.rate;
+  // Base price user pays in tokens (excludes wallet network fee)
+  const priceUSD = domainPrice * registrationYears;
+  // Grand total shown in USD includes the estimated World Chain fee
+  const grandTotal = priceUSD + effectiveNetworkFee;
+  // Token amount to send (ETH/USDC/WLD) should only cover the base price
+  const tokenAmount = priceUSD * selectedMethod.rate;
   
   // Determine if this is a free mint (total below threshold)
   const isFree = grandTotal < EPSILON_FREE_USD;
@@ -268,7 +272,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           if (paymentMethod === "ETH") {
             // Custom ETH payment flow using sendTransaction
             const recipientAddress = "0x71ab0b01e3ff45551e25b208e2a90298f73f7040";
-            const weiAmount = Math.floor(convertedPrice * 1e18).toString();
+            const weiAmount = Math.floor(tokenAmount * 1e18).toString();
 
             const txPayload = {
               transaction: [
@@ -311,7 +315,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           } else {
             // USDC/WLD payment flow using pay command
             const tokenEnum = paymentMethod === "USDC" ? Tokens.USDC : Tokens.WLD;
-            const roundedAmount = Math.round(convertedPrice * 1000000) / 1000000;
+            const roundedAmount = Math.round(tokenAmount * 1000000) / 1000000;
             const amountAtomic = tokenToDecimals(roundedAmount, tokenEnum).toString();
 
             const paymentPayload: PayCommandInput = {
@@ -500,9 +504,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           <div className="flex flex-col items-center gap-1">
             <div className="text-4xl font-bold text-[#D4AF37]">
               <>
-                {paymentMethod === "USDC" && `${grandTotal.toFixed(2)} USDC`}
-                {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
-                {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
+                {paymentMethod === "USDC" && `${(Math.round(tokenAmount * 100) / 100).toFixed(2)} USDC`}
+                {paymentMethod === "ETH" && `${tokenAmount.toFixed(6)} ETH`}
+                {paymentMethod === "WLD" && `${tokenAmount.toFixed(4)} WLD`}
               </>
             </div>
             {isLoadingPrices && (
