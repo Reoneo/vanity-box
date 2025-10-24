@@ -97,6 +97,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const getSubdomainPrice = (fullSubdomain: string) => {
     const subdomainLabel = fullSubdomain.split(".")[0];
+    // test321 is free for all domains
     if (subdomainLabel.toLowerCase() === "test321") return 0;
 
     const length = subdomainLabel.length;
@@ -185,7 +186,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
   
-  // Special-case test321: always use effectiveNetworkFee = 0
+  // test321 is free for ALL domains, no network fee
   const subdomainLabel = subdomain.split(".")[0];
   const effectiveNetworkFee = subdomainLabel.toLowerCase() === "test321" ? 0 : networkFeeUSD;
   

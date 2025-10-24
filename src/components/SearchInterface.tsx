@@ -289,7 +289,8 @@ export const SearchInterface = () => {
         price: 1,
         category: 'ENS',
         club: 'Digits',
-        selectable: true
+        selectable: true,
+        enabled: true
       },
       {
         name: 'MexiPay.eth',
@@ -310,11 +311,12 @@ export const SearchInterface = () => {
       {
         name: 'TeamXRP.eth',
         description: t('desc_teamxrp'),
-        imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/c1f98f3f469ba9be9e8dee87f4cfa7/a4c1f98f3f469ba9be9e8dee87f4cfa7.svg',
+        imageUrl: require('@/assets/teamxrp-avatar.png'),
         price: 5,
         category: 'ENS',
         club: 'Crypto',
-        selectable: true
+        selectable: true,
+        enabled: true
       },
       {
         name: '$mith.eth',
@@ -339,7 +341,8 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Dev',
-        selectable: true
+        selectable: true,
+        enabled: true
       }
     ];
     return allResults;
@@ -1404,7 +1407,8 @@ export const SearchInterface = () => {
               const isFlipped = flippedCards.has(index);
               const isTaken = takenSubdomains.has(result.name.toLowerCase());
               const isUserOwned = displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase());
-              const isDisabled = !((result.name === 'Smith.cash' || result.name === '$mith.eth')) || isTaken || isUserOwned;
+              const isEnabled = (result as any).enabled || result.name === 'Smith.cash' || result.name === '$mith.eth';
+              const isDisabled = !isEnabled || isTaken || isUserOwned;
               
               return (
                 <div key={index} className="perspective-1000 min-h-[320px]">

@@ -58,15 +58,34 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
           domain.address.toLowerCase() === walletAddress.toLowerCase()
         );
         
-        // Merge txHash from localStorage
-        const txMap = JSON.parse(localStorage.getItem('txMap') || '{}');
-        const domainsWithTx = filteredDomains.map((d: Domain) => {
-          const key = `${d.name}.${d.domain}`.toLowerCase();
-          return {
-            ...d,
-            txHash: txMap[key] || d.txHash,
-          };
-        });
+        // Fetch txHash from Namestone API for each domain
+        const domainsWithTx = await Promise.all(
+          filteredDomains.map(async (d: Domain) => {
+            try {
+              const namestoneApiUrl = `https://api.namestone.xyz/txs?name=${d.name}.${d.domain}`;
+              const response = await fetch(namestoneApiUrl);
+              if (response.ok) {
+                const data = await response.json();
+                // Extract tx hash from the first transaction if available
+                if (data && data.length > 0 && data[0].tx_hash) {
+                  return {
+                    ...d,
+                    txHash: data[0].tx_hash,
+                  };
+                }
+              }
+            } catch (error) {
+              console.error(`Error fetching tx for ${d.name}.${d.domain}:`, error);
+            }
+            // Fallback to localStorage or existing txHash
+            const txMap = JSON.parse(localStorage.getItem('txMap') || '{}');
+            const key = `${d.name}.${d.domain}`.toLowerCase();
+            return {
+              ...d,
+              txHash: txMap[key] || d.txHash,
+            };
+          })
+        );
         
         setDomains(domainsWithTx);
       } else {
