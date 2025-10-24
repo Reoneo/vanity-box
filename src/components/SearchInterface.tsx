@@ -288,7 +288,8 @@ export const SearchInterface = () => {
         imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
         price: 1,
         category: 'ENS',
-        club: 'Digits'
+        club: 'Digits',
+        selectable: true
       },
       {
         name: 'MexiPay.eth',
@@ -312,7 +313,8 @@ export const SearchInterface = () => {
         imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/c1f98f3f469ba9be9e8dee87f4cfa7/a4c1f98f3f469ba9be9e8dee87f4cfa7.svg',
         price: 5,
         category: 'ENS',
-        club: 'Crypto'
+        club: 'Crypto',
+        selectable: true
       },
       {
         name: '$mith.eth',
@@ -336,7 +338,8 @@ export const SearchInterface = () => {
         imageUrl: termuxAvatar,
         price: 5,
         category: 'ENS',
-        club: 'Dev'
+        club: 'Dev',
+        selectable: true
       }
     ];
     return allResults;
@@ -552,6 +555,7 @@ export const SearchInterface = () => {
             subdomain={displayQuery ? `${displayQuery}.${selectedResult.name}` : selectedResult.name}
             price={price}
             resultAvatar={selectedResult.imageUrl}
+            domain={selectedResult.name.toLowerCase().replace(/\s+/g, '')}
           />
         ) : (
           <>
@@ -1479,7 +1483,7 @@ export const SearchInterface = () => {
                            onClick={() => handleMint(result)}
                            disabled={isDisabled}
                          >
-                           {result.name === 'Smith.cash' || result.name === '$mith.eth'
+                           {(result as any).selectable || result.name === 'Smith.cash' || result.name === '$mith.eth'
                               ? isTaken
                                 ? 'Taken'
                                 : isUserOwned

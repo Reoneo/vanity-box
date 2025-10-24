@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
+// API key will be fetched based on domain
 const WORLD_CHAIN_RPC = 'https://worldchain-mainnet.g.alchemy.com/public';
 const REGISTRY_FACTORY_ADDRESS = '0xDddddDdDDD8Aa1f237b4fa0669cb46892346d22d';
 
@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain, walletAddress, txHash } = await req.json();
+    const { subdomain, walletAddress, txHash, domain } = await req.json();
 
     console.log('==========================================');
     console.log('🚀 STARTING SUBDOMAIN MINTING PROCESS');
@@ -42,15 +42,21 @@ serve(async (req) => {
     console.log('📝 Subdomain:', subdomain);
     console.log('👛 Wallet Address:', walletAddress);
     console.log('🔗 Transaction Hash:', txHash || 'N/A (Free Mint)');
+    console.log('🌐 Domain:', domain);
     console.log('==========================================');
 
-    if (!NAMESTONE_API_KEY) {
-      throw new Error('NAMESTONE_API_KEY is not configured');
-    }
-
-    if (!subdomain || !walletAddress) {
+    if (!subdomain || !walletAddress || !domain) {
       throw new Error('Missing required parameters');
     }
+
+    // Get API key for this domain
+    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    
+    if (!NAMESTONE_API_KEY) {
+      throw new Error(`API key not configured for domain ${domain}`);
+    }
+    
+    console.log('🔑 Using API key for domain:', domain);
 
     // Step 1: Verify the transaction on World Chain (skip for free mints)
     if (txHash) {
@@ -77,7 +83,7 @@ serve(async (req) => {
     console.log('🔑 API Key configured:', !!NAMESTONE_API_KEY);
     
     const namestonePayload = {
-      domain: (domainFromSubdomain || 'smith.cash').toLowerCase(),
+      domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
       name: subdomainLabel,
       address: walletAddress,
       chain_id: 480, // World Chain network ID

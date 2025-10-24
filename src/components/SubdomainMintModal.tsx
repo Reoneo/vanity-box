@@ -25,6 +25,7 @@ interface SubdomainMintModalProps {
   subdomain: string;
   price: number; // kept for compatibility; actual price computed from length
   resultAvatar?: string;
+  domain?: string; // The domain to mint on (e.g., "30315.eth", "teamxrp.eth", "termux.eth", "smith.cash")
 }
 
 type PaymentMethod = "USDC" | "ETH" | "WLD";
@@ -35,6 +36,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   subdomain,
   price, // eslint-disable-line @typescript-eslint/no-unused-vars
   resultAvatar,
+  domain = 'smith.cash', // Default to smith.cash if not specified
 }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
@@ -370,7 +372,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             body: { 
               subdomain, 
               walletAddress, 
-              txHash: txHash || 'free-mint-' + Date.now() 
+              txHash: txHash || 'free-mint-' + Date.now(),
+              domain // Pass the domain to the edge function
             },
           }),
           new Promise<never>((_, reject) => 

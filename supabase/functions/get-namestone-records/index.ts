@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
+// API key will be fetched based on domain
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,34 +14,41 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain, domain = 'smith.cash' } = await req.json();
+    const { subdomain, domain: providedDomain } = await req.json();
 
     console.log('==========================================');
     console.log('📖 FETCHING NAMESTONE RECORDS');
     console.log('==========================================');
     console.log('📝 Subdomain:', subdomain);
-    console.log('📝 Domain:', domain);
     console.log('==========================================');
-
-    if (!NAMESTONE_API_KEY) {
-      throw new Error('NAMESTONE_API_KEY is not configured');
-    }
 
     if (!subdomain) {
       throw new Error('Missing subdomain parameter');
     }
 
-    // Extract subdomain label (e.g., "alice" from "alice.smith.cash")
-    const subdomainLabel = subdomain.split('.')[0];
+    // Extract subdomain label and domain
+    const parts = subdomain.split('.');
+    const subdomainLabel = parts[0];
+    const domain = providedDomain || parts.slice(1).join('.') || 'smith.cash';
+
+    // Get API key for this domain
+    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    
+    if (!NAMESTONE_API_KEY) {
+      throw new Error(`API key not configured for domain ${domain}`);
+    }
+    
+    console.log('🔑 Using API key for domain:', domain);
+    console.log('📝 Domain:', domain);
     
     const payload = {
-      domain,
+      domain: domain.toLowerCase(),
       name: subdomainLabel
     };
 
     console.log('📤 Sending request to Namestone:', JSON.stringify(payload, null, 2));
 
-    const response = await fetch('https://namestone.xyz/api/public_v1/get-names', {
+    const response = await fetch('https://namestone.com/api/public_v1/get-names', {
       method: 'POST',
       headers: {
         'Authorization': NAMESTONE_API_KEY,
@@ -65,7 +72,7 @@ serve(async (req) => {
 
     // Extract text records from the response
     const records = Array.isArray(data) && data.length > 0 ? data[0] : data;
-    const textRecords = records.records?.texts || {};
+    const textRecords = records.text_records || {};
 
     return new Response(
       JSON.stringify({

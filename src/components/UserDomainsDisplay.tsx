@@ -4,9 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Pencil, Send, Trash2 } from 'lucide-react';
+import { Loader2, Pencil, Send, Trash2, ExternalLink } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
+import ensLogoLink from '@/assets/ens-logo-link.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import { DomainEditPanel } from './DomainEditPanel';
 import noResultsGif from '@/assets/no-results.gif';
@@ -180,6 +181,22 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                     <h4 className="font-bold text-lg text-white truncate">
                       {domain.name}.{domain.domain}
                     </h4>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a
+                          href={`https://ens.domains/${domain.name}.${domain.domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <img src={ensLogoLink} alt="View on ENS" className="w-6 h-6" />
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>View on ens.domains</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30 hover:bg-blue-500/20 flex items-center gap-1 w-fit">

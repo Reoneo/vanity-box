@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
+// API key will be fetched based on domain
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -23,10 +23,6 @@ serve(async (req) => {
     console.log('👛 To Address:', toAddress);
     console.log('==========================================');
 
-    if (!NAMESTONE_API_KEY) {
-      throw new Error('NAMESTONE_API_KEY is not configured');
-    }
-
     if (!subdomain || !toAddress) {
       throw new Error('Missing required parameters: subdomain and toAddress');
     }
@@ -38,6 +34,15 @@ serve(async (req) => {
     
     console.log('🏷️  Subdomain label:', subdomainLabel);
     console.log('🌐 Domain:', domainFromSubdomain);
+
+    // Get API key for this domain
+    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domainFromSubdomain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    
+    if (!NAMESTONE_API_KEY) {
+      throw new Error(`API key not configured for domain ${domainFromSubdomain}`);
+    }
+    
+    console.log('🔑 Using API key for domain:', domainFromSubdomain);
 
     const namestonePayload = {
       domain: (domainFromSubdomain || 'smith.cash').toLowerCase(),
