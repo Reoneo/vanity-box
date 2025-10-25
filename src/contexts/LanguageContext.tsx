@@ -184,6 +184,8 @@ function getTranslations(language: Language): Record<string, string> {
         "A startup-focused digital identity for innovative entrepreneurs and emerging businesses — perfect for creating unique brand subdomains.",
       desc_altcoin_chain:
         "A crypto-focused digital identity for blockchain enthusiasts and altcoin traders — perfect for creating decentralized finance subdomains.",
+      desc_spyda: "Hip-hop artist and producer bringing authentic sounds to Web3 — explore the music and secure your digital identity.",
+      desc_flirtad: "Rising artist blending modern beats with creative storytelling — join the Artist Club and claim your unique subdomain.",
       my_ids: "My ID's",
       register: "Register",
       edit: "Edit",

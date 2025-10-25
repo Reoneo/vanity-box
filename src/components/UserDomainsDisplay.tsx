@@ -200,22 +200,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                     <h4 className="font-bold text-lg text-white truncate">
                       {domain.name}.{domain.domain}
                     </h4>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <a
-                          href={`https://ens.domains/${domain.name}.${domain.domain}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-shrink-0 hover:opacity-80 transition-opacity"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <img src={ensLogoLink} alt="View on ENS" className="w-6 h-6" />
-                        </a>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>View on ens.domains</p>
-                      </TooltipContent>
-                    </Tooltip>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30 hover:bg-blue-500/20 flex items-center gap-1 w-fit">

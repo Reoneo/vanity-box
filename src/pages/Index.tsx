@@ -9,6 +9,9 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import web3BioLogo from '@/assets/web3bio-logo.png';
+import efpAppIcon from '@/assets/efp-app-icon.png';
+import awesomeBoxIcon from '@/assets/awesome-box-icon.jpeg';
 
 const Index = () => {
   const { t } = useLanguage();
@@ -41,11 +44,57 @@ const Index = () => {
       
       <Header />
       
-      {/* Hero Section - Optimized for mobile (no scroll) with proper header spacing */}
+      {/* Hero Section */}
       <main className="flex-1 px-4 pt-24 md:pt-24 pb-20 relative z-10">
         <article className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
           <SearchInterface />
+          
+          {/* Featured on section */}
+          <div className="mt-8 pt-8 border-t border-border/30">
+            <p className="text-sm text-muted-foreground mb-4">Featured on</p>
+            <div className="flex items-center justify-center gap-8">
+              <a 
+                href="https://web3.bio/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity group"
+              >
+                <img 
+                  src={web3BioLogo} 
+                  alt="Web3.bio" 
+                  className="w-12 h-12 object-contain"
+                />
+                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">Web3.bio</span>
+              </a>
+              <a 
+                href="https://efp.app/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity group"
+              >
+                <img 
+                  src={efpAppIcon} 
+                  alt="EFP.app" 
+                  className="w-12 h-12 object-contain rounded-full"
+                />
+                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">EFP.app</span>
+              </a>
+              <a 
+                href="https://awesome.box" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity group"
+              >
+                <img 
+                  src={awesomeBoxIcon} 
+                  alt="Awesome.box" 
+                  className="w-12 h-12 object-contain"
+                />
+                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">Awesome.box</span>
+              </a>
+            </div>
+          </div>
         </article>
       </main>
       <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">

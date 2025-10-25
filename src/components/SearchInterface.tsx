@@ -40,6 +40,8 @@ import eth30315Avatar from '@/assets/30315-eth-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
+import spydaAvatar from '@/assets/spyda-avatar.jpeg';
+import flirtadAvatar from '@/assets/flirtad-avatar.jpeg';
 import { DynamicMetaTags } from '@/components/DynamicMetaTags';
 import noResultsGif from '@/assets/no-results.gif';
 
@@ -55,6 +57,9 @@ interface ENSResult {
   price: number;
   category: string | string[];
   club: string | string[];
+  spotifyUrl?: string;
+  selectable?: boolean;
+  enabled?: boolean;
 }
 
 interface Web3BioProfile {
@@ -343,6 +348,28 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Dev',
+        selectable: true,
+        enabled: true
+      },
+      {
+        name: 'Spyda.eth',
+        description: t('desc_spyda'),
+        imageUrl: spydaAvatar,
+        price: 5,
+        category: 'ENS',
+        club: 'Artist',
+        spotifyUrl: 'https://spotify.link/KOHBCPLXKXb',
+        selectable: true,
+        enabled: true
+      },
+      {
+        name: 'FlirtaD.eth',
+        description: t('desc_flirtad'),
+        imageUrl: flirtadAvatar,
+        price: 5,
+        category: 'ENS',
+        club: 'Artist',
+        spotifyUrl: 'https://spotify.link/AnVAT2FXKX',
         selectable: true,
         enabled: true
       }
@@ -754,87 +781,6 @@ export const SearchInterface = () => {
             </div>
             )}
             
-            {/* Getting Started with Vanity - Shows when no search results and not showing My IDs */}
-            {!hasSearched && !showMyIDs && (
-              <div className="w-full max-w-3xl mx-auto mt-2 md:mt-3 px-2 md:px-4">
-                <article>
-                  <h2 className="sr-only">Getting Started with Vanity.box</h2>
-                  <Card className="bg-gradient-to-br from-gray-950 via-gray-900 to-black border-2 border-[#D4AF37]/40 rounded-3xl shadow-[0_20px_60px_rgba(212,175,55,0.15)] overflow-hidden backdrop-blur-xl">
-                    <CardContent className="p-4 md:p-6">
-                      <div className="space-y-3 md:space-y-4">
-                        <h3 className="text-lg md:text-2xl font-serif font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-clip-text text-transparent text-center mb-6 md:mb-8">
-                          {t('getting_started_with_vanity')}
-                        </h3>
-                        
-                        <section className="mb-6 sr-only">
-                          <p className="text-white/90 text-sm md:text-base leading-relaxed text-center px-2">
-                            Vanity.box is your premium Web3 digital identity platform. Create human-readable blockchain addresses across multiple protocols including ENS, DNS, and Aptos Names. Secure your unique subdomain on World Chain with verified World ID integration, enabling gasless transactions and human-priority blockspace. Build your decentralized identity for DeFi applications, NFT collections, and Web3 social platforms. Join thousands of users claiming their personalized digital identity in the decentralized web.
-                          </p>
-                        </section>
-                      
-                      <div className="space-y-4 md:space-y-6 flex flex-col items-center">
-                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
-                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
-                            1
-                          </div>
-                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            {t('getting_started_step1')}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
-                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
-                            2
-                          </div>
-                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            {t('getting_started_step2')}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
-                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
-                            3
-                          </div>
-                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            {t('getting_started_step3')}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
-                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
-                            4
-                          </div>
-                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            {t('getting_started_step4')}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-4 md:gap-5 max-w-md w-full">
-                          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center text-black font-bold text-base md:text-lg shadow-lg">
-                            5
-                          </div>
-                          <p className="text-white text-sm md:text-base font-medium pt-2 leading-relaxed">
-                            {t('getting_started_step5')}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                      {/* Learn More Button */}
-                      <div className="mt-4 md:mt-5 flex justify-center">
-                        <a
-                          href="https://ens.domains/ensv2"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group px-6 py-2 md:px-8 md:py-3 bg-gradient-to-r from-[#D4AF37] via-[#F4E4B7] to-[#D4AF37] bg-size-200 bg-pos-0 hover:bg-pos-100 text-black font-bold rounded-xl transition-all duration-500 hover:scale-105 shadow-[0_10px_40px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_50px_rgba(212,175,55,0.5)] text-sm md:text-base"
-                        >
-                          {t('learn_more')}
-                        </a>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </article>
-              </div>
-            )}
 
             {/* Web3.bio Profile Result - Social Media Style - Only show when search is active */}
             {web3BioProfile && hasSearched && (
@@ -1434,6 +1380,21 @@ export const SearchInterface = () => {
                               alt={result.name}
                               className="w-full h-full object-cover"
                             />
+                            {(result as any).spotifyUrl && (
+                              <a
+                                href={(result as any).spotifyUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                  <svg className="w-6 h-6 ml-0.5 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </div>
+                              </a>
+                            )}
                           </div>
                         </div>
                         

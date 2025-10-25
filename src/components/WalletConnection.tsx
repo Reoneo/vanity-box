@@ -114,6 +114,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     // Prevent immediate auto-reconnect after manual disconnect (this session only)
     sessionStorage.setItem('skipAutoAuth', '1');
     
+    // Remove backdrop when disconnecting
+    const backdrop = document.getElementById('wallet-dropdown-backdrop');
+    if (backdrop) backdrop.remove();
+    document.body.style.overflow = '';
+    
     // Dispatch event for Index component
     window.dispatchEvent(new CustomEvent('wallet-disconnected'));
   };
