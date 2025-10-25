@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
@@ -14,7 +13,6 @@ import efpAppIcon from '@/assets/efp-app-icon.png';
 import awesomeBoxIcon from '@/assets/awesome-box-icon.jpeg';
 
 const Index = () => {
-  const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
 
