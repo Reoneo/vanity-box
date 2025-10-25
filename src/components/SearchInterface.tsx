@@ -13,6 +13,7 @@ import { useTheme } from 'next-themes';
 import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { UserDomainsDisplay } from '@/components/UserDomainsDisplay';
+import { SpotifyPlayerModal } from '@/components/SpotifyPlayerModal';
 import { MiniKit } from '@worldcoin/minikit-js';
 import {
   DropdownMenu,
@@ -135,6 +136,9 @@ export const SearchInterface = () => {
   const [followingSearchQuery, setFollowingSearchQuery] = useState('');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoadingEFP, setIsLoadingEFP] = useState(false);
+  const [showSpotifyPlayer, setShowSpotifyPlayer] = useState(false);
+  const [selectedSpotifyUrl, setSelectedSpotifyUrl] = useState('');
+  const [selectedArtistName, setSelectedArtistName] = useState('');
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -581,6 +585,14 @@ export const SearchInterface = () => {
       {showFilterDropdown && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />
       )}
+      
+      {/* Spotify Player Modal */}
+      <SpotifyPlayerModal
+        isOpen={showSpotifyPlayer}
+        onClose={() => setShowSpotifyPlayer(false)}
+        spotifyUrl={selectedSpotifyUrl}
+        artistName={selectedArtistName}
+      />
       
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
@@ -1381,19 +1393,21 @@ export const SearchInterface = () => {
                               className="w-full h-full object-cover"
                             />
                             {(result as any).spotifyUrl && (
-                              <a
-                                href={(result as any).spotifyUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedSpotifyUrl((result as any).spotifyUrl);
+                                  setSelectedArtistName(result.name);
+                                  setShowSpotifyPlayer(true);
+                                }}
                                 className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
-                                onClick={(e) => e.stopPropagation()}
                               >
                                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                   <svg className="w-6 h-6 ml-0.5 text-black" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"/>
                                   </svg>
                                 </div>
-                              </a>
+                              </button>
                             )}
                           </div>
                         </div>
