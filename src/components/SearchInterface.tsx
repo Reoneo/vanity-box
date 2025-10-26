@@ -1414,7 +1414,7 @@ export const SearchInterface = () => {
                       <div className={`relative p-6 flex flex-col items-center text-center ${hasSpotify ? 'min-h-[380px]' : 'min-h-[320px]'}`}>
                         <div className={`relative ${hasSpotify ? 'mb-2 w-full' : 'mb-6'}`}>
                           {hasSpotify ? (
-                            <div className="w-full px-2 relative">
+                            <div className="w-full relative">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-2xl blur-md -z-10"></div>
                               <iframe
                                 src={`${(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}`}
