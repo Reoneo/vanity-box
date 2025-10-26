@@ -64,7 +64,7 @@ export const WorldIdAnimation: React.FC = () => {
           <Zap className="w-4 h-4 text-[#D4AF37] animate-pulse" />
           <div className="w-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
         </div>
-        <p className="text-sm md:text-base text-[#1e3a8a] dark:text-muted-foreground max-w-xl px-4">
+        <p className="text-sm md:text-base text-white dark:text-muted-foreground max-w-xl px-4">
           Experience the luxury of human-readable blockchain addresses
         </p>
       </div>
