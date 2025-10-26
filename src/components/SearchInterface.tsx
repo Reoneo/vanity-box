@@ -1150,7 +1150,7 @@ export const SearchInterface = () => {
                            
                            {/* POAP Icon with notification badge */}
                            <a
-                             href={`https://app.poap.xyz/scan/${web3BioProfile.address || searchQuery}`}
+                             href={`https://collectors.poap.xyz/scan/${web3BioProfile.address || searchQuery}`}
                              target="_blank"
                              rel="noopener noreferrer"
                              className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80 relative"
