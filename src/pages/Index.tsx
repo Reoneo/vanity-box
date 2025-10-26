@@ -41,15 +41,15 @@ const Index = () => {
       <Header />
       
       {/* Hero Section */}
-      <main className="flex-1 px-4 pt-24 md:pt-24 pb-32 relative z-10">
+      <main className="flex-1 px-4 pt-24 md:pt-24 pb-2 relative z-10">
         <article className="max-w-2xl mx-auto text-center h-full flex flex-col">
           <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
           <SearchInterface />
         </article>
       </main>
       
-      {/* Powered By Logos */}
-      <div className="relative z-[9998]">
+      {/* Powered By Logos - Fixed above footer */}
+      <div className="fixed bottom-[33px] left-0 right-0 z-[9998] bg-background/95 backdrop-blur-sm border-t border-border/50">
         <PoweredByLogos />
       </div>
       

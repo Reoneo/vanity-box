@@ -22,17 +22,17 @@ export const PoweredByLogos: React.FC = () => {
   const duplicatedLogos = [...logos, ...logos, ...logos];
 
   return (
-    <div className="w-full py-6 md:py-8 overflow-hidden bg-background/50 backdrop-blur-sm">
+    <div className="w-full py-3 md:py-4 overflow-hidden">
       {/* Heading */}
-      <div className="text-center space-y-3 mb-6">
+      <div className="text-center space-y-2 mb-3">
         <div className="flex items-center justify-center gap-2 w-full">
-          <div className="w-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent flex-shrink-0" />
-          <img src={ethLogo} alt="ETH" className="w-4 h-4 brightness-0 saturate-100 flex-shrink-0" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
-          <h3 className="text-lg md:text-xl font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent flex-shrink-0 whitespace-nowrap">
+          <div className="w-6 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent flex-shrink-0" />
+          <img src={ethLogo} alt="ETH" className="w-3 h-3 brightness-0 saturate-100 flex-shrink-0" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
+          <h3 className="text-base md:text-lg font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent flex-shrink-0 whitespace-nowrap">
             Powered By
           </h3>
-          <img src={ethLogo} alt="ETH" className="w-4 h-4 brightness-0 saturate-100 flex-shrink-0" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
-          <div className="w-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent flex-shrink-0" />
+          <img src={ethLogo} alt="ETH" className="w-3 h-3 brightness-0 saturate-100 flex-shrink-0" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
+          <div className="w-6 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent flex-shrink-0" />
         </div>
       </div>
 
@@ -49,7 +49,7 @@ export const PoweredByLogos: React.FC = () => {
                 src={logo.light}
                 alt={logo.alt}
                 className={cn(
-                  "h-8 md:h-10 w-auto object-contain dark:hidden",
+                  "h-6 md:h-7 w-auto object-contain dark:hidden",
                   logo.needsBorder && "border border-transparent"
                 )}
               />
@@ -58,7 +58,7 @@ export const PoweredByLogos: React.FC = () => {
                 src={logo.dark}
                 alt={logo.alt}
                 className={cn(
-                  "h-8 md:h-10 w-auto object-contain hidden dark:block",
+                  "h-6 md:h-7 w-auto object-contain hidden dark:block",
                   logo.needsBorder && "border border-white/20 rounded px-2 py-1"
                 )}
               />
