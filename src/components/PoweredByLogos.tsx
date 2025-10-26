@@ -57,7 +57,10 @@ export const PoweredByLogos: React.FC = () => {
               <img
                 src={logo.dark}
                 alt={logo.alt}
-                className="h-6 md:h-7 w-auto object-contain hidden dark:block"
+                className={cn(
+                  "w-auto object-contain hidden dark:block",
+                  logo.largerInLight ? "h-12 md:h-14" : "h-6 md:h-7"
+                )}
               />
             </div>
           ))}
