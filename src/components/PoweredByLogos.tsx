@@ -10,11 +10,11 @@ import poapLogo from '@/assets/poap-logo.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 
 const logos = [
-  { light: ensLogo, dark: ensLogo, alt: 'ENS', largerInLight: false },
-  { light: efpLogoLight, dark: efpLogoDark, alt: 'EFP', largerInLight: false },
-  { light: web3bioLogo, dark: web3bioLogo, alt: 'Web3.bio', largerInLight: false },
-  { light: namestoneLight, dark: namestoneDark, alt: 'NameStone', largerInLight: true },
-  { light: poapLogo, dark: poapLogo, alt: 'POAP', largerInLight: true },
+  { light: ensLogo, dark: ensLogo, alt: 'ENS', largerInLight: false, largerInDark: false },
+  { light: efpLogoLight, dark: efpLogoDark, alt: 'EFP', largerInLight: false, largerInDark: false },
+  { light: web3bioLogo, dark: web3bioLogo, alt: 'Web3.bio', largerInLight: false, largerInDark: true },
+  { light: namestoneLight, dark: namestoneDark, alt: 'NameStone', largerInLight: true, largerInDark: true },
+  { light: poapLogo, dark: poapLogo, alt: 'POAP', largerInLight: true, largerInDark: true },
 ];
 
 export const PoweredByLogos: React.FC = () => {
@@ -59,7 +59,7 @@ export const PoweredByLogos: React.FC = () => {
                 alt={logo.alt}
                 className={cn(
                   "w-auto object-contain hidden dark:block",
-                  logo.largerInLight ? "h-12 md:h-14" : "h-6 md:h-7"
+                  logo.largerInDark ? "h-12 md:h-14" : "h-6 md:h-7"
                 )}
               />
             </div>
