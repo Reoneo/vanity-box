@@ -42,7 +42,7 @@ import eth30315Avatar from '@/assets/30315-eth-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
-import poapLogo from '@/assets/poap-logo.png';
+import poapLogo from '@/assets/poap-icon.png';
 import spydaAvatar from '@/assets/spyda-avatar.jpeg';
 import flirtadAvatar from '@/assets/flirtad-avatar.jpeg';
 import prettyuglyAvatar from '@/assets/prettyugly-avatar.jpeg';
@@ -1161,16 +1161,16 @@ export const SearchInterface = () => {
                                </div>
                              ) : (
                                <>
-                                 <img 
-                                   src={poapLogo} 
-                                   alt="POAP" 
-                                   className="h-14 w-14 object-contain rounded-full"
-                                 />
-                                 {poapCount > 0 && (
-                                   <div className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center px-2 shadow-lg border-2 border-gray-900">
-                                     {poapCount}
-                                   </div>
-                                 )}
+                                  <img 
+                                    src={poapLogo} 
+                                    alt="POAP" 
+                                    className="h-14 w-14 object-contain"
+                                  />
+                                  {poapCount > 0 && (
+                                    <div className="absolute -top-1 -right-1 bg-gradient-to-br from-[#D4AF37] to-[#F4E4BC] text-black text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center px-2 shadow-lg border-2 border-gray-900">
+                                      {poapCount}
+                                    </div>
+                                  )}
                                </>
                              )}
                            </a>
