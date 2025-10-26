@@ -169,7 +169,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       id: "USDC" as PaymentMethod,
       name: "USDC",
       icon: usdcLogo,
-      rate: 1 / cryptoPrices.usdc, // $ → USDC
+      rate: 1, // USDC is 1:1 with USD, no conversion needed
     },
     {
       id: "ETH" as PaymentMethod,
@@ -194,7 +194,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   
   const totalPrice = (domainPrice * registrationYears) + effectiveNetworkFee;
   const grandTotal = totalPrice;
-  const convertedPrice = grandTotal * selectedMethod.rate;
+  
+  // For USDC, use exact dollar amount without conversion to prevent floating point errors
+  const convertedPrice = paymentMethod === "USDC" ? grandTotal : grandTotal * selectedMethod.rate;
   
   // Determine if this is a free mint (total below threshold)
   const isFree = grandTotal < EPSILON_FREE_USD;
