@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
 import vanityLogo from '../assets/vanity-logo.png';
+import vanityContactIcon from '../assets/vanity-contact-icon.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight } from 'lucide-react';
@@ -251,6 +252,19 @@ export const Header: React.FC = () => {
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Contact</h3>
             <div className="flex items-center gap-4">
+              <a 
+                href="https://vanity.box/vanity.box"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:scale-110 transition-transform duration-200"
+                aria-label="Vanity.box"
+              >
+                <img 
+                  src={vanityContactIcon} 
+                  alt="Vanity.box" 
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              </a>
               <a 
                 href="mailto:R@vanity.box"
                 className="hover:scale-110 transition-transform duration-200"
