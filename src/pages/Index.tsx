@@ -43,17 +43,17 @@ const Index = () => {
         <Header />
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-24 md:pt-24 pb-2 relative z-10">
-          <article className="max-w-2xl mx-auto text-center h-full flex flex-col">
+        <main className="flex-1 px-4 pt-24 md:pt-24 pb-2 relative z-10 flex flex-col min-h-[calc(100vh-140px)]">
+          <article className="max-w-2xl mx-auto text-center w-full flex-1 flex flex-col">
             <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
             <SearchInterface />
           </article>
+          
+          {/* Powered By Logos - Below content */}
+          <div className="w-full mt-auto border-l-2 border-r-2 border-[#D4AF37] -mx-4">
+            <PoweredByLogos />
+          </div>
         </main>
-        
-        {/* Powered By Logos - Fixed above footer */}
-        <div className="fixed bottom-[33px] left-0 right-0 z-[9998] bg-background/95 backdrop-blur-sm border-l-2 border-r-2 border-[#D4AF37]">
-          <PoweredByLogos />
-        </div>
         
         <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
