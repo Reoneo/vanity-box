@@ -371,7 +371,7 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Artist',
-        spotifyUrl: 'https://spotify.link/KOHBCPLXKXb',
+        spotifyUrl: 'https://open.spotify.com/track/4ZYYaXi1AnuBD5FfVLUqvX',
         selectable: true,
         enabled: true
       },
@@ -382,7 +382,7 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Artist',
-        spotifyUrl: 'https://spotify.link/AnVAT2FXKX',
+        spotifyUrl: 'https://open.spotify.com/track/3NGC2t1KnSOFcDQv8EI2Pl',
         selectable: true,
         enabled: true
       },
