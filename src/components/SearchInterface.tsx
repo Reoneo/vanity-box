@@ -620,14 +620,6 @@ export const SearchInterface = () => {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />
       )}
       
-      {/* Spotify Player Modal */}
-      <SpotifyPlayerModal
-        isOpen={showSpotifyPlayer}
-        onClose={() => setShowSpotifyPlayer(false)}
-        spotifyUrl={selectedSpotifyUrl}
-        artistName={selectedArtistName}
-      />
-      
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
         {showMintInterface && selectedResult ? (
@@ -1421,27 +1413,42 @@ export const SearchInterface = () => {
                         <div className="relative mb-6">
                           <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
                           <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
-                            <img 
-                              src={result.imageUrl} 
-                              alt={result.name}
-                              className="w-full h-full object-cover"
-                            />
-                            {(result as any).spotifyUrl && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedSpotifyUrl((result as any).spotifyUrl);
-                                  setSelectedArtistName(result.name);
-                                  setShowSpotifyPlayer(true);
-                                }}
-                                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
-                              >
-                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                  <svg className="w-6 h-6 ml-0.5 text-black" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z"/>
-                                  </svg>
-                                </div>
-                              </button>
+                            {(result as any).spotifyUrl && showSpotifyPlayer && selectedArtistName === result.name ? (
+                              <iframe
+                                src={(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}
+                                width="112"
+                                height="112"
+                                frameBorder="0"
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                loading="lazy"
+                                className="w-full h-full rounded-full"
+                                style={{ border: 'none' }}
+                              />
+                            ) : (
+                              <>
+                                <img 
+                                  src={result.imageUrl} 
+                                  alt={result.name}
+                                  className="w-full h-full object-cover"
+                                />
+                                {(result as any).spotifyUrl && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedSpotifyUrl((result as any).spotifyUrl);
+                                      setSelectedArtistName(result.name);
+                                      setShowSpotifyPlayer(true);
+                                    }}
+                                    className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity group"
+                                  >
+                                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                      <svg className="w-6 h-6 ml-0.5 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                      </svg>
+                                    </div>
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
