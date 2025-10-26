@@ -60,9 +60,34 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
           domain.address.toLowerCase() === walletAddress.toLowerCase()
         );
         
-        // Fetch txHash from Namestone API for each domain
+        // Fetch expiry dates from minted_domains table
+        const { data: mintedData, error: mintedError } = await supabase
+          .from('minted_domains')
+          .select('full_name, registration_years, expiry_date, registration_date')
+          .eq('wallet_address', walletAddress.toLowerCase());
+
+        if (mintedError) {
+          console.error('Error fetching minted domains:', mintedError);
+        }
+
+        // Create a map for quick lookups
+        const expiryMap = new Map<string, { expiry_date: string; registration_years: number; registration_date: string }>();
+        if (mintedData) {
+          mintedData.forEach(md => {
+            expiryMap.set(md.full_name.toLowerCase(), {
+              expiry_date: md.expiry_date,
+              registration_years: md.registration_years,
+              registration_date: md.registration_date
+            });
+          });
+        }
+        
+        // Fetch txHash from Namestone API for each domain and merge with expiry data
         const domainsWithTx = await Promise.all(
           filteredDomains.map(async (d: Domain) => {
+            const fullName = `${d.name}.${d.domain}`.toLowerCase();
+            const mintedInfo = expiryMap.get(fullName);
+            
             try {
               const namestoneApiUrl = `https://api.namestone.xyz/txs?name=${d.name}.${d.domain}`;
               const response = await fetch(namestoneApiUrl);
@@ -73,6 +98,9 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                   return {
                     ...d,
                     txHash: data[0].tx_hash,
+                    expiry_date: mintedInfo?.expiry_date,
+                    registration_years: mintedInfo?.registration_years,
+                    created_at: mintedInfo?.registration_date || d.created_at,
                   };
                 }
               }
@@ -85,6 +113,9 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             return {
               ...d,
               txHash: txMap[key] || d.txHash,
+              expiry_date: mintedInfo?.expiry_date,
+              registration_years: mintedInfo?.registration_years,
+              created_at: mintedInfo?.registration_date || d.created_at,
             };
           })
         );

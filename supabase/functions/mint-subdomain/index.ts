@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain, walletAddress, txHash, domain, registrationYears = 1 } = await req.json();
+    const { subdomain, walletAddress, txHash, domain, registrationYears = 1, paymentMethod, paymentAmount, networkFee } = await req.json();
 
     console.log('==========================================');
     console.log('🚀 STARTING SUBDOMAIN MINTING PROCESS');
@@ -44,6 +44,8 @@ serve(async (req) => {
     console.log('🔗 Transaction Hash:', txHash || 'N/A (Free Mint)');
     console.log('🌐 Domain:', domain);
     console.log('📅 Registration Years:', registrationYears);
+    console.log('💳 Payment Method:', paymentMethod || 'N/A');
+    console.log('💰 Payment Amount:', paymentAmount || 'N/A');
     console.log('==========================================');
 
     if (!subdomain || !walletAddress || !domain) {
@@ -123,6 +125,41 @@ serve(async (req) => {
     const namestoneData = await namestoneResponse.json();
     console.log('✅ Namestone response:', JSON.stringify(namestoneData, null, 2));
     console.log('✅ Subdomain registered successfully via Namestone');
+
+    // Log the minted domain to the database
+    console.log('\n✅ STEP 2.5: Logging minted domain to database');
+    try {
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      const { error: insertError } = await supabase
+        .from('minted_domains')
+        .insert({
+          subdomain: subdomainLabel,
+          domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
+          full_name: subdomain.toLowerCase(),
+          wallet_address: walletAddress.toLowerCase(),
+          registration_years: registrationYears,
+          registration_date: new Date().toISOString(),
+          expiry_date: expiryDate.toISOString(),
+          tx_hash: txHash || null,
+          payment_method: paymentMethod || null,
+          payment_amount: paymentAmount || null,
+          network_fee: networkFee || null,
+        });
+
+      if (insertError) {
+        console.error('❌ Failed to log minted domain:', insertError);
+        // Don't fail the entire mint if logging fails
+      } else {
+        console.log('✅ Minted domain logged to database successfully');
+      }
+    } catch (dbError) {
+      console.error('❌ Error logging to database:', dbError);
+      // Don't fail the entire mint if logging fails
+    }
 
     // Step 3: Wrap the subdomain using Durin on World Chain
     console.log('\n✅ STEP 3: Durin Wrapping on World Chain');

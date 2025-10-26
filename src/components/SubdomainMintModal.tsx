@@ -377,7 +377,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               walletAddress, 
               txHash: txHash || 'free-mint-' + Date.now(),
               domain, // Pass the domain to the edge function
-              registrationYears // Pass registration years for expiry calculation
+              registrationYears, // Pass registration years for expiry calculation
+              paymentMethod, // Pass payment method
+              paymentAmount: convertedPrice, // Pass payment amount
+              networkFee: effectiveNetworkFee // Pass network fee
             },
           }),
           new Promise<never>((_, reject) => 
@@ -521,7 +524,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                   {registrationYears} {registrationYears > 1 ? t('years_registration') : t('year_registration')}
                 </span>
                 <span className="font-medium text-[#D4AF37]">
-                  {domainPrice === 0 ? "FREE" : `$${(domainPrice * registrationYears).toFixed(2)}`}
+                  ${(domainPrice * registrationYears).toFixed(2)}
                 </span>
               </div>
 
