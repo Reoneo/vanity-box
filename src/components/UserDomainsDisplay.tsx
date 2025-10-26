@@ -208,62 +208,64 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
 
   return (
     <div className="space-y-4">
+      <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-6">My ID's</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {domains.map((domain, index) => (
           <div 
             key={`${domain.name}-${index}`}
-            className="relative w-full h-full min-h-[280px] overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]"
+            className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl p-6"
           >
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl" />
-              <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-[#D4AF37]/5 rounded-full blur-3xl" />
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-20 h-20 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
+                <img
+                  src={smithCashAvatar}
+                  alt={domain.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
+                  {domain.name}.{domain.domain}
+                </h3>
+                <p className="font-mono text-sm text-gray-300 break-all">
+                  {domain.address}
+                </p>
+              </div>
             </div>
 
-            <div className="relative z-10 p-6 flex flex-col h-full">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
-                  <img
-                    src={smithCashAvatar}
-                    alt={domain.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-lg text-white truncate mb-2">
-                    {domain.name}.{domain.domain}
-                  </h4>
-                  <p className="font-mono text-sm text-gray-300">
-                    {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
-                  </p>
-                </div>
-              </div>
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <Button
+                onClick={() => handleManageDomain(domain, 'edit')}
+                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </Button>
 
-              <div className="flex-1 space-y-3">
-                {domain.created_at && (
-                  <div className="text-sm text-gray-400">
-                    Registered: {new Date(domain.created_at).toLocaleDateString()}
-                  </div>
-                )}
-                {domain.expiry_date && (
-                  <div className="text-sm">
-                    <span className="text-gray-400">Expires:</span>
-                    <span className={`ml-1 ${new Date(domain.expiry_date) < new Date() ? 'text-red-400 font-semibold' : 'text-white'}`}>
-                      {new Date(domain.expiry_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
+              <Button
+                variant="outline"
+                className="w-full border-gray-500 text-gray-400 hover:bg-gray-800"
+                disabled
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Set Primary Domain
+              </Button>
 
-              <div className="mt-4">
-                <Button
-                  onClick={() => handleManageDomain(domain, 'edit')}
-                  size="sm"
-                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-                >
-                  <Pencil className="w-3 h-3 mr-1" />
-                  Edit
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                className="w-full border-gray-500 text-gray-400 hover:bg-gray-800"
+                disabled
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Transfer
+              </Button>
             </div>
           </div>
         ))}
