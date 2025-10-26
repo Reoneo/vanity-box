@@ -37,8 +37,8 @@ export const PoweredByLogos: React.FC = () => {
       </div>
 
       {/* Scrolling Logos */}
-      <div className="relative">
-        <div className="flex gap-8 md:gap-12 animate-scroll">
+      <div className="relative overflow-hidden w-full">
+        <div className="flex gap-8 md:gap-12 animate-scroll w-max">
           {duplicatedLogos.map((logo, index) => (
             <div
               key={index}

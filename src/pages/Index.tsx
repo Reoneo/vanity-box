@@ -50,7 +50,7 @@ const Index = () => {
           </article>
           
           {/* Powered By Logos - Below content */}
-          <div className="w-full mt-auto border-l-2 border-r-2 border-[#D4AF37] -mx-4">
+          <div className="w-full mt-auto">
             <PoweredByLogos />
           </div>
         </main>
