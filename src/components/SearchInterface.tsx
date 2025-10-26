@@ -1458,8 +1458,15 @@ export const SearchInterface = () => {
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Set filter to only this protocol and apply
-                                const newFilters = { protocol: [cat], club: [] };
+                                // Toggle protocol: add if not present, remove if present
+                                const newProtocols = filters.protocol.includes(cat)
+                                  ? filters.protocol.filter(p => p !== cat)
+                                  : [...filters.protocol, cat];
+                                
+                                const newFilters = { 
+                                  protocol: newProtocols, 
+                                  club: filters.club // Keep existing club filters
+                                };
                                 setFilters(newFilters);
                                 setSearchQuery('');
                                 // Manually trigger filter application
@@ -1493,8 +1500,15 @@ export const SearchInterface = () => {
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Set filter to only this club and apply
-                                const newFilters = { protocol: [], club: [clubName] };
+                                // Toggle club: add if not present, remove if present
+                                const newClubs = filters.club.includes(clubName)
+                                  ? filters.club.filter(c => c !== clubName)
+                                  : [...filters.club, clubName];
+                                
+                                const newFilters = { 
+                                  protocol: filters.protocol, // Keep existing protocol filters
+                                  club: newClubs 
+                                };
                                 setFilters(newFilters);
                                 setSearchQuery('');
                                 // Manually trigger filter application
