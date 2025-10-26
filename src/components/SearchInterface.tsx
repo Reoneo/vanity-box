@@ -1406,25 +1406,39 @@ export const SearchInterface = () => {
               const hasSpotify = !!(result as any).spotifyUrl;
               
               return (
-                <div key={index} className={`perspective-1000 ${hasSpotify ? 'min-h-[420px]' : 'min-h-[320px]'}`}>
-                  <div className={`relative w-full h-full ${hasSpotify ? 'min-h-[420px]' : 'min-h-[320px]'} transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                <div key={index} className={`perspective-1000 ${hasSpotify ? 'min-h-[500px]' : 'min-h-[320px]'}`}>
+                  <div className={`relative w-full h-full ${hasSpotify ? 'min-h-[500px]' : 'min-h-[320px]'} transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                       
-                      <div className={`relative p-6 flex flex-col items-center text-center ${hasSpotify ? 'min-h-[420px]' : 'min-h-[320px]'}`}>
-                        <div className={`relative ${hasSpotify ? 'mb-4' : 'mb-6'}`}>
+                      <div className={`relative p-6 flex flex-col items-center text-center ${hasSpotify ? 'min-h-[500px]' : 'min-h-[320px]'}`}>
+                        <div className={`relative ${hasSpotify ? 'mb-3 w-full' : 'mb-6'}`}>
                           {hasSpotify ? (
-                            <div className="w-full px-4 relative">
+                            <div className="w-full px-3 relative">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-2xl blur-md -z-10"></div>
                               <iframe
-                                src={(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}
+                                id={`spotify-${index}`}
+                                src={`${(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}&autoplay=0`}
                                 width="100%"
-                                height="232"
+                                height="352"
                                 frameBorder="0"
-                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                allow="encrypted-media; fullscreen; picture-in-picture"
                                 loading="lazy"
                                 className="rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-sm"
                                 style={{ border: 'none' }}
+                                onLoad={(e) => {
+                                  const iframe = e.currentTarget;
+                                  iframe.addEventListener('click', () => {
+                                    // Pause all other Spotify iframes
+                                    const allSpotifyIframes = document.querySelectorAll('iframe[id^="spotify-"]');
+                                    allSpotifyIframes.forEach((otherIframe) => {
+                                      if (otherIframe !== iframe && otherIframe instanceof HTMLIFrameElement) {
+                                        const src = otherIframe.src;
+                                        otherIframe.src = src; // Reload iframe to stop playback
+                                      }
+                                    });
+                                  });
+                                }}
                               />
                             </div>
                           ) : (
@@ -1441,11 +1455,11 @@ export const SearchInterface = () => {
                           )}
                         </div>
                         
-                         <h3 className="font-mono text-xl font-bold text-white mb-3 leading-tight px-4 w-full break-words flex items-center justify-center">
+                         <h3 className={`font-mono text-xl font-bold text-white ${hasSpotify ? 'mb-2' : 'mb-3'} leading-tight px-4 w-full break-words flex items-center justify-center`}>
                            {displayQuery ? `${displayQuery}.${result.name}` : result.name}
                          </h3>
                         
-                        <div className={`flex items-center justify-center gap-1 ${hasSpotify ? 'mb-4' : 'mb-2'} overflow-x-auto max-w-full flex-nowrap`}>
+                        <div className={`flex items-center justify-center gap-1 ${hasSpotify ? 'mb-3' : 'mb-4'} overflow-x-auto max-w-full flex-nowrap`}>
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
                              <Badge 
                               key={`cat-${catIndex}`}
@@ -1509,7 +1523,7 @@ export const SearchInterface = () => {
                         </div>
                         
                          <Button 
-                           className={`w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base ${hasSpotify ? 'py-5' : 'py-6'} rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
+                           className={`w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base ${hasSpotify ? 'py-4' : 'py-6'} rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
                            onClick={() => handleMint(result)}
                            disabled={isDisabled}
                          >
