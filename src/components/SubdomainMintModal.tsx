@@ -501,9 +501,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           <div className="flex flex-col items-center gap-1">
             <div className="text-4xl font-bold text-[#D4AF37]">
               <>
-                {paymentMethod === "USDC" && `${grandTotal.toFixed(effectiveNetworkFee < 0.01 ? 4 : 2)} USDC`}
-                {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
-                {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
+                {paymentMethod === "USDC" && `${((domainPrice * registrationYears) * selectedMethod.rate).toFixed(2)} USDC`}
+                {paymentMethod === "ETH" && `${((domainPrice * registrationYears) * selectedMethod.rate).toFixed(6)} ETH`}
+                {paymentMethod === "WLD" && `${((domainPrice * registrationYears) * selectedMethod.rate).toFixed(4)} WLD`}
               </>
             </div>
             {isLoadingPrices && (
@@ -528,7 +528,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">{t('network_fee')} (World Chain)</span>
                 <span className="font-medium text-[#D4AF37]">
-                  {effectiveNetworkFee === 0 ? "FREE" : `$${effectiveNetworkFee.toFixed(4)}`}
+                  {effectiveNetworkFee === 0 ? "FREE" : effectiveNetworkFee < 0.03 ? "< $0.03" : `$${effectiveNetworkFee.toFixed(2)}`}
                 </span>
               </div>
 
