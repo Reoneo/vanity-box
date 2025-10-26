@@ -541,7 +541,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-gray-900 dark:text-white">{t('total')}</span>
-                <span className="font-bold text-gray-900 dark:text-white">${grandTotal.toFixed(effectiveNetworkFee < 0.01 ? 4 : 2)}</span>
+                <span className="font-bold text-gray-900 dark:text-white">${((domainPrice * registrationYears) + 0.03).toFixed(2)}</span>
               </div>
             </div>
 

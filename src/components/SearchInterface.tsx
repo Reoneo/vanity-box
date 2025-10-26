@@ -1486,6 +1486,16 @@ export const SearchInterface = () => {
                                 loading="lazy"
                                 className="rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-sm"
                                 style={{ border: 'none' }}
+                                onLoad={(e) => {
+                                  const iframe = e.currentTarget;
+                                  // Mark as playing when iframe loads (user will click play)
+                                  const checkPlay = () => {
+                                    import('@/utils/spotifyManager').then(({ spotifyManager }) => {
+                                      spotifyManager.setPlaying(true);
+                                    });
+                                  };
+                                  iframe.addEventListener('click', checkPlay);
+                                }}
                               />
                             </div>
                           ) : (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
+import { SpotifyPauseButton } from './SpotifyPauseButton';
 import vanityLogo from '../assets/vanity-logo.png';
 import vanityContactIcon from '../assets/vanity-contact-icon.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -108,16 +109,24 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {/* Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+              {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
               {showSearchIcon && !isMintWindowOpen && !showMyIds && (
-                <button
-                  type="button"
-                  aria-label="Scroll to search"
-                  onClick={scrollToSearch}
-                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                >
-                  <Search className="w-5 h-5 text-black" />
-                </button>
+                <>
+                  <SpotifyPauseButton />
+                  <button
+                    type="button"
+                    aria-label="Scroll to search"
+                    onClick={scrollToSearch}
+                    className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                  >
+                    <Search className="w-5 h-5 text-black" />
+                  </button>
+                </>
+              )}
+              
+              {/* Spotify Pause when search icon is not visible */}
+              {!showSearchIcon && (
+                <SpotifyPauseButton />
               )}
             </div>
           )}
@@ -141,16 +150,24 @@ export const Header: React.FC = () => {
                   </button>
                 </TriggerOrClose>
 
-            {/* Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
             {showSearchIcon && !isMintWindowOpen && !showMyIds && (
-              <button
-                type="button"
-                aria-label="Scroll to search"
-                onClick={scrollToSearch}
-                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-              >
-                <Search className="w-5 h-5 text-black" />
-              </button>
+              <>
+                <SpotifyPauseButton />
+                <button
+                  type="button"
+                  aria-label="Scroll to search"
+                  onClick={scrollToSearch}
+                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                >
+                  <Search className="w-5 h-5 text-black" />
+                </button>
+              </>
+            )}
+            
+            {/* Spotify Pause when search icon is not visible */}
+            {!showSearchIcon && (
+              <SpotifyPauseButton />
             )}
               </div>
 
@@ -186,16 +203,24 @@ export const Header: React.FC = () => {
               </button>
             </TriggerOrClose>
 
-            {/* Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
             {showSearchIcon && !isMintWindowOpen && !showMyIds && (
-              <button
-                type="button"
-                aria-label="Scroll to search"
-                onClick={scrollToSearch}
-                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-              >
-                <Search className="w-5 h-5 text-black" />
-              </button>
+              <>
+                <SpotifyPauseButton />
+                <button
+                  type="button"
+                  aria-label="Scroll to search"
+                  onClick={scrollToSearch}
+                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                >
+                  <Search className="w-5 h-5 text-black" />
+                </button>
+              </>
+            )}
+            
+            {/* Spotify Pause when search icon is not visible */}
+            {!showSearchIcon && (
+              <SpotifyPauseButton />
             )}
           </div>
 
