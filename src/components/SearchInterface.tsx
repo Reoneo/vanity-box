@@ -168,6 +168,12 @@ export const SearchInterface = () => {
     setShowMintInterface(false);
     window.dispatchEvent(new CustomEvent('show-my-ids'));
   };
+
+  const handleShowSearch = () => {
+    setShowMyIDs(false);
+    setWeb3BioProfile(null);
+    setHasSearched(false);
+  };
     
     window.addEventListener('wallet-connected', handleWalletChange as EventListener);
     window.addEventListener('wallet-disconnected', () => {
@@ -175,6 +181,7 @@ export const SearchInterface = () => {
       setShowMyIDs(false);
     });
     window.addEventListener('show-my-ids', handleShowMyIDs);
+    window.addEventListener('show-search', handleShowSearch);
     
     return () => {
       window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
@@ -183,6 +190,7 @@ export const SearchInterface = () => {
         setShowMyIDs(false);
       });
       window.removeEventListener('show-my-ids', handleShowMyIDs);
+      window.removeEventListener('show-search', handleShowSearch);
     };
   }, []);
 
@@ -737,25 +745,6 @@ export const SearchInterface = () => {
             />
             {/* Main Heading - hidden only when web3.bio profile is displayed */}
             {!showMintInterface && !showMyIDs && !web3BioProfile && <PersonalizedHeader user={null} isProfileDisplayed={!!web3BioProfile} />}
-            
-            {/* My IDs Header with Back Button - shown when displaying IDs */}
-            {!showMintInterface && showMyIDs && (
-              <div className="space-y-4">
-                <button
-                  onClick={() => {
-                    setShowMyIDs(false);
-                    window.dispatchEvent(new Event('back-to-domains'));
-                  }}
-                  className="flex items-center gap-2 text-gray-900 dark:text-white hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span className="font-medium">{t('back')}</span>
-                </button>
-                <h1 className="text-3xl md:text-5xl font-bold text-center text-gray-900 dark:text-white whitespace-nowrap">
-                  {t('my_ids')}
-                </h1>
-              </div>
-            )}
             
             {/* Search bar container - hidden when showing My IDs */}
             {!showMyIDs && (

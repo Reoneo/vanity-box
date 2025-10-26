@@ -249,6 +249,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     window.dispatchEvent(new CustomEvent('back-to-domains'));
   };
 
+  const handleShowSearch = () => {
+    window.dispatchEvent(new CustomEvent('show-search'));
+  };
+
   const handleSetPrimaryDomain = () => {
     toast.info('Set Primary Domain feature coming soon!');
   };

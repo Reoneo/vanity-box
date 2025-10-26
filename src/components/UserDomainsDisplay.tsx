@@ -206,8 +206,21 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     return <DomainEditPanel domain={selectedDomain} />;
   }
 
+  const handleBackClick = () => {
+    window.dispatchEvent(new CustomEvent('show-search'));
+  };
+
   return (
     <div className="space-y-4">
+      <button 
+        onClick={handleBackClick}
+        className="flex items-center gap-2 text-foreground hover:text-primary mb-4"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
       <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-6">My ID's</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {domains.map((domain, index) => (
