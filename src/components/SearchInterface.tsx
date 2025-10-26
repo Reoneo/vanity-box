@@ -1411,27 +1411,31 @@ export const SearchInterface = () => {
                       
                       <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
                         <div className="relative mb-6">
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
-                          <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
-                            {(result as any).spotifyUrl ? (
+                          {(result as any).spotifyUrl ? (
+                            <div className="w-full max-w-[300px] mx-auto">
                               <iframe
                                 src={(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}
-                                width="112"
-                                height="112"
+                                width="100%"
+                                height="152"
                                 frameBorder="0"
                                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                                 loading="lazy"
-                                className="w-full h-full rounded-full"
+                                className="rounded-lg"
                                 style={{ border: 'none' }}
                               />
-                            ) : (
-                              <img 
-                                src={result.imageUrl} 
-                                alt={result.name}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
-                          </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
+                              <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
+                                <img 
+                                  src={result.imageUrl} 
+                                  alt={result.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                         
                          <h3 className="font-mono text-xl font-bold text-white mb-4 leading-tight px-4 w-full break-words flex items-center justify-center">
