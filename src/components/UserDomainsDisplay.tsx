@@ -20,6 +20,8 @@ interface Domain {
   updated_at?: string;
   isWrapped?: boolean;
   txHash?: string;
+  registration_years?: number; // Years registered for
+  expiry_date?: string; // Calculated expiry date
 }
 
 interface UserDomainsDisplayProps {
@@ -227,6 +229,14 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 {domain.created_at && (
                   <div className="text-sm text-gray-400">
                     Registered: {new Date(domain.created_at).toLocaleDateString()}
+                  </div>
+                )}
+                {domain.expiry_date && (
+                  <div className="text-sm">
+                    <span className="text-gray-400">Expires:</span>
+                    <span className={`ml-1 ${new Date(domain.expiry_date) < new Date() ? 'text-red-400 font-semibold' : 'text-white'}`}>
+                      {new Date(domain.expiry_date).toLocaleDateString()}
+                    </span>
                   </div>
                 )}
               </div>

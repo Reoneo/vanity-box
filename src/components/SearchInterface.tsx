@@ -3,6 +3,7 @@ import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, M
 import { SiDiscord } from 'react-icons/si';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -406,6 +407,14 @@ export const SearchInterface = () => {
   const handleSearch = async (queryOverride?: string) => {
     const trimmedQuery = (queryOverride || searchQuery).trim();
     if (!trimmedQuery) return;
+    
+    // Check if wallet is connected - if not, trigger authentication
+    if (!walletAddress) {
+      toast.error("Please connect your wallet to search");
+      // Trigger wallet connection via custom event
+      window.dispatchEvent(new Event('trigger-wallet-connect'));
+      return;
+    }
     
     console.log('Search start', { query: trimmedQuery });
     setShowFilterDropdown(false);

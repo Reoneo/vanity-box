@@ -36,7 +36,19 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     } else {
       console.log('❌ Not running in World App - MiniKit is not available');
     }
-  }, []);
+
+    // Listen for wallet connection trigger from search
+    const handleTriggerConnect = () => {
+      if (!user) {
+        handleConnect();
+      }
+    };
+
+    window.addEventListener('trigger-wallet-connect', handleTriggerConnect);
+    return () => {
+      window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
+    };
+  }, [user]);
 
   // Remove auto-connect - users must manually connect
 

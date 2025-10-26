@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.get-domain-api-key]
 verify_jwt = false
+
+[functions.cleanup-expired-domains]
+verify_jwt = false

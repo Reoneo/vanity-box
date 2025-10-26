@@ -376,7 +376,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               subdomain, 
               walletAddress, 
               txHash: txHash || 'free-mint-' + Date.now(),
-              domain // Pass the domain to the edge function
+              domain, // Pass the domain to the edge function
+              registrationYears // Pass registration years for expiry calculation
             },
           }),
           new Promise<never>((_, reject) => 
