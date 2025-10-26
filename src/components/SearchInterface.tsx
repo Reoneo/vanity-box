@@ -43,6 +43,8 @@ import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
 import spydaAvatar from '@/assets/spyda-avatar.jpeg';
 import flirtadAvatar from '@/assets/flirtad-avatar.jpeg';
+import prettyuglyAvatar from '@/assets/prettyugly-avatar.jpeg';
+import sanAndreasAvatar from '@/assets/sanandreas-avatar.jpeg';
 import { DynamicMetaTags } from '@/components/DynamicMetaTags';
 import noResultsGif from '@/assets/no-results.gif';
 
@@ -177,8 +179,8 @@ export const SearchInterface = () => {
     };
   }, []);
 
-  const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
-  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname', 'Startup', 'Artist'];
+  const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS', 'SNS.iD'];
+  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname', 'Startup', 'Artist', 'Misc', 'Gaming'];
 
   // Auto-search when username is in URL
   useEffect(() => {
@@ -376,6 +378,26 @@ export const SearchInterface = () => {
         spotifyUrl: 'https://spotify.link/AnVAT2FXKX',
         selectable: true,
         enabled: true
+      },
+      {
+        name: 'PrettyUgly.sol',
+        description: t('desc_prettyugly'),
+        imageUrl: prettyuglyAvatar,
+        price: 5,
+        category: 'SNS.iD',
+        club: 'Misc',
+        selectable: false,
+        enabled: false
+      },
+      {
+        name: 'SanAndreas.sol',
+        description: t('desc_sanandreas'),
+        imageUrl: sanAndreasAvatar,
+        price: 5,
+        category: 'SNS.iD',
+        club: 'Gaming',
+        selectable: false,
+        enabled: false
       }
     ];
     return allResults;
@@ -1418,13 +1440,14 @@ export const SearchInterface = () => {
                         
                         <div className="flex items-center justify-center gap-1 mb-2 overflow-x-auto max-w-full flex-nowrap">
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
-                            <Badge 
+                             <Badge 
                               key={`cat-${catIndex}`}
                               className={cn(
                                 "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity",
                                 cat === 'ENS' && "bg-transparent text-white border-[#D4AF37]",
                                 cat === 'DNS' && "bg-transparent text-white border-blue-500",
-                                cat === 'Aptos Names' && "bg-transparent text-white border-purple-500"
+                                cat === 'Aptos Names' && "bg-transparent text-white border-purple-500",
+                                cat === 'SNS.iD' && "bg-transparent text-white border-green-500"
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();

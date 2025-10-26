@@ -186,6 +186,8 @@ function getTranslations(language: Language): Record<string, string> {
         "A crypto-focused digital identity for blockchain enthusiasts and altcoin traders — perfect for creating decentralized finance subdomains.",
       desc_spyda: "Hip-hop artist and producer bringing authentic sounds to Web3 — explore the music and secure your digital identity.",
       desc_flirtad: "Rising artist blending modern beats with creative storytelling — join the Artist Club and claim your unique subdomain.",
+      desc_prettyugly: "Unique digital identity on Solana — combining art and blockchain culture on SNS.iD protocol.",
+      desc_sanandreas: "Gaming-focused identity on Solana — bringing classic culture to Web3 on SNS.iD protocol.",
       my_ids: "My ID's",
       register: "Register",
       edit: "Edit",
