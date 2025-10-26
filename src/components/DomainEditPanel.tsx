@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,6 +26,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [transferAddress, setTransferAddress] = useState('');
   const [activeTab, setActiveTab] = useState('records');
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // ENS standard text records
   const [ensRecords, setEnsRecords] = useState({
@@ -147,16 +149,20 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     }
   };
 
-  const handleTransfer = async () => {
-    if (!transferAddress) {
+  const handleTransfer = () => {
+    if (!transferAddress.trim()) {
       toast.error('Please enter a transfer address');
       return;
     }
+    setIsConfirmOpen(true);
+  };
 
-    const confirmed = window.confirm(
-      `Are you sure you want to transfer ${domain.name}.${domain.domain} to ${transferAddress}? This action cannot be undone.`
-    );
-    if (!confirmed) return;
+  const confirmTransferAndSend = async () => {
+    const to = transferAddress.trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(to)) {
+      toast.error('Invalid Ethereum address');
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -165,13 +171,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       const subdomain = `${domain.name}.${domain.domain}`;
 
       const { data, error } = await supabase.functions.invoke('transfer-namestone-name', {
-        body: { subdomain, toAddress: transferAddress },
+        body: { subdomain, toAddress: to },
       });
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (data?.success) {
         toast.success('Domain transferred successfully!');
@@ -179,7 +182,6 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
         window.dispatchEvent(new CustomEvent('domains-updated'));
         window.dispatchEvent(new CustomEvent('back-to-domains'));
       } else {
-        console.error('Transfer failed:', data);
         throw new Error(data?.error || 'Failed to transfer domain');
       }
     } catch (error) {
@@ -187,6 +189,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       toast.error(error instanceof Error ? error.message : 'Failed to transfer domain');
     } finally {
       setIsLoading(false);
+      setIsConfirmOpen(false);
     }
   };
 
@@ -239,10 +242,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6">
+    <div className="w-full max-w-2xl mx-auto bg-[hsl(var(--card))] dark:bg-[hsl(var(--card))] border border-border rounded-2xl shadow-lg p-6 luxury-card luxury-glow">
       {/* Domain Header */}
       <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-700">
-        <div className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
+        <div className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-border overflow-hidden bg-black/30 backdrop-blur-sm">
           <img
             src={smithCashAvatar}
             alt={domain.name}
@@ -260,9 +263,9 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-800">
-          <TabsTrigger value="records" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Records</TabsTrigger>
-          <TabsTrigger value="transfer" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Transfer</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-secondary dark:bg-muted">
+          <TabsTrigger value="records" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Records</TabsTrigger>
+          <TabsTrigger value="transfer" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Transfer</TabsTrigger>
         </TabsList>
 
         <TabsContent value="records" className="space-y-4 mt-4">
@@ -275,7 +278,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
                   value={value}
                   onChange={(e) => setEnsRecords({ ...ensRecords, [key]: e.target.value })}
                   placeholder={`Enter ${key}`}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-secondary dark:bg-muted border-border text-foreground"
                 />
               </div>
             ))}
@@ -285,8 +288,8 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
               
               {customRecords.map((record, index) => (
                 <div key={index} className="flex gap-2 mb-2">
-                  <Input value={record.key} disabled className="flex-1 bg-gray-800 text-white" />
-                  <Input value={record.value} disabled className="flex-1 bg-gray-800 text-white" />
+                  <Input value={record.key} disabled className="flex-1 bg-secondary dark:bg-muted text-foreground" />
+                  <Input value={record.value} disabled className="flex-1 bg-secondary dark:bg-muted text-foreground" />
                   <Button
                     variant="outline"
                     size="icon"
@@ -303,13 +306,13 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
                   value={newRecordKey}
                   onChange={(e) => setNewRecordKey(e.target.value)}
                   placeholder="Record key"
-                  className="flex-1 bg-gray-800 border-gray-700 text-white"
+                  className="flex-1 bg-secondary dark:bg-muted border-border text-foreground"
                 />
                 <Input
                   value={newRecordValue}
                   onChange={(e) => setNewRecordValue(e.target.value)}
                   placeholder="Record value"
-                  className="flex-1 bg-gray-800 border-gray-700 text-white"
+                  className="flex-1 bg-secondary dark:bg-muted border-border text-foreground"
                 />
                 <Button
                   onClick={handleAddCustomRecord}
@@ -323,7 +326,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
             <Button
               onClick={handleSaveRecords}
               disabled={isLoading}
-              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
+              className="w-full bg-primary hover:bg-[hsl(var(--primary-glow))] text-primary-foreground font-semibold disabled:opacity-50"
             >
               {isLoading ? 'Saving...' : 'Save Records'}
             </Button>
@@ -343,14 +346,14 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
                 value={transferAddress}
                 onChange={(e) => setTransferAddress(e.target.value)}
                 placeholder="0x..."
-                className="bg-gray-800 border-gray-700 text-white font-mono"
+                className="bg-secondary dark:bg-muted border-border text-foreground font-mono"
               />
             </div>
 
             <Button
               onClick={handleTransfer}
               disabled={isLoading || !transferAddress}
-              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
+              className="w-full bg-primary hover:bg[hsl(var(--primary-glow))] text-primary-foreground font-semibold disabled:opacity-50"
             >
               {isLoading ? 'Transferring...' : 'Transfer Domain'}
             </Button>
