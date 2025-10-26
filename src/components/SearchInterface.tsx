@@ -1412,15 +1412,15 @@ export const SearchInterface = () => {
                       <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
                         <div className="relative mb-6">
                           {(result as any).spotifyUrl ? (
-                            <div className="w-full max-w-[300px] mx-auto">
+                            <div className="w-full px-4">
                               <iframe
                                 src={(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}
                                 width="100%"
-                                height="152"
+                                height="80"
                                 frameBorder="0"
                                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                                 loading="lazy"
-                                className="rounded-lg"
+                                className="rounded-xl"
                                 style={{ border: 'none' }}
                               />
                             </div>
