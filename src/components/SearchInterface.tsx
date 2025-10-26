@@ -445,17 +445,20 @@ export const SearchInterface = () => {
     
     // If query contains a dot OR is a wallet address, fetch web3.bio profile
     if (trimmedQuery && (trimmedQuery.includes('.') || isWalletAddress)) {
+      let profileFetched = false;
+      
+      // Try web3.bio first
       try {
         const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
           body: { handle: trimmedQuery }
         });
         
-        if (error) throw error;
-        
-        if (data && !data.error && Array.isArray(data) && data.length > 0) {
+        // Only process if we got valid data (no error and has results)
+        if (!error && data && !data.error && Array.isArray(data) && data.length > 0) {
           const profileData = data[0];
           setWeb3BioProfile(profileData);
-          setEnsResults([]); // Clear ENS results when showing web3.bio profile
+          setEnsResults([]);
+          profileFetched = true;
           
           // Fetch EFP stats and ENS records if we have an address or ENS name
           if (profileData.address || trimmedQuery.includes('.eth')) {
@@ -516,69 +519,76 @@ export const SearchInterface = () => {
               console.error('Error fetching ENS records:', ensError);
             }
           }
-        } else {
-          // web3.bio returned no results, try ENS resolution fallback
-          try {
-            const { data: ensData, error: ensError } = await supabase.functions.invoke('resolve-ens', {
-              body: { name: trimmedQuery }
-            });
-            
-            if (!ensError && ensData && !ensData.error) {
-              // Successfully resolved ENS name
-              setWeb3BioProfile({
-                address: ensData.address,
-                displayName: ensData.displayName,
-                avatar: ensData.avatar,
-                description: ensData.description,
-                email: ensData.email,
-                links: ensData.links || {},
-                identity: trimmedQuery,
-                platform: 'ens'
-              });
-              setEnsResults([]);
-              
-              // Fetch EFP stats and ENS records for the resolved address
-              if (ensData.address) {
-                try {
-                  const efpResponse = await fetch(
-                    `https://api.ethfollow.xyz/api/v1/users/${ensData.address}/stats`
-                  );
-                  
-                  if (efpResponse.ok) {
-                    const efpData = await efpResponse.json();
-                    setEfpStats({
-                      followers_count: parseInt(efpData.followers_count) || 0,
-                      following_count: parseInt(efpData.following_count) || 0
-                    });
-                  }
-                } catch (efpError) {
-                  console.error('Error fetching EFP stats:', efpError);
-                }
-                
-                // Fetch POAP data
-                try {
-                  setIsLoadingPoaps(true);
-                  const { data: poapData, error: poapError } = await supabase.functions.invoke('get-poap-data', {
-                    body: { walletAddress: ensData.address }
-                  });
-                  
-                  if (!poapError && poapData?.success) {
-                    setPoapCount(poapData.count || 0);
-                  }
-                } catch (poapFetchError) {
-                  console.error('Error fetching POAPs:', poapFetchError);
-                } finally {
-                  setIsLoadingPoaps(false);
-                }
-              }
-            }
-          } catch (ensError) {
-            console.error('Error resolving ENS:', ensError);
-          }
         }
       } catch (error) {
-        console.error('Error fetching web3.bio profile:', error);
+        console.log('web3.bio failed, will try ENS fallback:', error);
       }
+      
+      // If web3.bio didn't return results, try ENS resolution fallback
+      if (!profileFetched) {
+        try {
+          console.log('Trying ENS resolution for:', trimmedQuery);
+          const { data: ensData, error: ensError } = await supabase.functions.invoke('resolve-ens', {
+            body: { name: trimmedQuery }
+          });
+          
+          if (!ensError && ensData && !ensData.error) {
+            // Successfully resolved ENS name
+            console.log('ENS resolution succeeded:', ensData);
+            setWeb3BioProfile({
+              address: ensData.address,
+              displayName: ensData.displayName,
+              avatar: ensData.avatar,
+              description: ensData.description,
+              email: ensData.email,
+              links: ensData.links || {},
+              identity: trimmedQuery,
+              platform: 'ens'
+            });
+            setEnsResults([]);
+            
+            // Fetch EFP stats and ENS records for the resolved address
+            if (ensData.address) {
+              try {
+                const efpResponse = await fetch(
+                  `https://api.ethfollow.xyz/api/v1/users/${ensData.address}/stats`
+                );
+                
+                if (efpResponse.ok) {
+                  const efpData = await efpResponse.json();
+                  setEfpStats({
+                    followers_count: parseInt(efpData.followers_count) || 0,
+                    following_count: parseInt(efpData.following_count) || 0
+                  });
+                }
+              } catch (efpError) {
+                console.error('Error fetching EFP stats:', efpError);
+              }
+              
+              // Fetch POAP data
+              try {
+                setIsLoadingPoaps(true);
+                const { data: poapData, error: poapError } = await supabase.functions.invoke('get-poap-data', {
+                  body: { walletAddress: ensData.address }
+                });
+                
+                if (!poapError && poapData?.success) {
+                  setPoapCount(poapData.count || 0);
+                }
+              } catch (poapFetchError) {
+                console.error('Error fetching POAPs:', poapFetchError);
+              } finally {
+                setIsLoadingPoaps(false);
+              }
+            }
+          } else {
+            console.log('ENS resolution also failed:', ensError || ensData?.error);
+          }
+        } catch (ensError) {
+          console.error('Error resolving ENS:', ensError);
+        }
+      }
+      
       setIsLoading(false);
       return;
     }
