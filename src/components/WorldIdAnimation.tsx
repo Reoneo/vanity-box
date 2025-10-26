@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Zap } from 'lucide-react';
+import { ArrowDown, Sparkles, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const transformations = [
@@ -64,21 +64,21 @@ export const WorldIdAnimation: React.FC = () => {
           <Zap className="w-4 h-4 text-[#D4AF37] animate-pulse" />
           <div className="w-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
         </div>
-        <p className="text-sm md:text-base text-muted-foreground max-w-xl px-4">
+        <p className="text-sm md:text-base text-[#1e3a8a] dark:text-muted-foreground max-w-xl px-4">
           Experience the luxury of human-readable blockchain addresses
         </p>
       </div>
 
-      {/* Premium Animation Container */}
-      <div className="relative w-full max-w-2xl">
+      {/* Premium Animation Container - Vertical Layout */}
+      <div className="relative w-full max-w-md">
         {/* Ambient glow effects */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#D4AF37]/5 dark:bg-[#D4AF37]/10 rounded-full blur-3xl -z-10" />
         
-        <div className="flex items-center justify-center gap-3 md:gap-8">
+        <div className="flex flex-col items-center justify-center gap-4">
           {/* Before: Complex Address */}
           <div
             className={cn(
-              "flex-1 transition-all duration-700 ease-out",
+              "w-full transition-all duration-700 ease-out",
               isTransformed && "opacity-30 scale-95 blur-[2px]"
             )}
           >
@@ -94,34 +94,34 @@ export const WorldIdAnimation: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="font-mono text-xs md:text-sm text-foreground/90 break-all leading-relaxed px-2">
+                <div className="font-mono text-xs md:text-sm text-[#1e3a8a] dark:text-foreground/90 break-all leading-relaxed px-2">
                   {current.worldId}
                 </div>
                 
-                <div className="text-[10px] md:text-xs text-muted-foreground/70 mt-3 font-medium">
+                <div className="text-[10px] md:text-xs text-[#1e3a8a]/70 dark:text-muted-foreground/70 mt-3 font-medium">
                   Complex • Unmemorable
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Transformation Arrow */}
-          <div className="flex-shrink-0 relative">
+          {/* Transformation Arrow - Pointing Down */}
+          <div className="flex-shrink-0 relative my-2">
             <div
               className={cn(
                 "transition-all duration-700 ease-out transform",
                 isTransformed 
-                  ? "text-[#D4AF37] scale-125 rotate-0" 
-                  : "text-muted-foreground/30 scale-100 -rotate-12"
+                  ? "text-[#D4AF37] scale-125 translate-y-0" 
+                  : "text-[#1e3a8a]/30 dark:text-muted-foreground/30 scale-100 -translate-y-1"
               )}
             >
               <div className="relative">
                 {isTransformed && (
                   <div className="absolute inset-0 animate-ping">
-                    <ArrowRight className="w-6 h-6 md:w-8 md:h-8 text-[#D4AF37]/50" />
+                    <ArrowDown className="w-8 h-8 md:w-10 md:h-10 text-[#D4AF37]/50" />
                   </div>
                 )}
-                <ArrowRight className="w-6 h-6 md:w-8 md:h-8 relative z-10" strokeWidth={2.5} />
+                <ArrowDown className="w-8 h-8 md:w-10 md:h-10 relative z-10" strokeWidth={2.5} />
               </div>
             </div>
           </div>
@@ -129,7 +129,7 @@ export const WorldIdAnimation: React.FC = () => {
           {/* After: Premium Identity */}
           <div
             className={cn(
-              "flex-1 transition-all duration-700 ease-out",
+              "w-full transition-all duration-700 ease-out",
               !isTransformed && "opacity-30 scale-95 blur-[2px]"
             )}
           >
@@ -163,7 +163,7 @@ export const WorldIdAnimation: React.FC = () => {
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20 border border-[#D4AF37]/30 dark:border-[#D4AF37]/40">
           <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
-          <p className="text-xs md:text-sm font-medium text-foreground/80">
+          <p className="text-xs md:text-sm font-medium text-[#1e3a8a] dark:text-foreground/80">
             Search above to claim your premium identity
           </p>
         </div>
