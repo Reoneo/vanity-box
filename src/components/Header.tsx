@@ -250,16 +250,6 @@ export const Header: React.FC = () => {
           {/* Contact */}
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Contact</h3>
-            <div className="flex flex-col gap-3 mb-4">
-              <Link 
-                to="/poap-collection"
-                onClick={() => setMenuOpen(false)}
-                className="h-14 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between transition-all duration-300 hover:shadow-lg"
-              >
-                <span className="font-medium">POAP Collection</span>
-                <ChevronRight className="w-5 h-5" />
-              </Link>
-            </div>
             <div className="flex items-center gap-4">
               <a 
                 href="mailto:R@vanity.box"
