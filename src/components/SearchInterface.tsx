@@ -371,7 +371,7 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Artist',
-        spotifyUrl: 'https://open.spotify.com/track/4ZYYaXi1AnuBD5FfVLUqvX',
+        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DZ06evO07i78t?si=O-Wk41qlRAy-6TdqfdteKw&pi=dIp1RP4rQBOjD&nd=1&utm_source=copy-link&utm_medium=sharing',
         selectable: true,
         enabled: true
       },
@@ -382,7 +382,7 @@ export const SearchInterface = () => {
         price: 5,
         category: 'ENS',
         club: 'Artist',
-        spotifyUrl: 'https://open.spotify.com/track/3NGC2t1KnSOFcDQv8EI2Pl',
+        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DZ06evO1xveQU?si=DjldB-b-S569AvJ1maoCIw&pi=377GPKjeQfSgE&nd=1&utm_source=copy-link&utm_medium=sharing',
         selectable: true,
         enabled: true
       },
