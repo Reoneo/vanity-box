@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { MiniKit } from "@worldcoin/minikit-js";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
 import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { UserDomainsDisplay } from '@/components/UserDomainsDisplay';
 import { SpotifyPlayerModal } from '@/components/SpotifyPlayerModal';
-import { MiniKit } from '@worldcoin/minikit-js';
 import {
   DropdownMenu,
   DropdownMenuContent,
