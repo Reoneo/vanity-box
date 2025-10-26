@@ -46,6 +46,8 @@ import spydaAvatar from '@/assets/spyda-avatar.jpeg';
 import flirtadAvatar from '@/assets/flirtad-avatar.jpeg';
 import prettyuglyAvatar from '@/assets/prettyugly-avatar.jpeg';
 import sanAndreasAvatar from '@/assets/sanandreas-avatar.jpeg';
+import guavapayAvatar from '@/assets/guavapay-avatar.png';
+import mexipayAvatar from '@/assets/mexipay-avatar.png';
 import { DynamicMetaTags } from '@/components/DynamicMetaTags';
 import noResultsGif from '@/assets/no-results.gif';
 
@@ -309,7 +311,7 @@ export const SearchInterface = () => {
       {
         name: 'MexiPay.eth',
         description: t('desc_mexipay'),
-        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/1b420ade2f21c60b34fe53f761d09a/551b420ade2f21c60b34fe53f761d09a.svg',
+        imageUrl: mexipayAvatar,
         price: 5,
         category: 'ENS',
         club: 'DeFi'
@@ -317,7 +319,7 @@ export const SearchInterface = () => {
       {
         name: 'GuavaPay.eth',
         description: t('desc_guavapay'),
-        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/44d2edb2482769d623f27e7c94cd46/7044d2edb2482769d623f27e7c94cd46.svg',
+        imageUrl: guavapayAvatar,
         price: 5,
         category: 'ENS',
         club: 'DeFi'
