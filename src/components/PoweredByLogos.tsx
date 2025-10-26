@@ -28,7 +28,7 @@ export const PoweredByLogos: React.FC = () => {
         <div className="flex items-center justify-center gap-2 w-full">
           <div className="w-6 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent flex-shrink-0" />
           <img src={ethLogo} alt="ETH" className="w-3 h-3 brightness-0 saturate-100 flex-shrink-0" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
-          <h3 className="text-base md:text-lg font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent flex-shrink-0 whitespace-nowrap">
+          <h3 className="text-base md:text-lg font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent dark:bg-gradient-to-r dark:from-[#D4AF37] dark:via-[#F4E4BC] dark:to-[#D4AF37] dark:bg-clip-text dark:text-transparent text-black flex-shrink-0 whitespace-nowrap">
             Powered By
           </h3>
           <img src={ethLogo} alt="ETH" className="w-3 h-3 brightness-0 saturate-100 flex-shrink-0" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
