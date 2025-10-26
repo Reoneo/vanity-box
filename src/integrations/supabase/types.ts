@@ -56,12 +56,14 @@ export type Database = {
           domain: string
           expiry_date: string
           full_name: string
+          grace_period_end: string | null
           id: string
+          is_expired: boolean
           network_fee: number | null
           payment_amount: number | null
           payment_method: string | null
           registration_date: string
-          registration_years: number
+          registration_months: number
           subdomain: string
           tx_hash: string | null
           updated_at: string
@@ -72,12 +74,14 @@ export type Database = {
           domain: string
           expiry_date: string
           full_name: string
+          grace_period_end?: string | null
           id?: string
+          is_expired?: boolean
           network_fee?: number | null
           payment_amount?: number | null
           payment_method?: string | null
           registration_date?: string
-          registration_years?: number
+          registration_months?: number
           subdomain: string
           tx_hash?: string | null
           updated_at?: string
@@ -88,12 +92,14 @@ export type Database = {
           domain?: string
           expiry_date?: string
           full_name?: string
+          grace_period_end?: string | null
           id?: string
+          is_expired?: boolean
           network_fee?: number | null
           payment_amount?: number | null
           payment_method?: string | null
           registration_date?: string
-          registration_years?: number
+          registration_months?: number
           subdomain?: string
           tx_hash?: string | null
           updated_at?: string

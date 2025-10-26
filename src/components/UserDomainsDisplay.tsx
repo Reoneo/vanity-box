@@ -65,7 +65,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         // Fetch expiry dates from minted_domains table
         const { data: mintedData, error: mintedError } = await supabase
           .from('minted_domains')
-          .select('full_name, registration_years, expiry_date, registration_date')
+          .select('full_name, registration_months, expiry_date, registration_date, grace_period_end')
           .eq('wallet_address', walletAddress.toLowerCase());
 
         if (mintedError) {
@@ -73,13 +73,14 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         }
 
         // Create a map for quick lookups
-        const expiryMap = new Map<string, { expiry_date: string; registration_years: number; registration_date: string }>();
+        const expiryMap = new Map<string, { expiry_date: string; registration_months: number; registration_date: string; grace_period_end?: string }>();
         if (mintedData) {
           mintedData.forEach(md => {
             expiryMap.set(md.full_name.toLowerCase(), {
               expiry_date: md.expiry_date,
-              registration_years: md.registration_years,
-              registration_date: md.registration_date
+              registration_months: md.registration_months,
+              registration_date: md.registration_date,
+              grace_period_end: md.grace_period_end
             });
           });
         }
@@ -101,7 +102,8 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                     ...d,
                     txHash: data[0].tx_hash,
                     expiry_date: mintedInfo?.expiry_date,
-                    registration_years: mintedInfo?.registration_years,
+                    registration_months: mintedInfo?.registration_months,
+                    grace_period_end: mintedInfo?.grace_period_end,
                     created_at: mintedInfo?.registration_date || d.created_at,
                   };
                 }
@@ -116,7 +118,8 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
               ...d,
               txHash: txMap[key] || d.txHash,
               expiry_date: mintedInfo?.expiry_date,
-              registration_years: mintedInfo?.registration_years,
+              registration_months: mintedInfo?.registration_months,
+              grace_period_end: mintedInfo?.grace_period_end,
               created_at: mintedInfo?.registration_date || d.created_at,
             };
           })

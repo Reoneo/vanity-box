@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain, walletAddress, txHash, domain, registrationYears = 1, paymentMethod, paymentAmount, networkFee } = await req.json();
+    const { subdomain, walletAddress, txHash, domain, registrationMonths = 12, paymentMethod, paymentAmount, networkFee } = await req.json();
 
     console.log('==========================================');
     console.log('🚀 STARTING SUBDOMAIN MINTING PROCESS');
@@ -43,7 +43,7 @@ serve(async (req) => {
     console.log('👛 Wallet Address:', walletAddress);
     console.log('🔗 Transaction Hash:', txHash || 'N/A (Free Mint)');
     console.log('🌐 Domain:', domain);
-    console.log('📅 Registration Years:', registrationYears);
+    console.log('📅 Registration Months:', registrationMonths);
     console.log('💳 Payment Method:', paymentMethod || 'N/A');
     console.log('💰 Payment Amount:', paymentAmount || 'N/A');
     console.log('==========================================');
@@ -85,9 +85,14 @@ serve(async (req) => {
     console.log('🌐 Domain from subdomain:', domainFromSubdomain);
     console.log('🔑 API Key configured:', !!NAMESTONE_API_KEY);
     
-    // Calculate expiry date
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + registrationYears);
+    // Calculate expiry date based on months
+    const registrationDate = new Date();
+    const expiryDate = new Date(registrationDate);
+    expiryDate.setMonth(expiryDate.getMonth() + registrationMonths);
+    
+    // Calculate grace period end (expiry + 1 month)
+    const gracePeriodEnd = new Date(expiryDate);
+    gracePeriodEnd.setMonth(gracePeriodEnd.getMonth() + 1);
     
     const namestonePayload = {
       domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
@@ -95,8 +100,9 @@ serve(async (req) => {
       address: walletAddress,
       chain_id: 480, // World Chain network ID
       metadata: {
-        registration_years: registrationYears,
+        registration_months: registrationMonths,
         expiry_date: expiryDate.toISOString(),
+        grace_period_end: gracePeriodEnd.toISOString(),
       }
     };
     
@@ -141,9 +147,11 @@ serve(async (req) => {
           domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
           full_name: subdomain.toLowerCase(),
           wallet_address: walletAddress.toLowerCase(),
-          registration_years: registrationYears,
-          registration_date: new Date().toISOString(),
+          registration_months: registrationMonths,
+          registration_date: registrationDate.toISOString(),
           expiry_date: expiryDate.toISOString(),
+          grace_period_end: gracePeriodEnd.toISOString(),
+          is_expired: false,
           tx_hash: txHash || null,
           payment_method: paymentMethod || null,
           payment_amount: paymentAmount || null,
@@ -222,8 +230,9 @@ serve(async (req) => {
         txHash,
         namestoneData,
         durinWrapping: durinWrappingStatus,
-        registration_years: registrationYears,
+        registration_months: registrationMonths,
         expiry_date: namestonePayload.metadata.expiry_date,
+        grace_period_end: namestonePayload.metadata.grace_period_end,
         message: durinWrappingStatus.success 
           ? 'Subdomain minted and wrapped successfully'
           : 'Subdomain minted via Namestone (Durin wrapping pending)'

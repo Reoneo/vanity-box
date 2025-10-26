@@ -19,102 +19,88 @@ serve(async (req) => {
     const now = new Date().toISOString();
     console.log('📅 Current time:', now);
 
-    // Get all domain API keys
-    const domains = ['SMITH_CASH', '30315', 'TERMUX', 'TEAMXRP', 'SPYDA', 'FLIRTAD'];
+    // Initialize Supabase client
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get all expired domains from database (where grace_period_end has passed)
+    console.log('📋 Querying database for expired domains...');
+    const { data: expiredDomains, error: queryError } = await supabase
+      .from('minted_domains')
+      .select('*')
+      .lt('grace_period_end', now)
+      .eq('is_expired', false);
+
+    if (queryError) {
+      console.error('❌ Database query error:', queryError);
+      throw queryError;
+    }
+
+    console.log(`📊 Found ${expiredDomains?.length || 0} expired domains to clean up`);
+
     const deletedDomains: string[] = [];
     const errors: string[] = [];
 
-    for (const domainKey of domains) {
-      const apiKey = Deno.env.get(`NAMESTONE_API_KEY_${domainKey}`);
-      if (!apiKey) {
-        console.log(`⚠️ No API key found for ${domainKey}, skipping`);
-        continue;
-      }
-
-      // Convert domain key to actual domain name
-      const domainName = domainKey === 'SMITH_CASH' ? 'smith.cash' : 
-                         domainKey === '30315' ? '30315.eth' :
-                         domainKey === 'TERMUX' ? 'termux.eth' :
-                         domainKey === 'TEAMXRP' ? 'teamxrp.eth' :
-                         domainKey === 'SPYDA' ? 'spyda.eth' :
-                         domainKey === 'FLIRTAD' ? 'flirtad.eth' : domainKey;
-
-      console.log(`\n🔍 Checking domain: ${domainName}`);
+    // Process each expired domain
+    for (const domainRecord of expiredDomains || []) {
+      const fullDomainName = `${domainRecord.subdomain}.${domainRecord.domain}`;
+      console.log(`\n🔍 Processing expired domain: ${fullDomainName}`);
+      console.log(`  📅 Grace period ended: ${domainRecord.grace_period_end}`);
 
       try {
-        // Get all names for this domain using Namestone search API
-        const searchResponse = await fetch(
-          `https://namestone.com/api/public_v1/search-names?domain=${domainName}`,
+        // Get API key for this domain
+        const domainKey = domainRecord.domain.toUpperCase().replace(/\./g, '_');
+        const apiKey = Deno.env.get(`NAMESTONE_API_KEY_${domainKey}`) || Deno.env.get('NAMESTONE_API_KEY');
+        
+        if (!apiKey) {
+          console.log(`  ⚠️ No API key found for ${domainRecord.domain}, skipping Namestone deletion`);
+          errors.push(`No API key for ${domainRecord.domain}`);
+          continue;
+        }
+
+        // Delete from Namestone API
+        console.log(`  🗑️ Deleting from Namestone...`);
+        const deleteResponse = await fetch(
+          'https://namestone.com/api/public_v1/delete-name',
           {
+            method: 'POST',
             headers: {
               'Authorization': apiKey,
               'Content-Type': 'application/json',
             },
+            body: JSON.stringify({
+              domain: domainRecord.domain,
+              name: domainRecord.subdomain,
+            }),
           }
         );
 
-        if (!searchResponse.ok) {
-          console.error(`❌ Failed to search names for ${domainName}:`, searchResponse.status);
-          errors.push(`Failed to search ${domainName}: ${searchResponse.status}`);
-          continue;
-        }
+        if (deleteResponse.ok) {
+          console.log(`  ✅ Successfully deleted from Namestone`);
+          
+          // Mark as expired in database
+          const { error: updateError } = await supabase
+            .from('minted_domains')
+            .update({ is_expired: true })
+            .eq('id', domainRecord.id);
 
-        const searchData = await searchResponse.json();
-        const names = searchData.names || [];
-
-        console.log(`📋 Found ${names.length} names for ${domainName}`);
-
-        // Check each name for expiry
-        for (const nameData of names) {
-          const metadata = nameData.metadata || {};
-          const expiryDate = metadata.expiry_date;
-
-          if (!expiryDate) {
-            // No expiry date set, skip
-            continue;
-          }
-
-          const expiry = new Date(expiryDate);
-          const currentDate = new Date();
-
-          console.log(`  📝 ${nameData.name}.${domainName} - Expiry: ${expiry.toISOString()}`);
-
-          // Check if expired
-          if (expiry < currentDate) {
-            console.log(`  ⚠️ EXPIRED! Deleting ${nameData.name}.${domainName}`);
-
-            // Delete the expired domain
-            const deleteResponse = await fetch(
-              'https://namestone.com/api/public_v1/delete-name',
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': apiKey,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  domain: domainName,
-                  name: nameData.name,
-                }),
-              }
-            );
-
-            if (deleteResponse.ok) {
-              console.log(`  ✅ Successfully deleted ${nameData.name}.${domainName}`);
-              deletedDomains.push(`${nameData.name}.${domainName}`);
-            } else {
-              const errorText = await deleteResponse.text();
-              console.error(`  ❌ Failed to delete ${nameData.name}.${domainName}:`, errorText);
-              errors.push(`Failed to delete ${nameData.name}.${domainName}: ${errorText}`);
-            }
+          if (updateError) {
+            console.error(`  ⚠️ Failed to update database record:`, updateError);
+            errors.push(`Failed to update DB for ${fullDomainName}: ${updateError.message}`);
           } else {
-            const daysUntilExpiry = Math.ceil((expiry.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-            console.log(`  ✓ Valid - expires in ${daysUntilExpiry} days`);
+            console.log(`  ✅ Marked as expired in database`);
+            deletedDomains.push(fullDomainName);
           }
+        } else {
+          const errorText = await deleteResponse.text();
+          console.error(`  ❌ Failed to delete from Namestone:`, errorText);
+          errors.push(`Failed to delete ${fullDomainName} from Namestone: ${errorText}`);
         }
       } catch (error) {
-        console.error(`❌ Error processing ${domainName}:`, error);
-        errors.push(`Error processing ${domainName}: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`  ❌ Error processing ${fullDomainName}:`, error);
+        errors.push(`Error processing ${fullDomainName}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
