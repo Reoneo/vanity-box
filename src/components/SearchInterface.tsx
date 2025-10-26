@@ -516,6 +516,65 @@ export const SearchInterface = () => {
               console.error('Error fetching ENS records:', ensError);
             }
           }
+        } else {
+          // web3.bio returned no results, try ENS resolution fallback
+          try {
+            const { data: ensData, error: ensError } = await supabase.functions.invoke('resolve-ens', {
+              body: { name: trimmedQuery }
+            });
+            
+            if (!ensError && ensData && !ensData.error) {
+              // Successfully resolved ENS name
+              setWeb3BioProfile({
+                address: ensData.address,
+                displayName: ensData.displayName,
+                avatar: ensData.avatar,
+                description: ensData.description,
+                email: ensData.email,
+                links: ensData.links || {},
+                identity: trimmedQuery,
+                platform: 'ens'
+              });
+              setEnsResults([]);
+              
+              // Fetch EFP stats and ENS records for the resolved address
+              if (ensData.address) {
+                try {
+                  const efpResponse = await fetch(
+                    `https://api.ethfollow.xyz/api/v1/users/${ensData.address}/stats`
+                  );
+                  
+                  if (efpResponse.ok) {
+                    const efpData = await efpResponse.json();
+                    setEfpStats({
+                      followers_count: parseInt(efpData.followers_count) || 0,
+                      following_count: parseInt(efpData.following_count) || 0
+                    });
+                  }
+                } catch (efpError) {
+                  console.error('Error fetching EFP stats:', efpError);
+                }
+                
+                // Fetch POAP data
+                try {
+                  setIsLoadingPoaps(true);
+                  const { data: poapData, error: poapError } = await supabase.functions.invoke('get-poap-data', {
+                    body: { walletAddress: ensData.address }
+                  });
+                  
+                  if (!poapError && poapData?.success) {
+                    setPoapCount(poapData.count || 0);
+                  }
+                } catch (poapFetchError) {
+                  console.error('Error fetching POAPs:', poapFetchError);
+                } finally {
+                  setIsLoadingPoaps(false);
+                }
+              }
+            }
+          } catch (ensError) {
+            console.error('Error resolving ENS:', ensError);
+          }
         }
       } catch (error) {
         console.error('Error fetching web3.bio profile:', error);
