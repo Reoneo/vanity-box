@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowDown, Sparkles, Zap } from 'lucide-react';
+import { ArrowDown, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import ethLogo from '@/assets/eth-logo-dark.svg';
 
 const transformations = [
   { 
@@ -58,11 +59,11 @@ export const WorldIdAnimation: React.FC = () => {
       <div className="text-center space-y-3">
         <div className="flex items-center justify-center gap-2">
           <div className="w-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
-          <Zap className="w-4 h-4 text-[#D4AF37] animate-pulse" />
+          <img src={ethLogo} alt="ETH" className="w-4 h-4 brightness-0 saturate-100" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
           <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent">
             Elevate Your Digital Identity
           </h3>
-          <Zap className="w-4 h-4 text-[#D4AF37] animate-pulse" />
+          <img src={ethLogo} alt="ETH" className="w-4 h-4 brightness-0 saturate-100" style={{ filter: 'invert(67%) sepia(57%) saturate(571%) hue-rotate(6deg) brightness(91%) contrast(87%)' }} />
           <div className="w-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" />
         </div>
         <p className="text-sm md:text-base text-white dark:text-muted-foreground max-w-xl px-4">
