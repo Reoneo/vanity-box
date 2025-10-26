@@ -1450,30 +1450,12 @@ export const SearchInterface = () => {
                              <Badge 
                               key={`cat-${catIndex}`}
                               className={cn(
-                                "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity",
+                                "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap",
                                 cat === 'ENS' && "bg-transparent text-white border-[#D4AF37]",
                                 cat === 'DNS' && "bg-transparent text-white border-blue-500",
                                 cat === 'Aptos Names' && "bg-transparent text-white border-purple-500",
                                 cat === 'SNS.iD' && "bg-transparent text-white border-green-500"
                               )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Toggle protocol: add if not present, remove if present
-                                const newProtocols = filters.protocol.includes(cat)
-                                  ? filters.protocol.filter(p => p !== cat)
-                                  : [...filters.protocol, cat];
-                                
-                                const newFilters = { 
-                                  protocol: newProtocols, 
-                                  club: filters.club // Keep existing club filters
-                                };
-                                setFilters(newFilters);
-                                setSearchQuery('');
-                                // Manually trigger filter application
-                                setTimeout(() => {
-                                  handleSearch();
-                                }, 50);
-                              }}
                             >
                               {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
                               {cat === 'DNS' && <Globe className="w-3 h-3" />}
@@ -1488,7 +1470,7 @@ export const SearchInterface = () => {
                             <Badge 
                               key={`club-${clubIndex}`}
                               className={cn(
-                                "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity",
+                                "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap",
                               clubName === 'Surname' && "bg-purple-600 text-white border-0",
                               clubName === 'DeFi' && "bg-green-600 text-white border-0",
                               clubName === 'Digits' && "bg-purple-600 text-white border-0",
@@ -1498,24 +1480,6 @@ export const SearchInterface = () => {
                               clubName === 'Startup' && "bg-orange-600 text-white border-0",
                               clubName === 'Artist' && "bg-pink-600 text-white border-0"
                               )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Toggle club: add if not present, remove if present
-                                const newClubs = filters.club.includes(clubName)
-                                  ? filters.club.filter(c => c !== clubName)
-                                  : [...filters.club, clubName];
-                                
-                                const newFilters = { 
-                                  protocol: filters.protocol, // Keep existing protocol filters
-                                  club: newClubs 
-                                };
-                                setFilters(newFilters);
-                                setSearchQuery('');
-                                // Manually trigger filter application
-                                setTimeout(() => {
-                                  handleSearch();
-                                }, 50);
-                              }}
                             >
                               {clubName}
                             </Badge>
