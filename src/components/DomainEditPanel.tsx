@@ -263,6 +263,15 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
+      <button 
+        onClick={handleBackClick}
+        className="flex items-center gap-2 text-foreground hover:text-primary mb-4"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
       <div className="bg-[hsl(var(--card))] dark:bg-[hsl(var(--card))] border border-border rounded-2xl shadow-lg p-6 luxury-card luxury-glow">
         {/* Records Section - Only show when activeTab is 'records' */}
         {activeTab === 'records' && (
