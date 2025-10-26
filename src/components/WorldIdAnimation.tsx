@@ -91,7 +91,7 @@ export const WorldIdAnimation: React.FC = () => {
               {/* Glow effect */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-red-500/20 dark:from-red-500/30 dark:via-orange-500/30 dark:to-red-500/30 rounded-2xl blur opacity-60" />
               
-              <div className="relative bg-gradient-to-br from-background via-muted/80 to-background backdrop-blur-xl border-2 border-red-500/30 dark:border-red-500/40 rounded-2xl p-5 md:p-6 text-center shadow-xl">
+              <div className="relative bg-gradient-to-br from-gray-900/90 via-gray-800/80 to-gray-900/90 backdrop-blur-xl border-2 border-red-500/30 dark:border-red-500/40 rounded-2xl p-5 md:p-6 text-center shadow-xl">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                   <div className="text-xs md:text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">
@@ -99,11 +99,11 @@ export const WorldIdAnimation: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="font-mono text-xs md:text-sm text-[#1e3a8a] dark:text-foreground/90 break-all leading-relaxed px-2">
+                <div className="font-mono text-xs md:text-sm text-gray-100 break-all leading-relaxed px-2">
                   {current.worldId}
                 </div>
                 
-                <div className="text-[10px] md:text-xs text-[#1e3a8a]/70 dark:text-muted-foreground/70 mt-3 font-medium">
+                <div className="text-[10px] md:text-xs text-gray-400 mt-3 font-medium">
                   Complex • Unmemorable
                 </div>
               </div>
@@ -145,7 +145,7 @@ export const WorldIdAnimation: React.FC = () => {
               {/* Luxurious glow effect */}
               <div className="absolute -inset-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] rounded-2xl blur-lg opacity-40 dark:opacity-60 group-hover:opacity-60 dark:group-hover:opacity-80 transition-opacity duration-500" />
               
-              <div className="relative bg-gradient-to-br from-[#D4AF37]/5 via-background to-[#F4E4BC]/5 dark:from-[#D4AF37]/10 dark:via-background dark:to-[#F4E4BC]/10 backdrop-blur-xl border-2 border-[#D4AF37]/50 dark:border-[#D4AF37]/60 rounded-2xl p-5 md:p-6 text-center shadow-2xl">
+              <div className="relative bg-gradient-to-br from-[#D4AF37]/10 via-gray-900/90 to-[#F4E4BC]/10 backdrop-blur-xl border-2 border-[#D4AF37]/50 dark:border-[#D4AF37]/60 rounded-2xl p-5 md:p-6 text-center shadow-2xl">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-[#D4AF37] animate-pulse" />
                   <div className="text-xs md:text-sm font-bold text-[#D4AF37] uppercase tracking-wider">
