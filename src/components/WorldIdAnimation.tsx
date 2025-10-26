@@ -84,7 +84,7 @@ export const WorldIdAnimation: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="font-mono text-xs md:text-sm text-gray-100 break-all leading-relaxed px-2">
+                <div className="font-mono text-[11px] md:text-sm text-gray-100 break-all leading-relaxed px-1">
                   {current.worldId}
                 </div>
                 
