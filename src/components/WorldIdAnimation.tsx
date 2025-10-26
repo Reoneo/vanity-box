@@ -132,11 +132,11 @@ export const WorldIdAnimation: React.FC = () => {
               
               <div className="relative bg-gradient-to-br from-[#D4AF37]/10 via-gray-900/90 to-[#F4E4BC]/10 backdrop-blur-xl border-2 border-[#D4AF37]/50 dark:border-[#D4AF37]/60 rounded-2xl p-5 md:p-6 text-center shadow-2xl">
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-[#D4AF37] animate-pulse" />
+                  <img src={ethLogo} alt="" className="w-3 h-3 md:w-4 md:h-4 animate-pulse" />
                   <div className="text-xs md:text-sm font-bold text-[#D4AF37] uppercase tracking-wider">
                     After
                   </div>
-                  <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-[#D4AF37] animate-pulse" />
+                  <img src={ethLogo} alt="" className="w-3 h-3 md:w-4 md:h-4 animate-pulse" />
                 </div>
                 
                 <div className="font-bold text-base md:text-xl bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent break-all leading-relaxed px-2 mb-2">
