@@ -12,7 +12,7 @@ import ethLogo from '@/assets/eth-logo-dark.svg';
 const logos = [
   { light: ensLogo, dark: ensLogo, alt: 'ENS', largerInLight: false, largerInDark: false },
   { light: efpLogoLight, dark: efpLogoDark, alt: 'EFP', largerInLight: false, largerInDark: false },
-  { light: web3bioLogo, dark: web3bioLogo, alt: 'Web3.bio', largerInLight: false, largerInDark: true },
+  { light: web3bioLogo, dark: web3bioLogo, alt: 'Web3.bio', largerInLight: true, largerInDark: true },
   { light: namestoneLight, dark: namestoneDark, alt: 'NameStone', largerInLight: true, largerInDark: true },
   { light: poapLogo, dark: poapLogo, alt: 'POAP', largerInLight: true, largerInDark: true },
 ];
