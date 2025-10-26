@@ -1148,19 +1148,19 @@ export const SearchInterface = () => {
                              />
                            </a>
                            
-                           {/* POAP Icon with notification badge */}
-                           <a
-                             href={`https://collectors.poap.xyz/scan/${web3BioProfile.address || searchQuery}`}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80 relative"
-                           >
-                             {isLoadingPoaps ? (
-                               <div className="h-14 w-14 flex items-center justify-center">
-                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37]"></div>
-                               </div>
-                             ) : (
-                               <>
+                            {/* POAP Icon with notification badge */}
+                            <a
+                              href={`https://collectors.poap.xyz/scan/${web3BioProfile.address || searchQuery}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80 relative"
+                            >
+                              {isLoadingPoaps ? (
+                                <div className="h-14 w-14 flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37]"></div>
+                                </div>
+                              ) : (
+                                <div className="relative">
                                   <img 
                                     src={poapLogo} 
                                     alt="POAP" 
@@ -1171,10 +1171,10 @@ export const SearchInterface = () => {
                                       {poapCount}
                                     </div>
                                   )}
-                               </>
-                             )}
-                           </a>
-                           
+                                </div>
+                              )}
+                            </a>
+                            
                            <a
                              href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
                              target="_blank"
