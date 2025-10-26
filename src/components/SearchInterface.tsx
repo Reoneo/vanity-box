@@ -412,7 +412,8 @@ export const SearchInterface = () => {
 
   const handleSearch = async (queryOverride?: string) => {
     const trimmedQuery = (queryOverride || searchQuery).trim();
-    if (!trimmedQuery) return;
+    // Allow search to proceed if filters are applied, even without a query
+    if (!trimmedQuery && filters.protocol.length === 0 && filters.club.length === 0) return;
     
     console.log('Search start', { query: trimmedQuery });
     setShowFilterDropdown(false);
@@ -436,10 +437,10 @@ export const SearchInterface = () => {
     setIsSearchActive(true);
     
     // Check if query is a wallet address (starts with 0x and 42 characters)
-    const isWalletAddress = trimmedQuery.startsWith('0x') && trimmedQuery.length === 42;
+    const isWalletAddress = trimmedQuery && trimmedQuery.startsWith('0x') && trimmedQuery.length === 42;
     
     // If query contains a dot OR is a wallet address, fetch web3.bio profile
-    if (trimmedQuery.includes('.') || isWalletAddress) {
+    if (trimmedQuery && (trimmedQuery.includes('.') || isWalletAddress)) {
       try {
         const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
           body: { handle: trimmedQuery }
@@ -511,31 +512,35 @@ export const SearchInterface = () => {
       }
     }
     
-    // Check which subdomains are already taken on Namestone
+    // Check which subdomains are already taken on Namestone (only if there's a query)
     let allResults = getAllResults();
-    const checkPromises = allResults.map(async (result) => {
-      // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain, $mith.eth)
-      if (result.name === 'Smith.cash' || result.name === 'Smith.box' || 
-          result.name === 'Vape.box' || result.name === 'altcoin.chain' || 
-          result.name === '$mith.eth') {
-        const domain = result.name.toLowerCase();
-        try {
-          const { data } = await supabase.functions.invoke('check-namestone-subdomain', {
-            body: { subdomain: trimmedQuery, domain }
-          });
-          if (data?.exists) {
-            return domain;
+    if (trimmedQuery) {
+      const checkPromises = allResults.map(async (result) => {
+        // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain, $mith.eth)
+        if (result.name === 'Smith.cash' || result.name === 'Smith.box' || 
+            result.name === 'Vape.box' || result.name === 'altcoin.chain' || 
+            result.name === '$mith.eth') {
+          const domain = result.name.toLowerCase();
+          try {
+            const { data } = await supabase.functions.invoke('check-namestone-subdomain', {
+              body: { subdomain: trimmedQuery, domain }
+            });
+            if (data?.exists) {
+              return domain;
+            }
+          } catch (error) {
+            console.error(`Error checking ${domain}:`, error);
           }
-        } catch (error) {
-          console.error(`Error checking ${domain}:`, error);
         }
-      }
-      return null;
-    });
-    
-    const takenResults = await Promise.all(checkPromises);
-    const taken = new Set(takenResults.filter(Boolean) as string[]);
-    setTakenSubdomains(taken);
+        return null;
+      });
+      
+      const takenResults = await Promise.all(checkPromises);
+      const taken = new Set(takenResults.filter(Boolean) as string[]);
+      setTakenSubdomains(taken);
+    } else {
+      setTakenSubdomains(new Set());
+    }
     
     await new Promise(resolve => setTimeout(resolve, 250));
     
@@ -1459,10 +1464,13 @@ export const SearchInterface = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Set filter to only this protocol and apply
-                                setFilters({ protocol: [cat], club: [] });
+                                const newFilters = { protocol: [cat], club: [] };
+                                setFilters(newFilters);
                                 setSearchQuery('');
-                                // Use timeout to ensure state is updated before search
-                                setTimeout(() => handleSearch(), 0);
+                                // Manually trigger filter application
+                                setTimeout(() => {
+                                  handleSearch();
+                                }, 50);
                               }}
                             >
                               {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
@@ -1491,10 +1499,13 @@ export const SearchInterface = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Set filter to only this club and apply
-                                setFilters({ protocol: [], club: [clubName] });
+                                const newFilters = { protocol: [], club: [clubName] };
+                                setFilters(newFilters);
                                 setSearchQuery('');
-                                // Use timeout to ensure state is updated before search
-                                setTimeout(() => handleSearch(), 0);
+                                // Manually trigger filter application
+                                setTimeout(() => {
+                                  handleSearch();
+                                }, 50);
                               }}
                             >
                               {clubName}
