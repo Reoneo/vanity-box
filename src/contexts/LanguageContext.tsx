@@ -85,6 +85,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Set Primary Domain',
       no_domains_found: 'No domains found',
       mint_first_id: 'Mint your first ID to get started!',
+      your_digital_id: 'Your Digital ID',
+      mint_now: 'Mint Now',
     },
     ca: {
       register: 'Registrar',
@@ -102,6 +104,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Establir domini principal',
       no_domains_found: 'No s\'han trobat dominis',
       mint_first_id: 'Encunya el teu primer ID per començar!',
+      your_digital_id: 'El teu ID digital',
+      mint_now: 'Encunya ara',
     },
     de: {
       register: 'Registrieren',
@@ -119,6 +123,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Primäre Domain festlegen',
       no_domains_found: 'Keine Domains gefunden',
       mint_first_id: 'Prägen Sie Ihre erste ID, um loszulegen!',
+      your_digital_id: 'Ihre digitale ID',
+      mint_now: 'Jetzt prägen',
     },
     ko: {
       register: '등록',
@@ -136,6 +142,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: '기본 도메인 설정',
       no_domains_found: '도메인을 찾을 수 없습니다',
       mint_first_id: '시작하려면 첫 번째 ID를 발행하세요!',
+      your_digital_id: '귀하의 디지털 ID',
+      mint_now: '지금 발행',
     },
     pl: {
       register: 'Zarejestruj',
@@ -153,6 +161,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Ustaw domenę główną',
       no_domains_found: 'Nie znaleziono domen',
       mint_first_id: 'Wybij swoje pierwsze ID, aby rozpocząć!',
+      your_digital_id: 'Twoje cyfrowe ID',
+      mint_now: 'Wybij teraz',
     },
     pt: {
       register: 'Registrar',
@@ -170,6 +180,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Definir domínio principal',
       no_domains_found: 'Nenhum domínio encontrado',
       mint_first_id: 'Cunhe seu primeiro ID para começar!',
+      your_digital_id: 'Seu ID digital',
+      mint_now: 'Cunhar agora',
     },
     es: {
       register: 'Registrar',
@@ -187,6 +199,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Establecer dominio principal',
       no_domains_found: 'No se encontraron dominios',
       mint_first_id: '¡Acuña tu primer ID para comenzar!',
+      your_digital_id: 'Tu ID digital',
+      mint_now: 'Acuñar ahora',
     },
     "es-419": {
       register: 'Registrar',
@@ -204,6 +218,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Establecer dominio principal',
       no_domains_found: 'No se encontraron dominios',
       mint_first_id: '¡Acuña tu primer ID para comenzar!',
+      your_digital_id: 'Tu ID digital',
+      mint_now: 'Acuñar ahora',
     },
     ms: {
       register: 'Daftar',
@@ -221,6 +237,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Tetapkan domain utama',
       no_domains_found: 'Tiada domain dijumpai',
       mint_first_id: 'Terbitkan ID pertama anda untuk bermula!',
+      your_digital_id: 'ID digital anda',
+      mint_now: 'Terbitkan sekarang',
     },
     th: {
       register: 'ลงทะเบียน',
@@ -238,6 +256,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'ตั้งโดเมนหลัก',
       no_domains_found: 'ไม่พบโดเมน',
       mint_first_id: 'สร้าง ID แรกของคุณเพื่อเริ่มต้น!',
+      your_digital_id: 'ID ดิจิทัลของคุณ',
+      mint_now: 'สร้างเลย',
     },
     id: {
       register: 'Daftar',
@@ -255,6 +275,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Atur domain utama',
       no_domains_found: 'Tidak ada domain ditemukan',
       mint_first_id: 'Cetak ID pertama Anda untuk memulai!',
+      your_digital_id: 'ID digital Anda',
+      mint_now: 'Cetak sekarang',
     },
     "zh-TW": {
       register: '註冊',
@@ -272,6 +294,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: '設定主域名',
       no_domains_found: '未找到域名',
       mint_first_id: '鑄造您的第一個ID開始吧！',
+      your_digital_id: '您的數位ID',
+      mint_now: '立即鑄造',
     },
     fr: {
       register: 'Enregistrer',
@@ -289,6 +313,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'Définir le domaine principal',
       no_domains_found: 'Aucun domaine trouvé',
       mint_first_id: 'Créez votre premier ID pour commencer!',
+      your_digital_id: 'Votre ID numérique',
+      mint_now: 'Créer maintenant',
     },
     ja: {
       register: '登録',
@@ -306,6 +332,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'プライマリドメインを設定',
       no_domains_found: 'ドメインが見つかりません',
       mint_first_id: '最初のIDを作成して始めましょう！',
+      your_digital_id: 'あなたのデジタルID',
+      mint_now: '今すぐ作成',
     },
     "zh-CN": {
       register: '注册',
@@ -323,6 +351,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: '设置主域名',
       no_domains_found: '未找到域名',
       mint_first_id: '铸造您的第一个ID开始吧！',
+      your_digital_id: '您的数字ID',
+      mint_now: '立即铸造',
     },
     hi: {
       register: 'रजिस्टर',
@@ -340,6 +370,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       set_primary_domain: 'प्राथमिक डोमेन सेट करें',
       no_domains_found: 'कोई डोमेन नहीं मिला',
       mint_first_id: 'शुरू करने के लिए अपनी पहली ID बनाएं!',
+      your_digital_id: 'आपकी डिजिटल ID',
+      mint_now: 'अभी बनाएं',
     },
   };
 
