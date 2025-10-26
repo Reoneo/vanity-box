@@ -50,6 +50,57 @@ export type Database = {
         }
         Relationships: []
       }
+      poap_tokens: {
+        Row: {
+          chain: string | null
+          created_at: string
+          event_description: string | null
+          event_end_date: string | null
+          event_id: number
+          event_image_url: string | null
+          event_name: string | null
+          event_start_date: string | null
+          event_year: number | null
+          id: string
+          owner: string | null
+          token_id: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          chain?: string | null
+          created_at?: string
+          event_description?: string | null
+          event_end_date?: string | null
+          event_id: number
+          event_image_url?: string | null
+          event_name?: string | null
+          event_start_date?: string | null
+          event_year?: number | null
+          id?: string
+          owner?: string | null
+          token_id: string
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          chain?: string | null
+          created_at?: string
+          event_description?: string | null
+          event_end_date?: string | null
+          event_id?: number
+          event_image_url?: string | null
+          event_name?: string | null
+          event_start_date?: string | null
+          event_year?: number | null
+          id?: string
+          owner?: string | null
+          token_id?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
