@@ -51,7 +51,7 @@ const Index = () => {
         </main>
         
         {/* Powered By Logos - Fixed above footer */}
-        <div className="fixed bottom-[33px] left-0 right-0 z-[9998] bg-background/95 backdrop-blur-sm border-t border-border/50">
+        <div className="fixed bottom-[33px] left-0 right-0 z-[9998] bg-background/95 backdrop-blur-sm border-l-2 border-r-2 border-[#D4AF37]">
           <PoweredByLogos />
         </div>
         
