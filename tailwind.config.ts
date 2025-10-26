@@ -90,6 +90,14 @@ export default {
             height: "0",
           },
         },
+        "scroll": {
+          "0%": {
+            transform: "translateX(0)",
+          },
+          "100%": {
+            transform: "translateX(-33.333%)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -97,6 +105,7 @@ export default {
         "glow": "glow 2s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "scroll": "scroll 30s linear infinite",
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
