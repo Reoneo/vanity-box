@@ -314,7 +314,9 @@ export const SearchInterface = () => {
         imageUrl: mexipayAvatar,
         price: 5,
         category: 'ENS',
-        club: 'DeFi'
+        club: 'DeFi',
+        selectable: true,
+        enabled: true
       },
       {
         name: 'GuavaPay.eth',
@@ -322,7 +324,9 @@ export const SearchInterface = () => {
         imageUrl: guavapayAvatar,
         price: 5,
         category: 'ENS',
-        club: 'DeFi'
+        club: 'DeFi',
+        selectable: true,
+        enabled: true
       },
       {
         name: 'TeamXRP.eth',
@@ -409,14 +413,6 @@ export const SearchInterface = () => {
   const handleSearch = async (queryOverride?: string) => {
     const trimmedQuery = (queryOverride || searchQuery).trim();
     if (!trimmedQuery) return;
-    
-    // Check if wallet is connected - if not, trigger authentication
-    if (!walletAddress) {
-      toast.error("Please connect your wallet to search");
-      // Trigger wallet connection via custom event
-      window.dispatchEvent(new Event('trigger-wallet-connect'));
-      return;
-    }
     
     console.log('Search start', { query: trimmedQuery });
     setShowFilterDropdown(false);
