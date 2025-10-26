@@ -42,6 +42,7 @@ import eth30315Avatar from '@/assets/30315-eth-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
+import poapLogo from '@/assets/poap-logo.png';
 import spydaAvatar from '@/assets/spyda-avatar.jpeg';
 import flirtadAvatar from '@/assets/flirtad-avatar.jpeg';
 import prettyuglyAvatar from '@/assets/prettyugly-avatar.jpeg';
@@ -134,6 +135,8 @@ export const SearchInterface = () => {
   const [followersList, setFollowersList] = useState<EFPUser[]>([]);
   const [followingList, setFollowingList] = useState<EFPUser[]>([]);
   const [takenSubdomains, setTakenSubdomains] = useState<Set<string>>(new Set());
+  const [poapCount, setPoapCount] = useState<number>(0);
+  const [isLoadingPoaps, setIsLoadingPoaps] = useState(false);
   const [followersPage, setFollowersPage] = useState(0);
   const [followingPage, setFollowingPage] = useState(0);
   const [totalFollowers, setTotalFollowers] = useState(0);
@@ -473,6 +476,28 @@ export const SearchInterface = () => {
               }
             } catch (efpError) {
               console.error('Error fetching EFP stats:', efpError);
+            }
+            
+            // Fetch POAP data
+            if (profileData.address) {
+              try {
+                setIsLoadingPoaps(true);
+                const { data: poapData, error: poapError } = await supabase.functions.invoke('get-poap-data', {
+                  body: { walletAddress: profileData.address }
+                });
+                
+                if (!poapError && poapData?.success) {
+                  setPoapCount(poapData.count || 0);
+                } else {
+                  console.error('Error fetching POAP data:', poapError);
+                  setPoapCount(0);
+                }
+              } catch (poapFetchError) {
+                console.error('Error fetching POAPs:', poapFetchError);
+                setPoapCount(0);
+              } finally {
+                setIsLoadingPoaps(false);
+              }
             }
             
             // Fetch ENS records
@@ -1122,6 +1147,34 @@ export const SearchInterface = () => {
                                className="h-14 w-auto object-contain"
                              />
                            </a>
+                           
+                           {/* POAP Icon with notification badge */}
+                           <a
+                             href={`https://app.poap.xyz/scan/${web3BioProfile.address || searchQuery}`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80 relative"
+                           >
+                             {isLoadingPoaps ? (
+                               <div className="h-14 w-14 flex items-center justify-center">
+                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37]"></div>
+                               </div>
+                             ) : (
+                               <>
+                                 <img 
+                                   src={poapLogo} 
+                                   alt="POAP" 
+                                   className="h-14 w-14 object-contain rounded-full"
+                                 />
+                                 {poapCount > 0 && (
+                                   <div className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center px-2 shadow-lg border-2 border-gray-900">
+                                     {poapCount}
+                                   </div>
+                                 )}
+                               </>
+                             )}
+                           </a>
+                           
                            <a
                              href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
                              target="_blank"
