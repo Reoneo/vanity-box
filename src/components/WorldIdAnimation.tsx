@@ -157,7 +157,7 @@ export const WorldIdAnimation: React.FC = () => {
         <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20 border border-[#D4AF37]/30 dark:border-[#D4AF37]/40">
           <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
           <p className="text-xs md:text-sm font-medium text-[#1e3a8a] dark:text-foreground/80">
-            Capable via ENS v2
+            Coming soon via ENS v2
           </p>
           <Button 
             asChild 
