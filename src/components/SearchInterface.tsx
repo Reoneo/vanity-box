@@ -1417,8 +1417,7 @@ export const SearchInterface = () => {
                             <div className="w-full px-3 relative">
                               <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-2xl blur-md -z-10"></div>
                               <iframe
-                                id={`spotify-${index}`}
-                                src={`${(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}&autoplay=0`}
+                                src={`${(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}`}
                                 width="100%"
                                 height="352"
                                 frameBorder="0"
@@ -1426,19 +1425,6 @@ export const SearchInterface = () => {
                                 loading="lazy"
                                 className="rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-sm"
                                 style={{ border: 'none' }}
-                                onLoad={(e) => {
-                                  const iframe = e.currentTarget;
-                                  iframe.addEventListener('click', () => {
-                                    // Pause all other Spotify iframes
-                                    const allSpotifyIframes = document.querySelectorAll('iframe[id^="spotify-"]');
-                                    allSpotifyIframes.forEach((otherIframe) => {
-                                      if (otherIframe !== iframe && otherIframe instanceof HTMLIFrameElement) {
-                                        const src = otherIframe.src;
-                                        otherIframe.src = src; // Reload iframe to stop playback
-                                      }
-                                    });
-                                  });
-                                }}
                               />
                             </div>
                           ) : (
