@@ -49,6 +49,7 @@ import sanAndreasAvatar from '@/assets/sanandreas-avatar.jpeg';
 import guavapayAvatar from '@/assets/guavapay-avatar.png';
 import mexipayAvatar from '@/assets/mexipay-avatar.png';
 import { DynamicMetaTags } from '@/components/DynamicMetaTags';
+import { WorldIdAnimation } from '@/components/WorldIdAnimation';
 import noResultsGif from '@/assets/no-results.gif';
 
 export interface FilterState {
@@ -664,6 +665,7 @@ export const SearchInterface = () => {
             
             {/* Search bar container - hidden when showing My IDs */}
             {!showMyIDs && (
+            <>
             <div className="w-full max-w-md mx-auto mb-4 md:mb-0 mt-4">
               <div className="relative">
                 <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -817,6 +819,12 @@ export const SearchInterface = () => {
                 </div>
               </div>
             </div>
+            
+            {/* World ID Animation - shown when no search is active */}
+            {!hasSearched && !isSearchActive && (
+              <WorldIdAnimation />
+            )}
+            </>
             )}
             
 

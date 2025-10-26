@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import {
   Dialog,
@@ -20,9 +20,20 @@ export const SpotifyPlayerModal: React.FC<SpotifyPlayerModalProps> = ({
   spotifyUrl,
   artistName,
 }) => {
-  // Convert spotify.link URLs to embed URLs
-  // For now, we'll use the direct link - you may need to provide the full Spotify track/playlist URLs
-  // Format: https://open.spotify.com/embed/track/{track_id} or /embed/playlist/{playlist_id}
+  // Pause all other Spotify iframes when this one opens
+  useEffect(() => {
+    if (isOpen) {
+      // Find all Spotify iframes and pause them by reloading
+      const allIframes = document.querySelectorAll('iframe[src*="spotify"]');
+      allIframes.forEach((iframe) => {
+        const currentSrc = (iframe as HTMLIFrameElement).src;
+        // Only reload if it's a different iframe
+        if (!currentSrc.includes(spotifyUrl)) {
+          (iframe as HTMLIFrameElement).src = currentSrc;
+        }
+      });
+    }
+  }, [isOpen, spotifyUrl]);
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

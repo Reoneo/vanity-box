@@ -253,10 +253,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2 break-words">
             {domain.name}.{domain.domain}
           </h2>
-          <p className="font-mono text-sm text-gray-300">
+          <p className="font-mono text-sm text-muted-foreground">
             {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
           </p>
         </div>
@@ -270,10 +270,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
         <TabsContent value="records" className="space-y-4 mt-4">
           <div className="space-y-4">
-            <h3 className="font-semibold text-white">ENS Text Records</h3>
+            <h3 className="font-semibold text-foreground">ENS Text Records</h3>
             {Object.entries(ensRecords).map(([key, value]) => (
               <div key={key} className="space-y-2">
-                <Label className="text-gray-300">{key}</Label>
+                <Label className="text-foreground">{key}</Label>
                 <Input
                   value={value}
                   onChange={(e) => setEnsRecords({ ...ensRecords, [key]: e.target.value })}
@@ -284,7 +284,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
             ))}
 
             <div className="pt-4 border-t border-gray-700">
-              <h3 className="font-semibold text-white mb-4">Custom Records</h3>
+              <h3 className="font-semibold text-foreground mb-4">Custom Records</h3>
               
               {customRecords.map((record, index) => (
                 <div key={index} className="flex gap-2 mb-2">
@@ -335,13 +335,13 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
         <TabsContent value="transfer" className="space-y-4 mt-4">
           <div className="space-y-4">
-            <h3 className="font-semibold text-white">Transfer Domain</h3>
-            <p className="text-sm text-gray-400">
+            <h3 className="font-semibold text-foreground">Transfer Domain</h3>
+            <p className="text-sm text-muted-foreground">
               Transfer ownership of {domain.name}.{domain.domain} to another wallet address.
             </p>
             
             <div className="space-y-2">
-              <Label className="text-gray-300">Recipient Address</Label>
+              <Label className="text-foreground">Recipient Address</Label>
               <Input
                 value={transferAddress}
                 onChange={(e) => setTransferAddress(e.target.value)}
