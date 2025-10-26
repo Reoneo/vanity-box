@@ -435,6 +435,7 @@ export const SearchInterface = () => {
       return;
     }
     
+    // Only show search results and clear previous data when actually searching
     // Instantly clear previous results
     setEnsResults([]);
     setWeb3BioProfile(null);

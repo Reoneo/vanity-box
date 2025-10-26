@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Pencil, Send, Trash2, ExternalLink } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useLanguage } from '@/contexts/LanguageContext';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoLink from '@/assets/ens-logo-link.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -30,6 +31,7 @@ interface UserDomainsDisplayProps {
 
 export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAddress }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,9 +181,9 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   if (domains.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600 dark:text-gray-400">No domains found</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('no_domains_found')}</p>
         <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-          Mint your first ID to get started!
+          {t('mint_first_id')}
         </p>
         {theme === 'light' && (
           <img 
@@ -219,9 +221,9 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Back
+        {t('back')}
       </button>
-      <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-6">My ID's</h2>
+      <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-6">{t('my_ids')}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {domains.map((domain, index) => (
           <div 
@@ -240,9 +242,14 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
                   {domain.name}.{domain.domain}
                 </h3>
-                <p className="font-mono text-sm text-gray-300 break-all">
-                  {domain.address}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-400">
+                    {t('registered')}: {domain.created_at ? new Date(domain.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {t('expires')}: {domain.expiry_date ? new Date(domain.expiry_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -255,7 +262,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                Edit
+                {t('edit')}
               </Button>
 
               <Button
@@ -266,7 +273,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                Set Primary Domain
+                {t('extend')}
               </Button>
 
               <Button
@@ -277,7 +284,18 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                Transfer
+                {t('set_primary_domain')}
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full border-gray-500 text-gray-400 hover:bg-gray-800"
+                disabled
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                {t('transfer')}
               </Button>
             </div>
           </div>
