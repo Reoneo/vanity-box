@@ -198,34 +198,16 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-bold text-lg text-white truncate">
-                      {domain.name}.{domain.domain}
-                    </h4>
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30 hover:bg-blue-500/20 flex items-center gap-1 w-fit">
-                      Namestone ENS
-                    </Badge>
-                  </div>
+                  <h4 className="font-bold text-lg text-white truncate mb-2">
+                    {domain.name}.{domain.domain}
+                  </h4>
+                  <p className="font-mono text-sm text-gray-300">
+                    {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
+                  </p>
                 </div>
               </div>
 
               <div className="flex-1 space-y-3">
-                <div className="text-sm text-gray-300">
-                  <span className="text-gray-400">Address:</span>
-                  <p className="font-mono text-white">
-                    {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
-                  </p>
-                </div>
-                {domain.txHash && (
-                  <div className="text-sm text-gray-300">
-                    <span className="text-gray-400">Transaction ID:</span>
-                    <p className="font-mono text-white text-xs break-all">
-                      {domain.txHash}
-                    </p>
-                  </div>
-                )}
                 {domain.created_at && (
                   <div className="text-sm text-gray-400">
                     Registered: {new Date(domain.created_at).toLocaleDateString()}
@@ -241,23 +223,14 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="mt-4">
                 <Button
                   onClick={() => handleManageDomain(domain, 'edit')}
                   size="sm"
-                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                 >
                   <Pencil className="w-3 h-3 mr-1" />
                   Edit
-                </Button>
-                <Button
-                  onClick={() => handleManageDomain(domain, 'transfer')}
-                  size="sm"
-                  variant="outline"
-                  className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"
-                >
-                  <Send className="w-3 h-3 mr-1" />
-                  Transfer
                 </Button>
               </div>
             </div>
