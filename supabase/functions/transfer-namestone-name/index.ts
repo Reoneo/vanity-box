@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,8 +36,37 @@ serve(async (req) => {
     console.log('🏷️  Subdomain label:', subdomainLabel);
     console.log('🌐 Domain:', domainFromSubdomain);
 
-    // Get API key for this domain
-    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domainFromSubdomain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    // Validate Ethereum address format (basic check)
+    if (!/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
+      throw new Error('Invalid Ethereum address format');
+    }
+
+    // Resolve API key for this domain using domain_configs first, then fall back to env naming pattern/default
+    let NAMESTONE_API_KEY: string | null = null;
+
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (supabaseUrl && supabaseServiceKey) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: cfg, error: dbError } = await supabase
+          .from('domain_configs')
+          .select('api_key_secret_name, status')
+          .eq('domain_name', domainFromSubdomain.toLowerCase())
+          .single();
+
+        if (!dbError && cfg && cfg.status === 'active' && cfg.api_key_secret_name) {
+          NAMESTONE_API_KEY = Deno.env.get(cfg.api_key_secret_name) || null;
+          console.log('🔑 Using API key from domain_configs:', cfg.api_key_secret_name);
+        }
+      }
+    } catch (lookupErr) {
+      console.log('ℹ️ Skipping domain_configs lookup due to error:', lookupErr);
+    }
+
+    if (!NAMESTONE_API_KEY) {
+      NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domainFromSubdomain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY') || null;
+    }
     
     if (!NAMESTONE_API_KEY) {
       throw new Error(`API key not configured for domain ${domainFromSubdomain}`);

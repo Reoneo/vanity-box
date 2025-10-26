@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, X } from 'lucide-react';
+
+import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -253,11 +253,9 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
           <h2 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
             {domain.name}.{domain.domain}
           </h2>
-          <div className="flex gap-2 flex-wrap">
-            <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30">
-              Namestone ENS
-            </Badge>
-          </div>
+          <p className="font-mono text-sm text-gray-300">
+            {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
+          </p>
         </div>
       </div>
 
