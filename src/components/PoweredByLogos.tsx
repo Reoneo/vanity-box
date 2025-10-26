@@ -10,11 +10,11 @@ import poapLogo from '@/assets/poap-logo.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 
 const logos = [
-  { light: ensLogo, dark: ensLogo, alt: 'ENS', needsBorder: true },
-  { light: efpLogoLight, dark: efpLogoDark, alt: 'EFP', needsBorder: false },
-  { light: web3bioLogo, dark: web3bioLogo, alt: 'Web3.bio', needsBorder: true },
-  { light: namestoneLight, dark: namestoneDark, alt: 'NameStone', needsBorder: false },
-  { light: poapLogo, dark: poapLogo, alt: 'POAP', needsBorder: false },
+  { light: ensLogo, dark: ensLogo, alt: 'ENS', largerInLight: false },
+  { light: efpLogoLight, dark: efpLogoDark, alt: 'EFP', largerInLight: false },
+  { light: web3bioLogo, dark: web3bioLogo, alt: 'Web3.bio', largerInLight: false },
+  { light: namestoneLight, dark: namestoneDark, alt: 'NameStone', largerInLight: true },
+  { light: poapLogo, dark: poapLogo, alt: 'POAP', largerInLight: true },
 ];
 
 export const PoweredByLogos: React.FC = () => {
@@ -49,18 +49,15 @@ export const PoweredByLogos: React.FC = () => {
                 src={logo.light}
                 alt={logo.alt}
                 className={cn(
-                  "h-6 md:h-7 w-auto object-contain dark:hidden",
-                  logo.needsBorder && "border border-transparent"
+                  "w-auto object-contain dark:hidden",
+                  logo.largerInLight ? "h-12 md:h-14" : "h-6 md:h-7"
                 )}
               />
               {/* Dark mode logo */}
               <img
                 src={logo.dark}
                 alt={logo.alt}
-                className={cn(
-                  "h-6 md:h-7 w-auto object-contain hidden dark:block",
-                  logo.needsBorder && "border border-white/20 rounded px-2 py-1"
-                )}
+                className="h-6 md:h-7 w-auto object-contain hidden dark:block"
               />
             </div>
           ))}
