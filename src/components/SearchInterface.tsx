@@ -1406,12 +1406,12 @@ export const SearchInterface = () => {
               const hasSpotify = !!(result as any).spotifyUrl;
               
               return (
-                <div key={index} className={`perspective-1000 ${hasSpotify ? 'min-h-[380px]' : 'min-h-[320px]'}`}>
-                  <div className={`relative w-full h-full ${hasSpotify ? 'min-h-[380px]' : 'min-h-[320px]'} transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                <div key={index} className="perspective-1000 min-h-[320px]">
+                  <div className="relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}">
                     {/* Front of Card */}
                     <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                       
-                      <div className={`relative p-6 flex flex-col items-center text-center ${hasSpotify ? 'min-h-[380px]' : 'min-h-[320px]'}`}>
+                      <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
                         <div className={`relative ${hasSpotify ? 'mb-2 w-full' : 'mb-6'}`}>
                           {hasSpotify ? (
                             <div className="w-full relative">
