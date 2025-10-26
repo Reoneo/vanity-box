@@ -43,14 +43,14 @@ const Index = () => {
         <Header />
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-24 md:pt-24 pb-20 relative z-10 flex flex-col min-h-[calc(100vh-200px)]">
+        <main className="flex-1 px-4 pt-24 md:pt-24 pb-2 relative z-10 flex flex-col min-h-[calc(100vh-140px)]">
           <article className="max-w-2xl mx-auto text-center w-full flex-1 flex flex-col">
             <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
             <SearchInterface />
           </article>
           
           {/* Powered By Logos - Below content */}
-          <div className="w-full mt-8">
+          <div className="w-full mt-auto mb-2">
             <PoweredByLogos />
           </div>
         </main>
