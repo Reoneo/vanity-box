@@ -1458,8 +1458,11 @@ export const SearchInterface = () => {
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleProtocolToggle(cat);
-                                handleSearch();
+                                // Set filter to only this protocol and apply
+                                setFilters({ protocol: [cat], club: [] });
+                                setSearchQuery('');
+                                // Use timeout to ensure state is updated before search
+                                setTimeout(() => handleSearch(), 0);
                               }}
                             >
                               {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
@@ -1487,8 +1490,11 @@ export const SearchInterface = () => {
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleClubToggle(clubName);
-                                handleSearch();
+                                // Set filter to only this club and apply
+                                setFilters({ protocol: [], club: [clubName] });
+                                setSearchQuery('');
+                                // Use timeout to ensure state is updated before search
+                                setTimeout(() => handleSearch(), 0);
                               }}
                             >
                               {clubName}
