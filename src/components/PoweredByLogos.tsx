@@ -18,8 +18,8 @@ const logos = [
 ];
 
 export const PoweredByLogos: React.FC = () => {
-  // Duplicate logos for seamless loop
-  const duplicatedLogos = [...logos, ...logos, ...logos];
+  // Duplicate logos multiple times for seamless loop
+  const duplicatedLogos = [...logos, ...logos, ...logos, ...logos];
 
   return (
     <div className="w-full py-3 md:py-4 overflow-hidden">

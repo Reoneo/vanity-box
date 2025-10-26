@@ -95,7 +95,7 @@ export default {
             transform: "translateX(0)",
           },
           "100%": {
-            transform: "translateX(-33.333%)",
+            transform: "translateX(-25%)",
           },
         },
       },
@@ -105,7 +105,7 @@ export default {
         "glow": "glow 2s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
-        "scroll": "scroll 30s linear infinite",
+        "scroll": "scroll 40s linear infinite",
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
