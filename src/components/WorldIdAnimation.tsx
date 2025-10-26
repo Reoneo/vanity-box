@@ -1,30 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowDown, Sparkles, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const transformations = [
   { 
-    worldId: '0x742d35Cc6...', 
+    worldId: '0x742d35Cc6634C0532925a3b844Bc9e7eb3845A8f', 
     domain: 'Agent.$mith.eth',
     description: 'AI Agent Identity'
   },
   { 
-    worldId: '0x8F92A1b4...', 
+    worldId: '0x8F92A1b4E7c3D5a2B6f9C0d1E2F3A4B5C6D7E8F9', 
     domain: '589.TeamXRP.eth',
     description: 'Community Leader'
   },
   { 
-    worldId: '0x1E4F8c2D...', 
+    worldId: '0x1E4F8c2D3B5a6C7e8F9A0b1C2d3E4f5A6B7C8D9', 
     domain: 'Tim.Smith.box',
     description: 'Personal Brand'
   },
   { 
-    worldId: '0xA3D91F7...', 
+    worldId: '0xA3D91F7E2B4c5D6e7F8a9B0c1D2e3F4a5B6c7D8', 
     domain: 'ATL.30315.eth',
     description: 'Location Identity'
   },
   { 
-    worldId: '0x5C8E2A9...', 
+    worldId: '0x5C8E2A9B3F4d5E6f7A8b9C0d1E2f3A4b5C6d7E8', 
     domain: 'eth.altcoin.chain',
     description: 'Crypto Native'
   },
@@ -83,6 +84,9 @@ export const WorldIdAnimation: React.FC = () => {
             )}
           >
             <div className="relative group">
+              {/* Black background */}
+              <div className="absolute inset-0 bg-black rounded-2xl" />
+              
               {/* Glow effect */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-red-500/20 dark:from-red-500/30 dark:via-orange-500/30 dark:to-red-500/30 rounded-2xl blur opacity-60" />
               
@@ -134,6 +138,9 @@ export const WorldIdAnimation: React.FC = () => {
             )}
           >
             <div className="relative group">
+              {/* Black background */}
+              <div className="absolute inset-0 bg-black rounded-2xl" />
+              
               {/* Luxurious glow effect */}
               <div className="absolute -inset-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] rounded-2xl blur-lg opacity-40 dark:opacity-60 group-hover:opacity-60 dark:group-hover:opacity-80 transition-opacity duration-500" />
               
@@ -161,11 +168,20 @@ export const WorldIdAnimation: React.FC = () => {
 
       {/* Elegant CTA */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20 border border-[#D4AF37]/30 dark:border-[#D4AF37]/40">
+        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20 border border-[#D4AF37]/30 dark:border-[#D4AF37]/40">
           <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
           <p className="text-xs md:text-sm font-medium text-[#1e3a8a] dark:text-foreground/80">
-            Search above to claim your premium identity
+            Capable via ENS v2
           </p>
+          <Button 
+            asChild 
+            size="sm" 
+            className="h-7 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+          >
+            <a href="https://ens.domains/ensv2" target="_blank" rel="noopener noreferrer">
+              Learn more
+            </a>
+          </Button>
         </div>
       </div>
     </div>
