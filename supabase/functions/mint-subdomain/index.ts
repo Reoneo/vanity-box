@@ -96,19 +96,23 @@ serve(async (req) => {
     
     const namestonePayload = {
       domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
-      name: subdomainLabel,
-      address: walletAddress,
-      chain_id: 480, // World Chain network ID
-      metadata: {
-        registration_months: registrationMonths,
-        expiry_date: expiryDate.toISOString(),
-        grace_period_end: gracePeriodEnd.toISOString(),
-      }
+      names: [
+        {
+          name: subdomainLabel,
+          address: walletAddress,
+          chain_id: 480, // World Chain network ID
+          metadata: {
+            registration_months: registrationMonths,
+            expiry_date: expiryDate.toISOString(),
+            grace_period_end: gracePeriodEnd.toISOString(),
+          }
+        }
+      ]
     };
     
     console.log('📤 Sending request to Namestone with payload:', JSON.stringify(namestonePayload, null, 2));
     
-    const namestoneResponse = await fetch('https://namestone.com/api/public_v1/set-name', {
+    const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/set-names', {
       method: 'POST',
       headers: {
         'Authorization': NAMESTONE_API_KEY!,
