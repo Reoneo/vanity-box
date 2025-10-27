@@ -113,6 +113,11 @@ export const SearchInterface = () => {
   const { theme } = useTheme();
   const { username } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Function to remove underscores from input
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value.replace(/_/g, ''));
+  };
   const [displayQuery, setDisplayQuery] = useState(''); // The actual searched query for display
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -863,7 +868,7 @@ export const SearchInterface = () => {
                   placeholder={t('search_for_a_name')}
                   className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleSearch();

@@ -94,25 +94,26 @@ serve(async (req) => {
     const gracePeriodEnd = new Date(expiryDate);
     gracePeriodEnd.setMonth(gracePeriodEnd.getMonth() + 1);
     
+    // Convert World Chain ID (480) to coin_type: 0x80000000 | 480 = 2147484128
+    const worldChainCoinType = (0x80000000 | 480).toString();
+    
     const namestonePayload = {
       domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
-      names: [
-        {
-          name: subdomainLabel,
-          address: walletAddress,
-          chain_id: 480, // World Chain network ID
-          metadata: {
-            registration_months: registrationMonths,
-            expiry_date: expiryDate.toISOString(),
-            grace_period_end: gracePeriodEnd.toISOString(),
-          }
-        }
-      ]
+      name: subdomainLabel,
+      address: walletAddress,
+      coin_types: {
+        [worldChainCoinType]: walletAddress, // World Chain address resolution
+      },
+      text_records: {
+        "registration_months": registrationMonths.toString(),
+        "expiry_date": expiryDate.toISOString(),
+        "grace_period_end": gracePeriodEnd.toISOString(),
+      }
     };
     
     console.log('📤 Sending request to Namestone with payload:', JSON.stringify(namestonePayload, null, 2));
     
-    const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/set-names', {
+    const namestoneResponse = await fetch('https://namestone.com/api/public_v1/set-name', {
       method: 'POST',
       headers: {
         'Authorization': NAMESTONE_API_KEY!,

@@ -41,7 +41,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const { theme } = useTheme();
   const { t } = useLanguage();
 
-  const [registrationMonths, setRegistrationMonths] = useState(12);
+  const [registrationYears, setRegistrationYears] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("USDC");
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({
     eth: 2600,
@@ -192,9 +192,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const subdomainLabel = subdomain.split(".")[0];
   const effectiveNetworkFee = subdomainLabel.toLowerCase() === "test321" ? 0 : networkFeeUSD;
   
-  // Calculate total based on months (price is per year, so divide by 12 and multiply by months)
-  const monthlyPrice = domainPrice / 12;
-  const totalPrice = (monthlyPrice * registrationMonths) + effectiveNetworkFee;
+  // Calculate total based on years (price is per year)
+  const totalPrice = (domainPrice * registrationYears) + effectiveNetworkFee;
   const grandTotal = totalPrice;
   
   // For USDC, use exact dollar amount without conversion to prevent floating point errors
@@ -205,12 +204,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // --------------------- handlers ---------------------
 
-  const handleIncreaseMonths = () => setRegistrationMonths((p) => Math.min(p + 1, 120)); // Max 10 years (120 months)
-  const handleDecreaseMonths = () => setRegistrationMonths((p) => Math.max(p - 1, 1));
+  const handleIncreaseYears = () => setRegistrationYears((p) => Math.min(p + 1, 10)); // Max 10 years
+  const handleDecreaseYears = () => setRegistrationYears((p) => Math.max(p - 1, 1));
 
   const getExpirationDate = () => {
     const d = new Date();
-    d.setMonth(d.getMonth() + registrationMonths);
+    d.setFullYear(d.getFullYear() + registrationYears);
     return d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
   };
 
@@ -327,7 +326,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                   token_amount: amountAtomic,
                 },
               ],
-              description: `Register ${subdomain} for ${registrationMonths} month${registrationMonths > 1 ? "s" : ""}`,
+              description: `Register ${subdomain} for ${registrationYears} ${registrationYears > 1 ? t('years') : t('year')}`,
             };
 
             console.debug("[MiniKit] Payment payload:", paymentPayload);
@@ -381,7 +380,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               walletAddress, 
               txHash: txHash || 'free-mint-' + Date.now(),
               domain, // Pass the domain to the edge function
-              registrationMonths, // Pass registration months for expiry calculation
+              registrationMonths: registrationYears * 12, // Convert years to months for backend
               paymentMethod, // Pass payment method
               paymentAmount: convertedPrice, // Pass payment amount
               networkFee: effectiveNetworkFee // Pass network fee
@@ -410,6 +409,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             detail: { subdomain, txHash } 
           }));
           onClose();
+          
+          // Navigate to My IDs view after successful mint
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('show-my-ids'));
+          }, 500);
         } else {
           console.error('Mint failed:', data);
           throw new Error(data?.error || "Failed to mint subdomain.");
@@ -460,23 +464,26 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           <div className="w-full max-w-sm space-y-1">
             <div className="flex items-center justify-center gap-3">
               <button
-                onClick={handleDecreaseMonths}
+                onClick={handleDecreaseYears}
                 className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                disabled={registrationMonths <= 1}
+                disabled={registrationYears <= 1}
               >
                 <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
 
               <div className="text-center">
                 <div className="text-3xl font-bold text-[#D4AF37]">
-                  {registrationMonths} {registrationMonths > 1 ? t('months') : t('month')}
+                  {registrationYears}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {registrationYears === 1 ? t('year') : t('years')}
                 </div>
               </div>
 
               <button
-                onClick={handleIncreaseMonths}
+                onClick={handleIncreaseYears}
                 className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                disabled={registrationMonths >= 120}
+                disabled={registrationYears >= 10}
               >
                 <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
@@ -522,10 +529,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {registrationMonths} {registrationMonths > 1 ? t('months') : t('month')}
+                  {registrationYears} {registrationYears > 1 ? t('years') : t('year')}
                 </span>
                 <span className="font-medium text-[#D4AF37]">
-                  ${(monthlyPrice * registrationMonths).toFixed(2)}
+                  ${(domainPrice * registrationYears).toFixed(2)}
                 </span>
               </div>
 
