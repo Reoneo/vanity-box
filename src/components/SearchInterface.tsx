@@ -517,20 +517,22 @@ export const SearchInterface = () => {
               }
             }
             
-            // Fetch ENS records
-            try {
-              const ensResponse = await fetch(
-                `https://api.ethfollow.xyz/api/v1/users/${addressOrName}/ens`
-              );
-              
-              if (ensResponse.ok) {
-                const ensData = await ensResponse.json();
-                if (ensData.ens) {
-                  setEnsRecords(ensData.ens);
+            // Fetch ENS records - use ONLY the resolved address from profileData
+            if (profileData.address) {
+              try {
+                const ensResponse = await fetch(
+                  `https://api.ethfollow.xyz/api/v1/users/${profileData.address}/ens`
+                );
+                
+                if (ensResponse.ok) {
+                  const ensData = await ensResponse.json();
+                  if (ensData.ens) {
+                    setEnsRecords(ensData.ens);
+                  }
                 }
+              } catch (ensError) {
+                console.error('Error fetching ENS records:', ensError);
               }
-            } catch (ensError) {
-              console.error('Error fetching ENS records:', ensError);
             }
           }
         }

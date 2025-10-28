@@ -221,20 +221,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       return;
     }
 
+    setIsMinting(true);
+
     try {
-      setIsMinting(true);
 
       // Guard: avoid race while prices are loading
       if (!isFree && isLoadingPrices) {
         toast.info("Fetching prices — try again in a moment.");
-        setIsMinting(false);
         return;
       }
 
       // Guard: ensure MiniKit is installed
       if (!MiniKit.isInstalled()) {
         toast.error("MiniKit is not installed. Please open this app in World App.");
-        setIsMinting(false);
         return;
       }
 
@@ -250,7 +249,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       } catch (connError: any) {
         console.error("[Mint] Wallet connection error:", connError);
         toast.error(connError?.message || "Failed to connect wallet. Please try again.");
-        setIsMinting(false);
         return;
       }
 
@@ -304,12 +302,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               const errorMsg = (finalPayload as any).error_message || "ETH payment failed.";
               toast.dismiss(paymentToast);
               toast.error(errorMsg);
-              setIsMinting(false);
               return;
             } else {
               toast.dismiss(paymentToast);
               toast.error("ETH payment was cancelled.");
-              setIsMinting(false);
               return;
             }
           } else {
@@ -348,19 +344,16 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               const errorMsg = (finalPayload as any).error_message || "Payment failed.";
               toast.dismiss(paymentToast);
               toast.error(errorMsg);
-              setIsMinting(false);
               return;
             } else {
               toast.dismiss(paymentToast);
               toast.error("Payment was cancelled.");
-              setIsMinting(false);
               return;
             }
           }
         } catch (payErr: any) {
           const msg = typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
           toast.error(msg);
-          setIsMinting(false);
           return;
         } finally {
           payInFlightRef.current = false;
@@ -425,9 +418,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       }
     } catch (e: any) {
       console.error("Minting error:", e);
-      toast.error(e?.message ?? "Failed to mint subdomain.");
+      const errorMsg = e?.message || "Failed to mint subdomain. Please try again.";
+      toast.error(errorMsg);
     } finally {
+      // Always reset minting state
       setIsMinting(false);
+      payInFlightRef.current = false;
     }
   };
 
