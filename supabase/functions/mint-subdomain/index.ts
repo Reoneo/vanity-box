@@ -236,9 +236,9 @@ serve(async (req) => {
         namestoneData,
         durinWrapping: durinWrappingStatus,
         registration_months: registrationMonths,
-        expiry_date: namestonePayload.metadata.expiry_date,
-        grace_period_end: namestonePayload.metadata.grace_period_end,
-        message: durinWrappingStatus.success 
+        expiry_date: namestonePayload.text_records.expiry_date,
+        grace_period_end: namestonePayload.text_records.grace_period_end,
+        message: durinWrappingStatus.success
           ? 'Subdomain minted and wrapped successfully'
           : 'Subdomain minted via Namestone (Durin wrapping pending)'
       }),

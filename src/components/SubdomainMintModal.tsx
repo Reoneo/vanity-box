@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 // ⬇︎ MiniKit v0.5+ (uses install(), not init())
 import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from "@worldcoin/minikit-js";
+import { parseUnits } from "viem";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ethLogoLight from "@/assets/eth-logo-light.png";
@@ -271,7 +272,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           if (paymentMethod === "ETH") {
             // Custom ETH payment flow using sendTransaction
             const recipientAddress = "0x71ab0b01e3ff45551e25b208e2a90298f73f7040";
-            const weiAmount = Math.floor(convertedPrice * 1e18).toString();
+            const weiAmount = parseUnits(convertedPrice.toFixed(18), 18).toString();
 
             const txPayload = {
               transaction: [
@@ -314,8 +315,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           } else {
             // USDC/WLD payment flow using pay command
             const tokenEnum = paymentMethod === "USDC" ? Tokens.USDC : Tokens.WLD;
-            const roundedAmount = Math.round(convertedPrice * 1000000) / 1000000;
-            const amountAtomic = tokenToDecimals(roundedAmount, tokenEnum).toString();
+            const decimals = tokenEnum === Tokens.USDC ? 6 : 18;
+            const amountAtomic = parseUnits(convertedPrice.toFixed(decimals), decimals).toString();
 
             const paymentPayload: PayCommandInput = {
               reference: `subdomain-${subdomain}-${Date.now()}`,
