@@ -51,6 +51,7 @@ import aptosNamesLight from "@/assets/aptos-names-light.png";
 import aptosNamesNew from "@/assets/aptos-names-new.jpeg";
 import avvyLogo from "@/assets/avvy-logo.png";
 import smithAptAvatar from "@/assets/smith-apt-avatar.png";
+import vanityContactIcon from "@/assets/vanity-contact-icon.png";
 import termuxAvatar from "@/assets/termux-avatar.png";
 import mithEthAvatar from "@/assets/mith-eth-avatar.png";
 import teamxrpAvatar from "@/assets/teamxrp-avatar.png";
@@ -1546,6 +1547,16 @@ export const SearchInterface = () => {
                           {/* Front of Card */}
                           <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                             <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
+                              {/* Vanity.box link to parent domain (top-right) */}
+                              <a
+                                href={`https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute top-3 right-3 opacity-90 hover:opacity-100"
+                                aria-label="Open parent domain on Vanity.box"
+                              >
+                                <img src={vanityContactIcon} alt="Vanity.box" className="w-6 h-6" />
+                              </a>
                               <div className={`relative ${hasSpotify ? "mb-2 w-full" : "mb-6"}`}>
                                 {hasSpotify ? (
                                   <div className="w-full relative">
@@ -1659,6 +1670,16 @@ export const SearchInterface = () => {
                           {/* Back of Card */}
                           <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
                             <div className="relative p-6 h-full flex flex-col min-h-[320px]">
+                              {/* Vanity.box link to parent domain (top-right) */}
+                              <a
+                                href={`https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute top-3 right-3 opacity-90 hover:opacity-100"
+                                aria-label="Open parent domain on Vanity.box"
+                              >
+                                <img src={vanityContactIcon} alt="Vanity.box" className="w-6 h-6" />
+                              </a>
                               <div className="flex justify-end mb-4 flex-shrink-0">
                                 <button
                                   onClick={() => handleFlipCard(index)}

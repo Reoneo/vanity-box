@@ -52,14 +52,25 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
-    // Get API key for this domain
-    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    // Get API key for this domain using robust mapping:
+    // 1) NAMESTONE_API_KEY_<LABEL> (e.g., 30315, TEAMXRP, MEXIPAY)
+    // 2) NAMESTONE_API_KEY_<FULL_DOMAIN> (e.g., 30315_ETH)
+    // 3) NAMESTONE_API_KEY (generic fallback)
+    const effectiveDomain = (domain || '').toLowerCase();
+    const label = effectiveDomain.split('.')[0] || '';
+    const labelKey = label.replace(/[^a-z0-9]/gi, '').toUpperCase();
+    const domainKey = effectiveDomain.toUpperCase().replace(/\./g, '_');
+
+    const NAMESTONE_API_KEY =
+      Deno.env.get(`NAMESTONE_API_KEY_${labelKey}`) ||
+      Deno.env.get(`NAMESTONE_API_KEY_${domainKey}`) ||
+      Deno.env.get('NAMESTONE_API_KEY');
     
     if (!NAMESTONE_API_KEY) {
-      throw new Error(`API key not configured for domain ${domain}`);
+      throw new Error(`API key not configured for domain ${effectiveDomain || domain}`);
     }
     
-    console.log('🔑 Using API key for domain:', domain);
+    console.log('🔑 Using API key for domain:', effectiveDomain, 'resolved secret for label:', labelKey);
 
     // Step 1: Verify the transaction on World Chain (skip for free mints)
     if (txHash) {
@@ -94,12 +105,12 @@ serve(async (req) => {
     const gracePeriodEnd = new Date(expiryDate);
     gracePeriodEnd.setMonth(gracePeriodEnd.getMonth() + 1);
     
-    // Convert World Chain ID (480) to coin_type: 0x80000000 | 480 = 2147484128
-    const worldChainCoinType = (0x80000000 | 480).toString();
+    // Convert World Chain ID (480) to coin_type per SLIP-44: 0x80000000 + 480 = 2147484128
+    const worldChainCoinType = (2147483648 + 480).toString();
     
     const namestonePayload = {
       domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
-      name: subdomainLabel,
+      name: subdomainLabel.toLowerCase(),
       address: walletAddress,
       coin_types: {
         [worldChainCoinType]: walletAddress, // World Chain address resolution
