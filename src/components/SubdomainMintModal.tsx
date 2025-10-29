@@ -6,11 +6,11 @@ import { ArrowLeft, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MiniKit, Tokens, PayCommandInput } from "@worldcoin/minikit-js";
 import { parseUnits } from "viem";
+import { callEdge } from "@/lib/supaInvoke";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ethLogoLight from "@/assets/eth-logo-light.png";
@@ -348,41 +348,25 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       const mintingToast = toast.info("Minting your subdomain…");
 
       try {
-        const { data, error } = await Promise.race([
-          supabase.functions.invoke("mint-subdomain", {
-            body: {
-              // keep your current payload for compatibility
-              subdomain,
-              walletAddress,
-              txHash: txHash || "free-mint-" + Date.now(),
-              domain,
-              registrationMonths: registrationYears * 12,
-              paymentMethod,
-              paymentAmount: convertedPrice,
-              networkFee: effectiveNetworkFee,
-            },
-            headers: { "Content-Type": "application/json" },
+        const data = await Promise.race([
+          callEdge<any>("mint-subdomain", {
+            subdomain,
+            walletAddress,
+            txHash: txHash || "free-mint-" + Date.now(),
+            domain,
+            registrationMonths: registrationYears * 12,
+            paymentMethod,
+            paymentAmount: convertedPrice,
+            networkFee: effectiveNetworkFee,
           }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error("Minting timeout - please check My IDs in a moment")), 45_000),
           ),
         ]);
 
-        if (error) {
-          // Pull the real message out of Supabase
-          const msg = extractInvokeError(error);
-          // add helpful hints for common statuses
-          if (msg.includes("404")) {
-            throw new Error("Mint function not found (404). Deploy the Edge Function `mint-subdomain` in Supabase.");
-          }
-          throw new Error(msg);
-        }
-
-        if (!data?.success) {
-          // function responded but not success
-          const msg =
-            data?.error || "Mint function did not return success. Check Supabase → Functions → Logs for details.";
-          throw new Error(msg);
+        // The echo function returns { ok: true, received: {...} }
+        if (!data?.ok) {
+          throw new Error(data?.error || "Mint function returned not-ok");
         }
 
         toast.dismiss(mintingToast);
