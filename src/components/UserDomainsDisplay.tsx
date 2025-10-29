@@ -181,9 +181,22 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     );
   }
 
+  const handleBackClick = () => {
+    window.dispatchEvent(new CustomEvent('show-search'));
+  };
+
   if (domains.length === 0) {
     return (
       <div className="text-center py-8">
+        <button 
+          onClick={handleBackClick}
+          className="flex items-center gap-2 text-foreground hover:text-primary mb-6"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {t('back')}
+        </button>
         <p className="text-gray-600 dark:text-gray-400">{t('no_domains_found')}</p>
         <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
           {t('mint_first_id')}
@@ -210,10 +223,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   if (isEditMode && selectedDomain) {
     return <DomainEditPanel domain={selectedDomain} />;
   }
-
-  const handleBackClick = () => {
-    window.dispatchEvent(new CustomEvent('show-search'));
-  };
 
   return (
     <div className="space-y-4">
