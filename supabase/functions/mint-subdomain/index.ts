@@ -17,15 +17,23 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
 
+    console.log(`[Mint] Received request:`, { subdomain, walletAddress, domain, registrationMonths });
+
     if (!subdomain || !walletAddress || !domain) {
+      console.error("[Mint] Missing required fields:", { subdomain, walletAddress, domain });
       return j({ ok: false, error: "Missing required fields" }, 400);
     }
 
-    console.log(`[Mint] ${subdomain} for ${walletAddress}`);
-
     // Extract subdomain label and domain
-    const subdomainLabel = subdomain.split(".")[0].toLowerCase();
-    const cleanDomain = domain.replace(/^\$/, "").toLowerCase();
+    const subdomainLabel = subdomain.split(".")[0].toLowerCase().trim();
+    const cleanDomain = domain.replace(/^\$/, "").toLowerCase().trim();
+
+    console.log(`[Mint] Processed: label="${subdomainLabel}", domain="${cleanDomain}"`);
+
+    if (!cleanDomain || cleanDomain.length === 0) {
+      console.error("[Mint] Domain is empty after processing");
+      return j({ ok: false, error: "Invalid domain format" }, 400);
+    }
 
     // Get API key for domain
     const apiKeyMap: Record<string, string | undefined> = {
@@ -39,8 +47,11 @@ Deno.serve(async (req) => {
     };
 
     const namestoneApiKey = apiKeyMap[cleanDomain] || Deno.env.get("NAMESTONE_API_KEY");
+    console.log(`[Mint] Using API key for domain: ${cleanDomain}, keyFound: ${!!namestoneApiKey}`);
+    
     if (!namestoneApiKey) {
-      return j({ ok: false, error: `No API key for domain ${cleanDomain}` }, 500);
+      console.error(`[Mint] No API key found for domain: ${cleanDomain}`);
+      return j({ ok: false, error: `No API key configured for domain ${cleanDomain}` }, 500);
     }
 
     // Calculate dates
@@ -66,7 +77,7 @@ Deno.serve(async (req) => {
       ],
     };
 
-    console.log(`[Namestone] Calling set-names for ${subdomainLabel}.${cleanDomain}`);
+    console.log(`[Namestone] Calling set-names for ${subdomainLabel}.${cleanDomain}`, namestonePayload);
     const namestoneRes = await fetch("https://namestone.xyz/api/public_v1/set-names", {
       method: "POST",
       headers: {
@@ -75,6 +86,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify(namestonePayload),
     });
+
+    console.log(`[Namestone] Response status: ${namestoneRes.status}`);
 
     if (!namestoneRes.ok) {
       const errorText = await namestoneRes.text();
