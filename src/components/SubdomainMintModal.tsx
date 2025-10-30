@@ -25,7 +25,6 @@ interface SubdomainMintModalProps {
   subdomain: string;
   price: number; // kept for compatibility; actual price computed from length
   resultAvatar?: string;
-  domain?: string; // The domain to mint on (e.g., "30315.eth", "teamxrp.eth", "termux.eth", "smith.cash")
 }
 
 type PaymentMethod = "USDC" | "ETH" | "WLD";
@@ -36,7 +35,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   subdomain,
   price, // eslint-disable-line @typescript-eslint/no-unused-vars
   resultAvatar,
-  domain = 'smith.cash', // Default to smith.cash if not specified
 }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
@@ -44,19 +42,18 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [registrationYears, setRegistrationYears] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("USDC");
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({
-    eth: 2600,
-    wld: 1.85,
+    eth: 2500,
+    wld: 2.0,
     usdc: 1.0,
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
-  const [networkFeeUSD, setNetworkFeeUSD] = useState(0.15);
+  const [networkFeeUSD, setNetworkFeeUSD] = useState(0.50);
 
+  // Prevent double MiniKit install
+  const miniKitInstalledRef = useRef(false);
   // Prevent duplicate pay calls
   const payInFlightRef = useRef(false);
-
-  // Free mint threshold
-  const EPSILON_FREE_USD = 0.01;
 
   // --------------------- helpers ---------------------
 
@@ -97,7 +94,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const getSubdomainPrice = (fullSubdomain: string) => {
     const subdomainLabel = fullSubdomain.split(".")[0];
-    // test321 is free for all domains
     if (subdomainLabel.toLowerCase() === "test321") return 0;
 
     const length = subdomainLabel.length;
@@ -140,12 +136,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     const loadNetworkFee = async () => {
       try {
         const { calculateNetworkFee } = await import('@/utils/worldChainGas');
-        const fee = await calculateNetworkFee(150000); // Realistic gas limit for subdomain mint
-        console.log('Loaded network fee:', fee);
+        const fee = await calculateNetworkFee();
         if (mounted) setNetworkFeeUSD(fee);
       } catch (error) {
         console.error('Failed to fetch network fee:', error);
-        if (mounted) setNetworkFeeUSD(0.15); // Fallback
       }
     };
 
@@ -153,7 +147,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     loadNetworkFee();
     
     const priceInterval = setInterval(load, 60_000);
-    const feeInterval = setInterval(loadNetworkFee, 30_000); // Refresh network fee every 30s
+    const feeInterval = setInterval(loadNetworkFee, 15_000);
     
     return () => {
       mounted = false;
@@ -187,17 +181,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
-  
-  // test321 is free for ALL domains, no network fee
-  const subdomainLabel = subdomain.split(".")[0];
-  const effectiveNetworkFee = subdomainLabel.toLowerCase() === "test321" ? 0 : networkFeeUSD;
-  
-  const totalPrice = (domainPrice * registrationYears) + effectiveNetworkFee;
+  const totalPrice = (domainPrice * registrationYears) + networkFeeUSD;
   const grandTotal = totalPrice;
   const convertedPrice = grandTotal * selectedMethod.rate;
-  
-  // Determine if this is a free mint (total below threshold)
-  const isFree = grandTotal < EPSILON_FREE_USD;
 
   // --------------------- handlers ---------------------
 
@@ -221,39 +207,18 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       setIsMinting(true);
 
       // Guard: avoid race while prices are loading
-      if (!isFree && isLoadingPrices) {
+      if (grandTotal > 0 && isLoadingPrices) {
         toast.info("Fetching prices — try again in a moment.");
-        setIsMinting(false);
-        return;
-      }
-
-      // Guard: ensure MiniKit is installed
-      if (!MiniKit.isInstalled()) {
-        toast.error("MiniKit is not installed. Please open this app in World App.");
-        setIsMinting(false);
         return;
       }
 
       // Ensure wallet is connected - will trigger walletAuth if needed
-      let walletAddress: string;
-      try {
-        walletAddress = await Promise.race([
-          ensureWalletConnected(),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error("Wallet connection timeout")), 30000)
-          )
-        ]);
-      } catch (connError: any) {
-        console.error("[Mint] Wallet connection error:", connError);
-        toast.error(connError?.message || "Failed to connect wallet. Please try again.");
-        setIsMinting(false);
-        return;
-      }
+      const walletAddress = await ensureWalletConnected();
 
       let txHash: string | undefined;
 
-      // Process payment only if NOT free
-      if (!isFree) {
+      // Process payment only if grand total > 0
+      if (grandTotal > 0) {
         // Guard: prevent duplicate pay calls
         if (payInFlightRef.current) {
           console.debug("[MiniKit] Payment already in flight, ignoring");
@@ -262,7 +227,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         payInFlightRef.current = true;
 
         try {
-          const paymentToast = toast.info("Processing payment...");
+          toast.info("Processing payment...");
 
           // ETH requires sendTransaction, USDC/WLD use pay command
           if (paymentMethod === "ETH") {
@@ -284,28 +249,18 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
             console.debug("[MiniKit] ETH transaction payload:", txPayload);
             
-            const { finalPayload } = await Promise.race([
-              MiniKit.commandsAsync.sendTransaction(txPayload),
-              new Promise<never>((_, reject) => 
-                setTimeout(() => reject(new Error("Payment timeout - please try again")), 60000)
-              )
-            ]);
+            const { finalPayload } = await MiniKit.commandsAsync.sendTransaction(txPayload);
             console.debug("[MiniKit] ETH transaction finalPayload:", finalPayload);
 
             if (finalPayload.status === "success") {
               txHash = finalPayload.transaction_id;
-              toast.dismiss(paymentToast);
               toast.success("ETH payment successful!");
             } else if (finalPayload.status === "error") {
               const errorMsg = (finalPayload as any).error_message || "ETH payment failed.";
-              toast.dismiss(paymentToast);
               toast.error(errorMsg);
-              setIsMinting(false);
               return;
             } else {
-              toast.dismiss(paymentToast);
               toast.error("ETH payment was cancelled.");
-              setIsMinting(false);
               return;
             }
           } else {
@@ -328,88 +283,47 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
             console.debug("[MiniKit] Payment payload:", paymentPayload);
 
-            const { finalPayload } = await Promise.race([
-              MiniKit.commandsAsync.pay(paymentPayload),
-              new Promise<never>((_, reject) => 
-                setTimeout(() => reject(new Error("Payment timeout - please try again")), 60000)
-              )
-            ]);
+            const { finalPayload } = await MiniKit.commandsAsync.pay(paymentPayload);
             console.debug("[MiniKit] Payment finalPayload:", finalPayload);
 
             if (finalPayload.status === "success") {
               txHash = finalPayload.transaction_id;
-              toast.dismiss(paymentToast);
               toast.success("Payment successful!");
             } else if (finalPayload.status === "error") {
               const errorMsg = (finalPayload as any).error_message || "Payment failed.";
-              toast.dismiss(paymentToast);
               toast.error(errorMsg);
-              setIsMinting(false);
               return;
             } else {
-              toast.dismiss(paymentToast);
               toast.error("Payment was cancelled.");
-              setIsMinting(false);
               return;
             }
           }
         } catch (payErr: any) {
           const msg = typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
           toast.error(msg);
-          setIsMinting(false);
           return;
         } finally {
           payInFlightRef.current = false;
         }
       } else {
         // Free mint path - skip payment entirely
-        txHash = 'free-mint-' + Date.now();
         toast.success("Free mint - processing...");
       }
 
-      const mintingToast = toast.info("Minting your subdomain...");
+      toast.info("Minting your subdomain...");
 
-      try {
-        const { data, error } = await Promise.race([
-          supabase.functions.invoke("mint-subdomain", {
-            body: { 
-              subdomain, 
-              walletAddress, 
-              txHash: txHash || 'free-mint-' + Date.now(),
-              domain, // Pass the domain to the edge function
-              registrationYears // Pass registration years for expiry calculation
-            },
-          }),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error("Minting timeout - please check My IDs in a moment")), 45000)
-          )
-        ]);
+      const { data, error } = await supabase.functions.invoke("mint-subdomain", {
+        body: { subdomain, walletAddress, txHash },
+      });
 
-        if (error) {
-          console.error('Supabase function error:', error);
-          throw error;
-        }
+      if (error) throw error;
 
-        if (data?.success) {
-          toast.dismiss(mintingToast);
-          toast.success("Subdomain minted successfully!");
-          
-          // Persist txHash to localStorage for display
-          const txMap = JSON.parse(localStorage.getItem('txMap') || '{}');
-          txMap[subdomain.toLowerCase()] = txHash;
-          localStorage.setItem('txMap', JSON.stringify(txMap));
-          
-          window.dispatchEvent(new CustomEvent("domains-updated", { 
-            detail: { subdomain, txHash } 
-          }));
-          onClose();
-        } else {
-          console.error('Mint failed:', data);
-          throw new Error(data?.error || "Failed to mint subdomain.");
-        }
-      } catch (mintErr: any) {
-        toast.dismiss(mintingToast);
-        throw mintErr;
+      if (data?.success) {
+        toast.success("Subdomain minted successfully!");
+        window.dispatchEvent(new CustomEvent("domains-updated"));
+        onClose();
+      } else {
+        throw new Error(data?.error || "Failed to mint subdomain.");
       }
     } catch (e: any) {
       console.error("Minting error:", e);
@@ -462,10 +376,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="text-center">
                 <div className="text-3xl font-bold text-[#D4AF37]">
-                  {registrationYears} {registrationYears > 1 ? t('years') : t('year')}
+                  {registrationYears} year{registrationYears > 1 ? "s" : ""}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">
-                  {registrationYears * 12} {t('month_registration')}
+                  {registrationYears * 12} Month Registration
                 </div>
               </div>
 
@@ -500,25 +414,26 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           {/* Price Display */}
           <div className="flex flex-col items-center gap-1">
             <div className="text-4xl font-bold text-[#D4AF37]">
-              <>
-                {paymentMethod === "USDC" && `${((domainPrice * registrationYears) * selectedMethod.rate).toFixed(2)} USDC`}
-                {paymentMethod === "ETH" && `${((domainPrice * registrationYears) * selectedMethod.rate).toFixed(6)} ETH`}
-                {paymentMethod === "WLD" && `${((domainPrice * registrationYears) * selectedMethod.rate).toFixed(4)} WLD`}
-              </>
+              {isLoadingPrices ? (
+                <span className="text-xl">Loading...</span>
+              ) : (
+                <>
+                  {paymentMethod === "USDC" && `$${grandTotal.toFixed(2)}`}
+                  {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
+                  {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
+                </>
+              )}
             </div>
-            {isLoadingPrices && (
-              <div className="text-xs text-gray-500">Updating prices…</div>
-            )}
           </div>
 
           {/* Cost Breakdown */}
           <div className="w-full max-w-sm space-y-2">
-            <h3 className="font-semibold text-gray-900 dark:text-white text-center text-sm">{t('cost_breakdown')}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white text-center text-sm">Cost Breakdown:</h3>
 
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {registrationYears} {registrationYears > 1 ? t('years_registration') : t('year_registration')}
+                  {registrationYears} year{registrationYears > 1 ? "s" : ""} registration
                 </span>
                 <span className="font-medium text-[#D4AF37]">
                   {domainPrice === 0 ? "FREE" : `$${(domainPrice * registrationYears).toFixed(2)}`}
@@ -526,29 +441,27 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">{t('network_fee')} (World Chain)</span>
-                <span className="font-medium text-[#D4AF37]">
-                  {effectiveNetworkFee === 0 ? "FREE" : effectiveNetworkFee < 0.03 ? "< $0.03" : `$${effectiveNetworkFee.toFixed(2)}`}
-                </span>
+                <span className="text-gray-600 dark:text-gray-400">Network fee</span>
+                <span className="font-medium text-[#D4AF37]">${networkFeeUSD.toFixed(2)}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">{t('expires')}</span>
+                <span className="text-gray-600 dark:text-gray-400">Expires</span>
                 <span className="font-medium text-gray-900 dark:text-white">{getExpirationDate()}</span>
               </div>
 
               <Separator className="my-1" />
 
               <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-gray-900 dark:text-white">{t('total')}</span>
-                <span className="font-bold text-gray-900 dark:text-white">${((domainPrice * registrationYears) + 0.03).toFixed(2)}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">Total</span>
+                <span className="font-bold text-gray-900 dark:text-white">${grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Mint Now Button */}
             <Button
               onClick={handleMintNow}
-              disabled={isMinting}
+              disabled={isMinting || (grandTotal > 0 && isLoadingPrices)}
               className="w-full mt-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-5 text-base disabled:opacity-50"
             >
               {isMinting ? "Minting..." : "Mint Now"}

@@ -103,29 +103,16 @@ serve(async (req) => {
           const isWrapped = owner !== '0x0000000000000000000000000000000000000000';
           console.log(`Domain ${fullDomain} wrapped status: ${isWrapped}`);
 
-          // Extract expiry and registration data from metadata if available
-          const metadata = domain.metadata || {};
-          const registrationYears = metadata.registration_years || 1;
-          const expiryDate = metadata.expiry_date;
-
           return {
             ...domain,
             isWrapped,
-            registration_years: registrationYears,
-            expiry_date: expiryDate,
           };
         } catch (error) {
           console.error(`Error checking wrapped status for ${domain.name}:`, error);
           // If we can't check, assume not wrapped
-          const metadata = domain.metadata || {};
-          const registrationYears = metadata.registration_years || 1;
-          const expiryDate = metadata.expiry_date;
-
           return {
             ...domain,
             isWrapped: false,
-            registration_years: registrationYears,
-            expiry_date: expiryDate,
           };
         }
       })

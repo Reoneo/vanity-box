@@ -7,7 +7,7 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { Header } from '@/components/Header';
 
 export default function PrivacyPolicy() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
@@ -24,17 +24,11 @@ export default function PrivacyPolicy() {
           {t('back')}
         </Button>
         <h1 className="text-4xl md:text-5xl font-playfair font-bold mb-4 bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] bg-clip-text text-transparent">
-          {t('privacy_policy')}
+          Privacy Policy
         </h1>
-        <p className="text-sm text-muted-foreground mb-8">{t('last_modified')}: {new Date().toLocaleDateString()}</p>
+        <p className="text-sm text-muted-foreground mb-8">Last modified: {new Date().toLocaleDateString()}</p>
 
         <div className="prose prose-lg dark:prose-invert max-w-none space-y-8">
-          <p className="text-sm text-muted-foreground mb-4">
-            {language !== 'en' && (
-              <em>Note: Legal documents are provided in English. Translations are for reference only.</em>
-            )}
-          </p>
-          
           <section>
             <h2 className="text-2xl font-playfair font-semibold mb-4">01. Introduction</h2>
             <ol className="list-decimal list-inside space-y-3 text-foreground/80">
@@ -142,32 +136,22 @@ export default function PrivacyPolicy() {
       </main>
 
       {/* Fixed Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
-        <div className="container mx-auto px-4 flex items-center justify-between text-xs">
-          {/* Language Selector on Left */}
-          <div className="flex items-center gap-1.5">
-            <LanguageSelector />
-          </div>
-          
-          {/* Copyright Centered */}
-          <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal whitespace-nowrap">
-            © 2025 vanity.box. All rights reserved.
-          </div>
-          
-          {/* Theme Toggle on Right */}
-          <div className="flex items-center">
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-7 h-7 flex items-center justify-center transition-all duration-300 hover:opacity-80"
-              aria-label={t('toggle_theme')}
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-black" />
-              ) : (
-                <Moon className="w-5 h-5 text-black" />
-              )}
-            </button>
-          </div>
+      <footer className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] py-4 px-4 pb-safe-area-inset-bottom">
+        <div className="container mx-auto flex items-center justify-between max-w-5xl">
+          <LanguageSelector />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-full hover:bg-black/10 transition-colors"
+            aria-label={t('toggle_theme')}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5 text-black" />
+            ) : (
+              <Moon className="h-5 w-5 text-black" />
+            )}
+          </Button>
         </div>
       </footer>
     </div>

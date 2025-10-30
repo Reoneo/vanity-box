@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API key will be fetched based on domain
+const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
 const WORLD_CHAIN_RPC = 'https://worldchain-mainnet.g.alchemy.com/public';
 const REGISTRY_FACTORY_ADDRESS = '0xDddddDdDDD8Aa1f237b4fa0669cb46892346d22d';
 
@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain, walletAddress, txHash, domain, registrationYears = 1 } = await req.json();
+    const { subdomain, walletAddress, txHash } = await req.json();
 
     console.log('==========================================');
     console.log('🚀 STARTING SUBDOMAIN MINTING PROCESS');
@@ -42,22 +42,15 @@ serve(async (req) => {
     console.log('📝 Subdomain:', subdomain);
     console.log('👛 Wallet Address:', walletAddress);
     console.log('🔗 Transaction Hash:', txHash || 'N/A (Free Mint)');
-    console.log('🌐 Domain:', domain);
-    console.log('📅 Registration Years:', registrationYears);
     console.log('==========================================');
 
-    if (!subdomain || !walletAddress || !domain) {
-      throw new Error('Missing required parameters');
+    if (!NAMESTONE_API_KEY) {
+      throw new Error('NAMESTONE_API_KEY is not configured');
     }
 
-    // Get API key for this domain
-    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
-    
-    if (!NAMESTONE_API_KEY) {
-      throw new Error(`API key not configured for domain ${domain}`);
+    if (!subdomain || !walletAddress) {
+      throw new Error('Missing required parameters');
     }
-    
-    console.log('🔑 Using API key for domain:', domain);
 
     // Step 1: Verify the transaction on World Chain (skip for free mints)
     if (txHash) {
@@ -83,24 +76,16 @@ serve(async (req) => {
     console.log('🌐 Domain from subdomain:', domainFromSubdomain);
     console.log('🔑 API Key configured:', !!NAMESTONE_API_KEY);
     
-    // Calculate expiry date
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + registrationYears);
-    
     const namestonePayload = {
-      domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
+      domain: domainFromSubdomain || 'smith.cash',
       name: subdomainLabel,
       address: walletAddress,
       chain_id: 480, // World Chain network ID
-      metadata: {
-        registration_years: registrationYears,
-        expiry_date: expiryDate.toISOString(),
-      }
     };
     
     console.log('📤 Sending request to Namestone with payload:', JSON.stringify(namestonePayload, null, 2));
     
-    const namestoneResponse = await fetch('https://namestone.com/api/public_v1/set-name', {
+    const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/set-name', {
       method: 'POST',
       headers: {
         'Authorization': NAMESTONE_API_KEY!,
@@ -185,8 +170,6 @@ serve(async (req) => {
         txHash,
         namestoneData,
         durinWrapping: durinWrappingStatus,
-        registration_years: registrationYears,
-        expiry_date: namestonePayload.metadata.expiry_date,
         message: durinWrappingStatus.success 
           ? 'Subdomain minted and wrapped successfully'
           : 'Subdomain minted via Namestone (Durin wrapping pending)'

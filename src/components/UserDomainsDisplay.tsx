@@ -4,10 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Pencil, Send, Trash2, ExternalLink } from 'lucide-react';
+import { Loader2, Pencil, Send, Trash2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
-import ensLogoLink from '@/assets/ens-logo-link.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import { DomainEditPanel } from './DomainEditPanel';
 import noResultsGif from '@/assets/no-results.gif';
@@ -19,9 +18,6 @@ interface Domain {
   created_at?: string;
   updated_at?: string;
   isWrapped?: boolean;
-  txHash?: string;
-  registration_years?: number; // Years registered for
-  expiry_date?: string; // Calculated expiry date
 }
 
 interface UserDomainsDisplayProps {
@@ -59,37 +55,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         const filteredDomains = (data.domains || []).filter((domain: Domain) => 
           domain.address.toLowerCase() === walletAddress.toLowerCase()
         );
-        
-        // Fetch txHash from Namestone API for each domain
-        const domainsWithTx = await Promise.all(
-          filteredDomains.map(async (d: Domain) => {
-            try {
-              const namestoneApiUrl = `https://api.namestone.xyz/txs?name=${d.name}.${d.domain}`;
-              const response = await fetch(namestoneApiUrl);
-              if (response.ok) {
-                const data = await response.json();
-                // Extract tx hash from the first transaction if available
-                if (data && data.length > 0 && data[0].tx_hash) {
-                  return {
-                    ...d,
-                    txHash: data[0].tx_hash,
-                  };
-                }
-              }
-            } catch (error) {
-              console.error(`Error fetching tx for ${d.name}.${d.domain}:`, error);
-            }
-            // Fallback to localStorage or existing txHash
-            const txMap = JSON.parse(localStorage.getItem('txMap') || '{}');
-            const key = `${d.name}.${d.domain}`.toLowerCase();
-            return {
-              ...d,
-              txHash: txMap[key] || d.txHash,
-            };
-          })
-        );
-        
-        setDomains(domainsWithTx);
+        setDomains(filteredDomains);
       } else {
         throw new Error(data?.error || 'Failed to fetch domains');
       }
@@ -163,11 +129,9 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     );
   }
 
-  const handleManageDomain = (domain: Domain, action: 'edit' | 'transfer') => {
+  const handleManageDomain = (domain: Domain) => {
     setSelectedDomain(domain);
     setIsEditMode(true);
-    // Dispatch event to tell DomainEditPanel which tab to show
-    window.dispatchEvent(new CustomEvent('domain-action', { detail: { action } }));
   };
 
   // Show edit panel if in edit mode
@@ -198,39 +162,50 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-lg text-white truncate mb-2">
-                    {domain.name}.{domain.domain}
-                  </h4>
-                  <p className="font-mono text-sm text-gray-300">
-                    {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
-                  </p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-bold text-lg text-white truncate">
+                      {domain.name}.{domain.domain}
+                    </h4>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30 hover:bg-blue-500/20 flex items-center gap-1 w-fit">
+                      Namestone ENS
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
               <div className="flex-1 space-y-3">
+                <div className="text-sm text-gray-300">
+                  <span className="text-gray-400">Address:</span>
+                  <p className="font-mono text-white">
+                    {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
+                  </p>
+                </div>
                 {domain.created_at && (
                   <div className="text-sm text-gray-400">
                     Registered: {new Date(domain.created_at).toLocaleDateString()}
                   </div>
                 )}
-                {domain.expiry_date && (
-                  <div className="text-sm">
-                    <span className="text-gray-400">Expires:</span>
-                    <span className={`ml-1 ${new Date(domain.expiry_date) < new Date() ? 'text-red-400 font-semibold' : 'text-white'}`}>
-                      {new Date(domain.expiry_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
               </div>
 
-              <div className="mt-4">
+              <div className="grid grid-cols-2 gap-2 mt-4">
                 <Button
-                  onClick={() => handleManageDomain(domain, 'edit')}
+                  onClick={() => handleManageDomain(domain)}
                   size="sm"
-                  className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                 >
                   <Pencil className="w-3 h-3 mr-1" />
                   Edit
+                </Button>
+                <Button
+                  onClick={() => handleManageDomain(domain)}
+                  size="sm"
+                  variant="outline"
+                  className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                >
+                  <Send className="w-3 h-3 mr-1" />
+                  Transfer
                 </Button>
               </div>
             </div>

@@ -15,20 +15,18 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   avatar,
   banner,
 }) => {
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vanitybox.app';
-  
   const title = username 
     ? `${displayName || username} - Vanity.box` 
-    : 'Vanity.box - Premium Web3 Identity';
+    : 'Vanity.box - Your Personalized Digital ID';
   
-  const desc = description || `View ${displayName || username} on Vanity.box`;
+  const desc = description || `Check out ${displayName || username}'s profile on Vanity.box`;
   const currentUrl = username 
-    ? `${origin}/${username}` 
-    : origin;
+    ? `${window.location.origin}/${username}` 
+    : window.location.origin;
   
   const ogImageUrl = username 
-    ? `${origin}/api/og?username=${encodeURIComponent(username)}${displayName ? `&displayName=${encodeURIComponent(displayName)}` : ''}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}${banner ? `&banner=${encodeURIComponent(banner)}` : ''}`
-    : `${origin}/vanity-meta-image.jpeg`;
+    ? `${window.location.origin}/api/og?username=${encodeURIComponent(username)}${displayName ? `&displayName=${encodeURIComponent(displayName)}` : ''}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}${banner ? `&banner=${encodeURIComponent(banner)}` : ''}`
+    : `${window.location.origin}/vanity-meta-image.jpeg`;
 
   return (
     <Helmet>

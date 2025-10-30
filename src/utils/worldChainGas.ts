@@ -57,22 +57,17 @@ export async function fetchWorldChainGasPrice(): Promise<number> {
 }
 
 // Calculate network fee in USD based on gas price
-export async function calculateNetworkFee(gasLimit: number = 150000): Promise<number> {
+export async function calculateNetworkFee(gasLimit: number = 100000): Promise<number> {
+  const gasGwei = await fetchWorldChainGasPrice();
+  const gasEth = (gasGwei * gasLimit) / 1e9;
+  
+  // Fetch ETH price from your crypto prices utility
   try {
-    const gasGwei = await fetchWorldChainGasPrice();
-    const gasEth = (gasGwei * gasLimit) / 1e9;
-    
-    // Fetch ETH price from our edge function
     const { fetchCryptoPrices } = await import('./cryptoPrices');
     const prices = await fetchCryptoPrices();
     const ethPrice = prices.eth;
-    
-    const feeUSD = gasEth * ethPrice;
-    console.log(`Network fee calculation: ${gasGwei} Gwei * ${gasLimit} gas = ${gasEth} ETH = $${feeUSD.toFixed(4)} USD`);
-    
-    return feeUSD;
+    return gasEth * ethPrice;
   } catch (e) {
-    console.error('Failed to calculate network fee:', e);
-    return 0.15; // Fallback network fee in USD
+    return 0.5; // Fallback network fee
   }
 }

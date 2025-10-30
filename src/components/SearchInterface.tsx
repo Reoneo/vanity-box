@@ -3,7 +3,6 @@ import { Search, X, Filter, ChevronDown, ArrowLeft, Globe, ExternalLink, Copy, M
 import { SiDiscord } from 'react-icons/si';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
-import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +13,6 @@ import { useTheme } from 'next-themes';
 import { SubdomainMintModal } from '@/components/SubdomainMintModal';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { UserDomainsDisplay } from '@/components/UserDomainsDisplay';
-import { SpotifyPlayerModal } from '@/components/SpotifyPlayerModal';
 import { MiniKit } from '@worldcoin/minikit-js';
 import {
   DropdownMenu,
@@ -37,20 +35,10 @@ import avvyLogo from '@/assets/avvy-logo.png';
 import smithAptAvatar from '@/assets/smith-apt-avatar.png';
 import termuxAvatar from '@/assets/termux-avatar.png';
 import mithEthAvatar from '@/assets/mith-eth-avatar.png';
-import teamxrpAvatar from '@/assets/teamxrp-avatar.png';
-import eth30315Avatar from '@/assets/30315-eth-avatar.png';
 import ensV2Logo from '@/assets/ens-v2-logo.png';
 import web3BioLogo from '@/assets/web3bio-logo.png';
 import efpLogoFullDark from '@/assets/efp-logo-full-dark.png';
-import poapLogo from '@/assets/poap-icon.png';
-import spydaAvatar from '@/assets/spyda-avatar.jpeg';
-import flirtadAvatar from '@/assets/flirtad-avatar.jpeg';
-import prettyuglyAvatar from '@/assets/prettyugly-avatar.jpeg';
-import sanAndreasAvatar from '@/assets/sanandreas-avatar.jpeg';
-import guavapayAvatar from '@/assets/guavapay-avatar.png';
-import mexipayAvatar from '@/assets/mexipay-avatar.png';
 import { DynamicMetaTags } from '@/components/DynamicMetaTags';
-import { WorldIdAnimation } from '@/components/WorldIdAnimation';
 import noResultsGif from '@/assets/no-results.gif';
 
 export interface FilterState {
@@ -65,9 +53,6 @@ interface ENSResult {
   price: number;
   category: string | string[];
   club: string | string[];
-  spotifyUrl?: string;
-  selectable?: boolean;
-  enabled?: boolean;
 }
 
 interface Web3BioProfile {
@@ -135,8 +120,6 @@ export const SearchInterface = () => {
   const [followersList, setFollowersList] = useState<EFPUser[]>([]);
   const [followingList, setFollowingList] = useState<EFPUser[]>([]);
   const [takenSubdomains, setTakenSubdomains] = useState<Set<string>>(new Set());
-  const [poapCount, setPoapCount] = useState<number>(0);
-  const [isLoadingPoaps, setIsLoadingPoaps] = useState(false);
   const [followersPage, setFollowersPage] = useState(0);
   const [followingPage, setFollowingPage] = useState(0);
   const [totalFollowers, setTotalFollowers] = useState(0);
@@ -145,9 +128,6 @@ export const SearchInterface = () => {
   const [followingSearchQuery, setFollowingSearchQuery] = useState('');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoadingEFP, setIsLoadingEFP] = useState(false);
-  const [showSpotifyPlayer, setShowSpotifyPlayer] = useState(false);
-  const [selectedSpotifyUrl, setSelectedSpotifyUrl] = useState('');
-  const [selectedArtistName, setSelectedArtistName] = useState('');
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -186,8 +166,8 @@ export const SearchInterface = () => {
     };
   }, []);
 
-  const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS', 'SNS.iD'];
-  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname', 'Startup', 'Artist', 'Misc', 'Gaming'];
+  const protocols = ['Aptos Names', 'Avvy Domains', 'DNS', 'ENS'];
+  const clubs = ['Crypto', 'DeFi', 'Dev', 'Digits', 'Letters', 'Surname', 'Startup', 'Artist'];
 
   // Auto-search when username is in URL
   useEffect(() => {
@@ -305,42 +285,34 @@ export const SearchInterface = () => {
       {
         name: '30315.eth',
         description: t('desc_30315'),
-        imageUrl: eth30315Avatar,
+        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/f4ba02d96f0f9edccaee4a242f0fdf/82f4ba02d96f0f9edccaee4a242f0fdf.svg',
         price: 1,
         category: 'ENS',
-        club: 'Digits',
-        selectable: true,
-        enabled: true
+        club: 'Digits'
       },
       {
         name: 'MexiPay.eth',
         description: t('desc_mexipay'),
-        imageUrl: mexipayAvatar,
+        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/1b420ade2f21c60b34fe53f761d09a/551b420ade2f21c60b34fe53f761d09a.svg',
         price: 5,
         category: 'ENS',
-        club: 'DeFi',
-        selectable: true,
-        enabled: true
+        club: 'DeFi'
       },
       {
         name: 'GuavaPay.eth',
         description: t('desc_guavapay'),
-        imageUrl: guavapayAvatar,
+        imageUrl: 'https://raw2.seadn.io/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/44d2edb2482769d623f27e7c94cd46/7044d2edb2482769d623f27e7c94cd46.svg',
         price: 5,
         category: 'ENS',
-        club: 'DeFi',
-        selectable: true,
-        enabled: true
+        club: 'DeFi'
       },
       {
         name: 'TeamXRP.eth',
         description: t('desc_teamxrp'),
-        imageUrl: teamxrpAvatar,
+        imageUrl: 'https://raw2.seadn.io/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/c1f98f3f469ba9be9e8dee87f4cfa7/a4c1f98f3f469ba9be9e8dee87f4cfa7.svg',
         price: 5,
         category: 'ENS',
-        club: 'Crypto',
-        selectable: true,
-        enabled: true
+        club: 'Crypto'
       },
       {
         name: '$mith.eth',
@@ -348,7 +320,7 @@ export const SearchInterface = () => {
         imageUrl: mithEthAvatar,
         price: 5,
         category: 'ENS',
-        club: ['Surname', 'DeFi']
+        club: 'DeFi'
       },
       {
         name: 'smith.apt',
@@ -364,51 +336,7 @@ export const SearchInterface = () => {
         imageUrl: termuxAvatar,
         price: 5,
         category: 'ENS',
-        club: 'Dev',
-        selectable: true,
-        enabled: true
-      },
-      {
-        name: 'Spyda.eth',
-        description: t('desc_spyda'),
-        imageUrl: spydaAvatar,
-        price: 5,
-        category: 'ENS',
-        club: 'Artist',
-        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DZ06evO07i78t?si=O-Wk41qlRAy-6TdqfdteKw&pi=dIp1RP4rQBOjD&nd=1&utm_source=copy-link&utm_medium=sharing',
-        selectable: true,
-        enabled: true
-      },
-      {
-        name: 'FlirtaD.eth',
-        description: t('desc_flirtad'),
-        imageUrl: flirtadAvatar,
-        price: 5,
-        category: 'ENS',
-        club: 'Artist',
-        spotifyUrl: 'https://open.spotify.com/playlist/37i9dQZF1DZ06evO1xveQU?si=DjldB-b-S569AvJ1maoCIw&pi=377GPKjeQfSgE&nd=1&utm_source=copy-link&utm_medium=sharing',
-        selectable: true,
-        enabled: true
-      },
-      {
-        name: 'PrettyUgly.sol',
-        description: t('desc_prettyugly'),
-        imageUrl: prettyuglyAvatar,
-        price: 5,
-        category: 'SNS.iD',
-        club: 'Misc',
-        selectable: false,
-        enabled: false
-      },
-      {
-        name: 'SanAndreas.sol',
-        description: t('desc_sanandreas'),
-        imageUrl: sanAndreasAvatar,
-        price: 5,
-        category: 'SNS.iD',
-        club: 'Gaming',
-        selectable: false,
-        enabled: false
+        club: 'Dev'
       }
     ];
     return allResults;
@@ -416,11 +344,7 @@ export const SearchInterface = () => {
 
   const handleSearch = async (queryOverride?: string) => {
     const trimmedQuery = (queryOverride || searchQuery).trim();
-    // Allow search to proceed if filters are applied, even without a query
-    if (!trimmedQuery && filters.protocol.length === 0 && filters.club.length === 0) return;
-    
-    console.log('Search start', { query: trimmedQuery });
-    setShowFilterDropdown(false);
+    if (!trimmedQuery) return;
     
     // Prevent searches with spaces
     if (trimmedQuery.includes(' ')) {
@@ -441,10 +365,10 @@ export const SearchInterface = () => {
     setIsSearchActive(true);
     
     // Check if query is a wallet address (starts with 0x and 42 characters)
-    const isWalletAddress = trimmedQuery && trimmedQuery.startsWith('0x') && trimmedQuery.length === 42;
+    const isWalletAddress = trimmedQuery.startsWith('0x') && trimmedQuery.length === 42;
     
     // If query contains a dot OR is a wallet address, fetch web3.bio profile
-    if (trimmedQuery && (trimmedQuery.includes('.') || isWalletAddress)) {
+    if (trimmedQuery.includes('.') || isWalletAddress) {
       try {
         const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
           body: { handle: trimmedQuery }
@@ -476,28 +400,6 @@ export const SearchInterface = () => {
               }
             } catch (efpError) {
               console.error('Error fetching EFP stats:', efpError);
-            }
-            
-            // Fetch POAP data
-            if (profileData.address) {
-              try {
-                setIsLoadingPoaps(true);
-                const { data: poapData, error: poapError } = await supabase.functions.invoke('get-poap-data', {
-                  body: { walletAddress: profileData.address }
-                });
-                
-                if (!poapError && poapData?.success) {
-                  setPoapCount(poapData.count || 0);
-                } else {
-                  console.error('Error fetching POAP data:', poapError);
-                  setPoapCount(0);
-                }
-              } catch (poapFetchError) {
-                console.error('Error fetching POAPs:', poapFetchError);
-                setPoapCount(0);
-              } finally {
-                setIsLoadingPoaps(false);
-              }
             }
             
             // Fetch ENS records
@@ -538,37 +440,33 @@ export const SearchInterface = () => {
       }
     }
     
-    // Check which subdomains are already taken on Namestone (only if there's a query)
+    // Check which subdomains are already taken on Namestone
     let allResults = getAllResults();
-    if (trimmedQuery) {
-      const checkPromises = allResults.map(async (result) => {
-        // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain, $mith.eth)
-        if (result.name === 'Smith.cash' || result.name === 'Smith.box' || 
-            result.name === 'Vape.box' || result.name === 'altcoin.chain' || 
-            result.name === '$mith.eth') {
-          const domain = result.name.toLowerCase();
-          try {
-            const { data } = await supabase.functions.invoke('check-namestone-subdomain', {
-              body: { subdomain: trimmedQuery, domain }
-            });
-            if (data?.exists) {
-              return domain;
-            }
-          } catch (error) {
-            console.error(`Error checking ${domain}:`, error);
+    const checkPromises = allResults.map(async (result) => {
+      // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain, $mith.eth)
+      if (result.name === 'Smith.cash' || result.name === 'Smith.box' || 
+          result.name === 'Vape.box' || result.name === 'altcoin.chain' || 
+          result.name === '$mith.eth') {
+        const domain = result.name.toLowerCase();
+        try {
+          const { data } = await supabase.functions.invoke('check-namestone-subdomain', {
+            body: { subdomain: trimmedQuery, domain }
+          });
+          if (data?.exists) {
+            return domain;
           }
+        } catch (error) {
+          console.error(`Error checking ${domain}:`, error);
         }
-        return null;
-      });
-      
-      const takenResults = await Promise.all(checkPromises);
-      const taken = new Set(takenResults.filter(Boolean) as string[]);
-      setTakenSubdomains(taken);
-    } else {
-      setTakenSubdomains(new Set());
-    }
+      }
+      return null;
+    });
     
-    await new Promise(resolve => setTimeout(resolve, 250));
+    const takenResults = await Promise.all(checkPromises);
+    const taken = new Set(takenResults.filter(Boolean) as string[]);
+    setTakenSubdomains(taken);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Filter results
     let filteredResults = allResults;
@@ -590,22 +488,21 @@ export const SearchInterface = () => {
       filteredResults = allResults;
     }
     
-    // Sort results: Selectable items first ("Select"), then coming soon items, then alphabetically
+    // Sort results: $mith.eth first, then Smith.cash, then "Coming Soon", all alphabetically within categories
     filteredResults.sort((a, b) => {
-      const aIsSelectable = (a as any).selectable === true || a.name === 'Smith.cash' || a.name === '$mith.eth';
-      const bIsSelectable = (b as any).selectable === true || b.name === 'Smith.cash' || b.name === '$mith.eth';
+      // Prioritize $mith.eth first
+      if (a.name === '$mith.eth') return -1;
+      if (b.name === '$mith.eth') return 1;
       
-      // If both selectable or both not, sort alphabetically
-      if (aIsSelectable === bIsSelectable) {
-        return a.name.localeCompare(b.name);
-      }
+      // Then Smith.cash
+      if (a.name === 'Smith.cash') return -1;
+      if (b.name === 'Smith.cash') return 1;
       
-      // Selectable items come first
-      return aIsSelectable ? -1 : 1;
+      // Within "Coming Soon" category, sort alphabetically
+      return a.name.localeCompare(b.name);
     });
     
     setEnsResults(filteredResults);
-    console.log('Results set', filteredResults.length);
     
     if (searchQuery) {
       setIsAvailable(!searchQuery.toLowerCase().includes('taken'));
@@ -655,7 +552,6 @@ export const SearchInterface = () => {
             subdomain={displayQuery ? `${displayQuery}.${selectedResult.name}` : selectedResult.name}
             price={price}
             resultAvatar={selectedResult.imageUrl}
-            domain={selectedResult.name.toLowerCase().replace(/\s+/g, '')}
           />
         ) : (
           <>
@@ -690,7 +586,6 @@ export const SearchInterface = () => {
             
             {/* Search bar container - hidden when showing My IDs */}
             {!showMyIDs && (
-            <>
             <div className="w-full max-w-md mx-auto mb-4 md:mb-0 mt-4">
               <div className="relative">
                 <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -811,12 +706,9 @@ export const SearchInterface = () => {
                       setIsSearchActive(true);
                     }
                   }}
-                  onFocus={() => {
-                    setIsSearchActive(true);
-                    setShowFilterDropdown(false);
-                  }}
+                  onFocus={() => setIsSearchActive(true)}
                 />
-                <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
+                <div className="absolute right-1 top-1 flex items-center gap-1 h-10">
                   {searchQuery && (
                     <button
                       onClick={() => {
@@ -844,14 +736,61 @@ export const SearchInterface = () => {
                 </div>
               </div>
             </div>
-            
-            {/* World ID Animation - shown when no search is active */}
-            {!hasSearched && !isSearchActive && (
-              <WorldIdAnimation />
-            )}
-            </>
             )}
             
+            {/* ENS V2 Info Section - Shows when no search results and not showing My IDs */}
+            {!hasSearched && !showMyIDs && (
+              <div className="w-full max-w-2xl mx-auto mt-2 md:mt-4 px-2 md:px-4">
+                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                  <CardContent className="p-3 md:p-8">
+                    {/* Logo */}
+                    <div className="flex justify-center mb-3 md:mb-6">
+                      <img src={ensV2Logo} alt="ENS V2" className="h-10 md:h-20 w-auto" />
+                    </div>
+                    
+                    {/* Benefits List */}
+                    <div className="space-y-2 md:space-y-4 text-white text-center">
+                      <div>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">One Name, Any Chain</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS names work across Ethereum L1, all L2s and World Chain.</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Low Fees, Fast Updates</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">Instant management with near-zero gas fees.</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Full ENS Functionality</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">Manage profiles, records, wallets, metadata—all from World App.</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Future-Proof Identity</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS makes your identity portable and interoperable.</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold text-sm md:text-xl mb-1 text-white">Subdomain Value</h3>
+                        <p className="text-gray-300 text-xs md:text-base leading-snug">ENS subdomains are digital assets gaining utility and value.</p>
+                      </div>
+                    </div>
+                    
+                    {/* Learn More Button */}
+                    <div className="mt-3 md:mt-6 flex justify-center">
+                      <a
+                        href="https://ens.domains/ensv2"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 md:px-6 md:py-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg text-sm md:text-base"
+                      >
+                        Learn More
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Web3.bio Profile Result - Social Media Style - Only show when search is active */}
             {web3BioProfile && hasSearched && (
@@ -1147,34 +1086,6 @@ export const SearchInterface = () => {
                                className="h-14 w-auto object-contain"
                              />
                            </a>
-                           
-                            {/* POAP Icon with notification badge */}
-                            <a
-                              href={`https://collectors.poap.xyz/scan/${web3BioProfile.address || searchQuery}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80 relative"
-                            >
-                              {isLoadingPoaps ? (
-                                <div className="h-14 w-14 flex items-center justify-center">
-                                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37]"></div>
-                                </div>
-                              ) : (
-                                <div className="relative">
-                                  <img 
-                                    src={poapLogo} 
-                                    alt="POAP" 
-                                    className="h-14 w-14 object-contain"
-                                  />
-                                  {poapCount > 0 && (
-                                    <div className="absolute -top-1 -right-1 bg-gradient-to-br from-[#D4AF37] to-[#F4E4BC] text-black text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center px-2 shadow-lg border-2 border-gray-900">
-                                      {poapCount}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </a>
-                            
                            <a
                              href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
                              target="_blank"
@@ -1461,72 +1372,45 @@ export const SearchInterface = () => {
               const isFlipped = flippedCards.has(index);
               const isTaken = takenSubdomains.has(result.name.toLowerCase());
               const isUserOwned = displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase());
-              const isEnabled = (result as any).enabled || result.name === 'Smith.cash' || result.name === '$mith.eth';
-              const isDisabled = !isEnabled || isTaken || isUserOwned;
-              
-              const hasSpotify = !!(result as any).spotifyUrl;
+              const isDisabled = !((result.name === 'Smith.cash' || result.name === '$mith.eth')) || isTaken || isUserOwned;
               
               return (
                 <div key={index} className="perspective-1000 min-h-[320px]">
-                  <div className="relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}">
+                  <div className={`relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                     {/* Front of Card */}
                     <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
                       
                       <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
-                        <div className={`relative ${hasSpotify ? 'mb-2 w-full' : 'mb-6'}`}>
-                          {hasSpotify ? (
-                            <div className="w-full relative">
-                              <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-2xl blur-md -z-10"></div>
-                              <iframe
-                                src={`${(result as any).spotifyUrl.replace('/track/', '/embed/track/').replace('/playlist/', '/embed/playlist/')}`}
-                                width="100%"
-                                height="152"
-                                frameBorder="0"
-                                allow="encrypted-media; fullscreen; picture-in-picture"
-                                loading="lazy"
-                                className="rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-sm"
-                                style={{ border: 'none' }}
-                                onLoad={(e) => {
-                                  const iframe = e.currentTarget;
-                                  // Mark as playing when iframe loads (user will click play)
-                                  const checkPlay = () => {
-                                    import('@/utils/spotifyManager').then(({ spotifyManager }) => {
-                                      spotifyManager.setPlaying(true);
-                                    });
-                                  };
-                                  iframe.addEventListener('click', checkPlay);
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <>
-                              <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
-                              <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
-                                <img 
-                                  src={result.imageUrl} 
-                                  alt={result.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            </>
-                          )}
+                        <div className="relative mb-6">
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
+                          <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
+                            <img 
+                              src={result.imageUrl} 
+                              alt={result.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         </div>
                         
-                         <h3 className={`font-mono text-xl font-bold text-white ${hasSpotify ? 'mb-2' : 'mb-3'} leading-tight px-4 w-full break-words flex items-center justify-center`}>
+                         <h3 className="font-mono text-xl font-bold text-white mb-4 leading-tight px-4 w-full break-words flex items-center justify-center">
                            {displayQuery ? `${displayQuery}.${result.name}` : result.name}
                          </h3>
                         
-                        <div className={`flex items-center justify-center gap-1 ${hasSpotify ? 'mb-3' : 'mb-4'} overflow-x-auto max-w-full flex-nowrap`}>
+                        <div className="flex items-center justify-center gap-1 mb-2 overflow-x-auto max-w-full flex-nowrap">
                           {(Array.isArray(result.category) ? result.category : [result.category]).map((cat, catIndex) => (
-                             <Badge 
+                            <Badge 
                               key={`cat-${catIndex}`}
                               className={cn(
-                                "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap",
+                                "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity",
                                 cat === 'ENS' && "bg-transparent text-white border-[#D4AF37]",
                                 cat === 'DNS' && "bg-transparent text-white border-blue-500",
-                                cat === 'Aptos Names' && "bg-transparent text-white border-purple-500",
-                                cat === 'SNS.iD' && "bg-transparent text-white border-green-500"
+                                cat === 'Aptos Names' && "bg-transparent text-white border-purple-500"
                               )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleProtocolToggle(cat);
+                                handleSearch();
+                              }}
                             >
                               {cat === 'ENS' && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
                               {cat === 'DNS' && <Globe className="w-3 h-3" />}
@@ -1541,7 +1425,7 @@ export const SearchInterface = () => {
                             <Badge 
                               key={`club-${clubIndex}`}
                               className={cn(
-                                "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap",
+                                "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity",
                               clubName === 'Surname' && "bg-purple-600 text-white border-0",
                               clubName === 'DeFi' && "bg-green-600 text-white border-0",
                               clubName === 'Digits' && "bg-purple-600 text-white border-0",
@@ -1551,6 +1435,11 @@ export const SearchInterface = () => {
                               clubName === 'Startup' && "bg-orange-600 text-white border-0",
                               clubName === 'Artist' && "bg-pink-600 text-white border-0"
                               )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleClubToggle(clubName);
+                                handleSearch();
+                              }}
                             >
                               {clubName}
                             </Badge>
@@ -1558,11 +1447,11 @@ export const SearchInterface = () => {
                         </div>
                         
                          <Button 
-                           className={`w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base ${hasSpotify ? 'py-4' : 'py-6'} rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
+                           className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                            onClick={() => handleMint(result)}
                            disabled={isDisabled}
                          >
-                           {(result as any).selectable || result.name === 'Smith.cash' || result.name === '$mith.eth'
+                           {result.name === 'Smith.cash' || result.name === '$mith.eth'
                               ? isTaken
                                 ? 'Taken'
                                 : isUserOwned

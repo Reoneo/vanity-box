@@ -1,6 +1,4 @@
-// Utility for fetching real-time cryptocurrency prices via edge function proxy
-import { supabase } from "@/integrations/supabase/client";
-
+// Utility for fetching real-time cryptocurrency prices from CoinGecko
 export interface CryptoPrices {
   eth: number;
   wld: number;
@@ -9,21 +7,26 @@ export interface CryptoPrices {
 
 export async function fetchCryptoPrices(): Promise<CryptoPrices> {
   try {
-    const { data, error } = await supabase.functions.invoke('get-crypto-prices');
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum,worldcoin-wld,usd-coin&vs_currencies=usd',
+      {
+        headers: {
+          'Accept': 'application/json',
+        }
+      }
+    );
 
-    if (error) {
-      throw error;
+    if (!response.ok) {
+      throw new Error('Failed to fetch crypto prices');
     }
 
-    if (data?.success && data?.prices) {
-      return {
-        eth: data.prices.eth || 2500,
-        wld: data.prices.wld || 2.0,
-        usdc: data.prices.usdc || 1.0,
-      };
-    }
-
-    throw new Error('Invalid response from crypto prices API');
+    const data = await response.json();
+    
+    return {
+      eth: data.ethereum?.usd || 0,
+      wld: data['worldcoin-wld']?.usd || 0,
+      usdc: data['usd-coin']?.usd || 1.0,
+    };
   } catch (error) {
     console.error('Error fetching crypto prices:', error);
     // Return fallback prices
