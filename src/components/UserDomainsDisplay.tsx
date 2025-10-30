@@ -124,8 +124,28 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             };
           })
         );
-        
-        setDomains(domainsWithTx);
+
+        // Also include any domains from minted_domains that aren't returned by get-user-domains
+        const existing = new Set(domainsWithTx.map((d) => `${d.name}.${d.domain}`.toLowerCase()));
+        const additionalFromMinted: Domain[] = [];
+        if (mintedData) {
+          mintedData.forEach((md) => {
+            const full = md.full_name.toLowerCase();
+            if (!existing.has(full)) {
+              const [n, ...rest] = full.split('.');
+              const dom = rest.join('.');
+              additionalFromMinted.push({
+                name: n,
+                domain: dom,
+                address: walletAddress.toLowerCase(),
+                created_at: md.registration_date,
+                expiry_date: md.expiry_date,
+              });
+            }
+          });
+        }
+
+        setDomains([...domainsWithTx, ...additionalFromMinted]);
       } else {
         throw new Error(data?.error || 'Failed to fetch domains');
       }
@@ -181,9 +201,22 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     );
   }
 
+  const handleBackClick = () => {
+    window.dispatchEvent(new CustomEvent('show-search'));
+  };
+
   if (domains.length === 0) {
     return (
       <div className="text-center py-8">
+        <button 
+          onClick={handleBackClick}
+          className="flex items-center gap-2 text-foreground hover:text-primary mb-6"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {t('back')}
+        </button>
         <p className="text-gray-600 dark:text-gray-400">{t('no_domains_found')}</p>
         <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
           {t('mint_first_id')}
@@ -210,10 +243,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   if (isEditMode && selectedDomain) {
     return <DomainEditPanel domain={selectedDomain} />;
   }
-
-  const handleBackClick = () => {
-    window.dispatchEvent(new CustomEvent('show-search'));
-  };
 
   return (
     <div className="space-y-4">
