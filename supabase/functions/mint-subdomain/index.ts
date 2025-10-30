@@ -37,13 +37,15 @@ Deno.serve(async (req) => {
 
     // Get API key for domain
     const apiKeyMap: Record<string, string | undefined> = {
+      "$mith.eth": Deno.env.get("NAMESTONE_API_KEY_MITH_ETH"),
       "30315.eth": Deno.env.get("NAMESTONE_API_KEY_30315"),
+      "flirtad.eth": Deno.env.get("NAMESTONE_API_KEY_FLIRTAD"),
+      "guavapay.eth": Deno.env.get("NAMESTONE_API_KEY_GUAVAPAY"),
+      "mexipay.eth": Deno.env.get("NAMESTONE_API_KEY_MEXIPAY"),
+      "smith.cash": Deno.env.get("NAMESTONE_API_KEY_SMITH_CASH"),
+      "spyda.eth": Deno.env.get("NAMESTONE_API_KEY_SPYDA"),
       "teamxrp.eth": Deno.env.get("NAMESTONE_API_KEY_TEAMXRP"),
       "termux.eth": Deno.env.get("NAMESTONE_API_KEY_TERMUX"),
-      "mexipay.eth": Deno.env.get("NAMESTONE_API_KEY_MEXIPAY"),
-      "guavapay.eth": Deno.env.get("NAMESTONE_API_KEY_GUAVAPAY"),
-      "spyda.eth": Deno.env.get("NAMESTONE_API_KEY_SPYDA"),
-      "flirtad.eth": Deno.env.get("NAMESTONE_API_KEY_FLIRTAD"),
     };
 
     const namestoneApiKey = apiKeyMap[cleanDomain] || Deno.env.get("NAMESTONE_API_KEY");
