@@ -105,31 +105,27 @@ serve(async (req) => {
 
           // Extract expiry and registration data from metadata if available
           const metadata = domain.metadata || {};
-          const registrationMonths = metadata.registration_months || 12;
+          const registrationYears = metadata.registration_years || 1;
           const expiryDate = metadata.expiry_date;
-          const gracePeriodEnd = metadata.grace_period_end;
 
           return {
             ...domain,
             isWrapped,
-            registration_months: registrationMonths,
+            registration_years: registrationYears,
             expiry_date: expiryDate,
-            grace_period_end: gracePeriodEnd,
           };
         } catch (error) {
           console.error(`Error checking wrapped status for ${domain.name}:`, error);
           // If we can't check, assume not wrapped
           const metadata = domain.metadata || {};
-          const registrationMonths = metadata.registration_months || 12;
+          const registrationYears = metadata.registration_years || 1;
           const expiryDate = metadata.expiry_date;
-          const gracePeriodEnd = metadata.grace_period_end;
 
           return {
             ...domain,
             isWrapped: false,
-            registration_months: registrationMonths,
+            registration_years: registrationYears,
             expiry_date: expiryDate,
-            grace_period_end: gracePeriodEnd,
           };
         }
       })

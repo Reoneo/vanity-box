@@ -1,134 +1,212 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createPublicClient, createWalletClient, http, parseEther } from "npm:viem@2.21.54";
+import { privateKeyToAccount } from "npm:viem@2.21.54/accounts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Content-Type": "application/json",
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const j = (body: any, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: CORS });
+// API key will be fetched based on domain
+const WORLD_CHAIN_RPC = 'https://worldchain-mainnet.g.alchemy.com/public';
+const REGISTRY_FACTORY_ADDRESS = '0xDddddDdDDD8Aa1f237b4fa0669cb46892346d22d';
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+// Minimal ABI for L2Registry createSubnode function
+const L2_REGISTRY_ABI = [
+  {
+    inputs: [
+      { name: "label", type: "string" },
+      { name: "owner", type: "address" },
+      { name: "resolver", type: "address" },
+      { name: "ttl", type: "uint64" }
+    ],
+    name: "createSubnode",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  }
+] as const;
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    const body = await req.json();
-    const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
+    const { subdomain, walletAddress, txHash, domain, registrationYears = 1 } = await req.json();
 
-    console.log(`[Mint] Received request:`, { subdomain, walletAddress, domain, registrationMonths });
+    console.log('==========================================');
+    console.log('🚀 STARTING SUBDOMAIN MINTING PROCESS');
+    console.log('==========================================');
+    console.log('📝 Subdomain:', subdomain);
+    console.log('👛 Wallet Address:', walletAddress);
+    console.log('🔗 Transaction Hash:', txHash || 'N/A (Free Mint)');
+    console.log('🌐 Domain:', domain);
+    console.log('📅 Registration Years:', registrationYears);
+    console.log('==========================================');
 
     if (!subdomain || !walletAddress || !domain) {
-      console.error("[Mint] Missing required fields:", { subdomain, walletAddress, domain });
-      return j({ ok: false, error: "Missing required fields" }, 400);
+      throw new Error('Missing required parameters');
     }
 
-    // Extract subdomain label and domain
-    const subdomainLabel = subdomain.split(".")[0].toLowerCase().trim();
-    const cleanDomain = domain.replace(/^\$/, "").toLowerCase().trim();
-
-    console.log(`[Mint] Processed: label="${subdomainLabel}", domain="${cleanDomain}"`);
-
-    if (!cleanDomain || cleanDomain.length === 0) {
-      console.error("[Mint] Domain is empty after processing");
-      return j({ ok: false, error: "Invalid domain format" }, 400);
-    }
-
-    // Get API key for domain
-    const apiKeyMap: Record<string, string | undefined> = {
-      "$mith.eth": Deno.env.get("NAMESTONE_API_KEY_MITH_ETH"),
-      "30315.eth": Deno.env.get("NAMESTONE_API_KEY_30315"),
-      "flirtad.eth": Deno.env.get("NAMESTONE_API_KEY_FLIRTAD"),
-      "guavapay.eth": Deno.env.get("NAMESTONE_API_KEY_GUAVAPAY"),
-      "mexipay.eth": Deno.env.get("NAMESTONE_API_KEY_MEXIPAY"),
-      "smith.cash": Deno.env.get("NAMESTONE_API_KEY_SMITH_CASH"),
-      "spyda.eth": Deno.env.get("NAMESTONE_API_KEY_SPYDA"),
-      "teamxrp.eth": Deno.env.get("NAMESTONE_API_KEY_TEAMXRP"),
-      "termux.eth": Deno.env.get("NAMESTONE_API_KEY_TERMUX"),
-    };
-
-    const namestoneApiKey = apiKeyMap[cleanDomain] || Deno.env.get("NAMESTONE_API_KEY");
-    console.log(`[Mint] Using API key for domain: ${cleanDomain}, keyFound: ${!!namestoneApiKey}`);
+    // Get API key for this domain
+    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
     
-    if (!namestoneApiKey) {
-      console.error(`[Mint] No API key found for domain: ${cleanDomain}`);
-      return j({ ok: false, error: `No API key configured for domain ${cleanDomain}` }, 500);
+    if (!NAMESTONE_API_KEY) {
+      throw new Error(`API key not configured for domain ${domain}`);
+    }
+    
+    console.log('🔑 Using API key for domain:', domain);
+
+    // Step 1: Verify the transaction on World Chain (skip for free mints)
+    if (txHash) {
+      console.log('\n✅ STEP 1: Transaction Verification');
+      console.log('🔍 Verifying transaction:', txHash);
+      // Note: In production, you'd verify the transaction amount, recipient, etc.
+      console.log('⚠️ Note: Transaction verification is a placeholder - implement full verification in production');
+    } else {
+      console.log('\n✅ STEP 1: Free Mint (Skipping Transaction Verification)');
     }
 
-    // Calculate dates
-    const now = new Date();
-    const expiryDate = new Date(now);
-    expiryDate.setMonth(expiryDate.getMonth() + (registrationMonths || 12));
-    const gracePeriodEnd = new Date(expiryDate);
-    gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 90);
-
-    // Call Namestone set-names
+    // Step 2: Mint subdomain using Namestone API
+    console.log('\n✅ STEP 2: Minting via Namestone API');
+    
+    // Extract the subdomain label and domain from the full subdomain
+    // e.g., "g.$mith.eth" -> label: "g", domain: "$mith.eth"
+    const parts = subdomain.split('.');
+    const subdomainLabel = parts[0];
+    const domainFromSubdomain = parts.slice(1).join('.');
+    
+    console.log('📋 Full subdomain:', subdomain);
+    console.log('🏷️  Subdomain label:', subdomainLabel);
+    console.log('🌐 Domain from subdomain:', domainFromSubdomain);
+    console.log('🔑 API Key configured:', !!NAMESTONE_API_KEY);
+    
+    // Calculate expiry date
+    const expiryDate = new Date();
+    expiryDate.setFullYear(expiryDate.getFullYear() + registrationYears);
+    
     const namestonePayload = {
-      domain: cleanDomain,
-      names: [
-        {
-          name: subdomainLabel,
-          address: walletAddress.toLowerCase(),
-          text_records: {
-            registration_months: String(registrationMonths || 12),
-            expiry_date: expiryDate.toISOString(),
-            grace_period_end: gracePeriodEnd.toISOString(),
-          },
-        },
-      ],
+      domain: (domain || domainFromSubdomain || 'smith.cash').toLowerCase(),
+      name: subdomainLabel,
+      address: walletAddress,
+      chain_id: 480, // World Chain network ID
+      metadata: {
+        registration_years: registrationYears,
+        expiry_date: expiryDate.toISOString(),
+      }
     };
-
-    console.log(`[Namestone] Calling set-names for ${subdomainLabel}.${cleanDomain}`, namestonePayload);
-    const namestoneRes = await fetch("https://namestone.xyz/api/public_v1/set-names", {
-      method: "POST",
+    
+    console.log('📤 Sending request to Namestone with payload:', JSON.stringify(namestonePayload, null, 2));
+    
+    const namestoneResponse = await fetch('https://namestone.com/api/public_v1/set-name', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${namestoneApiKey}`,
+        'Authorization': NAMESTONE_API_KEY!,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(namestonePayload),
     });
 
-    console.log(`[Namestone] Response status: ${namestoneRes.status}`);
-
-    if (!namestoneRes.ok) {
-      const errorText = await namestoneRes.text();
-      console.error(`[Namestone] Error: ${namestoneRes.status} - ${errorText}`);
-      return j({ ok: false, error: `Namestone API error: ${errorText}` }, 500);
+    console.log('📥 Namestone response status:', namestoneResponse.status);
+    
+    if (!namestoneResponse.ok) {
+      const errorText = await namestoneResponse.text();
+      console.error('❌ NAMESTONE API ERROR');
+      console.error('Status:', namestoneResponse.status);
+      console.error('Error message:', errorText);
+      console.error('Request payload:', JSON.stringify(namestonePayload, null, 2));
+      throw new Error(`Namestone API error: ${namestoneResponse.status} - ${errorText}`);
     }
 
-    const namestoneData = await namestoneRes.json();
-    console.log(`[Namestone] Success:`, namestoneData);
+    const namestoneData = await namestoneResponse.json();
+    console.log('✅ Namestone response:', JSON.stringify(namestoneData, null, 2));
+    console.log('✅ Subdomain registered successfully via Namestone');
 
-    // Record in minted_domains
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { error: dbError } = await supabase.from("minted_domains").insert({
-      full_name: `${subdomainLabel}.${cleanDomain}`,
-      subdomain: subdomainLabel,
-      domain: cleanDomain,
-      wallet_address: walletAddress.toLowerCase(),
-      registration_months: registrationMonths || 12,
-      registration_date: now.toISOString(),
-      expiry_date: expiryDate.toISOString(),
-      grace_period_end: gracePeriodEnd.toISOString(),
-      payment_method: paymentMethod,
-      payment_amount: paymentAmount,
-      network_fee: networkFee,
-      tx_hash: txHash,
-    });
-
-    if (dbError) {
-      console.error("[DB] Error:", dbError);
-      return j({ ok: false, error: `Database error: ${dbError.message}` }, 500);
+    // Step 3: Wrap the subdomain using Durin on World Chain
+    console.log('\n✅ STEP 3: Durin Wrapping on World Chain');
+    
+    let durinWrappingStatus = {
+      success: false,
+      error: null as string | null,
+      message: 'Durin wrapping not yet implemented'
+    };
+    
+    try {
+      console.log('📦 Attempting to wrap subdomain using Durin...');
+      
+      // Note: For Durin wrapping, you need to:
+      // 1. Deploy a Registry using the Registry Factory at 0xDddddDdDDD8Aa1f237b4fa0669cb46892346d22d
+      // 2. Deploy a custom L2Registrar contract
+      // 3. Add the Registrar to the Registry's approved list
+      // 4. Call createSubnode() on the Registrar contract
+      
+      console.log('⚠️ Durin wrapping requires the following contracts to be deployed:');
+      console.log('  1. Registry (via Registry Factory at', REGISTRY_FACTORY_ADDRESS + ')');
+      console.log('  2. Custom L2Registrar contract');
+      console.log('  3. Registrar must be added to Registry approved list');
+      console.log('⚠️ These contracts are not yet deployed. Skipping wrapping for now.');
+      console.log('📝 Namestone handles name resolution. Durin wrapping can be added later.');
+      
+      durinWrappingStatus = {
+        success: false,
+        error: 'Contracts not deployed',
+        message: 'Durin wrapping infrastructure not yet deployed. Domain registered via Namestone only.'
+      };
+      
+    } catch (durinError) {
+      console.error('❌ DURIN WRAPPING ERROR');
+      console.error('Error:', durinError instanceof Error ? durinError.message : String(durinError));
+      console.error('Stack:', durinError instanceof Error ? durinError.stack : 'N/A');
+      
+      durinWrappingStatus = {
+        success: false,
+        error: durinError instanceof Error ? durinError.message : 'Unknown Durin error',
+        message: 'Failed to wrap subdomain with Durin, but domain was registered via Namestone'
+      };
     }
-
-    console.log(`[Mint] Complete for ${subdomainLabel}.${cleanDomain}`);
-    return j({ ok: true, subdomain: `${subdomainLabel}.${cleanDomain}`, expiryDate: expiryDate.toISOString() });
-  } catch (e: any) {
-    console.error("[Mint] Fatal:", e);
-    return j({ ok: false, error: String(e?.message || e) }, 500);
+    
+    console.log('\n==========================================');
+    console.log('🎉 SUBDOMAIN MINTING COMPLETE');
+    console.log('==========================================');
+    console.log('✅ Namestone Registration: SUCCESS');
+    console.log('📦 Durin Wrapping:', durinWrappingStatus.success ? 'SUCCESS' : 'PENDING/FAILED');
+    if (durinWrappingStatus.error) {
+      console.log('⚠️ Durin Error:', durinWrappingStatus.error);
+    }
+    console.log('==========================================');
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        subdomain,
+        address: walletAddress,
+        txHash,
+        namestoneData,
+        durinWrapping: durinWrappingStatus,
+        registration_years: registrationYears,
+        expiry_date: namestonePayload.metadata.expiry_date,
+        message: durinWrappingStatus.success 
+          ? 'Subdomain minted and wrapped successfully'
+          : 'Subdomain minted via Namestone (Durin wrapping pending)'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error('Error in mint-subdomain function:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

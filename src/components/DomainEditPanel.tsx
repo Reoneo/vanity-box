@@ -230,10 +230,6 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       if (data?.success) {
         toast.success('Records saved successfully!');
         window.dispatchEvent(new CustomEvent('domains-updated'));
-        
-        // Auto-launch ENS app with the domain
-        const ensUrl = `https://app.ens.domains/${subdomain}`;
-        window.open(ensUrl, '_blank', 'noopener,noreferrer');
       } else {
         throw new Error(data?.error || 'Failed to save records');
       }
@@ -245,38 +241,36 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     }
   };
 
-  const handleBackClick = () => {
-    window.dispatchEvent(new CustomEvent('back-to-domains'));
-  };
-
-  const handleShowSearch = () => {
-    window.dispatchEvent(new CustomEvent('show-search'));
-  };
-
-  const handleSetPrimaryDomain = () => {
-    toast.info('Set Primary Domain feature coming soon!');
-  };
-
-  const handleTransferClick = () => {
-    toast.info('Transfer feature coming soon!');
-  };
-
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <button 
-        onClick={handleBackClick}
-        className="flex items-center gap-2 text-foreground hover:text-primary mb-4"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back
-      </button>
-      <div className="bg-[hsl(var(--card))] dark:bg-[hsl(var(--card))] border border-border rounded-2xl shadow-lg p-6 luxury-card luxury-glow">
-        {/* Records Section - Only show when activeTab is 'records' */}
-        {activeTab === 'records' && (
+    <div className="w-full max-w-2xl mx-auto bg-[hsl(var(--card))] dark:bg-[hsl(var(--card))] border border-border rounded-2xl shadow-lg p-6 luxury-card luxury-glow">
+      {/* Domain Header */}
+      <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-700">
+        <div className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-border overflow-hidden bg-black/30 backdrop-blur-sm">
+          <img
+            src={smithCashAvatar}
+            alt={domain.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2 break-words">
+            {domain.name}.{domain.domain}
+          </h2>
+          <p className="font-mono text-sm text-muted-foreground">
+            {domain.address.slice(0, 10)}...{domain.address.slice(-8)}
+          </p>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-secondary dark:bg-muted">
+          <TabsTrigger value="records" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Records</TabsTrigger>
+          <TabsTrigger value="transfer" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Transfer</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="records" className="space-y-4 mt-4">
           <div className="space-y-4">
-            <h3 className="font-semibold text-foreground text-center">ENS Text Records</h3>
+            <h3 className="font-semibold text-foreground">ENS Text Records</h3>
             {Object.entries(ensRecords).map(([key, value]) => (
               <div key={key} className="space-y-2">
                 <Label className="text-foreground">{key}</Label>
@@ -337,23 +331,35 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
               {isLoading ? 'Saving...' : 'Save Records'}
             </Button>
           </div>
-        )}
-      </div>
+        </TabsContent>
 
-      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to transfer {domain.name}.{domain.domain} to {transferAddress}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTransferAndSend}>Transfer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <TabsContent value="transfer" className="space-y-4 mt-4">
+          <div className="space-y-4">
+            <h3 className="font-semibold text-foreground">Transfer Domain</h3>
+            <p className="text-sm text-muted-foreground">
+              Transfer ownership of {domain.name}.{domain.domain} to another wallet address.
+            </p>
+            
+            <div className="space-y-2">
+              <Label className="text-foreground">Recipient Address</Label>
+              <Input
+                value={transferAddress}
+                onChange={(e) => setTransferAddress(e.target.value)}
+                placeholder="0x..."
+                className="bg-secondary dark:bg-muted border-border text-foreground font-mono"
+              />
+            </div>
+
+            <Button
+              onClick={handleTransfer}
+              disabled={isLoading || !transferAddress}
+              className="w-full bg-primary hover:bg[hsl(var(--primary-glow))] text-primary-foreground font-semibold disabled:opacity-50"
+            >
+              {isLoading ? 'Transferring...' : 'Transfer Domain'}
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

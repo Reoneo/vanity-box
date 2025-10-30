@@ -18,7 +18,7 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user, is
     // Always show the same text regardless of connection status
     return (
       <span className="font-playfair text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold tracking-wide text-black dark:text-white whitespace-nowrap">
-        {t('your_digital_id')}
+        {t('your_personalized_digital_id')}
       </span>
     );
   };

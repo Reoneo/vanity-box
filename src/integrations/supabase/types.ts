@@ -50,63 +50,6 @@ export type Database = {
         }
         Relationships: []
       }
-      minted_domains: {
-        Row: {
-          created_at: string
-          domain: string
-          expiry_date: string
-          full_name: string
-          grace_period_end: string | null
-          id: string
-          is_expired: boolean
-          network_fee: number | null
-          payment_amount: number | null
-          payment_method: string | null
-          registration_date: string
-          registration_months: number
-          subdomain: string
-          tx_hash: string | null
-          updated_at: string
-          wallet_address: string
-        }
-        Insert: {
-          created_at?: string
-          domain: string
-          expiry_date: string
-          full_name: string
-          grace_period_end?: string | null
-          id?: string
-          is_expired?: boolean
-          network_fee?: number | null
-          payment_amount?: number | null
-          payment_method?: string | null
-          registration_date?: string
-          registration_months?: number
-          subdomain: string
-          tx_hash?: string | null
-          updated_at?: string
-          wallet_address: string
-        }
-        Update: {
-          created_at?: string
-          domain?: string
-          expiry_date?: string
-          full_name?: string
-          grace_period_end?: string | null
-          id?: string
-          is_expired?: boolean
-          network_fee?: number | null
-          payment_amount?: number | null
-          payment_method?: string | null
-          registration_date?: string
-          registration_months?: number
-          subdomain?: string
-          tx_hash?: string | null
-          updated_at?: string
-          wallet_address?: string
-        }
-        Relationships: []
-      }
       poap_tokens: {
         Row: {
           chain: string | null
