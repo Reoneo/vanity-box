@@ -36,7 +36,19 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     } else {
       console.log('❌ Not running in World App - MiniKit is not available');
     }
-  }, []);
+
+    // Listen for wallet connection trigger from search
+    const handleTriggerConnect = () => {
+      if (!user) {
+        handleConnect();
+      }
+    };
+
+    window.addEventListener('trigger-wallet-connect', handleTriggerConnect);
+    return () => {
+      window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
+    };
+  }, [user]);
 
   // Remove auto-connect - users must manually connect
 
@@ -67,7 +79,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         requestId: 'vanity-box-auth-' + Date.now(),
         expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         notBefore: new Date(Date.now() - 60 * 1000), // 1 minute ago
-        statement: 'Sign in to Vanity.₿ox to access your World ID domains and personalized features.'
+        statement: 'Sign in to Vanity.box to access your World ID domains and personalized features.'
       };
       
       console.log('📝 Auth parameters:', authParams);
@@ -113,6 +125,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     setUser(null);
     // Prevent immediate auto-reconnect after manual disconnect (this session only)
     sessionStorage.setItem('skipAutoAuth', '1');
+    
+    // Remove backdrop when disconnecting
+    const backdrop = document.getElementById('wallet-dropdown-backdrop');
+    if (backdrop) backdrop.remove();
+    document.body.style.overflow = '';
     
     // Dispatch event for Index component
     window.dispatchEvent(new CustomEvent('wallet-disconnected'));
@@ -245,7 +262,19 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => {
+      if (open) {
+        document.body.style.overflow = 'hidden';
+        const backdrop = document.createElement('div');
+        backdrop.id = 'wallet-dropdown-backdrop';
+        backdrop.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]';
+        document.body.appendChild(backdrop);
+      } else {
+        document.body.style.overflow = '';
+        const backdrop = document.getElementById('wallet-dropdown-backdrop');
+        if (backdrop) backdrop.remove();
+      }
+    }}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
@@ -259,9 +288,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
         <DropdownMenuItem 
-          className="text-gray-700 hover:bg-gray-100 cursor-pointer"
+          className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
           onClick={() => {
             window.dispatchEvent(new CustomEvent('show-my-ids'));
+            const backdrop = document.getElementById('wallet-dropdown-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.style.overflow = '';
           }}
         >
           <User className="mr-2 h-4 w-4" />
@@ -269,7 +301,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          className="text-red-600 hover:bg-red-50 cursor-pointer"
+          className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
           onClick={handleDisconnect}
         >
           <LogOut className="mr-2 h-4 w-4" />

@@ -14,7 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      domain_configs: {
+        Row: {
+          api_key_secret_name: string
+          avatar_url: string | null
+          created_at: string | null
+          description: string | null
+          display_name: string | null
+          domain_name: string
+          id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_key_secret_name: string
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          domain_name: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_key_secret_name?: string
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          domain_name?: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      minted_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          expiry_date: string
+          full_name: string
+          grace_period_end: string | null
+          id: string
+          is_expired: boolean
+          network_fee: number | null
+          payment_amount: number | null
+          payment_method: string | null
+          registration_date: string
+          registration_months: number
+          subdomain: string
+          tx_hash: string | null
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          expiry_date: string
+          full_name: string
+          grace_period_end?: string | null
+          id?: string
+          is_expired?: boolean
+          network_fee?: number | null
+          payment_amount?: number | null
+          payment_method?: string | null
+          registration_date?: string
+          registration_months?: number
+          subdomain: string
+          tx_hash?: string | null
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          expiry_date?: string
+          full_name?: string
+          grace_period_end?: string | null
+          id?: string
+          is_expired?: boolean
+          network_fee?: number | null
+          payment_amount?: number | null
+          payment_method?: string | null
+          registration_date?: string
+          registration_months?: number
+          subdomain?: string
+          tx_hash?: string | null
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      poap_tokens: {
+        Row: {
+          chain: string | null
+          created_at: string
+          event_description: string | null
+          event_end_date: string | null
+          event_id: number
+          event_image_url: string | null
+          event_name: string | null
+          event_start_date: string | null
+          event_year: number | null
+          id: string
+          owner: string | null
+          token_id: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          chain?: string | null
+          created_at?: string
+          event_description?: string | null
+          event_end_date?: string | null
+          event_id: number
+          event_image_url?: string | null
+          event_name?: string | null
+          event_start_date?: string | null
+          event_year?: number | null
+          id?: string
+          owner?: string | null
+          token_id: string
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          chain?: string | null
+          created_at?: string
+          event_description?: string | null
+          event_end_date?: string | null
+          event_id?: number
+          event_image_url?: string | null
+          event_name?: string | null
+          event_start_date?: string | null
+          event_year?: number | null
+          id?: string
+          owner?: string | null
+          token_id?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

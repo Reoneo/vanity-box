@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, X } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
+import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -23,6 +24,9 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const [newRecordKey, setNewRecordKey] = useState('');
   const [newRecordValue, setNewRecordValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [transferAddress, setTransferAddress] = useState('');
+  const [activeTab, setActiveTab] = useState('records');
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // ENS standard text records
   const [ensRecords, setEnsRecords] = useState({
@@ -34,6 +38,20 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     'com.twitter': '',
     'com.discord': '',
   });
+
+  // Listen for domain action events
+  useEffect(() => {
+    const handleDomainAction = (e: any) => {
+      if (e.detail?.action === 'transfer') {
+        setActiveTab('transfer');
+      } else if (e.detail?.action === 'edit') {
+        setActiveTab('records');
+      }
+    };
+
+    window.addEventListener('domain-action', handleDomainAction);
+    return () => window.removeEventListener('domain-action', handleDomainAction);
+  }, []);
 
   // Load existing records when component mounts
   useEffect(() => {
@@ -131,6 +149,50 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     }
   };
 
+  const handleTransfer = () => {
+    if (!transferAddress.trim()) {
+      toast.error('Please enter a transfer address');
+      return;
+    }
+    setIsConfirmOpen(true);
+  };
+
+  const confirmTransferAndSend = async () => {
+    const to = transferAddress.trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(to)) {
+      toast.error('Invalid Ethereum address');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      toast.info('Transferring domain...');
+
+      const subdomain = `${domain.name}.${domain.domain}`;
+
+      const { data, error } = await supabase.functions.invoke('transfer-namestone-name', {
+        body: { subdomain, toAddress: to },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('Domain transferred successfully!');
+        setTransferAddress('');
+        window.dispatchEvent(new CustomEvent('domains-updated'));
+        window.dispatchEvent(new CustomEvent('back-to-domains'));
+      } else {
+        throw new Error(data?.error || 'Failed to transfer domain');
+      }
+    } catch (error) {
+      console.error('Transfer error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to transfer domain');
+    } finally {
+      setIsLoading(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
   const handleSaveRecords = async () => {
     try {
       setIsLoading(true);
@@ -168,6 +230,10 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       if (data?.success) {
         toast.success('Records saved successfully!');
         window.dispatchEvent(new CustomEvent('domains-updated'));
+        
+        // Auto-launch ENS app with the domain
+        const ensUrl = `https://app.ens.domains/${subdomain}`;
+        window.open(ensUrl, '_blank', 'noopener,noreferrer');
       } else {
         throw new Error(data?.error || 'Failed to save records');
       }
@@ -179,56 +245,57 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     }
   };
 
+  const handleBackClick = () => {
+    window.dispatchEvent(new CustomEvent('back-to-domains'));
+  };
+
+  const handleShowSearch = () => {
+    window.dispatchEvent(new CustomEvent('show-search'));
+  };
+
+  const handleSetPrimaryDomain = () => {
+    toast.info('Set Primary Domain feature coming soon!');
+  };
+
+  const handleTransferClick = () => {
+    toast.info('Transfer feature coming soon!');
+  };
+
   return (
-    <div className="w-full max-w-2xl mx-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6">
-      {/* Domain Header */}
-      <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-700">
-        <div className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
-          <img
-            src={smithCashAvatar}
-            alt={domain.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
-            {domain.name}.{domain.domain}
-          </h2>
-          <div className="flex gap-2 flex-wrap">
-            <Badge className="bg-blue-500/10 text-blue-400 border-blue-400/30">
-              Namestone ENS
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      <Tabs defaultValue="records" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 bg-gray-800">
-          <TabsTrigger value="records" className="data-[state=active]:bg-[#D4AF37] data-[state=active]:text-black">Records</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="records" className="space-y-4 mt-4">
+    <div className="w-full max-w-2xl mx-auto">
+      <button 
+        onClick={handleBackClick}
+        className="flex items-center gap-2 text-foreground hover:text-primary mb-4"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
+      <div className="bg-[hsl(var(--card))] dark:bg-[hsl(var(--card))] border border-border rounded-2xl shadow-lg p-6 luxury-card luxury-glow">
+        {/* Records Section - Only show when activeTab is 'records' */}
+        {activeTab === 'records' && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-white">ENS Text Records</h3>
+            <h3 className="font-semibold text-foreground text-center">ENS Text Records</h3>
             {Object.entries(ensRecords).map(([key, value]) => (
               <div key={key} className="space-y-2">
-                <Label className="text-gray-300">{key}</Label>
+                <Label className="text-foreground">{key}</Label>
                 <Input
                   value={value}
                   onChange={(e) => setEnsRecords({ ...ensRecords, [key]: e.target.value })}
                   placeholder={`Enter ${key}`}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-secondary dark:bg-muted border-border text-foreground"
                 />
               </div>
             ))}
 
             <div className="pt-4 border-t border-gray-700">
-              <h3 className="font-semibold text-white mb-4">Custom Records</h3>
+              <h3 className="font-semibold text-foreground mb-4">Custom Records</h3>
               
               {customRecords.map((record, index) => (
                 <div key={index} className="flex gap-2 mb-2">
-                  <Input value={record.key} disabled className="flex-1 bg-gray-800 text-white" />
-                  <Input value={record.value} disabled className="flex-1 bg-gray-800 text-white" />
+                  <Input value={record.key} disabled className="flex-1 bg-secondary dark:bg-muted text-foreground" />
+                  <Input value={record.value} disabled className="flex-1 bg-secondary dark:bg-muted text-foreground" />
                   <Button
                     variant="outline"
                     size="icon"
@@ -245,13 +312,13 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
                   value={newRecordKey}
                   onChange={(e) => setNewRecordKey(e.target.value)}
                   placeholder="Record key"
-                  className="flex-1 bg-gray-800 border-gray-700 text-white"
+                  className="flex-1 bg-secondary dark:bg-muted border-border text-foreground"
                 />
                 <Input
                   value={newRecordValue}
                   onChange={(e) => setNewRecordValue(e.target.value)}
                   placeholder="Record value"
-                  className="flex-1 bg-gray-800 border-gray-700 text-white"
+                  className="flex-1 bg-secondary dark:bg-muted border-border text-foreground"
                 />
                 <Button
                   onClick={handleAddCustomRecord}
@@ -265,13 +332,28 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
             <Button
               onClick={handleSaveRecords}
               disabled={isLoading}
-              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
+              className="w-full bg-primary hover:bg-[hsl(var(--primary-glow))] text-primary-foreground font-semibold disabled:opacity-50"
             >
               {isLoading ? 'Saving...' : 'Save Records'}
             </Button>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to transfer {domain.name}.{domain.domain} to {transferAddress}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTransferAndSend}>Transfer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

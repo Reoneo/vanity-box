@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
+// API key will be fetched based on domain
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -24,20 +24,27 @@ serve(async (req) => {
     console.log('📋 Text Records:', textRecords);
     console.log('==========================================');
 
-    if (!NAMESTONE_API_KEY) {
-      throw new Error('NAMESTONE_API_KEY is not configured');
-    }
-
     if (!subdomain || !walletAddress) {
       throw new Error('Missing required parameters');
     }
 
-    // Extract subdomain label (e.g., "alice" from "alice.smith.cash")
-    const subdomainLabel = subdomain.split('.')[0];
+    // Extract subdomain label and domain
+    const parts = subdomain.split('.');
+    const subdomainLabel = parts[0];
+    const domain = parts.slice(1).join('.') || 'smith.cash';
+
+    // Get API key for this domain
+    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    
+    if (!NAMESTONE_API_KEY) {
+      throw new Error(`API key not configured for domain ${domain}`);
+    }
+    
+    console.log('🔑 Using API key for domain:', domain);
     
     // Use the set-names endpoint (batch) for setting records
     const payload = {
-      domain: 'smith.cash',
+      domain: domain.toLowerCase(),
       names: [
         {
           name: subdomainLabel,
