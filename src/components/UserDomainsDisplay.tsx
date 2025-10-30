@@ -124,8 +124,28 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             };
           })
         );
-        
-        setDomains(domainsWithTx);
+
+        // Also include any domains from minted_domains that aren't returned by get-user-domains
+        const existing = new Set(domainsWithTx.map((d) => `${d.name}.${d.domain}`.toLowerCase()));
+        const additionalFromMinted: Domain[] = [];
+        if (mintedData) {
+          mintedData.forEach((md) => {
+            const full = md.full_name.toLowerCase();
+            if (!existing.has(full)) {
+              const [n, ...rest] = full.split('.');
+              const dom = rest.join('.');
+              additionalFromMinted.push({
+                name: n,
+                domain: dom,
+                address: walletAddress.toLowerCase(),
+                created_at: md.registration_date,
+                expiry_date: md.expiry_date,
+              });
+            }
+          });
+        }
+
+        setDomains([...domainsWithTx, ...additionalFromMinted]);
       } else {
         throw new Error(data?.error || 'Failed to fetch domains');
       }

@@ -63,11 +63,11 @@ Deno.serve(async (req) => {
 
     // Call Namestone set-names
     const namestonePayload = {
+      domain: cleanDomain,
       names: [
         {
           name: subdomainLabel,
           address: walletAddress.toLowerCase(),
-          domain: cleanDomain,
           text_records: {
             registration_months: String(registrationMonths || 12),
             expiry_date: expiryDate.toISOString(),
