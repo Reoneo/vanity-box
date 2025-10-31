@@ -89,6 +89,7 @@ export async function safePay(payload: PayCommandInput, timeoutMs = 20000): Prom
     timeout: `${timeoutMs}ms`
   });
   
+  // Always force WORLD_CHAIN for payments  
   const enhancedPayload: PayCommandInput = {
     ...payload,
     network: "WORLD_CHAIN" as any,

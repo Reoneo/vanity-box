@@ -275,27 +275,34 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
           const paymentToast = toast.info("Processing payment…");
 
-          // Unified Pay command - use SDK Token enums
+          // Unified Pay command - use exact SDK Token enums and proper token amounts
           let tokenSymbol: any;
           let tokenAmount: string;
           
           if (paymentMethod === "USDC") {
-            // Handle both USDC and USDCE (different SDK versions)
-            tokenSymbol = (Tokens as any).USDC ?? (Tokens as any).USDCE;
-            tokenAmount = convertedPrice.toFixed(2);
+            tokenSymbol = Tokens.USDC;
+            // USDC has 6 decimals, convert to smallest unit
+            const usdcDecimals = 6;
+            const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, usdcDecimals));
+            tokenAmount = amountInSmallestUnit.toString();
           } else if (paymentMethod === "WLD") {
             tokenSymbol = Tokens.WLD;
-            tokenAmount = convertedPrice.toFixed(4);
+            // WLD has 18 decimals, convert to smallest unit  
+            const wldDecimals = 18;
+            const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, wldDecimals));
+            tokenAmount = amountInSmallestUnit.toString();
           } else {
-            // ETH - use as any to handle different SDK versions
             tokenSymbol = (Tokens as any).ETH ?? "ETH";
-            tokenAmount = convertedPrice.toFixed(6);
+            // ETH has 18 decimals, convert to smallest unit
+            const ethDecimals = 18;
+            const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, ethDecimals));
+            tokenAmount = amountInSmallestUnit.toString();
           }
 
-          const paymentPayload = {
+          const paymentPayload: any = {
             reference: `${subdomain}-${walletAddress.slice(0, 6)}-${Date.now()}`,
             to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040",
-            tokens: [{ symbol: tokenSymbol as any, token_amount: tokenAmount }],
+            tokens: [{ symbol: tokenSymbol, token_amount: tokenAmount }],
             description: `Register ${subdomain} for ${registrationYears} ${
               registrationYears > 1 ? t("years") : t("year")
             }`,

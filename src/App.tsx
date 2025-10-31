@@ -18,15 +18,22 @@ const queryClient = new QueryClient();
 // Bootstrap MiniKit globally with app_id
 const MiniKitBootstrap = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
-    const appId = import.meta.env.VITE_MINIKIT_APP_ID as string;
-    const env = (import.meta.env.VITE_MINIKIT_ENV as string) || "production";
+    // Use hardcoded app ID for reliability  
+    const appId = "app_ed7e61cb0c52630464178eed59e3fbdd";
+    const env = "production";
     
-    if (!appId) {
-      console.warn("[MiniKit] Missing VITE_MINIKIT_APP_ID in environment variables");
+    try {
+      if (MiniKit.isInstalled()) {
+        console.log("[MiniKit] World App detected, installing with app_id:", appId);
+        (MiniKit as any).install({ app_id: appId, environment: env });
+        console.log("[MiniKit] Installation successful");
+      } else {
+        console.warn("[MiniKit] World App not detected, installing anyway");
+        (MiniKit as any).install({ app_id: appId, environment: env });
+      }
+    } catch (e) {
+      console.error("[MiniKit] Installation failed:", e);
     }
-    
-    (MiniKit as any).install({ app_id: appId, environment: env });
-    console.debug("[MiniKit] install() called with app_id:", appId, "environment:", env);
   }, []);
 
   return children as any;
