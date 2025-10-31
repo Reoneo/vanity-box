@@ -24,9 +24,9 @@ Deno.serve(async (req) => {
       return j({ ok: false, error: "Missing required fields" }, 400);
     }
 
-    // Parse subdomain label and domain safely
+    // Parse subdomain label and domain safely - PRESERVE $ in domain names
     const subdomainLabel = String(subdomain).split(".")[0].trim().toLowerCase();
-    const cleanDomain = String(domain).trim().toLowerCase().replace(/^\$/, "");
+    const cleanDomain = String(domain).trim().toLowerCase(); // DO NOT strip $ - it's part of the domain name!
 
     console.log(`[Mint] Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
 
@@ -115,6 +115,15 @@ Deno.serve(async (req) => {
     if (!namestoneRes.ok) {
       const errorText = await namestoneRes.text();
       console.error(`[Namestone] Error: ${namestoneRes.status} - ${errorText}`);
+      
+      // Provide clearer error for 401 (authorization issues)
+      if (namestoneRes.status === 401) {
+        return j({ 
+          ok: false, 
+          error: `API key not authorized for domain "${cleanDomain}". Please verify domain configuration.` 
+        }, 500);
+      }
+      
       return j({ ok: false, error: `Namestone API error: ${errorText}` }, 500);
     }
 

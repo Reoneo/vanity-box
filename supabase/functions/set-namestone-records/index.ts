@@ -26,10 +26,10 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
-    // Extract subdomain label and domain
+    // Extract subdomain label and domain - PRESERVE $ in domain names
     const parts = subdomain.split('.');
     const subdomainLabel = parts[0].trim().toLowerCase();
-    const cleanDomain = (parts.slice(1).join('.') || 'smith.cash').trim().toLowerCase().replace(/^\$/, '');
+    const cleanDomain = (parts.slice(1).join('.') || 'smith.cash').trim().toLowerCase(); // DO NOT strip $ - it's part of the domain name!
 
     console.log(`🔍 Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
 
@@ -97,6 +97,12 @@ serve(async (req) => {
       console.error('❌ NAMESTONE API ERROR');
       console.error('Status:', response.status);
       console.error('Error message:', errorText);
+      
+      // Provide clearer error for 401 (authorization issues)
+      if (response.status === 401) {
+        throw new Error(`API key not authorized for domain "${cleanDomain}". Please verify domain configuration.`);
+      }
+      
       throw new Error(`Namestone API error: ${response.status} - ${errorText}`);
     }
 

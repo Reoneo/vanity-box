@@ -27,11 +27,11 @@ serve(async (req) => {
 
     // Extract subdomain label (e.g., "alice" from "alice.smith.cash")
     const subdomainLabel = subdomain.includes('.') ? subdomain.split('.')[0] : subdomain;
-    const cleanDomain = String(domain).trim().toLowerCase().replace(/^\$/, '');
+    const cleanDomain = String(domain).trim().toLowerCase(); // DO NOT strip $ - it's part of the domain name!
     
     console.log(`🔍 Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
     
-    // Fetch API key from domain_configs - check mith.eth specifically
+    // Fetch API key from domain_configs
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -61,7 +61,8 @@ serve(async (req) => {
       throw new Error(`API key not configured for domain ${cleanDomain}`);
     }
     
-    const url = `https://namestone.com/api/public_v1/get-names?domain=${cleanDomain}`;
+    // URL-encode the domain for GET request (handles special characters like $)
+    const url = `https://namestone.com/api/public_v1/get-names?domain=${encodeURIComponent(cleanDomain)}`;
 
     console.log('📤 Sending request to Namestone:', url);
 
@@ -81,20 +82,17 @@ serve(async (req) => {
       console.error('Status:', response.status);
       console.error('Error message:', errorText);
       
-      // If domain is not set up on Namestone (401 Unauthorized), return false (available)
+      // If domain returns 401, it means API key mismatch or domain not configured
       if (response.status === 401) {
-        console.log('⚠️ Domain not set up on Namestone, treating as available');
+        console.error(`⚠️ API key not authorized for domain "${cleanDomain}"`);
         return new Response(
           JSON.stringify({
-            success: true,
-            subdomain: subdomainLabel,
-            domain: cleanDomain,
-            exists: false,
-            message: 'Domain not set up on Namestone - subdomain available'
+            success: false,
+            error: `API key not authorized for domain "${cleanDomain}". Please verify domain configuration.`
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
+            status: 500,
           }
         );
       }
