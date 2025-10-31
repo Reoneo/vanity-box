@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MiniKit, Tokens } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
-import { ensureReady, requestPayPermission, safePay, sendHaptic } from "@/lib/minikit";
+import { ensureReady, ensurePayPermission, safePay, sendHaptic } from "@/lib/minikit";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ethLogoLight from "@/assets/eth-logo-light.png";
@@ -263,24 +263,32 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         payInFlightRef.current = true;
 
         try {
-          // Request payment permission
-          await requestPayPermission();
+          // Request and verify payment permission
+          toast.info("Requesting payment permission...");
+          try {
+            await ensurePayPermission();
+          } catch (permError: any) {
+            console.error("[Mint] Permission denied:", permError);
+            toast.error("Payment permission required. Please grant access in World App.");
+            return;
+          }
 
           const paymentToast = toast.info("Processing payment…");
 
-          // Unified Pay command for all tokens
-          let tokenSymbol: string;
+          // Unified Pay command - use SDK Token enums
+          let tokenSymbol: any;
           let tokenAmount: string;
           
           if (paymentMethod === "USDC") {
-            tokenSymbol = "USDC";
+            // Handle both USDC and USDCE (different SDK versions)
+            tokenSymbol = (Tokens as any).USDC ?? (Tokens as any).USDCE;
             tokenAmount = convertedPrice.toFixed(2);
           } else if (paymentMethod === "WLD") {
-            tokenSymbol = "WLD";
+            tokenSymbol = Tokens.WLD;
             tokenAmount = convertedPrice.toFixed(4);
           } else {
-            // ETH - use string symbol instead of enum
-            tokenSymbol = "ETH";
+            // ETH - use as any to handle different SDK versions
+            tokenSymbol = (Tokens as any).ETH ?? "ETH";
             tokenAmount = convertedPrice.toFixed(6);
           }
 
@@ -295,8 +303,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
           console.log("[Payment] Initiating:", { paymentMethod, tokenAmount, payload: paymentPayload });
 
-          // Use safePay with 45s timeout
-          txHash = await safePay(paymentPayload, 45000);
+          // Use safePay with 8s timeout
+          txHash = await safePay(paymentPayload, 8000);
 
           toast.dismiss(paymentToast);
           toast.success(`${paymentMethod} payment successful!`);
@@ -308,9 +316,23 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           localStorage.setItem("txMap", JSON.stringify(txMap));
 
         } catch (payErr: any) {
-          const msg =
-            typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
-          toast.error(msg);
+          console.error("[Mint] Payment error details:", payErr);
+          
+          let msg = "Payment processing failed. Please try again.";
+          
+          if (typeof payErr?.message === "string") {
+            if (payErr.message.includes("timeout") || payErr.message.includes("taking longer") || payErr.message.includes("in progress")) {
+              msg = "Payment confirmation in progress. Check World App to complete, then return here.";
+            } else if (payErr.message.includes("canceled") || payErr.message.includes("denied")) {
+              msg = "Payment was canceled. Please try again when ready.";
+            } else if (payErr.message.includes("permission")) {
+              msg = "Payment permission required. Please grant access in World App.";
+            } else {
+              msg = payErr.message;
+            }
+          }
+          
+          toast.error(msg, { duration: 6000 });
           await sendHaptic("error");
           return;
         } finally {

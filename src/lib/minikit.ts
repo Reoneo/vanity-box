@@ -40,55 +40,110 @@ export async function ensureReady(): Promise<void> {
 }
 
 /**
- * Request payment permission (simplified - permission system may vary)
+ * Request payment permission with explicit preflight check
+ */
+export async function ensurePayPermission(): Promise<void> {
+  await ensureReady();
+  
+  try {
+    const getPerms = (MiniKit.commandsAsync as any).getPermissions;
+    const reqPerm = (MiniKit.commandsAsync as any).requestPermission;
+    
+    if (typeof getPerms === "function") {
+      const res = await getPerms();
+      const hasPay = Array.isArray(res?.finalPayload?.permissions) 
+        ? res.finalPayload.permissions.includes("pay") 
+        : false;
+        
+      if (!hasPay && typeof reqPerm === "function") {
+        console.log("[MiniKit] Requesting 'pay' permission");
+        await reqPerm({ permissions: ["pay"] });
+      } else {
+        console.log("[MiniKit] Pay permission already granted");
+      }
+    }
+  } catch (e) {
+    console.debug("[MiniKit] Permission preflight skipped (SDK may not support):", e);
+  }
+}
+
+/**
+ * @deprecated Use ensurePayPermission instead
  */
 export async function requestPayPermission(): Promise<void> {
-  await ensureReady();
-  console.log("[MiniKit] Payment permission check (auto-granted in World App)");
-  // MiniKit in World App typically auto-grants payment access
-  // No explicit permission request needed for Pay command
+  return ensurePayPermission();
 }
 
 /**
  * Execute a payment with robust error handling and timeout
  */
-export async function safePay(payload: PayCommandInput, timeoutMs = 45000): Promise<string> {
+export async function safePay(payload: PayCommandInput, timeoutMs = 20000): Promise<string> {
   await ensureReady();
+  
+  // Log environment status
+  console.log("[MiniKit] Payment environment:", {
+    isInstalled: MiniKit.isInstalled(),
+    isReady,
+    timeout: `${timeoutMs}ms`
+  });
   
   const enhancedPayload: PayCommandInput = {
     ...payload,
-    network: "WORLD_CHAIN" as any, // Ensure World Chain network
+    network: "WORLD_CHAIN" as any,
   };
   
-  console.log("[MiniKit] Initiating payment:", enhancedPayload);
+  // Log payment details (non-PII)
+  console.log("[MiniKit] Payment payload:", {
+    to: enhancedPayload.to,
+    token: enhancedPayload.tokens?.[0]?.symbol,
+    amount: enhancedPayload.tokens?.[0]?.token_amount,
+    network: enhancedPayload.network,
+    reference: enhancedPayload.reference
+  });
+  
+  const startTime = Date.now();
   
   try {
     const result = await Promise.race([
       MiniKit.commandsAsync.pay(enhancedPayload),
       new Promise<never>((_, reject) =>
         setTimeout(
-          () => reject(new Error("Payment didn't complete in time. If you confirmed in World App, check My IDs shortly.")),
+          () => reject(new Error("Payment confirmation in progress. Please check World App to complete the transaction.")),
           timeoutMs
         )
       ),
     ]);
     
+    const duration = Date.now() - startTime;
     const { finalPayload } = result as { finalPayload: MiniAppPaymentPayload };
     
+    console.log("[MiniKit] Payment response received:", {
+      status: finalPayload.status,
+      duration: `${duration}ms`,
+      hasTransactionId: !!(finalPayload as any).transaction_id
+    });
+    
     if (finalPayload.status === "success") {
-      console.log("[MiniKit] Payment success:", finalPayload.transaction_id);
-      return finalPayload.transaction_id;
+      const txId = (finalPayload as any).transaction_id;
+      console.log("[MiniKit] Payment success - txId:", txId);
+      return txId;
     }
     
     if (finalPayload.status === "error") {
       const errorMsg = (finalPayload as any).error_message || "Payment failed";
+      console.error("[MiniKit] Payment error:", errorMsg);
       throw new Error(errorMsg);
     }
     
-    // User cancelled
+    console.warn("[MiniKit] Payment canceled by user");
     throw new Error("Payment canceled");
   } catch (e: any) {
-    console.error("[MiniKit] Payment error:", e);
+    const duration = Date.now() - startTime;
+    console.error("[MiniKit] Payment failed:", {
+      error: e.message,
+      duration: `${duration}ms`,
+      type: e.name
+    });
     throw e;
   }
 }
