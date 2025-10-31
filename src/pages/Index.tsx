@@ -49,8 +49,8 @@ const Index = () => {
             <SearchInterface />
           </article>
           
-          {/* Powered By Logos - Below content */}
-          <div className="w-full mt-auto mb-2">
+          {/* Powered By Logos - Below content with smooth fade-in */}
+          <div className="w-full mt-auto mb-4 animate-fade-in">
             <PoweredByLogos />
           </div>
         </main>
