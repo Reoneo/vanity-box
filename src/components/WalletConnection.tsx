@@ -247,7 +247,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         disabled={isLoading}
         variant="outline"
         size="sm"
-        className={cn("h-10 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold", className)}
+        className={cn(
+          "h-10 bg-black text-white border-2 border-black hover:bg-gray-800 hover:border-gray-800 transition-all duration-300 font-semibold relative",
+          !isLoading && "before:absolute before:inset-0 before:rounded-md before:border-2 before:border-[#D4AF37] before:animate-pulse before:pointer-events-none",
+          className
+        )}
       >
         {isLoading ? (
           <>
@@ -255,7 +259,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             {t('connecting')}
           </>
         ) : (
-          t('connect')
+          t('connect').charAt(0).toUpperCase() + t('connect').slice(1)
         )}
       </Button>
     );
