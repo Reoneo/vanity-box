@@ -27,9 +27,11 @@ serve(async (req) => {
 
     // Extract subdomain label (e.g., "alice" from "alice.smith.cash")
     const subdomainLabel = subdomain.includes('.') ? subdomain.split('.')[0] : subdomain;
-    const cleanDomain = String(domain).trim().toLowerCase();
+    const cleanDomain = String(domain).trim().toLowerCase().replace(/^\$/, '');
     
-    // Fetch API key from domain_configs
+    console.log(`🔍 Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
+    
+    // Fetch API key from domain_configs - check mith.eth specifically
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);

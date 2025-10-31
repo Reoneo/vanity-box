@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     // Parse subdomain label and domain safely
     const subdomainLabel = String(subdomain).split(".")[0].trim().toLowerCase();
-    const cleanDomain = String(domain).trim().toLowerCase();
+    const cleanDomain = String(domain).trim().toLowerCase().replace(/^\$/, "");
 
     console.log(`[Mint] Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
 

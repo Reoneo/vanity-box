@@ -29,7 +29,7 @@ serve(async (req) => {
     // Extract subdomain label and domain
     const parts = subdomain.split('.');
     const subdomainLabel = parts[0].trim().toLowerCase();
-    const cleanDomain = parts.slice(1).join('.').trim().toLowerCase() || 'smith.cash';
+    const cleanDomain = (parts.slice(1).join('.') || 'smith.cash').trim().toLowerCase().replace(/^\$/, '');
 
     console.log(`🔍 Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
 
