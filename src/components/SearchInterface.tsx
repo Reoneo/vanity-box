@@ -1155,6 +1155,34 @@ export const SearchInterface = () => {
                         </button>
                       </div>
 
+                      {/* Spotify Player for Artists */}
+                      {(displayQuery === "spyda" || displayQuery === "flirtad") && (
+                        <div className="w-full max-w-md mx-auto mb-4">
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-2xl blur-md -z-10"></div>
+                            <iframe
+                              src={`https://open.spotify.com/${displayQuery === "spyda" ? "embed/playlist/37i9dQZF1DZ06evO07i78t?si=O-Wk41qlRAy-6TdqfdteKw" : "embed/playlist/37i9dQZF1DZ06evO1xveQU?si=DjldB-b-S569AvJ1maoCIw"}`}
+                              width="100%"
+                              height="352"
+                              frameBorder="0"
+                              allow="encrypted-media; fullscreen; picture-in-picture"
+                              loading="lazy"
+                              className="rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-sm"
+                              style={{ border: "none" }}
+                              onLoad={(e) => {
+                                const iframe = e.currentTarget;
+                                const checkPlay = () => {
+                                  import("@/utils/spotifyManager").then(({ spotifyManager }) => {
+                                    spotifyManager.setPlaying(true);
+                                  });
+                                };
+                                iframe.addEventListener("click", checkPlay);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
                       {/* Social Links and ENS Records */}
                       <div className="flex flex-wrap gap-3 pt-2 justify-center">
                         {/* Twitter/X */}
@@ -1557,54 +1585,22 @@ export const SearchInterface = () => {
                               >
                                 <img src={vanityContactIcon} alt="Vanity.box" className="w-6 h-6" />
                               </a>
-                              <div className={`relative ${hasSpotify ? "mb-2 w-full" : "mb-6"}`}>
-                                {hasSpotify ? (
-                                  <div className="w-full relative">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/10 to-[#F7E06C]/10 rounded-2xl blur-md -z-10"></div>
-                                    <iframe
-                                      src={`${(result as any).spotifyUrl.replace("/track/", "/embed/track/").replace("/playlist/", "/embed/playlist/")}`}
-                                      width="100%"
-                                      height="152"
-                                      frameBorder="0"
-                                      allow="encrypted-media; fullscreen; picture-in-picture"
-                                      loading="lazy"
-                                      className="rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-sm"
-                                      style={{ border: "none" }}
-                                      onLoad={(e) => {
-                                        const iframe = e.currentTarget;
-                                        // Mark as playing when iframe loads (user will click play)
-                                        const checkPlay = () => {
-                                          import("@/utils/spotifyManager").then(({ spotifyManager }) => {
-                                            spotifyManager.setPlaying(true);
-                                          });
-                                        };
-                                        iframe.addEventListener("click", checkPlay);
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
-                                    <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
-                                      <img
-                                        src={result.imageUrl}
-                                        alt={result.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  </>
-                                )}
+                              <div className="relative mb-6">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
+                                <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
+                                  <img
+                                    src={result.imageUrl}
+                                    alt={result.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
                               </div>
 
-                              <h3
-                                className={`font-mono text-xl font-bold text-white ${hasSpotify ? "mb-2" : "mb-3"} leading-tight px-4 w-full break-words flex items-center justify-center`}
-                              >
+                              <h3 className="font-mono text-xl font-bold text-white mb-3 leading-tight px-4 w-full break-words flex items-center justify-center">
                                 {displayQuery ? `${displayQuery}.${result.name}` : result.name}
                               </h3>
 
-                              <div
-                                className={`flex items-center justify-center gap-1 ${hasSpotify ? "mb-3" : "mb-4"} overflow-x-auto max-w-full flex-nowrap`}
-                              >
+                              <div className="flex items-center justify-center gap-1 mb-4 overflow-x-auto max-w-full flex-nowrap">
                                 {(Array.isArray(result.category) ? result.category : [result.category]).map(
                                   (cat, catIndex) => (
                                     <Badge
@@ -1650,7 +1646,7 @@ export const SearchInterface = () => {
                               </div>
 
                               <Button
-                                className={`w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base ${hasSpotify ? "py-4" : "py-6"} rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
+                                className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 onClick={() => handleMint(result)}
                                 disabled={isDisabled}
                               >

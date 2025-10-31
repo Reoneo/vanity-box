@@ -285,7 +285,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             const { finalPayload } = await Promise.race([
               MiniKit.commandsAsync.sendTransaction(txPayload),
               new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("Payment timeout - please try again")), 60_000),
+                setTimeout(() => reject(new Error("Payment timeout - please try again")), 120_000),
               ),
             ]);
 
@@ -317,7 +317,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             const { finalPayload } = await Promise.race([
               MiniKit.commandsAsync.pay(paymentPayload),
               new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("Payment timeout - please try again")), 60_000),
+                setTimeout(() => reject(new Error("Payment timeout - please try again")), 120_000),
               ),
             ]);
 
