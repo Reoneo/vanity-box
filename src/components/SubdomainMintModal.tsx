@@ -8,9 +8,9 @@ import { useTheme } from "next-themes";
 import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { MiniKit, Tokens, PayCommandInput } from "@worldcoin/minikit-js";
-import { parseUnits } from "viem";
+import { MiniKit, Tokens } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
+import { ensureReady, requestPayPermission, safePay, sendHaptic } from "@/lib/minikit";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ethLogoLight from "@/assets/eth-logo-light.png";
@@ -228,6 +228,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     }
 
     setIsMinting(true);
+    await sendHaptic("light");
 
     try {
       if (!isFree && isLoadingPrices) {
@@ -235,10 +236,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      if (!MiniKit.isInstalled()) {
-        toast.error("MiniKit is not installed. Please open this app in World App.");
-        return;
-      }
+      // Ensure MiniKit is ready
+      await ensureReady();
 
       // 1) Ensure wallet connected (with timeout)
       let walletAddress: string;
@@ -253,7 +252,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      // 2) Payments
+      // 2) Payments - unified flow for all tokens
       let txHash: string | undefined;
 
       if (!isFree) {
@@ -264,77 +263,55 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         payInFlightRef.current = true;
 
         try {
+          // Request payment permission
+          await requestPayPermission();
+
           const paymentToast = toast.info("Processing payment…");
 
-          if (paymentMethod === "ETH") {
-            const recipientAddress = "0x71ab0b01e3ff45551e25b208e2a90298f73f7040";
-            const weiAmount = parseUnits(convertedPrice.toFixed(18), 18).toString();
-
-            const txPayload = {
-              transaction: [
-                {
-                  address: recipientAddress,
-                  abi: [],
-                  functionName: "",
-                  args: [],
-                  value: weiAmount,
-                },
-              ],
-            };
-
-            const { finalPayload } = await Promise.race([
-              MiniKit.commandsAsync.sendTransaction(txPayload),
-              new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("Payment timeout - please try again")), 120_000),
-              ),
-            ]);
-
-            if (finalPayload.status === "success") {
-              txHash = finalPayload.transaction_id;
-              toast.dismiss(paymentToast);
-              toast.success("ETH payment successful!");
-            } else if (finalPayload.status === "error") {
-              toast.dismiss(paymentToast);
-              throw new Error((finalPayload as any).error_message || "ETH payment failed.");
-            } else {
-              toast.dismiss(paymentToast);
-              throw new Error("ETH payment was cancelled.");
-            }
+          // Unified Pay command for all tokens
+          let tokenSymbol: string;
+          let tokenAmount: string;
+          
+          if (paymentMethod === "USDC") {
+            tokenSymbol = "USDC";
+            tokenAmount = convertedPrice.toFixed(2);
+          } else if (paymentMethod === "WLD") {
+            tokenSymbol = "WLD";
+            tokenAmount = convertedPrice.toFixed(4);
           } else {
-            const tokenEnum = paymentMethod === "USDC" ? Tokens.USDC : Tokens.WLD;
-            const decimals = tokenEnum === Tokens.USDC ? 6 : 18;
-            const amountAtomic = parseUnits(convertedPrice.toFixed(decimals), decimals).toString();
-
-            const paymentPayload: PayCommandInput = {
-              reference: `subdomain-${subdomain}-${Date.now()}`,
-              to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040",
-              tokens: [{ symbol: tokenEnum, token_amount: amountAtomic }],
-              description: `Register ${subdomain} for ${registrationYears} ${
-                registrationYears > 1 ? t("years") : t("year")
-              }`,
-            };
-
-            const { finalPayload } = await Promise.race([
-              MiniKit.commandsAsync.pay(paymentPayload),
-              new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error("Payment timeout - please try again")), 120_000),
-              ),
-            ]);
-
-            if (finalPayload.status === "success") {
-              txHash = finalPayload.transaction_id;
-              toast.dismiss();
-              toast.success("Payment successful!");
-            } else if (finalPayload.status === "error") {
-              throw new Error((finalPayload as any).error_message || "Payment failed.");
-            } else {
-              throw new Error("Payment was cancelled.");
-            }
+            // ETH - use string symbol instead of enum
+            tokenSymbol = "ETH";
+            tokenAmount = convertedPrice.toFixed(6);
           }
+
+          const paymentPayload = {
+            reference: `${subdomain}-${walletAddress.slice(0, 6)}-${Date.now()}`,
+            to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040",
+            tokens: [{ symbol: tokenSymbol as any, token_amount: tokenAmount }],
+            description: `Register ${subdomain} for ${registrationYears} ${
+              registrationYears > 1 ? t("years") : t("year")
+            }`,
+          };
+
+          console.log("[Payment] Initiating:", { paymentMethod, tokenAmount, payload: paymentPayload });
+
+          // Use safePay with 45s timeout
+          txHash = await safePay(paymentPayload, 45000);
+
+          toast.dismiss(paymentToast);
+          toast.success(`${paymentMethod} payment successful!`);
+          await sendHaptic("success");
+
+          // Persist txHash immediately
+          const txMap = JSON.parse(localStorage.getItem("txMap") || "{}");
+          txMap[subdomain.toLowerCase()] = txHash;
+          localStorage.setItem("txMap", JSON.stringify(txMap));
+
         } catch (payErr: any) {
           const msg =
             typeof payErr?.message === "string" ? payErr.message : "Payment processing failed. Please try again.";
           toast.error(msg);
+          await sendHaptic("error");
           return;
         } finally {
           payInFlightRef.current = false;

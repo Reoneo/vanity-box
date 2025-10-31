@@ -1,13 +1,13 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { MiniKit } from "@worldcoin/minikit-js";
+import { initMiniKit } from "@/lib/minikit";
 
-// Install MiniKit once before rendering App
-try {
-  MiniKit.install('app_ed7e61cb0c52630464178eed59e3fbdd');
-} catch (e) {
-  console.warn("[MiniKit] Installation failed (may not be in World App):", e);
-}
+// Bootstrap MiniKit once on app load
+initMiniKit('app_ed7e61cb0c52630464178eed59e3fbdd').then(() => {
+  console.log("[App] MiniKit ready");
+}).catch(() => {
+  console.warn("[App] MiniKit not available (not in World App)");
+});
 
 createRoot(document.getElementById("root")!).render(<App />);
