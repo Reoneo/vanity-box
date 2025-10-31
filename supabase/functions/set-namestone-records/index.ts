@@ -1,14 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API key will be fetched based on domain
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -30,21 +28,46 @@ serve(async (req) => {
 
     // Extract subdomain label and domain
     const parts = subdomain.split('.');
-    const subdomainLabel = parts[0];
-    const domain = parts.slice(1).join('.') || 'smith.cash';
+    const subdomainLabel = parts[0].trim().toLowerCase();
+    const cleanDomain = parts.slice(1).join('.').trim().toLowerCase() || 'smith.cash';
 
-    // Get API key for this domain
-    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
-    
-    if (!NAMESTONE_API_KEY) {
-      throw new Error(`API key not configured for domain ${domain}`);
+    console.log(`🔍 Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
+
+    // Fetch API key from domain_configs
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: domainConfig, error: configError } = await supabase
+      .from("domain_configs")
+      .select("*")
+      .eq("domain_name", cleanDomain)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (configError) {
+      throw new Error(`Database error: ${configError.message}`);
+    }
+
+    let namestoneApiKey: string | undefined;
+
+    if (domainConfig) {
+      console.log(`🔑 Found domain config for ${cleanDomain}, secret: ${domainConfig.api_key_secret_name}`);
+      namestoneApiKey = Deno.env.get(domainConfig.api_key_secret_name);
+    } else {
+      console.log(`🔑 No domain config found for ${cleanDomain}, using default`);
+      namestoneApiKey = Deno.env.get("NAMESTONE_API_KEY");
     }
     
-    console.log('🔑 Using API key for domain:', domain);
+    if (!namestoneApiKey) {
+      throw new Error(`API key not configured for domain ${cleanDomain}`);
+    }
+    
+    console.log('🔑 API key resolved for domain:', cleanDomain);
     
     // Use the set-names endpoint (batch) for setting records
     const payload = {
-      domain: domain.toLowerCase(),
+      domain: cleanDomain,
       names: [
         {
           name: subdomainLabel,
@@ -58,10 +81,10 @@ serve(async (req) => {
 
     console.log('📤 Sending request to Namestone set-names endpoint:', JSON.stringify(payload, null, 2));
 
-    const response = await fetch('https://namestone.xyz/api/public_v1/set-names', {
+    const response = await fetch('https://namestone.com/api/public_v1/set-names', {
       method: 'POST',
       headers: {
-        'Authorization': NAMESTONE_API_KEY,
+        'Authorization': namestoneApiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),

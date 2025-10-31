@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createPublicClient, http, namehash } from 'npm:viem';
 import { worldchain } from 'npm:viem/chains';
 
@@ -6,8 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const NAMESTONE_API_KEY = Deno.env.get('NAMESTONE_API_KEY');
 
 // ENS Name Wrapper contract address (standard across networks)
 const NAME_WRAPPER_ADDRESS = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
@@ -29,7 +28,6 @@ const viemClient = createPublicClient({
 });
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -39,20 +37,41 @@ serve(async (req) => {
 
     console.log('Fetching domains for wallet:', walletAddress);
 
-    if (!NAMESTONE_API_KEY) {
-      throw new Error('NAMESTONE_API_KEY is not configured');
-    }
-
     if (!walletAddress) {
       throw new Error('Missing wallet address');
     }
 
-    // Fetch domains from Namestone API
+    // Get list of active domains from domain_configs
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: activeDomains, error: domainsError } = await supabase
+      .from("domain_configs")
+      .select("domain_name, api_key_secret_name")
+      .eq("status", "active");
+
+    if (domainsError) {
+      console.error('Error fetching active domains:', domainsError);
+      throw new Error(`Database error: ${domainsError.message}`);
+    }
+
+    console.log('Active domains:', activeDomains);
+
+    // Fetch domains from Namestone API for the wallet
     console.log('Calling Namestone get-names API');
-    const namestoneResponse = await fetch('https://namestone.xyz/api/public_v1/get-names', {
+    
+    // Use default API key for POST request (address-based query)
+    const defaultApiKey = Deno.env.get('NAMESTONE_API_KEY');
+    
+    if (!defaultApiKey) {
+      throw new Error('NAMESTONE_API_KEY is not configured');
+    }
+
+    const namestoneResponse = await fetch('https://namestone.com/api/public_v1/get-names', {
       method: 'POST',
       headers: {
-        'Authorization': NAMESTONE_API_KEY!,
+        'Authorization': defaultApiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -69,24 +88,23 @@ serve(async (req) => {
 
     const namestoneData = await namestoneResponse.json();
     console.log('Namestone response:', namestoneData);
-    console.log('Namestone response type:', typeof namestoneData);
-    console.log('Is array:', Array.isArray(namestoneData));
 
     // Handle both response formats: direct array or {names: [...]}
     const namesArray = Array.isArray(namestoneData) ? namestoneData : (namestoneData.names || []);
     console.log('Names array:', namesArray);
     
-    // Filter for smith.cash domains
-    const smithDomains = namesArray.filter((name: any) => 
-      name.domain === 'smith.cash'
+    // Filter for active domains only
+    const activeDomainNames = new Set(activeDomains?.map(d => d.domain_name) || []);
+    const userDomains = namesArray.filter((name: any) => 
+      activeDomainNames.has(name.domain)
     );
 
-    console.log('Found smith.cash domains:', smithDomains.length);
-    console.log('Smith domains:', smithDomains);
+    console.log('Found user domains across active domains:', userDomains.length);
+    console.log('User domains:', userDomains);
 
     // Check wrapped status for each domain
     const domainsWithWrappedStatus = await Promise.all(
-      smithDomains.map(async (domain: any) => {
+      userDomains.map(async (domain: any) => {
         try {
           const fullDomain = `${domain.name}.${domain.domain}`;
           const nameHash = namehash(fullDomain);

@@ -749,7 +749,7 @@ export const SearchInterface = () => {
             subdomain={displayQuery ? `${displayQuery}.${selectedResult.name}` : selectedResult.name}
             price={price}
             resultAvatar={selectedResult.imageUrl}
-            domain={selectedResult.name.toLowerCase().replace(/\s+/g, "").replace(/^\$/, "s")}
+            domain={selectedResult.name.trim().toLowerCase()}
           />
         ) : (
           <>

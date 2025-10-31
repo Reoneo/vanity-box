@@ -24,35 +24,58 @@ Deno.serve(async (req) => {
       return j({ ok: false, error: "Missing required fields" }, 400);
     }
 
-    // Extract subdomain label and domain
-    const subdomainLabel = subdomain.split(".")[0].toLowerCase().trim();
-    const cleanDomain = domain.replace(/^\$/, "").toLowerCase().trim();
+    // Parse subdomain label and domain safely
+    const subdomainLabel = String(subdomain).split(".")[0].trim().toLowerCase();
+    const cleanDomain = String(domain).trim().toLowerCase();
 
-    console.log(`[Mint] Processed: label="${subdomainLabel}", domain="${cleanDomain}"`);
+    console.log(`[Mint] Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
+
+    // Validate subdomain label format (ENS-safe)
+    if (!/^[a-z0-9-]{1,63}$/.test(subdomainLabel)) {
+      console.error("[Mint] Invalid subdomain label format:", subdomainLabel);
+      return j({ ok: false, error: "Invalid subdomain format. Use only lowercase letters, numbers, and hyphens." }, 400);
+    }
 
     if (!cleanDomain || cleanDomain.length === 0) {
       console.error("[Mint] Domain is empty after processing");
       return j({ ok: false, error: "Invalid domain format" }, 400);
     }
 
-    // Get API key for domain
-    const apiKeyMap: Record<string, string | undefined> = {
-      "30315.eth": Deno.env.get("NAMESTONE_API_KEY_30315"),
-      "teamxrp.eth": Deno.env.get("NAMESTONE_API_KEY_TEAMXRP"),
-      "termux.eth": Deno.env.get("NAMESTONE_API_KEY_TERMUX"),
-      "mexipay.eth": Deno.env.get("NAMESTONE_API_KEY_MEXIPAY"),
-      "guavapay.eth": Deno.env.get("NAMESTONE_API_KEY_GUAVAPAY"),
-      "spyda.eth": Deno.env.get("NAMESTONE_API_KEY_SPYDA"),
-      "flirtad.eth": Deno.env.get("NAMESTONE_API_KEY_FLIRTAD"),
-    };
+    // Fetch domain config and API key from database
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const namestoneApiKey = apiKeyMap[cleanDomain] || Deno.env.get("NAMESTONE_API_KEY");
-    console.log(`[Mint] Using API key for domain: ${cleanDomain}, keyFound: ${!!namestoneApiKey}`);
+    console.log(`[Mint] Fetching domain config for: ${cleanDomain}`);
     
+    const { data: domainConfig, error: configError } = await supabase
+      .from("domain_configs")
+      .select("*")
+      .eq("domain_name", cleanDomain)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (configError) {
+      console.error("[Mint] Error fetching domain config:", configError);
+      return j({ ok: false, error: `Database error: ${configError.message}` }, 500);
+    }
+
+    let namestoneApiKey: string | undefined;
+
+    if (domainConfig) {
+      console.log(`[Mint] Found domain config for ${cleanDomain}, secret: ${domainConfig.api_key_secret_name}`);
+      namestoneApiKey = Deno.env.get(domainConfig.api_key_secret_name);
+    } else {
+      console.log(`[Mint] No domain config found for ${cleanDomain}, using default`);
+      namestoneApiKey = Deno.env.get("NAMESTONE_API_KEY");
+    }
+
     if (!namestoneApiKey) {
       console.error(`[Mint] No API key found for domain: ${cleanDomain}`);
-      return j({ ok: false, error: `No API key configured for domain ${cleanDomain}` }, 500);
+      return j({ ok: false, error: `Domain ${cleanDomain} is not configured. Please contact support.` }, 500);
     }
+
+    console.log(`[Mint] API key resolved for ${cleanDomain}`);
 
     // Calculate dates
     const now = new Date();
@@ -61,7 +84,7 @@ Deno.serve(async (req) => {
     const gracePeriodEnd = new Date(expiryDate);
     gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 90);
 
-    // Call Namestone set-names
+    // Call Namestone set-names API (official endpoint)
     const namestonePayload = {
       domain: cleanDomain,
       names: [
@@ -78,11 +101,11 @@ Deno.serve(async (req) => {
     };
 
     console.log(`[Namestone] Calling set-names for ${subdomainLabel}.${cleanDomain}`, namestonePayload);
-    const namestoneRes = await fetch("https://namestone.xyz/api/public_v1/set-names", {
+    const namestoneRes = await fetch("https://namestone.com/api/public_v1/set-names", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${namestoneApiKey}`,
+        "Authorization": namestoneApiKey,
       },
       body: JSON.stringify(namestonePayload),
     });
@@ -99,10 +122,6 @@ Deno.serve(async (req) => {
     console.log(`[Namestone] Success:`, namestoneData);
 
     // Record in minted_domains
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const { error: dbError } = await supabase.from("minted_domains").insert({
       full_name: `${subdomainLabel}.${cleanDomain}`,
       subdomain: subdomainLabel,
@@ -115,7 +134,7 @@ Deno.serve(async (req) => {
       payment_method: paymentMethod,
       payment_amount: paymentAmount,
       network_fee: networkFee,
-      tx_hash: txHash,
+      tx_hash: txHash || `free-mint-${Date.now()}`,
     });
 
     if (dbError) {
