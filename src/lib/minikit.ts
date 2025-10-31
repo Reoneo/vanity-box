@@ -75,7 +75,9 @@ export async function requestPayPermission(): Promise<void> {
 }
 
 /**
- * Execute a payment with robust error handling and timeout
+ * Execute a payment with robust error handling and a SOFT UI timeout
+ * - timeoutMs only controls UI/log warning, we still await the real result
+ * - a hard safety cap of 120s prevents indefinite waiting
  */
 export async function safePay(payload: PayCommandInput, timeoutMs = 20000): Promise<string> {
   await ensureReady();
@@ -102,24 +104,32 @@ export async function safePay(payload: PayCommandInput, timeoutMs = 20000): Prom
   });
   
   const startTime = Date.now();
+  const payPromise = MiniKit.commandsAsync.pay(enhancedPayload);
   
+  // Soft UI timeout (does not reject)
+  let uiTimeoutFired = false;
+  const uiTimer = setTimeout(() => {
+    uiTimeoutFired = true;
+    console.warn("[MiniKit] UI timeout reached; continuing to wait for World App confirmation");
+  }, timeoutMs);
+
+  // Hard safety cap of 120s
+  const hardCapMs = Math.max(timeoutMs, 120000);
+  const hardCapPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Payment took too long. Please retry in World App.")), hardCapMs)
+  );
+
   try {
-    const result = await Promise.race([
-      MiniKit.commandsAsync.pay(enhancedPayload),
-      new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Payment confirmation in progress. Please check World App to complete the transaction.")),
-          timeoutMs
-        )
-      ),
-    ]);
-    
+    const result = await Promise.race([payPromise, hardCapPromise]);
+    clearTimeout(uiTimer);
+
     const duration = Date.now() - startTime;
     const { finalPayload } = result as { finalPayload: MiniAppPaymentPayload };
     
     console.log("[MiniKit] Payment response received:", {
       status: finalPayload.status,
       duration: `${duration}ms`,
+      uiTimeoutFired,
       hasTransactionId: !!(finalPayload as any).transaction_id
     });
     
@@ -138,6 +148,7 @@ export async function safePay(payload: PayCommandInput, timeoutMs = 20000): Prom
     console.warn("[MiniKit] Payment canceled by user");
     throw new Error("Payment canceled");
   } catch (e: any) {
+    clearTimeout(uiTimer);
     const duration = Date.now() - startTime;
     console.error("[MiniKit] Payment failed:", {
       error: e.message,
