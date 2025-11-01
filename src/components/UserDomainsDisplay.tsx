@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Pencil, Send, Trash2, ExternalLink } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from 'sonner';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoLink from '@/assets/ens-logo-link.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -37,6 +38,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   const [error, setError] = useState<string | null>(null);
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [deletingDomain, setDeletingDomain] = useState<string | null>(null);
 
   const fetchDomains = async () => {
     if (!walletAddress) {
@@ -328,31 +330,51 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
               <Button
                 variant="destructive"
                 className="w-full"
+                disabled={deletingDomain === `${domain.name}.${domain.domain}`}
                 onClick={async () => {
-                  const confirmed = window.confirm(`Are you sure you want to delete ${domain.name}.${domain.domain}? This action cannot be undone.`);
+                  const fullName = `${domain.name}.${domain.domain}`;
+                  const confirmed = window.confirm(`Are you sure you want to delete ${fullName}? This action cannot be undone.`);
                   if (!confirmed) return;
                   
+                  setDeletingDomain(fullName);
+                  
                   try {
-                    const subdomain = `${domain.name}.${domain.domain}`;
+                    toast.info('Deleting domain...');
+                    
                     const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-                      body: { subdomain, domain: domain.domain },
+                      body: { subdomain: fullName, domain: domain.domain },
                     });
 
-                    if (error) throw error;
+                    if (error) {
+                      console.error('Supabase error:', error);
+                      throw error;
+                    }
 
                     if (data?.success) {
-                      fetchDomains();
+                      toast.success('Domain deleted successfully!');
+                      await fetchDomains();
                     } else {
                       throw new Error(data?.error || 'Failed to delete domain');
                     }
                   } catch (error) {
                     console.error('Delete error:', error);
-                    alert(error instanceof Error ? error.message : 'Failed to delete domain');
+                    toast.error(error instanceof Error ? error.message : 'Failed to delete domain');
+                  } finally {
+                    setDeletingDomain(null);
                   }
                 }}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+                {deletingDomain === `${domain.name}.${domain.domain}` ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
               </Button>
             </div>
           </div>
