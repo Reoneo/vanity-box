@@ -297,43 +297,27 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      // Ensure MiniKit is ready with retry
+      // Ensure MiniKit is ready
       console.log("[PaymentFlow] Step: checking_minikit");
       
-      let retryCount = 0;
-      const maxRetries = 2;
-      
-      while (retryCount <= maxRetries) {
-        try {
-          await ensureReady();
-          const status = getMiniKitStatus();
-          console.log("[PaymentFlow] MiniKit ready:", status);
-          break; // Success
-        } catch (readyError: any) {
-          retryCount++;
-          console.error(`[PaymentFlow] MiniKit check failed (attempt ${retryCount}/${maxRetries + 1}):`, readyError);
-          
-          if (retryCount <= maxRetries) {
-            // Show retry toast
-            toast.info(`Retrying connection to World App... (${retryCount}/${maxRetries})`, { duration: 2000 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-          } else {
-            // Final failure
-            setPaymentFlowStep("idle");
-            localStorage.removeItem('paymentFlowState');
-            
-            const errorMsg = readyError?.message || "MiniKit not available";
-            const isInWorldApp = typeof (window as any).WorldApp !== "undefined" || 
-                                navigator.userAgent.includes("World App");
-            
-            if (isInWorldApp) {
-              toast.error("Failed to connect to World App. Please try:\n1. Close and reopen this mini app\n2. Restart World App\n3. Contact support if issue persists [ERR_MINIKIT_INIT_FAILED]", { duration: 10000 });
-            } else {
-              toast.error("Please open this app in World App to complete payment. [ERR_MINIKIT_NOT_INSTALLED]", { duration: 8000 });
-            }
-            return;
-          }
+      try {
+        await ensureReady();
+        const status = getMiniKitStatus();
+        console.log("[PaymentFlow] MiniKit ready:", status);
+      } catch (readyError: any) {
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
+        
+        const errorMsg = readyError?.message || "MiniKit not available";
+        const isInWorldApp = typeof (window as any).WorldApp !== "undefined" || 
+                            navigator.userAgent.includes("World App");
+        
+        if (isInWorldApp) {
+          toast.error("Failed to connect to World App. Please close and reopen this mini app. [ERR_MINIKIT_INIT_FAILED]", { duration: 8000 });
+        } else {
+          toast.error("Please open this app in World App to complete payment. [ERR_MINIKIT_NOT_INSTALLED]", { duration: 8000 });
         }
+        return;
       }
 
       // 1) Ensure wallet connected (with 90s timeout and countdown)

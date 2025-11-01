@@ -28,16 +28,8 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const [activeTab, setActiveTab] = useState('records');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  // ENS standard text records
-  const [ensRecords, setEnsRecords] = useState({
-    email: '',
-    url: '',
-    avatar: '',
-    description: '',
-    'com.github': '',
-    'com.twitter': '',
-    'com.discord': '',
-  });
+  // ENS standard text records - NEVER store defaults, always fetch fresh from Namestone
+  const [ensRecords, setEnsRecords] = useState<Record<string, string>>({});
 
   // Listen for domain action events
   useEffect(() => {
@@ -53,12 +45,17 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     return () => window.removeEventListener('domain-action', handleDomainAction);
   }, []);
 
-  // Load existing records when component mounts
+  // Load existing records when component mounts or domain changes
   useEffect(() => {
     const loadRecords = async () => {
       try {
         setIsLoading(true);
+        // Clear previous records to prevent cross-domain contamination
+        setEnsRecords({});
+        setCustomRecords([]);
+        
         const subdomain = `${domain.name}.${domain.domain}`;
+        console.log('[DomainEditPanel] Fetching records for:', subdomain);
         
         const { data, error } = await supabase.functions.invoke('get-namestone-records', {
           body: { subdomain, domain: domain.domain },
@@ -71,25 +68,25 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
         if (data?.success && data.textRecords) {
           const fetchedRecords = data.textRecords;
+          console.log('[DomainEditPanel] Fetched records:', fetchedRecords);
           
-          // Populate ENS records
-          const updatedEnsRecords = { ...ensRecords };
-          Object.keys(ensRecords).forEach((key) => {
-            if (fetchedRecords[key]) {
-              updatedEnsRecords[key as keyof typeof ensRecords] = fetchedRecords[key];
+          // Standard ENS record keys
+          const standardENSKeys = ['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'];
+          
+          // Separate ENS standard records from custom records
+          const ensRecordsData: Record<string, string> = {};
+          const customRecordsData: { key: string; value: string }[] = [];
+          
+          Object.entries(fetchedRecords).forEach(([key, value]) => {
+            if (standardENSKeys.includes(key)) {
+              ensRecordsData[key] = value as string;
+            } else {
+              customRecordsData.push({ key, value: value as string });
             }
           });
-          setEnsRecords(updatedEnsRecords);
           
-          // Populate custom records
-          const customKeys = Object.keys(fetchedRecords).filter(
-            (key) => !Object.keys(ensRecords).includes(key)
-          );
-          const customRecordsArray = customKeys.map((key) => ({
-            key,
-            value: fetchedRecords[key],
-          }));
-          setCustomRecords(customRecordsArray);
+          setEnsRecords(ensRecordsData);
+          setCustomRecords(customRecordsData);
         }
       } catch (error) {
         console.error('Error loading records:', error);
@@ -99,7 +96,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     };
 
     loadRecords();
-  }, [domain]);
+  }, [domain.name, domain.domain]); // Re-fetch when domain changes
 
   const handleAddCustomRecord = () => {
     if (newRecordKey && newRecordValue) {
@@ -277,11 +274,11 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
         {activeTab === 'records' && (
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground text-center">ENS Text Records</h3>
-            {Object.entries(ensRecords).map(([key, value]) => (
+            {['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'].map((key) => (
               <div key={key} className="space-y-2">
                 <Label className="text-foreground">{key}</Label>
                 <Input
-                  value={value}
+                  value={ensRecords[key] || ''}
                   onChange={(e) => setEnsRecords({ ...ensRecords, [key]: e.target.value })}
                   placeholder={`Enter ${key}`}
                   className="bg-secondary dark:bg-muted border-border text-foreground"
