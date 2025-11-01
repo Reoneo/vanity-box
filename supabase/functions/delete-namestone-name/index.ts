@@ -1,13 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { validateInput, subdomainSchema, ethereumAddressSchema } from "../_shared/validation.ts";
-import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
-import { verifyAuth, verifyWalletOwnership } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// API key will be fetched based on domain
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -16,41 +15,21 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
-    const authResult = await verifyAuth(req);
-    if (!authResult.authenticated) {
-      console.error('[delete-namestone-name] Unauthorized:', authResult.error);
-      return errorResponse(
-        toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 
-        401
-      );
-    }
-
     const { subdomain, domain: providedDomain, walletAddress } = await req.json();
 
-    // Verify wallet ownership
-    if (!verifyWalletOwnership(authResult, walletAddress)) {
-      console.error('[delete-namestone-name] Wallet mismatch:', {
-        authenticated: authResult.walletAddress,
-        requested: walletAddress
-      });
-      return errorResponse(
-        toSafeError(new Error('Wallet address mismatch'), ErrorCodes.UNAUTHORIZED), 
-        403
-      );
-    }
-
+    console.log('==========================================');
     console.log('🗑️  DELETING NAMESTONE NAME');
+    console.log('==========================================');
+    console.log('📝 Subdomain:', subdomain);
+    console.log('📝 Wallet Address:', walletAddress);
+    console.log('==========================================');
 
-    // Validate inputs
-    const subdomainValidation = validateInput(subdomainSchema, subdomain);
-    if (!subdomainValidation.success) {
-      return errorResponse(toSafeError(subdomainValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    if (!subdomain) {
+      throw new Error('Missing subdomain parameter');
     }
-
-    const addressValidation = validateInput(ethereumAddressSchema, walletAddress);
-    if (!addressValidation.success) {
-      return errorResponse(toSafeError(addressValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    
+    if (!walletAddress) {
+      throw new Error('Missing wallet address parameter');
     }
 
     // Extract subdomain label and domain
@@ -98,7 +77,7 @@ serve(async (req) => {
     }
     
     if (!NAMESTONE_API_KEY) {
-      return errorResponse(toSafeError(new Error('Domain not configured'), ErrorCodes.DOMAIN_NOT_CONFIGURED), 500);
+      throw new Error(`API key not configured for domain ${domain}`);
     }
     
     console.log('🔑 Using API key for domain via', usedSecret || 'domain_configs', '→', domain);
@@ -124,14 +103,16 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ NAMESTONE API ERROR', response.status);
+      console.error('❌ NAMESTONE API ERROR');
+      console.error('Status:', response.status);
+      console.error('Error message:', errorText);
 
-      // Treat missing names as idempotent success
+      // Treat missing names as idempotent success so UI can proceed and DB stays clean
       const lower = errorText.toLowerCase();
       if (lower.includes('name does not exist') || lower.includes('not found')) {
-        console.warn('⚠️ Name not found on Namestone. Proceeding with local cleanup.');
+        console.warn('⚠️ Name not found on Namestone. Proceeding with local cleanup as successful delete.');
       } else {
-        return errorResponse(toSafeError(new Error(`Namestone error: ${response.status}`), ErrorCodes.EXTERNAL_API_ERROR), 500);
+        throw new Error(`Namestone API error: ${response.status} - ${errorText}`);
       }
     }
 
@@ -198,6 +179,16 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    return errorResponse(toSafeError(error, ErrorCodes.INTERNAL_ERROR), 500);
+    console.error('Error in delete-namestone-name function:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

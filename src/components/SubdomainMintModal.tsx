@@ -12,7 +12,7 @@ import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
 import { setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
 import { fullEnsName } from "@/lib/ensRedirect/profile";
-import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus, isInWorldApp, getWalletAddress as getWorldWalletAddress } from "@/lib/minikit";
+import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
@@ -81,13 +81,32 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // ---------- helpers ----------
 
-  const getWalletAddress = (): string | null => {
-    // In World App, check for cached wallet address
-    if (typeof window !== 'undefined' && isInWorldApp()) {
-      const cached = localStorage.getItem('world_wallet_address');
-      return cached || "pending"; // Return pending if not cached yet
+  const ensureWalletConnected = async (): Promise<string> => {
+    try {
+      if (MiniKit.user?.walletAddress) {
+        console.debug("[MiniKit] Wallet already connected:", MiniKit.user.walletAddress);
+        return MiniKit.user.walletAddress;
+      }
+
+      console.debug("[MiniKit] Initiating walletAuth…");
+
+      const authResult = await MiniKit.commandsAsync.walletAuth({
+        nonce: Date.now().toString(),
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        notBefore: new Date(Date.now() - 60 * 1000),
+        statement: "Connect your wallet to mint subdomains",
+      });
+
+      if (authResult?.finalPayload?.status === "success" && authResult.finalPayload.address) {
+        console.debug("[MiniKit] Wallet connected:", authResult.finalPayload.address);
+        return authResult.finalPayload.address;
+      }
+
+      throw new Error("Wallet authentication failed. Please try again.");
+    } catch (e: any) {
+      console.error("[MiniKit] Wallet connection failed:", e);
+      throw new Error(e?.message || "Unable to connect wallet. Please try again.");
     }
-    return null;
   };
 
   const getSubdomainPrice = (fullSubdomain: string) => {
@@ -280,28 +299,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      // Get wallet address from MiniKit
-      let walletAddress = getWalletAddress();
-      
-      // If not cached, authenticate to get wallet address
-      if (!walletAddress || walletAddress === "pending") {
-        setPaymentFlowStep("connecting_wallet");
-        console.log("[PaymentFlow] Requesting wallet authentication");
-        
-        try {
-          walletAddress = await getWorldWalletAddress();
-          console.log("[PaymentFlow] Wallet authenticated:", walletAddress);
-        } catch (authError: any) {
-          setPaymentFlowStep("idle");
-          localStorage.removeItem('paymentFlowState');
-          console.error("[PaymentFlow] Wallet authentication failed:", authError);
-          toast.error("Failed to connect wallet. Please try again. [ERR_WALLET_AUTH_FAILED]", { duration: 8000 });
-          return;
-        }
-      }
-
-      console.log("[PaymentFlow] Using wallet:", walletAddress);
-
       // Ensure MiniKit is ready
       console.log("[PaymentFlow] Step: checking_minikit");
       
@@ -314,8 +311,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         localStorage.removeItem('paymentFlowState');
         
         const errorMsg = readyError?.message || "MiniKit not available";
+        const isInWorldApp = typeof (window as any).WorldApp !== "undefined" || 
+                            navigator.userAgent.includes("World App");
         
-        if (isInWorldApp()) {
+        if (isInWorldApp) {
           toast.error("Failed to connect to World App. Please close and reopen this mini app. [ERR_MINIKIT_INIT_FAILED]", { duration: 8000 });
         } else {
           toast.error("Please open this app in World App to complete payment. [ERR_MINIKIT_NOT_INSTALLED]", { duration: 8000 });
@@ -323,9 +322,61 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
+      // 1) Ensure wallet connected (with 90s timeout and countdown)
+      setPaymentFlowStep("connecting_wallet");
+      localStorage.setItem('paymentFlowState', JSON.stringify({
+        subdomain, paymentMethod, amount: convertedPrice,
+        step: 'connecting_wallet', timestamp: Date.now()
+      }));
+      console.log("[PaymentFlow] Step: connecting_wallet");
+      
+      let walletAddress: string;
+      try {
+        toast.info("Please approve wallet connection in World App (90s)");
+        
+        // Start countdown timer
+        setWalletConnectionTimeRemaining(90);
+        const countdownInterval = setInterval(() => {
+          setWalletConnectionTimeRemaining(prev => {
+            if (prev === null || prev <= 1) {
+              clearInterval(countdownInterval);
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        
+        walletAddress = await Promise.race([
+          ensureWalletConnected(),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => {
+              clearInterval(countdownInterval);
+              reject(new Error("Wallet connection timed out"));
+            }, 90_000)
+          ),
+        ]);
+        
+        clearInterval(countdownInterval);
+        setWalletConnectionTimeRemaining(null);
+        console.log("[PaymentFlow] Wallet connected:", walletAddress);
+        
+      } catch (connError: any) {
+        setWalletConnectionTimeRemaining(null);
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
+        console.error("[PaymentFlow] Wallet connection failed:", connError);
+        
+        const isTimeout = connError?.message?.includes("timeout") || connError?.message?.includes("timed out");
+        const errorMsg = isTimeout
+          ? "Wallet connection timed out. Please approve the connection request in World App within 90 seconds. [ERR_WALLET_TIMEOUT]"
+          : (connError?.message || "Failed to connect wallet. [ERR_WALLET_DENIED]");
+          
+        toast.error(errorMsg, { duration: 8000 });
+        return;
+      }
+
       // 2) Payments - World App payment flow with backend verification
       let txHash: string | undefined;
-      let reference: string | undefined;
 
       if (!isFree) {
         if (payInFlightRef.current) {
@@ -360,7 +411,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             paymentMethod,
           });
 
-          reference = initResponse.reference;
+          const { reference } = initResponse;
           console.log("[PaymentFlow] Payment reference created:", reference);
 
           // Step 2: Request payment permission
@@ -531,7 +582,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             paymentMethod,
             paymentAmount: convertedPrice,
             networkFee: effectiveNetworkFee,
-            reference: reference || undefined,
           }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error("Minting timeout - please check My IDs in a moment")), 45_000),

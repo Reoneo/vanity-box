@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WalletConnection } from './WalletConnection';
 import { SpotifyPauseButton } from './SpotifyPauseButton';
 import vanityLogo from '../assets/vanity-logo.png';
 import vanityContactIcon from '../assets/vanity-contact-icon.png';
@@ -238,11 +239,9 @@ export const Header: React.FC = () => {
           </button>
 
           
-          {/* World App Badge - Right Side */}
+          {/* Wallet Connection - Right Side */}
           <div className="flex items-center">
-            <div className="text-xs text-muted-foreground">
-              World App
-            </div>
+            <WalletConnection />
           </div>
         </div>
       </header>

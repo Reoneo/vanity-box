@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { toSafeError, ErrorCodes } from '../_shared/errors.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -116,18 +115,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    // Determine appropriate error code based on error type
-    let errorCode = ErrorCodes.EXTERNAL_API_ERROR;
-    if (error instanceof Error && error.message.includes('Missing')) {
-      errorCode = ErrorCodes.INVALID_INPUT;
-    }
-    
-    const safeError = toSafeError(error, errorCode);
+    console.error('Error in get-namestone-records function:', error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: safeError.message,
-        code: safeError.code
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       }),
       {
         status: 500,

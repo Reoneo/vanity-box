@@ -1,10 +1,9 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { initMiniKit } from "@/lib/minikit";
-import App from "./App";
+import App from "./App.tsx";
 import "./index.css";
+import { initMiniKit } from "@/lib/minikit";
 
-// Bootstrap MiniKit on app load
+// Bootstrap MiniKit once on app load with enhanced logging
 const APP_ID = 'app_ed7e61cb0c52630464178eed59e3fbdd';
 
 console.log("[App] Initializing app...", {
@@ -19,8 +18,4 @@ initMiniKit(APP_ID).then(() => {
   console.warn("[App] MiniKit initialization failed:", e);
 });
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+createRoot(document.getElementById("root")!).render(<App />);

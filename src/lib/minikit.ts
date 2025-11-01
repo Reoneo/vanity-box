@@ -6,15 +6,6 @@ let isReady = false;
 let installedAppId: string | null = null;
 
 /**
- * Check if running in World App
- */
-export function isInWorldApp(): boolean {
-  return typeof (window as any).WorldApp !== "undefined" || 
-         navigator.userAgent.includes("World App") ||
-         navigator.userAgent.includes("WorldApp");
-}
-
-/**
  * Initialize MiniKit once on app load with retry logic
  */
 export function initMiniKit(appId: string): Promise<void> {
@@ -63,7 +54,7 @@ export function getMiniKitStatus() {
     isInstalled: MiniKit.isInstalled(),
     isReady,
     version: (MiniKit as any).version || "unknown",
-    inWorldApp: isInWorldApp(),
+    inWorldApp: typeof (window as any).WorldApp !== "undefined",
   };
 }
 
@@ -279,45 +270,6 @@ export async function safePay(payload: PayCommandInput, timeoutMs = 20000): Prom
     });
     throw e;
   }
-}
-
-/**
- * Get wallet address from World App using walletAuth
- */
-export async function getWalletAddress(): Promise<string> {
-  await ensureReady();
-  
-  // Check for cached wallet address
-  const cached = localStorage.getItem('world_wallet_address');
-  if (cached) {
-    console.log("[MiniKit] Using cached wallet address");
-    return cached;
-  }
-  
-  console.log("[MiniKit] Requesting wallet authentication");
-  
-  const authParams = {
-    nonce: `vanity-box-${Date.now()}`,
-    requestId: `vanity-box-wallet-${Date.now()}`,
-    expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    notBefore: new Date(),
-    statement: 'Connect your wallet to Vanity.box to mint subdomains.'
-  };
-  
-  const result = await MiniKit.commandsAsync.walletAuth(authParams);
-  const { finalPayload } = result;
-  
-  if (finalPayload?.status !== 'success' || !finalPayload.address) {
-    throw new Error('Wallet authentication failed');
-  }
-  
-  const address = finalPayload.address;
-  console.log("[MiniKit] Wallet address obtained:", address);
-  
-  // Cache the wallet address
-  localStorage.setItem('world_wallet_address', address);
-  
-  return address;
 }
 
 /**

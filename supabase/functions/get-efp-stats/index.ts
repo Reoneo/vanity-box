@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { toSafeError, ErrorCodes } from '../_shared/errors.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,10 +57,9 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    const safeError = toSafeError(error, ErrorCodes.EXTERNAL_API_ERROR);
+    console.error('Error fetching EFP stats:', error);
     return new Response(JSON.stringify({ 
-      error: safeError.message,
-      code: safeError.code,
+      error: error.message,
       followers_count: 0,
       following_count: 0
     }), {

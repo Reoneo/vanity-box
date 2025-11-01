@@ -1,29 +1,24 @@
 project_id = "gdjjboorqviobvvygpca"
 
-# Write operations - REQUIRE AUTHENTICATION
 [functions.mint-subdomain]
-verify_jwt = true
+verify_jwt = false
 
 [functions.set-namestone-redirect]
-verify_jwt = true
+verify_jwt = false
 
 [functions.initiate-payment]
-verify_jwt = true
+verify_jwt = false
 
-[functions.set-namestone-records]
-verify_jwt = true
-
-[functions.delete-namestone-name]
-verify_jwt = true
-
-[functions.transfer-namestone-name]
-verify_jwt = true
-
-# Read-only public operations - NO AUTHENTICATION REQUIRED
 [functions.verify-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.get-user-domains]
+verify_jwt = false
+
+[functions.set-namestone-records]
+verify_jwt = false
+
+[functions.delete-namestone-name]
 verify_jwt = false
 
 [functions.get-web3bio-profile]
@@ -33,6 +28,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.get-namestone-records]
+verify_jwt = false
+
+[functions.transfer-namestone-name]
 verify_jwt = false
 
 [functions.get-domain-api-key]
