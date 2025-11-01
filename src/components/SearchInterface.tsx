@@ -466,48 +466,60 @@ export const SearchInterface = () => {
       );
 
       if (isNamestoneSubdomain) {
-        // Fetch Namestone records directly
+        // Fetch parent domain profile using get-domain endpoint
         try {
           const parts = normalizedQuery.split('.');
           const subLabel = parts[0];
           const domain = parts.slice(1).join('.');
           
-          const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-namestone-records', {
-            body: { 
-              subdomain: `${subLabel}.${domain}`,
-              domain: domain
-            }
+          // Fetch parent domain data to populate profile template
+          const { data: domainData, error: domainError } = await supabase.functions.invoke('get-namestone-domain', {
+            body: { domain: domain }
           });
-          
-          if (!namestoneError && namestoneData?.success && namestoneData.records?.length > 0) {
-            const record = namestoneData.records[0];
+
+          if (!domainError && domainData?.success && domainData.data?.length > 0) {
+            const parentRecord = domainData.data[0];
             
-            // Build a web3.bio-like profile from Namestone data
+            // Build profile from parent domain data
             const namestoneProfile: Web3BioProfile = {
-              avatar: record.text_records?.avatar || smithCashAvatar,
-              displayName: trimmedQuery,
-              description: record.text_records?.description,
-              address: record.address,
+              avatar: parentRecord.text_records?.avatar || smithCashAvatar,
+              displayName: parentRecord.text_records?.name || domain,
+              description: parentRecord.text_records?.description,
+              address: parentRecord.address,
               platform: 'Namestone',
-              identity: `${subLabel}.${domain}`,
+              identity: domain,
               links: {
-                website: record.text_records?.url ? { link: record.text_records.url } : undefined,
-                twitter: record.text_records?.['com.twitter'] ? { handle: record.text_records['com.twitter'] } : undefined,
-                github: record.text_records?.['com.github'] ? { handle: record.text_records['com.github'] } : undefined,
-                discord: record.text_records?.['com.discord'] ? { handle: record.text_records['com.discord'] } : undefined,
+                website: parentRecord.text_records?.url ? { link: parentRecord.text_records.url } : undefined,
+                twitter: parentRecord.text_records?.['com.twitter'] ? { handle: parentRecord.text_records['com.twitter'] } : undefined,
+                github: parentRecord.text_records?.['com.github'] ? { handle: parentRecord.text_records['com.github'] } : undefined,
+                discord: parentRecord.text_records?.['com.discord'] ? { handle: parentRecord.text_records['com.discord'] } : undefined,
               },
             };
             
             setWeb3BioProfile(namestoneProfile);
             setEnsResults([]);
+            
+            // Build ENS-like records from parent domain
+            const records: Record<string, string> = {};
+            if (parentRecord.text_records) {
+              Object.entries(parentRecord.text_records).forEach(([key, value]) => {
+                if (value) records[key] = String(value);
+              });
+            }
+            
+            setEnsRecords({
+              name: domain,
+              address: parentRecord.address,
+              avatar: parentRecord.text_records?.avatar,
+              records,
+            });
           } else {
-            // Gracefully handle no profile found for Namestone subdomain
             setWeb3BioProfile(null);
           }
         } catch (e) {
-          console.warn('Failed to fetch Namestone profile:', e);
+          console.warn('Failed to fetch Namestone parent domain:', e);
         }
-        // Prevent web3.bio fallback for Namestone-managed domains to avoid 400 errors
+        // Prevent web3.bio fallback for Namestone-managed domains
         profileFetched = true;
       }
 
