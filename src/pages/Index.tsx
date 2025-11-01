@@ -3,7 +3,6 @@ import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { LanguageSelector } from '@/components/LanguageSelector';
-import { PoweredByLogos } from '@/components/PoweredByLogos';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
@@ -48,11 +47,6 @@ const Index = () => {
             <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
             <SearchInterface />
           </article>
-          
-          {/* Powered By Logos - Below content with smooth fade-in */}
-          <div className="w-full mt-auto mb-4 animate-fade-in">
-            <PoweredByLogos />
-          </div>
         </main>
         
         <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">

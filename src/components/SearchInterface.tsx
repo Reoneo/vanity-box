@@ -70,6 +70,7 @@ import mexipayAvatar from "@/assets/mexipay-avatar.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
+import { PoapCarousel } from "@/components/PoapCarousel";
 
 export interface FilterState {
   protocol: string[];
@@ -1277,35 +1278,18 @@ export const SearchInterface = () => {
                         </a>
 
                         {/* POAP Icon with notification badge */}
-                        <a
-                          href={`https://collectors.poap.xyz/scan/${web3BioProfile.address || searchQuery}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80 relative"
-                        >
-                          {isLoadingPoaps ? (
-                            <div className="h-14 w-14 flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37]"></div>
-                            </div>
-                          ) : (
-                            <div className="relative">
-                              <img src={poapLogo} alt="POAP" className="h-14 w-14 object-contain" />
-                              {poapCount > 0 && (
-                                <div className="absolute -top-1 -right-1 bg-gradient-to-br from-[#D4AF37] to-[#F4E4BC] text-black text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center px-2 shadow-lg border-2 border-gray-900">
-                                  {poapCount}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </a>
+                        {/* POAP Carousel */}
+                        {web3BioProfile?.address && (
+                          <PoapCarousel walletAddress={web3BioProfile.address} />
+                        )}
 
                         <a
                           href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
+                          className="flex items-center justify-center py-2 rounded-xl transition-all duration-300 hover:opacity-80"
                         >
-                          <img src={efpLogoFullDark} alt="EFP" className="h-14 w-auto object-contain" />
+                          <img src={efpLogoFullDark} alt="EFP" className="h-12 w-auto object-contain" />
                         </a>
                       </div>
                     </div>
