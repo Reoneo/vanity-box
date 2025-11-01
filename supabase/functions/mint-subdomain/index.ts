@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Deployment timestamp for cache-busting: 2025-01-11T23:15:00Z
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -14,7 +15,24 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
-    const body = await req.json();
+    console.log('[mint-subdomain] Request method:', req.method);
+    console.log('[mint-subdomain] Request headers:', Object.fromEntries(req.headers.entries()));
+    
+    const rawBody = await req.text();
+    console.log('[mint-subdomain] Raw request body:', rawBody);
+    
+    if (!rawBody || rawBody.trim() === '') {
+      console.error('[mint-subdomain] Empty request body received');
+      return j({ ok: false, error: "Empty request body" }, 400);
+    }
+
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('[mint-subdomain] JSON parse error:', parseError);
+      return j({ ok: false, error: "Invalid JSON in request body" }, 400);
+    }
     const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
 
     console.log('[mint-subdomain] Request received:', { 

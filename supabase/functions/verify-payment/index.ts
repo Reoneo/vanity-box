@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Deployment timestamp for cache-busting: 2025-01-11T23:15:00Z
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -11,7 +12,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { transactionId, reference } = await req.json();
+    console.log('[verify-payment] Request method:', req.method);
+    console.log('[verify-payment] Request headers:', Object.fromEntries(req.headers.entries()));
+    
+    const rawBody = await req.text();
+    console.log('[verify-payment] Raw request body:', rawBody);
+    
+    if (!rawBody || rawBody.trim() === '') {
+      console.error('[verify-payment] Empty request body received');
+      return new Response(
+        JSON.stringify({ error: 'Empty request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('[verify-payment] JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { transactionId, reference } = body;
 
     console.log('[verify-payment] Request received:', { 
       transactionId, 
