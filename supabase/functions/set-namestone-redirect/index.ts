@@ -116,16 +116,28 @@ serve(async (req) => {
   try {
     const { 
       parentDomain, 
-      subname, 
+      subname: rawSubname, 
       redirectType, // "default" or "custom"
       customUrl 
     } = await req.json();
 
-    console.log("Set redirect request:", { parentDomain, subname, redirectType, customUrl });
+    console.log("Set redirect request (raw):", { parentDomain, rawSubname, redirectType, customUrl });
 
-    if (!parentDomain || !subname) {
+    if (!parentDomain || !rawSubname) {
       throw new Error("Missing required fields: parentDomain, subname");
     }
+
+    // Normalize subname: strip parent domain if present, convert to lowercase
+    let subname = rawSubname.toLowerCase().trim();
+    const parentLower = parentDomain.toLowerCase();
+    
+    // If subname contains the parent domain, extract just the label
+    if (subname.includes(`.${parentLower}`)) {
+      subname = subname.replace(`.${parentLower}`, '');
+      console.log(`⚠️ Stripped parent domain from subname: "${rawSubname}" → "${subname}"`);
+    }
+    
+    console.log("Normalized subname:", subname);
 
     if (!redirectType || !["default", "custom"].includes(redirectType)) {
       throw new Error("redirectType must be 'default' or 'custom'");

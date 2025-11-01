@@ -22,13 +22,16 @@ export default function IdsRedirectManager({
   const [customUrl, setCustomUrl] = useState<string>(currentRedirectUrl || "");
   const [isSaving, setIsSaving] = useState(false);
 
-  const name = fullEnsName(subname, parentDomain);
-  const defaultUrl = vanityProfileUrl(subname, parentDomain);
+  // Extract just the subdomain label (e.g., "test321" from "test321.30315.eth")
+  const subnameLabel = subname.toLowerCase().replace(`.${parentDomain.toLowerCase()}`, '').trim();
+  
+  const name = fullEnsName(subnameLabel, parentDomain);
+  const defaultUrl = vanityProfileUrl(subnameLabel, parentDomain);
 
   async function handleReset() {
     setIsSaving(true);
     try {
-      const result = await setDefaultVanityRedirect(parentDomain, subname);
+      const result = await setDefaultVanityRedirect(parentDomain, subnameLabel);
       
       if (result.success && result.url) {
         setCustomUrl(result.url);
@@ -53,7 +56,7 @@ export default function IdsRedirectManager({
   async function handleSave() {
     setIsSaving(true);
     try {
-      const result = await setCustomRedirect(parentDomain, subname, customUrl.trim());
+      const result = await setCustomRedirect(parentDomain, subnameLabel, customUrl.trim());
       
       if (result.success && result.url) {
         toast({
