@@ -1000,8 +1000,8 @@ export const SearchInterface = () => {
               </>
             )}
 
-            {/* Web3.bio Profile Result - Social Media Style - Only show when search is active */}
-            {web3BioProfile && hasSearched && (
+            {/* Web3.bio Profile Result - Social Media Style - Only show when search is active and My IDs is not showing */}
+            {web3BioProfile && hasSearched && !showMyIDs && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                   {/* Header/Banner */}
@@ -1334,27 +1334,6 @@ export const SearchInterface = () => {
                         )}
                       </div>
                       </div>
-
-                      {/* ENS Records (from web3.bio or Namestone) */}
-                      {ensRecords?.records && Object.keys(ensRecords.records || {}).length > 0 && (
-                        <div className="border-t border-[#D4AF37]/30 pt-4 mt-4">
-                          <h4 className="text-sm font-semibold text-white mb-2">ENS Records</h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                            {Object.entries(ensRecords.records).map(([key, value]) => (
-                              <div key={key} className="flex items-center justify-between bg-gray-800/40 rounded-md px-3 py-2">
-                                <span className="text-gray-400">{key}</span>
-                                {/^https?:/i.test(String(value)) ? (
-                                  <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] hover:underline">
-                                    {String(value)}
-                                  </a>
-                                ) : (
-                                  <span className="text-gray-200 break-all">{String(value)}</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
                       {/* POAP Collection */}
                       {web3BioProfile.address && poapCount > 0 && (
