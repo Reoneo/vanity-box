@@ -1283,61 +1283,12 @@ export const SearchInterface = () => {
                             </a>
                           );
                         })}
-                        
-                        {/* ENS Records that might not be in web3bio */}
-                        {ensRecords?.records?.["com.twitter"] && !web3BioProfile.links?.twitter && (
-                          <a
-                            href={`https://twitter.com/${ensRecords.records["com.twitter"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                          >
-                            <span>𝕏</span>
-                            <span>@{ensRecords.records["com.twitter"]}</span>
-                          </a>
-                        )}
-                        
-                        {ensRecords?.records?.["com.github"] && !web3BioProfile.links?.github && (
-                          <a
-                            href={`https://github.com/${ensRecords.records["com.github"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                          >
-                            <Github className="w-4 h-4" />
-                            <span>@{ensRecords.records["com.github"]}</span>
-                          </a>
-                        )}
-
-                        {ensRecords?.records?.["com.discord"] && !web3BioProfile.links?.discord && (
-                          <a
-                            href={`https://discord.com/users/${ensRecords.records["com.discord"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                          >
-                            <SiDiscord className="w-4 h-4" />
-                            <span>{ensRecords.records["com.discord"]}</span>
-                          </a>
-                        )}
-
-                        {ensRecords?.records?.["org.telegram"] && !web3BioProfile.links?.telegram && (
-                          <a
-                            href={`https://t.me/${ensRecords.records["org.telegram"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
-                          >
-                            <Send className="w-4 h-4" />
-                            <span>@{ensRecords.records["org.telegram"]}</span>
-                          </a>
-                        )}
                       </div>
                       </div>
 
                       {/* POAP Collection */}
                       {web3BioProfile.address && poapCount > 0 && (
-                      <div className="border-t border-[#D4AF37]/30 pt-4 mt-4">
+                      <div className="pt-4 mt-4">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <img src={poapLogo} alt="POAP" className="w-5 h-5" />
                           <h4 className="text-sm font-semibold text-white">
