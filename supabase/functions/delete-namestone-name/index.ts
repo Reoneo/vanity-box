@@ -37,14 +37,50 @@ serve(async (req) => {
     const subdomainLabel = parts[0];
     const domain = providedDomain || parts.slice(1).join('.') || 'smith.cash';
 
-    // Get API key for this domain
-    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    // Resolve API key for this domain using domain_configs first, then env fallbacks
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    let usedSecret = '';
+    let NAMESTONE_API_KEY = '';
+
+    try {
+      const { data: cfg, error: cfgError } = await supabase
+        .from('domain_configs')
+        .select('api_key_secret_name')
+        .eq('domain_name', domain.toLowerCase())
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (cfgError) {
+        console.warn('⚠️ Could not read domain_configs:', cfgError);
+      }
+      if (cfg?.api_key_secret_name) {
+        usedSecret = cfg.api_key_secret_name;
+        NAMESTONE_API_KEY = Deno.env.get(cfg.api_key_secret_name) || '';
+      }
+    } catch (e) {
+      console.warn('⚠️ domain_configs lookup failed:', e);
+    }
+
+    if (!NAMESTONE_API_KEY) {
+      const envKeyExact = `NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`;
+      const baseLabel = domain.split('.')[0].toUpperCase();
+      const envKeyBase = `NAMESTONE_API_KEY_${baseLabel}`;
+      NAMESTONE_API_KEY =
+        Deno.env.get(envKeyExact) ||
+        Deno.env.get(envKeyBase) ||
+        Deno.env.get('NAMESTONE_API_KEY') ||
+        '';
+      usedSecret = NAMESTONE_API_KEY ? (NAMESTONE_API_KEY === Deno.env.get('NAMESTONE_API_KEY') ? 'NAMESTONE_API_KEY' : `${envKeyExact} or ${envKeyBase}`) : usedSecret;
+    }
     
     if (!NAMESTONE_API_KEY) {
       throw new Error(`API key not configured for domain ${domain}`);
     }
     
-    console.log('🔑 Using API key for domain:', domain);
+    console.log('🔑 Using API key for domain via', usedSecret || 'domain_configs', '→', domain);
     console.log('📝 Domain:', domain);
     
     const payload = {
@@ -78,9 +114,7 @@ serve(async (req) => {
 
     // Also delete from minted_domains table to keep database in sync
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      // Supabase client already initialized above
 
       const fullName = `${subdomainLabel}.${domain}`;
       console.log('🗃️  Deleting from database:', { fullName, walletAddress: walletAddress.toLowerCase() });
