@@ -41,6 +41,8 @@ serve(async (req) => {
     }
 
     // Fetch POAPs for the wallet using X-API-Key header
+    console.log('Calling POAP API:', `https://api.poap.tech/actions/scan/${walletAddress}`);
+    
     const poapsResponse = await fetch(
       `https://api.poap.tech/actions/scan/${walletAddress}`,
       {
@@ -51,13 +53,22 @@ serve(async (req) => {
       }
     );
 
+    console.log('POAP API response status:', poapsResponse.status);
+
     if (!poapsResponse.ok) {
-      const error = await poapsResponse.text();
-      console.error('Failed to fetch POAPs:', error);
+      const errorText = await poapsResponse.text();
+      console.error('POAP API error status:', poapsResponse.status);
+      console.error('POAP API error body:', errorText);
+      console.error('POAP API error headers:', JSON.stringify(Object.fromEntries(poapsResponse.headers.entries())));
+      
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch POAPs from API' }),
+        JSON.stringify({ 
+          error: 'Failed to fetch POAPs from API',
+          details: errorText,
+          status: poapsResponse.status
+        }),
         { 
-          status: 500, 
+          status: poapsResponse.status, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
