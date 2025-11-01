@@ -317,6 +317,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
       // 2) Payments - World App payment flow with backend verification
       let txHash: string | undefined;
+      let reference: string | undefined;
 
       if (!isFree) {
         if (payInFlightRef.current) {
@@ -351,7 +352,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             paymentMethod,
           });
 
-          const { reference } = initResponse;
+          reference = initResponse.reference;
           console.log("[PaymentFlow] Payment reference created:", reference);
 
           // Step 2: Request payment permission
@@ -522,7 +523,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             paymentMethod,
             paymentAmount: convertedPrice,
             networkFee: effectiveNetworkFee,
-            reference: paymentRef || undefined,
+            reference: reference || undefined,
           }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error("Minting timeout - please check My IDs in a moment")), 45_000),
