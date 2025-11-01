@@ -252,7 +252,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      // 2) Payments - unified flow for all tokens
+      // 2) Payments - World App payment flow with backend verification
       let txHash: string | undefined;
 
       if (!isFree) {
@@ -263,7 +263,20 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         payInFlightRef.current = true;
 
         try {
-          // Request and verify payment permission
+          // Step 1: Initiate payment reference in backend
+          toast.info("Preparing payment...");
+          const initResponse = await callEdge<{ reference: string }>("initiate-payment", {
+            subdomain,
+            domain,
+            walletAddress,
+            paymentAmount: convertedPrice,
+            paymentMethod,
+          });
+
+          const { reference } = initResponse;
+          console.log("[Payment] Backend reference created:", reference);
+
+          // Step 2: Request payment permission
           toast.info("Requesting payment permission...");
           try {
             await ensurePayPermission();
@@ -273,34 +286,31 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             return;
           }
 
-          const paymentToast = toast.info("Processing payment…");
+          const paymentToast = toast.info("Opening World App payment...");
 
-          // Unified Pay command - use exact SDK Token enums and proper token amounts
+          // Step 3: Build payment payload
           let tokenSymbol: any;
           let tokenAmount: string;
           
           if (paymentMethod === "USDC") {
             tokenSymbol = Tokens.USDC;
-            // USDC has 6 decimals, convert to smallest unit
             const usdcDecimals = 6;
             const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, usdcDecimals));
             tokenAmount = amountInSmallestUnit.toString();
           } else if (paymentMethod === "WLD") {
             tokenSymbol = Tokens.WLD;
-            // WLD has 18 decimals, convert to smallest unit  
             const wldDecimals = 18;
             const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, wldDecimals));
             tokenAmount = amountInSmallestUnit.toString();
           } else {
             tokenSymbol = (Tokens as any).ETH ?? "ETH";
-            // ETH has 18 decimals, convert to smallest unit
             const ethDecimals = 18;
             const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, ethDecimals));
             tokenAmount = amountInSmallestUnit.toString();
           }
 
           const paymentPayload: any = {
-            reference: `${subdomain}-${walletAddress.slice(0, 6)}-${Date.now()}`,
+            reference, // Use backend-generated reference
             to: "0x71ab0b01e3ff45551e25b208e2a90298f73f7040",
             tokens: [{ symbol: tokenSymbol, token_amount: tokenAmount }],
             description: `Register ${subdomain} for ${registrationYears} ${
@@ -308,19 +318,45 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             }`,
           };
 
-          console.log("[Payment] Initiating:", { paymentMethod, tokenAmount, payload: paymentPayload });
+          console.log("[Payment] World App payload:", { paymentMethod, tokenAmount, reference });
 
-          // Use safePay with 8s timeout
-          txHash = await safePay(paymentPayload, 8000);
+          // Step 4: Execute payment via World App
+          const transactionId = await safePay(paymentPayload, 20000);
+          console.log("[Payment] World App returned transaction_id:", transactionId);
 
           toast.dismiss(paymentToast);
-          toast.success(`${paymentMethod} payment successful!`);
-          await sendHaptic("success");
 
-          // Persist txHash immediately
-          const txMap = JSON.parse(localStorage.getItem("txMap") || "{}");
-          txMap[subdomain.toLowerCase()] = txHash;
-          localStorage.setItem("txMap", JSON.stringify(txMap));
+          // Step 5: Verify payment with backend
+          const verifyToast = toast.info("Verifying payment on blockchain...");
+          
+          try {
+            const verifyResponse = await callEdge<{ success: boolean; txHash: string }>("verify-payment", {
+              transactionId,
+              reference,
+            });
+
+            if (!verifyResponse.success) {
+              throw new Error("Payment verification failed");
+            }
+
+            txHash = verifyResponse.txHash;
+            console.log("[Payment] Verified txHash:", txHash);
+
+            toast.dismiss(verifyToast);
+            toast.success(`${paymentMethod} payment verified!`);
+            await sendHaptic("success");
+
+            // Persist txHash
+            const txMap = JSON.parse(localStorage.getItem("txMap") || "{}");
+            txMap[subdomain.toLowerCase()] = txHash;
+            localStorage.setItem("txMap", JSON.stringify(txMap));
+
+          } catch (verifyErr: any) {
+            toast.dismiss(verifyToast);
+            console.error("[Payment] Verification error:", verifyErr);
+            toast.error("Payment verification failed. Please contact support with reference: " + reference);
+            return;
+          }
 
         } catch (payErr: any) {
           console.error("[Mint] Payment error details:", payErr);
@@ -334,6 +370,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               msg = "Payment was canceled. Please try again when ready.";
             } else if (payErr.message.includes("permission")) {
               msg = "Payment permission required. Please grant access in World App.";
+            } else if (payErr.message.includes("whitelist")) {
+              msg = "Payment address not whitelisted. Please contact support.";
             } else {
               msg = payErr.message;
             }

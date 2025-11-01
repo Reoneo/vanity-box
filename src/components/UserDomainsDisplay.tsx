@@ -260,8 +260,21 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         {domains.map((domain, index) => (
           <div 
             key={`${domain.name}-${index}`}
-            className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl p-6"
+            className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl p-6 relative"
           >
+            {/* Tx Icon Badge - Top Right */}
+            {domain.txHash && !domain.txHash.startsWith('free-mint-') && (
+              <a
+                href={`https://worldchain-mainnet.explorer.alchemy.com/tx/${domain.txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-[#D4AF37]/20 border border-[#D4AF37] hover:bg-[#D4AF37]/30 transition-all duration-200 group"
+                title="View transaction receipt"
+              >
+                <ExternalLink className="w-4 h-4 text-[#D4AF37] group-hover:scale-110 transition-transform" />
+              </a>
+            )}
+
             <div className="flex items-start gap-4 mb-6">
               <div className="w-20 h-20 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
                 <img
@@ -270,7 +283,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-8">
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
                   {domain.name}.{domain.domain}
                 </h3>

@@ -107,6 +107,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_references: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          payment_amount: number
+          payment_method: string
+          reference: string
+          status: string
+          subdomain: string
+          transaction_id: string | null
+          tx_hash: string | null
+          verified_at: string | null
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          payment_amount: number
+          payment_method: string
+          reference: string
+          status?: string
+          subdomain: string
+          transaction_id?: string | null
+          tx_hash?: string | null
+          verified_at?: string | null
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          payment_amount?: number
+          payment_method?: string
+          reference?: string
+          status?: string
+          subdomain?: string
+          transaction_id?: string | null
+          tx_hash?: string | null
+          verified_at?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       poap_tokens: {
         Row: {
           chain: string | null
