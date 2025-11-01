@@ -22,9 +22,9 @@ export const PoweredByLogos: React.FC = () => {
   const duplicatedLogos = [...logos, ...logos, ...logos, ...logos];
 
   return (
-    <div className="w-full py-2 overflow-hidden opacity-90 hover:opacity-100 transition-opacity duration-300">
+    <div className="w-full py-4 overflow-hidden opacity-90 hover:opacity-100 transition-opacity duration-300">
       {/* Heading - More subtle */}
-      <div className="text-center mb-3">
+      <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-2 w-full">
           <div className="w-8 h-[1px] bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent flex-shrink-0" />
           <h3 className="text-sm font-medium text-muted-foreground flex-shrink-0 whitespace-nowrap">

@@ -563,18 +563,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         </button>
         
         {/* MiniKit Status Badge */}
-        {miniKitStatus === "checking" && (
-          <div className="absolute top-6 right-6 z-10 flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded-full">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Checking World App...</span>
-          </div>
-        )}
-        {miniKitStatus === "ready" && (
-          <div className="absolute top-6 right-6 z-10 flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full">
-            <div className="w-2 h-2 bg-green-500 rounded-full" />
-            <span className="text-xs font-medium text-green-700 dark:text-green-300">World App Ready ✓</span>
-          </div>
-        )}
         {miniKitStatus === "unavailable" && (
           <div className="absolute top-6 right-6 z-10 flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900 rounded-full cursor-pointer" onClick={async () => {
             setMiniKitStatus("checking");
