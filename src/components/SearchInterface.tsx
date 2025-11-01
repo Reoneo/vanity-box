@@ -289,7 +289,8 @@ export const SearchInterface = () => {
   };
 
   const handleApplyFilters = () => {
-    if (filters.protocol.length > 0 || filters.club.length > 0) {
+    // Only re-filter if we already have results from a search
+    if (hasSearched && ensResults.length > 0) {
       handleSearch();
     }
     setShowFilterDropdown(false);
@@ -418,8 +419,8 @@ export const SearchInterface = () => {
 
   const handleSearch = async (queryOverride?: string) => {
     const trimmedQuery = (queryOverride || searchQuery).trim();
-    // Allow search to proceed if filters are applied, even without a query
-    if (!trimmedQuery && filters.protocol.length === 0 && filters.club.length === 0) return;
+    // Require a search query - we only show subdomain results, not parent domains
+    if (!trimmedQuery) return;
 
     console.log("Search start", { query: trimmedQuery });
     setShowFilterDropdown(false);
