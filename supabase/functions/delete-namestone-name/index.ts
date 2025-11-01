@@ -106,11 +106,30 @@ serve(async (req) => {
       console.error('❌ NAMESTONE API ERROR');
       console.error('Status:', response.status);
       console.error('Error message:', errorText);
-      throw new Error(`Namestone API error: ${response.status} - ${errorText}`);
+
+      // Treat missing names as idempotent success so UI can proceed and DB stays clean
+      const lower = errorText.toLowerCase();
+      if (lower.includes('name does not exist') || lower.includes('not found')) {
+        console.warn('⚠️ Name not found on Namestone. Proceeding with local cleanup as successful delete.');
+      } else {
+        throw new Error(`Namestone API error: ${response.status} - ${errorText}`);
+      }
     }
 
-    const data = await response.json();
-    console.log('✅ Name deleted successfully:', JSON.stringify(data, null, 2));
+    // Parse response when OK, otherwise synthesize a minimal payload
+    let data: any = null;
+    try {
+      if (response.ok) {
+        data = await response.json();
+      } else {
+        data = { softDeleted: true };
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not parse Namestone response JSON:', e);
+      data = { softDeleted: !response.ok };
+    }
+
+    console.log('✅ Delete flow completed (remote or soft):', JSON.stringify(data, null, 2));
 
     // Also delete from minted_domains table to keep database in sync
     try {
@@ -119,17 +138,29 @@ serve(async (req) => {
       const fullName = `${subdomainLabel}.${domain}`;
       console.log('🗃️  Deleting from database:', { fullName, walletAddress: walletAddress.toLowerCase() });
       
-      const { error: deleteError } = await supabase
+    const { data: primaryDel, error: deleteError } = await supabase
+      .from('minted_domains')
+      .delete()
+      .eq('full_name', fullName)
+      .eq('wallet_address', walletAddress.toLowerCase())
+      .select('id');
+
+    if (deleteError) {
+      console.error('⚠️ Error deleting from minted_domains (wallet scoped):', deleteError);
+    } else if (!primaryDel || primaryDel.length === 0) {
+      console.warn('ℹ️ No rows deleted with wallet filter. Attempting fallback delete by full_name only.');
+      const { error: fallbackError } = await supabase
         .from('minted_domains')
         .delete()
-        .eq('full_name', fullName)
-        .eq('wallet_address', walletAddress.toLowerCase());
-
-      if (deleteError) {
-        console.error('⚠️ Error deleting from minted_domains:', deleteError);
+        .eq('full_name', fullName);
+      if (fallbackError) {
+        console.error('⚠️ Fallback delete error:', fallbackError);
       } else {
-        console.log('✅ Also deleted from minted_domains table');
+        console.log('✅ Deleted from minted_domains by full_name');
       }
+    } else {
+      console.log('✅ Also deleted from minted_domains table (wallet scoped)');
+    }
     } catch (dbError) {
       console.error('⚠️ Database cleanup error:', dbError);
       // Don't fail the whole request if DB cleanup fails
