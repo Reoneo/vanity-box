@@ -627,34 +627,27 @@ export const SearchInterface = () => {
     
     if (trimmedQuery) {
       const checkPromises = allResults.map(async (result) => {
-        // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain, $mith.eth)
-        if (
-          result.name === "Smith.cash" ||
-          result.name === "Smith.box" ||
-          result.name === "Vape.box" ||
-          result.name === "altcoin.chain" ||
-          result.name === "$mith.eth"
-        ) {
-          const domain = result.name.toLowerCase();
-          try {
-            const { data, error } = await supabase.functions.invoke("check-namestone-subdomain", {
-              body: { subdomain: trimmedQuery, domain },
-            });
-            
-            // If check failed (error or no success), mark as check_failed
-            if (error || !data?.success) {
-              console.error(`Check failed for ${domain}:`, error || data);
-              return { domain, status: 'check_failed' };
-            }
-            
-            if (data?.exists) {
-              return { domain, status: 'taken' };
-            }
-          } catch (error) {
-            console.error(`Error checking ${domain}:`, error);
+        const domain = result.name.toLowerCase();
+        
+        try {
+          const { data, error } = await supabase.functions.invoke("check-namestone-subdomain", {
+            body: { subdomain: trimmedQuery, domain },
+          });
+          
+          // If check failed (error or no success), mark as check_failed
+          if (error || !data?.success) {
+            console.error(`Check failed for ${domain}:`, error || data);
             return { domain, status: 'check_failed' };
           }
+          
+          if (data?.exists) {
+            return { domain, status: 'taken' };
+          }
+        } catch (error) {
+          console.error(`Error checking ${domain}:`, error);
+          return { domain, status: 'check_failed' };
         }
+        
         return null;
       });
 

@@ -13,6 +13,7 @@ import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoLink from '@/assets/ens-logo-link.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import { DomainEditPanel } from './DomainEditPanel';
+import { DomainAvatar } from './DomainAvatar';
 import noResultsGif from '@/assets/no-results.gif';
 
 interface Domain {
@@ -263,13 +264,8 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             )}
 
             <div className="flex items-start gap-4 mb-6">
-              <div className="w-20 h-20 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
-                <img
-                  src={smithCashAvatar}
-                  alt={domain.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <DomainAvatar domain={domain} />
+
               <div className="flex-1 min-w-0 pr-8">
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
                   {domain.name}.{domain.domain}

@@ -55,20 +55,21 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
         setCustomRecords([]);
         
         const subdomain = `${domain.name}.${domain.domain}`;
-        console.log('[DomainEditPanel] Fetching records for:', subdomain);
+        console.log('[DomainEditPanel] Fetching records for subdomain:', subdomain);
         
+        // Fetch records specifically for THIS subdomain from Namestone
         const { data, error } = await supabase.functions.invoke('get-namestone-records', {
           body: { subdomain, domain: domain.domain },
         });
 
         if (error) {
-          console.error('Error fetching records:', error);
+          console.error('[DomainEditPanel] Error fetching records:', error);
           return;
         }
 
         if (data?.success && data.textRecords) {
           const fetchedRecords = data.textRecords;
-          console.log('[DomainEditPanel] Fetched records:', fetchedRecords);
+          console.log('[DomainEditPanel] Fetched records for', subdomain, ':', fetchedRecords);
           
           // Standard ENS record keys
           const standardENSKeys = ['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'];
@@ -108,11 +109,12 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
             }
           });
           
+          console.log(`[DomainEditPanel] Set ${Object.keys(ensRecordsData).length} ENS records and ${customRecordsData.length} custom records for ${subdomain}`);
           setEnsRecords(ensRecordsData);
           setCustomRecords(customRecordsData);
         }
       } catch (error) {
-        console.error('Error loading records:', error);
+        console.error('[DomainEditPanel] Error loading records:', error);
       } finally {
         setIsLoading(false);
       }
