@@ -22,16 +22,15 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain }) => {
         // Fetch ENS avatar from Web3.bio API
         const profile = await callEdge<any>('get-web3bio-profile', { handle: fullName });
         
-        if (profile?.identity?.avatar) {
-          let avatarUrl = profile.identity.avatar;
-          
+        const first = Array.isArray(profile) ? profile[0] : (profile?.identity || profile);
+        if (first?.avatar) {
+          let avatarUrl = first.avatar as string;
           // Convert IPFS URLs to HTTP gateway URLs
           if (avatarUrl.startsWith('ipfs://')) {
             avatarUrl = avatarUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
           } else if (avatarUrl.startsWith('ipns://')) {
             avatarUrl = avatarUrl.replace('ipns://', 'https://ipfs.io/ipns/');
           }
-          
           setAvatarUrl(avatarUrl);
         }
       } catch (error) {

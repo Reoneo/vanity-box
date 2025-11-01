@@ -465,6 +465,32 @@ export const SearchInterface = () => {
           setEnsResults([]);
           profileFetched = true;
 
+          // Build ENS-like text records from web3.bio profile
+          try {
+            const records: Record<string, string> = {};
+            if (profileData?.email) records.email = profileData.email;
+            if (profileData?.avatar) records.avatar = profileData.avatar;
+            if (profileData?.description) records.description = profileData.description;
+            if (profileData?.location) records.location = profileData.location;
+            const website = profileData?.links?.website?.link || profileData?.url;
+            if (website) records.url = website;
+            const links = profileData?.links || {};
+            if (links?.twitter?.handle) records['com.twitter'] = String(links.twitter.handle).replace(/^@/, '');
+            if (links?.github?.handle) records['com.github'] = String(links.github.handle).replace(/^@/, '');
+            if (links?.discord?.handle) records['com.discord'] = String(links.discord.handle);
+            if (links?.telegram?.handle) records['org.telegram'] = String(links.telegram.handle).replace(/^@/, '');
+            if (profileData?.contenthash) records.contenthash = String(profileData.contenthash);
+
+            setEnsRecords({
+              name: trimmedQuery,
+              address: profileData?.address,
+              avatar: profileData?.avatar,
+              records,
+            });
+          } catch (e) {
+            console.warn('Failed to map web3.bio profile to ENS records:', e);
+          }
+
           // Fetch EFP stats and ENS records if we have an address or ENS name
           if (profileData.address || trimmedQuery.includes(".eth")) {
             const addressOrName = profileData.address || trimmedQuery;
@@ -1271,10 +1297,31 @@ export const SearchInterface = () => {
                           </a>
                         )}
                       </div>
-                    </div>
+                      </div>
 
-                    {/* POAP Collection */}
-                    {web3BioProfile.address && poapCount > 0 && (
+                      {/* ENS Records (from web3.bio or Namestone) */}
+                      {ensRecords?.records && Object.keys(ensRecords.records || {}).length > 0 && (
+                        <div className="border-t border-[#D4AF37]/30 pt-4 mt-4">
+                          <h4 className="text-sm font-semibold text-white mb-2">ENS Records</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                            {Object.entries(ensRecords.records).map(([key, value]) => (
+                              <div key={key} className="flex items-center justify-between bg-gray-800/40 rounded-md px-3 py-2">
+                                <span className="text-gray-400">{key}</span>
+                                {/^https?:/i.test(String(value)) ? (
+                                  <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] hover:underline">
+                                    {String(value)}
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-200 break-all">{String(value)}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* POAP Collection */}
+                      {web3BioProfile.address && poapCount > 0 && (
                       <div className="border-t border-[#D4AF37]/30 pt-4 mt-4">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <img src={poapLogo} alt="POAP" className="w-5 h-5" />
