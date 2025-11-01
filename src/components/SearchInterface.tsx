@@ -448,122 +448,157 @@ export const SearchInterface = () => {
     // Check if query is a wallet address (starts with 0x and 42 characters)
     const isWalletAddress = trimmedQuery && trimmedQuery.startsWith("0x") && trimmedQuery.length === 42;
 
-    // If query contains a dot OR is a wallet address, fetch web3.bio profile
+    // If query contains a dot OR is a wallet address, try fetching profile
     if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
       let profileFetched = false;
 
-      // Try web3.bio first
-      try {
-        const { data, error } = await supabase.functions.invoke("get-web3bio-profile", {
-          body: { handle: trimmedQuery },
-        });
+      // Check if it's a Namestone subdomain first
+      const namestoneDomainsSupported = ['box', 'cash', 'smith'];
+      const isNamestoneSubdomain = trimmedQuery.includes('.') && 
+        namestoneDomainsSupported.some(d => trimmedQuery.endsWith(`.${d}`));
 
-        // Only process if we got valid data (no error and has results)
-        if (!error && data && !data.error && Array.isArray(data) && data.length > 0) {
-          const profileData = data[0];
-          setWeb3BioProfile(profileData);
-          setEnsResults([]);
-          profileFetched = true;
-
-          // Build ENS-like text records from web3.bio profile
-          try {
+      if (isNamestoneSubdomain) {
+        // Fetch Namestone records directly
+        try {
+          const parts = trimmedQuery.split('.');
+          const subdomain = parts[0];
+          const domain = parts.slice(1).join('.');
+          
+          const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-namestone-records', {
+            body: { 
+              subdomain: trimmedQuery,
+              domain: domain
+            }
+          });
+          
+          if (!namestoneError && namestoneData?.success && namestoneData.records?.length > 0) {
+            const record = namestoneData.records[0];
+            
+            // Build a web3.bio-like profile from Namestone data
+            const namestoneProfile: Web3BioProfile = {
+              avatar: record.text_records?.avatar || smithCashAvatar,
+              displayName: trimmedQuery,
+              description: record.text_records?.description,
+              address: record.address,
+              platform: 'Namestone',
+              identity: trimmedQuery,
+              links: {
+                website: record.text_records?.url ? { link: record.text_records.url } : undefined,
+                twitter: record.text_records?.['com.twitter'] ? { handle: record.text_records['com.twitter'] } : undefined,
+                github: record.text_records?.['com.github'] ? { handle: record.text_records['com.github'] } : undefined,
+                discord: record.text_records?.['com.discord'] ? { handle: record.text_records['com.discord'] } : undefined,
+              },
+            };
+            
+            setWeb3BioProfile(namestoneProfile);
+            setEnsResults([]);
+            profileFetched = true;
+            
+            // Build ENS-like records from Namestone data
             const records: Record<string, string> = {};
-            if (profileData?.email) records.email = profileData.email;
-            if (profileData?.avatar) records.avatar = profileData.avatar;
-            if (profileData?.description) records.description = profileData.description;
-            if (profileData?.location) records.location = profileData.location;
-            const website = profileData?.links?.website?.link || profileData?.url;
-            if (website) records.url = website;
-            const links = profileData?.links || {};
-            if (links?.twitter?.handle) records['com.twitter'] = String(links.twitter.handle).replace(/^@/, '');
-            if (links?.github?.handle) records['com.github'] = String(links.github.handle).replace(/^@/, '');
-            if (links?.discord?.handle) records['com.discord'] = String(links.discord.handle);
-            if (links?.telegram?.handle) records['org.telegram'] = String(links.telegram.handle).replace(/^@/, '');
-            if (profileData?.contenthash) records.contenthash = String(profileData.contenthash);
-
+            if (record.text_records) {
+              Object.entries(record.text_records).forEach(([key, value]) => {
+                if (value) records[key] = String(value);
+              });
+            }
+            
             setEnsRecords({
               name: trimmedQuery,
-              address: profileData?.address,
-              avatar: profileData?.avatar,
+              address: record.address,
+              avatar: record.text_records?.avatar,
               records,
             });
-          } catch (e) {
-            console.warn('Failed to map web3.bio profile to ENS records:', e);
           }
+        } catch (e) {
+          console.warn('Failed to fetch Namestone profile:', e);
+        }
+      }
 
-          // Fetch EFP stats and ENS records if we have an address or ENS name
-          if (profileData.address || trimmedQuery.includes(".eth")) {
-            const addressOrName = profileData.address || trimmedQuery;
+      // If not Namestone or Namestone fetch failed, try web3.bio
+      if (!profileFetched) {
+        try {
+          const { data, error } = await supabase.functions.invoke("get-web3bio-profile", {
+            body: { handle: trimmedQuery },
+          });
 
-            // Fetch EFP stats using the ethfollow.xyz API directly
+          // Only process if we got valid data (no error and has results)
+          if (!error && data && !data.error && Array.isArray(data) && data.length > 0) {
+            const profileData = data[0];
+            setWeb3BioProfile(profileData);
+            setEnsResults([]);
+            profileFetched = true;
+
+            // Build ENS-like text records from web3.bio profile
             try {
-              const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
+              const records: Record<string, string> = {};
+              if (profileData?.email) records.email = profileData.email;
+              if (profileData?.avatar) records.avatar = profileData.avatar;
+              if (profileData?.description) records.description = profileData.description;
+              if (profileData?.location) records.location = profileData.location;
+              const website = profileData?.links?.website?.link || profileData?.url;
+              if (website) records.url = website;
+              const links = profileData?.links || {};
+              if (links?.twitter?.handle) records['com.twitter'] = String(links.twitter.handle).replace(/^@/, '');
+              if (links?.github?.handle) records['com.github'] = String(links.github.handle).replace(/^@/, '');
+              if (links?.discord?.handle) records['com.discord'] = String(links.discord.handle);
+              if (links?.telegram?.handle) records['org.telegram'] = String(links.telegram.handle).replace(/^@/, '');
+              if (profileData?.contenthash) records.contenthash = String(profileData.contenthash);
 
-              if (efpResponse.ok) {
-                const efpData = await efpResponse.json();
-                setEfpStats({
-                  followers_count: parseInt(efpData.followers_count) || 0,
-                  following_count: parseInt(efpData.following_count) || 0,
-                });
-              }
-            } catch (efpError) {
-              console.error("Error fetching EFP stats:", efpError);
+              setEnsRecords({
+                name: trimmedQuery,
+                address: profileData?.address,
+                avatar: profileData?.avatar,
+                records,
+              });
+            } catch (e) {
+              console.warn('Failed to map web3.bio profile to ENS records:', e);
             }
 
-            // Fetch POAP data
-            if (profileData.address) {
-              try {
-                setIsLoadingPoaps(true);
-                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                  body: { walletAddress: profileData.address },
-                });
+            // Fetch EFP stats and ENS records if we have an address or ENS name
+            if (profileData.address || trimmedQuery.includes(".eth")) {
+              const addressOrName = profileData.address || trimmedQuery;
 
-                if (!poapError && poapData?.success) {
-                  setPoapCount(poapData.count || 0);
-                } else {
-                  console.error("Error fetching POAP data:", poapError);
-                  setPoapCount(0);
-                }
-              } catch (poapFetchError) {
-                console.error("Error fetching POAPs:", poapFetchError);
-                setPoapCount(0);
-              } finally {
-                setIsLoadingPoaps(false);
-              }
-            }
-
-            // Fetch Namestone records ONLY for subdomain queries
-            if (trimmedQuery.includes('.')) {
+              // Fetch EFP stats using the ethfollow.xyz API directly
               try {
-                const parts = trimmedQuery.split('.');
-                const subdomain = parts[0];
-                const domain = parts.slice(1).join('.');
-                
-                const { data: namestoneRecords } = await supabase.functions.invoke('get-namestone-records', {
-                  body: { 
-                    subdomain: trimmedQuery,
-                    domain: domain
-                  }
-                });
-                
-                if (namestoneRecords?.success && namestoneRecords.records?.length > 0) {
-                  const record = namestoneRecords.records[0];
-                  setEnsRecords({
-                    name: trimmedQuery,
-                    records: record.text_records || {}
+                const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
+
+                if (efpResponse.ok) {
+                  const efpData = await efpResponse.json();
+                  setEfpStats({
+                    followers_count: parseInt(efpData.followers_count) || 0,
+                    following_count: parseInt(efpData.following_count) || 0,
                   });
                 }
-              } catch (error) {
-                console.error('Error fetching Namestone records:', error);
+              } catch (efpError) {
+                console.error("Error fetching EFP stats:", efpError);
               }
-            } else {
-              // Viewing wallet address - don't show ENS records
-              setEnsRecords(null);
+
+              // Fetch POAP data
+              if (profileData.address) {
+                try {
+                  setIsLoadingPoaps(true);
+                  const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+                    body: { walletAddress: profileData.address },
+                  });
+
+                  if (!poapError && poapData?.success) {
+                    setPoapCount(poapData.count || 0);
+                  } else {
+                    console.error("Error fetching POAP data:", poapError);
+                    setPoapCount(0);
+                  }
+                } catch (poapFetchError) {
+                  console.error("Error fetching POAPs:", poapFetchError);
+                  setPoapCount(0);
+                } finally {
+                  setIsLoadingPoaps(false);
+                }
+              }
             }
           }
+        } catch (error) {
+          console.log("web3.bio failed, will try ENS fallback:", error);
         }
-      } catch (error) {
-        console.log("web3.bio failed, will try ENS fallback:", error);
       }
 
       // If web3.bio didn't return results, try ENS resolution fallback

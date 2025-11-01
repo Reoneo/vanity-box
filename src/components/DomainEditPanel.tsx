@@ -45,75 +45,12 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
     return () => window.removeEventListener('domain-action', handleDomainAction);
   }, []);
 
-  // Load existing records when component mounts or domain changes
+  // Keep records empty by default - don't pre-populate from saved data
   useEffect(() => {
-    const loadRecords = async () => {
-      try {
-        setIsLoading(true);
-        // Clear previous records to prevent cross-domain contamination
-        setEnsRecords({});
-        setCustomRecords([]);
-        
-        const fullName = `${domain.name}.${domain.domain}`;
-        console.log('[DomainEditPanel] Fetching ENS records from Web3.bio for:', fullName);
-        
-        // Fetch ENS records from Web3.bio API
-        const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
-          body: { handle: fullName },
-        });
-
-        if (error) {
-          console.error('[DomainEditPanel] Error fetching Web3.bio profile:', error);
-          // Empty records is a valid state - don't show error
-          return;
-        }
-
-        if (data && !data.error && data.identity) {
-          console.log('[DomainEditPanel] Fetched Web3.bio profile for', fullName, ':', data);
-          
-          const profile = data.identity;
-          const ensRecordsData: Record<string, string> = {};
-          const customRecordsData: { key: string; value: string }[] = [];
-          
-          // Standard ENS record keys
-          const standardKeys = ['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'];
-          
-          // Map Web3.bio fields to ENS text records
-          if (profile.email) ensRecordsData.email = profile.email;
-          if (profile.url) ensRecordsData.url = profile.url;
-          if (profile.avatar) ensRecordsData.avatar = profile.avatar;
-          if (profile.description) ensRecordsData.description = profile.description;
-          if (profile.github) ensRecordsData['com.github'] = profile.github;
-          if (profile.twitter) ensRecordsData['com.twitter'] = profile.twitter;
-          if (profile.discord) ensRecordsData['com.discord'] = profile.discord;
-
-          // Handle any additional custom fields from links
-          if (profile.links && Array.isArray(profile.links)) {
-            profile.links.forEach((link: any) => {
-              const key = link.platform || link.type;
-              if (key && !standardKeys.includes(key) && link.handle) {
-                customRecordsData.push({ key, value: link.handle });
-              }
-            });
-          }
-          
-          console.log(`[DomainEditPanel] Set ${Object.keys(ensRecordsData).length} ENS records and ${customRecordsData.length} custom records for ${fullName}`);
-          setEnsRecords(ensRecordsData);
-          setCustomRecords(customRecordsData);
-        } else {
-          // No records found on-chain - show empty fields (valid state)
-          console.log(`[DomainEditPanel] No ENS records found for ${fullName}`);
-        }
-      } catch (error) {
-        console.error('[DomainEditPanel] Error loading ENS records:', error);
-        // Empty records is a valid state
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadRecords();
-  }, [domain.name, domain.domain]); // Re-fetch when domain changes
+    // Clear previous records to prevent cross-domain contamination
+    setEnsRecords({});
+    setCustomRecords([]);
+  }, [domain.name, domain.domain]);
 
   const handleAddCustomRecord = () => {
     if (newRecordKey && newRecordValue) {
