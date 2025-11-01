@@ -198,7 +198,7 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
       const subdomain = `${domain.name}.${domain.domain}`;
       
       const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-        body: { subdomain, domain: domain.domain },
+        body: { subdomain, domain: domain.domain, walletAddress: domain.address },
       });
 
       if (error) {
