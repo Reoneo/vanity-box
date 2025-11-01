@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { validateInput, subdomainSchema, domainSchema, ethereumAddressSchema } from "../_shared/validation.ts";
 import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
+import { verifyAuth, verifyWalletOwnership } from "../_shared/auth.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,10 +18,32 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated) {
+      console.error('[mint-subdomain] Unauthorized:', authResult.error);
+      return errorResponse(
+        toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 
+        401
+      );
+    }
+
     const body = await req.json();
     const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
 
-    console.log('[mint-subdomain] Request received');
+    // Verify wallet ownership
+    if (!verifyWalletOwnership(authResult, walletAddress)) {
+      console.error('[mint-subdomain] Wallet mismatch:', {
+        authenticated: authResult.walletAddress,
+        requested: walletAddress
+      });
+      return errorResponse(
+        toSafeError(new Error('Wallet address mismatch'), ErrorCodes.UNAUTHORIZED), 
+        403
+      );
+    }
+
+    console.log('[mint-subdomain] Request received from authenticated user:', authResult.walletAddress);
 
     // Validate inputs
     const subdomainValidation = validateInput(subdomainSchema, subdomain);

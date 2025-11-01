@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { verifyAuth, verifyWalletOwnership } from '../_shared/auth.ts';
+import { toSafeError, ErrorCodes, errorResponse } from '../_shared/errors.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +13,29 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated) {
+      console.error('[initiate-payment] Unauthorized:', authResult.error);
+      return errorResponse(
+        toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 
+        401
+      );
+    }
+
     const { subdomain, domain, walletAddress, paymentAmount, paymentMethod } = await req.json();
+
+    // Verify wallet ownership
+    if (!verifyWalletOwnership(authResult, walletAddress)) {
+      console.error('[initiate-payment] Wallet mismatch:', {
+        authenticated: authResult.walletAddress,
+        requested: walletAddress
+      });
+      return errorResponse(
+        toSafeError(new Error('Wallet address mismatch'), ErrorCodes.UNAUTHORIZED), 
+        403
+      );
+    }
 
     console.log('[initiate-payment] Request received:', { 
       subdomain, 

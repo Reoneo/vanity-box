@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { validateInput, subdomainSchema, domainSchema, ethereumAddressSchema, textRecordsSchema, coinTypesSchema, contenthashSchema } from "../_shared/validation.ts";
 import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
+import { verifyAuth, verifyWalletOwnership } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,7 +15,29 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated) {
+      console.error('[set-namestone-records] Unauthorized:', authResult.error);
+      return errorResponse(
+        toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 
+        401
+      );
+    }
+
     const { subdomain, walletAddress, textRecords, coinTypes, contenthash } = await req.json();
+
+    // Verify wallet ownership
+    if (!verifyWalletOwnership(authResult, walletAddress)) {
+      console.error('[set-namestone-records] Wallet mismatch:', {
+        authenticated: authResult.walletAddress,
+        requested: walletAddress
+      });
+      return errorResponse(
+        toSafeError(new Error('Wallet address mismatch'), ErrorCodes.UNAUTHORIZED), 
+        403
+      );
+    }
 
     console.log('🔄 UPDATING NAMESTONE RECORDS');
 

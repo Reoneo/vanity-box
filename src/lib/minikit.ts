@@ -6,6 +6,15 @@ let isReady = false;
 let installedAppId: string | null = null;
 
 /**
+ * Check if running in World App
+ */
+export function isInWorldApp(): boolean {
+  return typeof (window as any).WorldApp !== "undefined" || 
+         navigator.userAgent.includes("World App") ||
+         navigator.userAgent.includes("WorldApp");
+}
+
+/**
  * Initialize MiniKit once on app load with retry logic
  */
 export function initMiniKit(appId: string): Promise<void> {
@@ -54,7 +63,7 @@ export function getMiniKitStatus() {
     isInstalled: MiniKit.isInstalled(),
     isReady,
     version: (MiniKit as any).version || "unknown",
-    inWorldApp: typeof (window as any).WorldApp !== "undefined",
+    inWorldApp: isInWorldApp(),
   };
 }
 

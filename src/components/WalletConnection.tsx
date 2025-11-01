@@ -13,6 +13,7 @@ import { LogOut, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { setAuthToken } from '@/lib/supaInvoke';
 
 interface WalletConnectionProps {
   className?: string;
@@ -20,7 +21,7 @@ interface WalletConnectionProps {
 
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
   const { t } = useLanguage();
-  const { ready, authenticated, user: privyUser, logout } = usePrivy();
+  const { ready, authenticated, user: privyUser, logout, getAccessToken } = usePrivy();
   const { generateSiweNonce, loginWithSiwe } = useLoginWithSiwe();
   const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState<string | undefined>();
@@ -31,6 +32,26 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       getWorldChainENS(privyUser.wallet.address).then(setUsername);
     }
   }, [authenticated, privyUser]);
+
+  // Update auth token when authentication state changes
+  useEffect(() => {
+    const updateToken = async () => {
+      if (authenticated) {
+        try {
+          const token = await getAccessToken();
+          setAuthToken(token);
+          console.log('[WalletConnection] Auth token set for edge function calls');
+        } catch (error) {
+          console.error('[WalletConnection] Failed to get access token:', error);
+          setAuthToken(null);
+        }
+      } else {
+        setAuthToken(null);
+      }
+    };
+    
+    updateToken();
+  }, [authenticated, getAccessToken]);
 
   useEffect(() => {
     // Listen for wallet connection trigger from search
@@ -120,6 +141,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const handleDisconnect = () => {
     logout();
     setUsername(undefined);
+    setAuthToken(null); // Clear auth token
     sessionStorage.setItem('skipAutoAuth', '1');
     
     // Remove backdrop when disconnecting

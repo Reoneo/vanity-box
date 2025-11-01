@@ -2,13 +2,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateInput, subdomainSchema, ethereumAddressSchema } from "../_shared/validation.ts";
 import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// API key will be fetched based on domain
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,6 +16,18 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated) {
+      console.error('[transfer-namestone-name] Unauthorized:', authResult.error);
+      return errorResponse(
+        toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 
+        401
+      );
+    }
+
+    console.log('[transfer-namestone-name] Authenticated user:', authResult.walletAddress);
+
     const { subdomain, toAddress } = await req.json();
 
     console.log('🔄 STARTING DOMAIN TRANSFER');
