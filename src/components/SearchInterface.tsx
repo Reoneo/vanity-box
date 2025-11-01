@@ -1037,29 +1037,52 @@ export const SearchInterface = () => {
                         </p>
                       )}
 
-                      {/* Email, Website, and Location - Email first, then website, then location */}
+                      {/* Email, Website, and Location - ONLY from ENS records if available, otherwise from web3bio */}
                       <div className="flex flex-col gap-2 text-sm text-gray-400 items-center">
-                        {(ensRecords?.records?.email || web3BioProfile.email) && (
+                        {ensRecords?.records?.email && (
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4" />
-                            <span>{ensRecords?.records?.email || web3BioProfile.email}</span>
+                            <span>{ensRecords.records.email}</span>
                           </div>
                         )}
-                        {(web3BioProfile.links?.website || ensRecords?.records?.url) && (
+                        {!ensRecords?.records?.email && web3BioProfile.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            <span>{web3BioProfile.email}</span>
+                          </div>
+                        )}
+                        {ensRecords?.records?.url && (
                           <a
-                            href={web3BioProfile.links?.website?.link || ensRecords?.records?.url}
+                            href={ensRecords.records.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors"
                           >
                             <Globe className="w-4 h-4" />
-                            <span>{web3BioProfile.links?.website?.handle || ensRecords?.records?.url}</span>
+                            <span>{ensRecords.records.url}</span>
                           </a>
                         )}
-                        {(ensRecords?.records?.location || web3BioProfile.location) && (
+                        {!ensRecords?.records?.url && web3BioProfile.links?.website && (
+                          <a
+                            href={web3BioProfile.links.website.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors"
+                          >
+                            <Globe className="w-4 h-4" />
+                            <span>{web3BioProfile.links.website.handle}</span>
+                          </a>
+                        )}
+                        {ensRecords?.records?.location && (
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4" />
-                            <span>{ensRecords?.records?.location || web3BioProfile.location}</span>
+                            <span>{ensRecords.records.location}</span>
+                          </div>
+                        )}
+                        {!ensRecords?.records?.location && web3BioProfile.location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>{web3BioProfile.location}</span>
                           </div>
                         )}
                       </div>

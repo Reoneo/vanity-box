@@ -1,155 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowDown, Sparkles } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { IdentityFlowVisualization } from '@/components/IdentityFlowVisualization';
 import { Button } from '@/components/ui/button';
-import ethLogo from '@/assets/eth-logo-dark.svg';
-
-const transformations = [
-  { 
-    worldId: '0x742d35Cc6634C0532925a3b844Bc9e7eb3845A8f', 
-    domain: 'Agent.$mith.eth',
-    description: 'AI Agent Identity'
-  },
-  { 
-    worldId: '0x8F92A1b4E7c3D5a2B6f9C0d1E2F3A4B5C6D7E8F9', 
-    domain: '589.TeamXRP.eth',
-    description: 'Community Leader'
-  },
-  { 
-    worldId: '0x1E4F8c2D3B5a6C7e8F9A0b1C2d3E4f5A6B7C8D9', 
-    domain: 'Tim.Smith.box',
-    description: 'Personal Brand'
-  },
-  { 
-    worldId: '0xA3D91F7E2B4c5D6e7F8a9B0c1D2e3F4a5B6c7D8', 
-    domain: 'ATL.30315.eth',
-    description: 'Location Identity'
-  },
-  { 
-    worldId: '0x5C8E2A9B3F4d5E6f7A8b9C0d1E2f3A4b5C6d7E8', 
-    domain: 'eth.altcoin.chain',
-    description: 'Crypto Native'
-  },
-];
 
 export const WorldIdAnimation: React.FC = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransformed, setIsTransformed] = useState(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isTransformed) {
-        setIsTransformed(true);
-      } else {
-        setIsTransformed(false);
-        setTimeout(() => {
-          setCurrentIndex((prev) => (prev + 1) % transformations.length);
-        }, 1000);
-      }
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [isTransformed]);
-
-  const current = transformations[currentIndex];
-
   return (
     <div className="flex flex-col items-center justify-center py-6 md:py-10 px-4 space-y-6">
-
-      {/* Premium Animation Container - Vertical Layout */}
-      <div className="relative w-full max-w-md">
-        {/* Ambient glow effects */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#D4AF37]/5 dark:bg-[#D4AF37]/10 rounded-full blur-3xl -z-10" />
-        
-        <div className="flex flex-col items-center justify-center gap-4">
-          {/* Before: Complex Address */}
-          <div
-            className={cn(
-              "w-full transition-all duration-700 ease-out",
-              isTransformed && "opacity-30 scale-95 blur-[2px]"
-            )}
-          >
-            <div className="relative group">
-              {/* Black background */}
-              <div className="absolute inset-0 bg-black rounded-2xl" />
-              
-              {/* Glow effect */}
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-red-500/20 dark:from-red-500/30 dark:via-orange-500/30 dark:to-red-500/30 rounded-2xl blur opacity-60" />
-              
-              <div className="relative bg-gradient-to-br from-gray-900/90 via-gray-800/80 to-gray-900/90 backdrop-blur-xl border-2 border-red-500/30 dark:border-red-500/40 rounded-2xl p-5 md:p-6 text-center shadow-xl">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <div className="text-xs md:text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">
-                    Before
-                  </div>
-                </div>
-                
-                <div className="font-mono text-[11px] md:text-sm text-gray-100 break-all leading-relaxed px-1">
-                  {current.worldId}
-                </div>
-                
-                <div className="text-[10px] md:text-xs text-gray-400 mt-3 font-medium">
-                  Complex • Unmemorable
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Transformation Arrow - Pointing Down */}
-          <div className="flex-shrink-0 relative my-2">
-            <div
-              className={cn(
-                "transition-all duration-700 ease-out transform",
-                isTransformed 
-                  ? "text-[#D4AF37] scale-125 translate-y-0" 
-                  : "text-[#1e3a8a]/30 dark:text-muted-foreground/30 scale-100 -translate-y-1"
-              )}
-            >
-              <div className="relative">
-                {isTransformed && (
-                  <div className="absolute inset-0 animate-ping">
-                    <ArrowDown className="w-8 h-8 md:w-10 md:h-10 text-[#D4AF37]/50" />
-                  </div>
-                )}
-                <ArrowDown className="w-8 h-8 md:w-10 md:h-10 relative z-10" strokeWidth={2.5} />
-              </div>
-            </div>
-          </div>
-
-          {/* After: Premium Identity */}
-          <div
-            className={cn(
-              "w-full transition-all duration-700 ease-out",
-              !isTransformed && "opacity-30 scale-95 blur-[2px]"
-            )}
-          >
-            <div className="relative group">
-              {/* Black background */}
-              <div className="absolute inset-0 bg-black rounded-2xl" />
-              
-              {/* Luxurious glow effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] rounded-2xl blur-lg opacity-40 dark:opacity-60 group-hover:opacity-60 dark:group-hover:opacity-80 transition-opacity duration-500" />
-              
-              <div className="relative bg-gradient-to-br from-[#D4AF37]/10 via-gray-900/90 to-[#F4E4BC]/10 backdrop-blur-xl border-2 border-[#D4AF37]/50 dark:border-[#D4AF37]/60 rounded-2xl p-5 md:p-6 text-center shadow-2xl">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <img src={ethLogo} alt="" className="w-3 h-3 md:w-4 md:h-4 animate-pulse" />
-                  <div className="text-xs md:text-sm font-bold text-[#D4AF37] uppercase tracking-wider">
-                    After
-                  </div>
-                  <img src={ethLogo} alt="" className="w-3 h-3 md:w-4 md:h-4 animate-pulse" />
-                </div>
-                
-                <div className="font-bold text-base md:text-xl bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent break-all leading-relaxed px-2 mb-2">
-                  {current.domain}
-                </div>
-                
-                <div className="text-[10px] md:text-xs text-[#D4AF37]/80 dark:text-[#D4AF37]/90 mt-3 font-semibold">
-                  {current.description}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* 3D Identity Flow Visualization */}
+      <div className="relative w-full max-w-3xl">
+        <IdentityFlowVisualization 
+          worldId="demo.2025.world.id"
+          vanityName="Tim.Vanity.box"
+        />
       </div>
 
       {/* Elegant CTA */}
@@ -157,14 +18,14 @@ export const WorldIdAnimation: React.FC = () => {
         <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20 border border-[#D4AF37]/30 dark:border-[#D4AF37]/40">
           <div className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
           <p className="text-xs md:text-sm font-medium text-[#1e3a8a] dark:text-foreground/80">
-            Coming soon via ENS v2
+            Connect your World ID to premium vanity names
           </p>
           <Button 
             asChild 
             size="sm" 
             className="h-7 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
           >
-            <a href="https://ens.domains/ensv2" target="_blank" rel="noopener noreferrer">
+            <a href="https://world.org" target="_blank" rel="noopener noreferrer">
               Learn more
             </a>
           </Button>
