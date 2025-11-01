@@ -13,7 +13,11 @@ Deno.serve(async (req) => {
   try {
     const { transactionId, reference } = await req.json();
 
-    console.log('[verify-payment] Request:', { transactionId, reference });
+    console.log('[verify-payment] Request received:', { 
+      transactionId, 
+      reference,
+      timestamp: new Date().toISOString()
+    });
 
     if (!transactionId || !reference) {
       return new Response(
@@ -41,6 +45,14 @@ Deno.serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('[verify-payment] Payment reference found in DB:', { 
+      reference, 
+      subdomain: paymentRef.subdomain, 
+      domain: paymentRef.domain,
+      status: paymentRef.status,
+      paymentMethod: paymentRef.payment_method
+    });
 
     // 2. Call World App Developer Portal API to verify transaction
     const appId = Deno.env.get('VITE_MINIKIT_APP_ID') || 'app_ed7e61cb0c52630464178eed59e3fbdd';
@@ -76,7 +88,7 @@ Deno.serve(async (req) => {
 
     // Call Developer Portal API
     const verifyUrl = `https://developer.worldcoin.org/api/v2/minikit/transaction/${transactionId}?app_id=${appId}`;
-    console.log('[verify-payment] Calling Developer Portal:', verifyUrl);
+    console.log('[verify-payment] Calling World App Developer Portal API:', verifyUrl);
 
     const response = await fetch(verifyUrl, {
       method: 'GET',
@@ -102,7 +114,11 @@ Deno.serve(async (req) => {
     }
 
     const transaction = await response.json();
-    console.log('[verify-payment] Transaction data:', transaction);
+    console.log('[verify-payment] Developer Portal response:', { 
+      status: transaction.status, 
+      reference: transaction.reference,
+      txHash: transaction.transaction_hash
+    });
 
     // 3. Verify transaction matches our reference and is not failed
     if (transaction.reference !== reference) {
@@ -134,6 +150,8 @@ Deno.serve(async (req) => {
     // 4. Optimistically confirm (accept if not failed, or poll until mined)
     // For now, we'll accept any non-failed status
     const txHash = transaction.transaction_hash || transactionId;
+    
+    console.log('[verify-payment] Verification successful, updating DB to verified');
 
     const { error: updateError } = await supabase
       .from('payment_references')
@@ -153,7 +171,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[verify-payment] Success:', { reference, txHash, status: transaction.status });
+    console.log('[verify-payment] Payment verified successfully:', { 
+      reference, 
+      txHash, 
+      status: transaction.status 
+    });
 
     return new Response(
       JSON.stringify({ success: true, txHash, status: transaction.status }),

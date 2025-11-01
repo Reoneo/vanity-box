@@ -13,7 +13,14 @@ Deno.serve(async (req) => {
   try {
     const { subdomain, domain, walletAddress, paymentAmount, paymentMethod } = await req.json();
 
-    console.log('[initiate-payment] Request:', { subdomain, domain, walletAddress, paymentAmount, paymentMethod });
+    console.log('[initiate-payment] Request received:', { 
+      subdomain, 
+      domain, 
+      walletAddress, 
+      paymentAmount, 
+      paymentMethod,
+      timestamp: new Date().toISOString()
+    });
 
     // Validate inputs
     if (!subdomain || !domain || !walletAddress || paymentAmount === undefined || !paymentMethod) {
@@ -25,6 +32,7 @@ Deno.serve(async (req) => {
 
     // Generate unique reference ID (UUID without dashes for compatibility)
     const reference = crypto.randomUUID().replace(/-/g, '');
+    console.log('[initiate-payment] Generated reference:', reference);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -52,7 +60,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[initiate-payment] Success - reference:', reference);
+    console.log('[initiate-payment] Payment reference created in DB:', {
+      reference,
+      subdomain,
+      status: 'pending'
+    });
+
+    console.log('[initiate-payment] Returning reference to client:', reference);
 
     return new Response(
       JSON.stringify({ reference }),

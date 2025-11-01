@@ -28,6 +28,16 @@ interface SubdomainMintModalProps {
 
 type PaymentMethod = "USDC" | "WLD";
 
+type PaymentFlowStep = 
+  | "idle" 
+  | "checking_minikit" 
+  | "connecting_wallet" 
+  | "requesting_permission"
+  | "preparing_payment"
+  | "processing_payment" 
+  | "verifying_payment"
+  | "minting";
+
 export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   isOpen,
   onClose,
@@ -56,6 +66,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   
   // Wallet connection countdown
   const [walletConnectionTimeRemaining, setWalletConnectionTimeRemaining] = useState<number | null>(null);
+  
+  // Payment flow step tracking
+  const [paymentFlowStep, setPaymentFlowStep] = useState<PaymentFlowStep>("idle");
 
   // avoid duplicate pay calls
   const payInFlightRef = useRef(false);
@@ -255,26 +268,57 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     }
 
     setIsMinting(true);
+    setPaymentFlowStep("checking_minikit");
+    
+    // Persist to localStorage for recovery
+    localStorage.setItem('paymentFlowState', JSON.stringify({
+      subdomain,
+      paymentMethod,
+      amount: convertedPrice,
+      step: 'checking_minikit',
+      timestamp: Date.now(),
+    }));
+    
+    console.log("[PaymentFlow] Starting mint flow", { 
+      subdomain, 
+      paymentMethod, 
+      amount: convertedPrice,
+      isFree,
+      registrationYears 
+    });
+    
     await sendHaptic("light");
 
     try {
       if (!isFree && isLoadingPrices) {
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
         toast.info("Fetching prices — try again in a moment.");
         return;
       }
 
       // Ensure MiniKit is ready
+      console.log("[PaymentFlow] Step: checking_minikit");
       try {
         await ensureReady();
         const status = getMiniKitStatus();
-        console.log("[Mint] MiniKit status before payment:", status);
+        console.log("[PaymentFlow] MiniKit ready:", status);
       } catch (readyError: any) {
-        console.error("[Mint] MiniKit not ready:", readyError);
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
+        console.error("[PaymentFlow] MiniKit check failed:", readyError);
         toast.error("MiniKit Error: Please open this app in World App to complete payment. [ERR_MINIKIT_NOT_INSTALLED]", { duration: 8000 });
         return;
       }
 
       // 1) Ensure wallet connected (with 90s timeout and countdown)
+      setPaymentFlowStep("connecting_wallet");
+      localStorage.setItem('paymentFlowState', JSON.stringify({
+        subdomain, paymentMethod, amount: convertedPrice,
+        step: 'connecting_wallet', timestamp: Date.now()
+      }));
+      console.log("[PaymentFlow] Step: connecting_wallet");
+      
       let walletAddress: string;
       try {
         toast.info("Please approve wallet connection in World App (90s)");
@@ -303,10 +347,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         
         clearInterval(countdownInterval);
         setWalletConnectionTimeRemaining(null);
+        console.log("[PaymentFlow] Wallet connected:", walletAddress);
         
       } catch (connError: any) {
         setWalletConnectionTimeRemaining(null);
-        console.error("[Mint] Wallet connection error:", connError);
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
+        console.error("[PaymentFlow] Wallet connection failed:", connError);
         
         const isTimeout = connError?.message?.includes("timeout") || connError?.message?.includes("timed out");
         const errorMsg = isTimeout
@@ -337,6 +384,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
         try {
           // Step 1: Initiate payment reference in backend
+          setPaymentFlowStep("preparing_payment");
+          localStorage.setItem('paymentFlowState', JSON.stringify({
+            subdomain, paymentMethod, amount: convertedPrice,
+            step: 'preparing_payment', timestamp: Date.now()
+          }));
+          console.log("[PaymentFlow] Step: preparing_payment");
+          
           toast.info("Preparing payment...");
           const initResponse = await callEdge<{ reference: string }>("initiate-payment", {
             subdomain,
@@ -347,21 +401,36 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           });
 
           const { reference } = initResponse;
-          console.log("[Payment] Backend reference created:", reference);
+          console.log("[PaymentFlow] Payment reference created:", reference);
 
           // Step 2: Request payment permission
+          setPaymentFlowStep("requesting_permission");
+          localStorage.setItem('paymentFlowState', JSON.stringify({
+            subdomain, paymentMethod, amount: convertedPrice, reference,
+            step: 'requesting_permission', timestamp: Date.now()
+          }));
+          console.log("[PaymentFlow] Step: requesting_permission");
+          
           toast.info("Requesting payment permission...");
           try {
             await ensurePayPermission();
+            console.log("[PaymentFlow] Permission granted");
           } catch (permError: any) {
-            console.error("[Mint] Permission denied:", permError);
+            setPaymentFlowStep("idle");
+            localStorage.removeItem('paymentFlowState');
+            console.error("[PaymentFlow] Permission denied:", permError);
             toast.error("Payment permission required. Please enable 'Pay' permission in World App settings. [ERR_PERMISSION_DENIED]", { duration: 8000 });
             return;
           }
 
-          const paymentToast = toast.info("Opening World App payment...");
-
-          // Step 3: Build payment payload using tokenToDecimals
+          // Step 3: Execute payment via World App
+          setPaymentFlowStep("processing_payment");
+          localStorage.setItem('paymentFlowState', JSON.stringify({
+            subdomain, paymentMethod, amount: convertedPrice, reference,
+            step: 'processing_payment', timestamp: Date.now()
+          }));
+          
+          // Build payment payload using tokenToDecimals
           let tokenSymbol: any;
           let tokenAmount: string;
           
@@ -385,15 +454,22 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             }`,
           };
 
-          console.log("[Payment] World App payload:", { paymentMethod, tokenAmount, reference });
+          console.log("[PaymentFlow] Step: processing_payment", { paymentMethod, tokenAmount, reference });
 
-          // Step 4: Execute payment via World App
+          const paymentToast = toast.info("Opening World App payment...");
           const transactionId = await safePay(paymentPayload, 20000);
-          console.log("[Payment] World App returned transaction_id:", transactionId);
+          console.log("[PaymentFlow] Transaction ID received:", transactionId);
 
           toast.dismiss(paymentToast);
 
-          // Step 5: Verify payment with backend
+          // Step 4: Verify payment with backend
+          setPaymentFlowStep("verifying_payment");
+          localStorage.setItem('paymentFlowState', JSON.stringify({
+            subdomain, paymentMethod, amount: convertedPrice, reference, transactionId,
+            step: 'verifying_payment', timestamp: Date.now()
+          }));
+          console.log("[PaymentFlow] Step: verifying_payment", { transactionId, reference });
+          
           const verifyToast = toast.info("Verifying payment on blockchain...");
           
           try {
@@ -407,7 +483,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             }
 
             txHash = verifyResponse.txHash;
-            console.log("[Payment] Verified txHash:", txHash);
+            console.log("[PaymentFlow] Payment verified, txHash:", txHash);
 
             toast.dismiss(verifyToast);
             toast.success(`${paymentMethod} payment verified!`);
@@ -419,8 +495,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             localStorage.setItem("txMap", JSON.stringify(txMap));
 
           } catch (verifyErr: any) {
+            setPaymentFlowStep("idle");
+            localStorage.removeItem('paymentFlowState');
             toast.dismiss(verifyToast);
-            console.error("[Payment] Verification error:", verifyErr);
+            console.error("[PaymentFlow] Verification failed:", verifyErr);
             toast.error(`Payment verification failed. Your payment may still be processing. Reference: ${reference} [ERR_VERIFICATION_FAILED]`, { duration: 10000 });
             return;
           }
@@ -473,6 +551,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       }
 
       // 3) Call Edge Function to mint
+      setPaymentFlowStep("minting");
+      localStorage.setItem('paymentFlowState', JSON.stringify({
+        subdomain, paymentMethod, amount: convertedPrice, txHash,
+        step: 'minting', timestamp: Date.now()
+      }));
+      console.log("[PaymentFlow] Step: minting", { subdomain, walletAddress, txHash });
+      
       const mintingToast = toast.info("Minting your subdomain…");
 
       try {
@@ -497,6 +582,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           throw new Error(data?.error || "Mint function returned not-ok");
         }
 
+        console.log("[PaymentFlow] Mint successful:", data);
         toast.dismiss(mintingToast);
         toast.success("Subdomain minted successfully!");
 
@@ -510,12 +596,18 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             detail: { subdomain, txHash },
           }),
         );
+        
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
         onClose();
 
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("show-my-ids"));
         }, 500);
       } catch (mintErr: any) {
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
+        console.error("[PaymentFlow] Mint failed:", mintErr);
         toast.dismiss(mintingToast);
         throw mintErr;
       }
@@ -538,6 +630,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       toast.error(errorMsg, { duration: 8000 });
     } finally {
       setIsMinting(false);
+      setPaymentFlowStep("idle");
+      setWalletConnectionTimeRemaining(null);
+      localStorage.removeItem('paymentFlowState');
       payInFlightRef.current = false;
       if (payInFlightTimeoutRef.current) {
         clearTimeout(payInFlightTimeoutRef.current);
@@ -580,14 +675,46 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
         )}
         
-        {/* Wallet Connection Timer */}
+        {/* World App Instructions Banner */}
+        {miniKitStatus !== "unavailable" && paymentFlowStep === "idle" && (
+          <div className="absolute top-16 left-4 right-4 z-10 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <span className="text-base">💡</span>
+              <div className="flex-1">
+                <p className="text-sm text-blue-900 dark:text-blue-100 font-medium">
+                  Keep World App open during minting
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  You'll need to approve wallet connection and payment prompts
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Wallet Connection Timer with Cancel Button */}
         {walletConnectionTimeRemaining !== null && (
-          <div className="absolute top-20 left-0 right-0 z-10 flex justify-center">
+          <div className="absolute top-20 left-0 right-0 z-10 flex flex-col items-center gap-2">
             <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded-full">
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                Waiting for approval... ({walletConnectionTimeRemaining}s remaining)
+                Waiting for wallet approval... ({walletConnectionTimeRemaining}s)
               </span>
             </div>
+            {walletConnectionTimeRemaining < 60 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setWalletConnectionTimeRemaining(null);
+                  setIsMinting(false);
+                  setPaymentFlowStep("idle");
+                  toast.info("Wallet connection canceled. Click Mint Now to try again.");
+                }}
+                className="text-xs hover:bg-white/10"
+              >
+                Cancel & Retry
+              </Button>
+            )}
           </div>
         )}
 
@@ -701,13 +828,48 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
             <Button
               onClick={handleMintNow}
-              disabled={isMinting}
-              className="w-full mt-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold py-5 text-base disabled:opacity-50"
+              disabled={isMinting || miniKitStatus === "unavailable" || miniKitStatus === "checking"}
+              className="w-full mt-3 bg-gradient-to-r from-[#D4AF37] to-[#F2D574] hover:from-[#C9A532] hover:to-[#E8C760] text-black font-bold text-lg h-14 rounded-full shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isMinting ? "Minting..." : "Mint Now"}
+              {isMinting 
+                ? "Processing..." 
+                : miniKitStatus === "unavailable" 
+                  ? "Open in World App to Mint"
+                  : miniKitStatus === "checking"
+                    ? "Checking World App..."
+                    : "Mint Now"}
             </Button>
           </div>
         </div>
+        
+        {/* Payment Flow Step Indicator */}
+        {paymentFlowStep !== "idle" && (
+          <div className="absolute bottom-24 left-4 right-4 z-20">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {paymentFlowStep === "checking_minikit" && "Checking World App..."}
+                    {paymentFlowStep === "connecting_wallet" && "Connecting wallet..."}
+                    {paymentFlowStep === "requesting_permission" && "Requesting payment permission..."}
+                    {paymentFlowStep === "preparing_payment" && "Preparing payment..."}
+                    {paymentFlowStep === "processing_payment" && "Processing payment..."}
+                    {paymentFlowStep === "verifying_payment" && "Verifying on blockchain..."}
+                    {paymentFlowStep === "minting" && "Minting subdomain..."}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                    {paymentFlowStep === "connecting_wallet" && "Approve in World App"}
+                    {paymentFlowStep === "requesting_permission" && "Grant pay permission"}
+                    {paymentFlowStep === "processing_payment" && "Check World App to complete"}
+                    {paymentFlowStep === "verifying_payment" && "This may take a few seconds..."}
+                    {paymentFlowStep === "minting" && "Almost done!"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

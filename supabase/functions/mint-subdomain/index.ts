@@ -17,7 +17,16 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
 
-    console.log(`[Mint] Received request:`, { subdomain, walletAddress, domain, registrationMonths });
+    console.log('[mint-subdomain] Request received:', { 
+      subdomain, 
+      domain, 
+      walletAddress, 
+      registrationMonths, 
+      paymentMethod,
+      paymentAmount,
+      txHash,
+      timestamp: new Date().toISOString()
+    });
 
     if (!subdomain || !walletAddress || !domain) {
       console.error("[Mint] Missing required fields:", { subdomain, walletAddress, domain });
@@ -63,10 +72,14 @@ Deno.serve(async (req) => {
     let namestoneApiKey: string | undefined;
 
     if (domainConfig) {
-      console.log(`[Mint] Found domain config for ${cleanDomain}, secret: ${domainConfig.api_key_secret_name}`);
+      console.log('[mint-subdomain] Domain config found:', {
+        domain: cleanDomain,
+        secretName: domainConfig.api_key_secret_name,
+        status: domainConfig.status
+      });
       namestoneApiKey = Deno.env.get(domainConfig.api_key_secret_name);
     } else {
-      console.log(`[Mint] No domain config found for ${cleanDomain}, using default`);
+      console.log('[mint-subdomain] No domain config, using default API key');
       namestoneApiKey = Deno.env.get("NAMESTONE_API_KEY");
     }
 
@@ -100,7 +113,12 @@ Deno.serve(async (req) => {
       ],
     };
 
-    console.log(`[Namestone] Calling set-names for ${subdomainLabel}.${cleanDomain}`, namestonePayload);
+    console.log('[mint-subdomain] Calling Namestone API:', {
+      endpoint: 'set-names',
+      subdomain: subdomainLabel,
+      domain: cleanDomain,
+      walletAddress
+    });
     const namestoneRes = await fetch("https://namestone.com/api/public_v1/set-names", {
       method: "POST",
       headers: {
@@ -128,8 +146,10 @@ Deno.serve(async (req) => {
     }
 
     const namestoneData = await namestoneRes.json();
-    console.log(`[Namestone] Success:`, namestoneData);
+    console.log('[mint-subdomain] Namestone API success:', namestoneData);
 
+    console.log('[mint-subdomain] Recording mint in database');
+    
     // Record in minted_domains
     const { error: dbError } = await supabase.from("minted_domains").insert({
       full_name: `${subdomainLabel}.${cleanDomain}`,
@@ -151,7 +171,10 @@ Deno.serve(async (req) => {
       return j({ ok: false, error: `Database error: ${dbError.message}` }, 500);
     }
 
-    console.log(`[Mint] Complete for ${subdomainLabel}.${cleanDomain}`);
+    console.log('[mint-subdomain] Mint completed successfully:', {
+      fullName: `${subdomainLabel}.${cleanDomain}`,
+      expiryDate: expiryDate.toISOString()
+    });
     return j({ ok: true, subdomain: `${subdomainLabel}.${cleanDomain}`, expiryDate: expiryDate.toISOString() });
   } catch (e: any) {
     console.error("[Mint] Fatal:", e);
