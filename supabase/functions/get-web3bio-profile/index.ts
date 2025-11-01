@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { toSafeError, ErrorCodes } from '../_shared/errors.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,10 +42,26 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error fetching web3.bio profile:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Determine appropriate error code based on error type
+    let errorCode = ErrorCodes.EXTERNAL_API_ERROR;
+    if (error instanceof Error) {
+      if (error.message.includes('required')) {
+        errorCode = ErrorCodes.INVALID_INPUT;
+      } else if (error.message.includes('not configured')) {
+        errorCode = ErrorCodes.DOMAIN_NOT_CONFIGURED;
+      }
+    }
+    
+    const safeError = toSafeError(error, errorCode);
+    return new Response(
+      JSON.stringify({ 
+        error: safeError.message,
+        code: safeError.code
+      }), 
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
