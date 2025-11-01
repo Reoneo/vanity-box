@@ -3,6 +3,7 @@ import { MiniKit, ResponseEvent, MiniAppPaymentPayload, Tokens, PayCommandInput 
 
 let initPromise: Promise<void> | null = null;
 let isReady = false;
+let installedAppId: string | null = null;
 
 /**
  * Initialize MiniKit once on app load with retry logic
@@ -19,7 +20,8 @@ export function initMiniKit(appId: string): Promise<void> {
     });
     
     try {
-      MiniKit.install();
+      installedAppId = appId;
+      MiniKit.install(appId);
       isReady = true;
       
       const status = getMiniKitStatus();
@@ -31,7 +33,7 @@ export function initMiniKit(appId: string): Promise<void> {
       // Retry after 1 second
       await new Promise(resolve => setTimeout(resolve, 1000));
       try {
-        MiniKit.install();
+        MiniKit.install(appId);
         isReady = true;
         console.log("[MiniKit] Retry successful");
       } catch (retryErr) {
@@ -101,7 +103,7 @@ export async function ensureReady(): Promise<void> {
       
       // Try reinstalling
       try {
-        MiniKit.install();
+        MiniKit.install(installedAppId || 'app_ed7e61cb0c52630464178eed59e3fbdd');
         isReady = true;
         console.log(`[MiniKit] Recovery attempt ${i + 1} successful`);
       } catch (e) {
