@@ -137,8 +137,8 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
-              {showSearchIcon && !isMintWindowOpen && !showMyIds && (
+              {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint, my ids, or profile pages */}
+              {showSearchIcon && !isMintWindowOpen && !showMyIds && !isProfileShown && (
                 <>
                   <SpotifyPauseButton />
                   <button
@@ -178,8 +178,8 @@ export const Header: React.FC = () => {
                   </button>
                 </TriggerOrClose>
 
-            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
-            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
+            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint, my ids, or profile pages */}
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && !isProfileShown && (
               <>
                 <SpotifyPauseButton />
                 <button
@@ -231,8 +231,8 @@ export const Header: React.FC = () => {
               </button>
             </TriggerOrClose>
 
-            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
-            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
+            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint, my ids, or profile pages */}
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && !isProfileShown && (
               <>
                 <SpotifyPauseButton />
                 <button

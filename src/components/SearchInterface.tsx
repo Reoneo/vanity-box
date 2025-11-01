@@ -4,6 +4,7 @@ import {
   X,
   Filter,
   ChevronDown,
+  ChevronLeft,
   ArrowLeft,
   Globe,
   ExternalLink,
@@ -1025,6 +1026,20 @@ export const SearchInterface = () => {
             {/* Web3.bio Profile Result - Social Media Style - Only show when search is active */}
             {web3BioProfile && hasSearched && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
+                {/* Back Button */}
+                <Button
+                  onClick={() => {
+                    setWeb3BioProfile(null);
+                    setHasSearched(false);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="mb-4 text-white hover:text-[#D4AF37] hover:bg-gray-800/50"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Back to results
+                </Button>
+                
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                   {/* Header/Banner */}
                   <div className="relative h-32 sm:h-48 bg-gradient-to-r from-[#D4AF37]/20 via-[#F7E06C]/10 to-[#D4AF37]/20">
@@ -1346,7 +1361,7 @@ export const SearchInterface = () => {
 
                       {/* POAP Collection */}
                       {web3BioProfile.address && poapCount > 0 && (
-                      <div className="border-t border-[#D4AF37]/30 pt-4 mt-4">
+                      <div className="pt-4 mt-4">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <img src={poapLogo} alt="POAP" className="w-5 h-5" />
                           <h4 className="text-sm font-semibold text-white">
