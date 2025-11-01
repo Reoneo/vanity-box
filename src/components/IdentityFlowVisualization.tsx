@@ -38,7 +38,7 @@ export const IdentityFlowVisualization: React.FC<IdentityFlowVisualizationProps>
         <div className="relative group w-full max-w-2xl">
           <div className="absolute -inset-2 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] rounded-3xl blur-2xl opacity-50 group-hover:opacity-70 transition-opacity animate-pulse" />
           <div className="relative bg-gradient-to-br from-[#D4AF37]/20 via-black to-[#D4AF37]/20 border-4 border-[#D4AF37] rounded-3xl p-8 sm:p-12 text-center shadow-[0_0_80px_rgba(212,175,55,0.3)]">
-            <div className="text-xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent mb-2 whitespace-nowrap px-2 overflow-hidden text-ellipsis">
+            <div className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent mb-2 whitespace-nowrap px-2">
               {vanityName}
             </div>
             <div className="text-xs sm:text-sm text-[#D4AF37]/70 font-semibold uppercase tracking-wider">Premium Identity</div>

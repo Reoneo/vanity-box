@@ -3,6 +3,7 @@ import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import SplashCursor from '@/components/SplashCursor';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
@@ -32,6 +33,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+      <SplashCursor />
       {/* Gold border wrapper that includes powered by and footer */}
       <div className="min-h-screen flex flex-col border-l-2 border-r-2 border-[#D4AF37]">
         {/* Blur overlay when language selector is open */}
