@@ -324,6 +324,36 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 </svg>
                 {t('transfer')}
               </Button>
+
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={async () => {
+                  const confirmed = window.confirm(`Are you sure you want to delete ${domain.name}.${domain.domain}? This action cannot be undone.`);
+                  if (!confirmed) return;
+                  
+                  try {
+                    const subdomain = `${domain.name}.${domain.domain}`;
+                    const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
+                      body: { subdomain, domain: domain.domain },
+                    });
+
+                    if (error) throw error;
+
+                    if (data?.success) {
+                      fetchDomains();
+                    } else {
+                      throw new Error(data?.error || 'Failed to delete domain');
+                    }
+                  } catch (error) {
+                    console.error('Delete error:', error);
+                    alert(error instanceof Error ? error.message : 'Failed to delete domain');
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
             </div>
           </div>
         ))}
