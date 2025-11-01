@@ -1710,6 +1710,9 @@ export const SearchInterface = () => {
           </>
         )}
       </div>
+      
+      {/* Bottom spacing for scroll */}
+      <div className="h-32" />
     </>
   );
 };
