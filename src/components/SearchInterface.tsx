@@ -198,6 +198,13 @@ export const SearchInterface = () => {
       setWeb3BioProfile(null);
       setHasSearched(false);
     };
+    
+    // Dispatch event when profile is shown/hidden to control search icon in header
+    if (web3BioProfile) {
+      window.dispatchEvent(new CustomEvent("profile-shown"));
+    } else {
+      window.dispatchEvent(new CustomEvent("profile-hidden"));
+    }
 
     window.addEventListener("wallet-connected", handleWalletChange as EventListener);
     window.addEventListener("wallet-disconnected", () => {
@@ -217,6 +224,15 @@ export const SearchInterface = () => {
       window.removeEventListener("show-search", handleShowSearch);
     };
   }, []);
+
+  // Dispatch event when profile is shown/hidden to control search icon in header
+  useEffect(() => {
+    if (web3BioProfile) {
+      window.dispatchEvent(new CustomEvent("profile-shown"));
+    } else {
+      window.dispatchEvent(new CustomEvent("profile-hidden"));
+    }
+  }, [web3BioProfile]);
 
   const protocols = ["DNS", "ENS"];
   const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming"];
@@ -834,8 +850,8 @@ export const SearchInterface = () => {
               <PersonalizedHeader user={null} isProfileDisplayed={!!web3BioProfile} />
             )}
 
-            {/* Search bar container - hidden when showing My IDs */}
-            {!showMyIDs && (
+            {/* Search bar container - hidden when showing My IDs or profile */}
+            {!showMyIDs && !web3BioProfile && (
               <>
                 <div className="w-full max-w-md mx-auto mb-4 md:mb-0 mt-4">
                   <div className="relative">
