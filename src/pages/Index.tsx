@@ -8,7 +8,6 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
-import Prism from '@/components/Prism';
 
 const Index = () => {
   const { theme, setTheme } = useTheme();
@@ -33,25 +32,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Fixed Ethereum-shaped Prism Background */}
-      <div className="fixed inset-0 w-full h-full pointer-events-none z-0 opacity-20">
-        <Prism
-          animationType="rotate"
-          timeScale={0.3}
-          height={4.5}
-          baseWidth={5.5}
-          scale={2.5}
-          hueShift={0.8}
-          colorFrequency={0.8}
-          noise={0.3}
-          glow={1.5}
-          bloom={1.2}
-          transparent={true}
-        />
-      </div>
-
       {/* Gold border wrapper that includes powered by and footer */}
-      <div className="min-h-screen flex flex-col border-l-2 border-r-2 border-[#D4AF37] relative z-10">
+      <div className="min-h-screen flex flex-col border-l-2 border-r-2 border-[#D4AF37]">
         {/* Blur overlay when language selector is open */}
         <div className="fixed inset-0 z-[9998] pointer-events-none">
           <div className="absolute inset-0" id="page-blur-target"></div>
