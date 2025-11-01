@@ -506,20 +506,33 @@ export const SearchInterface = () => {
               }
             }
 
-            // Fetch ENS records - use ONLY the resolved address from profileData
-            if (profileData.address) {
+            // Fetch Namestone records ONLY for subdomain queries
+            if (trimmedQuery.includes('.')) {
               try {
-                const ensResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${profileData.address}/ens`);
-
-                if (ensResponse.ok) {
-                  const ensData = await ensResponse.json();
-                  if (ensData.ens) {
-                    setEnsRecords(ensData.ens);
+                const parts = trimmedQuery.split('.');
+                const subdomain = parts[0];
+                const domain = parts.slice(1).join('.');
+                
+                const { data: namestoneRecords } = await supabase.functions.invoke('get-namestone-records', {
+                  body: { 
+                    subdomain: trimmedQuery,
+                    domain: domain
                   }
+                });
+                
+                if (namestoneRecords?.success && namestoneRecords.records?.length > 0) {
+                  const record = namestoneRecords.records[0];
+                  setEnsRecords({
+                    name: trimmedQuery,
+                    records: record.text_records || {}
+                  });
                 }
-              } catch (ensError) {
-                console.error("Error fetching ENS records:", ensError);
+              } catch (error) {
+                console.error('Error fetching Namestone records:', error);
               }
+            } else {
+              // Viewing wallet address - don't show ENS records
+              setEnsRecords(null);
             }
           }
         }
