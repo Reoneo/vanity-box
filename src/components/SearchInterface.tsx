@@ -453,24 +453,28 @@ export const SearchInterface = () => {
     if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
       let profileFetched = false;
 
+      // Normalize for matching (users may type with caps)
+      const normalizedQuery = trimmedQuery.toLowerCase();
+
       // Check if it's a Namestone subdomain first
       // Include both TLD domains (.box, .cash, .smith) and .eth parent domains managed by Namestone
       const namestoneTLDs = ['box', 'cash', 'smith'];
       const namestoneEthParents = ['30315.eth', 'mith.eth', 'guavapay.eth', 'mexipay.eth', 'teamxrp.eth', 'termux.eth', 'spyda.eth', 'flirtad.eth'];
-      const isNamestoneSubdomain = trimmedQuery.includes('.') && 
-        (namestoneTLDs.some(d => trimmedQuery.endsWith(`.${d}`)) ||
-         namestoneEthParents.some(parent => trimmedQuery.endsWith(`.${parent}`)));
+      const isNamestoneSubdomain = normalizedQuery.includes('.') && (
+        namestoneTLDs.some(d => normalizedQuery.endsWith(`.${d}`)) ||
+        namestoneEthParents.some(parent => normalizedQuery.endsWith(`.${parent}`))
+      );
 
       if (isNamestoneSubdomain) {
         // Fetch Namestone records directly
         try {
-          const parts = trimmedQuery.split('.');
-          const subdomain = parts[0];
+          const parts = normalizedQuery.split('.');
+          const subLabel = parts[0];
           const domain = parts.slice(1).join('.');
           
           const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-namestone-records', {
             body: { 
-              subdomain: trimmedQuery,
+              subdomain: `${subLabel}.${domain}`,
               domain: domain
             }
           });
@@ -485,7 +489,7 @@ export const SearchInterface = () => {
               description: record.text_records?.description,
               address: record.address,
               platform: 'Namestone',
-              identity: trimmedQuery,
+              identity: `${subLabel}.${domain}`,
               links: {
                 website: record.text_records?.url ? { link: record.text_records.url } : undefined,
                 twitter: record.text_records?.['com.twitter'] ? { handle: record.text_records['com.twitter'] } : undefined,
@@ -496,29 +500,18 @@ export const SearchInterface = () => {
             
             setWeb3BioProfile(namestoneProfile);
             setEnsResults([]);
-            profileFetched = true;
-            
-            // Build ENS-like records from Namestone data
-            const records: Record<string, string> = {};
-            if (record.text_records) {
-              Object.entries(record.text_records).forEach(([key, value]) => {
-                if (value) records[key] = String(value);
-              });
-            }
-            
-            setEnsRecords({
-              name: trimmedQuery,
-              address: record.address,
-              avatar: record.text_records?.avatar,
-              records,
-            });
+          } else {
+            // Gracefully handle no profile found for Namestone subdomain
+            setWeb3BioProfile(null);
           }
         } catch (e) {
           console.warn('Failed to fetch Namestone profile:', e);
         }
+        // Prevent web3.bio fallback for Namestone-managed domains to avoid 400 errors
+        profileFetched = true;
       }
 
-      // If not Namestone or Namestone fetch failed, try web3.bio
+      // If not Namestone (or a plain wallet/other domain), try web3.bio
       if (!profileFetched) {
         try {
           const { data, error } = await supabase.functions.invoke("get-web3bio-profile", {
