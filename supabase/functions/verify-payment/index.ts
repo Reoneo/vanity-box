@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateInput, transactionIdSchema, uuidSchema } from "../_shared/validation.ts";
 import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
+import { verifyAuth, verifyWalletOwnership } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,9 +14,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authResult = await verifyAuth(req);
+    if (!authResult.authenticated) {
+      console.error('[verify-payment] Unauthorized:', authResult.error);
+      return errorResponse(
+        toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 
+        401
+      );
+    }
+
     const { transactionId, reference } = await req.json();
 
-    console.log('[verify-payment] Request received');
+    console.log('[verify-payment] Request received from authenticated user:', authResult.walletAddress);
 
     // Validate inputs
     const txIdValidation = validateInput(transactionIdSchema, transactionId);
@@ -46,35 +57,29 @@ Deno.serve(async (req) => {
       return errorResponse(toSafeError(new Error('Not found'), ErrorCodes.NOT_FOUND), 404);
     }
 
-    console.log('[verify-payment] Payment reference found in DB');
+    // Verify wallet ownership
+    if (!verifyWalletOwnership(authResult, paymentRef.wallet_address)) {
+      console.error('[verify-payment] Wallet mismatch:', {
+        authenticated: authResult.walletAddress,
+        payment: paymentRef.wallet_address
+      });
+      return errorResponse(
+        toSafeError(new Error('Wallet address mismatch'), ErrorCodes.UNAUTHORIZED), 
+        403
+      );
+    }
+
+    console.log('[verify-payment] Payment reference found and wallet verified');
 
     // Call World App Developer Portal API
     const appId = Deno.env.get('VITE_MINIKIT_APP_ID') || 'app_ed7e61cb0c52630464178eed59e3fbdd';
     const devPortalApiKey = Deno.env.get('DEV_PORTAL_API_KEY');
 
     if (!devPortalApiKey) {
-      console.warn('[verify-payment] DEV_PORTAL_API_KEY not set, optimistic verification');
-      
-      const { error: updateError } = await supabase
-        .from('payment_references')
-        .update({
-          status: 'verified',
-          transaction_id: transactionId,
-          tx_hash: transactionId,
-          verified_at: new Date().toISOString(),
-        })
-        .eq('reference', reference)
-        .eq('status', 'pending'); // Ensure still pending
-
-      if (updateError) {
-        console.error('[verify-payment] Update error:', updateError);
-        return errorResponse(toSafeError(updateError, ErrorCodes.DATABASE_ERROR), 500);
-      }
-
-      console.log('[verify-payment] Optimistic success');
-      return new Response(
-        JSON.stringify({ success: true, txHash: transactionId }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      console.error('[verify-payment] DEV_PORTAL_API_KEY not configured');
+      return errorResponse(
+        toSafeError(new Error('Payment verification not configured'), ErrorCodes.INTERNAL_ERROR), 
+        500
       );
     }
 

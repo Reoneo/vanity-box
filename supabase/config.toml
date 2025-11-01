@@ -21,7 +21,7 @@ verify_jwt = true
 
 # Read-only public operations - NO AUTHENTICATION REQUIRED
 [functions.verify-payment]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-user-domains]
 verify_jwt = false

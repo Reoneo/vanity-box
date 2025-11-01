@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
+    const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash, reference } = body;
 
     // Verify wallet ownership
     if (!verifyWalletOwnership(authResult, walletAddress)) {
@@ -44,6 +44,32 @@ Deno.serve(async (req) => {
     }
 
     console.log('[mint-subdomain] Request received from authenticated user:', authResult.walletAddress);
+
+    // Verify payment if reference provided
+    if (reference) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      const { data: payment, error: paymentError } = await supabase
+        .from('payment_references')
+        .select('*')
+        .eq('reference', reference)
+        .eq('wallet_address', walletAddress.toLowerCase())
+        .eq('subdomain', subdomain)
+        .eq('status', 'verified')
+        .maybeSingle();
+
+      if (paymentError || !payment) {
+        console.error('[mint-subdomain] Payment not verified:', paymentError);
+        return errorResponse(
+          toSafeError(new Error('Payment not verified'), ErrorCodes.UNAUTHORIZED), 
+          403
+        );
+      }
+
+      console.log('[mint-subdomain] Payment verified');
+    }
 
     // Validate inputs
     const subdomainValidation = validateInput(subdomainSchema, subdomain);
@@ -75,9 +101,9 @@ Deno.serve(async (req) => {
     // Fetch domain config and API key from database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-    const { data: domainConfig, error: configError } = await supabase
+    const { data: domainConfig, error: configError } = await supabaseClient
       .from("domain_configs")
       .select("*")
       .eq("domain_name", cleanDomain)
@@ -157,7 +183,7 @@ Deno.serve(async (req) => {
     
     // Check for existing orphaned records
     const fullName = `${subdomainLabel}.${cleanDomain}`;
-    const { data: existingRecord } = await supabase
+    const { data: existingRecord } = await supabaseClient
       .from("minted_domains")
       .select("*")
       .eq("full_name", fullName)
@@ -166,7 +192,7 @@ Deno.serve(async (req) => {
 
     if (existingRecord) {
       console.log('[mint-subdomain] Cleaning up orphaned entry');
-      await supabase
+      await supabaseClient
         .from("minted_domains")
         .delete()
         .eq("full_name", fullName)
@@ -174,7 +200,7 @@ Deno.serve(async (req) => {
     }
     
     // Record in minted_domains
-    const { error: dbError } = await supabase.from("minted_domains").insert({
+    const { error: dbError } = await supabaseClient.from("minted_domains").insert({
       full_name: fullName,
       subdomain: subdomainLabel,
       domain: cleanDomain,

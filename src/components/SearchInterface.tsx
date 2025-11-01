@@ -1699,10 +1699,9 @@ export const SearchInterface = () => {
                               </div>
 
                               <div className="flex-1 overflow-y-auto px-2">
-                                <p
-                                  className="text-sm text-gray-300 leading-relaxed text-center break-words"
-                                  dangerouslySetInnerHTML={{ __html: result.description }}
-                                />
+                                <p className="text-sm text-gray-300 leading-relaxed text-center break-words">
+                                  {result.description}
+                                </p>
                               </div>
                             </div>
                           </div>

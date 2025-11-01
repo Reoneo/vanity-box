@@ -522,6 +522,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             paymentMethod,
             paymentAmount: convertedPrice,
             networkFee: effectiveNetworkFee,
+            reference: paymentRef || undefined,
           }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error("Minting timeout - please check My IDs in a moment")), 45_000),
