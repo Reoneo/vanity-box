@@ -17,7 +17,6 @@ export const Header: React.FC = () => {
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [showMyIds, setShowMyIds] = useState(false);
-  const [isProfileDisplayed, setIsProfileDisplayed] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,9 +33,6 @@ export const Header: React.FC = () => {
     
     const handleShowMyIds = () => setShowMyIds(true);
     const handleHideMyIds = () => setShowMyIds(false);
-    
-    const handleProfileDisplayed = () => setIsProfileDisplayed(true);
-    const handleProfileHidden = () => setIsProfileDisplayed(false);
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('mint-window-open', handleMintOpen);
@@ -45,8 +41,6 @@ export const Header: React.FC = () => {
     window.addEventListener('wallet-disconnected', handleWalletDisconnected);
     window.addEventListener('show-my-ids', handleShowMyIds);
     window.addEventListener('back-to-domains', handleHideMyIds);
-    window.addEventListener('profile-displayed', handleProfileDisplayed);
-    window.addEventListener('profile-hidden', handleProfileHidden);
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -56,8 +50,6 @@ export const Header: React.FC = () => {
       window.removeEventListener('wallet-disconnected', handleWalletDisconnected);
       window.removeEventListener('show-my-ids', handleShowMyIds);
       window.removeEventListener('back-to-domains', handleHideMyIds);
-      window.removeEventListener('profile-displayed', handleProfileDisplayed);
-      window.removeEventListener('profile-hidden', handleProfileHidden);
     };
   }, []);
 
@@ -117,8 +109,8 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
 
-              {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids or profile pages */}
-              {showSearchIcon && !isMintWindowOpen && !showMyIds && !isProfileDisplayed && (
+              {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+              {showSearchIcon && !isMintWindowOpen && !showMyIds && (
                 <>
                   <SpotifyPauseButton />
                   <button
@@ -158,8 +150,8 @@ export const Header: React.FC = () => {
                   </button>
                 </TriggerOrClose>
 
-            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids or profile pages */}
-            {showSearchIcon && !isMintWindowOpen && !showMyIds && !isProfileDisplayed && (
+            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
               <>
                 <SpotifyPauseButton />
                 <button
@@ -211,8 +203,8 @@ export const Header: React.FC = () => {
               </button>
             </TriggerOrClose>
 
-            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids or profile pages */}
-            {showSearchIcon && !isMintWindowOpen && !showMyIds && !isProfileDisplayed && (
+            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
               <>
                 <SpotifyPauseButton />
                 <button

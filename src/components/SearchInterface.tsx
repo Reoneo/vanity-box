@@ -218,14 +218,6 @@ export const SearchInterface = () => {
     };
   }, []);
 
-  // Dispatch event when profile is displayed or hidden
-  useEffect(() => {
-    if (web3BioProfile) {
-      window.dispatchEvent(new Event('profile-displayed'));
-    } else {
-      window.dispatchEvent(new Event('profile-hidden'));
-    }
-  }, [web3BioProfile]);
 
   const protocols = ["DNS", "ENS"];
   const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming"];
@@ -840,7 +832,7 @@ export const SearchInterface = () => {
             />
             {/* Main Heading - always shown except on mint and My IDs pages */}
             {!showMintInterface && !showMyIDs && (
-              <PersonalizedHeader user={null} isProfileDisplayed={!!web3BioProfile} />
+              <PersonalizedHeader user={null} />
             )}
 
             {/* Search bar container - hidden when showing My IDs */}
