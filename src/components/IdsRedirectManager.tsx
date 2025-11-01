@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { fullEnsName, vanityProfileUrl } from "@/lib/ensRedirect/profile";
-import { setCustomRedirect, setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
+import { setCustomRedirect, setDefaultVanityRedirect, SetRedirectResponse } from "@/lib/ensRedirect/service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ export default function IdsRedirectManager({
 }: Props) {
   const [customUrl, setCustomUrl] = useState<string>(currentRedirectUrl || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [lastResult, setLastResult] = useState<SetRedirectResponse | null>(null);
 
   // Extract just the subdomain label (e.g., "test321" from "test321.30315.eth")
   const subnameLabel = subname.toLowerCase().replace(`.${parentDomain.toLowerCase()}`, '').trim();
@@ -30,11 +31,13 @@ export default function IdsRedirectManager({
 
   async function handleReset() {
     setIsSaving(true);
+    setLastResult(null);
     try {
       const result = await setDefaultVanityRedirect(parentDomain, subnameLabel);
       
       if (result.success && result.url) {
         setCustomUrl(result.url);
+        setLastResult(result);
         toast({
           title: "Reset to default",
           description: `Now redirecting to ${result.url}`,
@@ -55,10 +58,12 @@ export default function IdsRedirectManager({
 
   async function handleSave() {
     setIsSaving(true);
+    setLastResult(null);
     try {
       const result = await setCustomRedirect(parentDomain, subnameLabel, customUrl.trim());
       
       if (result.success && result.url) {
+        setLastResult(result);
         toast({
           title: "Redirect updated",
           description: `Now redirecting to ${result.url}`,
@@ -87,6 +92,55 @@ export default function IdsRedirectManager({
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {/* Success Feedback */}
+        {lastResult && lastResult.success && (
+          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 space-y-2">
+            <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+              ✅ Redirect Updated Successfully
+            </p>
+            <div className="text-xs space-y-1 text-green-800 dark:text-green-200">
+              <p>
+                <strong>IPFS CID:</strong> <span className="font-mono">{lastResult.cid}</span>
+                {lastResult.provider && <span className="ml-2 text-green-600 dark:text-green-400">via {lastResult.provider}</span>}
+              </p>
+              {lastResult.ethLimoUrl && (
+                <p>
+                  <strong>ENS Gateway:</strong>{" "}
+                  <a 
+                    href={lastResult.ethLimoUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="font-mono text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                  >
+                    {lastResult.ethLimoUrl}
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </p>
+              )}
+              {lastResult.verificationUrls && lastResult.verificationUrls.length > 0 && (
+                <div>
+                  <strong>Verify IPFS:</strong>
+                  <ul className="ml-4 mt-1 space-y-1">
+                    {lastResult.verificationUrls.map((url, idx) => (
+                      <li key={idx}>
+                        <a 
+                          href={url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="font-mono text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                        >
+                          {url}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Default Vanity Profile */}
         <div className="bg-muted/50 rounded-lg p-4 space-y-3">
           <div>

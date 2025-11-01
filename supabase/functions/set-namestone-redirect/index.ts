@@ -37,13 +37,12 @@ const PASSTHROUGH_BASE=${BASE}.replace ? ${BASE}.replace(/\\/+$/,"") : "";
 }
 
 // Pin HTML to Web3.Storage and return CID
-async function pinRedirectHtml(html: string, token: string): Promise<string> {
+async function pinToWeb3Storage(html: string, token: string): Promise<string> {
   if (!token) throw new Error("Missing Web3.Storage token");
 
-  // Use Web3.Storage HTTP API directly
   const files = new FormData();
   const blob = new Blob([html], { type: "text/html" });
-  files.append("file", blob, "redirect.html");
+  files.append("file", blob, "index.html"); // Use index.html for better gateway compatibility
 
   const response = await fetch("https://api.web3.storage/upload", {
     method: "POST",
@@ -60,6 +59,73 @@ async function pinRedirectHtml(html: string, token: string): Promise<string> {
 
   const data = await response.json();
   return data.cid;
+}
+
+// Fallback: Pin to Cloudflare IPFS (no auth required)
+async function pinToCloudflare(html: string): Promise<string> {
+  const formData = new FormData();
+  const blob = new Blob([html], { type: "text/html" });
+  formData.append("file", blob, "index.html");
+
+  const response = await fetch("https://cloudflare-ipfs.com/api/v0/add?pin=true", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Cloudflare IPFS upload failed: ${response.status} ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.Hash; // Cloudflare returns "Hash" field
+}
+
+// Verify CID is accessible via multiple gateways
+async function verifyCid(cid: string): Promise<{ success: boolean; urls: string[] }> {
+  const gateways = [
+    `https://cloudflare-ipfs.com/ipfs/${cid}/`,
+    `https://ipfs.io/ipfs/${cid}/`,
+  ];
+
+  const results = await Promise.allSettled(
+    gateways.map(url => 
+      fetch(url, { method: "HEAD" }).then(r => ({ url, ok: r.ok }))
+    )
+  );
+
+  const accessibleUrls = results
+    .filter(r => r.status === "fulfilled" && r.value.ok)
+    .map(r => r.status === "fulfilled" ? r.value.url : "");
+
+  return {
+    success: accessibleUrls.length > 0,
+    urls: gateways,
+  };
+}
+
+// Pin with automatic fallback
+async function pinRedirectHtml(html: string, web3StorageToken: string): Promise<{ cid: string; provider: string }> {
+  let cid: string;
+  let provider: string;
+
+  try {
+    console.log("Attempting Web3.Storage upload...");
+    cid = await pinToWeb3Storage(html, web3StorageToken);
+    provider = "web3.storage";
+    console.log(`✅ Pinned to Web3.Storage: ${cid}`);
+  } catch (error: any) {
+    console.warn(`⚠️ Web3.Storage failed (${error.message}), trying Cloudflare IPFS...`);
+    try {
+      cid = await pinToCloudflare(html);
+      provider = "cloudflare-ipfs";
+      console.log(`✅ Pinned to Cloudflare IPFS: ${cid}`);
+    } catch (fallbackError: any) {
+      throw new Error(`All IPFS providers failed. Web3.Storage: ${error.message}, Cloudflare: ${fallbackError.message}`);
+    }
+  }
+
+  return { cid, provider };
 }
 
 // Set contenthash via Namestone API
@@ -205,9 +271,13 @@ serve(async (req) => {
     // Build redirect HTML
     const html = buildRedirectHtml({ mode: "EXACT", exactUrl: redirectUrl });
 
-    // Pin to IPFS
-    const cid = await pinRedirectHtml(html, web3StorageToken);
-    console.log("Pinned to IPFS:", cid);
+    // Pin to IPFS with automatic fallback
+    const { cid, provider } = await pinRedirectHtml(html, web3StorageToken);
+    console.log(`Pinned to IPFS via ${provider}:`, cid);
+
+    // Verify CID is accessible
+    const verification = await verifyCid(cid);
+    console.log("Gateway verification:", verification);
 
     // Set contenthash via Namestone
     const namestoneResult = await setContenthashViaNamestone({
@@ -220,12 +290,18 @@ serve(async (req) => {
 
     console.log("Namestone update successful:", namestoneResult);
 
+    const ensName = fullName;
+    const ethLimoUrl = `https://${ensName}.limo/`;
+
     return new Response(
       JSON.stringify({
         success: true,
         cid,
+        provider,
         contenthash: `ipfs://${cid}`,
         url: redirectUrl,
+        verificationUrls: verification.urls,
+        ethLimoUrl,
         namestoneResult,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

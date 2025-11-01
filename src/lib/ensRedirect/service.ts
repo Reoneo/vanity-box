@@ -5,8 +5,11 @@ import { vanityProfileUrl } from "./profile";
 export type SetRedirectResponse = {
   success: boolean;
   cid?: string;
+  provider?: string;
   contenthash?: string;
   url?: string;
+  verificationUrls?: string[];
+  ethLimoUrl?: string;
   error?: string;
 };
 
