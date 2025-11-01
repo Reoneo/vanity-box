@@ -9,7 +9,7 @@ export const WorldIdAnimation: React.FC = () => {
       <div className="relative w-full max-w-3xl">
         <IdentityFlowVisualization 
           worldId="demo.2025.world.id"
-          vanityName="Tim.Vanity.box"
+          vanityName="YourName.Vanity.box"
         />
       </div>
     </div>

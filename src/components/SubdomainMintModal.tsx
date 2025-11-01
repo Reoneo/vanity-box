@@ -684,22 +684,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
         )}
         
-        {/* World App Instructions Banner */}
-        {miniKitStatus !== "unavailable" && paymentFlowStep === "idle" && (
-          <div className="absolute top-16 left-4 right-4 z-10 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <span className="text-base">💡</span>
-              <div className="flex-1">
-                <p className="text-sm text-blue-900 dark:text-blue-100 font-medium">
-                  Keep World App open during minting
-                </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                  You'll need to approve wallet connection and payment prompts
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
         
         {/* Wallet Connection Timer with Cancel Button */}
         {walletConnectionTimeRemaining !== null && (
