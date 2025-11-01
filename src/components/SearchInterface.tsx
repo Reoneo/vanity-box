@@ -997,7 +997,7 @@ export const SearchInterface = () => {
                     {/* Avatar */}
                     <div className="relative inline-block mb-4">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
                         {web3BioProfile.avatar ? (
                           <img
                             src={web3BioProfile.avatar}
