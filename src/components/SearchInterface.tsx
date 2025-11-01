@@ -1030,13 +1030,14 @@ export const SearchInterface = () => {
                 <Button
                   onClick={() => {
                     setWeb3BioProfile(null);
+                    setSearchQuery(displayQuery);
                   }}
                   variant="ghost"
                   size="sm"
                   className="mb-4 text-white hover:text-[#D4AF37] hover:bg-gray-800/50"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
-                  Back to results
+                  Back
                 </Button>
                 
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
