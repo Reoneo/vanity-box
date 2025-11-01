@@ -1,5 +1,5 @@
 // Server-side authentication verification using Privy
-import { PrivyClient } from 'https://esm.sh/@privy-io/server-auth@1.x';
+import { PrivyClient } from 'npm:@privy-io/server-auth@1';
 
 const PRIVY_APP_ID = Deno.env.get('PRIVY_APP_ID') || '';
 const PRIVY_APP_SECRET = Deno.env.get('PRIVY_APP_SECRET') || '';
