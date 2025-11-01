@@ -199,6 +199,11 @@ export const SearchInterface = () => {
       setHasSearched(false);
     };
     
+    const handleClearProfile = () => {
+      setWeb3BioProfile(null);
+      setHasSearched(false);
+    };
+    
     // Dispatch event when profile is shown/hidden to control search icon in header
     if (web3BioProfile) {
       window.dispatchEvent(new CustomEvent("profile-shown"));
@@ -213,6 +218,7 @@ export const SearchInterface = () => {
     });
     window.addEventListener("show-my-ids", handleShowMyIDs);
     window.addEventListener("show-search", handleShowSearch);
+    window.addEventListener("clear-profile", handleClearProfile);
 
     return () => {
       window.removeEventListener("wallet-connected", handleWalletChange as EventListener);
@@ -222,6 +228,7 @@ export const SearchInterface = () => {
       });
       window.removeEventListener("show-my-ids", handleShowMyIDs);
       window.removeEventListener("show-search", handleShowSearch);
+      window.removeEventListener("clear-profile", handleClearProfile);
     };
   }, []);
 
@@ -1138,8 +1145,6 @@ export const SearchInterface = () => {
                         {ensRecords?.records?.url && (
                           <a
                             href={ensRecords.records.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors"
                           >
                             <Globe className="w-4 h-4" />
@@ -1149,8 +1154,6 @@ export const SearchInterface = () => {
                         {!ensRecords?.records?.url && web3BioProfile.links?.website && (
                           <a
                             href={web3BioProfile.links.website.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors"
                           >
                             <Globe className="w-4 h-4" />
@@ -1289,8 +1292,6 @@ export const SearchInterface = () => {
                             <a
                               key={platform}
                               href={linkData.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                             >
                               {platformIcons[platform.toLowerCase()] || <ExternalLink className="w-4 h-4" />}
@@ -1303,8 +1304,6 @@ export const SearchInterface = () => {
                         {ensRecords?.records?.["com.twitter"] && !web3BioProfile.links?.twitter && (
                           <a
                             href={`https://twitter.com/${ensRecords.records["com.twitter"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
                             <span>𝕏</span>
@@ -1315,8 +1314,6 @@ export const SearchInterface = () => {
                         {ensRecords?.records?.["com.github"] && !web3BioProfile.links?.github && (
                           <a
                             href={`https://github.com/${ensRecords.records["com.github"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
                             <Github className="w-4 h-4" />
@@ -1327,8 +1324,6 @@ export const SearchInterface = () => {
                         {ensRecords?.records?.["com.discord"] && !web3BioProfile.links?.discord && (
                           <a
                             href={`https://discord.com/users/${ensRecords.records["com.discord"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
                             <SiDiscord className="w-4 h-4" />
@@ -1339,8 +1334,6 @@ export const SearchInterface = () => {
                         {ensRecords?.records?.["org.telegram"] && !web3BioProfile.links?.telegram && (
                           <a
                             href={`https://t.me/${ensRecords.records["org.telegram"]}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
                             <Send className="w-4 h-4" />
@@ -1350,26 +1343,6 @@ export const SearchInterface = () => {
                       </div>
                       </div>
 
-                      {/* ENS Records (from web3.bio or Namestone) */}
-                      {ensRecords?.records && Object.keys(ensRecords.records || {}).length > 0 && (
-                        <div className="border-t border-[#D4AF37]/30 pt-4 mt-4">
-                          <h4 className="text-sm font-semibold text-white mb-2">ENS Records</h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                            {Object.entries(ensRecords.records).map(([key, value]) => (
-                              <div key={key} className="flex items-center justify-between bg-gray-800/40 rounded-md px-3 py-2">
-                                <span className="text-gray-400">{key}</span>
-                                {/^https?:/i.test(String(value)) ? (
-                                  <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] hover:underline">
-                                    {String(value)}
-                                  </a>
-                                ) : (
-                                  <span className="text-gray-200 break-all">{String(value)}</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
                       {/* POAP Collection */}
                       {web3BioProfile.address && poapCount > 0 && (

@@ -76,10 +76,23 @@ export const Header: React.FC = () => {
       return;
     }
     
-    // Otherwise, reset to main page state
-    setShowMyIds(false);
-    window.dispatchEvent(new Event('back-to-domains'));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // If showing My IDs, go back to domains
+    if (showMyIds) {
+      window.dispatchEvent(new Event('back-to-domains'));
+      return;
+    }
+    
+    // If profile is shown, clear the profile
+    if (isProfileShown) {
+      window.dispatchEvent(new Event('clear-profile'));
+      return;
+    }
+    
+    // Otherwise scroll to search
+    const searchElement = document.getElementById('search-section');
+    if (searchElement) {
+      searchElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
   
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
