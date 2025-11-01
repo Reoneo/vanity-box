@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
+import { setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
+import { fullEnsName } from "@/lib/ensRedirect/profile";
 import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
 
 import usdcLogo from "@/assets/usdc-logo.png";
@@ -605,6 +607,22 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             detail: { subdomain, txHash },
           }),
         );
+
+        // Auto-set default Vanity redirect
+        try {
+          const redirectResult = await setDefaultVanityRedirect(domain || "", subdomain);
+          if (redirectResult.success) {
+            console.log("Default redirect set:", redirectResult);
+            toast.success(`Redirect set to ${fullEnsName(subdomain, domain || "")} Vanity profile`, {
+              duration: 5000,
+            });
+          }
+        } catch (redirectErr: any) {
+          console.error("Failed to set redirect:", redirectErr);
+          toast.info("Minted successfully! You can set redirect in My IDs.", {
+            duration: 5000,
+          });
+        }
         
         setPaymentFlowStep("idle");
         localStorage.removeItem('paymentFlowState');
