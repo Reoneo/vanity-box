@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { validateInput, subdomainSchema, ethereumAddressSchema } from "../_shared/validation.ts";
+import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,29 +19,26 @@ serve(async (req) => {
   try {
     const { subdomain, toAddress } = await req.json();
 
-    console.log('==========================================');
-    console.log('🔄 STARTING DOMAIN TRANSFER PROCESS');
-    console.log('==========================================');
-    console.log('📝 Subdomain:', subdomain);
-    console.log('👛 To Address:', toAddress);
-    console.log('==========================================');
+    console.log('🔄 STARTING DOMAIN TRANSFER');
 
-    if (!subdomain || !toAddress) {
-      throw new Error('Missing required parameters: subdomain and toAddress');
+    // Validate inputs
+    const subdomainValidation = validateInput(subdomainSchema, subdomain);
+    if (!subdomainValidation.success) {
+      return errorResponse(toSafeError(subdomainValidation.error, ErrorCodes.INVALID_INPUT), 400);
     }
 
-    // Parse subdomain to extract label and domain
-    const parts = subdomain.split('.');
+    const addressValidation = validateInput(ethereumAddressSchema, toAddress);
+    if (!addressValidation.success) {
+      return errorResponse(toSafeError(addressValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    // Parse subdomain
+    const parts = subdomainValidation.data.split('.');
     const subdomainLabel = parts[0];
     const domainFromSubdomain = parts.slice(1).join('.');
     
-    console.log('🏷️  Subdomain label:', subdomainLabel);
-    console.log('🌐 Domain:', domainFromSubdomain);
-
-    // Validate Ethereum address format (basic check)
-    if (!/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
-      throw new Error('Invalid Ethereum address format');
-    }
+    console.log('Subdomain label:', subdomainLabel);
+    console.log('Domain:', domainFromSubdomain);
 
     // Resolve API key for this domain using domain_configs first, then fall back to env naming pattern/default
     let NAMESTONE_API_KEY: string | null = null;
@@ -69,7 +68,7 @@ serve(async (req) => {
     }
     
     if (!NAMESTONE_API_KEY) {
-      throw new Error(`API key not configured for domain ${domainFromSubdomain}`);
+      return errorResponse(toSafeError(new Error('Domain not configured'), ErrorCodes.DOMAIN_NOT_CONFIGURED), 500);
     }
     
     console.log('🔑 Using API key for domain:', domainFromSubdomain);
@@ -96,10 +95,8 @@ serve(async (req) => {
     
     if (!namestoneResponse.ok) {
       const errorText = await namestoneResponse.text();
-      console.error('❌ NAMESTONE API ERROR');
-      console.error('Status:', namestoneResponse.status);
-      console.error('Error message:', errorText);
-      throw new Error(`Namestone API error: ${namestoneResponse.status} - ${errorText}`);
+      console.error('❌ NAMESTONE API ERROR', namestoneResponse.status);
+      return errorResponse(toSafeError(new Error(`Namestone error: ${namestoneResponse.status}`), ErrorCodes.EXTERNAL_API_ERROR), 500);
     }
 
     const namestoneData = await namestoneResponse.json();
@@ -124,16 +121,6 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in transfer-namestone-name function:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return errorResponse(toSafeError(error, ErrorCodes.INTERNAL_ERROR), 500);
   }
 });

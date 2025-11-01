@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -308,16 +309,6 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error("Error setting redirect:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || "Failed to set redirect",
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
+    return errorResponse(toSafeError(error, ErrorCodes.INTERNAL_ERROR), 500);
   }
 });

@@ -1,4 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateInput, subdomainSchema, domainSchema, ethereumAddressSchema } from "../_shared/validation.ts";
+import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,46 +20,40 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
 
-    console.log('[mint-subdomain] Request received:', { 
-      subdomain, 
-      domain, 
-      walletAddress, 
-      registrationMonths, 
-      paymentMethod,
-      paymentAmount,
-      txHash,
-      timestamp: new Date().toISOString()
-    });
+    console.log('[mint-subdomain] Request received');
 
-    if (!subdomain || !walletAddress || !domain) {
-      console.error("[Mint] Missing required fields:", { subdomain, walletAddress, domain });
-      return j({ ok: false, error: "Missing required fields" }, 400);
+    // Validate inputs
+    const subdomainValidation = validateInput(subdomainSchema, subdomain);
+    if (!subdomainValidation.success) {
+      return errorResponse(toSafeError(subdomainValidation.error, ErrorCodes.INVALID_INPUT), 400);
     }
 
-    // Parse subdomain label and domain safely - PRESERVE $ in domain names
-    const subdomainLabel = String(subdomain).split(".")[0].trim().toLowerCase();
-    const cleanDomain = String(domain).trim().toLowerCase(); // DO NOT strip $ - it's part of the domain name!
+    const domainValidation = validateInput(domainSchema, domain);
+    if (!domainValidation.success) {
+      return errorResponse(toSafeError(domainValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    const addressValidation = validateInput(ethereumAddressSchema, walletAddress);
+    if (!addressValidation.success) {
+      return errorResponse(toSafeError(addressValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    const monthsValidation = validateInput(z.number().int().min(1).max(60), registrationMonths || 12);
+    if (!monthsValidation.success) {
+      return errorResponse(toSafeError(monthsValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    // Parse subdomain label and domain safely
+    const subdomainLabel = subdomainValidation.data.split(".")[0].trim().toLowerCase();
+    const cleanDomain = domainValidation.data.trim().toLowerCase();
 
     console.log(`[Mint] Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
-
-    // Validate subdomain label format (ENS-safe)
-    if (!/^[a-z0-9-]{1,63}$/.test(subdomainLabel)) {
-      console.error("[Mint] Invalid subdomain label format:", subdomainLabel);
-      return j({ ok: false, error: "Invalid subdomain format. Use only lowercase letters, numbers, and hyphens." }, 400);
-    }
-
-    if (!cleanDomain || cleanDomain.length === 0) {
-      console.error("[Mint] Domain is empty after processing");
-      return j({ ok: false, error: "Invalid domain format" }, 400);
-    }
 
     // Fetch domain config and API key from database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log(`[Mint] Fetching domain config for: ${cleanDomain}`);
-    
     const { data: domainConfig, error: configError } = await supabase
       .from("domain_configs")
       .select("*")
@@ -65,18 +62,14 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (configError) {
-      console.error("[Mint] Error fetching domain config:", configError);
-      return j({ ok: false, error: `Database error: ${configError.message}` }, 500);
+      console.error("[Mint] Database error:", configError);
+      return errorResponse(toSafeError(configError, ErrorCodes.DATABASE_ERROR), 500);
     }
 
     let namestoneApiKey: string | undefined;
 
     if (domainConfig) {
-      console.log('[mint-subdomain] Domain config found:', {
-        domain: cleanDomain,
-        secretName: domainConfig.api_key_secret_name,
-        status: domainConfig.status
-      });
+      console.log('[mint-subdomain] Domain config found');
       namestoneApiKey = Deno.env.get(domainConfig.api_key_secret_name);
     } else {
       console.log('[mint-subdomain] No domain config, using default API key');
@@ -84,20 +77,20 @@ Deno.serve(async (req) => {
     }
 
     if (!namestoneApiKey) {
-      console.error(`[Mint] No API key found for domain: ${cleanDomain}`);
-      return j({ ok: false, error: `Domain ${cleanDomain} is not configured. Please contact support.` }, 500);
+      console.error(`[Mint] No API key found for domain`);
+      return errorResponse(toSafeError(new Error('Domain not configured'), ErrorCodes.DOMAIN_NOT_CONFIGURED), 500);
     }
 
-    console.log(`[Mint] API key resolved for ${cleanDomain}`);
+    console.log(`[Mint] API key resolved`);
 
     // Calculate dates
     const now = new Date();
     const expiryDate = new Date(now);
-    expiryDate.setMonth(expiryDate.getMonth() + (registrationMonths || 12));
+    expiryDate.setMonth(expiryDate.getMonth() + monthsValidation.data);
     const gracePeriodEnd = new Date(expiryDate);
     gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 90);
 
-    // Call Namestone set-names API (official endpoint)
+    // Call Namestone API
     const namestonePayload = {
       domain: cleanDomain,
       names: [
@@ -105,7 +98,7 @@ Deno.serve(async (req) => {
           name: subdomainLabel,
           address: walletAddress.toLowerCase(),
           text_records: {
-            registration_months: String(registrationMonths || 12),
+            registration_months: String(monthsValidation.data),
             expiry_date: expiryDate.toISOString(),
             grace_period_end: gracePeriodEnd.toISOString(),
           },
@@ -113,12 +106,7 @@ Deno.serve(async (req) => {
       ],
     };
 
-    console.log('[mint-subdomain] Calling Namestone API:', {
-      endpoint: 'set-names',
-      subdomain: subdomainLabel,
-      domain: cleanDomain,
-      walletAddress
-    });
+    console.log('[mint-subdomain] Calling Namestone API');
     const namestoneRes = await fetch("https://namestone.com/api/public_v1/set-names", {
       method: "POST",
       headers: {
@@ -128,29 +116,23 @@ Deno.serve(async (req) => {
       body: JSON.stringify(namestonePayload),
     });
 
-    console.log(`[Namestone] Response status: ${namestoneRes.status}`);
-
     if (!namestoneRes.ok) {
       const errorText = await namestoneRes.text();
-      console.error(`[Namestone] Error: ${namestoneRes.status} - ${errorText}`);
+      console.error(`[Namestone] Error: ${namestoneRes.status}`);
       
-      // Provide clearer error for 401 (authorization issues)
       if (namestoneRes.status === 401) {
-        return j({ 
-          ok: false, 
-          error: `API key not authorized for domain "${cleanDomain}". Please verify domain configuration.` 
-        }, 500);
+        return errorResponse(toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 401);
       }
       
-      return j({ ok: false, error: `Namestone API error: ${errorText}` }, 500);
+      return errorResponse(toSafeError(new Error(`Namestone error: ${namestoneRes.status}`), ErrorCodes.EXTERNAL_API_ERROR), 500);
     }
 
     const namestoneData = await namestoneRes.json();
-    console.log('[mint-subdomain] Namestone API success:', namestoneData);
+    console.log('[mint-subdomain] Namestone API success');
 
     console.log('[mint-subdomain] Recording mint in database');
     
-    // Check for existing orphaned records (in DB but not in Namestone)
+    // Check for existing orphaned records
     const fullName = `${subdomainLabel}.${cleanDomain}`;
     const { data: existingRecord } = await supabase
       .from("minted_domains")
@@ -160,16 +142,12 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existingRecord) {
-      console.log('[mint-subdomain] Found existing record, cleaning up orphaned entry');
-      const { error: deleteError } = await supabase
+      console.log('[mint-subdomain] Cleaning up orphaned entry');
+      await supabase
         .from("minted_domains")
         .delete()
         .eq("full_name", fullName)
         .eq("wallet_address", walletAddress.toLowerCase());
-
-      if (deleteError) {
-        console.error('[mint-subdomain] Error cleaning up orphaned record:', deleteError);
-      }
     }
     
     // Record in minted_domains
@@ -178,7 +156,7 @@ Deno.serve(async (req) => {
       subdomain: subdomainLabel,
       domain: cleanDomain,
       wallet_address: walletAddress.toLowerCase(),
-      registration_months: registrationMonths || 12,
+      registration_months: monthsValidation.data,
       registration_date: now.toISOString(),
       expiry_date: expiryDate.toISOString(),
       grace_period_end: gracePeriodEnd.toISOString(),
@@ -191,24 +169,16 @@ Deno.serve(async (req) => {
     if (dbError) {
       console.error("[DB] Error:", dbError);
       
-      // Provide helpful error message for duplicate key errors
       if (dbError.code === '23505') {
-        return j({ 
-          ok: false, 
-          error: `This domain "${fullName}" is already registered to this wallet. If you deleted it from Namestone but still see this error, please try again in a moment.` 
-        }, 409);
+        return errorResponse(toSafeError(new Error('Domain already exists'), ErrorCodes.ALREADY_EXISTS), 409);
       }
       
-      return j({ ok: false, error: `Database error: ${dbError.message}` }, 500);
+      return errorResponse(toSafeError(dbError, ErrorCodes.DATABASE_ERROR), 500);
     }
 
-    console.log('[mint-subdomain] Mint completed successfully:', {
-      fullName: `${subdomainLabel}.${cleanDomain}`,
-      expiryDate: expiryDate.toISOString()
-    });
-    return j({ ok: true, subdomain: `${subdomainLabel}.${cleanDomain}`, expiryDate: expiryDate.toISOString() });
+    console.log('[mint-subdomain] Mint completed successfully');
+    return j({ ok: true, subdomain: fullName, expiryDate: expiryDate.toISOString() });
   } catch (e: any) {
-    console.error("[Mint] Fatal:", e);
-    return j({ ok: false, error: String(e?.message || e) }, 500);
+    return errorResponse(toSafeError(e, ErrorCodes.INTERNAL_ERROR), 500);
   }
 });
