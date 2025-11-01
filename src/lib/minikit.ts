@@ -19,7 +19,7 @@ export function initMiniKit(appId: string): Promise<void> {
     });
     
     try {
-      MiniKit.install(appId);
+      MiniKit.install();
       isReady = true;
       
       const status = getMiniKitStatus();
@@ -31,7 +31,7 @@ export function initMiniKit(appId: string): Promise<void> {
       // Retry after 1 second
       await new Promise(resolve => setTimeout(resolve, 1000));
       try {
-        MiniKit.install(appId);
+        MiniKit.install();
         isReady = true;
         console.log("[MiniKit] Retry successful");
       } catch (retryErr) {
@@ -101,8 +101,7 @@ export async function ensureReady(): Promise<void> {
       
       // Try reinstalling
       try {
-        const appId = 'app_ed7e61cb0c52630464178eed59e3fbdd';
-        MiniKit.install(appId);
+        MiniKit.install();
         isReady = true;
         console.log(`[MiniKit] Recovery attempt ${i + 1} successful`);
       } catch (e) {
