@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateInput, subdomainSchema, domainSchema, ethereumAddressSchema, textRecordsSchema, coinTypesSchema, contenthashSchema } from "../_shared/validation.ts";
+import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,16 +16,32 @@ serve(async (req) => {
   try {
     const { subdomain, walletAddress, textRecords, coinTypes, contenthash } = await req.json();
 
-    console.log('==========================================');
     console.log('🔄 UPDATING NAMESTONE RECORDS');
-    console.log('==========================================');
-    console.log('📝 Subdomain:', subdomain);
-    console.log('👛 Wallet Address:', walletAddress);
-    console.log('📋 Text Records:', textRecords);
-    console.log('==========================================');
 
-    if (!subdomain || !walletAddress) {
-      throw new Error('Missing required parameters');
+    // Validate inputs
+    const subdomainValidation = validateInput(subdomainSchema, subdomain);
+    if (!subdomainValidation.success) {
+      return errorResponse(toSafeError(subdomainValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    const addressValidation = validateInput(ethereumAddressSchema, walletAddress);
+    if (!addressValidation.success) {
+      return errorResponse(toSafeError(addressValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    const textRecordsValidation = validateInput(textRecordsSchema, textRecords);
+    if (!textRecordsValidation.success) {
+      return errorResponse(toSafeError(textRecordsValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    const coinTypesValidation = validateInput(coinTypesSchema, coinTypes);
+    if (!coinTypesValidation.success) {
+      return errorResponse(toSafeError(coinTypesValidation.error, ErrorCodes.INVALID_INPUT), 400);
+    }
+
+    const contenthashValidation = validateInput(contenthashSchema, contenthash);
+    if (!contenthashValidation.success) {
+      return errorResponse(toSafeError(contenthashValidation.error, ErrorCodes.INVALID_INPUT), 400);
     }
 
     // Extract subdomain label and domain - PRESERVE $ in domain names
@@ -60,7 +78,7 @@ serve(async (req) => {
     }
     
     if (!namestoneApiKey) {
-      throw new Error(`API key not configured for domain ${cleanDomain}`);
+      return errorResponse(toSafeError(new Error('Domain not configured'), ErrorCodes.DOMAIN_NOT_CONFIGURED), 500);
     }
     
     console.log('🔑 API key resolved for domain:', cleanDomain);
@@ -94,16 +112,13 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ NAMESTONE API ERROR');
-      console.error('Status:', response.status);
-      console.error('Error message:', errorText);
+      console.error('❌ NAMESTONE API ERROR', response.status, errorText);
       
-      // Provide clearer error for 401 (authorization issues)
       if (response.status === 401) {
-        throw new Error(`API key not authorized for domain "${cleanDomain}". Please verify domain configuration.`);
+        return errorResponse(toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 401);
       }
       
-      throw new Error(`Namestone API error: ${response.status} - ${errorText}`);
+      return errorResponse(toSafeError(new Error(`Namestone error: ${response.status}`), ErrorCodes.EXTERNAL_API_ERROR), 500);
     }
 
     const data = await response.json();
@@ -122,16 +137,6 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in set-namestone-records function:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return errorResponse(toSafeError(error, ErrorCodes.INTERNAL_ERROR), 500);
   }
 });
