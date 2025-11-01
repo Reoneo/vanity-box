@@ -8,6 +8,7 @@ import { Loader2, Pencil, Send, Trash2, ExternalLink } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoLink from '@/assets/ens-logo-link.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
@@ -39,6 +40,8 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [deletingDomain, setDeletingDomain] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [domainToDelete, setDomainToDelete] = useState<Domain | null>(null);
 
   const fetchDomains = async () => {
     if (!walletAddress) {
@@ -331,37 +334,9 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 variant="destructive"
                 className="w-full"
                 disabled={deletingDomain === `${domain.name}.${domain.domain}`}
-                onClick={async () => {
-                  const fullName = `${domain.name}.${domain.domain}`;
-                  const confirmed = window.confirm(`Are you sure you want to delete ${fullName}? This action cannot be undone.`);
-                  if (!confirmed) return;
-                  
-                  setDeletingDomain(fullName);
-                  
-                  try {
-                    toast.info('Deleting domain...');
-                    
-                    const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-                      body: { subdomain: fullName, domain: domain.domain },
-                    });
-
-                    if (error) {
-                      console.error('Supabase error:', error);
-                      throw error;
-                    }
-
-                    if (data?.success) {
-                      toast.success('Domain deleted successfully!');
-                      await fetchDomains();
-                    } else {
-                      throw new Error(data?.error || 'Failed to delete domain');
-                    }
-                  } catch (error) {
-                    console.error('Delete error:', error);
-                    toast.error(error instanceof Error ? error.message : 'Failed to delete domain');
-                  } finally {
-                    setDeletingDomain(null);
-                  }
+                onClick={() => {
+                  setDomainToDelete(domain);
+                  setDeleteDialogOpen(true);
                 }}
               >
                 {deletingDomain === `${domain.name}.${domain.domain}` ? (
@@ -380,6 +355,45 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
           </div>
         ))}
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        domainName={domainToDelete ? `${domainToDelete.name}.${domainToDelete.domain}` : ''}
+        onConfirm={async () => {
+          if (!domainToDelete) return;
+
+          const fullName = `${domainToDelete.name}.${domainToDelete.domain}`;
+          setDeletingDomain(fullName);
+          setDeleteDialogOpen(false);
+
+          try {
+            toast.info('Deleting domain...');
+
+            const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
+              body: { subdomain: fullName, domain: domainToDelete.domain },
+            });
+
+            if (error) {
+              console.error('Supabase error:', error);
+              throw error;
+            }
+
+            if (data?.success) {
+              toast.success('Domain deleted successfully!');
+              await fetchDomains();
+            } else {
+              throw new Error(data?.error || 'Failed to delete domain');
+            }
+          } catch (error) {
+            console.error('Delete error:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to delete domain');
+          } finally {
+            setDeletingDomain(null);
+            setDomainToDelete(null);
+          }
+        }}
+      />
     </div>
   );
 };

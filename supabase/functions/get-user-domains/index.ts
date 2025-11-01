@@ -58,27 +58,25 @@ serve(async (req) => {
 
     console.log('Active domains:', activeDomains);
 
-    // Fetch domains from Namestone API for the wallet
-    console.log('Calling Namestone get-names API');
+    // Fetch ALL domains from Namestone API for the wallet address
+    console.log('Calling Namestone get-names API for all domains');
     
-    // Use default API key for POST request (address-based query)
+    // Use default API key for GET request (address-based query across all domains)
     const defaultApiKey = Deno.env.get('NAMESTONE_API_KEY');
     
     if (!defaultApiKey) {
       throw new Error('NAMESTONE_API_KEY is not configured');
     }
 
-    const namestoneResponse = await fetch('https://namestone.com/api/public_v1/get-names', {
-      method: 'POST',
-      headers: {
-        'Authorization': defaultApiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        address: walletAddress,
-        chain_id: 480, // World Chain network ID
-      }),
-    });
+    const namestoneResponse = await fetch(
+      `https://namestone.com/api/public_v1/get-names?address=${walletAddress}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': defaultApiKey,
+        },
+      }
+    );
 
     if (!namestoneResponse.ok) {
       const errorText = await namestoneResponse.text();
