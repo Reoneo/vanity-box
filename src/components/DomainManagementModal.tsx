@@ -64,64 +64,66 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
         });
         setCustomRecords([]);
         
-        const subdomain = `${domain.name}.${domain.domain}`;
-        console.log('[DomainManagementModal] Fetching records for:', subdomain);
+        const fullName = `${domain.name}.${domain.domain}`;
+        console.log('[DomainManagementModal] Fetching ENS records from Web3.bio for:', fullName);
         
-        const { data, error } = await supabase.functions.invoke('get-namestone-records', {
-          body: { subdomain, domain: domain.domain },
+        // Fetch ENS records from Web3.bio API
+        const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
+          body: { handle: fullName },
         });
 
         if (error) {
-          console.error('Error fetching records:', error);
+          console.error('[DomainManagementModal] Error fetching Web3.bio profile:', error);
+          // Empty records is a valid state - don't show error
           return;
         }
 
-        if (data?.success && data.textRecords) {
-          const fetchedRecords = data.textRecords;
-          console.log('[DomainManagementModal] Fetched records:', fetchedRecords);
+        if (data && !data.error && data.identity) {
+          console.log('[DomainManagementModal] Fetched Web3.bio profile:', data);
           
-          // Standard ENS record keys
-          const standardENSKeys = ['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'];
-          
-          // SECURITY: Metadata fields that should NEVER be displayed or editable
-          const metadataBlacklist = [
-            'registration_months',
-            'expiry_date', 
-            'grace_period_end',
-            'registration_date',
-            'created_at',
-            'updated_at',
-            'minted_at',
-            'is_expired',
-            'payment_amount',
-            'network_fee',
-            'tx_hash',
-            'payment_method'
-          ];
-          
-          // Separate ENS standard records from custom records
-          const ensRecordsData = { ...ensRecords };
+          const profile = data.identity;
+          const ensRecordsData = {
+            email: '',
+            url: '',
+            avatar: '',
+            description: '',
+            'com.github': '',
+            'com.twitter': '',
+            'com.discord': '',
+          };
           const customRecordsData: { key: string; value: string }[] = [];
           
-          Object.entries(fetchedRecords).forEach(([key, value]) => {
-            // Filter out metadata fields completely
-            if (metadataBlacklist.includes(key)) {
-              console.log(`[DomainManagementModal] Filtering out metadata field: ${key}`);
-              return;
-            }
-            
-            if (standardENSKeys.includes(key)) {
-              ensRecordsData[key] = value as string;
-            } else {
-              customRecordsData.push({ key, value: value as string });
-            }
-          });
+          // Standard ENS record keys
+          const standardKeys = ['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'];
+          
+          // Map Web3.bio fields to ENS text records
+          if (profile.email) ensRecordsData.email = profile.email;
+          if (profile.url) ensRecordsData.url = profile.url;
+          if (profile.avatar) ensRecordsData.avatar = profile.avatar;
+          if (profile.description) ensRecordsData.description = profile.description;
+          if (profile.github) ensRecordsData['com.github'] = profile.github;
+          if (profile.twitter) ensRecordsData['com.twitter'] = profile.twitter;
+          if (profile.discord) ensRecordsData['com.discord'] = profile.discord;
+
+          // Handle any additional custom fields from links
+          if (profile.links && Array.isArray(profile.links)) {
+            profile.links.forEach((link: any) => {
+              const key = link.platform || link.type;
+              if (key && !standardKeys.includes(key) && link.handle) {
+                customRecordsData.push({ key, value: link.handle });
+              }
+            });
+          }
           
           setEnsRecords(ensRecordsData);
           setCustomRecords(customRecordsData);
+        } else {
+          // No records found on-chain - show empty fields (valid state)
+          console.log(`[DomainManagementModal] No ENS records found for ${fullName}`);
         }
       } catch (error) {
-        console.error('Error loading records:', error);
+        console.error('[DomainManagementModal] Error loading records:', error);
+        // Empty records is a valid state
       } finally {
         setIsLoading(false);
       }

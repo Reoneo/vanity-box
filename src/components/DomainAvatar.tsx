@@ -19,11 +19,20 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain }) => {
         setIsLoading(true);
         const fullName = `${domain.name}.${domain.domain}`;
         
-        // Try to get ENS avatar from resolve-ens function
-        const ensData = await callEdge<any>('resolve-ens', { name: fullName });
+        // Fetch ENS avatar from Web3.bio API
+        const profile = await callEdge<any>('get-web3bio-profile', { handle: fullName });
         
-        if (ensData?.avatar) {
-          setAvatarUrl(ensData.avatar);
+        if (profile?.identity?.avatar) {
+          let avatarUrl = profile.identity.avatar;
+          
+          // Convert IPFS URLs to HTTP gateway URLs
+          if (avatarUrl.startsWith('ipfs://')) {
+            avatarUrl = avatarUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+          } else if (avatarUrl.startsWith('ipns://')) {
+            avatarUrl = avatarUrl.replace('ipns://', 'https://ipfs.io/ipns/');
+          }
+          
+          setAvatarUrl(avatarUrl);
         }
       } catch (error) {
         console.error(`Error fetching avatar for ${domain.name}.${domain.domain}:`, error);
