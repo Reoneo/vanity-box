@@ -9,11 +9,10 @@ import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
-import { usePrivy } from "@privy-io/react-auth";
 import { callEdge } from "@/lib/supaInvoke";
 import { setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
 import { fullEnsName } from "@/lib/ensRedirect/profile";
-import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus, isInWorldApp } from "@/lib/minikit";
+import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus, isInWorldApp, getWalletAddress as getWorldWalletAddress } from "@/lib/minikit";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
@@ -51,7 +50,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { authenticated, user: privyUser } = usePrivy();
 
   const [registrationYears, setRegistrationYears] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("USDC");
@@ -84,9 +82,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   // ---------- helpers ----------
 
   const getWalletAddress = (): string | null => {
-    // Use Privy's authenticated wallet address
-    if (authenticated && privyUser?.wallet?.address) {
-      return privyUser.wallet.address;
+    // In World App, check for cached wallet address
+    if (typeof window !== 'undefined' && isInWorldApp()) {
+      const cached = localStorage.getItem('world_wallet_address');
+      return cached || "pending"; // Return pending if not cached yet
     }
     return null;
   };
@@ -281,18 +280,27 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      // Check authentication first
-      if (!authenticated || !privyUser?.wallet?.address) {
-        setPaymentFlowStep("idle");
-        localStorage.removeItem('paymentFlowState');
-        toast.error("Please connect your wallet first. [ERR_NOT_AUTHENTICATED]", { duration: 8000 });
-        // Trigger wallet connection
-        window.dispatchEvent(new Event('trigger-wallet-connect'));
-        return;
+      // Get wallet address from MiniKit
+      let walletAddress = getWalletAddress();
+      
+      // If not cached, authenticate to get wallet address
+      if (!walletAddress || walletAddress === "pending") {
+        setPaymentFlowStep("connecting_wallet");
+        console.log("[PaymentFlow] Requesting wallet authentication");
+        
+        try {
+          walletAddress = await getWorldWalletAddress();
+          console.log("[PaymentFlow] Wallet authenticated:", walletAddress);
+        } catch (authError: any) {
+          setPaymentFlowStep("idle");
+          localStorage.removeItem('paymentFlowState');
+          console.error("[PaymentFlow] Wallet authentication failed:", authError);
+          toast.error("Failed to connect wallet. Please try again. [ERR_WALLET_AUTH_FAILED]", { duration: 8000 });
+          return;
+        }
       }
 
-      const walletAddress = privyUser.wallet.address;
-      console.log("[PaymentFlow] Using authenticated wallet:", walletAddress);
+      console.log("[PaymentFlow] Using wallet:", walletAddress);
 
       // Ensure MiniKit is ready
       console.log("[PaymentFlow] Step: checking_minikit");

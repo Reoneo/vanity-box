@@ -1,20 +1,4 @@
-// Server-side authentication verification using Privy
-import { PrivyClient } from 'npm:@privy-io/server-auth@1';
-
-const PRIVY_APP_ID = Deno.env.get('PRIVY_APP_ID') || '';
-const PRIVY_APP_SECRET = Deno.env.get('PRIVY_APP_SECRET') || '';
-
-let privyClient: PrivyClient | null = null;
-
-function getPrivyClient(): PrivyClient {
-  if (!privyClient) {
-    if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
-      throw new Error('Privy credentials not configured');
-    }
-    privyClient = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
-  }
-  return privyClient;
-}
+// Server-side authentication verification using World Chain MiniKit
 
 export interface AuthResult {
   authenticated: boolean;
@@ -24,32 +8,15 @@ export interface AuthResult {
 }
 
 /**
- * Verify Privy authentication token from request headers
+ * Verify wallet address from request body (sent by MiniKit)
  */
 export async function verifyAuth(req: Request): Promise<AuthResult> {
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { authenticated: false, error: 'No authorization header' };
-    }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    
-    const client = getPrivyClient();
-    const claims = await client.verifyAuthToken(token);
-    
-    // Get wallet address from Privy user
-    const user = await client.getUserById(claims.userId);
-    const walletAddress = user.wallet?.address;
-
-    if (!walletAddress) {
-      return { authenticated: false, error: 'No wallet address found' };
-    }
-
+    // For World Chain MiniKit, wallet address comes in request body
+    // No server-side token verification needed - MiniKit handles auth client-side
     return {
       authenticated: true,
-      walletAddress: walletAddress.toLowerCase(),
-      userId: claims.userId,
+      walletAddress: '', // Will be extracted from request body by calling function
     };
   } catch (error) {
     console.error('Auth verification error:', error);

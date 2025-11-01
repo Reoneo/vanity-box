@@ -1,7 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateInput, transactionIdSchema, uuidSchema } from "../_shared/validation.ts";
 import { toSafeError, ErrorCodes, errorResponse } from "../_shared/errors.ts";
-import { verifyAuth, verifyWalletOwnership } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,19 +13,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify authentication
-    const authResult = await verifyAuth(req);
-    if (!authResult.authenticated) {
-      console.error('[verify-payment] Unauthorized:', authResult.error);
-      return errorResponse(
-        toSafeError(new Error('Unauthorized'), ErrorCodes.UNAUTHORIZED), 
-        401
-      );
+    const { transactionId, reference, walletAddress } = await req.json();
+
+    console.log('[verify-payment] Request received from wallet:', walletAddress);
+
+    if (!walletAddress) {
+      return errorResponse(toSafeError(new Error('Wallet address required'), ErrorCodes.INVALID_INPUT), 400);
     }
-
-    const { transactionId, reference } = await req.json();
-
-    console.log('[verify-payment] Request received from authenticated user:', authResult.walletAddress);
 
     // Validate inputs
     const txIdValidation = validateInput(transactionIdSchema, transactionId);
@@ -58,9 +51,9 @@ Deno.serve(async (req) => {
     }
 
     // Verify wallet ownership
-    if (!verifyWalletOwnership(authResult, paymentRef.wallet_address)) {
+    if (walletAddress.toLowerCase() !== paymentRef.wallet_address.toLowerCase()) {
       console.error('[verify-payment] Wallet mismatch:', {
-        authenticated: authResult.walletAddress,
+        provided: walletAddress,
         payment: paymentRef.wallet_address
       });
       return errorResponse(
