@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
 import ensLogoWhite from "@/assets/ens-logo-white.png";
+import defaultHeaderPattern from "@/assets/default-header-pattern.png";
 import smithCashAvatar from "@/assets/smith-cash-avatar.png";
 import smithBoxAvatar from "@/assets/smith-box-avatar.jpeg";
 import vapeBoxAvatar from "@/assets/vape-box-avatar.webp";
@@ -216,7 +217,7 @@ export const SearchInterface = () => {
     };
   }, []);
 
-  const protocols = ["Aptos Names", "Avvy Domains", "DNS", "ENS", "SNS.iD"];
+  const protocols = ["DNS", "ENS"];
   const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming"];
 
   // Auto-search when username is in URL
@@ -377,14 +378,6 @@ export const SearchInterface = () => {
         club: ["Surname", "DeFi"],
       },
       {
-        name: "smith.apt",
-        description: t("desc_smith_apt"),
-        imageUrl: smithAptAvatar,
-        price: 5,
-        category: "Aptos Names",
-        club: "Surname",
-      },
-      {
         name: "Termux.eth",
         description: t("desc_termux"),
         imageUrl: termuxAvatar,
@@ -418,28 +411,9 @@ export const SearchInterface = () => {
         selectable: true,
         enabled: true,
       },
-      {
-        name: "PrettyUgly.sol",
-        description: t("desc_prettyugly"),
-        imageUrl: prettyuglyAvatar,
-        price: 5,
-        category: "SNS.iD",
-        club: "Misc",
-        selectable: false,
-        enabled: false,
-      },
-      {
-        name: "SanAndreas.sol",
-        description: t("desc_sanandreas"),
-        imageUrl: sanAndreasAvatar,
-        price: 5,
-        category: "SNS.iD",
-        club: "Gaming",
-        selectable: false,
-        enabled: false,
-      },
     ];
-    return allResults;
+    // Filter out domains marked as not selectable or not enabled
+    return allResults.filter(result => result.selectable !== false && result.enabled !== false);
   };
 
   const handleSearch = async (queryOverride?: string) => {
@@ -962,8 +936,10 @@ export const SearchInterface = () => {
                 <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                   {/* Header/Banner */}
                   <div className="relative h-32 sm:h-48 bg-gradient-to-r from-[#D4AF37]/20 via-[#F7E06C]/10 to-[#D4AF37]/20">
-                    {web3BioProfile.header && (
+                    {web3BioProfile.header ? (
                       <img src={web3BioProfile.header} alt="Profile header" className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={defaultHeaderPattern} alt="Default header" className="w-full h-full object-cover opacity-60" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/60"></div>
 
@@ -1209,44 +1185,66 @@ export const SearchInterface = () => {
                         </div>
                       )}
 
-                      {/* Social Links and ENS Records */}
+                      {/* Social Links and All Available Web3.bio Links */}
                       <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                        {/* Twitter/X */}
-                        {(web3BioProfile.links?.twitter || ensRecords?.records?.["com.twitter"]) && (
+                        {/* Display all links from web3BioProfile */}
+                        {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
+                          if (!linkData || platform === 'website') return null; // Skip website as it's shown above
+                          
+                          const platformIcons: { [key: string]: any } = {
+                            twitter: <span>𝕏</span>,
+                            github: <Github className="w-4 h-4" />,
+                            discord: <SiDiscord className="w-4 h-4" />,
+                            telegram: <Send className="w-4 h-4" />,
+                            farcaster: <span>🟣</span>,
+                            lens: <span>🌿</span>,
+                            instagram: <span>📷</span>,
+                            youtube: <span>▶️</span>,
+                            reddit: <span>🤖</span>,
+                            medium: <span>Ⓜ️</span>,
+                            linkedin: <span>💼</span>,
+                          };
+                          
+                          return (
+                            <a
+                              key={platform}
+                              href={linkData.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              {platformIcons[platform.toLowerCase()] || <ExternalLink className="w-4 h-4" />}
+                              <span>@{linkData.handle || linkData.link}</span>
+                            </a>
+                          );
+                        })}
+                        
+                        {/* ENS Records that might not be in web3bio */}
+                        {ensRecords?.records?.["com.twitter"] && !web3BioProfile.links?.twitter && (
                           <a
-                            href={
-                              web3BioProfile.links?.twitter?.link ||
-                              `https://twitter.com/${ensRecords?.records?.["com.twitter"]}`
-                            }
+                            href={`https://twitter.com/${ensRecords.records["com.twitter"]}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
                             <span>𝕏</span>
-                            <span>
-                              @{web3BioProfile.links?.twitter?.handle || ensRecords?.records?.["com.twitter"]}
-                            </span>
+                            <span>@{ensRecords.records["com.twitter"]}</span>
                           </a>
                         )}
-
-                        {/* GitHub */}
-                        {(web3BioProfile.links?.github || ensRecords?.records?.["com.github"]) && (
+                        
+                        {ensRecords?.records?.["com.github"] && !web3BioProfile.links?.github && (
                           <a
-                            href={
-                              web3BioProfile.links?.github?.link ||
-                              `https://github.com/${ensRecords?.records?.["com.github"]}`
-                            }
+                            href={`https://github.com/${ensRecords.records["com.github"]}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
                             <Github className="w-4 h-4" />
-                            <span>@{web3BioProfile.links?.github?.handle || ensRecords?.records?.["com.github"]}</span>
+                            <span>@{ensRecords.records["com.github"]}</span>
                           </a>
                         )}
 
-                        {/* Discord */}
-                        {ensRecords?.records?.["com.discord"] && (
+                        {ensRecords?.records?.["com.discord"] && !web3BioProfile.links?.discord && (
                           <a
                             href={`https://discord.com/users/${ensRecords.records["com.discord"]}`}
                             target="_blank"
@@ -1258,8 +1256,7 @@ export const SearchInterface = () => {
                           </a>
                         )}
 
-                        {/* Telegram */}
-                        {ensRecords?.records?.["org.telegram"] && (
+                        {ensRecords?.records?.["org.telegram"] && !web3BioProfile.links?.telegram && (
                           <a
                             href={`https://t.me/${ensRecords.records["org.telegram"]}`}
                             target="_blank"
@@ -1607,10 +1604,10 @@ export const SearchInterface = () => {
                                 href={`https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="absolute top-3 right-3 opacity-90 hover:opacity-100"
+                                className="absolute top-3 right-3 opacity-60 hover:opacity-100 transition-opacity"
                                 aria-label="Open parent domain on Vanity.box"
                               >
-                                <img src={vanityContactIcon} alt="Vanity.box" className="w-6 h-6" />
+                                <ExternalLink className="w-6 h-6 text-[#D4AF37]" />
                               </a>
                               <div className="relative mb-6">
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
@@ -1700,10 +1697,10 @@ export const SearchInterface = () => {
                                 href={`https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="absolute top-3 right-3 opacity-90 hover:opacity-100"
+                                className="absolute top-3 right-3 opacity-60 hover:opacity-100 transition-opacity"
                                 aria-label="Open parent domain on Vanity.box"
                               >
-                                <img src={vanityContactIcon} alt="Vanity.box" className="w-6 h-6" />
+                                <ExternalLink className="w-6 h-6 text-[#D4AF37]" />
                               </a>
                               <div className="flex justify-end mb-4 flex-shrink-0">
                                 <button
