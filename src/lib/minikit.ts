@@ -278,11 +278,13 @@ export async function safePay(payload: PayCommandInput, timeoutMs = 20000): Prom
 export async function sendHaptic(style: "light" | "medium" | "heavy" | "success" | "warning" | "error" = "light") {
   try {
     if (isReady && MiniKit.isInstalled()) {
-      // Haptic feedback API may not be available in all MiniKit versions
-      // Silently fail if not supported
-      const feedback = (MiniKit.commandsAsync as any).sendHapticFeedback;
+      // Use the correct payload format for haptic feedback
+      const feedback = (MiniKit.commands as any).sendHapticFeedback;
       if (typeof feedback === 'function') {
-        await feedback(style);
+        feedback({
+          hapticsType: 'impact',
+          style: style === 'success' || style === 'warning' || style === 'error' ? 'medium' : style,
+        });
       }
     }
   } catch (e) {
