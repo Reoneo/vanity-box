@@ -634,6 +634,8 @@ export const SearchInterface = () => {
 
     // Check which subdomains are already taken on Namestone (only if there's a query)
     let allResults = getAllResults();
+    const checkFailedDomains = new Set<string>();
+    
     if (trimmedQuery) {
       const checkPromises = allResults.map(async (result) => {
         // Only check Namestone domains (smith.cash, smith.box, vape.box, altcoin.chain, $mith.eth)
@@ -646,24 +648,48 @@ export const SearchInterface = () => {
         ) {
           const domain = result.name.toLowerCase();
           try {
-            const { data } = await supabase.functions.invoke("check-namestone-subdomain", {
+            const { data, error } = await supabase.functions.invoke("check-namestone-subdomain", {
               body: { subdomain: trimmedQuery, domain },
             });
+            
+            // If check failed (error or no success), mark as check_failed
+            if (error || !data?.success) {
+              console.error(`Check failed for ${domain}:`, error || data);
+              return { domain, status: 'check_failed' };
+            }
+            
             if (data?.exists) {
-              return domain;
+              return { domain, status: 'taken' };
             }
           } catch (error) {
             console.error(`Error checking ${domain}:`, error);
+            return { domain, status: 'check_failed' };
           }
         }
         return null;
       });
 
-      const takenResults = await Promise.all(checkPromises);
-      const taken = new Set(takenResults.filter(Boolean) as string[]);
+      const checkResults = await Promise.all(checkPromises);
+      const taken = new Set<string>();
+      
+      checkResults.forEach((result) => {
+        if (result) {
+          if (result.status === 'taken') {
+            taken.add(result.domain);
+          } else if (result.status === 'check_failed') {
+            checkFailedDomains.add(result.domain);
+          }
+        }
+      });
+      
       setTakenSubdomains(taken);
+      
+      // Store check_failed domains in a state or pass to render
+      // For now, we'll use a window variable to communicate with render
+      (window as any).__checkFailedDomains = checkFailedDomains;
     } else {
       setTakenSubdomains(new Set());
+      (window as any).__checkFailedDomains = new Set();
     }
 
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -1561,11 +1587,12 @@ export const SearchInterface = () => {
                   {ensResults.map((result, index) => {
                     const isFlipped = flippedCards.has(index);
                     const isTaken = takenSubdomains.has(result.name.toLowerCase());
+                    const checkFailed = ((window as any).__checkFailedDomains as Set<string> | undefined)?.has(result.name.toLowerCase()) ?? false;
                     const isUserOwned =
                       displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase());
                     const isEnabled =
                       (result as any).enabled || result.name === "Smith.cash" || result.name === "$mith.eth";
-                    const isDisabled = !isEnabled || isTaken || isUserOwned;
+                    const isDisabled = !isEnabled || isTaken || isUserOwned || checkFailed;
 
                     const hasSpotify = !!(result as any).spotifyUrl;
 
@@ -1653,11 +1680,13 @@ export const SearchInterface = () => {
                                 {(result as any).selectable ||
                                 result.name === "Smith.cash" ||
                                 result.name === "$mith.eth"
-                                  ? isTaken
-                                    ? "Taken"
-                                    : isUserOwned
+                                  ? checkFailed
+                                    ? "Check Failed"
+                                    : isTaken
                                       ? "Taken"
-                                      : t("mint_now")
+                                      : isUserOwned
+                                        ? "Taken"
+                                        : t("mint_now")
                                   : "Coming Soon"}
                               </Button>
                             </div>

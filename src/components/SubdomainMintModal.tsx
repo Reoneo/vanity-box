@@ -8,13 +8,11 @@ import { useTheme } from "next-themes";
 import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { MiniKit, Tokens } from "@worldcoin/minikit-js";
+import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
 import { ensureReady, ensurePayPermission, safePay, sendHaptic } from "@/lib/minikit";
 
 import usdcLogo from "@/assets/usdc-logo.png";
-import ethLogoLight from "@/assets/eth-logo-light.png";
-import ethLogoDark from "@/assets/eth-logo-dark.svg";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
 import wldLogoDark from "@/assets/wld-logo-dark.svg";
 import wldLogoLight from "@/assets/wld-logo-light.png";
@@ -28,7 +26,7 @@ interface SubdomainMintModalProps {
   domain?: string; // e.g., "30315.eth", "teamxrp.eth", "termux.eth", "smith.cash"
 }
 
-type PaymentMethod = "USDC" | "ETH" | "WLD";
+type PaymentMethod = "USDC" | "WLD";
 
 export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   isOpen,
@@ -162,12 +160,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       rate: 1, // $ → USDC (1:1)
     },
     {
-      id: "ETH" as PaymentMethod,
-      name: "ETH",
-      icon: theme === "dark" ? ethLogoDark : ethLogoLight,
-      rate: 1 / cryptoPrices.eth, // $ → ETH
-    },
-    {
       id: "WLD" as PaymentMethod,
       name: "WLD",
       icon: theme === "dark" ? wldLogoDark : wldLogoLight,
@@ -237,7 +229,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       }
 
       // Ensure MiniKit is ready
-      await ensureReady();
+      try {
+        await ensureReady();
+      } catch (readyError: any) {
+        console.error("[Mint] MiniKit not ready:", readyError);
+        toast.error("Open this app in World App to complete payment.");
+        return;
+      }
 
       // 1) Ensure wallet connected (with timeout)
       let walletAddress: string;
@@ -288,25 +286,19 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
           const paymentToast = toast.info("Opening World App payment...");
 
-          // Step 3: Build payment payload
+          // Step 3: Build payment payload using tokenToDecimals
           let tokenSymbol: any;
           let tokenAmount: string;
           
           if (paymentMethod === "USDC") {
             tokenSymbol = Tokens.USDC;
-            const usdcDecimals = 6;
-            const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, usdcDecimals));
-            tokenAmount = amountInSmallestUnit.toString();
+            tokenAmount = tokenToDecimals(convertedPrice, Tokens.USDC).toString();
           } else if (paymentMethod === "WLD") {
             tokenSymbol = Tokens.WLD;
-            const wldDecimals = 18;
-            const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, wldDecimals));
-            tokenAmount = amountInSmallestUnit.toString();
+            tokenAmount = tokenToDecimals(convertedPrice, Tokens.WLD).toString();
           } else {
-            tokenSymbol = (Tokens as any).ETH ?? "ETH";
-            const ethDecimals = 18;
-            const amountInSmallestUnit = Math.floor(convertedPrice * Math.pow(10, ethDecimals));
-            tokenAmount = amountInSmallestUnit.toString();
+            // This shouldn't happen since ETH is removed
+            throw new Error("Unsupported payment method");
           }
 
           const paymentPayload: any = {
@@ -527,7 +519,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             <div className="text-4xl font-bold text-[#D4AF37]">
               <>
                 {paymentMethod === "USDC" && `${convertedPrice.toFixed(2)} USDC`}
-                {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
                 {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
               </>
             </div>
