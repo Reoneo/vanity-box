@@ -27,13 +27,12 @@ serve(async (req) => {
 
     console.log('Fetching POAPs for wallet:', walletAddress);
 
-    const poapClientId = Deno.env.get('POAP_CLIENT_ID');
-    const poapClientSecret = Deno.env.get('POAP_CLIENT_SECRET');
+    const poapApiKey = Deno.env.get('POAP_CLIENT_ID');
 
-    if (!poapClientId || !poapClientSecret) {
-      console.error('POAP credentials not configured');
+    if (!poapApiKey) {
+      console.error('POAP API key not configured');
       return new Response(
-        JSON.stringify({ error: 'POAP API credentials not configured' }),
+        JSON.stringify({ error: 'POAP API key not configured' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -41,41 +40,13 @@ serve(async (req) => {
       );
     }
 
-    // First, get access token
-    const tokenResponse = await fetch('https://poapauth.auth0.com/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        audience: 'https://api.poap.tech',
-        grant_type: 'client_credentials',
-        client_id: poapClientId,
-        client_secret: poapClientSecret,
-      }),
-    });
-
-    if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      console.error('Failed to get POAP access token:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to authenticate with POAP API' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const { access_token } = await tokenResponse.json();
-
-    // Fetch POAPs for the wallet
+    // Fetch POAPs for the wallet using X-API-Key header
     const poapsResponse = await fetch(
       `https://api.poap.tech/actions/scan/${walletAddress}`,
       {
         headers: {
-          'Authorization': `Bearer ${access_token}`,
-          'X-API-Key': poapClientId,
+          'X-API-Key': poapApiKey,
+          'Accept': 'application/json',
         },
       }
     );

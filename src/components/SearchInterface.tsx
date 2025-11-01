@@ -1272,6 +1272,19 @@ export const SearchInterface = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* POAP Collection */}
+                    {web3BioProfile.address && poapCount > 0 && (
+                      <div className="border-t border-[#D4AF37]/30 pt-4 mt-4">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <img src={poapLogo} alt="POAP" className="w-5 h-5" />
+                          <h4 className="text-sm font-semibold text-white">
+                            POAPs ({poapCount})
+                          </h4>
+                        </div>
+                        <PoapCarousel walletAddress={web3BioProfile.address} />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
