@@ -47,9 +47,88 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
 
   // Load existing records when modal opens
   useEffect(() => {
-    // You can fetch existing records from Namestone here if needed
-    // For now, they start empty
-  }, [domain]);
+    const loadRecords = async () => {
+      if (!isOpen) return;
+      
+      try {
+        setIsLoading(true);
+        // Clear previous records to prevent cross-domain contamination
+        setEnsRecords({
+          email: '',
+          url: '',
+          avatar: '',
+          description: '',
+          'com.github': '',
+          'com.twitter': '',
+          'com.discord': '',
+        });
+        setCustomRecords([]);
+        
+        const subdomain = `${domain.name}.${domain.domain}`;
+        console.log('[DomainManagementModal] Fetching records for:', subdomain);
+        
+        const { data, error } = await supabase.functions.invoke('get-namestone-records', {
+          body: { subdomain, domain: domain.domain },
+        });
+
+        if (error) {
+          console.error('Error fetching records:', error);
+          return;
+        }
+
+        if (data?.success && data.textRecords) {
+          const fetchedRecords = data.textRecords;
+          console.log('[DomainManagementModal] Fetched records:', fetchedRecords);
+          
+          // Standard ENS record keys
+          const standardENSKeys = ['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'];
+          
+          // SECURITY: Metadata fields that should NEVER be displayed or editable
+          const metadataBlacklist = [
+            'registration_months',
+            'expiry_date', 
+            'grace_period_end',
+            'registration_date',
+            'created_at',
+            'updated_at',
+            'minted_at',
+            'is_expired',
+            'payment_amount',
+            'network_fee',
+            'tx_hash',
+            'payment_method'
+          ];
+          
+          // Separate ENS standard records from custom records
+          const ensRecordsData = { ...ensRecords };
+          const customRecordsData: { key: string; value: string }[] = [];
+          
+          Object.entries(fetchedRecords).forEach(([key, value]) => {
+            // Filter out metadata fields completely
+            if (metadataBlacklist.includes(key)) {
+              console.log(`[DomainManagementModal] Filtering out metadata field: ${key}`);
+              return;
+            }
+            
+            if (standardENSKeys.includes(key)) {
+              ensRecordsData[key] = value as string;
+            } else {
+              customRecordsData.push({ key, value: value as string });
+            }
+          });
+          
+          setEnsRecords(ensRecordsData);
+          setCustomRecords(customRecordsData);
+        }
+      } catch (error) {
+        console.error('Error loading records:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRecords();
+  }, [domain.name, domain.domain, isOpen]);
 
   const handleAddCustomRecord = () => {
     if (newRecordKey && newRecordValue) {
@@ -148,22 +227,42 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
       
       const subdomain = `${domain.name}.${domain.domain}`;
       
+      // SECURITY: Metadata fields that should NEVER be saved by users
+      const metadataBlacklist = [
+        'registration_months',
+        'expiry_date', 
+        'grace_period_end',
+        'registration_date',
+        'created_at',
+        'updated_at',
+        'minted_at',
+        'is_expired',
+        'payment_amount',
+        'network_fee',
+        'tx_hash',
+        'payment_method'
+      ];
+      
       // Combine ENS records and custom records
       const textRecords: Record<string, string> = {};
       
       // Add ENS standard records (only non-empty ones)
       Object.entries(ensRecords).forEach(([key, value]) => {
-        if (value.trim()) {
+        if (value.trim() && !metadataBlacklist.includes(key)) {
           textRecords[key] = value;
         }
       });
       
-      // Add custom records
+      // Add custom records (filter out metadata fields)
       customRecords.forEach(record => {
-        if (record.key.trim() && record.value.trim()) {
+        if (record.key.trim() && record.value.trim() && !metadataBlacklist.includes(record.key)) {
           textRecords[record.key] = record.value;
+        } else if (metadataBlacklist.includes(record.key)) {
+          console.warn(`[DomainManagementModal] Blocked attempt to save metadata field: ${record.key}`);
         }
       });
+
+      console.log(`[DomainManagementModal] Saving records for ${subdomain}:`, textRecords);
 
       const { data, error } = await supabase.functions.invoke('set-namestone-records', {
         body: {

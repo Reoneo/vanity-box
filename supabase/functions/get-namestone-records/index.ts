@@ -72,14 +72,41 @@ serve(async (req) => {
 
     // Extract text records from the response
     const records = Array.isArray(data) && data.length > 0 ? data[0] : data;
-    const textRecords = records.text_records || {};
+    const rawTextRecords = records.text_records || {};
+
+    // SECURITY: Filter out metadata fields that should never be displayed/editable
+    // These are managed by the backend/contract only
+    const metadataBlacklist = [
+      'registration_months',
+      'expiry_date',
+      'grace_period_end',
+      'registration_date',
+      'created_at',
+      'updated_at',
+      'minted_at',
+      'is_expired',
+      'payment_amount',
+      'network_fee',
+      'tx_hash',
+      'payment_method'
+    ];
+
+    const textRecords: Record<string, string> = {};
+    Object.entries(rawTextRecords).forEach(([key, value]) => {
+      if (!metadataBlacklist.includes(key)) {
+        textRecords[key] = value as string;
+      } else {
+        console.log(`🔒 Filtering out metadata field: ${key}`);
+      }
+    });
+
+    console.log('📋 Filtered text records:', textRecords);
 
     return new Response(
       JSON.stringify({
         success: true,
         subdomain,
         textRecords,
-        data,
         message: 'Records fetched successfully'
       }),
       {
