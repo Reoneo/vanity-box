@@ -1025,12 +1025,11 @@ export const SearchInterface = () => {
 
             {/* Web3.bio Profile Result - Social Media Style - Only show when search is active */}
             {web3BioProfile && hasSearched && (
-              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
+              <div className="w-full sm:max-w-3xl sm:mx-auto mt-6">
                 {/* Back Button */}
                 <Button
                   onClick={() => {
                     setWeb3BioProfile(null);
-                    setHasSearched(false);
                   }}
                   variant="ghost"
                   size="sm"
