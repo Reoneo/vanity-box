@@ -58,47 +58,43 @@ serve(async (req) => {
 
     console.log('Active domains:', activeDomains);
 
-    // Fetch ALL domains from Namestone API for the wallet address
-    console.log('Calling Namestone get-names API for all domains');
-    
-    // Use default API key for GET request (address-based query across all domains)
-    const defaultApiKey = Deno.env.get('NAMESTONE_API_KEY');
-    
-    if (!defaultApiKey) {
-      throw new Error('NAMESTONE_API_KEY is not configured');
+    // PRIMARY SOURCE: Fetch from minted_domains table (immediate, reliable)
+    const { data: mintedDomains, error: mintedError } = await supabase
+      .from("minted_domains")
+      .select("*")
+      .eq("wallet_address", walletAddress.toLowerCase())
+      .eq("is_expired", false)
+      .order("created_at", { ascending: false });
+
+    if (mintedError) {
+      console.error('Error fetching minted domains:', mintedError);
+      throw new Error(`Database error: ${mintedError.message}`);
     }
 
-    const namestoneResponse = await fetch(
-      `https://namestone.com/api/public_v1/get-names?address=${walletAddress}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': defaultApiKey,
-        },
-      }
-    );
+    console.log(`Found ${mintedDomains?.length || 0} minted domains in database`);
 
-    if (!namestoneResponse.ok) {
-      const errorText = await namestoneResponse.text();
-      console.error('Namestone API error:', errorText);
-      throw new Error(`Namestone API error: ${namestoneResponse.status} - ${errorText}`);
-    }
-
-    const namestoneData = await namestoneResponse.json();
-    console.log('Namestone response:', namestoneData);
-
-    // Handle both response formats: direct array or {names: [...]}
-    const namesArray = Array.isArray(namestoneData) ? namestoneData : (namestoneData.names || []);
-    console.log('Names array:', namesArray);
-    
     // Filter for active domains only
     const activeDomainNames = new Set(activeDomains?.map(d => d.domain_name) || []);
-    const userDomains = namesArray.filter((name: any) => 
-      activeDomainNames.has(name.domain)
+    const activeMintedDomains = (mintedDomains || []).filter(domain => 
+      activeDomainNames.has(domain.domain)
     );
 
-    console.log('Found user domains across active domains:', userDomains.length);
-    console.log('User domains:', userDomains);
+    console.log(`${activeMintedDomains.length} domains match active domain configs`);
+
+    // Transform minted_domains data to match expected format
+    const userDomains = activeMintedDomains.map(domain => ({
+      name: domain.subdomain,
+      domain: domain.domain,
+      address: domain.wallet_address,
+      created_at: domain.registration_date,
+      registration_months: domain.registration_months,
+      expiry_date: domain.expiry_date,
+      grace_period_end: domain.grace_period_end,
+      text_records: {},
+      coin_types: {},
+    }));
+
+    console.log('User domains from database:', userDomains.length);
 
     // Check wrapped status for each domain
     const domainsWithWrappedStatus = await Promise.all(
