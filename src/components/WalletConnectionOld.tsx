@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { usePrivy, useLoginWithSiwe } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -9,10 +8,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Wallet, LogOut, User, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+
+interface User {
+  walletAddress?: string;
+  username?: string;
+}
 
 interface WalletConnectionProps {
   className?: string;
@@ -20,22 +24,22 @@ interface WalletConnectionProps {
 
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
   const { t } = useLanguage();
-  const { ready, authenticated, user: privyUser, logout } = usePrivy();
-  const { generateSiweNonce, loginWithSiwe } = useLoginWithSiwe();
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [username, setUsername] = useState<string | undefined>();
 
   useEffect(() => {
-    // Fetch World ID username when user is authenticated
-    if (authenticated && privyUser?.wallet?.address) {
-      getWorldChainENS(privyUser.wallet.address).then(setUsername);
+    // Check if we're running in World App
+    const isInWorldApp = MiniKit.isInstalled();
+    
+    if (isInWorldApp) {
+      console.log('✅ Running in World App - MiniKit is available');
+    } else {
+      console.log('❌ Not running in World App - MiniKit is not available');
     }
-  }, [authenticated, privyUser]);
 
-  useEffect(() => {
     // Listen for wallet connection trigger from search
     const handleTriggerConnect = () => {
-      if (!authenticated) {
+      if (!user) {
         handleConnect();
       }
     };
@@ -44,19 +48,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return () => {
       window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
     };
-  }, [authenticated]);
+  }, [user]);
 
-  // Dispatch wallet events when auth state changes
-  useEffect(() => {
-    if (authenticated && privyUser?.wallet?.address) {
-      window.dispatchEvent(new CustomEvent('wallet-connected', { 
-        detail: { 
-          walletAddress: privyUser.wallet.address,
-          username 
-        } 
-      }));
-    }
-  }, [authenticated, privyUser, username]);
+  // Remove auto-connect - users must manually connect
 
   const handleConnect = async () => {
     // Check if running in World App
@@ -66,60 +60,70 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return;
     }
 
-    if (!ready) {
-      toast.error('Privy is not ready yet. Please wait a moment.');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      console.log('🔄 Starting SIWE authentication with Privy + World App...');
+      console.log('🔄 Initiating wallet authentication with World App native UI...');
+      console.log('📱 Platform info:', { 
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        isInstalled: MiniKit.isInstalled()
+      });
       
-      // Step 1: Get nonce from Privy
-      const privyNonce = await generateSiweNonce();
-      console.log('✅ Generated Privy nonce');
-
-      // Step 2: Pass nonce to Worldcoin walletAuth
+      // Enhanced authentication with better iOS support
+      const nonce = generateNonce();
+      console.log('🎲 Generated nonce:', nonce);
+      
       const authParams = {
-        nonce: privyNonce,
+        nonce,
         requestId: 'vanity-box-auth-' + Date.now(),
         expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         notBefore: new Date(Date.now() - 60 * 1000), // 1 minute ago
         statement: 'Sign in to Vanity.box to access your World ID domains and personalized features.'
       };
-
-      console.log('📱 Requesting wallet signature from World App...');
+      
+      console.log('📝 Auth parameters:', authParams);
+      
+      // Use the official World App wallet auth that shows the native modal
       const result = await MiniKit.commandsAsync.walletAuth(authParams);
-      const { finalPayload } = result;
+      const { commandPayload, finalPayload } = result;
 
-      console.log('📦 Received wallet auth response');
+      console.log('📦 Wallet auth response:', { commandPayload, finalPayload, fullResult: result });
 
-      if (finalPayload?.status !== 'success' || !finalPayload.message || !finalPayload.signature) {
-        throw new Error('Wallet authentication failed - no signature received');
+      if (finalPayload?.status === 'success' && finalPayload.address) {
+        console.log('✅ Authentication successful, fetching ENS...');
+        const ensName = await getWorldChainENS(finalPayload.address);
+        const userData = {
+          walletAddress: finalPayload.address,
+          username: ensName
+        };
+        setUser(userData);
+        sessionStorage.removeItem('skipAutoAuth');
+        
+        // Dispatch event for Index component
+        window.dispatchEvent(new CustomEvent('wallet-connected', { detail: userData }));
+        
+        console.log('✅ User authenticated successfully:', userData);
+      } else {
+        console.error('❌ Authentication failed:', { commandPayload, finalPayload });
+        if (finalPayload?.status === 'error') {
+          throw new Error(`Authentication failed: ${JSON.stringify(finalPayload)}`);
+        } else {
+          throw new Error('Authentication failed - no success status received');
+        }
       }
-
-      // Step 3: Send signed message and signature to Privy
-      console.log('🔐 Verifying signature with Privy...');
-      await loginWithSiwe({ 
-        message: finalPayload.message, 
-        signature: finalPayload.signature 
-      });
-
-      console.log('✅ Successfully authenticated with Privy SIWE!');
-      toast.success('Wallet connected successfully!');
-
     } catch (error) {
-      console.error('❌ Error during SIWE authentication:', error);
+      console.error('❌ Error during wallet authentication:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Failed to connect wallet: ${errorMessage}`);
+      alert(`Failed to connect wallet: ${errorMessage}\n\nPlease ensure you're using the latest version of World App and try again.`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDisconnect = () => {
-    logout();
-    setUsername(undefined);
+    setUser(null);
+    // Prevent immediate auto-reconnect after manual disconnect (this session only)
     sessionStorage.setItem('skipAutoAuth', '1');
     
     // Remove backdrop when disconnecting
@@ -129,7 +133,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     
     // Dispatch event for Index component
     window.dispatchEvent(new CustomEvent('wallet-disconnected'));
-    toast.success('Wallet disconnected');
+  };
+
+  const generateNonce = (): string => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
   const getWorldChainENS = async (address: string): Promise<string | undefined> => {
@@ -149,29 +156,44 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return cached;
     }
 
-    // Try MiniKit
+    // Primary: ask World App via MiniKit
     try {
+      // 1) Explicit fetch using MiniKit.getUserByAddress if available
       const mkAny = MiniKit as any;
       if (mkAny?.getUserByAddress) {
+        console.log('🌍 Using MiniKit.getUserByAddress...');
         const worldIdUser = await mkAny.getUserByAddress(address);
         const mkDomain = normalize(worldIdUser?.username || worldIdUser?.handle || worldIdUser?.name);
         if (mkDomain) {
           sessionStorage.setItem(cacheKey, mkDomain);
+          console.log('✅ Found username from MiniKit.getUserByAddress:', mkDomain);
           return mkDomain;
         }
+      }
+      // 2) Try MiniKit.user if populated after auth
+      const inlineUsername = (MiniKit as any)?.user?.username;
+      const inlineDomain = normalize(inlineUsername);
+      if (inlineDomain) {
+        sessionStorage.setItem(cacheKey, inlineDomain);
+        console.log('✅ Found username from MiniKit.user:', inlineDomain);
+        return inlineDomain;
       }
     } catch (e) {
       console.error('❌ MiniKit username lookup failed:', e);
     }
 
-    // Try World Bridge API
+    // Secondary: World Bridge API for World ID username
     try {
+      console.log('🌐 Fetching from World Bridge API...');
       const worldBridgeResp = await fetch(`https://usernames.worldcoin.org/v1/addresses/${address.toLowerCase()}`);
+      // usernames service: also try legacy bridge endpoint as fallback
       if (worldBridgeResp.ok) {
         const data = await worldBridgeResp.json();
+        // Common shapes: { username: 'reon.0000' } or { handle: 'reon.0000' }
         const bridgeDomain = normalize(data?.username || data?.handle || data?.name);
         if (bridgeDomain) {
           sessionStorage.setItem(cacheKey, bridgeDomain);
+          console.log('✅ Found username from usernames service:', bridgeDomain);
           return bridgeDomain;
         }
       }
@@ -179,6 +201,38 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       console.error('❌ World usernames service lookup failed:', e);
     }
 
+    // Tertiary: Legacy Bridge endpoint
+    try {
+      console.log('🔄 Trying legacy World Bridge endpoint...');
+      const legacyResp = await fetch(`https://bridge.worldcoin.org/v1/id/${address.toLowerCase()}`);
+      if (legacyResp.ok) {
+        const legacyData = await legacyResp.json();
+        const legacyDomain = normalize(legacyData?.username || legacyData?.handle);
+        if (legacyDomain) {
+          sessionStorage.setItem(cacheKey, legacyDomain);
+          console.log('✅ Found legacy World Bridge username:', legacyDomain);
+          return legacyDomain;
+        }
+      }
+    } catch (e) {
+      console.error('❌ Legacy World Bridge lookup failed:', e);
+    }
+
+    // Retry MiniKit inline user after small delay (in case auth just populated it)
+    try {
+      console.log('⏳ Retrying MiniKit.user after delay...');
+      await new Promise((r) => setTimeout(r, 1200));
+      const retryInline = normalize((MiniKit as any)?.user?.username);
+      if (retryInline) {
+        sessionStorage.setItem(cacheKey, retryInline);
+        console.log('✅ Found username on retry:', retryInline);
+        return retryInline;
+      }
+    } catch (e) {
+      console.error('❌ Retry MiniKit.user failed:', e);
+    }
+
+    console.log('❌ No World ID domain found for address:', address);
     return undefined;
   };
 
@@ -186,11 +240,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
-  if (!authenticated || !privyUser) {
+  if (!user) {
     return (
       <Button
         onClick={handleConnect}
-        disabled={isLoading || !ready}
+        disabled={isLoading}
         variant="outline"
         size="sm"
         className={cn("relative h-10 bg-black text-white border-0 hover:bg-gray-800 transition-all duration-300 font-semibold before:absolute before:inset-0 before:rounded-md before:border-2 before:border-[#D4AF37] before:animate-pulse before:pointer-events-none", className)}
@@ -206,8 +260,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       </Button>
     );
   }
-
-  const displayName = username || formatAddress(privyUser.wallet?.address || '');
 
   return (
     <DropdownMenu onOpenChange={(open) => {
@@ -230,7 +282,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-black hover:border-black hover:text-white transition-all duration-300 font-semibold", className)}
         >
           <span className="font-bold text-white truncate max-w-48">
-            {displayName}
+            {user.username || formatAddress(user.walletAddress || '')}
           </span>
         </Button>
       </DropdownMenuTrigger>
