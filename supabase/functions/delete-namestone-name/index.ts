@@ -15,16 +15,21 @@ serve(async (req) => {
   }
 
   try {
-    const { subdomain, domain: providedDomain } = await req.json();
+    const { subdomain, domain: providedDomain, walletAddress } = await req.json();
 
     console.log('==========================================');
     console.log('🗑️  DELETING NAMESTONE NAME');
     console.log('==========================================');
     console.log('📝 Subdomain:', subdomain);
+    console.log('📝 Wallet Address:', walletAddress);
     console.log('==========================================');
 
     if (!subdomain) {
       throw new Error('Missing subdomain parameter');
+    }
+    
+    if (!walletAddress) {
+      throw new Error('Missing wallet address parameter');
     }
 
     // Extract subdomain label and domain
@@ -78,10 +83,13 @@ serve(async (req) => {
       const supabase = createClient(supabaseUrl, supabaseKey);
 
       const fullName = `${subdomainLabel}.${domain}`;
+      console.log('🗃️  Deleting from database:', { fullName, walletAddress: walletAddress.toLowerCase() });
+      
       const { error: deleteError } = await supabase
         .from('minted_domains')
         .delete()
-        .eq('full_name', fullName);
+        .eq('full_name', fullName)
+        .eq('wallet_address', walletAddress.toLowerCase());
 
       if (deleteError) {
         console.error('⚠️ Error deleting from minted_domains:', deleteError);

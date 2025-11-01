@@ -150,9 +150,31 @@ Deno.serve(async (req) => {
 
     console.log('[mint-subdomain] Recording mint in database');
     
+    // Check for existing orphaned records (in DB but not in Namestone)
+    const fullName = `${subdomainLabel}.${cleanDomain}`;
+    const { data: existingRecord } = await supabase
+      .from("minted_domains")
+      .select("*")
+      .eq("full_name", fullName)
+      .eq("wallet_address", walletAddress.toLowerCase())
+      .maybeSingle();
+
+    if (existingRecord) {
+      console.log('[mint-subdomain] Found existing record, cleaning up orphaned entry');
+      const { error: deleteError } = await supabase
+        .from("minted_domains")
+        .delete()
+        .eq("full_name", fullName)
+        .eq("wallet_address", walletAddress.toLowerCase());
+
+      if (deleteError) {
+        console.error('[mint-subdomain] Error cleaning up orphaned record:', deleteError);
+      }
+    }
+    
     // Record in minted_domains
     const { error: dbError } = await supabase.from("minted_domains").insert({
-      full_name: `${subdomainLabel}.${cleanDomain}`,
+      full_name: fullName,
       subdomain: subdomainLabel,
       domain: cleanDomain,
       wallet_address: walletAddress.toLowerCase(),
@@ -168,6 +190,15 @@ Deno.serve(async (req) => {
 
     if (dbError) {
       console.error("[DB] Error:", dbError);
+      
+      // Provide helpful error message for duplicate key errors
+      if (dbError.code === '23505') {
+        return j({ 
+          ok: false, 
+          error: `This domain "${fullName}" is already registered to this wallet. If you deleted it from Namestone but still see this error, please try again in a moment.` 
+        }, 409);
+      }
+      
       return j({ ok: false, error: `Database error: ${dbError.message}` }, 500);
     }
 

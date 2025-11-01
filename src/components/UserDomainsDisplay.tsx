@@ -371,7 +371,11 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             toast.info('Deleting domain...');
 
             const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-              body: { subdomain: fullName, domain: domainToDelete.domain },
+              body: { 
+                subdomain: fullName, 
+                domain: domainToDelete.domain,
+                walletAddress: walletAddress 
+              },
             });
 
             if (error) {
