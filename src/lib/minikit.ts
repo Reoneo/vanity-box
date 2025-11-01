@@ -5,19 +5,39 @@ let initPromise: Promise<void> | null = null;
 let isReady = false;
 
 /**
- * Initialize MiniKit once on app load
+ * Initialize MiniKit once on app load with retry logic
  */
 export function initMiniKit(appId: string): Promise<void> {
   if (initPromise) return initPromise;
   
   initPromise = (async () => {
+    console.log("[MiniKit] Starting initialization...", {
+      appId,
+      hasWorldApp: typeof (window as any).WorldApp !== "undefined",
+      userAgent: navigator.userAgent.includes("World App") || navigator.userAgent.includes("WorldApp"),
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       MiniKit.install(appId);
       isReady = true;
-      console.log("[MiniKit] Initialized successfully");
+      
+      const status = getMiniKitStatus();
+      console.log("[MiniKit] Initialized successfully", status);
     } catch (e) {
       console.warn("[MiniKit] Installation failed (may not be in World App):", e);
       isReady = false;
+      
+      // Retry after 1 second
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        MiniKit.install(appId);
+        isReady = true;
+        console.log("[MiniKit] Retry successful");
+      } catch (retryErr) {
+        console.error("[MiniKit] Retry failed:", retryErr);
+        isReady = false;
+      }
     }
   })();
   
@@ -37,25 +57,76 @@ export function getMiniKitStatus() {
 }
 
 /**
- * Ensure MiniKit is ready with retry logic (exponential backoff)
+ * Ensure MiniKit is ready with enhanced retry logic and fallback detection
  */
 export async function ensureReady(): Promise<void> {
+  console.log("[MiniKit] ensureReady called", {
+    hasInitPromise: !!initPromise,
+    isReady,
+    isInstalled: MiniKit.isInstalled(),
+    timestamp: new Date().toISOString()
+  });
+  
   if (!initPromise) {
     throw new Error("MiniKit not initialized. Call initMiniKit first.");
   }
   
   await initPromise;
   
-  // Retry logic with exponential backoff: 0ms, 1000ms, 2000ms
+  // Enhanced environment detection
+  const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
+  const hasWorldAppUA = navigator.userAgent.includes("World App") || navigator.userAgent.includes("WorldApp");
+  const hasMiniKitWindow = typeof (window as any).MiniKit !== "undefined";
+  
+  console.log("[MiniKit] Environment check:", {
+    hasWorldApp,
+    hasWorldAppUA,
+    hasMiniKitWindow,
+    isReady,
+    isInstalled: MiniKit.isInstalled()
+  });
+  
+  // If we detect World App environment but MiniKit isn't ready, try progressive fallbacks
+  if ((hasWorldApp || hasWorldAppUA) && (!isReady || !MiniKit.isInstalled())) {
+    console.warn("[MiniKit] World App detected but MiniKit not ready, attempting recovery...");
+    
+    // Retry logic with longer delays: 0ms, 500ms, 1500ms, 3000ms
+    const retryDelays = [0, 500, 1500, 3000];
+    
+    for (let i = 0; i < retryDelays.length; i++) {
+      if (i > 0) {
+        console.log(`[MiniKit] Recovery attempt ${i + 1}/${retryDelays.length} after ${retryDelays[i]}ms`);
+        await new Promise(resolve => setTimeout(resolve, retryDelays[i]));
+      }
+      
+      // Try reinstalling
+      try {
+        const appId = 'app_ed7e61cb0c52630464178eed59e3fbdd';
+        MiniKit.install(appId);
+        isReady = true;
+        console.log(`[MiniKit] Recovery attempt ${i + 1} successful`);
+      } catch (e) {
+        console.warn(`[MiniKit] Recovery attempt ${i + 1} failed:`, e);
+      }
+      
+      // Check if ready now
+      if (isReady && MiniKit.isInstalled()) {
+        const status = getMiniKitStatus();
+        console.log("[MiniKit] Ready after recovery:", status);
+        return;
+      }
+    }
+  }
+  
+  // Standard retry logic
   const retryDelays = [0, 1000, 2000];
   
   for (let i = 0; i < retryDelays.length; i++) {
     if (i > 0) {
-      console.log(`[MiniKit] Retry attempt ${i + 1}/${retryDelays.length} after ${retryDelays[i]}ms`);
+      console.log(`[MiniKit] Standard retry ${i + 1}/${retryDelays.length} after ${retryDelays[i]}ms`);
       await new Promise(resolve => setTimeout(resolve, retryDelays[i]));
     }
     
-    // Check both flags
     if (isReady && MiniKit.isInstalled()) {
       const status = getMiniKitStatus();
       console.log("[MiniKit] Ready:", status);
@@ -63,10 +134,20 @@ export async function ensureReady(): Promise<void> {
     }
   }
   
-  // Final check failed
+  // Final check failed - provide detailed error
   const status = getMiniKitStatus();
-  console.error("[MiniKit] Not available after retries:", status);
-  throw new Error("MiniKit is not available. Please open this app in World App.");
+  console.error("[MiniKit] Not available after all retries:", {
+    ...status,
+    hasWorldApp,
+    hasWorldAppUA,
+    hasMiniKitWindow
+  });
+  
+  const errorMsg = hasWorldApp || hasWorldAppUA
+    ? "MiniKit failed to initialize in World App. Please try closing and reopening the mini app."
+    : "Please open this app in World App to use payment features.";
+  
+  throw new Error(errorMsg);
 }
 
 /**

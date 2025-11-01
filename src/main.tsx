@@ -3,11 +3,19 @@ import App from "./App.tsx";
 import "./index.css";
 import { initMiniKit } from "@/lib/minikit";
 
-// Bootstrap MiniKit once on app load
-initMiniKit('app_ed7e61cb0c52630464178eed59e3fbdd').then(() => {
-  console.log("[App] MiniKit ready");
-}).catch(() => {
-  console.warn("[App] MiniKit not available (not in World App)");
+// Bootstrap MiniKit once on app load with enhanced logging
+const APP_ID = 'app_ed7e61cb0c52630464178eed59e3fbdd';
+
+console.log("[App] Initializing app...", {
+  hasWorldApp: typeof (window as any).WorldApp !== "undefined",
+  userAgent: navigator.userAgent,
+  timestamp: new Date().toISOString()
+});
+
+initMiniKit(APP_ID).then(() => {
+  console.log("[App] MiniKit initialization complete");
+}).catch((e) => {
+  console.warn("[App] MiniKit initialization failed:", e);
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
