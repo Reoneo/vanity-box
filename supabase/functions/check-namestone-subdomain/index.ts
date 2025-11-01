@@ -85,14 +85,17 @@ serve(async (req) => {
       // If domain returns 401, it means API key mismatch or domain not configured
       if (response.status === 401) {
         console.error(`⚠️ API key not authorized for domain "${cleanDomain}"`);
+        // Return 200 with a structured failure so the frontend can handle gracefully
         return new Response(
           JSON.stringify({
             success: false,
-            error: `API key not authorized for domain "${cleanDomain}". Please verify domain configuration.`
+            domain: cleanDomain,
+            error: `API key not authorized for domain "${cleanDomain}". Please verify domain configuration.`,
+            reasonCode: 'UNAUTHORIZED_DOMAIN'
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500,
+            status: 200,
           }
         );
       }
