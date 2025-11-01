@@ -25,7 +25,19 @@ export function initMiniKit(appId: string): Promise<void> {
 }
 
 /**
- * Ensure MiniKit is ready and validate environment
+ * Get current MiniKit status without throwing
+ */
+export function getMiniKitStatus() {
+  return {
+    isInstalled: MiniKit.isInstalled(),
+    isReady,
+    version: (MiniKit as any).version || "unknown",
+    inWorldApp: typeof (window as any).WorldApp !== "undefined",
+  };
+}
+
+/**
+ * Ensure MiniKit is ready with retry logic (exponential backoff)
  */
 export async function ensureReady(): Promise<void> {
   if (!initPromise) {
@@ -34,9 +46,27 @@ export async function ensureReady(): Promise<void> {
   
   await initPromise;
   
-  if (!isReady || !MiniKit.isInstalled()) {
-    throw new Error("MiniKit is not available. Please open this app in World App.");
+  // Retry logic with exponential backoff: 0ms, 1000ms, 2000ms
+  const retryDelays = [0, 1000, 2000];
+  
+  for (let i = 0; i < retryDelays.length; i++) {
+    if (i > 0) {
+      console.log(`[MiniKit] Retry attempt ${i + 1}/${retryDelays.length} after ${retryDelays[i]}ms`);
+      await new Promise(resolve => setTimeout(resolve, retryDelays[i]));
+    }
+    
+    // Check both flags
+    if (isReady && MiniKit.isInstalled()) {
+      const status = getMiniKitStatus();
+      console.log("[MiniKit] Ready:", status);
+      return;
+    }
   }
+  
+  // Final check failed
+  const status = getMiniKitStatus();
+  console.error("[MiniKit] Not available after retries:", status);
+  throw new Error("MiniKit is not available. Please open this app in World App.");
 }
 
 /**

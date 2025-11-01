@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
-import { ensureReady, ensurePayPermission, safePay, sendHaptic } from "@/lib/minikit";
+import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
@@ -49,9 +49,17 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
   const [networkFeeUSD, setNetworkFeeUSD] = useState(0.15);
+  
+  // MiniKit status tracking
+  const [miniKitStatus, setMiniKitStatus] = useState<"checking" | "ready" | "unavailable">("checking");
+  const [miniKitError, setMiniKitError] = useState<string>("");
+  
+  // Wallet connection countdown
+  const [walletConnectionTimeRemaining, setWalletConnectionTimeRemaining] = useState<number | null>(null);
 
   // avoid duplicate pay calls
   const payInFlightRef = useRef(false);
+  const payInFlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // free-mint threshold
   const EPSILON_FREE_USD = 0.01;
@@ -103,11 +111,38 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // ---------- effects ----------
 
+  // Check MiniKit status on modal open
   useEffect(() => {
     if (isOpen) {
       window.dispatchEvent(new Event("mint-window-open"));
+      
+      // Check MiniKit availability
+      setMiniKitStatus("checking");
+      setMiniKitError("");
+      
+      const checkMiniKit = async () => {
+        try {
+          await ensureReady();
+          const status = getMiniKitStatus();
+          console.log("[Modal] MiniKit status on open:", status);
+          setMiniKitStatus("ready");
+          setMiniKitError("");
+        } catch (e: any) {
+          console.error("[Modal] MiniKit check failed:", e);
+          setMiniKitStatus("unavailable");
+          setMiniKitError(e?.message || "MiniKit not available");
+        }
+      };
+      
+      checkMiniKit();
     } else {
       window.dispatchEvent(new Event("mint-window-close"));
+      // Reset payment lock when modal closes
+      payInFlightRef.current = false;
+      if (payInFlightTimeoutRef.current) {
+        clearTimeout(payInFlightTimeoutRef.current);
+        payInFlightTimeoutRef.current = null;
+      }
     }
   }, [isOpen]);
 
@@ -231,22 +266,54 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       // Ensure MiniKit is ready
       try {
         await ensureReady();
+        const status = getMiniKitStatus();
+        console.log("[Mint] MiniKit status before payment:", status);
       } catch (readyError: any) {
         console.error("[Mint] MiniKit not ready:", readyError);
-        toast.error("Open this app in World App to complete payment.");
+        toast.error("MiniKit Error: Please open this app in World App to complete payment. [ERR_MINIKIT_NOT_INSTALLED]", { duration: 8000 });
         return;
       }
 
-      // 1) Ensure wallet connected (with timeout)
+      // 1) Ensure wallet connected (with 90s timeout and countdown)
       let walletAddress: string;
       try {
+        toast.info("Please approve wallet connection in World App (90s)");
+        
+        // Start countdown timer
+        setWalletConnectionTimeRemaining(90);
+        const countdownInterval = setInterval(() => {
+          setWalletConnectionTimeRemaining(prev => {
+            if (prev === null || prev <= 1) {
+              clearInterval(countdownInterval);
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        
         walletAddress = await Promise.race([
           ensureWalletConnected(),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Wallet connection timeout")), 30_000)),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => {
+              clearInterval(countdownInterval);
+              reject(new Error("Wallet connection timed out"));
+            }, 90_000)
+          ),
         ]);
+        
+        clearInterval(countdownInterval);
+        setWalletConnectionTimeRemaining(null);
+        
       } catch (connError: any) {
+        setWalletConnectionTimeRemaining(null);
         console.error("[Mint] Wallet connection error:", connError);
-        toast.error(connError?.message || "Failed to connect wallet. Please try again.");
+        
+        const isTimeout = connError?.message?.includes("timeout") || connError?.message?.includes("timed out");
+        const errorMsg = isTimeout
+          ? "Wallet connection timed out. Please approve the connection request in World App within 90 seconds. [ERR_WALLET_TIMEOUT]"
+          : (connError?.message || "Failed to connect wallet. [ERR_WALLET_DENIED]");
+          
+        toast.error(errorMsg, { duration: 8000 });
         return;
       }
 
@@ -256,9 +323,17 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       if (!isFree) {
         if (payInFlightRef.current) {
           console.debug("[MiniKit] Payment already in flight, ignoring");
+          toast.warning("Payment already in progress. Please wait...");
           return;
         }
         payInFlightRef.current = true;
+        
+        // Set 2-minute safety timeout for payment lock
+        payInFlightTimeoutRef.current = setTimeout(() => {
+          console.warn("[MiniKit] Payment lock timeout - resetting after 2 minutes");
+          payInFlightRef.current = false;
+          payInFlightTimeoutRef.current = null;
+        }, 120_000);
 
         try {
           // Step 1: Initiate payment reference in backend
@@ -280,7 +355,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             await ensurePayPermission();
           } catch (permError: any) {
             console.error("[Mint] Permission denied:", permError);
-            toast.error("Payment permission required. Please grant access in World App.");
+            toast.error("Payment permission required. Please enable 'Pay' permission in World App settings. [ERR_PERMISSION_DENIED]", { duration: 8000 });
             return;
           }
 
@@ -346,34 +421,51 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           } catch (verifyErr: any) {
             toast.dismiss(verifyToast);
             console.error("[Payment] Verification error:", verifyErr);
-            toast.error("Payment verification failed. Please contact support with reference: " + reference);
+            toast.error(`Payment verification failed. Your payment may still be processing. Reference: ${reference} [ERR_VERIFICATION_FAILED]`, { duration: 10000 });
             return;
           }
 
         } catch (payErr: any) {
-          console.error("[Mint] Payment error details:", payErr);
+          console.error("[Mint] Payment error details:", {
+            error: payErr,
+            message: payErr?.message,
+            subdomain,
+            paymentMethod,
+            amount: convertedPrice,
+            timestamp: new Date().toISOString(),
+          });
           
-          let msg = "Payment processing failed. Please try again.";
+          let msg = "Payment processing failed. [ERR_PAYMENT_FAILED]";
+          let errorCode = "ERR_PAYMENT_FAILED";
           
           if (typeof payErr?.message === "string") {
             if (payErr.message.includes("timeout") || payErr.message.includes("taking longer") || payErr.message.includes("in progress")) {
-              msg = "Payment confirmation in progress. Check World App to complete, then return here.";
+              msg = "Payment confirmation in progress. Check World App to complete, then return here. [ERR_PAYMENT_TIMEOUT]";
+              errorCode = "ERR_PAYMENT_TIMEOUT";
             } else if (payErr.message.includes("canceled") || payErr.message.includes("denied")) {
-              msg = "Payment was canceled. Please try again when ready.";
+              msg = "Payment was canceled. Please try again when ready. [ERR_PAYMENT_CANCELED]";
+              errorCode = "ERR_PAYMENT_CANCELED";
             } else if (payErr.message.includes("permission")) {
-              msg = "Payment permission required. Please grant access in World App.";
+              msg = "Payment permission required. Please grant access in World App. [ERR_PERMISSION_DENIED]";
+              errorCode = "ERR_PERMISSION_DENIED";
             } else if (payErr.message.includes("whitelist")) {
-              msg = "Payment address not whitelisted. Please contact support.";
+              msg = "Payment address not whitelisted. Please contact support. [ERR_WHITELIST]";
+              errorCode = "ERR_WHITELIST";
             } else {
-              msg = payErr.message;
+              msg = payErr.message + " [ERR_PAYMENT_FAILED]";
             }
           }
           
-          toast.error(msg, { duration: 6000 });
+          console.error(`[Mint] Payment failed with error code: ${errorCode}`);
+          toast.error(msg, { duration: 8000 });
           await sendHaptic("error");
           return;
         } finally {
           payInFlightRef.current = false;
+          if (payInFlightTimeoutRef.current) {
+            clearTimeout(payInFlightTimeoutRef.current);
+            payInFlightTimeoutRef.current = null;
+          }
         }
       } else {
         txHash = "free-mint-" + Date.now();
@@ -428,12 +520,29 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         throw mintErr;
       }
     } catch (e: any) {
-      console.error("Minting error:", e);
-      const errorMsg = e?.message || "Failed to mint subdomain. Please try again.";
-      toast.error(errorMsg);
+      console.error("[Mint] Top-level error:", {
+        error: e,
+        message: e?.message,
+        stack: e?.stack,
+        subdomain,
+        timestamp: new Date().toISOString(),
+      });
+      
+      let errorMsg = "Failed to mint subdomain. [ERR_MINT_FAILED]";
+      if (e?.message && !e.message.includes("[ERR_")) {
+        errorMsg = e.message + " [ERR_MINT_FAILED]";
+      } else if (e?.message) {
+        errorMsg = e.message;
+      }
+      
+      toast.error(errorMsg, { duration: 8000 });
     } finally {
       setIsMinting(false);
       payInFlightRef.current = false;
+      if (payInFlightTimeoutRef.current) {
+        clearTimeout(payInFlightTimeoutRef.current);
+        payInFlightTimeoutRef.current = null;
+      }
     }
   };
 
@@ -452,6 +561,47 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Back</span>
         </button>
+        
+        {/* MiniKit Status Badge */}
+        {miniKitStatus === "checking" && (
+          <div className="absolute top-6 right-6 z-10 flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded-full">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Checking World App...</span>
+          </div>
+        )}
+        {miniKitStatus === "ready" && (
+          <div className="absolute top-6 right-6 z-10 flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full">
+            <div className="w-2 h-2 bg-green-500 rounded-full" />
+            <span className="text-xs font-medium text-green-700 dark:text-green-300">World App Ready ✓</span>
+          </div>
+        )}
+        {miniKitStatus === "unavailable" && (
+          <div className="absolute top-6 right-6 z-10 flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900 rounded-full cursor-pointer" onClick={async () => {
+            setMiniKitStatus("checking");
+            try {
+              await ensureReady();
+              setMiniKitStatus("ready");
+              setMiniKitError("");
+            } catch (e: any) {
+              setMiniKitStatus("unavailable");
+              setMiniKitError(e?.message || "MiniKit not available");
+            }
+          }}>
+            <div className="w-2 h-2 bg-red-500 rounded-full" />
+            <span className="text-xs font-medium text-red-700 dark:text-red-300">Refresh</span>
+          </div>
+        )}
+        
+        {/* Wallet Connection Timer */}
+        {walletConnectionTimeRemaining !== null && (
+          <div className="absolute top-20 left-0 right-0 z-10 flex justify-center">
+            <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded-full">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                Waiting for approval... ({walletConnectionTimeRemaining}s remaining)
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="p-4 pt-16 pb-4 flex flex-col items-center space-y-3">
           {/* Avatar */}
