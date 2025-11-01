@@ -454,9 +454,12 @@ export const SearchInterface = () => {
       let profileFetched = false;
 
       // Check if it's a Namestone subdomain first
-      const namestoneDomainsSupported = ['box', 'cash', 'smith'];
+      // Include both TLD domains (.box, .cash, .smith) and .eth parent domains managed by Namestone
+      const namestoneTLDs = ['box', 'cash', 'smith'];
+      const namestoneEthParents = ['30315.eth', 'mith.eth', 'guavapay.eth', 'mexipay.eth', 'teamxrp.eth', 'termux.eth', 'spyda.eth', 'flirtad.eth'];
       const isNamestoneSubdomain = trimmedQuery.includes('.') && 
-        namestoneDomainsSupported.some(d => trimmedQuery.endsWith(`.${d}`));
+        (namestoneTLDs.some(d => trimmedQuery.endsWith(`.${d}`)) ||
+         namestoneEthParents.some(parent => trimmedQuery.endsWith(`.${parent}`)));
 
       if (isNamestoneSubdomain) {
         // Fetch Namestone records directly
