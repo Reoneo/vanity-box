@@ -934,10 +934,10 @@ export const SearchInterface = () => {
 
             {/* Web3.bio Profile Result - Social Media Style - Only show when search is active */}
             {web3BioProfile && hasSearched && (
-              <div className="w-full sm:max-w-md sm:mx-auto mt-8">
-                <Card className="aspect-square bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col">
+              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
+                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                   {/* Header/Banner */}
-                  <div className="relative h-24 bg-gradient-to-r from-[#D4AF37]/20 via-[#F7E06C]/10 to-[#D4AF37]/20 flex-shrink-0">
+                  <div className="relative h-32 sm:h-48 bg-gradient-to-r from-[#D4AF37]/20 via-[#F7E06C]/10 to-[#D4AF37]/20">
                     {web3BioProfile.header ? (
                       <img src={web3BioProfile.header} alt="Profile header" className="w-full h-full object-cover" />
                     ) : (
@@ -980,11 +980,11 @@ export const SearchInterface = () => {
                     </Button>
                   </div>
 
-                  <CardContent className="relative -mt-12 px-3 pb-4 flex flex-col items-center flex-1 overflow-y-auto">
+                  <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
                     {/* Avatar */}
-                    <div className="relative inline-block mb-2 flex-shrink-0">
+                    <div className="relative inline-block mb-4">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      <div className="relative w-20 h-20 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
                         {web3BioProfile.avatar ? (
                           <img
                             src={web3BioProfile.avatar}
@@ -1000,9 +1000,9 @@ export const SearchInterface = () => {
                     </div>
 
                     {/* Profile Info - Centered */}
-                    <div className="space-y-2 flex flex-col items-center text-center w-full flex-shrink-0">
+                    <div className="space-y-3 flex flex-col items-center text-center w-full">
                       <div className="flex flex-col items-center">
-                        <h3 className="text-xl font-bold text-white mb-1">
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                           {web3BioProfile.displayName || searchQuery}
                         </h3>
                         {web3BioProfile.address && (
@@ -1033,7 +1033,7 @@ export const SearchInterface = () => {
 
                       {/* Bio/Description */}
                       {web3BioProfile.description && (
-                        <p className="text-gray-300 text-xs leading-relaxed line-clamp-2">
+                        <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
                           {web3BioProfile.description}
                         </p>
                       )}
@@ -1089,7 +1089,7 @@ export const SearchInterface = () => {
                       </div>
 
                       {/* Follower Stats */}
-                      <div className="flex gap-4 pt-1">
+                      <div className="flex gap-6 pt-2">
                         <button
                           onClick={async () => {
                             if (!web3BioProfile.address) return;
@@ -1130,10 +1130,10 @@ export const SearchInterface = () => {
                           }}
                           className="text-center hover:opacity-80 transition-opacity cursor-pointer"
                         >
-                          <div className="text-lg font-bold text-[#D4AF37]">
+                          <div className="text-xl sm:text-2xl font-bold text-[#D4AF37]">
                             {efpStats?.following_count ?? 0}
                           </div>
-                          <div className="text-xs text-gray-400">Following</div>
+                          <div className="text-xs sm:text-sm text-gray-400">Following</div>
                         </button>
                         <button
                           onClick={async () => {
@@ -1175,15 +1175,15 @@ export const SearchInterface = () => {
                           }}
                           className="text-center hover:opacity-80 transition-opacity cursor-pointer"
                         >
-                          <div className="text-lg font-bold text-[#D4AF37]">
+                          <div className="text-xl sm:text-2xl font-bold text-[#D4AF37]">
                             {efpStats?.followers_count ?? 0}
                           </div>
-                          <div className="text-xs text-gray-400">Followers</div>
+                          <div className="text-xs sm:text-sm text-gray-400">Followers</div>
                         </button>
                       </div>
 
                       {/* Social Links and All Available Web3.bio Links */}
-                      <div className="flex flex-wrap gap-2 pt-1 justify-center max-h-16 overflow-y-auto">
+                      <div className="flex flex-wrap gap-3 pt-2 justify-center">
                         {/* Display all links from web3BioProfile */}
                         {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
                           if (!linkData || platform === 'website') return null; // Skip website as it's shown above
@@ -1208,10 +1208,10 @@ export const SearchInterface = () => {
                               href={linkData.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 px-2 py-1 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-xs text-gray-300 hover:text-white transition-colors"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                             >
-                              {platformIcons[platform.toLowerCase()] || <ExternalLink className="w-3 h-3" />}
-                              <span className="truncate max-w-[80px]">@{linkData.handle || linkData.link}</span>
+                              {platformIcons[platform.toLowerCase()] || <ExternalLink className="w-4 h-4" />}
+                              <span>@{linkData.handle || linkData.link}</span>
                             </a>
                           );
                         })}
@@ -1222,10 +1222,10 @@ export const SearchInterface = () => {
                             href={`https://twitter.com/${ensRecords.records["com.twitter"]}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-xs text-gray-300 hover:text-white transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
                             <span>𝕏</span>
-                            <span className="truncate max-w-[80px]">@{ensRecords.records["com.twitter"]}</span>
+                            <span>@{ensRecords.records["com.twitter"]}</span>
                           </a>
                         )}
                         
@@ -1234,10 +1234,10 @@ export const SearchInterface = () => {
                             href={`https://github.com/${ensRecords.records["com.github"]}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-xs text-gray-300 hover:text-white transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
-                            <Github className="w-3 h-3" />
-                            <span className="truncate max-w-[80px]">@{ensRecords.records["com.github"]}</span>
+                            <Github className="w-4 h-4" />
+                            <span>@{ensRecords.records["com.github"]}</span>
                           </a>
                         )}
 
@@ -1246,10 +1246,10 @@ export const SearchInterface = () => {
                             href={`https://discord.com/users/${ensRecords.records["com.discord"]}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-xs text-gray-300 hover:text-white transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
-                            <SiDiscord className="w-3 h-3" />
-                            <span className="truncate max-w-[80px]">{ensRecords.records["com.discord"]}</span>
+                            <SiDiscord className="w-4 h-4" />
+                            <span>{ensRecords.records["com.discord"]}</span>
                           </a>
                         )}
 
@@ -1258,39 +1258,12 @@ export const SearchInterface = () => {
                             href={`https://t.me/${ensRecords.records["org.telegram"]}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-xs text-gray-300 hover:text-white transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
                           >
-                            <Send className="w-3 h-3" />
-                            <span className="truncate max-w-[80px]">@{ensRecords.records["org.telegram"]}</span>
+                            <Send className="w-4 h-4" />
+                            <span>@{ensRecords.records["org.telegram"]}</span>
                           </a>
                         )}
-                      </div>
-
-                      {/* Action Buttons - Centered side by side */}
-                      <div className="flex gap-3 pt-2 justify-center items-center flex-shrink-0">
-                        <a
-                          href={`https://web3.bio/${searchQuery}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center py-3 rounded-xl transition-all duration-300 hover:opacity-80"
-                        >
-                          <img src={web3BioLogo} alt="Web3.bio" className="h-14 w-auto object-contain" />
-                        </a>
-
-                        {/* POAP Icon with notification badge */}
-                        {/* POAP Carousel */}
-                        {web3BioProfile?.address && (
-                          <PoapCarousel walletAddress={web3BioProfile.address} />
-                        )}
-
-                        <a
-                          href={`https://ethfollow.xyz/${web3BioProfile.address || searchQuery}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center py-2 rounded-xl transition-all duration-300 hover:opacity-80"
-                        >
-                          <img src={efpLogoFullDark} alt="EFP" className="h-12 w-auto object-contain" />
-                        </a>
                       </div>
                     </div>
                   </CardContent>
