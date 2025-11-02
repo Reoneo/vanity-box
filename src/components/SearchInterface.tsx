@@ -70,6 +70,10 @@ import prettyuglyAvatar from "@/assets/prettyugly-avatar.png";
 import sanAndreasAvatar from "@/assets/sanandreas-avatar.png";
 import guavapayAvatar from "@/assets/guavapay-avatar.png";
 import mexipayAvatar from "@/assets/mexipay-avatar.png";
+import discordIcon from "@/assets/discord-icon.png";
+import githubIcon from "@/assets/github-icon.png";
+import whatsappIcon from "@/assets/whatsapp-icon.png";
+import blueskyIcon from "@/assets/bluesky-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
@@ -1245,7 +1249,7 @@ export const SearchInterface = () => {
                             className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors"
                           >
                             <Globe className="w-4 h-4" />
-                            <span>{web3BioProfile.links.website.handle}</span>
+                            <span>{web3BioProfile.links.website.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
                           </a>
                         )}
                         {web3BioProfile.location && (
@@ -1362,6 +1366,10 @@ export const SearchInterface = () => {
                             youtube: 'https://cdn-icons-png.flaticon.com/512/5968/5968852.png',
                             facebook: 'https://cdn-icons-png.flaticon.com/512/733/733547.png',
                             spotify: 'https://cdn-icons-png.flaticon.com/512/174/174872.png',
+                            discord: discordIcon,
+                            github: githubIcon,
+                            whatsapp: whatsappIcon,
+                            bluesky: blueskyIcon,
                           };
                           
                           // Special handling for Telegram to construct proper t.me URL
