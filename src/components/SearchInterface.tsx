@@ -1255,6 +1255,7 @@ export const SearchInterface = () => {
                           </div>
                         )}
                       </div>
+                    </div>
 
                       {/* Follower Stats */}
                       <div className="flex gap-6 pt-2">
@@ -1351,27 +1352,34 @@ export const SearchInterface = () => {
                       </div>
 
                       {/* Social Links - Grid layout with 5 icons per row */}
-                      <div className="grid grid-cols-5 gap-4 pt-2 justify-items-center">
-                        {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
-                          if (!linkData || platform === 'website') return null;
-                          
-                          const socialIcons: { [key: string]: string } = {
-                            twitter: 'https://cdn-icons-png.flaticon.com/512/5968/5968830.png',
-                            telegram: 'https://cdn.pixabay.com/photo/2021/12/27/10/50/telegram-6896827_1280.png',
-                            youtube: 'https://cdn-icons-png.flaticon.com/512/5968/5968852.png',
-                            facebook: 'https://cdn-icons-png.flaticon.com/512/733/733547.png',
-                            spotify: 'https://www.citypng.com/public/uploads/preview/square-black-green-spotify-app-icon-png-701751694969849j7wtxvnrgo.png',
-                          };
-                          
-                          return (
-                            <a
-                              key={platform}
-                              href={linkData.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group relative"
-                              title={`@${linkData.handle || platform}`}
-                            >
+                      <div className="flex justify-center pt-2">
+                        <div className="grid grid-cols-5 gap-4 justify-items-center">
+                          {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
+                            if (!linkData || platform === 'website') return null;
+                            
+                            const socialIcons: { [key: string]: string } = {
+                              twitter: 'https://cdn-icons-png.flaticon.com/512/5969/5969020.png',
+                              telegram: 'https://cdn.pixabay.com/photo/2021/12/27/10/50/telegram-6896827_1280.png',
+                              youtube: 'https://cdn-icons-png.flaticon.com/512/5968/5968852.png',
+                              facebook: 'https://cdn-icons-png.flaticon.com/512/733/733547.png',
+                              spotify: 'https://cdn-icons-png.flaticon.com/512/174/174872.png',
+                            };
+                            
+                            // Special handling for Telegram to construct proper t.me URL
+                            let href = linkData.link;
+                            if (platform.toLowerCase() === 'telegram' && linkData.handle) {
+                              href = `https://t.me/${linkData.handle}`;
+                            }
+                            
+                            return (
+                              <a
+                                key={platform}
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group relative"
+                                title={`@${linkData.handle || platform}`}
+                              >
                               {socialIcons[platform.toLowerCase()] ? (
                                 <img 
                                   src={socialIcons[platform.toLowerCase()]} 
@@ -1392,11 +1400,11 @@ export const SearchInterface = () => {
                                     <ExternalLink className="w-6 h-6 text-white" />
                                   )}
                                 </div>
-                              )}
+                                )}
                             </a>
                           );
                         })}
-                      </div>
+                        </div>
                       </div>
 
                       {/* POAP Collection */}
