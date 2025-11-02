@@ -1265,40 +1265,25 @@ export const SearchInterface = () => {
                       <div className="flex gap-6 pt-2">
                         <button
                           onClick={async () => {
-                            if (!web3BioProfile.address) return;
+                            if (!web3BioProfile.address || isLoadingEFP) return;
+                            setIsLoadingEFP(true);
                             setFollowingPage(0);
                             setFollowingSearchQuery("");
                             try {
                               const response = await fetch(
-                                `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=20&offset=0`,
+                                `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=5&offset=0`,
                               );
                               if (response.ok) {
                                 const data = await response.json();
                                 const followingData = data.following || [];
                                 setTotalFollowing(efpStats?.following_count || 0);
-
-                                // Fetch web3.bio data for each user
-                                const enrichedFollowing = await Promise.all(
-                                  followingData.map(async (user: EFPUser) => {
-                                    try {
-                                      const { data: bioData } = await supabase.functions.invoke("get-web3bio-profile", {
-                                        body: { handle: user.address },
-                                      });
-                                      if (bioData && Array.isArray(bioData) && bioData.length > 0) {
-                                        return { ...user, web3bio: bioData[0] };
-                                      }
-                                    } catch (error) {
-                                      console.error("Error fetching web3.bio for user:", error);
-                                    }
-                                    return user;
-                                  }),
-                                );
-
-                                setFollowingList(enrichedFollowing);
+                                setFollowingList(followingData);
                                 setShowFollowingList(true);
                               }
                             } catch (error) {
                               console.error("Error fetching following list:", error);
+                            } finally {
+                              setIsLoadingEFP(false);
                             }
                           }}
                           className="text-center hover:opacity-80 transition-opacity cursor-pointer"
@@ -1310,40 +1295,25 @@ export const SearchInterface = () => {
                         </button>
                         <button
                           onClick={async () => {
-                            if (!web3BioProfile.address) return;
+                            if (!web3BioProfile.address || isLoadingEFP) return;
+                            setIsLoadingEFP(true);
                             setFollowersPage(0);
                             setFollowersSearchQuery("");
                             try {
                               const response = await fetch(
-                                `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=20&offset=0`,
+                                `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=5&offset=0`,
                               );
                               if (response.ok) {
                                 const data = await response.json();
                                 const followersData = data.followers || [];
                                 setTotalFollowers(efpStats?.followers_count || 0);
-
-                                // Fetch web3.bio data for each user
-                                const enrichedFollowers = await Promise.all(
-                                  followersData.map(async (user: EFPUser) => {
-                                    try {
-                                      const { data: bioData } = await supabase.functions.invoke("get-web3bio-profile", {
-                                        body: { handle: user.address },
-                                      });
-                                      if (bioData && Array.isArray(bioData) && bioData.length > 0) {
-                                        return { ...user, web3bio: bioData[0] };
-                                      }
-                                    } catch (error) {
-                                      console.error("Error fetching web3.bio for user:", error);
-                                    }
-                                    return user;
-                                  }),
-                                );
-
-                                setFollowersList(enrichedFollowers);
+                                setFollowersList(followersData);
                                 setShowFollowersList(true);
                               }
                             } catch (error) {
                               console.error("Error fetching followers list:", error);
+                            } finally {
+                              setIsLoadingEFP(false);
                             }
                           }}
                           className="text-center hover:opacity-80 transition-opacity cursor-pointer"
@@ -1434,9 +1404,9 @@ export const SearchInterface = () => {
             {/* Followers List Modal */}
             {showFollowersList && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col pointer-events-auto">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-xl font-bold text-white">Followers ({totalFollowers})</h3>
+                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">Followers ({totalFollowers})</h3>
                     <button
                       onClick={() => setShowFollowersList(false)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -1450,7 +1420,7 @@ export const SearchInterface = () => {
                         placeholder="Search followers..."
                         value={followersSearchQuery}
                         onChange={(e) => setFollowersSearchQuery(e.target.value)}
-                        className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500 pr-10"
+                        className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
                       />
                       {followersSearchQuery && (
                         <button
@@ -1477,15 +1447,15 @@ export const SearchInterface = () => {
                       .map((user, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                          className="flex items-center justify-between p-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/40 hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-white/60 rounded-lg transition-colors"
                         >
                           <div className="flex flex-col">
                             {(user.web3bio?.displayName || user.ens?.name) && (
-                              <span className="text-white font-medium">
+                              <span className="text-white dark:text-white light:text-black font-medium">
                                 {user.web3bio?.displayName || user.ens?.name}
                               </span>
                             )}
-                            <span className="text-gray-400 text-sm font-mono">
+                            <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 text-sm font-mono">
                               {user.address.slice(0, 6)}...{user.address.slice(-4)}
                             </span>
                           </div>
@@ -1510,30 +1480,12 @@ export const SearchInterface = () => {
                           try {
                             const nextPage = followersPage + 1;
                             const response = await fetch(
-                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=20&offset=${nextPage * 20}`,
+                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=5&offset=${nextPage * 5}`,
                             );
                             if (response.ok) {
                               const data = await response.json();
                               const newFollowers = data.followers || [];
-
-                              // Fetch web3.bio data for new users
-                              const enrichedFollowers = await Promise.all(
-                                newFollowers.map(async (user: EFPUser) => {
-                                  try {
-                                    const { data: bioData } = await supabase.functions.invoke("get-web3bio-profile", {
-                                      body: { handle: user.address },
-                                    });
-                                    if (bioData && Array.isArray(bioData) && bioData.length > 0) {
-                                      return { ...user, web3bio: bioData[0] };
-                                    }
-                                  } catch (error) {
-                                    console.error("Error fetching web3.bio for user:", error);
-                                  }
-                                  return user;
-                                }),
-                              );
-
-                              setFollowersList([...followersList, ...enrichedFollowers]);
+                              setFollowersList([...followersList, ...newFollowers]);
                               setFollowersPage(nextPage);
                             }
                           } catch (error) {
@@ -1555,9 +1507,9 @@ export const SearchInterface = () => {
             {/* Following List Modal */}
             {showFollowingList && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col pointer-events-auto">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-xl font-bold text-white">Following ({totalFollowing})</h3>
+                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">Following ({totalFollowing})</h3>
                     <button
                       onClick={() => setShowFollowingList(false)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -1571,7 +1523,7 @@ export const SearchInterface = () => {
                         placeholder="Search following..."
                         value={followingSearchQuery}
                         onChange={(e) => setFollowingSearchQuery(e.target.value)}
-                        className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500 pr-10"
+                        className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
                       />
                       {followingSearchQuery && (
                         <button
@@ -1598,15 +1550,15 @@ export const SearchInterface = () => {
                       .map((user, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                          className="flex items-center justify-between p-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/40 hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-white/60 rounded-lg transition-colors"
                         >
                           <div className="flex flex-col">
                             {(user.web3bio?.displayName || user.ens?.name) && (
-                              <span className="text-white font-medium">
+                              <span className="text-white dark:text-white light:text-black font-medium">
                                 {user.web3bio?.displayName || user.ens?.name}
                               </span>
                             )}
-                            <span className="text-gray-400 text-sm font-mono">
+                            <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 text-sm font-mono">
                               {user.address.slice(0, 6)}...{user.address.slice(-4)}
                             </span>
                           </div>
@@ -1631,30 +1583,12 @@ export const SearchInterface = () => {
                           try {
                             const nextPage = followingPage + 1;
                             const response = await fetch(
-                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=20&offset=${nextPage * 20}`,
+                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=5&offset=${nextPage * 5}`,
                             );
                             if (response.ok) {
                               const data = await response.json();
                               const newFollowing = data.following || [];
-
-                              // Fetch web3.bio data for new users
-                              const enrichedFollowing = await Promise.all(
-                                newFollowing.map(async (user: EFPUser) => {
-                                  try {
-                                    const { data: bioData } = await supabase.functions.invoke("get-web3bio-profile", {
-                                      body: { handle: user.address },
-                                    });
-                                    if (bioData && Array.isArray(bioData) && bioData.length > 0) {
-                                      return { ...user, web3bio: bioData[0] };
-                                    }
-                                  } catch (error) {
-                                    console.error("Error fetching web3.bio for user:", error);
-                                  }
-                                  return user;
-                                }),
-                              );
-
-                              setFollowingList([...followingList, ...enrichedFollowing]);
+                              setFollowingList([...followingList, ...newFollowing]);
                               setFollowingPage(nextPage);
                             }
                           } catch (error) {
