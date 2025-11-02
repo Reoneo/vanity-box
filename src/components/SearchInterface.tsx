@@ -74,6 +74,8 @@ import discordIcon from "@/assets/discord-icon.png";
 import githubIcon from "@/assets/github-icon.png";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
 import blueskyIcon from "@/assets/bluesky-icon.png";
+import instagramIcon from "@/assets/instagram-icon.png";
+import linkedinIcon from "@/assets/linkedin-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
@@ -980,7 +982,7 @@ export const SearchInterface = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="start"
-                          className="w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-50"
+                          className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-50"
                         >
                           <div className="relative">
                             <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
@@ -991,38 +993,6 @@ export const SearchInterface = () => {
                               <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
 
                               <div className="space-y-3">
-                                <p className="text-sm font-medium text-gray-300">{t("protocol")}</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {protocols.map((protocol) => (
-                                    <label
-                                      key={protocol}
-                                      className={cn(
-                                        "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
-                                        filters.protocol.includes(protocol)
-                                          ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                                          : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
-                                      )}
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        handleProtocolToggle(protocol);
-                                      }}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        className="hidden"
-                                        checked={filters.protocol.includes(protocol)}
-                                        onChange={() => handleProtocolToggle(protocol)}
-                                      />
-                                      {protocol}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                              <div className="space-y-3">
-                                <p className="text-sm font-medium text-gray-300">{t("club")}</p>
                                 <div className="flex flex-wrap gap-2">
                                   {clubs.map((club) => (
                                     <label
@@ -1130,7 +1100,7 @@ export const SearchInterface = () => {
             {/* Web3.bio Profile Result - Social Media Style - Only show when search is active and My IDs is not showing */}
             {web3BioProfile && hasSearched && !showMyIDs && (
               <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
-                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+                <Card className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
                   {/* Header/Banner */}
                   <div className="relative h-32 sm:h-48 bg-gradient-to-r from-[#D4AF37]/20 via-[#F7E06C]/10 to-[#D4AF37]/20">
                     {web3BioProfile.header ? (
@@ -1197,7 +1167,7 @@ export const SearchInterface = () => {
                     {/* Profile Info - Centered */}
                     <div className="space-y-3 flex flex-col items-center text-center w-full">
                       <div className="flex flex-col items-center">
-                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-black mb-2">
                           {web3BioProfile.displayName || searchQuery}
                         </h3>
                         {web3BioProfile.address && (
@@ -1228,13 +1198,13 @@ export const SearchInterface = () => {
 
                       {/* Bio/Description */}
                       {web3BioProfile.description && (
-                        <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+                        <p className="text-gray-300 dark:text-gray-300 light:text-gray-800 text-sm sm:text-base leading-relaxed">
                           {web3BioProfile.description}
                         </p>
                       )}
 
                       {/* Contact and Location - from Web3.bio only */}
-                      <div className="flex flex-col gap-2 text-sm text-gray-400 items-center">
+                      <div className="flex flex-col gap-2 text-sm text-gray-400 dark:text-gray-400 light:text-gray-700 items-center">
                         {web3BioProfile.email && (
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4" />
@@ -1340,6 +1310,8 @@ export const SearchInterface = () => {
                             github: githubIcon,
                             whatsapp: whatsappIcon,
                             bluesky: blueskyIcon,
+                            instagram: instagramIcon,
+                            linkedin: linkedinIcon,
                           };
                           
                           // Special handling for Telegram to construct proper t.me URL
@@ -1358,11 +1330,16 @@ export const SearchInterface = () => {
                               title={`@${linkData.handle || platform}`}
                             >
                               {socialIcons[platform.toLowerCase()] ? (
-                                <img 
-                                  src={socialIcons[platform.toLowerCase()]} 
-                                  alt={platform}
-                                  className="w-12 h-12 rounded-lg transition-transform group-hover:scale-110"
-                                />
+                                <div className={cn(
+                                  "w-12 h-12 rounded-lg transition-transform group-hover:scale-110",
+                                  platform.toLowerCase() === 'github' && "dark:bg-white dark:p-1"
+                                )}>
+                                  <img 
+                                    src={socialIcons[platform.toLowerCase()]} 
+                                    alt={platform}
+                                    className="w-full h-full rounded-lg"
+                                  />
+                                </div>
                               ) : (
                                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
                                   <ExternalLink className="w-6 h-6 text-white" />
@@ -1460,7 +1437,7 @@ export const SearchInterface = () => {
                             </span>
                           </div>
                           <a
-                            href={`https://ethfollow.xyz/${user.address}`}
+                            href={`https://vanity.box/${user.ens?.name || user.address}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
@@ -1563,7 +1540,7 @@ export const SearchInterface = () => {
                             </span>
                           </div>
                           <a
-                            href={`https://ethfollow.xyz/${user.address}`}
+                            href={`https://vanity.box/${user.ens?.name || user.address}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
