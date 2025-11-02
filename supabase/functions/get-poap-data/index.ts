@@ -61,14 +61,18 @@ serve(async (req) => {
       console.error('POAP API error body:', errorText);
       console.error('POAP API error headers:', JSON.stringify(Object.fromEntries(poapsResponse.headers.entries())));
       
+      // Return success:false with 200 status so the UI doesn't crash
+      // This allows the app to continue functioning without POAPs
       return new Response(
         JSON.stringify({ 
+          success: false,
+          count: 0,
           error: 'Failed to fetch POAPs from API',
           details: errorText,
           status: poapsResponse.status
         }),
         { 
-          status: poapsResponse.status, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
