@@ -456,86 +456,11 @@ export const SearchInterface = () => {
       // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
 
-      // For .eth domains, use native ENS resolution as PRIMARY
-      const isEthDomain = normalizedQuery.endsWith('.eth');
-      
-      if (isEthDomain) {
-        console.log("Detected .eth domain, using native ENS resolution:", trimmedQuery);
-        
-        try {
-          const { data: ensData, error: ensError } = await supabase.functions.invoke("resolve-ens", {
-            body: { name: trimmedQuery },
-          });
-
-          if (!ensError && ensData && !ensData.error) {
-            console.log("ENS resolution succeeded:", ensData);
-            
-            setWeb3BioProfile({
-              address: ensData.address,
-              displayName: ensData.displayName,
-              avatar: ensData.avatar,
-              header: ensData.header,
-              description: ensData.description,
-              email: ensData.email,
-              location: ensData.location,
-              links: ensData.links || {},
-              identity: trimmedQuery,
-              platform: "ens",
-            });
-            
-            setEnsRecords({
-              name: trimmedQuery,
-              address: ensData.address,
-              avatar: ensData.avatar,
-              records: ensData.records || {},
-            });
-            
-            profileFetched = true;
-            
-            // Fetch EFP stats and POAPs for the resolved address
-            if (ensData.address) {
-              try {
-                const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${ensData.address}/stats`);
-                if (efpResponse.ok) {
-                  const efpData = await efpResponse.json();
-                  setEfpStats({
-                    followers_count: parseInt(efpData.followers_count) || 0,
-                    following_count: parseInt(efpData.following_count) || 0,
-                  });
-                }
-              } catch (efpError) {
-                console.error("Error fetching EFP stats:", efpError);
-              }
-
-              // Fetch POAP data
-              try {
-                setIsLoadingPoaps(true);
-                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                  body: { walletAddress: ensData.address },
-                });
-
-                if (!poapError && poapData?.success) {
-                  setPoapCount(poapData.count || 0);
-                }
-              } catch (poapFetchError) {
-                console.error("Error fetching POAPs:", poapFetchError);
-              } finally {
-                setIsLoadingPoaps(false);
-              }
-            }
-          } else {
-            console.log("ENS resolution failed:", ensError || ensData?.error);
-          }
-        } catch (error) {
-          console.error("Error resolving ENS:", error);
-        }
-      }
-
-      // Check if it's a Namestone subdomain (only if NOT a .eth domain)
+      // Check if it's a Namestone subdomain
       // Include both TLD domains (.box, .cash, .smith) and .eth parent domains managed by Namestone
       const namestoneTLDs = ['box', 'cash', 'smith'];
       const namestoneEthParents = ['30315.eth', 'mith.eth', 'guavapay.eth', 'mexipay.eth', 'teamxrp.eth', 'termux.eth', 'spyda.eth', 'flirtad.eth'];
-      const isNamestoneSubdomain = !isEthDomain && normalizedQuery.includes('.') && (
+      const isNamestoneSubdomain = normalizedQuery.includes('.') && (
         namestoneTLDs.some(d => normalizedQuery.endsWith(`.${d}`)) ||
         namestoneEthParents.some(parent => normalizedQuery.endsWith(`.${parent}`))
       );
@@ -603,8 +528,8 @@ export const SearchInterface = () => {
         profileFetched = true;
       }
 
-      // If not .eth and not Namestone (or a plain wallet/other domain), try web3.bio
-      if (!profileFetched && !isEthDomain) {
+      // If not Namestone subdomain, use web3.bio for everything (including .eth)
+      if (!profileFetched) {
         try {
           const { data, error } = await supabase.functions.invoke("get-web3bio-profile", {
             body: { handle: trimmedQuery },
