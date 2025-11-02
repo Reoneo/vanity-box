@@ -456,11 +456,86 @@ export const SearchInterface = () => {
       // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
 
-      // Check if it's a Namestone subdomain first
+      // For .eth domains, use native ENS resolution as PRIMARY
+      const isEthDomain = normalizedQuery.endsWith('.eth');
+      
+      if (isEthDomain) {
+        console.log("Detected .eth domain, using native ENS resolution:", trimmedQuery);
+        
+        try {
+          const { data: ensData, error: ensError } = await supabase.functions.invoke("resolve-ens", {
+            body: { name: trimmedQuery },
+          });
+
+          if (!ensError && ensData && !ensData.error) {
+            console.log("ENS resolution succeeded:", ensData);
+            
+            setWeb3BioProfile({
+              address: ensData.address,
+              displayName: ensData.displayName,
+              avatar: ensData.avatar,
+              header: ensData.header,
+              description: ensData.description,
+              email: ensData.email,
+              location: ensData.location,
+              links: ensData.links || {},
+              identity: trimmedQuery,
+              platform: "ens",
+            });
+            
+            setEnsRecords({
+              name: trimmedQuery,
+              address: ensData.address,
+              avatar: ensData.avatar,
+              records: ensData.records || {},
+            });
+            
+            profileFetched = true;
+            
+            // Fetch EFP stats and POAPs for the resolved address
+            if (ensData.address) {
+              try {
+                const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${ensData.address}/stats`);
+                if (efpResponse.ok) {
+                  const efpData = await efpResponse.json();
+                  setEfpStats({
+                    followers_count: parseInt(efpData.followers_count) || 0,
+                    following_count: parseInt(efpData.following_count) || 0,
+                  });
+                }
+              } catch (efpError) {
+                console.error("Error fetching EFP stats:", efpError);
+              }
+
+              // Fetch POAP data
+              try {
+                setIsLoadingPoaps(true);
+                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+                  body: { walletAddress: ensData.address },
+                });
+
+                if (!poapError && poapData?.success) {
+                  setPoapCount(poapData.count || 0);
+                }
+              } catch (poapFetchError) {
+                console.error("Error fetching POAPs:", poapFetchError);
+              } finally {
+                setIsLoadingPoaps(false);
+              }
+            }
+          } else {
+            console.log("ENS resolution failed:", ensError || ensData?.error);
+          }
+        } catch (error) {
+          console.error("Error resolving ENS:", error);
+        }
+      }
+
+      // Check if it's a Namestone subdomain (only if NOT a .eth domain)
       // Include both TLD domains (.box, .cash, .smith) and .eth parent domains managed by Namestone
       const namestoneTLDs = ['box', 'cash', 'smith'];
       const namestoneEthParents = ['30315.eth', 'mith.eth', 'guavapay.eth', 'mexipay.eth', 'teamxrp.eth', 'termux.eth', 'spyda.eth', 'flirtad.eth'];
-      const isNamestoneSubdomain = normalizedQuery.includes('.') && (
+      const isNamestoneSubdomain = !isEthDomain && normalizedQuery.includes('.') && (
         namestoneTLDs.some(d => normalizedQuery.endsWith(`.${d}`)) ||
         namestoneEthParents.some(parent => normalizedQuery.endsWith(`.${parent}`))
       );
@@ -523,8 +598,8 @@ export const SearchInterface = () => {
         profileFetched = true;
       }
 
-      // If not Namestone (or a plain wallet/other domain), try web3.bio
-      if (!profileFetched) {
+      // If not .eth and not Namestone (or a plain wallet/other domain), try web3.bio
+      if (!profileFetched && !isEthDomain) {
         try {
           const { data, error } = await supabase.functions.invoke("get-web3bio-profile", {
             body: { handle: trimmedQuery },
@@ -610,68 +685,8 @@ export const SearchInterface = () => {
         }
       }
 
-      // If web3.bio didn't return results, try ENS resolution fallback
-      if (!profileFetched) {
-        try {
-          console.log("Trying ENS resolution for:", trimmedQuery);
-          const { data: ensData, error: ensError } = await supabase.functions.invoke("resolve-ens", {
-            body: { name: trimmedQuery },
-          });
-
-          if (!ensError && ensData && !ensData.error) {
-            // Successfully resolved ENS name
-            console.log("ENS resolution succeeded:", ensData);
-            setWeb3BioProfile({
-              address: ensData.address,
-              displayName: ensData.displayName,
-              avatar: ensData.avatar,
-              description: ensData.description,
-              email: ensData.email,
-              links: ensData.links || {},
-              identity: trimmedQuery,
-              platform: "ens",
-            });
-            setEnsResults([]);
-
-            // Fetch EFP stats and ENS records for the resolved address
-            if (ensData.address) {
-              try {
-                const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${ensData.address}/stats`);
-
-                if (efpResponse.ok) {
-                  const efpData = await efpResponse.json();
-                  setEfpStats({
-                    followers_count: parseInt(efpData.followers_count) || 0,
-                    following_count: parseInt(efpData.following_count) || 0,
-                  });
-                }
-              } catch (efpError) {
-                console.error("Error fetching EFP stats:", efpError);
-              }
-
-              // Fetch POAP data
-              try {
-                setIsLoadingPoaps(true);
-                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                  body: { walletAddress: ensData.address },
-                });
-
-                if (!poapError && poapData?.success) {
-                  setPoapCount(poapData.count || 0);
-                }
-              } catch (poapFetchError) {
-                console.error("Error fetching POAPs:", poapFetchError);
-              } finally {
-                setIsLoadingPoaps(false);
-              }
-            }
-          } else {
-            console.log("ENS resolution also failed:", ensError || ensData?.error);
-          }
-        } catch (ensError) {
-          console.error("Error resolving ENS:", ensError);
-        }
-      }
+      // ENS fallback is no longer needed since .eth is handled above
+      // This section is kept only for non-.eth domains that failed web3.bio
 
       setIsLoading(false);
       return;
@@ -1273,7 +1288,7 @@ export const SearchInterface = () => {
 
                       {/* POAP Collection */}
                       {web3BioProfile.address && poapCount > 0 && (
-                      <div className="pt-4 mt-4">
+                      <div className="pt-4 mt-4 border-t border-gray-700/50">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <img src={poapLogo} alt="POAP" className="w-5 h-5" />
                           <h4 className="text-sm font-semibold text-white">
@@ -1281,6 +1296,33 @@ export const SearchInterface = () => {
                           </h4>
                         </div>
                         <PoapCarousel walletAddress={web3BioProfile.address} />
+                      </div>
+                    )}
+
+                    {/* ENS Text Records Section - Only show for ENS domains */}
+                    {web3BioProfile?.platform === 'ens' && ensRecords?.records && 
+                     Object.keys(ensRecords.records).length > 0 && (
+                      <div className="pt-4 mt-4 border-t border-gray-700/50 w-full">
+                        <h4 className="text-sm font-semibold text-white mb-3 text-center">
+                          ENS Text Records
+                        </h4>
+                        <div className="grid grid-cols-1 gap-2 text-xs max-h-[300px] overflow-y-auto pr-2">
+                          {Object.entries(ensRecords.records)
+                            .filter(([key]) => !['avatar', 'header', 'display', 'name'].includes(key))
+                            .map(([key, value]) => (
+                              <div 
+                                key={key}
+                                className="flex items-start gap-2 p-2 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors"
+                              >
+                                <span className="text-gray-400 font-mono min-w-[100px] shrink-0">
+                                  {key}:
+                                </span>
+                                <span className="text-gray-300 break-all">
+                                  {String(value)}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
                       </div>
                     )}
                   </CardContent>
