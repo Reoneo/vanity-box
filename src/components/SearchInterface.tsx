@@ -1351,35 +1351,34 @@ export const SearchInterface = () => {
                         </button>
                       </div>
 
-                      {/* Social Links - Grid layout with 5 icons per row */}
-                      <div className="flex justify-center pt-2">
-                        <div className="grid grid-cols-5 gap-4 justify-items-center">
-                          {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
-                            if (!linkData || platform === 'website') return null;
-                            
-                            const socialIcons: { [key: string]: string } = {
-                              twitter: 'https://cdn-icons-png.flaticon.com/512/5969/5969020.png',
-                              telegram: 'https://cdn.pixabay.com/photo/2021/12/27/10/50/telegram-6896827_1280.png',
-                              youtube: 'https://cdn-icons-png.flaticon.com/512/5968/5968852.png',
-                              facebook: 'https://cdn-icons-png.flaticon.com/512/733/733547.png',
-                              spotify: 'https://cdn-icons-png.flaticon.com/512/174/174872.png',
-                            };
-                            
-                            // Special handling for Telegram to construct proper t.me URL
-                            let href = linkData.link;
-                            if (platform.toLowerCase() === 'telegram' && linkData.handle) {
-                              href = `https://t.me/${linkData.handle}`;
-                            }
-                            
-                            return (
-                              <a
-                                key={platform}
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group relative"
-                                title={`@${linkData.handle || platform}`}
-                              >
+                      {/* Social Links - Flexbox layout that centers dynamically */}
+                      <div className="flex flex-wrap justify-center gap-4 pt-2 px-4">
+                        {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
+                          if (!linkData || platform === 'website') return null;
+                          
+                          const socialIcons: { [key: string]: string } = {
+                            twitter: 'https://cdn-icons-png.flaticon.com/512/5969/5969020.png',
+                            telegram: 'https://cdn.pixabay.com/photo/2021/12/27/10/50/telegram-6896827_1280.png',
+                            youtube: 'https://cdn-icons-png.flaticon.com/512/5968/5968852.png',
+                            facebook: 'https://cdn-icons-png.flaticon.com/512/733/733547.png',
+                            spotify: 'https://cdn-icons-png.flaticon.com/512/174/174872.png',
+                          };
+                          
+                          // Special handling for Telegram to construct proper t.me URL
+                          let href = linkData.link;
+                          if (platform.toLowerCase() === 'telegram' && linkData.handle) {
+                            href = `https://t.me/${linkData.handle}`;
+                          }
+                          
+                          return (
+                            <a
+                              key={platform}
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group relative"
+                              title={`@${linkData.handle || platform}`}
+                            >
                               {socialIcons[platform.toLowerCase()] ? (
                                 <img 
                                   src={socialIcons[platform.toLowerCase()]} 
@@ -1387,24 +1386,13 @@ export const SearchInterface = () => {
                                   className="w-12 h-12 rounded-lg transition-transform group-hover:scale-110"
                                 />
                               ) : (
-                                <div className="w-12 h-12 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 flex items-center justify-center transition-colors">
-                                  {platform === 'github' && <Github className="w-6 h-6 text-white" />}
-                                  {platform === 'discord' && <SiDiscord className="w-6 h-6 text-white" />}
-                                  {platform === 'instagram' && <span className="text-2xl">📷</span>}
-                                  {platform === 'linkedin' && <span className="text-2xl">💼</span>}
-                                  {platform === 'farcaster' && <span className="text-2xl">🟣</span>}
-                                  {platform === 'lens' && <span className="text-2xl">🌿</span>}
-                                  {platform === 'reddit' && <span className="text-2xl">🤖</span>}
-                                  {platform === 'medium' && <span className="text-2xl">Ⓜ️</span>}
-                                  {!['github', 'discord', 'instagram', 'linkedin', 'farcaster', 'lens', 'reddit', 'medium'].includes(platform) && (
-                                    <ExternalLink className="w-6 h-6 text-white" />
-                                  )}
+                                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center transition-transform group-hover:scale-110">
+                                  <ExternalLink className="w-6 h-6 text-white" />
                                 </div>
-                                )}
+                              )}
                             </a>
                           );
                         })}
-                        </div>
                       </div>
 
                       {/* POAP Collection */}

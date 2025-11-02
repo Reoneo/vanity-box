@@ -27,7 +27,7 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
     : origin;
   
   const ogImageUrl = username 
-    ? `${origin}/api/og?username=${encodeURIComponent(username)}${displayName ? `&displayName=${encodeURIComponent(displayName)}` : ''}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}${banner ? `&banner=${encodeURIComponent(banner)}` : ''}`
+    ? (banner || avatar || `${origin}/vanity-meta-image.jpeg`)
     : `${origin}/vanity-meta-image.jpeg`;
 
   return (
