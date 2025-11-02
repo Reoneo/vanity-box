@@ -728,6 +728,11 @@ export const SearchInterface = () => {
                 };
               }
               
+              // Update header from ENS text record if available
+              if (ensTextRecords['header']) {
+                updatedProfile.header = ensTextRecords['header'];
+              }
+              
               setWeb3BioProfile(updatedProfile);
             } catch (e) {
               console.warn('Failed to map web3.bio profile to ENS records:', e);
@@ -1345,24 +1350,17 @@ export const SearchInterface = () => {
                         </button>
                       </div>
 
-                      {/* Social Links and All Available Web3.bio Links */}
-                      <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                        {/* Display all links from web3BioProfile */}
+                      {/* Social Links - Grid layout with 5 icons per row */}
+                      <div className="grid grid-cols-5 gap-4 pt-2 justify-items-center">
                         {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
-                          if (!linkData || platform === 'website') return null; // Skip website as it's shown above
+                          if (!linkData || platform === 'website') return null;
                           
-                          const platformIcons: { [key: string]: any } = {
-                            twitter: <span>𝕏</span>,
-                            github: <Github className="w-4 h-4" />,
-                            discord: <SiDiscord className="w-4 h-4" />,
-                            telegram: <Send className="w-4 h-4" />,
-                            farcaster: <span>🟣</span>,
-                            lens: <span>🌿</span>,
-                            instagram: <span>📷</span>,
-                            youtube: <span>▶️</span>,
-                            reddit: <span>🤖</span>,
-                            medium: <span>Ⓜ️</span>,
-                            linkedin: <span>💼</span>,
+                          const socialIcons: { [key: string]: string } = {
+                            twitter: 'https://cdn-icons-png.flaticon.com/512/5968/5968830.png',
+                            telegram: 'https://cdn.pixabay.com/photo/2021/12/27/10/50/telegram-6896827_1280.png',
+                            youtube: 'https://cdn-icons-png.flaticon.com/512/5968/5968852.png',
+                            facebook: 'https://cdn-icons-png.flaticon.com/512/733/733547.png',
+                            spotify: 'https://www.citypng.com/public/uploads/preview/square-black-green-spotify-app-icon-png-701751694969849j7wtxvnrgo.png',
                           };
                           
                           return (
@@ -1371,10 +1369,30 @@ export const SearchInterface = () => {
                               href={linkData.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg text-sm text-gray-300 hover:text-white transition-colors"
+                              className="group relative"
+                              title={`@${linkData.handle || platform}`}
                             >
-                              {platformIcons[platform.toLowerCase()] || <ExternalLink className="w-4 h-4" />}
-                              <span>@{linkData.handle || linkData.link}</span>
+                              {socialIcons[platform.toLowerCase()] ? (
+                                <img 
+                                  src={socialIcons[platform.toLowerCase()]} 
+                                  alt={platform}
+                                  className="w-12 h-12 rounded-lg transition-transform group-hover:scale-110"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 flex items-center justify-center transition-colors">
+                                  {platform === 'github' && <Github className="w-6 h-6 text-white" />}
+                                  {platform === 'discord' && <SiDiscord className="w-6 h-6 text-white" />}
+                                  {platform === 'instagram' && <span className="text-2xl">📷</span>}
+                                  {platform === 'linkedin' && <span className="text-2xl">💼</span>}
+                                  {platform === 'farcaster' && <span className="text-2xl">🟣</span>}
+                                  {platform === 'lens' && <span className="text-2xl">🌿</span>}
+                                  {platform === 'reddit' && <span className="text-2xl">🤖</span>}
+                                  {platform === 'medium' && <span className="text-2xl">Ⓜ️</span>}
+                                  {!['github', 'discord', 'instagram', 'linkedin', 'farcaster', 'lens', 'reddit', 'medium'].includes(platform) && (
+                                    <ExternalLink className="w-6 h-6 text-white" />
+                                  )}
+                                </div>
+                              )}
                             </a>
                           );
                         })}
@@ -1394,32 +1412,6 @@ export const SearchInterface = () => {
                       </div>
                     )}
 
-                    {/* ENS Text Records Section - Only show for ENS domains */}
-                    {web3BioProfile?.platform === 'ens' && ensRecords?.records && 
-                     Object.keys(ensRecords.records).length > 0 && (
-                      <div className="pt-4 mt-4 border-t border-gray-700/50 w-full">
-                        <h4 className="text-sm font-semibold text-white mb-3 text-center">
-                          ENS Text Records
-                        </h4>
-                        <div className="grid grid-cols-1 gap-2 text-xs max-h-[300px] overflow-y-auto pr-2">
-                          {Object.entries(ensRecords.records)
-                            .filter(([key]) => !['avatar', 'header', 'display', 'name'].includes(key))
-                            .map(([key, value]) => (
-                              <div 
-                                key={key}
-                                className="flex items-start gap-2 p-2 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors"
-                              >
-                                <span className="text-gray-400 font-mono min-w-[100px] shrink-0">
-                                  {key}:
-                                </span>
-                                <span className="text-gray-300 break-all">
-                                  {String(value)}
-                                </span>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>
