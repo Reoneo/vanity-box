@@ -16,18 +16,20 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   banner,
 }) => {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vanitybox.app';
+  const supabaseUrl = 'https://nttbfocahntuwqtsgpfr.supabase.co';
   
   const title = username 
     ? `${displayName || username} - Vanity.box` 
     : 'Vanity.box - Premium Web3 Identity';
   
-  const desc = description || `View ${displayName || username} on Vanity.box`;
+  const desc = description || `View ${displayName || username}'s Web3 identity on Vanity.box`;
   const currentUrl = username 
     ? `${origin}/${username}` 
     : origin;
   
+  // Use edge function to generate dynamic OG image
   const ogImageUrl = username 
-    ? (banner || avatar || `${origin}/vanity-meta-image.jpeg`)
+    ? `${supabaseUrl}/functions/v1/og-image?username=${encodeURIComponent(username)}${displayName ? `&displayName=${encodeURIComponent(displayName)}` : ''}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ''}${banner ? `&banner=${encodeURIComponent(banner)}` : ''}`
     : `${origin}/vanity-meta-image.jpeg`;
 
   return (
