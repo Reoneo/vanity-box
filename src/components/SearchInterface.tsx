@@ -559,7 +559,7 @@ export const SearchInterface = () => {
 
                 const ensName = normalize(trimmedQuery);
                 
-                // All standard ENS text record keys
+                // All standard ENS text record keys + common social platforms
                 const textRecordKeys = [
                   'display',
                   'description',
@@ -570,23 +570,34 @@ export const SearchInterface = () => {
                   'notice',
                   'phone',
                   'url',
+                  'avatar',
                   'header',
                   'com.twitter',
                   'com.github',
                   'com.discord',
                   'com.reddit',
+                  'com.youtube',
+                  'com.facebook',
+                  'com.spotify',
+                  'com.linkedin',
+                  'com.instagram',
                   'org.telegram',
                   'io.keybase',
                   'vnd.twitter',
                   'vnd.github',
                 ];
 
-                // Fetch all text records in parallel
-                const textValues = await Promise.all(
-                  textRecordKeys.map(key => 
-                    publicClient.getEnsText({ name: ensName, key }).catch(() => null)
-                  )
+                // Fetch all text records in parallel with a timeout
+                const fetchPromises = textRecordKeys.map(key => 
+                  Promise.race([
+                    publicClient.getEnsText({ name: ensName, key }),
+                    new Promise((_, reject) => 
+                      setTimeout(() => reject(new Error('timeout')), 3000)
+                    )
+                  ]).catch(() => null)
                 );
+
+                const textValues = await Promise.all(fetchPromises);
 
                 // Build records object with all non-null values
                 textRecordKeys.forEach((key, index) => {
@@ -643,9 +654,10 @@ export const SearchInterface = () => {
 
               // Update web3BioProfile with ENS social links
               const updatedProfile = { ...profileData };
+              if (!updatedProfile.links) updatedProfile.links = {};
+              
               if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
                 const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
-                if (!updatedProfile.links) updatedProfile.links = {};
                 updatedProfile.links.twitter = {
                   link: `https://twitter.com/${twitterHandle}`,
                   handle: twitterHandle
@@ -653,33 +665,64 @@ export const SearchInterface = () => {
               }
               if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
                 const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
-                if (!updatedProfile.links) updatedProfile.links = {};
                 updatedProfile.links.github = {
                   link: `https://github.com/${githubHandle}`,
                   handle: githubHandle
                 };
               }
               if (ensTextRecords['com.discord']) {
-                if (!updatedProfile.links) updatedProfile.links = {};
                 updatedProfile.links.discord = {
                   handle: ensTextRecords['com.discord']
                 };
               }
               if (ensTextRecords['org.telegram']) {
-                if (!updatedProfile.links) updatedProfile.links = {};
                 updatedProfile.links.telegram = {
                   handle: ensTextRecords['org.telegram']
                 };
               }
               if (ensTextRecords['com.reddit']) {
-                if (!updatedProfile.links) updatedProfile.links = {};
                 updatedProfile.links.reddit = {
                   link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
                   handle: ensTextRecords['com.reddit']
                 };
               }
+              if (ensTextRecords['com.youtube']) {
+                updatedProfile.links.youtube = {
+                  link: ensTextRecords['com.youtube'].startsWith('http') 
+                    ? ensTextRecords['com.youtube']
+                    : `https://youtube.com/${ensTextRecords['com.youtube']}`,
+                  handle: ensTextRecords['com.youtube']
+                };
+              }
+              if (ensTextRecords['com.facebook']) {
+                updatedProfile.links.facebook = {
+                  link: ensTextRecords['com.facebook'].startsWith('http')
+                    ? ensTextRecords['com.facebook']
+                    : `https://facebook.com/${ensTextRecords['com.facebook']}`,
+                  handle: ensTextRecords['com.facebook']
+                };
+              }
+              if (ensTextRecords['com.spotify']) {
+                updatedProfile.links.spotify = {
+                  link: ensTextRecords['com.spotify'],
+                  handle: ensTextRecords['com.spotify']
+                };
+              }
+              if (ensTextRecords['com.linkedin']) {
+                updatedProfile.links.linkedin = {
+                  link: ensTextRecords['com.linkedin'].startsWith('http')
+                    ? ensTextRecords['com.linkedin']
+                    : `https://linkedin.com/in/${ensTextRecords['com.linkedin']}`,
+                  handle: ensTextRecords['com.linkedin']
+                };
+              }
+              if (ensTextRecords['com.instagram']) {
+                updatedProfile.links.instagram = {
+                  link: `https://instagram.com/${ensTextRecords['com.instagram']}`,
+                  handle: ensTextRecords['com.instagram']
+                };
+              }
               if (ensTextRecords['url']) {
-                if (!updatedProfile.links) updatedProfile.links = {};
                 updatedProfile.links.website = {
                   link: ensTextRecords['url']
                 };
