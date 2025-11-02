@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
+import { normalize } from 'viem/ens';
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -542,28 +545,147 @@ export const SearchInterface = () => {
             setEnsResults([]);
             profileFetched = true;
 
-            // Build ENS-like text records from web3.bio profile
+            // For .eth domains, also fetch ENS text records directly using viem
+            const isEthDomain = normalizedQuery.endsWith('.eth');
+            let ensTextRecords: Record<string, string> = {};
+            
+            if (isEthDomain && profileData.address) {
+              try {
+                console.log("Fetching ENS text records for:", trimmedQuery);
+                const publicClient = createPublicClient({
+                  chain: mainnet,
+                  transport: http(),
+                });
+
+                const ensName = normalize(trimmedQuery);
+                
+                // All standard ENS text record keys
+                const textRecordKeys = [
+                  'display',
+                  'description',
+                  'email',
+                  'keywords',
+                  'location',
+                  'name',
+                  'notice',
+                  'phone',
+                  'url',
+                  'header',
+                  'com.twitter',
+                  'com.github',
+                  'com.discord',
+                  'com.reddit',
+                  'org.telegram',
+                  'io.keybase',
+                  'vnd.twitter',
+                  'vnd.github',
+                ];
+
+                // Fetch all text records in parallel
+                const textValues = await Promise.all(
+                  textRecordKeys.map(key => 
+                    publicClient.getEnsText({ name: ensName, key }).catch(() => null)
+                  )
+                );
+
+                // Build records object with all non-null values
+                textRecordKeys.forEach((key, index) => {
+                  if (textValues[index]) {
+                    ensTextRecords[key] = textValues[index] as string;
+                  }
+                });
+
+                console.log("Fetched ENS text records:", ensTextRecords);
+              } catch (ensError) {
+                console.error("Error fetching ENS text records:", ensError);
+              }
+            }
+
+            // Build ENS-like text records from web3.bio profile + direct ENS records
             try {
               const records: Record<string, string> = {};
-              if (profileData?.email) records.email = profileData.email;
-              if (profileData?.avatar) records.avatar = profileData.avatar;
-              if (profileData?.description) records.description = profileData.description;
-              if (profileData?.location) records.location = profileData.location;
+              
+              // Start with ENS records (if .eth domain)
+              Object.assign(records, ensTextRecords);
+              
+              // Fallback to web3.bio data if ENS records are missing
+              if (!records.email && profileData?.email) records.email = profileData.email;
+              if (!records.avatar && profileData?.avatar) records.avatar = profileData.avatar;
+              if (!records.description && profileData?.description) records.description = profileData.description;
+              if (!records.location && profileData?.location) records.location = profileData.location;
+              
               const website = profileData?.links?.website?.link || profileData?.url;
-              if (website) records.url = website;
+              if (!records.url && website) records.url = website;
+              
               const links = profileData?.links || {};
-              if (links?.twitter?.handle) records['com.twitter'] = String(links.twitter.handle).replace(/^@/, '');
-              if (links?.github?.handle) records['com.github'] = String(links.github.handle).replace(/^@/, '');
-              if (links?.discord?.handle) records['com.discord'] = String(links.discord.handle);
-              if (links?.telegram?.handle) records['org.telegram'] = String(links.telegram.handle).replace(/^@/, '');
-              if (profileData?.contenthash) records.contenthash = String(profileData.contenthash);
+              if (!records['com.twitter'] && links?.twitter?.handle) {
+                records['com.twitter'] = String(links.twitter.handle).replace(/^@/, '');
+              }
+              if (!records['com.github'] && links?.github?.handle) {
+                records['com.github'] = String(links.github.handle).replace(/^@/, '');
+              }
+              if (!records['com.discord'] && links?.discord?.handle) {
+                records['com.discord'] = String(links.discord.handle);
+              }
+              if (!records['org.telegram'] && links?.telegram?.handle) {
+                records['org.telegram'] = String(links.telegram.handle).replace(/^@/, '');
+              }
+              if (!records.contenthash && profileData?.contenthash) {
+                records.contenthash = String(profileData.contenthash);
+              }
 
               setEnsRecords({
                 name: trimmedQuery,
                 address: profileData?.address,
-                avatar: profileData?.avatar,
+                avatar: records.avatar || profileData?.avatar,
                 records,
               });
+
+              // Update web3BioProfile with ENS social links
+              const updatedProfile = { ...profileData };
+              if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
+                const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
+                if (!updatedProfile.links) updatedProfile.links = {};
+                updatedProfile.links.twitter = {
+                  link: `https://twitter.com/${twitterHandle}`,
+                  handle: twitterHandle
+                };
+              }
+              if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
+                const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
+                if (!updatedProfile.links) updatedProfile.links = {};
+                updatedProfile.links.github = {
+                  link: `https://github.com/${githubHandle}`,
+                  handle: githubHandle
+                };
+              }
+              if (ensTextRecords['com.discord']) {
+                if (!updatedProfile.links) updatedProfile.links = {};
+                updatedProfile.links.discord = {
+                  handle: ensTextRecords['com.discord']
+                };
+              }
+              if (ensTextRecords['org.telegram']) {
+                if (!updatedProfile.links) updatedProfile.links = {};
+                updatedProfile.links.telegram = {
+                  handle: ensTextRecords['org.telegram']
+                };
+              }
+              if (ensTextRecords['com.reddit']) {
+                if (!updatedProfile.links) updatedProfile.links = {};
+                updatedProfile.links.reddit = {
+                  link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
+                  handle: ensTextRecords['com.reddit']
+                };
+              }
+              if (ensTextRecords['url']) {
+                if (!updatedProfile.links) updatedProfile.links = {};
+                updatedProfile.links.website = {
+                  link: ensTextRecords['url']
+                };
+              }
+              
+              setWeb3BioProfile(updatedProfile);
             } catch (e) {
               console.warn('Failed to map web3.bio profile to ENS records:', e);
             }
