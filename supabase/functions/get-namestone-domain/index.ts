@@ -77,8 +77,16 @@ serve(async (req) => {
 
     if (!apiRes.ok) {
       console.error('❌ NameStone get-domain error', apiRes.status, text);
-      // Return 404 for "Domain does not exist" errors, otherwise 500
-      const status = apiRes.status === 400 || apiRes.status === 404 ? 404 : 500;
+      // Gracefully handle non-existent domains without surfacing as a 5xx in the app
+      const isDomainMissing = (json?.error || text || '').toLowerCase().includes('domain does not exist');
+      if (apiRes.status === 400 && isDomainMissing) {
+        return new Response(JSON.stringify({ success: false, error: 'Domain does not exist' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200, // avoid throwing in client; caller can branch on success
+        });
+      }
+      // Otherwise, pass through original status (404/401/etc.) instead of forcing 500
+      const status = apiRes.status || 500;
       return new Response(JSON.stringify({ success: false, error: json?.error || text || `HTTP ${apiRes.status}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status,
