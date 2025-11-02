@@ -552,6 +552,7 @@ export const SearchInterface = () => {
             body: { domain: domain }
           });
 
+          // Only set profile if we successfully got parent domain data
           if (!domainError && domainData?.success && domainData.data?.length > 0) {
             const parentRecord = domainData.data[0];
             
@@ -588,13 +589,17 @@ export const SearchInterface = () => {
               avatar: parentRecord.text_records?.avatar,
               records,
             });
+            
+            profileFetched = true;
           } else {
-            setWeb3BioProfile(null);
+            // Parent domain doesn't exist in Namestone, just continue to show subdomain results
+            console.log('Parent domain not found in Namestone:', domain);
           }
         } catch (e) {
           console.warn('Failed to fetch Namestone parent domain:', e);
         }
-        // Prevent web3.bio fallback for Namestone-managed domains
+        // Mark as fetched to prevent web3.bio fallback for Namestone-managed domains
+        // even if parent domain doesn't exist
         profileFetched = true;
       }
 

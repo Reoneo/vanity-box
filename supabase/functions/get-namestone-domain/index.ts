@@ -77,9 +77,11 @@ serve(async (req) => {
 
     if (!apiRes.ok) {
       console.error('❌ NameStone get-domain error', apiRes.status, text);
+      // Return 404 for "Domain does not exist" errors, otherwise 500
+      const status = apiRes.status === 400 || apiRes.status === 404 ? 404 : 500;
       return new Response(JSON.stringify({ success: false, error: json?.error || text || `HTTP ${apiRes.status}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status,
       });
     }
 
