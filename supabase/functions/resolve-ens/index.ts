@@ -1,6 +1,7 @@
 // Deno serverless function to resolve ENS names using viem
-import { createPublicClient, http, normalize } from 'npm:viem@2.37.5';
+import { createPublicClient, http } from 'npm:viem@2.37.5';
 import { mainnet } from 'npm:viem@2.37.5/chains';
+import { normalize } from 'npm:viem@2.37.5/ens';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
