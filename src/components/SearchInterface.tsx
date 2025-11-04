@@ -551,20 +551,32 @@ export const SearchInterface = () => {
             setEnsResults([]);
             profileFetched = true;
 
-            // For .eth domains, also fetch ENS text records directly using viem
-            const isEthDomain = normalizedQuery.endsWith('.eth');
+            // Fetch ENS text records (for .eth inputs OR any input that resolves to a primary ENS name)
             let ensTextRecords: Record<string, string> = {};
-            
-            if (isEthDomain && profileData.address) {
-              try {
-                console.log("Fetching ENS text records for:", trimmedQuery);
-                const publicClient = createPublicClient({
-                  chain: mainnet,
-                  transport: http(),
-                });
+            try {
+              const publicClient = createPublicClient({
+                chain: mainnet,
+                transport: http(),
+              });
 
-                const ensName = normalize(trimmedQuery);
-                
+              // Determine ENS name to read text records from
+              let ensNameToQuery: string | null = null;
+
+              if (normalizedQuery.endsWith('.eth')) {
+                // Direct .eth lookup
+                ensNameToQuery = normalize(trimmedQuery);
+              } else if (profileData.address) {
+                // Resolve primary ENS name from the returned address
+                try {
+                  const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
+                  if (primary) ensNameToQuery = normalize(primary);
+                } catch (_) {
+                  /* ignore ENS name resolution failure */
+                }
+              }
+
+              if (ensNameToQuery) {
+                console.log('Fetching ENS text records for:', ensNameToQuery);
                 // All standard ENS text record keys + common social platforms
                 const textRecordKeys = [
                   'display',
@@ -594,13 +606,11 @@ export const SearchInterface = () => {
                 ];
 
                 // Fetch all text records in parallel with a timeout
-                const fetchPromises = textRecordKeys.map(key => 
+                const fetchPromises = textRecordKeys.map((key) =>
                   Promise.race([
-                    publicClient.getEnsText({ name: ensName, key }),
-                    new Promise((_, reject) => 
-                      setTimeout(() => reject(new Error('timeout')), 3000)
-                    )
-                  ]).catch(() => null)
+                    publicClient.getEnsText({ name: ensNameToQuery!, key }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+                  ]).catch(() => null),
                 );
 
                 const textValues = await Promise.all(fetchPromises);
@@ -611,11 +621,10 @@ export const SearchInterface = () => {
                     ensTextRecords[key] = textValues[index] as string;
                   }
                 });
-
-                console.log("Fetched ENS text records:", ensTextRecords);
-              } catch (ensError) {
-                console.error("Error fetching ENS text records:", ensError);
+                console.log('Fetched ENS text records:', ensTextRecords);
               }
+            } catch (ensError) {
+              console.error('Error fetching ENS text records:', ensError);
             }
 
             // Build ENS-like text records from web3.bio profile + direct ENS records
@@ -1203,12 +1212,12 @@ export const SearchInterface = () => {
                         </p>
                       )}
 
-                      {/* Contact and Location - from Web3.bio only */}
+                      {/* Contact and Location */}
                       <div className="flex flex-col gap-2 text-sm text-gray-400 dark:text-gray-400 light:text-gray-700 items-center">
-                        {web3BioProfile.email && (
+                        {(ensRecords?.records?.email || web3BioProfile.email) && (
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4" />
-                            <span>{web3BioProfile.email}</span>
+                            <span>{ensRecords?.records?.email || web3BioProfile.email}</span>
                           </div>
                         )}
                         {web3BioProfile.links?.website && (
@@ -1314,11 +1323,22 @@ export const SearchInterface = () => {
                             linkedin: linkedinIcon,
                           };
                           
-                          // Special handling for Telegram to construct proper t.me URL
-                          let href = linkData.link;
-                          if (platform.toLowerCase() === 'telegram' && linkData.handle) {
-                            href = `https://t.me/${linkData.handle}`;
+                          // Construct href when ENS record only provided a handle
+                          let href = linkData.link as string | undefined;
+                          const p = platform.toLowerCase();
+                          const handle = (linkData.handle || '').replace(/^@/, '');
+                          if (!href && handle) {
+                            if (p === 'telegram') href = `https://t.me/${handle}`;
+                            else if (p === 'twitter' || p === 'x') href = `https://twitter.com/${handle}`;
+                            else if (p === 'github') href = `https://github.com/${handle}`;
+                            else if (p === 'instagram') href = `https://instagram.com/${handle}`;
+                            else if (p === 'linkedin') href = `https://linkedin.com/in/${handle}`;
+                            else if (p === 'bluesky') href = `https://bsky.app/profile/${handle}`;
+                            else if (p === 'facebook') href = `https://facebook.com/${handle}`;
+                            else if (p === 'youtube') href = `https://youtube.com/${handle}`;
+                            else if (p === 'spotify') href = handle.startsWith('http') ? handle : `https://open.spotify.com/user/${handle}`;
                           }
+                          if (!href) href = '#';
                           
                           return (
                             <a
