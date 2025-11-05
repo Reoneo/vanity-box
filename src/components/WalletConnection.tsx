@@ -265,27 +265,23 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2">
+        <DropdownMenuContent 
+          align="end" 
+          className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[9999]"
+          style={{ position: 'fixed' }}
+        >
           <DropdownMenuItem 
-            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-2"
-            onClick={handleConnect}
+            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer py-3 px-4"
+            onClick={() => window.open('https://t.me/vanitybox_bot/vanity', '_blank')}
           >
-            <img src={wldLogo} alt="World Chain" className="w-5 h-5" />
-            <div>
-              <div className="font-semibold">World App</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Connect & mint Vanity.box</div>
-            </div>
+            <div className="text-center w-full font-semibold text-base">Telegram</div>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
-            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-2"
-            onClick={() => window.open('https://t.me/vanitybox_bot', '_blank')}
+            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer py-3 px-4"
+            onClick={handleConnect}
           >
-            <img src={tonLogo} alt="TON" className="w-5 h-5 rounded" />
-            <div>
-              <div className="font-semibold">Telegram Mini App</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Mint Vanity.ton</div>
-            </div>
+            <div className="text-center w-full font-semibold text-base">World App</div>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
