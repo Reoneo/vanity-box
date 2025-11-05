@@ -70,6 +70,7 @@ import prettyuglyAvatar from "@/assets/prettyugly-avatar.png";
 import sanAndreasAvatar from "@/assets/sanandreas-avatar.png";
 import guavapayAvatar from "@/assets/guavapay-avatar.png";
 import mexipayAvatar from "@/assets/mexipay-avatar.png";
+import tonLogo from "@/assets/ton-logo.png";
 import discordIcon from "@/assets/discord-icon.png";
 import githubIcon from "@/assets/github-icon.png";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
@@ -340,6 +341,16 @@ export const SearchInterface = () => {
         price: 5,
         category: ["ENS", "DNS"],
         club: ["Crypto", "DeFi"],
+      },
+      {
+        name: "Vanity.ton",
+        description: "Telegram-native Web3 identity on TON blockchain",
+        imageUrl: tonLogo,
+        price: 5,
+        category: ["TON"],
+        club: ["Telegram", "DeFi"],
+        selectable: true,
+        enabled: true,
       },
       {
         name: "30315.eth",

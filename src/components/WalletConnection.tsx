@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Wallet, LogOut, User, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import wldLogo from '@/assets/wld-logo.png';
+import tonLogo from '@/assets/ton-logo.png';
 
 interface User {
   walletAddress?: string;
@@ -242,22 +244,51 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   if (!user) {
     return (
-      <Button
-        onClick={handleConnect}
-        disabled={isLoading}
-        variant="outline"
-        size="sm"
-        className={cn("relative h-10 bg-black text-white border-0 hover:bg-gray-800 transition-all duration-300 font-semibold before:absolute before:inset-0 before:rounded-md before:border-2 before:border-[#D4AF37] before:animate-pulse before:pointer-events-none", className)}
-      >
-        {isLoading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-            {t('connecting')}
-          </>
-        ) : (
-          t('Connect')
-        )}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                {t('connecting')}
+              </>
+            ) : (
+              <>
+                {t('Connect')}
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2">
+          <DropdownMenuItem 
+            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-2"
+            onClick={handleConnect}
+          >
+            <img src={wldLogo} alt="World Chain" className="w-5 h-5" />
+            <div>
+              <div className="font-semibold">World App</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Connect & mint Vanity.box</div>
+            </div>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-2"
+            onClick={() => window.open('https://t.me/vanitybox_bot', '_blank')}
+          >
+            <img src={tonLogo} alt="TON" className="w-5 h-5 rounded" />
+            <div>
+              <div className="font-semibold">Telegram Mini App</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Mint Vanity.ton</div>
+            </div>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
