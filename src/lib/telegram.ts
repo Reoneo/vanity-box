@@ -1,4 +1,4 @@
-// Telegram WebApp utilities for Mini App integration
+// Telegram WebApp utilities for Mini App integration with TON Connect
 
 interface TelegramWebApp {
   ready: () => void;
@@ -49,31 +49,4 @@ export const getTelegramUser = () => {
   if (!tg) return null;
   
   return tg.initDataUnsafe?.user || null;
-};
-
-/**
- * Connect TON wallet in Telegram
- * Note: This uses Telegram's built-in TON wallet
- */
-export const connectTonWallet = async (): Promise<{ address: string; username?: string }> => {
-  const tg = (window as any).Telegram?.WebApp;
-  if (!tg) {
-    throw new Error('Not in Telegram WebView');
-  }
-  
-  // Get Telegram user info
-  const telegramUser = getTelegramUser();
-  
-  // For now, we'll use Telegram user info
-  // In a full implementation, this would request actual TON wallet access
-  // using Telegram's wallet API when it's available
-  
-  if (telegramUser) {
-    return {
-      address: `telegram_${telegramUser.id}`,
-      username: telegramUser.username || telegramUser.first_name || `User${telegramUser.id}`
-    };
-  }
-  
-  throw new Error('No Telegram user data available');
 };

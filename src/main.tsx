@@ -2,6 +2,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { initMiniKit } from "@/lib/minikit";
+import { TonConnectUIProvider } from '@tonconnect/ui-react';
+import { getTonConnectManifest } from './lib/tonConnect';
 
 // Bootstrap MiniKit once on app load with enhanced logging
 const APP_ID = 'app_ed7e61cb0c52630464178eed59e3fbdd';
@@ -18,4 +20,8 @@ initMiniKit(APP_ID).then(() => {
   console.warn("[App] MiniKit initialization failed:", e);
 });
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <TonConnectUIProvider manifestUrl={getTonConnectManifest()}>
+    <App />
+  </TonConnectUIProvider>
+);

@@ -14,7 +14,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
 import tonLogo from '@/assets/ton-logo.png';
-import { isTelegramWebView, connectTonWallet } from '@/lib/telegram';
+import { isTelegramWebView, getTelegramUser } from '@/lib/telegram';
+import { useTonConnectUI } from '@tonconnect/ui-react';
+import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
 
 interface User {
   walletAddress?: string;
@@ -29,6 +31,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [tonConnectUI] = useTonConnectUI();
 
   useEffect(() => {
     // Check if we're running in World App
@@ -127,23 +130,29 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const handleTelegramConnect = async () => {
     // Check if in Telegram WebView
     if (isTelegramWebView()) {
-      // User is already in Telegram, connect TON wallet
+      // User is already in Telegram, connect TON wallet using TON Connect SDK
       try {
         setIsLoading(true);
-        const tonWallet = await connectTonWallet();
+        console.log('🔄 Connecting to TON wallet via TON Connect...');
+        
+        const tonWallet = await tonConnectWallet(tonConnectUI);
+        
         const userData = {
           walletAddress: tonWallet.address,
           username: tonWallet.username || formatAddress(tonWallet.address)
         };
         setUser(userData);
+        
         // Dispatch event for Index component
         window.dispatchEvent(new CustomEvent('wallet-connected', { 
           detail: userData
         }));
+        
         console.log('✅ TON wallet connected:', userData);
       } catch (error) {
         console.error('❌ TON wallet connection failed:', error);
-        alert('Failed to connect Telegram wallet. Please try again.');
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        alert(`Failed to connect TON wallet: ${errorMessage}\n\nPlease try again.`);
       } finally {
         setIsLoading(false);
       }
