@@ -14,6 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
 import tonLogo from '@/assets/ton-logo.png';
+import { isTelegramWebView, connectTonWallet } from '@/lib/telegram';
 
 interface User {
   walletAddress?: string;
@@ -120,6 +121,35 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       alert(`Failed to connect wallet: ${errorMessage}\n\nPlease ensure you're using the latest version of World App and try again.`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTelegramConnect = async () => {
+    // Check if in Telegram WebView
+    if (isTelegramWebView()) {
+      // User is already in Telegram, connect TON wallet
+      try {
+        setIsLoading(true);
+        const tonWallet = await connectTonWallet();
+        const userData = {
+          walletAddress: tonWallet.address,
+          username: tonWallet.username || formatAddress(tonWallet.address)
+        };
+        setUser(userData);
+        // Dispatch event for Index component
+        window.dispatchEvent(new CustomEvent('wallet-connected', { 
+          detail: userData
+        }));
+        console.log('✅ TON wallet connected:', userData);
+      } catch (error) {
+        console.error('❌ TON wallet connection failed:', error);
+        alert('Failed to connect Telegram wallet. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // User is on website, redirect to Telegram mini app
+      window.open('https://t.me/vanitybox_bot/vanity', '_blank');
     }
   };
 
@@ -266,13 +296,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
-          align="end" 
-          className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[9999]"
-          style={{ position: 'fixed' }}
+          align="end"
+          sideOffset={8}
+          alignOffset={0}
+          side="bottom"
+          avoidCollisions={true}
+          collisionPadding={8}
+          className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-[99999]"
         >
           <DropdownMenuItem 
             className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer py-3 px-4"
-            onClick={() => window.open('https://t.me/vanitybox_bot/vanity', '_blank')}
+            onClick={handleTelegramConnect}
           >
             <div className="text-center w-full font-semibold text-base">Telegram</div>
           </DropdownMenuItem>

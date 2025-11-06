@@ -26,7 +26,6 @@ const App = () => {
     <div style={{
       position: "fixed",
       inset: 0,
-      overflow: "hidden",
       overscrollBehavior: "none",
       WebkitOverflowScrolling: "none",
     } as any}>
