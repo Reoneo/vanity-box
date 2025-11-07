@@ -15,11 +15,13 @@ import TermsOfUse from "./pages/TermsOfUse";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Prevent iOS pull-to-refresh and scroll bounce
+  // Prevent only pull-to-refresh, allow internal scrolling
   useEffect(() => {
-    const preventScroll = (e: TouchEvent) => e.preventDefault();
-    document.addEventListener('touchmove', preventScroll, { passive: false });
-    return () => document.removeEventListener('touchmove', preventScroll);
+    // Prevent pull-to-refresh on document level
+    document.body.style.overscrollBehavior = 'none';
+    return () => {
+      document.body.style.overscrollBehavior = 'auto';
+    };
   }, []);
 
   return (

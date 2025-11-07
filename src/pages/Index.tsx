@@ -47,9 +47,10 @@ const Index = () => {
         <main 
           className="flex-1 px-4 pt-24 md:pt-24 pb-20 relative z-10 flex flex-col overflow-y-auto overflow-x-hidden"
           style={{
-            overscrollBehavior: 'contain',
+            overscrollBehavior: 'none',
             WebkitOverflowScrolling: 'touch',
-            height: 'calc(100vh - 80px)'
+            height: 'calc(100vh - 80px)',
+            touchAction: 'pan-y'
           } as any}
         >
           <article className="max-w-2xl mx-auto text-center w-full flex-1 flex flex-col">
