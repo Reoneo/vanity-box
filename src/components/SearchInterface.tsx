@@ -71,6 +71,7 @@ import sanAndreasAvatar from "@/assets/sanandreas-avatar.png";
 import guavapayAvatar from "@/assets/guavapay-avatar.png";
 import mexipayAvatar from "@/assets/mexipay-avatar.png";
 import tonLogo from "@/assets/ton-logo.png";
+import vanityTonAvatar from "@/assets/vanity-ton-avatar.jpeg";
 import discordIcon from "@/assets/discord-icon.png";
 import githubIcon from "@/assets/github-icon.png";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
@@ -345,12 +346,12 @@ export const SearchInterface = () => {
       {
         name: "Vanity.ton",
         description: "Telegram-native Web3 identity on TON blockchain",
-        imageUrl: tonLogo,
+        imageUrl: vanityTonAvatar,
         price: 5,
         category: ["TON"],
         club: ["Telegram", "DeFi"],
-        selectable: true,
-        enabled: true,
+        selectable: false,
+        enabled: false,
       },
       {
         name: "30315.eth",
@@ -504,22 +505,151 @@ export const SearchInterface = () => {
             
             const textRecords = subdomainData.textRecords;
             
-            // Build profile from subdomain's own text records
+            // Try to fetch web3.bio profile using eth_address from text records
+            let web3BioData: Web3BioProfile | null = null;
+            let ownerAddress: string | null = textRecords.eth_address || null;
+            
+            // If no eth_address in text records, try to get domain owner
+            if (!ownerAddress) {
+              try {
+                console.log('📧 No eth_address in text records, fetching domain owner...');
+                const { data: domainData } = await supabase.functions.invoke('get-namestone-domain', {
+                  body: { domain }
+                });
+                if (domainData?.success && domainData.owner) {
+                  ownerAddress = domainData.owner;
+                  console.log('✅ Domain owner found:', ownerAddress);
+                }
+              } catch (err) {
+                console.warn('Failed to fetch domain owner:', err);
+              }
+            }
+            
+            // Fetch web3.bio profile using address if available
+            if (ownerAddress) {
+              try {
+                console.log('📞 Fetching web3.bio profile for address:', ownerAddress);
+                const { data: web3BioResponse } = await supabase.functions.invoke('get-web3bio-profile', {
+                  body: { handle: ownerAddress }
+                });
+                
+                if (web3BioResponse && Array.isArray(web3BioResponse) && web3BioResponse.length > 0) {
+                  web3BioData = web3BioResponse[0];
+                  console.log('✅ Web3.bio profile fetched:', web3BioData);
+                }
+              } catch (err) {
+                console.warn('Failed to fetch web3.bio profile:', err);
+              }
+            }
+            
+            // Fetch ENS text records if we have an address or ENS name from web3.bio
+            let ensTextRecords: Record<string, string> = {};
+            if (ownerAddress) {
+              try {
+                const publicClient = createPublicClient({
+                  chain: mainnet,
+                  transport: http(),
+                });
+                
+                // Try to resolve primary ENS name
+                let ensNameToQuery: string | null = null;
+                try {
+                  const primary = await publicClient.getEnsName({ address: ownerAddress as `0x${string}` });
+                  if (primary) ensNameToQuery = normalize(primary);
+                } catch (_) {
+                  console.warn('No primary ENS name found for address');
+                }
+                
+                if (ensNameToQuery) {
+                  console.log('📝 Fetching ENS text records for:', ensNameToQuery);
+                  const textRecordKeys = [
+                    'avatar', 'description', 'email', 'url', 'location', 'name',
+                    'com.twitter', 'com.github', 'com.discord', 'com.reddit',
+                    'com.youtube', 'com.spotify', 'com.linkedin', 'com.instagram',
+                    'org.telegram', 'vnd.twitter', 'vnd.github', 'header'
+                  ];
+                  
+                  const fetchPromises = textRecordKeys.map((key) =>
+                    Promise.race([
+                      publicClient.getEnsText({ name: ensNameToQuery!, key }),
+                      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+                    ]).catch(() => null),
+                  );
+                  
+                  const textValues = await Promise.all(fetchPromises);
+                  textRecordKeys.forEach((key, index) => {
+                    if (textValues[index]) {
+                      ensTextRecords[key] = textValues[index] as string;
+                    }
+                  });
+                  console.log('✅ ENS text records fetched:', ensTextRecords);
+                }
+              } catch (ensError) {
+                console.warn('Failed to fetch ENS text records:', ensError);
+              }
+            }
+            
+            // Build merged profile from NameStone + web3.bio + ENS text records
+            // Priority: ENS text records > NameStone text records > web3.bio data
+            const mergedRecords: Record<string, string> = {};
+            
+            // Start with web3.bio data (lowest priority)
+            if (web3BioData?.email) mergedRecords.email = web3BioData.email;
+            if (web3BioData?.description) mergedRecords.description = web3BioData.description;
+            if (web3BioData?.avatar) mergedRecords.avatar = web3BioData.avatar;
+            if (web3BioData?.location) mergedRecords.location = web3BioData.location;
+            if (web3BioData?.header) mergedRecords.header = web3BioData.header;
+            
+            // Override with NameStone text records (medium priority)
+            Object.entries(textRecords).forEach(([key, value]) => {
+              if (value && typeof value === 'string') mergedRecords[key] = value;
+            });
+            
+            // Override with ENS text records (highest priority)
+            Object.entries(ensTextRecords).forEach(([key, value]) => {
+              if (value && typeof value === 'string') mergedRecords[key] = value;
+            });
+            
             setEnsRecords({
-              records: textRecords
+              records: mergedRecords,
+              address: ownerAddress || undefined,
+              avatar: mergedRecords.avatar,
+              name: normalizedQuery
             });
 
-            const buildLinksFromRecords = (records: Record<string, string>) => {
-              const links: any[] = [];
-              const socialPlatforms = ['twitter', 'github', 'url', 'instagram', 'linkedin', 'bluesky', 'discord', 'telegram', 'youtube', 'spotify'];
+            // Build comprehensive links from all sources
+            const buildMergedLinks = () => {
+              const links: any = {};
               
-              Object.entries(records).forEach(([key, value]) => {
-                if (socialPlatforms.includes(key.toLowerCase()) && value) {
-                  links.push({
-                    link: value,
-                    handle: value,
-                    platform: key
-                  });
+              // Add web3.bio links first
+              if (web3BioData?.links) {
+                Object.assign(links, web3BioData.links);
+              }
+              
+              // Add/override with NameStone text records
+              const socialPlatforms: Record<string, string> = {
+                'twitter': 'com.twitter',
+                'github': 'com.github',
+                'discord': 'com.discord',
+                'telegram': 'org.telegram',
+                'instagram': 'com.instagram',
+                'linkedin': 'com.linkedin',
+                'youtube': 'com.youtube',
+                'spotify': 'com.spotify',
+                'reddit': 'com.reddit',
+                'url': 'url'
+              };
+              
+              Object.entries(mergedRecords).forEach(([key, value]) => {
+                const platform = Object.keys(socialPlatforms).find(p => 
+                  key.toLowerCase() === p || key.toLowerCase() === socialPlatforms[p]
+                );
+                
+                if (platform && value) {
+                  links[platform] = {
+                    link: value.startsWith('http') ? value : `https://${platform}.com/${value}`,
+                    handle: value
+                  };
                 }
               });
               
@@ -527,21 +657,23 @@ export const SearchInterface = () => {
             };
 
             setWeb3BioProfile({
-              avatar: textRecords.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${normalizedQuery}`,
-              displayName: textRecords.name || normalizedQuery,
-              description: textRecords.description || '',
-              address: textRecords.eth_address || '',
-              email: textRecords.email || '',
+              avatar: mergedRecords.avatar || web3BioData?.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${normalizedQuery}`,
+              displayName: mergedRecords.name || web3BioData?.displayName || normalizedQuery,
+              description: mergedRecords.description || web3BioData?.description || '',
+              address: ownerAddress || web3BioData?.address || '',
+              email: mergedRecords.email || web3BioData?.email || '',
+              location: mergedRecords.location || web3BioData?.location || '',
+              header: mergedRecords.header || web3BioData?.header || '',
               platform: 'Namestone',
               identity: normalizedQuery,
-              links: buildLinksFromRecords(textRecords)
+              links: buildMergedLinks()
             });
 
             // Fetch EFP stats if address is available
-            if (textRecords.eth_address) {
+            if (ownerAddress) {
               try {
                 const { data: efpData } = await supabase.functions.invoke('get-efp-stats', {
-                  body: { address: textRecords.eth_address }
+                  body: { address: ownerAddress }
                 });
                 if (efpData) setEfpStats(efpData);
               } catch (efpError) {
@@ -550,16 +682,20 @@ export const SearchInterface = () => {
             }
 
             // Fetch POAPs if address is available
-            if (textRecords.eth_address) {
+            if (ownerAddress) {
               try {
+                setIsLoadingPoaps(true);
                 const { data: poapData } = await supabase.functions.invoke('get-poap-data', {
-                  body: { walletAddress: textRecords.eth_address }
+                  body: { walletAddress: ownerAddress }
                 });
-                if (poapData?.poaps) {
-                  setPoapCount(poapData.poaps.length);
+                if (poapData?.success) {
+                  setPoapCount(poapData.count || 0);
                 }
               } catch (poapError) {
                 console.warn('Failed to fetch POAPs:', poapError);
+                setPoapCount(0);
+              } finally {
+                setIsLoadingPoaps(false);
               }
             }
 
