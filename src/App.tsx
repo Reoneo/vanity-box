@@ -25,36 +25,29 @@ const App = () => {
   }, []);
 
   return (
-    <div style={{
-      position: "fixed",
-      inset: 0,
-      overscrollBehavior: "none",
-      WebkitOverflowScrolling: "none",
-    } as any}>
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-            <LanguageProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                    <Route path="/terms-of-use" element={<TermsOfUse />} />
-                    {/* User profile routes - must come before catch-all */}
-                    <Route path="/:username" element={<Index />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-              </TooltipProvider>
-            </LanguageProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </HelmetProvider>
-    </div>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <LanguageProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-of-use" element={<TermsOfUse />} />
+                  {/* User profile routes - must come before catch-all */}
+                  <Route path="/:username" element={<Index />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 };
 
