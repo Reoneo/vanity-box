@@ -35,7 +35,6 @@ import { SubdomainMintModal } from "@/components/SubdomainMintModal";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
-import InfiniteMenu from "@/components/InfiniteMenu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1788,21 +1787,166 @@ export const SearchInterface = () => {
             {/* Results container - same width as search bar */}
             <div className="w-full sm:max-w-3xl sm:mx-auto">
               {hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-                <div className="mt-8 animate-in slide-in-from-bottom duration-500">
-                  <div style={{ height: '600px', position: 'relative' }} className="w-full">
-                    <InfiniteMenu
-                      items={ensResults.map((result) => ({
-                        image: result.imageUrl,
-                        link: `https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`,
-                        title: displayQuery ? `${displayQuery}.${result.name}` : result.name,
-                        description: result.description || 'Premium digital identity'
-                      }))}
-                      onItemClick={(item, index) => {
-                        const result = ensResults[index];
-                        handleMint(result);
-                      }}
-                    />
-                  </div>
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-500">
+                  {ensResults.map((result, index) => {
+                    const isFlipped = flippedCards.has(index);
+                    const isTaken = takenSubdomains.has(result.name.toLowerCase());
+                    const checkFailed = ((window as any).__checkFailedDomains as Set<string> | undefined)?.has(result.name.toLowerCase()) ?? false;
+                    const isUserOwned =
+                      displayQuery && userDomains.includes(`${displayQuery}.${result.name}`.toLowerCase());
+                    const isEnabled =
+                      (result as any).enabled || result.name === "Smith.cash" || result.name === "$mith.eth";
+                    const isDisabled = !isEnabled || isTaken || isUserOwned || checkFailed;
+
+                    const hasSpotify = !!(result as any).spotifyUrl;
+
+                    return (
+                      <div key={index} className="perspective-1000 min-h-[320px]">
+                        <div className="relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}">
+                          {/* Front of Card */}
+                          <div className="absolute inset-0 w-full h-full backface-hidden overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_50px_rgba(212,175,55,0.3)] transition-all duration-500 hover:scale-[1.02]">
+                            <div className="relative p-6 flex flex-col items-center text-center min-h-[320px]">
+                              {/* Vanity.box link to parent domain (top-right) */}
+                              <a
+                                href={`https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute top-3 right-3 opacity-60 hover:opacity-100 transition-opacity"
+                                aria-label="Open parent domain on Vanity.box"
+                              >
+                                <ExternalLink className="w-6 h-6 text-[#D4AF37]" />
+                              </a>
+                              <div className="relative mb-6">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60 animate-pulse"></div>
+                                <div className="relative w-28 h-28 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)]">
+                                  <img
+                                    src={result.imageUrl}
+                                    alt={result.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              </div>
+
+                              <h3 className="font-mono text-xl font-bold text-white mb-3 leading-tight px-4 w-full break-words flex items-center justify-center">
+                                {displayQuery ? `${displayQuery}.${result.name}` : result.name}
+                              </h3>
+
+                              <div className="flex items-center justify-center gap-1 mb-4 overflow-x-auto max-w-full flex-nowrap">
+                                {(Array.isArray(result.category) ? result.category : [result.category]).map(
+                                  (cat, catIndex) => (
+                                    <Badge
+                                      key={`cat-${catIndex}`}
+                                      className={cn(
+                                        "text-xs px-2 py-0.5 flex items-center gap-1 font-semibold rounded-full border whitespace-nowrap",
+                                        cat === "ENS" && "bg-transparent text-white border-[#D4AF37]",
+                                        cat === "DNS" && "bg-transparent text-white border-blue-500",
+                                        cat === "Aptos Names" && "bg-transparent text-white border-purple-500",
+                                        cat === "SNS.iD" && "bg-transparent text-white border-green-500",
+                                      )}
+                                    >
+                                      {cat === "ENS" && <img src={ensLogoWhite} alt="ENS" className="w-3 h-3" />}
+                                      {cat === "DNS" && <Globe className="w-3 h-3" />}
+                                      {cat === "Aptos Names" && (
+                                        <img src={aptosNamesNew} alt="Aptos Names" className="w-3 h-3 rounded-sm" />
+                                      )}
+                                      {cat}
+                                    </Badge>
+                                  ),
+                                )}
+
+                                {(Array.isArray(result.club) ? result.club : [result.club]).map(
+                                  (clubName, clubIndex) => (
+                                    <Badge
+                                      key={`club-${clubIndex}`}
+                                      className={cn(
+                                        "text-xs px-2 py-0.5 font-semibold rounded-full whitespace-nowrap",
+                                        clubName === "Surname" && "bg-purple-600 text-white border-0",
+                                        clubName === "DeFi" && "bg-green-600 text-white border-0",
+                                        clubName === "Digits" && "bg-purple-600 text-white border-0",
+                                        clubName === "Dev" && "bg-blue-600 text-white border-0",
+                                        clubName === "Crypto" && "bg-gray-600 text-white border-0",
+                                        clubName === "Letters" && "bg-gray-600 text-white border-0",
+                                        clubName === "Startup" && "bg-orange-600 text-white border-0",
+                                        clubName === "Artist" && "bg-pink-600 text-white border-0",
+                                      )}
+                                    >
+                                      {clubName}
+                                    </Badge>
+                                  ),
+                                )}
+                              </div>
+
+                              <Button
+                                className="w-full bg-gradient-to-r from-[#D4AF37] via-[#F7E06C] to-[#D4AF37] hover:from-[#C4A027] hover:via-[#E7D05C] hover:to-[#C4A027] text-black font-bold text-base py-6 rounded-xl shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_30px_rgba(212,175,55,0.6)] transition-all duration-300 transform hover:scale-105 mt-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                onClick={() => handleMint(result)}
+                                disabled={isDisabled}
+                              >
+                                {(result as any).selectable ||
+                                result.name === "Smith.cash" ||
+                                result.name === "$mith.eth"
+                                  ? checkFailed
+                                    ? "Check Failed"
+                                    : isTaken
+                                      ? "Taken"
+                                      : isUserOwned
+                                        ? "Taken"
+                                        : t("mint_now")
+                                  : "Coming Soon"}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Back of Card */}
+                          <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                            <div className="relative p-6 h-full flex flex-col min-h-[320px]">
+                              {/* Vanity.box link to parent domain (top-right) */}
+                              <a
+                                href={`https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute top-3 right-3 opacity-60 hover:opacity-100 transition-opacity"
+                                aria-label="Open parent domain on Vanity.box"
+                              >
+                                <ExternalLink className="w-6 h-6 text-[#D4AF37]" />
+                              </a>
+                              <div className="flex justify-end mb-4 flex-shrink-0">
+                                <button
+                                  onClick={() => handleFlipCard(index)}
+                                  className="w-10 h-10 rounded-full bg-gray-700/80 backdrop-blur-sm border border-gray-600 flex items-center justify-center hover:bg-gray-600/80 transition-all duration-300 hover:scale-110"
+                                >
+                                  <X size={18} className="text-white" />
+                                </button>
+                              </div>
+
+                              <div className="flex flex-col items-center text-center mb-4 flex-shrink-0">
+                                <div className="relative mb-3">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-lg opacity-40"></div>
+                                  <div className="relative w-24 h-24 rounded-full border-3 border-[#D4AF37] overflow-hidden shadow-lg">
+                                    <img
+                                      src={result.imageUrl}
+                                      alt={result.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                </div>
+
+                                <h4 className="font-mono text-xl font-bold text-white leading-tight px-4 break-words flex items-center justify-center">
+                                  {displayQuery ? `${displayQuery}.${result.name}` : result.name}
+                                </h4>
+                              </div>
+
+                              <div className="flex-1 overflow-y-auto px-2">
+                                <p
+                                  className="text-sm text-gray-300 leading-relaxed text-center break-words"
+                                  dangerouslySetInnerHTML={{ __html: result.description }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
