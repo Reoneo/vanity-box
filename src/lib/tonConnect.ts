@@ -13,8 +13,16 @@ export const getTonConnectManifest = (): string => {
  */
 export const connectTonWallet = async (tonConnectUI: TonConnectUI): Promise<{ address: string; username?: string }> => {
   try {
-    // Open the connection modal
-    await tonConnectUI.connectWallet();
+    // Check if already connected
+    if (tonConnectUI.wallet) {
+      return {
+        address: tonConnectUI.wallet.account.address,
+        username: tonConnectUI.wallet.account.address.slice(0, 6) + '...' + tonConnectUI.wallet.account.address.slice(-4)
+      };
+    }
+
+    // Open the connection modal without triggering page reload
+    const walletConnectionSource = await tonConnectUI.connectWallet();
     
     // Get the connected wallet
     const wallet = tonConnectUI.wallet;

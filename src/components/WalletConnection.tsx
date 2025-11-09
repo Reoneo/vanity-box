@@ -135,6 +135,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         setIsLoading(true);
         console.log('🔄 Connecting to TON wallet via TON Connect...');
         
+        // Prevent page reload by using TON Connect properly
         const tonWallet = await tonConnectWallet(tonConnectUI);
         
         const userData = {
@@ -151,8 +152,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         console.log('✅ TON wallet connected:', userData);
       } catch (error) {
         console.error('❌ TON wallet connection failed:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        alert(`Failed to connect TON wallet: ${errorMessage}\n\nPlease try again.`);
+        
+        // Only show alert if it's not a user cancellation
+        if (error instanceof Error && !error.message.includes('User rejected')) {
+          const errorMessage = error.message;
+          alert(`Failed to connect TON wallet: ${errorMessage}\n\nPlease try again.`);
+        }
       } finally {
         setIsLoading(false);
       }
