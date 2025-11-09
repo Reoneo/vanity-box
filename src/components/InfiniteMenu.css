@@ -3,8 +3,11 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   outline: none;
+  background: transparent;
 }
 
 #infinite-grid-menu-canvas:active {
@@ -27,9 +30,15 @@
   transition: all 0.3s ease;
 }
 
-.action-button:hover {
+.action-button:hover:not(.disabled) {
   transform: translateX(-50%) scale(1.1);
   box-shadow: 0 4px 20px hsl(var(--primary) / 0.4);
+}
+
+.action-button.disabled {
+  background: hsl(var(--muted));
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .action-button-icon {
@@ -112,6 +121,34 @@
   opacity: 0;
   pointer-events: none;
   transition: bottom 0.1s ease, opacity 0.1s ease, transform 0.1s ease;
+}
+
+.coming-soon-badge {
+  user-select: none;
+  position: absolute;
+  right: clamp(1rem, 5vw, 3rem);
+  top: clamp(1rem, 5vw, 3rem);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-shadow: 0 2px 10px hsl(var(--background) / 0.8);
+  border: 2px solid hsl(var(--border));
+  pointer-events: none;
+}
+
+.coming-soon-badge.active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.coming-soon-badge.inactive {
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.1s ease, transform 0.1s ease;
 }
 
 @media (max-width: 1024px) {

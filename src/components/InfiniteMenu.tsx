@@ -874,6 +874,8 @@ interface InfiniteMenuProps {
     link: string;
     title: string;
     description: string;
+    enabled?: boolean;
+    badge?: string;
   }>;
   onItemClick?: (item: any, index: number) => void;
 }
@@ -921,6 +923,10 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
 
   const handleButtonClick = () => {
     if (!activeItem) return;
+    
+    // Check if item is disabled
+    if (activeItem.enabled === false) return;
+    
     if (onItemClick) {
       onItemClick(activeItem, activeIndex);
     } else if (activeItem.link) {
@@ -938,10 +944,20 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
         <>
           <h2 className={`face-title ${isMoving ? 'inactive' : 'active'}`}>{activeItem.title}</h2>
 
-          <p className={`face-description ${isMoving ? 'inactive' : 'active'}`}> {activeItem.description}</p>
+          <p className={`face-description ${isMoving ? 'inactive' : 'active'}`}>{activeItem.description}</p>
 
-          <div onClick={handleButtonClick} className={`action-button ${isMoving ? 'inactive' : 'active'}`}>
-            <p className="action-button-icon">&#x2197;</p>
+          {activeItem.badge && (
+            <div className={`coming-soon-badge ${isMoving ? 'inactive' : 'active'}`}>
+              {activeItem.badge}
+            </div>
+          )}
+
+          <div 
+            onClick={handleButtonClick} 
+            className={`action-button ${isMoving ? 'inactive' : 'active'} ${activeItem.enabled === false ? 'disabled' : ''}`}
+            style={{ cursor: activeItem.enabled === false ? 'not-allowed' : 'pointer' }}
+          >
+            <p className="action-button-icon">{activeItem.enabled === false ? '⏳' : '→'}</p>
           </div>
         </>
       )}

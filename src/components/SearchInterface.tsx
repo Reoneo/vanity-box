@@ -1792,122 +1792,39 @@ export const SearchInterface = () => {
               </div>
             )}
 
-            {/* Results container - Grid Layout */}
-            <div className="w-full sm:max-w-6xl sm:mx-auto px-4">
-              {hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-                <div className="mt-8 animate-in slide-in-from-bottom duration-500">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {ensResults.map((result, index) => {
-                      const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
-                      const isTaken = takenSubdomains.has(result.name.toLowerCase());
-                      const isComingSoon = result.enabled === false;
-                      const categories = Array.isArray(result.category) ? result.category : [result.category];
-                      const clubs = Array.isArray(result.club) ? result.club : [result.club];
-                      
-                      return (
-                        <Card
-                          key={index}
-                          className="bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden backdrop-blur-sm hover:border-[#D4AF37]/60 transition-all duration-300 group"
-                        >
-                          <CardContent className="p-6 space-y-4">
-                            {/* Header with pattern background */}
-                            <div className="relative h-32 -mx-6 -mt-6 mb-4 bg-gradient-to-r from-[#D4AF37]/20 via-[#F7E06C]/10 to-[#D4AF37]/20 overflow-hidden">
-                              <img 
-                                src={defaultHeaderPattern} 
-                                alt="Pattern" 
-                                className="w-full h-full object-cover opacity-40"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900"></div>
-                              
-                              {/* Coming Soon Badge */}
-                              {isComingSoon && (
-                                <div className="absolute top-4 right-4 bg-[#D4AF37] text-black px-3 py-1 rounded-full text-xs font-bold">
-                                  Coming Soon
-                                </div>
-                              )}
-                              
-                              {/* External Link Icon */}
-                              {!isComingSoon && !isTaken && (
-                                <a
-                                  href={`https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="absolute top-4 right-4 w-8 h-8 bg-gray-900/60 hover:bg-gray-900/80 backdrop-blur-sm border border-[#D4AF37]/30 rounded-lg flex items-center justify-center transition-all"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <ExternalLink className="w-4 h-4 text-[#D4AF37]" />
-                                </a>
-                              )}
-                            </div>
-                            
-                            {/* Avatar with golden glow */}
-                            <div className="relative -mt-20 flex justify-center">
-                              <div className="relative inline-block">
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                                <div className="relative w-32 h-32 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
-                                  <img
-                                    src={result.imageUrl}
-                                    alt={result.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Domain Name */}
-                            <div className="text-center">
-                              <h3 className="text-2xl font-bold text-white">
-                                {displayQuery ? `${displayQuery}.${result.name}` : result.name}
-                              </h3>
-                            </div>
-                            
-                            {/* Badges */}
-                            <div className="flex flex-wrap gap-2 justify-center">
-                              {categories.map((cat) => (
-                                <Badge
-                                  key={cat}
-                                  className="bg-gray-700/50 text-white border border-[#D4AF37]/30 px-3 py-1"
-                                >
-                                  <span className="text-xs">◇</span> {cat}
-                                </Badge>
-                              ))}
-                              {clubs.map((club) => (
-                                <Badge
-                                  key={club}
-                                  className="bg-purple-600/80 text-white border-0 px-3 py-1"
-                                >
-                                  {club}
-                                </Badge>
-                              ))}
-                              {isTaken && (
-                                <Badge className="bg-red-600/80 text-white border-0 px-3 py-1">
-                                  Taken
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            {/* Mint Button */}
-                            <Button
-                              onClick={() => !isComingSoon && !isTaken && handleMint(result)}
-                              disabled={isComingSoon || isTaken}
-                              className={cn(
-                                "w-full h-12 text-lg font-bold rounded-xl transition-all duration-300",
-                                isComingSoon || isTaken
-                                  ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                                  : "bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.5)]"
-                              )}
-                            >
-                              {isComingSoon ? "Coming Soon" : isTaken ? "Taken" : "Mint Now"}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+            {/* Results container - Fullscreen Infinite Menu */}
+            {hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
+              <div className="fixed inset-0 z-30 bg-background/95 backdrop-blur-sm">
+                <InfiniteMenu
+                  items={ensResults.map((result) => {
+                    const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
+                    const isTaken = takenSubdomains.has(result.name.toLowerCase());
+                    const isComingSoon = result.enabled === false;
+                    
+                    return {
+                      image: result.imageUrl,
+                      link: `https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`,
+                      title: displayQuery ? `${displayQuery}.${result.name}` : result.name,
+                      description: result.description || 'Premium digital identity',
+                      enabled: !isComingSoon && !isTaken,
+                      badge: isComingSoon ? 'Coming Soon' : isTaken ? 'Taken' : undefined
+                    };
+                  })}
+                  onItemClick={(item, index) => {
+                    const result = ensResults[index];
+                    const isComingSoon = result.enabled === false;
+                    const isTaken = takenSubdomains.has(result.name.toLowerCase());
+                    
+                    if (!isComingSoon && !isTaken) {
+                      handleMint(result);
+                    }
+                  }}
+                />
+              </div>
+            )}
 
-              {/* No Results State */}
+            {/* No Results State */}
+            <div className="w-full sm:max-w-3xl sm:mx-auto px-4">
               {hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
                 <div className="text-center py-12 animate-in fade-in duration-500">
                   <p className="text-gray-400 text-lg mb-2">No results found</p>
