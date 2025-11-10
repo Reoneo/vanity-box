@@ -677,7 +677,10 @@ class InfiniteGridMenu {
       images.forEach((img, i) => {
         const x = (i % this.atlasSize) * cellSize;
         const y = Math.floor(i / this.atlasSize) * cellSize;
+        // Apply slight dimming filter to avatar images
+        ctx.filter = 'brightness(0.85)';
         ctx.drawImage(img, x, y, cellSize, cellSize);
+        ctx.filter = 'none';
       });
 
       gl.bindTexture(gl.TEXTURE_2D, this.tex);

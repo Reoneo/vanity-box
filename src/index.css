@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable all animations during theme transitions */
+.theme-transitioning * {
+  animation: none !important;
+  transition: none !important;
+}
+
 /* Vanity.₿ox Design System - Web3 Identity Platform
 Inspired by clean, modern ENS interface with crypto-native aesthetics.
 All colors MUST be HSL. */

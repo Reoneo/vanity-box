@@ -17,22 +17,26 @@
 .action-button {
   position: absolute;
   left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
-  width: 60px;
-  height: 60px;
-  display: grid;
-  place-items: center;
+  min-width: 120px;
+  height: 48px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: hsl(var(--primary));
   border: none;
-  border-radius: 50%;
+  border-radius: 24px;
   cursor: pointer;
-  border: 3px solid hsl(var(--border));
+  border: 2px solid hsl(var(--border));
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
 }
 
 .action-button:hover:not(.disabled) {
-  transform: translateX(-50%) scale(1.1);
-  box-shadow: 0 4px 20px hsl(var(--primary) / 0.4);
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 6px 20px hsl(var(--primary) / 0.5);
 }
 
 .action-button.disabled {
@@ -43,12 +47,12 @@
 
 .action-button-icon {
   user-select: none;
-  position: relative;
   color: hsl(var(--primary-foreground));
-  top: 2px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   text-align: center;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .face-title {
@@ -107,7 +111,7 @@
 }
 
 .action-button.active {
-  bottom: clamp(2em, 10vh, 3.8em);
+  bottom: clamp(5.5em, 18vh, 8em);
   transform: translateX(-50%) scale(1);
   opacity: 1;
   pointer-events: auto;

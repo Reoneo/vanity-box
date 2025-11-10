@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 const Index = () => {
   const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Listen for wallet connection events from WalletConnection component
   useEffect(() => {
@@ -29,13 +30,29 @@ const Index = () => {
     };
   }, []);
 
-  // No longer needed - mint flow is handled directly in SearchInterface
+  // Handle theme switching with animation reset
+  const handleThemeToggle = () => {
+    setIsTransitioning(true);
+    document.documentElement.classList.add('theme-transitioning');
+    
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+    
+    // Remove the class after theme has switched
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+      setIsTransitioning(false);
+    }, 100);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       <SplashCursor />
-      {/* Gold border wrapper that includes powered by and footer - z-40 to appear over menu */}
-      <div className="min-h-screen flex flex-col border-l-2 border-r-2 border-[#D4AF37] relative z-40 pointer-events-none">
+      
+      {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
+      <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
+      
+      {/* Content wrapper */}
+      <div className="min-h-screen flex flex-col relative z-40">
         {/* Blur overlay when language selector is open */}
         <div className="fixed inset-0 z-[9998] pointer-events-none">
           <div className="absolute inset-0" id="page-blur-target"></div>
@@ -68,7 +85,7 @@ const Index = () => {
             {/* Theme Toggle on Right */}
             <div className="flex items-center">
               <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={handleThemeToggle}
                 className="w-7 h-7 flex items-center justify-center transition-all duration-300 hover:opacity-80"
                 aria-label="Toggle theme"
               >
