@@ -957,7 +957,7 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
             className={`action-button ${isMoving ? 'inactive' : 'active'} ${activeItem.enabled === false ? 'disabled' : ''}`}
             style={{ cursor: activeItem.enabled === false ? 'not-allowed' : 'pointer' }}
           >
-            <p className="action-button-icon">{activeItem.enabled === false ? '⏳' : '→'}</p>
+            <p className="action-button-icon">{activeItem.enabled === false ? 'Coming Soon' : 'Mint Now'}</p>
           </div>
         </>
       )}

@@ -46,7 +46,9 @@
   position: relative;
   color: hsl(var(--primary-foreground));
   top: 2px;
-  font-size: 26px;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .face-title {

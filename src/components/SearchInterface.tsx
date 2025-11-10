@@ -1154,10 +1154,10 @@ export const SearchInterface = () => {
               <PersonalizedHeader user={null} />
             )}
 
-            {/* Search bar container - hidden when showing My IDs */}
+            {/* Search bar container - hidden when showing My IDs - z-50 to appear over infinite menu */}
             {!showMyIDs && (
               <>
-                <div className="w-full max-w-md mx-auto mb-4 md:mb-0 mt-4">
+                <div className="w-full max-w-md mx-auto mb-4 md:mb-0 mt-4 relative z-50">
                   <div className="relative">
                     <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                       <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
@@ -1172,7 +1172,7 @@ export const SearchInterface = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="start"
-                          className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-50"
+                          className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-[60]"
                         >
                           <div className="relative">
                             <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
