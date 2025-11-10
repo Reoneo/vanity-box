@@ -34,24 +34,26 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       <SplashCursor />
-      {/* Gold border wrapper that includes powered by and footer */}
-      <div className="min-h-screen flex flex-col border-l-2 border-r-2 border-[#D4AF37]">
+      {/* Gold border wrapper that includes powered by and footer - z-40 to appear over menu */}
+      <div className="min-h-screen flex flex-col border-l-2 border-r-2 border-[#D4AF37] relative z-40 pointer-events-none">
         {/* Blur overlay when language selector is open */}
         <div className="fixed inset-0 z-[9998] pointer-events-none">
           <div className="absolute inset-0" id="page-blur-target"></div>
         </div>
         
-        <Header />
+        <div className="pointer-events-auto">
+          <Header />
+        </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-24 md:pt-24 pb-24 relative z-10 flex flex-col">
+        <main className="flex-1 px-4 pt-24 md:pt-24 pb-24 relative z-10 flex flex-col pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full flex-1 flex flex-col">
             <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
             <SearchInterface />
           </article>
         </main>
         
-        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom">
+        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom pointer-events-auto">
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">

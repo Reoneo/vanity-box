@@ -713,7 +713,7 @@ export const SearchInterface = () => {
         }
       }
 
-      // If not Namestone subdomain, use web3.bio for everything (including .eth)
+      // If not Namestone subdomain, use web3.bio for everything (including .eth and .box)
       if (!profileFetched) {
         try {
           const { data, error } = await supabase.functions.invoke("get-web3bio-profile", {
@@ -1794,7 +1794,7 @@ export const SearchInterface = () => {
 
             {/* Results container - Fullscreen Infinite Menu */}
             {hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="fixed inset-0 z-30 bg-background/95 backdrop-blur-sm">
+              <div className="fixed inset-0 z-30 bg-background/95 backdrop-blur-sm pointer-events-auto">
                 <InfiniteMenu
                   items={ensResults.map((result) => {
                     const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
