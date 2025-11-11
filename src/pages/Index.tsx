@@ -6,17 +6,18 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import SplashCursor from '@/components/SplashCursor';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { Moon, Sun } from 'lucide-react';
+
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Listen for wallet connection events from WalletConnection component
+  // Force dark mode and listen for wallet connection events
   useEffect(() => {
+    setTheme('dark');
+    
     const handleWalletChange = (event: CustomEvent) => {
       setUser(event.detail);
     };
@@ -28,21 +29,7 @@ const Index = () => {
       window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
       window.removeEventListener('wallet-disconnected', () => setUser(null));
     };
-  }, []);
-
-  // Handle theme switching with animation reset
-  const handleThemeToggle = () => {
-    setIsTransitioning(true);
-    document.documentElement.classList.add('theme-transitioning');
-    
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-    
-    // Remove the class after theme has switched
-    setTimeout(() => {
-      document.documentElement.classList.remove('theme-transitioning');
-      setIsTransitioning(false);
-    }, 100);
-  };
+  }, [setTheme]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
@@ -82,20 +69,8 @@ const Index = () => {
               © 2025 vanity.box. All rights reserved.
             </div>
             
-            {/* Theme Toggle on Right */}
-            <div className="flex items-center">
-              <button
-                onClick={handleThemeToggle}
-                className="w-7 h-7 flex items-center justify-center transition-all duration-300 hover:opacity-80"
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? (
-                  <Sun className="w-5 h-5 text-black" />
-                ) : (
-                  <Moon className="w-5 h-5 text-black" />
-                )}
-              </button>
-            </div>
+            {/* Empty div for spacing (theme toggle hidden) */}
+            <div className="w-7 h-7"></div>
           </div>
         </footer>
       </div>

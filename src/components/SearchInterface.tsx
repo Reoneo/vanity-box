@@ -490,13 +490,18 @@ export const SearchInterface = () => {
       // Use web3.bio for ALL lookups - it supports .eth, .box, wallet addresses, and more
       console.log('🔍 Fetching web3.bio profile for:', normalizedQuery);
       try {
-        const { data, error } = await supabase.functions.invoke("get-web3bio-profile", {
-          body: { handle: trimmedQuery },
-        });
+        const response = await fetch(`https://api.web3.bio/profile/${trimmedQuery}`);
+        
+        if (!response.ok) {
+          throw new Error(`Web3.bio API error: ${response.statusText}`);
+        }
 
-        // Only process if we got valid data (no error and has results)
-        if (!error && data && !data.error && Array.isArray(data) && data.length > 0) {
+        const data = await response.json();
+
+        // Only process if we got valid data (has results)
+        if (data && Array.isArray(data) && data.length > 0) {
           const profileData = data[0];
+          console.log('✅ Web3.bio profile data:', profileData);
           setWeb3BioProfile(profileData);
           setEnsResults([]);
 
