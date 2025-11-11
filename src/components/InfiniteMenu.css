@@ -83,18 +83,20 @@
 .face-description {
   user-select: none;
   position: absolute;
-  max-width: clamp(10ch, 18vw, 15ch);
+  max-width: clamp(15ch, 25vw, 20ch);
   top: 50%;
   font-size: clamp(0.875rem, 1.75vw, 1.25rem);
   right: clamp(1rem, 4vw, 2.5rem);
   transform: translate(0, -50%);
   color: hsl(var(--muted-foreground));
   text-shadow: 0 2px 10px hsl(var(--background) / 0.8);
+  line-height: 1.6;
+  text-align: right;
 }
 
 .face-description.active {
   opacity: 1;
-  transform: translate(-50%, -50%);
+  transform: translate(-20%, -50%);
   pointer-events: auto;
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
@@ -111,8 +113,8 @@
 }
 
 .action-button.active {
-  bottom: 50%;
-  transform: translateX(-50%) translateY(50%) scale(1);
+  bottom: clamp(7em, 22vh, 12em);
+  transform: translateX(-50%) scale(1);
   opacity: 1;
   pointer-events: auto;
   transition: bottom 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
@@ -160,7 +162,11 @@
     display: block;
   }
   
+  .face-description {
+    max-width: clamp(12ch, 30vw, 18ch);
+  }
+  
   .action-button.active {
-    bottom: 2em;
+    bottom: clamp(5em, 15vh, 8em);
   }
 }
