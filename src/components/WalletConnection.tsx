@@ -288,51 +288,32 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   if (!user) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-            className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
-          >
-            {isLoading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                {t('connecting')}
-              </>
-            ) : (
-              <>
-                {t('Connect')}
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end"
-          sideOffset={8}
-          alignOffset={0}
-          side="bottom"
-          avoidCollisions={true}
-          collisionPadding={8}
-          className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-[99999]"
-        >
-          <DropdownMenuItem 
-            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer py-3 px-4"
-            onClick={handleTelegramConnect}
-          >
-            <div className="text-center w-full font-semibold text-base">Telegram</div>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer py-3 px-4"
-            onClick={handleConnect}
-          >
-            <div className="text-center w-full font-semibold text-base">World App</div>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        onClick={() => {
+          // Detect if in World App or Telegram and connect accordingly
+          if (MiniKit.isInstalled()) {
+            handleConnect();
+          } else if (isTelegramWebView()) {
+            handleTelegramConnect();
+          } else {
+            // Not in either app, show error or redirect
+            alert('Please open this app in World App or Telegram to connect your wallet.');
+          }
+        }}
+        disabled={isLoading}
+        variant="outline"
+        size="sm"
+        className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
+      >
+        {isLoading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            {t('connecting')}
+          </>
+        ) : (
+          t('Connect')
+        )}
+      </Button>
     );
   }
 

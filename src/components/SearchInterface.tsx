@@ -80,6 +80,8 @@ import whatsappIcon from "@/assets/whatsapp-icon.png";
 import blueskyIcon from "@/assets/bluesky-icon.png";
 import instagramIcon from "@/assets/instagram-icon.png";
 import linkedinIcon from "@/assets/linkedin-icon.png";
+import worldAppIcon from "@/assets/world-app-icon.png";
+import telegramIcon from "@/assets/telegram-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
