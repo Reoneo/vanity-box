@@ -50,40 +50,6 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user, is
       <h1 className="leading-tight mb-6">
         {getHeaderText()}
       </h1>
-      
-      {/* Mini Apps Section */}
-      <div className="flex flex-col items-center gap-3">
-        <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase">
-          Mini Apps
-        </h2>
-        <div className="flex items-center justify-center gap-6">
-          {/* World App Icon */}
-          <button
-            onClick={handleWorldAppClick}
-            className="group relative flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-black/20 hover:bg-black/30 transition-all duration-300 border-2 border-[#D4AF37]/30 hover:border-[#D4AF37] hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-            aria-label="World App"
-          >
-            <img 
-              src={worldAppIcon} 
-              alt="World App" 
-              className="w-8 h-8 md:w-10 md:h-10 object-contain transition-transform group-hover:scale-110"
-            />
-          </button>
-
-          {/* Telegram Icon */}
-          <button
-            onClick={handleTelegramClick}
-            className="group relative flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-black/20 hover:bg-black/30 transition-all duration-300 border-2 border-[#D4AF37]/30 hover:border-[#D4AF37] hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-            aria-label="Telegram"
-          >
-            <img 
-              src={telegramIcon} 
-              alt="Telegram" 
-              className="w-8 h-8 md:w-10 md:h-10 object-contain transition-transform group-hover:scale-110"
-            />
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

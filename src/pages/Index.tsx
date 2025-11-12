@@ -6,6 +6,9 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import SplashCursor from '@/components/SplashCursor';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
+import { isTelegramWebView } from '@/lib/telegram';
+import worldAppIcon from '@/assets/world-app-icon.png';
+import telegramIcon from '@/assets/telegram-icon.png';
 
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
@@ -31,6 +34,22 @@ const Index = () => {
     };
   }, [setTheme]);
 
+  const handleWorldAppClick = () => {
+    if (!MiniKit.isInstalled()) {
+      window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+    } else {
+      console.log('Already in World App');
+    }
+  };
+
+  const handleTelegramClick = () => {
+    if (!isTelegramWebView()) {
+      window.open('https://t.me/vanitybox_bot/vanity', '_blank');
+    } else {
+      console.log('Already in Telegram');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       <SplashCursor />
@@ -54,6 +73,40 @@ const Index = () => {
           <article className="max-w-2xl mx-auto text-center w-full flex-1 flex flex-col">
             <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
             <SearchInterface />
+
+            {/* Mini Apps Section - Only on Home Page */}
+            <div className="flex flex-col items-center gap-4 mt-8 mb-12">
+              <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase">
+                Mini Apps
+              </h2>
+              <div className="flex items-center justify-center gap-8">
+                {/* World App Icon */}
+                <button
+                  onClick={handleWorldAppClick}
+                  className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                  aria-label="World App"
+                >
+                  <img 
+                    src={worldAppIcon} 
+                    alt="World App" 
+                    className="w-24 h-24 md:w-30 md:h-30 object-contain transition-transform group-hover:scale-110"
+                  />
+                </button>
+
+                {/* Telegram Icon */}
+                <button
+                  onClick={handleTelegramClick}
+                  className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                  aria-label="Telegram"
+                >
+                  <img 
+                    src={telegramIcon} 
+                    alt="Telegram" 
+                    className="w-24 h-24 md:w-30 md:h-30 object-contain transition-transform group-hover:scale-110"
+                  />
+                </button>
+              </div>
+            </div>
           </article>
         </main>
         
