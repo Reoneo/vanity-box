@@ -1147,9 +1147,15 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                         )}
                       </div>
 
-                      {/* Bio/Description */}
+                      {/* Bio/Description - Moved below with gold styling */}
                       {web3BioProfile.description && (
-                        <p className="text-gray-300 dark:text-gray-300 light:text-gray-800 text-sm sm:text-base leading-relaxed">
+                        <p 
+                          className="text-sm sm:text-base leading-relaxed max-w-md px-4"
+                          style={{
+                            color: '#D4AF37',
+                            textShadow: '-0.5px -0.5px 0 black, 0.5px -0.5px 0 black, -0.5px 0.5px 0 black, 0.5px 0.5px 0 black'
+                          }}
+                        >
                           {web3BioProfile.description}
                         </p>
                       )}
