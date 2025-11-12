@@ -142,7 +142,11 @@ interface ENSRecords {
   };
 }
 
-export const SearchInterface = () => {
+interface SearchInterfaceProps {
+  onSearchFocus?: () => void;
+}
+
+export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
@@ -1007,6 +1011,7 @@ export const SearchInterface = () => {
                       onFocus={() => {
                         setIsSearchActive(true);
                         setShowFilterDropdown(false);
+                        onSearchFocus?.();
                       }}
                     />
                     <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">

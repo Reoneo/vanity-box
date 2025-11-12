@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 const Index = () => {
   const { setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
+  const [showMiniApps, setShowMiniApps] = useState(true);
 
   // Force dark mode and listen for wallet connection events
   useEffect(() => {
@@ -69,44 +70,46 @@ const Index = () => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-24 md:pt-24 pb-24 relative z-10 flex flex-col pointer-events-auto">
+        <main className="flex-1 px-4 pt-16 md:pt-20 pb-16 relative z-10 flex flex-col pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full flex-1 flex flex-col">
             <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
-            <SearchInterface />
+            <SearchInterface onSearchFocus={() => setShowMiniApps(false)} />
 
             {/* Mini Apps Section - Only on Home Page */}
-            <div className="flex flex-col items-center gap-4 mt-8 mb-12">
-              <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase">
-                Mini Apps
-              </h2>
-              <div className="flex items-center justify-center gap-8">
-                {/* World App Icon */}
-                <button
-                  onClick={handleWorldAppClick}
-                  className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
-                  aria-label="World App"
-                >
-                  <img 
-                    src={worldAppIcon} 
-                    alt="World App" 
-                    className="w-24 h-24 md:w-30 md:h-30 object-contain transition-transform group-hover:scale-110"
-                  />
-                </button>
+            {showMiniApps && (
+              <div className="flex flex-col items-center gap-3 mt-6">
+                <h2 className="text-xs md:text-sm font-semibold text-[#D4AF37] tracking-wider uppercase">
+                  Mini Apps
+                </h2>
+                <div className="flex items-center justify-center gap-6">
+                  {/* World App Icon */}
+                  <button
+                    onClick={handleWorldAppClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="World App"
+                  >
+                    <img 
+                      src={worldAppIcon} 
+                      alt="World App" 
+                      className="w-48 h-48 md:w-56 md:h-56 object-contain transition-transform group-hover:scale-110"
+                    />
+                  </button>
 
-                {/* Telegram Icon */}
-                <button
-                  onClick={handleTelegramClick}
-                  className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
-                  aria-label="Telegram"
-                >
-                  <img 
-                    src={telegramIcon} 
-                    alt="Telegram" 
-                    className="w-24 h-24 md:w-30 md:h-30 object-contain transition-transform group-hover:scale-110"
-                  />
-                </button>
+                  {/* Telegram Icon */}
+                  <button
+                    onClick={handleTelegramClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="Telegram"
+                  >
+                    <img 
+                      src={telegramIcon} 
+                      alt="Telegram" 
+                      className="w-24 h-24 md:w-30 md:h-30 object-contain transition-transform group-hover:scale-110"
+                    />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </article>
         </main>
         
