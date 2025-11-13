@@ -70,19 +70,22 @@ const Index = () => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-8 md:pt-12 pb-8 relative z-10 flex flex-col pointer-events-auto">
-          <article className="max-w-2xl mx-auto text-center w-full flex-1 flex flex-col">
-            <h1 className="sr-only">Vanity.box - Your Premium Web3 Digital Identity</h1>
+        <main className="flex-1 px-4 pt-2 md:pt-4 pb-2 relative z-10 flex flex-col items-center justify-center pointer-events-auto">
+          <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-3">
+            {/* Visible H1 Heading */}
+            <h1 className="text-3xl md:text-4xl font-bold text-[#D4AF37] mb-2" style={{textShadow: '-1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black'}}>
+              Web3 ID's
+            </h1>
             <SearchInterface onSearchFocus={() => setShowMiniApps(false)} />
 
             {/* Mini Apps Section - Only on Home Page */}
             {showMiniApps && (
-              <div className="flex flex-col items-center gap-3 mt-6">
+              <div className="flex flex-col items-center gap-2 mt-4">
                 <h2 className="text-xs md:text-sm font-semibold text-[#D4AF37] tracking-wider uppercase">
                   Mini Apps
                 </h2>
-                <div className="flex items-center justify-center gap-8">
-                  {/* World App Icon - Doubled size */}
+                <div className="flex items-center justify-center gap-12">
+                  {/* World App Icon */}
                   <button
                     onClick={handleWorldAppClick}
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
@@ -91,11 +94,11 @@ const Index = () => {
                     <img 
                       src={worldAppIcon} 
                       alt="World App" 
-                      className="w-48 h-48 md:w-56 md:h-56 object-contain transition-transform group-hover:scale-110"
+                      className="w-32 h-32 md:w-36 md:h-36 object-contain transition-transform group-hover:scale-110"
                     />
                   </button>
 
-                  {/* Telegram Icon - Same size as World */}
+                  {/* Telegram Icon - Same size */}
                   <button
                     onClick={handleTelegramClick}
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
@@ -104,7 +107,7 @@ const Index = () => {
                     <img 
                       src={telegramIcon} 
                       alt="Telegram" 
-                      className="w-48 h-48 md:w-56 md:h-56 object-contain transition-transform group-hover:scale-110"
+                      className="w-32 h-32 md:w-36 md:h-36 object-contain transition-transform group-hover:scale-110"
                     />
                   </button>
                 </div>

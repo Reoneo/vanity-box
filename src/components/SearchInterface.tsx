@@ -496,12 +496,37 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
       // Use web3.bio for ALL lookups - it supports .eth, .box, wallet addresses, and more
       console.log('🔍 Fetching web3.bio profile for:', normalizedQuery);
       try {
-        const response = await fetch(`https://api.web3.bio/profile/${trimmedQuery}`);
+        // Retry logic with timeout for reliability
+        const fetchWithRetry = async (url: string, retries = 3, timeout = 10000) => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), timeout);
+              
+              const response = await fetch(url, { 
+                signal: controller.signal,
+                headers: {
+                  'Accept': 'application/json',
+                }
+              });
+              
+              clearTimeout(timeoutId);
+              
+              if (!response.ok) {
+                throw new Error(`Web3.bio API error: ${response.statusText}`);
+              }
+              
+              return response;
+            } catch (error) {
+              if (i === retries - 1) throw error;
+              console.log(`Retry ${i + 1}/${retries} for web3.bio API...`);
+              await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+            }
+          }
+          throw new Error('Max retries reached');
+        };
         
-        if (!response.ok) {
-          throw new Error(`Web3.bio API error: ${response.statusText}`);
-        }
-
+        const response = await fetchWithRetry(`https://api.web3.bio/profile/${trimmedQuery}`);
         const data = await response.json();
 
         // Only process if we got valid data (has results)
@@ -1097,19 +1122,34 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                   </div>
 
                   <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
-                    {/* Avatar */}
+                    {/* Avatar with Description Overlay */}
                     <div className="relative inline-block mb-4">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-visible shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
                         {web3BioProfile.avatar ? (
                           <img
                             src={web3BioProfile.avatar}
                             alt={web3BioProfile.displayName || searchQuery}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover rounded-full"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold">
+                          <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold rounded-full">
                             {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        
+                        {/* Description Overlay - Bottom of Avatar */}
+                        {web3BioProfile.description && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm px-3 py-2 rounded-b-full">
+                            <p 
+                              className="text-xs sm:text-sm leading-tight text-center line-clamp-2"
+                              style={{
+                                color: '#D4AF37',
+                                textShadow: '-0.5px -0.5px 0 black, 0.5px -0.5px 0 black, -0.5px 0.5px 0 black, 0.5px 0.5px 0 black'
+                              }}
+                            >
+                              {web3BioProfile.description}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -1146,19 +1186,6 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                           </div>
                         )}
                       </div>
-
-                      {/* Bio/Description - Moved below with gold styling */}
-                      {web3BioProfile.description && (
-                        <p 
-                          className="text-sm sm:text-base leading-relaxed max-w-md px-4"
-                          style={{
-                            color: '#D4AF37',
-                            textShadow: '-0.5px -0.5px 0 black, 0.5px -0.5px 0 black, -0.5px 0.5px 0 black, 0.5px 0.5px 0 black'
-                          }}
-                        >
-                          {web3BioProfile.description}
-                        </p>
-                      )}
 
                       {/* Contact and Location */}
                       <div className="flex flex-col gap-2 text-sm text-gray-400 dark:text-gray-400 light:text-gray-700 items-center">
