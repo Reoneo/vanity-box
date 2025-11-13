@@ -143,10 +143,10 @@ interface ENSRecords {
 }
 
 interface SearchInterfaceProps {
-  onSearchFocus?: () => void;
+  onSearchClick?: () => void;
 }
 
-export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
+export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
@@ -1031,12 +1031,11 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                         if (e.key === "Enter") {
                           handleSearch();
                           setIsSearchActive(true);
+                          onSearchClick?.();
                         }
                       }}
                       onFocus={() => {
-                        setIsSearchActive(true);
                         setShowFilterDropdown(false);
-                        onSearchFocus?.();
                       }}
                     />
                     <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
@@ -1057,7 +1056,11 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                         </button>
                       )}
                       <Button
-                        onClick={() => handleSearch()}
+                        onClick={() => {
+                          handleSearch();
+                          setIsSearchActive(true);
+                          onSearchClick?.();
+                        }}
                         size="sm"
                         className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
                         disabled={!searchQuery.trim() || isLoading}
@@ -1122,10 +1125,10 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                   </div>
 
                   <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
-                    {/* Avatar with Description Overlay */}
+                    {/* Avatar - No description overlay */}
                     <div className="relative inline-block mb-4">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-visible shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
                         {web3BioProfile.avatar ? (
                           <img
                             src={web3BioProfile.avatar}
@@ -1137,12 +1140,21 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                             {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Profile Info - Centered */}
+                    <div className="space-y-3 flex flex-col items-center text-center w-full max-w-2xl mx-auto">
+                      <div className="flex flex-col items-center w-full">
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-black mb-2">
+                          {web3BioProfile.displayName || searchQuery}
+                        </h3>
                         
-                        {/* Description Overlay - Bottom of Avatar */}
+                        {/* Description below subdomain - full width */}
                         {web3BioProfile.description && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm px-3 py-2 rounded-b-full">
+                          <div className="w-full px-4 mb-3">
                             <p 
-                              className="text-xs sm:text-sm leading-tight text-center line-clamp-2"
+                              className="text-sm sm:text-base leading-relaxed text-center"
                               style={{
                                 color: '#D4AF37',
                                 textShadow: '-0.5px -0.5px 0 black, 0.5px -0.5px 0 black, -0.5px 0.5px 0 black, 0.5px 0.5px 0 black'
@@ -1152,15 +1164,7 @@ export const SearchInterface = ({ onSearchFocus }: SearchInterfaceProps) => {
                             </p>
                           </div>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Profile Info - Centered */}
-                    <div className="space-y-3 flex flex-col items-center text-center w-full">
-                      <div className="flex flex-col items-center">
-                        <h3 className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-black mb-2">
-                          {web3BioProfile.displayName || searchQuery}
-                        </h3>
+                        
                         {web3BioProfile.address && (
                           <div className="flex items-center gap-2 justify-center">
                             <p className="text-[#D4AF37] text-sm font-mono">
