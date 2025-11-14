@@ -942,7 +942,7 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
             {/* Search bar container - hidden when showing My IDs - z-50 to appear over infinite menu */}
             {!showMyIDs && (
               <>
-                <div className={cn("w-full max-w-md mx-auto mb-2 md:mb-1 relative z-50 transition-all duration-500", web3BioProfile ? "mt-0" : "mt-0")}>
+                <div className={cn("w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-500", web3BioProfile ? "mt-0" : "mt-0")}>
                   <div className="relative">
                     <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                       <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
