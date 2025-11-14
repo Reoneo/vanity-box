@@ -942,7 +942,7 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
             {/* Search bar container - hidden when showing My IDs - z-50 to appear over infinite menu */}
             {!showMyIDs && (
               <>
-                <div className={cn("w-full max-w-md mx-auto mb-4 md:mb-0 relative z-50 transition-all duration-500", web3BioProfile ? "mt-0" : "mt-0")}>
+                <div className={cn("w-full max-w-md mx-auto mb-2 md:mb-1 relative z-50 transition-all duration-500", web3BioProfile ? "mt-0" : "mt-0")}>
                   <div className="relative">
                     <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                       <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
@@ -1126,7 +1126,7 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
 
                   <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
                     {/* Avatar - No description overlay */}
-                    <div className="relative inline-block mb-4">
+                    <div className="relative inline-block mb-2">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
                       <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
                         {web3BioProfile.avatar ? (
@@ -1144,15 +1144,15 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
                     </div>
 
                     {/* Profile Info - Centered */}
-                    <div className="space-y-3 flex flex-col items-center text-center w-full max-w-2xl mx-auto">
+                    <div className="space-y-1 flex flex-col items-center text-center w-full max-w-2xl mx-auto">
                       <div className="flex flex-col items-center w-full">
-                        <h3 className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-black mb-2">
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-black mb-1">
                           {web3BioProfile.displayName || searchQuery}
                         </h3>
                         
                         {/* Description below subdomain - full width */}
                         {web3BioProfile.description && (
-                          <div className="w-full px-4 mb-3">
+                          <div className="w-full px-2 mb-1">
                             <p 
                               className="text-sm sm:text-base leading-relaxed text-center"
                               style={{
