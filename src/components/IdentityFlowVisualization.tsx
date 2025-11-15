@@ -12,11 +12,11 @@ export const IdentityFlowVisualization: React.FC<IdentityFlowVisualizationProps>
   vanityName,
 }) => {
   return (
-    <div className="relative w-full py-8 px-4">
+    <div className="relative w-full pt-4 pb-2 px-4">
       {/* Ambient glow background */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#D4AF37]/5 via-transparent to-[#D4AF37]/5 rounded-3xl blur-3xl" />
       
-      <div className="relative flex flex-col items-center gap-6">
+      <div className="relative flex flex-col items-center gap-4">
         {/* World ID - Top */}
         <div className="relative group w-full max-w-md">
           <div className="absolute -inset-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
