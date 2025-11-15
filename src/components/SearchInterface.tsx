@@ -934,8 +934,8 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
               avatar={web3BioProfile?.avatar}
               banner={web3BioProfile?.header}
             />
-            {/* Main Heading - always shown except on mint and My IDs pages */}
-            {!showMintInterface && !showMyIDs && (
+            {/* Main Heading - always shown except on mint, My IDs, and profile pages */}
+            {!showMintInterface && !showMyIDs && !web3BioProfile && (
               <PersonalizedHeader user={null} />
             )}
 
@@ -1071,8 +1071,53 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
                   </div>
                 </div>
 
-                {/* World ID Animation - shown when no search is active */}
-                {!hasSearched && !isSearchActive && <WorldIdAnimation />}
+                {/* Mini Apps Section - shown when no search is active */}
+                {!hasSearched && !isSearchActive && (
+                  <div className="flex flex-col items-center gap-0.5 mt-2">
+                    <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-1">
+                      Mini Apps
+                    </h2>
+                    <div className="flex items-center justify-center gap-6">
+                      {/* World App Icon */}
+                      <button
+                        onClick={() => {
+                          if (!MiniKit.isInstalled()) {
+                            window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+                          }
+                        }}
+                        className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                        aria-label="World App"
+                      >
+                        <div className="rounded-full border border-[#D4AF37] p-1">
+                          <img 
+                            src={worldAppIcon} 
+                            alt="World App" 
+                            className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                          />
+                        </div>
+                      </button>
+
+                      {/* Telegram Icon */}
+                      <button
+                        onClick={() => {
+                          if (!(window as any).Telegram?.WebApp?.initData) {
+                            window.open('https://t.me/vanitybox_bot/vanity', '_blank');
+                          }
+                        }}
+                        className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                        aria-label="Telegram"
+                      >
+                        <div className="rounded-full border border-[#D4AF37] p-1">
+                          <img 
+                            src={telegramIcon} 
+                            alt="Telegram" 
+                            className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                          />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
