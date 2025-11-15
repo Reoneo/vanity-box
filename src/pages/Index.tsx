@@ -70,13 +70,13 @@ const Index = () => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-24 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
+        <main className="flex-1 px-4 pt-16 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
             <SearchInterface onSearchClick={() => setShowMiniApps(false)} />
 
             {/* Mini Apps Section - Only on Home Page */}
             {showMiniApps && (
-              <div className="flex flex-col items-center gap-0.5 mt-2">
+              <div className="flex flex-col items-center gap-0.5 mt-4">
                 <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-1">
                   Mini Apps
                 </h2>

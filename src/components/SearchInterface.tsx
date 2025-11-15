@@ -934,8 +934,8 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
               avatar={web3BioProfile?.avatar}
               banner={web3BioProfile?.header}
             />
-            {/* Main Heading - always shown except on mint and My IDs pages */}
-            {!showMintInterface && !showMyIDs && (
+            {/* Main Heading - always shown except on mint, My IDs pages, and profile views */}
+            {!showMintInterface && !showMyIDs && !web3BioProfile && (
               <PersonalizedHeader user={null} />
             )}
 
