@@ -73,6 +73,46 @@ const Index = () => {
         <main className="flex-1 px-4 pt-24 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
             <SearchInterface onSearchClick={() => setShowMiniApps(false)} />
+
+            {/* Mini Apps Section - Only on Home Page */}
+            {showMiniApps && (
+              <div className="flex flex-col items-center gap-0.5 mt-2">
+                <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-1">
+                  Mini Apps
+                </h2>
+                <div className="flex items-center justify-center gap-6">
+                  {/* World App Icon */}
+                  <button
+                    onClick={handleWorldAppClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="World App"
+                  >
+                    <div className="rounded-full border border-[#D4AF37] p-1">
+                      <img 
+                        src={worldAppIcon} 
+                        alt="World App" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
+                    </div>
+                  </button>
+
+                  {/* Telegram Icon */}
+                  <button
+                    onClick={handleTelegramClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="Telegram"
+                  >
+                    <div className="rounded-full border border-[#D4AF37] p-1">
+                      <img 
+                        src={telegramIcon} 
+                        alt="Telegram" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </article>
         </main>
         
