@@ -503,7 +503,6 @@ class InfiniteGridMenu {
   #deltaTime = 0;
   #deltaFrames = 0;
   #frames = 0;
-  #lastSnapUpdate = 0;
 
   camera = {
     matrix: mat4.create(),
@@ -826,15 +825,11 @@ class InfiniteGridMenu {
     }
 
     if (!this.control.isPointerDown) {
-      // Throttle nearest vertex calculation to reduce computation
-      if (!this.#lastSnapUpdate || performance.now() - this.#lastSnapUpdate > 50) {
-        const nearestVertexIndex = this.#findNearestVertexIndex();
-        const itemIndex = nearestVertexIndex % Math.max(1, this.items.length);
-        this.onActiveItemChange(itemIndex);
-        const snapDirection = vec3.normalize(vec3.create(), this.#getVertexWorldPosition(nearestVertexIndex));
-        this.control.snapTargetDirection = snapDirection;
-        this.#lastSnapUpdate = performance.now();
-      }
+      const nearestVertexIndex = this.#findNearestVertexIndex();
+      const itemIndex = nearestVertexIndex % Math.max(1, this.items.length);
+      this.onActiveItemChange(itemIndex);
+      const snapDirection = vec3.normalize(vec3.create(), this.#getVertexWorldPosition(nearestVertexIndex));
+      this.control.snapTargetDirection = snapDirection;
     } else {
       cameraTargetZ += this.control.rotationVelocity * 80 + 2.5;
       damping = 7 / timeScale;
