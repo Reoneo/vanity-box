@@ -70,7 +70,7 @@ const Index = () => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-24 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
+        <main className="flex-1 px-4 pt-24 pb-4 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
             <SearchInterface 
               onSearchClick={() => setShowMiniApps(false)} 
@@ -79,7 +79,7 @@ const Index = () => {
 
             {/* Mini Apps Section - Only on Home Page */}
             {showMiniApps && (
-              <div className="flex flex-col items-center gap-0.5 mt-1">
+              <div className="flex flex-col items-center gap-0.5 mt-2">
                 <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-0.5">
                   Mini Apps
                 </h2>
@@ -119,7 +119,7 @@ const Index = () => {
           </article>
         </main>
         
-        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom pointer-events-auto">
+        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom pointer-events-auto mt-2">
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">
