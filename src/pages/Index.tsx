@@ -68,8 +68,8 @@ const Index = () => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-16 pb-20 relative z-10 flex flex-col items-center justify-center pointer-events-auto">
-          <article className="max-w-2xl mx-auto text-center w-full flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
+        <main className="flex-1 px-4 pt-8 pb-2 relative z-10 flex flex-col items-center justify-center pointer-events-auto">
+          <article className="max-w-2xl mx-auto text-center w-full flex flex-col items-center justify-center min-h-[calc(100vh-6rem)]">
             <SearchInterface 
               onSearchClick={() => setShowMiniApps(false)} 
               onClearSearch={() => setShowMiniApps(true)}
@@ -77,22 +77,22 @@ const Index = () => {
 
             {/* Mini Apps Section - Only on Home Page */}
             {showMiniApps && (
-              <div className="flex flex-col items-center gap-3 mt-6">
-                <h2 className="text-base md:text-lg font-semibold text-[#D4AF37] tracking-widest uppercase">
+              <div className="flex flex-col items-center gap-2 mt-8">
+                <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-[0.3em] uppercase mb-1">
                   Mini Apps
                 </h2>
-                <div className="flex items-center justify-center gap-8">
+                <div className="flex items-center justify-center gap-6">
                   {/* World App Icon */}
                   <button
                     onClick={handleWorldAppClick}
-                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    className="group relative flex items-center justify-center transition-all duration-300"
                     aria-label="World App"
                   >
-                    <div className="rounded-full border-2 border-[#D4AF37] p-2 bg-background/50 backdrop-blur-sm group-hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all duration-300">
+                    <div className="rounded-full border-2 border-[#D4AF37] p-2.5 bg-background/40 backdrop-blur-md group-hover:bg-background/60 group-hover:shadow-[0_0_30px_rgba(212,175,55,0.7)] group-hover:border-[#F4E4BC] transition-all duration-500">
                       <img 
                         src={worldAppIcon} 
                         alt="World App" 
-                        className="w-14 h-14 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
+                        className="w-11 h-11 md:w-12 md:h-12 object-contain transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12"
                       />
                     </div>
                   </button>
@@ -100,14 +100,14 @@ const Index = () => {
                   {/* Telegram Icon */}
                   <button
                     onClick={handleTelegramClick}
-                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    className="group relative flex items-center justify-center transition-all duration-300"
                     aria-label="Telegram"
                   >
-                    <div className="rounded-full border-2 border-[#D4AF37] p-2 bg-background/50 backdrop-blur-sm group-hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all duration-300">
+                    <div className="rounded-full border-2 border-[#D4AF37] p-2.5 bg-background/40 backdrop-blur-md group-hover:bg-background/60 group-hover:shadow-[0_0_30px_rgba(212,175,55,0.7)] group-hover:border-[#F4E4BC] transition-all duration-500">
                       <img 
                         src={telegramIcon} 
                         alt="Telegram" 
-                        className="w-14 h-14 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
+                        className="w-11 h-11 md:w-12 md:h-12 object-contain transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12"
                       />
                     </div>
                   </button>
