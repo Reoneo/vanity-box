@@ -5,6 +5,7 @@ export interface CryptoPrices {
   eth: number;
   wld: number;
   usdc: number;
+  apt: number;
 }
 
 export async function fetchCryptoPrices(): Promise<CryptoPrices> {
@@ -20,6 +21,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
         eth: data.prices.eth || 2500,
         wld: data.prices.wld || 2.0,
         usdc: data.prices.usdc || 1.0,
+        apt: data.prices.apt || 8.5,
       };
     }
 
@@ -31,6 +33,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
       eth: 2500,
       wld: 2.0,
       usdc: 1.0,
+      apt: 8.5,
     };
   }
 }

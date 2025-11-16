@@ -30,7 +30,7 @@ interface SubdomainMintModalProps {
   domain?: string; // e.g., "30315.eth", "teamxrp.eth", "termux.eth", "smith.cash"
 }
 
-type PaymentMethod = "USDC" | "WLD";
+type PaymentMethod = "USDC" | "WLD" | "APT";
 
 type PaymentFlowStep = 
   | "idle" 
@@ -58,11 +58,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const isAptosDomain = domain.toLowerCase().endsWith('.apt');
 
   const [registrationYears, setRegistrationYears] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("USDC");
+  // Default payment method based on domain type
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    isAptosDomain ? "APT" : "USDC"
+  );
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({
     eth: 2600,
     wld: 1.85,
     usdc: 1.0,
+    apt: 8.5, // Add APT price
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
@@ -208,20 +212,36 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // ---------- pricing ----------
 
-  const paymentMethods = [
-    {
-      id: "USDC" as PaymentMethod,
-      name: "USDC",
-      icon: usdcLogo,
-      rate: 1, // $ → USDC (1:1)
-    },
-    {
-      id: "WLD" as PaymentMethod,
-      name: "WLD",
-      icon: theme === "dark" ? wldLogoDark : wldLogoLight,
-      rate: 1 / cryptoPrices.wld, // $ → WLD
-    },
-  ];
+  // Payment methods - conditional on domain type
+  const paymentMethods = isAptosDomain 
+    ? [
+        {
+          id: "APT" as PaymentMethod,
+          name: "APT",
+          icon: aptosLogo,
+          rate: 1 / cryptoPrices.apt, // $ → APT
+        },
+        {
+          id: "USDC" as PaymentMethod,
+          name: "USDC",
+          icon: usdcLogo,
+          rate: 1, // $ → USDC (1:1)
+        },
+      ]
+    : [
+        {
+          id: "USDC" as PaymentMethod,
+          name: "USDC",
+          icon: usdcLogo,
+          rate: 1, // $ → USDC (1:1)
+        },
+        {
+          id: "WLD" as PaymentMethod,
+          name: "WLD",
+          icon: theme === "dark" ? wldLogoDark : wldLogoLight,
+          rate: 1 / cryptoPrices.wld, // $ → WLD
+        },
+      ];
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
   const domainPrice = getSubdomainPrice(subdomain);
@@ -859,6 +879,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               <>
                 {paymentMethod === "USDC" && `${convertedPrice.toFixed(2)} USDC`}
                 {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
+                {paymentMethod === "APT" && `${convertedPrice.toFixed(4)} APT`}
               </>
             </div>
             {isLoadingPrices && <div className="text-xs text-gray-500">Updating prices…</div>}
@@ -877,7 +898,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">{t("network_fee")} (World Chain)</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  {t("network_fee")} ({isAptosDomain ? "Aptos" : "World Chain"})
+                </span>
                 <span className="font-medium text-[#D4AF37]">
                   {effectiveNetworkFee === 0
                     ? "FREE"
@@ -902,16 +925,21 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
             <Button
               onClick={handleMintNow}
-              disabled={isMinting || miniKitStatus === "unavailable" || miniKitStatus === "checking"}
+              disabled={
+                isMinting || 
+                (isAptosDomain ? (!isInstalled || !isConnected) : (miniKitStatus === "unavailable" || miniKitStatus === "checking"))
+              }
               className="w-full mt-3 bg-gradient-to-r from-[#D4AF37] to-[#F2D574] hover:from-[#C9A532] hover:to-[#E8C760] text-black font-bold text-lg h-14 rounded-full shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isMinting 
                 ? "Processing..." 
-                : miniKitStatus === "unavailable" 
-                  ? "Open in World App to Mint"
-                  : miniKitStatus === "checking"
-                    ? "Checking World App..."
-                    : "Mint Now"}
+                : isAptosDomain
+                  ? (!isInstalled ? "Install Petra Wallet" : !isConnected ? "Connect Petra Wallet" : "Mint Now")
+                  : miniKitStatus === "unavailable" 
+                    ? "Open in World App to Mint"
+                    : miniKitStatus === "checking"
+                      ? "Checking World App..."
+                      : "Mint Now"}
             </Button>
           </div>
         </div>
