@@ -74,6 +74,8 @@ import mexipayAvatar from "@/assets/mexipay-avatar.png";
 import tonLogo from "@/assets/ton-logo.png";
 import vanityTonAvatar from "@/assets/vanity-ton-avatar.jpeg";
 import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
+import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
+import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import discordIcon from "@/assets/discord-icon.png";
 import githubIcon from "@/assets/github-icon.png";
 import whatsappIcon from "@/assets/whatsapp-icon.png";
@@ -164,7 +166,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showMintInterface, setShowMintInterface] = useState(false);
   const [selectedResult, setSelectedResult] = useState<ENSResult | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
+  const [filters, setFilters] = useState<FilterState>({ protocol: [], club: ["Personal"] });
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
@@ -240,7 +242,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
 
   const protocols = ["DNS", "ENS"];
-  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming"];
+  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
 
   // Auto-search when username is in URL
   useEffect(() => {
@@ -361,7 +363,27 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         imageUrl: vanityTonAvatar,
         price: 5,
         category: ["TON"],
-        club: ["Telegram", "DeFi"],
+        club: ["Personal"],
+        selectable: true,
+        enabled: false,
+      },
+      {
+        name: "Vanity.apt",
+        description: "Personal identity on Aptos blockchain",
+        imageUrl: vanityAptAvatar,
+        price: 5,
+        category: ["Aptos"],
+        club: ["Personal"],
+        selectable: true,
+        enabled: false,
+      },
+      {
+        name: "Vanity.hl",
+        description: "Personal Web3 identity hub",
+        imageUrl: vanityHlAvatar,
+        price: 5,
+        category: ["DNS"],
+        club: ["Personal"],
         selectable: true,
         enabled: false,
       },
@@ -371,7 +393,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         imageUrl: vanityBoxAvatar,
         price: 5,
         category: ["ENS", "DNS"],
-        club: ["DeFi", "Startup"],
+        club: ["Personal"],
         selectable: true,
         enabled: false,
       },
