@@ -584,7 +584,12 @@ class InfiniteGridMenu {
   }
 
   #init(onInit: ((sketch: InfiniteGridMenu) => void) | null) {
-    const context = this.canvas.getContext('webgl2', { antialias: true, alpha: false });
+    const context = this.canvas.getContext('webgl2', { 
+      antialias: false, 
+      alpha: false,
+      powerPreference: 'high-performance',
+      desynchronized: true
+    });
     if (!context) {
       throw new Error('No WebGL 2 context!');
     }
@@ -720,9 +725,17 @@ class InfiniteGridMenu {
     const gl = this.gl;
     this.control.update(deltaTime, this.TARGET_FRAME_DURATION);
 
+    // Optimize: Only recalculate matrices when needed
+    const isMoving = this.control.rotationVelocity > 0.001;
+    if (!isMoving && !this.movementActive) return;
+
     let positions = this.instancePositions.map(p => vec3.transformQuat(vec3.create(), p, this.control.orientation));
     const scale = 0.25;
     const SCALE_INTENSITY = 0.6;
+    
+    // Batch matrix updates
+    const matricesData = new Float32Array(this.DISC_INSTANCE_COUNT * 16);
+    
     positions.forEach((p, ndx) => {
       const s = (Math.abs(p[2]) / this.SPHERE_RADIUS) * SCALE_INTENSITY + (1 - SCALE_INTENSITY);
       const finalScale = s * scale;
@@ -732,11 +745,11 @@ class InfiniteGridMenu {
       mat4.multiply(matrix, matrix, mat4.fromScaling(mat4.create(), [finalScale, finalScale, finalScale]));
       mat4.multiply(matrix, matrix, mat4.fromTranslation(mat4.create(), [0, 0, -this.SPHERE_RADIUS]));
 
-      mat4.copy(this.discInstances.matrices[ndx], matrix);
+      matricesData.set(matrix, ndx * 16);
     });
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.discInstances.buffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.discInstances.matricesArray);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, matricesData);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
     this.smoothRotationVelocity = this.control.rotationVelocity;

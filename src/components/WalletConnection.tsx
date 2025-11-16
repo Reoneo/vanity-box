@@ -14,9 +14,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
 import tonLogo from '@/assets/ton-logo.png';
+import petraIcon from '@/assets/petra-icon.png';
 import { isTelegramWebView, getTelegramUser } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
+import { usePetraWallet } from '@/hooks/use-petra-wallet';
 
 interface User {
   walletAddress?: string;
@@ -32,8 +34,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
+  const { account: petraAccount, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
+  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | null>(null);
+
 
   useEffect(() => {
+    // Check Petra wallet connection
+    if (petraConnected && petraAccount) {
+      setWalletType('petra');
+    }
+    
     // Check if we're running in World App
     const isInWorldApp = MiniKit.isInstalled();
     
@@ -45,7 +55,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
     // Listen for wallet connection trigger from search
     const handleTriggerConnect = () => {
-      if (!user) {
+      if (!user && !petraConnected) {
         handleConnect();
       }
     };
@@ -54,11 +64,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return () => {
       window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
     };
-  }, [user]);
+  }, [user, petraConnected, petraAccount]);
 
   // Remove auto-connect - users must manually connect
 
   const handleConnect = async () => {
+    // If Petra is already connected, just return
+    if (petraConnected) {
+      return;
+    }
+
     // Check if running in World App
     if (!MiniKit.isInstalled()) {
       console.log('Not in World App - redirecting to World App ecosystem page');
@@ -69,28 +84,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     setIsLoading(true);
     try {
       console.log('🔄 Initiating wallet authentication with World App native UI...');
-      console.log('📱 Platform info:', { 
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
-        isInstalled: MiniKit.isInstalled()
-      });
       
-      // Enhanced authentication with better iOS support
       const nonce = generateNonce();
       console.log('🎲 Generated nonce:', nonce);
       
       const authParams = {
         nonce,
         requestId: 'vanity-box-auth-' + Date.now(),
-        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        notBefore: new Date(Date.now() - 60 * 1000), // 1 minute ago
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        notBefore: new Date(Date.now() - 60 * 1000),
         statement: 'Sign in to Vanity.box to access your World ID domains and personalized features.'
       };
       
       console.log('📝 Auth parameters:', authParams);
       
-      // Use the official World App wallet auth that shows the native modal
       const result = await MiniKit.commandsAsync.walletAuth(authParams);
       const { commandPayload, finalPayload } = result;
 
@@ -104,6 +111,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           username: ensName
         };
         setUser(userData);
+        setWalletType('worldchain');
         sessionStorage.removeItem('skipAutoAuth');
         
         // Dispatch event for Index component
@@ -168,17 +176,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const handleDisconnect = () => {
-    setUser(null);
-    // Prevent immediate auto-reconnect after manual disconnect (this session only)
-    sessionStorage.setItem('skipAutoAuth', '1');
+    if (walletType === 'petra') {
+      disconnectPetra();
+      setWalletType(null);
+    } else if (walletType === 'worldchain') {
+      setUser(null);
+      setWalletType(null);
+      sessionStorage.setItem('skipAutoAuth', '1');
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+    }
     
     // Remove backdrop when disconnecting
     const backdrop = document.getElementById('wallet-dropdown-backdrop');
     if (backdrop) backdrop.remove();
     document.body.style.overflow = '';
-    
-    // Dispatch event for Index component
-    window.dispatchEvent(new CustomEvent('wallet-disconnected'));
   };
 
   const generateNonce = (): string => {
@@ -286,7 +297,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
-  if (!user) {
+  // Not connected - show connect button
+  if (!user && !petraConnected) {
     return (
       <Button
         onClick={() => {
@@ -296,8 +308,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           } else if (isTelegramWebView()) {
             handleTelegramConnect();
           } else {
-            // Not in either app, show error or redirect
-            alert('Please open this app in World App or Telegram to connect your wallet.');
+            // Try Petra wallet connection
+            connectPetra();
           }
         }}
         disabled={isLoading}
@@ -317,6 +329,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     );
   }
 
+  // Get display info based on wallet type
+  const displayAddress = walletType === 'petra' && petraAccount 
+    ? petraAccount.address 
+    : user?.walletAddress || '';
+  const displayUsername = walletType === 'petra' 
+    ? formatAddress(petraAccount?.address || '')
+    : user?.username || formatAddress(user?.walletAddress || '');
+  const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
+
   return (
     <DropdownMenu onOpenChange={(open) => {
       if (open) {
@@ -335,11 +356,13 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         <Button
           variant="outline"
           size="sm"
-          className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-black hover:border-black hover:text-white transition-all duration-300 font-semibold", className)}
+          className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-black hover:border-black hover:text-white transition-all duration-300 font-semibold flex items-center gap-2", className)}
         >
+          <img src={walletIcon} alt="Wallet" className="w-4 h-4" />
           <span className="font-bold text-white truncate max-w-48">
-            {user.username || formatAddress(user.walletAddress || '')}
+            {displayUsername}
           </span>
+          <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
