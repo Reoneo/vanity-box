@@ -943,8 +943,8 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
             {!showMyIDs && (
               <>
                 <div className={cn(
-                  "w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-500",
-                  (web3BioProfile || (ensResults && ensResults.length > 0)) ? "mt-[-60px]" : "mt-0"
+                  "w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300",
+                  (web3BioProfile || (ensResults && ensResults.length > 0)) ? "mt-2" : "mt-0"
                 )}>
                   <div className="relative">
                     <div className="absolute left-1 top-1 z-10 flex items-center h-10">
