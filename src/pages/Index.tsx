@@ -9,15 +9,14 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import { isTelegramWebView } from '@/lib/telegram';
 import worldAppIcon from '@/assets/world-app-icon.png';
 import telegramIcon from '@/assets/telegram-icon.png';
-import petraWalletIcon from '@/assets/petra-wallet-icon.png';
-import { usePetraWallet } from '@/hooks/use-petra-wallet';
+import petraIcon from '@/assets/petra-icon.png';
+
 
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
   const { setTheme } = useTheme();
-  const { account, isConnected, isInstalled, connect, disconnect } = usePetraWallet();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const [showMiniApps, setShowMiniApps] = useState(true);
   const [showInfiniteMenu, setShowInfiniteMenu] = useState(false);
@@ -55,19 +54,9 @@ const Index = () => {
     }
   };
 
-  const handlePetraWalletClick = async () => {
-    if (!isInstalled) {
-      // If Petra is not installed, redirect to Petra installation page
-      window.open('https://petra.app/', '_blank');
-      return;
-    }
-    
-    // If Petra is installed, connect or disconnect
-    if (isConnected) {
-      await disconnect();
-    } else {
-      await connect();
-    }
+  const handlePetraClick = () => {
+    // Deep link to open vanity.box in Petra wallet
+    window.location.href = 'https://petra.app/explore?link=https://vanity.box';
   };
 
   return (
@@ -134,25 +123,19 @@ const Index = () => {
                     </div>
                   </button>
 
-                  {/* Petra Wallet Icon */}
+                  {/* Petra Icon */}
                   <button
-                    onClick={handlePetraWalletClick}
+                    onClick={handlePetraClick}
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
-                    aria-label="Petra Wallet"
+                    aria-label="Petra"
                   >
-                    <div className={cn(
-                      "rounded-full border p-1 transition-colors",
-                      isConnected ? "border-green-500 bg-green-500/10" : "border-[#D4AF37]"
-                    )}>
+                    <div className="rounded-full border border-[#D4AF37] p-1">
                       <img 
-                        src={petraWalletIcon} 
-                        alt="Petra Wallet" 
+                        src={petraIcon} 
+                        alt="Petra" 
                         className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
                       />
                     </div>
-                    {isConnected && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background" />
-                    )}
                   </button>
                 </div>
               </div>
