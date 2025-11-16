@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { mat4, quat, vec2, vec3 } from 'gl-matrix';
 import './InfiniteMenu.css';
+import MetallicPaint, { parseLogoImage } from './MetallicPaint';
+import circleBorderSvg from '@/assets/circle-border.svg';
 
 const discVertShaderSource = `#version 300 es
 
@@ -910,6 +912,23 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
   const [activeItem, setActiveItem] = useState<any>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isMoving, setIsMoving] = useState(false);
+  const [borderImageData, setBorderImageData] = useState<ImageData | null>(null);
+
+  useEffect(() => {
+    async function loadBorderImage() {
+      try {
+        const response = await fetch(circleBorderSvg);
+        const blob = await response.blob();
+        const file = new File([blob], "circle-border.svg", { type: blob.type });
+        const parsedData = await parseLogoImage(file);
+        setBorderImageData(parsedData?.imageData ?? null);
+      } catch (err) {
+        console.error("Error loading border image:", err);
+      }
+    }
+
+    loadBorderImage();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -964,6 +983,31 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <canvas id="infinite-grid-menu-canvas" ref={canvasRef} />
+
+      {borderImageData && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 'min(90vh, 90vw)',
+          height: 'min(90vh, 90vw)',
+          pointerEvents: 'none',
+          zIndex: 5
+        }}>
+          <MetallicPaint 
+            imageData={borderImageData} 
+            params={{ 
+              edge: 2, 
+              patternBlur: 0.005, 
+              patternScale: 2, 
+              refraction: 0.015, 
+              speed: 0.3, 
+              liquid: 0.07 
+            }} 
+          />
+        </div>
+      )}
 
       {activeItem && (
         <>
