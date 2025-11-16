@@ -973,6 +973,15 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
 
       {activeItem && (
         <>
+          {/* Centered Avatar Display */}
+          <div className={`centered-avatar ${isMoving ? 'inactive' : 'active'}`}>
+            <img 
+              src={activeItem.image} 
+              alt={activeItem.title}
+              className="avatar-image"
+            />
+          </div>
+
           <h2 className={`face-title ${isMoving ? 'inactive' : 'active'}`}>{activeItem.title}</h2>
 
           <p className={`face-description ${isMoving ? 'inactive' : 'active'}`}>{activeItem.description}</p>
