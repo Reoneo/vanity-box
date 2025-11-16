@@ -9,6 +9,7 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import { isTelegramWebView } from '@/lib/telegram';
 import worldAppIcon from '@/assets/world-app-icon.png';
 import telegramIcon from '@/assets/telegram-icon.png';
+import petraWalletIcon from '@/assets/petra-wallet-icon.png';
 
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
@@ -49,6 +50,19 @@ const Index = () => {
       window.open('https://t.me/vanitybox_bot/vanity', '_blank');
     } else {
       console.log('Already in Telegram');
+    }
+  };
+
+  const handlePetraWalletClick = () => {
+    // Check if Petra wallet is installed
+    const isPetraInstalled = (window as any).aptos;
+    
+    if (isPetraInstalled) {
+      // Open vanity.box inside Petra wallet using deep link
+      window.open('https://petra.app/explore?link=https://vanity.box', '_blank');
+    } else {
+      // If Petra is not installed, redirect to Petra installation page
+      window.open('https://petra.app/', '_blank');
     }
   };
 
@@ -96,7 +110,7 @@ const Index = () => {
                       <img 
                         src={worldAppIcon} 
                         alt="World App" 
-                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                        className="w-20 h-20 md:w-24 md:h-24 object-contain transition-transform group-hover:scale-110"
                       />
                     </div>
                   </button>
@@ -111,6 +125,21 @@ const Index = () => {
                       <img 
                         src={telegramIcon} 
                         alt="Telegram" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
+                    </div>
+                  </button>
+
+                  {/* Petra Wallet Icon */}
+                  <button
+                    onClick={handlePetraWalletClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="Petra Wallet"
+                  >
+                    <div className="rounded-full border border-[#D4AF37] p-1">
+                      <img 
+                        src={petraWalletIcon} 
+                        alt="Petra Wallet" 
                         className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
                       />
                     </div>
