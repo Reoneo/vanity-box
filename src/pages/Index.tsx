@@ -85,17 +85,22 @@ const Index = () => {
         {/* Hero Section */}
         <main className="flex-1 px-4 pt-24 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
+            {/* Register Heading */}
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Register
+            </h1>
+
             <SearchInterface 
               onSearchClick={() => setShowMiniApps(false)} 
               onClearSearch={() => setShowMiniApps(true)}
               onInfiniteMenuChange={setShowInfiniteMenu}
             />
 
-            {/* Mini Apps Section removed - user requested removal */}
-            {false && showMiniApps && isHomePage && (
+            {/* Supported Wallets Section - Only on Home Page */}
+            {showMiniApps && isHomePage && (
               <div className="flex flex-col items-center gap-0.5 mt-1">
                 <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-0.5">
-                  Mini Apps
+                  Supported Wallets
                 </h2>
                 <div className="flex items-center justify-center gap-6">
                   {/* World App Icon */}
