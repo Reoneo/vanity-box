@@ -335,6 +335,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         price: 5,
         category: ["ENS", "DNS"],
         club: ["Surname", "DeFi"],
+        enabled: false,
       },
       {
         name: "Vape.box",
@@ -343,6 +344,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         price: 5,
         category: ["ENS", "DNS"],
         club: ["Startup", "DeFi"],
+        enabled: false,
       },
       {
         name: "altcoin.chain",
@@ -351,6 +353,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         price: 5,
         category: ["ENS", "DNS"],
         club: ["Crypto", "DeFi"],
+        enabled: false,
       },
       {
         name: "Vanity.ton",
@@ -1090,7 +1093,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </>
                 ) : (
                   <>
-                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
+                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2 lg:mt-6">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                           <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
