@@ -917,10 +917,13 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
   useEffect(() => {
     async function loadBorderImage() {
       try {
+        console.log('Loading border image...');
         const response = await fetch(circleBorderSvg);
         const blob = await response.blob();
+        console.log('Border SVG blob loaded:', blob.size, 'bytes');
         const file = new File([blob], "circle-border.svg", { type: blob.type });
         const parsedData = await parseLogoImage(file);
+        console.log('Border image parsed:', parsedData?.imageData ? 'success' : 'failed');
         setBorderImageData(parsedData?.imageData ?? null);
       } catch (err) {
         console.error("Error loading border image:", err);
@@ -990,20 +993,21 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 'min(90vh, 90vw)',
-          height: 'min(90vh, 90vw)',
+          width: 'min(85vh, 85vw)',
+          height: 'min(85vh, 85vw)',
           pointerEvents: 'none',
-          zIndex: 5
+          zIndex: 5,
+          border: '2px solid red' // Debug border
         }}>
           <MetallicPaint 
             imageData={borderImageData} 
             params={{ 
-              edge: 2, 
-              patternBlur: 0.005, 
-              patternScale: 2, 
-              refraction: 0.015, 
-              speed: 0.3, 
-              liquid: 0.07 
+              edge: 1.5, 
+              patternBlur: 0.01, 
+              patternScale: 1.5, 
+              refraction: 0.02, 
+              speed: 0.2, 
+              liquid: 0.05 
             }} 
           />
         </div>
