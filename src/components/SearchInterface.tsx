@@ -384,7 +384,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
       },
       {
         name: "Vanity.apt",
-        description: "Personal identity on Aptos blockchain",
+        description: "Native Web3 ID for the Aptos blockchain.",
         imageUrl: vanityAptAvatar,
         price: 5,
         category: ["Aptos"],
@@ -404,7 +404,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
       },
       {
         name: "Vanity.hl",
-        description: "Personal Web3 identity hub",
+        description: "Native Web3 ID for the HyperLiquid blockchain.",
         imageUrl: vanityHlAvatar,
         price: 5,
         category: ["DNS"],
