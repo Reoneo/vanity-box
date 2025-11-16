@@ -2,6 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { mat4, quat, vec2, vec3 } from 'gl-matrix';
 import './InfiniteMenu.css';
 
+// Device detection for performance optimization
+const isLowEndDevice = (() => {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent.toLowerCase();
+  const isMobile = /mobile|android|iphone|ipad|tablet/i.test(ua);
+  if (!isMobile) return false;
+  
+  // Detect older devices (Galaxy S10 and similar)
+  const isOldDevice = /sm-g97|sm-g96|sm-g95|sm-g93|sm-g92|sm-g91|sm-g90/i.test(ua);
+  const hasLowMemory = (navigator as any).deviceMemory ? (navigator as any).deviceMemory < 4 : false;
+  const hasSlowCPU = (navigator as any).hardwareConcurrency ? (navigator as any).hardwareConcurrency < 8 : false;
+  
+  return isOldDevice || hasLowMemory || hasSlowCPU;
+})();
+
 const discVertShaderSource = `#version 300 es
 
 uniform mat4 uWorldMatrix;
@@ -9,6 +24,7 @@ uniform mat4 uViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform vec3 uCameraPosition;
 uniform vec4 uRotationAxisVelocity;
+uniform float uLowEndMode;
 
 in vec3 aModelPosition;
 in vec3 aModelNormal;
@@ -27,7 +43,8 @@ void main() {
     vec3 centerPos = (uWorldMatrix * aInstanceMatrix * vec4(0., 0., 0., 1.)).xyz;
     float radius = length(centerPos.xyz);
 
-    if (gl_VertexID > 0) {
+    // Simplified stretch effect for low-end devices (optimization #3)
+    if (gl_VertexID > 0 && uLowEndMode < 0.5) {
         vec3 rotationAxis = uRotationAxisVelocity.xyz;
         float rotationVelocity = min(.15, uRotationAxisVelocity.w * 15.);
         vec3 stretchDir = normalize(cross(centerPos, rotationAxis));
@@ -220,7 +237,9 @@ class IcosahedronGeometry extends Geometry {
 class DiscGeometry extends Geometry {
   constructor(steps = 4, radius = 1) {
     super();
-    steps = Math.max(4, steps);
+    // Optimization #4: Reduce geometry complexity on low-end devices
+    const actualSteps = isLowEndDevice ? Math.max(4, Math.floor(steps * 0.6)) : steps;
+    steps = Math.max(4, actualSteps);
 
     const alpha = (2 * Math.PI) / steps;
     
@@ -502,6 +521,8 @@ class ArcballControl {
 class InfiniteGridMenu {
   TARGET_FRAME_DURATION = 1000 / 60;
   SPHERE_RADIUS = 2;
+  LOW_END_MODE = isLowEndDevice;
+  currentLOD = 1.0; // Level of detail multiplier
 
   #time = 0;
   #deltaTime = 0;
@@ -623,6 +644,7 @@ class InfiniteGridMenu {
       uCameraPosition: gl.getUniformLocation(this.discProgram, 'uCameraPosition'),
       uScaleFactor: gl.getUniformLocation(this.discProgram, 'uScaleFactor'),
       uRotationAxisVelocity: gl.getUniformLocation(this.discProgram, 'uRotationAxisVelocity'),
+      uLowEndMode: gl.getUniformLocation(this.discProgram, 'uLowEndMode'),
       uTex: gl.getUniformLocation(this.discProgram, 'uTex'),
       uFrames: gl.getUniformLocation(this.discProgram, 'uFrames'),
       uItemCount: gl.getUniformLocation(this.discProgram, 'uItemCount'),
@@ -640,8 +662,10 @@ class InfiniteGridMenu {
       this.discBuffers.indices
     );
 
+    // Optimization #6: Reduce subdivision on low-end devices
     this.icoGeo = new IcosahedronGeometry();
-    this.icoGeo.subdivide(1).spherize(this.SPHERE_RADIUS);
+    const subdivisions = this.LOW_END_MODE ? 0 : 1;
+    this.icoGeo.subdivide(subdivisions).spherize(this.SPHERE_RADIUS);
     this.instancePositions = this.icoGeo.vertices.map(v => v.position);
     this.DISC_INSTANCE_COUNT = this.icoGeo.vertices.length;
     this.#initDiscInstances(this.DISC_INSTANCE_COUNT);
@@ -666,7 +690,8 @@ class InfiniteGridMenu {
     this.atlasSize = Math.ceil(Math.sqrt(itemCount));
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const cellSize = 512;
+    // Optimization #2: Lower texture resolution on low-end devices
+    const cellSize = this.LOW_END_MODE ? 256 : 512;
 
     canvas.width = this.atlasSize * cellSize;
     canvas.height = this.atlasSize * cellSize;
@@ -738,16 +763,38 @@ class InfiniteGridMenu {
     const isMoving = this.control.rotationVelocity > 0.001 || this.control.isPointerDown || snapping || this.#frames < 2;
     if (!isMoving && !this.movementActive && this.#frames >= 2) return;
 
+    // Optimization #4: LOD based on movement speed
+    const velocity = this.control.rotationVelocity;
+    if (velocity > 0.05) {
+      this.currentLOD = 0.7; // Reduce detail when moving fast
+    } else {
+      this.currentLOD = 1.0; // Full detail when slow/stopped
+    }
+
     let positions = this.instancePositions.map(p => vec3.transformQuat(vec3.create(), p, this.control.orientation));
     const scale = 0.25;
     const SCALE_INTENSITY = 0.6;
     
-    // Batch matrix updates
-    const matricesData = new Float32Array(this.DISC_INSTANCE_COUNT * 16);
+    // Optimization #1: Frustum culling - only update visible items
+    const cameraForward = vec3.fromValues(0, 0, -1);
+    const visibleIndices: number[] = [];
     
     positions.forEach((p, ndx) => {
+      const normalized = vec3.normalize(vec3.create(), p);
+      const dotProduct = vec3.dot(normalized, cameraForward);
+      // Only render items in front hemisphere (optimization #1)
+      if (dotProduct > -0.3) {
+        visibleIndices.push(ndx);
+      }
+    });
+    
+    // Batch matrix updates for visible items only
+    const matricesData = new Float32Array(this.DISC_INSTANCE_COUNT * 16);
+    
+    visibleIndices.forEach(ndx => {
+      const p = positions[ndx];
       const s = (Math.abs(p[2]) / this.SPHERE_RADIUS) * SCALE_INTENSITY + (1 - SCALE_INTENSITY);
-      const finalScale = s * scale;
+      const finalScale = s * scale * this.currentLOD;
       const matrix = mat4.create();
       mat4.multiply(matrix, matrix, mat4.fromTranslation(mat4.create(), vec3.negate(vec3.create(), p)));
       mat4.multiply(matrix, matrix, mat4.targetTo(mat4.create(), [0, 0, 0], p, [0, 1, 0]));
@@ -790,6 +837,9 @@ class InfiniteGridMenu {
       this.control.rotationAxis[2],
       this.smoothRotationVelocity * 1.1
     );
+    
+    // Set low-end mode uniform
+    gl.uniform1f(this.discLocations.uLowEndMode, this.LOW_END_MODE ? 1.0 : 0.0);
 
     gl.uniform1i(this.discLocations.uItemCount, this.items.length);
     gl.uniform1i(this.discLocations.uAtlasSize, this.atlasSize);
