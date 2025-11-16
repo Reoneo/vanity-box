@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
@@ -17,9 +18,13 @@ import { cn } from '@/lib/utils';
 
 const Index = () => {
   const { setTheme } = useTheme();
+  const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const [showMiniApps, setShowMiniApps] = useState(true);
   const [showInfiniteMenu, setShowInfiniteMenu] = useState(false);
+
+  // Check if we're on the home page (only show mini apps there)
+  const isHomePage = location.pathname === '/';
 
   // Force dark mode and listen for wallet connection events
   useEffect(() => {
@@ -87,7 +92,7 @@ const Index = () => {
             />
 
             {/* Mini Apps Section - Only on Home Page */}
-            {showMiniApps && (
+            {showMiniApps && isHomePage && (
               <div className="flex flex-col items-center gap-0.5 mt-1">
                 <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-0.5">
                   Mini Apps
