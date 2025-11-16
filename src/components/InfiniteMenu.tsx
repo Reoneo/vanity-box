@@ -581,11 +581,8 @@ class InfiniteGridMenu {
     this.#deltaFrames = this.#deltaTime / this.TARGET_FRAME_DURATION;
     this.#frames += this.#deltaFrames;
 
-    // Skip frame if falling behind significantly
-    if (this.#deltaTime < 100) {
-      this.#animate(this.#deltaTime);
-      this.#render();
-    }
+    this.#animate(this.#deltaTime);
+    this.#render();
 
     requestAnimationFrame(t => this.run(t));
   }
@@ -595,8 +592,7 @@ class InfiniteGridMenu {
       antialias: false, 
       alpha: false,
       powerPreference: 'high-performance',
-      desynchronized: true,
-      failIfMajorPerformanceCaveat: false
+      desynchronized: true
     });
     if (!context) {
       throw new Error('No WebGL 2 context!');
@@ -645,7 +641,7 @@ class InfiniteGridMenu {
     );
 
     this.icoGeo = new IcosahedronGeometry();
-    this.icoGeo.subdivide(0).spherize(this.SPHERE_RADIUS);
+    this.icoGeo.subdivide(1).spherize(this.SPHERE_RADIUS);
     this.instancePositions = this.icoGeo.vertices.map(v => v.position);
     this.DISC_INSTANCE_COUNT = this.icoGeo.vertices.length;
     this.#initDiscInstances(this.DISC_INSTANCE_COUNT);
@@ -669,53 +665,37 @@ class InfiniteGridMenu {
     const itemCount = Math.max(1, this.items.length);
     this.atlasSize = Math.ceil(Math.sqrt(itemCount));
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const cellSize = 256;
+    const ctx = canvas.getContext('2d');
+    const cellSize = 512;
 
     canvas.width = this.atlasSize * cellSize;
     canvas.height = this.atlasSize * cellSize;
 
-    // Use requestIdleCallback for non-blocking texture loading
-    const loadTextures = () => {
-      Promise.all(
-        this.items.map(
-          item =>
-            new Promise<HTMLImageElement>(resolve => {
-              const img = new Image();
-              img.crossOrigin = 'anonymous';
-              img.onload = () => resolve(img);
-              img.onerror = () => {
-                // Fallback to empty image on error
-                const fallback = new Image();
-                fallback.width = cellSize;
-                fallback.height = cellSize;
-                resolve(fallback);
-              };
-              img.src = item.image;
-            })
-        )
-      ).then(images => {
-        if (!ctx) return;
-        images.forEach((img, i) => {
-          const x = (i % this.atlasSize) * cellSize;
-          const y = Math.floor(i / this.atlasSize) * cellSize;
-          ctx.filter = 'brightness(0.85)';
-          ctx.drawImage(img, x, y, cellSize, cellSize);
-          ctx.filter = 'none';
-        });
-
-        gl.bindTexture(gl.TEXTURE_2D, this.tex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-        gl.generateMipmap(gl.TEXTURE_2D);
+    Promise.all(
+      this.items.map(
+        item =>
+          new Promise<HTMLImageElement>(resolve => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.src = item.image;
+          })
+      )
+    ).then(images => {
+      if (!ctx) return;
+      images.forEach((img, i) => {
+        const x = (i % this.atlasSize) * cellSize;
+        const y = Math.floor(i / this.atlasSize) * cellSize;
+        // Apply slight dimming filter to avatar images
+        ctx.filter = 'brightness(0.85)';
+        ctx.drawImage(img, x, y, cellSize, cellSize);
+        ctx.filter = 'none';
       });
-    };
 
-    // Use requestIdleCallback if available, otherwise use setTimeout
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(loadTextures);
-    } else {
-      setTimeout(loadTextures, 0);
-    }
+      gl.bindTexture(gl.TEXTURE_2D, this.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    });
   }
 
   #initDiscInstances(count: number) {
