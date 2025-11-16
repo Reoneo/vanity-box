@@ -110,7 +110,7 @@ const Index = () => {
                       <img 
                         src={worldAppIcon} 
                         alt="World App" 
-                        className="w-20 h-20 md:w-24 md:h-24 object-contain transition-transform group-hover:scale-110"
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
                       />
                     </div>
                   </button>
