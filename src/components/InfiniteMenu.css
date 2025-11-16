@@ -59,7 +59,7 @@
   user-select: none;
   position: absolute;
   left: clamp(1rem, 4vw, 2.5rem);
-  top: 45%;
+  top: 50%;
   transform: translate(20%, -50%);
   width: clamp(250px, 50vw, 600px);
   display: flex;
@@ -164,6 +164,6 @@
 
 @media (min-width: 1025px) {
   .face-title-container {
-    top: 40%;
+    top: 50%;
   }
 }
