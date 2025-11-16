@@ -942,10 +942,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 {!hasSearched && !isSearchActive ? (
                   <>
                     {/* Before search: Header on top, search below */}
-                    <div className="mt-2">
-
-                      <PersonalizedHeader user={{ walletAddress }} />
-                    </div>
+                    <PersonalizedHeader user={{ walletAddress }} />
                     <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
