@@ -76,8 +76,8 @@ const Index = () => {
 
             {/* Mini Apps Section - Only on Home Page */}
             {showMiniApps && (
-              <div className="flex flex-col items-center gap-0.5 mt-4">
-                <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-1">
+              <div className="flex flex-col items-center gap-0.5 mt-1">
+                <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-0.5">
                   Mini Apps
                 </h2>
                 <div className="flex items-center justify-center gap-6">
