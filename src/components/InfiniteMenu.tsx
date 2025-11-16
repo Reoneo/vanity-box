@@ -69,10 +69,18 @@ void main() {
     vec2 cellSize = vec2(1.0) / vec2(float(cellsPerRow));
     vec2 cellOffset = vec2(float(cellX), float(cellY)) * cellSize;
 
-    // Flip Y coordinate for correct orientation
-    vec2 st = vec2(vUvs.x, 1.0 - vUvs.y);
+    ivec2 texSize = textureSize(uTex, 0);
+    float imageAspect = float(texSize.x) / float(texSize.y);
+    float containerAspect = 1.0;
     
-    // Map to the correct cell in the atlas
+    float scale = max(imageAspect / containerAspect, 
+                     containerAspect / imageAspect);
+    
+    vec2 st = vec2(vUvs.x, 1.0 - vUvs.y);
+    st = (st - 0.5) * scale + 0.5;
+    
+    st = clamp(st, 0.0, 1.0);
+    
     st = st * cellSize + cellOffset;
     
     outColor = texture(uTex, st);
@@ -495,13 +503,7 @@ class InfiniteGridMenu {
   #deltaTime = 0;
   #deltaFrames = 0;
   #frames = 0;
-  
-  // Pre-allocated objects for performance
-  #tempVec3 = vec3.create();
-  #tempQuat = quat.create();
-  #tempMat4 = mat4.create();
-  #transformedPositions: vec3[] = [];
-  #lastOrientation = quat.create();
+  #lastSnapUpdate = 0;
 
   camera = {
     matrix: mat4.create(),
@@ -719,48 +721,20 @@ class InfiniteGridMenu {
     const gl = this.gl;
     this.control.update(deltaTime, this.TARGET_FRAME_DURATION);
 
-    // Check if orientation actually changed to avoid unnecessary calculations
-    const orientationChanged = !quat.exactEquals(this.#lastOrientation, this.control.orientation);
-    
-    if (orientationChanged) {
-      quat.copy(this.#lastOrientation, this.control.orientation);
-      
-      // Reuse pre-allocated transformed positions array
-      for (let i = 0; i < this.instancePositions.length; i++) {
-        if (!this.#transformedPositions[i]) {
-          this.#transformedPositions[i] = vec3.create();
-        }
-        vec3.transformQuat(this.#transformedPositions[i], this.instancePositions[i], this.control.orientation);
-      }
-    }
-
+    let positions = this.instancePositions.map(p => vec3.transformQuat(vec3.create(), p, this.control.orientation));
     const scale = 0.25;
     const SCALE_INTENSITY = 0.6;
-    const radius = this.SPHERE_RADIUS;
-    
-    // Update matrices with reused objects
-    for (let ndx = 0; ndx < this.#transformedPositions.length; ndx++) {
-      const p = this.#transformedPositions[ndx];
-      const s = (Math.abs(p[2]) / radius) * SCALE_INTENSITY + (1 - SCALE_INTENSITY);
+    positions.forEach((p, ndx) => {
+      const s = (Math.abs(p[2]) / this.SPHERE_RADIUS) * SCALE_INTENSITY + (1 - SCALE_INTENSITY);
       const finalScale = s * scale;
-      
-      const matrix = this.discInstances.matrices[ndx];
-      mat4.identity(matrix);
-      
-      // Negate position
-      vec3.negate(this.#tempVec3, p);
-      mat4.translate(matrix, matrix, this.#tempVec3);
-      
-      // Target to
-      mat4.targetTo(this.#tempMat4, [0, 0, 0], p, [0, 1, 0]);
-      mat4.multiply(matrix, matrix, this.#tempMat4);
-      
-      // Scale
-      mat4.scale(matrix, matrix, [finalScale, finalScale, finalScale]);
-      
-      // Translate back
-      mat4.translate(matrix, matrix, [0, 0, -radius]);
-    }
+      const matrix = mat4.create();
+      mat4.multiply(matrix, matrix, mat4.fromTranslation(mat4.create(), vec3.negate(vec3.create(), p)));
+      mat4.multiply(matrix, matrix, mat4.targetTo(mat4.create(), [0, 0, 0], p, [0, 1, 0]));
+      mat4.multiply(matrix, matrix, mat4.fromScaling(mat4.create(), [finalScale, finalScale, finalScale]));
+      mat4.multiply(matrix, matrix, mat4.fromTranslation(mat4.create(), [0, 0, -this.SPHERE_RADIUS]));
+
+      mat4.copy(this.discInstances.matrices[ndx], matrix);
+    });
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.discInstances.buffer);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.discInstances.matricesArray);
@@ -852,13 +826,15 @@ class InfiniteGridMenu {
     }
 
     if (!this.control.isPointerDown) {
-      const nearestVertexIndex = this.#findNearestVertexIndex();
-      const itemIndex = nearestVertexIndex % Math.max(1, this.items.length);
-      this.onActiveItemChange(itemIndex);
-      
-      // Reuse temp vec3 for snap direction
-      vec3.normalize(this.#tempVec3, this.#getVertexWorldPosition(nearestVertexIndex));
-      this.control.snapTargetDirection = this.#tempVec3;
+      // Throttle nearest vertex calculation to reduce computation
+      if (!this.#lastSnapUpdate || performance.now() - this.#lastSnapUpdate > 50) {
+        const nearestVertexIndex = this.#findNearestVertexIndex();
+        const itemIndex = nearestVertexIndex % Math.max(1, this.items.length);
+        this.onActiveItemChange(itemIndex);
+        const snapDirection = vec3.normalize(vec3.create(), this.#getVertexWorldPosition(nearestVertexIndex));
+        this.control.snapTargetDirection = snapDirection;
+        this.#lastSnapUpdate = performance.now();
+      }
     } else {
       cameraTargetZ += this.control.rotationVelocity * 80 + 2.5;
       damping = 7 / timeScale;
@@ -870,13 +846,13 @@ class InfiniteGridMenu {
 
   #findNearestVertexIndex() {
     const n = this.control.snapDirection;
-    quat.conjugate(this.#tempQuat, this.control.orientation);
-    vec3.transformQuat(this.#tempVec3, n, this.#tempQuat);
+    const inversOrientation = quat.conjugate(quat.create(), this.control.orientation);
+    const nt = vec3.transformQuat(vec3.create(), n, inversOrientation);
 
     let maxD = -1;
     let nearestVertexIndex = 0;
     for (let i = 0; i < this.instancePositions.length; ++i) {
-      const d = vec3.dot(this.#tempVec3, this.instancePositions[i]);
+      const d = vec3.dot(nt, this.instancePositions[i]);
       if (d > maxD) {
         maxD = d;
         nearestVertexIndex = i;
@@ -886,7 +862,8 @@ class InfiniteGridMenu {
   }
 
   #getVertexWorldPosition(index: number) {
-    return this.#transformedPositions[index] || this.instancePositions[index];
+    const nearestVertexPos = this.instancePositions[index];
+    return vec3.transformQuat(vec3.create(), nearestVertexPos, this.control.orientation);
   }
 }
 
@@ -973,15 +950,6 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
 
       {activeItem && (
         <>
-          {/* Centered Avatar Display */}
-          <div className={`centered-avatar ${isMoving ? 'inactive' : 'active'}`}>
-            <img 
-              src={activeItem.image} 
-              alt={activeItem.title}
-              className="avatar-image"
-            />
-          </div>
-
           <h2 className={`face-title ${isMoving ? 'inactive' : 'active'}`}>{activeItem.title}</h2>
 
           <p className={`face-description ${isMoving ? 'inactive' : 'active'}`}>{activeItem.description}</p>
