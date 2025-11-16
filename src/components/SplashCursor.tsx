@@ -15,7 +15,8 @@ function SplashCursor({
   SHADING = true,
   COLOR_UPDATE_SPEED = 10,
   BACK_COLOR = { r: 0.5, g: 0, b: 0 },
-  TRANSPARENT = true
+  TRANSPARENT = true,
+  enabled = true
 }) {
   const canvasRef = useRef(null);
 
@@ -885,7 +886,13 @@ function SplashCursor({
     }
 
     function generateColor() {
-      let c = HSVtoRGB(Math.random(), 1.0, 1.0);
+      // Gold color in HSV: hue ~43°/360 = 0.12, saturation ~0.75, value ~0.83
+      // We'll use a slight variation in hue to keep it interesting but always gold
+      const goldHue = 0.12 + (Math.random() * 0.02 - 0.01); // 0.11 to 0.13
+      const goldSat = 0.7 + Math.random() * 0.1; // 0.7 to 0.8
+      const goldVal = 0.75 + Math.random() * 0.15; // 0.75 to 0.9
+      
+      let c = HSVtoRGB(goldHue, goldSat, goldVal);
       c.r *= 0.15;
       c.g *= 0.15;
       c.b *= 0.15;
@@ -1054,6 +1061,10 @@ function SplashCursor({
     BACK_COLOR,
     TRANSPARENT
   ]);
+
+  if (!enabled) {
+    return null;
+  }
 
   return (
     <div

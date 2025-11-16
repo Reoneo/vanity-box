@@ -17,6 +17,7 @@ const Index = () => {
   const { setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const [showMiniApps, setShowMiniApps] = useState(true);
+  const [showInfiniteMenu, setShowInfiniteMenu] = useState(false);
 
   // Force dark mode and listen for wallet connection events
   useEffect(() => {
@@ -53,7 +54,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      <SplashCursor />
+      <SplashCursor enabled={!showInfiniteMenu} />
       
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
@@ -75,6 +76,7 @@ const Index = () => {
             <SearchInterface 
               onSearchClick={() => setShowMiniApps(false)} 
               onClearSearch={() => setShowMiniApps(true)}
+              onInfiniteMenuChange={setShowInfiniteMenu}
             />
 
             {/* Mini Apps Section - Only on Home Page */}

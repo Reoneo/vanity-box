@@ -148,9 +148,10 @@ interface ENSRecords {
 interface SearchInterfaceProps {
   onSearchClick?: () => void;
   onClearSearch?: () => void;
+  onInfiniteMenuChange?: (show: boolean) => void;
 }
 
-export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfaceProps) => {
+export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuChange }: SearchInterfaceProps) => {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
@@ -275,6 +276,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       }
     }
   }, [language]);
+
+  // Notify parent when infinite menu visibility changes
+  useEffect(() => {
+    const showInfiniteMenu = hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs;
+    onInfiniteMenuChange?.(showInfiniteMenu);
+  }, [hasSearched, ensResults.length, web3BioProfile, showMyIDs, onInfiniteMenuChange]);
+
 
   const getSubdomainPrice = (subdomain: string) => {
     const length = subdomain.length;
