@@ -730,8 +730,9 @@ class InfiniteGridMenu {
       vec3.squaredDistance(this.control.snapTargetDirection as vec3, this.control.snapDirection) > 1e-4;
 
     // Only skip when fully idle and not snapping
-    const isMoving = this.control.rotationVelocity > 0.001 || this.control.isPointerDown || snapping;
-    if (!isMoving && !this.movementActive) return;
+    // Force initial render when frames < 2 to ensure first avatar is visible
+    const isMoving = this.control.rotationVelocity > 0.001 || this.control.isPointerDown || snapping || this.#frames < 2;
+    if (!isMoving && !this.movementActive && this.#frames >= 2) return;
 
     let positions = this.instancePositions.map(p => vec3.transformQuat(vec3.create(), p, this.control.orientation));
     const scale = 0.25;
