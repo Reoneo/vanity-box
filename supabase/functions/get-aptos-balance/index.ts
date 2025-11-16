@@ -2,13 +2,20 @@
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
 };
 
 interface BalanceRequest {
   address?: string;
+  network?: 'mainnet' | 'testnet' | 'devnet';
 }
 
-const APTOS_MAINNET_URL = "https://fullnode.mainnet.aptoslabs.com/v1";
+const APTOS_NODES = {
+  mainnet: "https://fullnode.mainnet.aptoslabs.com/v1",
+  testnet: "https://fullnode.testnet.aptoslabs.com/v1",
+  devnet: "https://fullnode.devnet.aptoslabs.com/v1",
+};
+
 const APT_COIN_STORE = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
 const USDC_TYPE = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC";
 const USDC_COIN_STORE = `0x1::coin::CoinStore<${USDC_TYPE}>`;
@@ -18,8 +25,8 @@ function toNumberSafe(v: bigint, decimals: number) {
   return Number(v) / Math.pow(10, decimals);
 }
 
-async function fetchResourceBalance(address: string, resource: string): Promise<bigint | null> {
-  const res = await fetch(`${APTOS_MAINNET_URL}/accounts/${address}/resource/${encodeURIComponent(resource)}`);
+async function fetchResourceBalance(nodeUrl: string, address: string, resource: string): Promise<bigint | null> {
+  const res = await fetch(`${nodeUrl}/accounts/${address}/resource/${encodeURIComponent(resource)}`);
   if (res.status === 404) return 0n;
   if (!res.ok) throw new Error(`Resource fetch failed ${res.status}`);
   const json = await res.json();
@@ -28,9 +35,9 @@ async function fetchResourceBalance(address: string, resource: string): Promise<
   return BigInt(raw);
 }
 
-async function fetchCoinsList(address: string): Promise<Record<string, bigint>> {
+async function fetchCoinsList(nodeUrl: string, address: string): Promise<Record<string, bigint>> {
   const out: Record<string, bigint> = {};
-  const res = await fetch(`${APTOS_MAINNET_URL}/accounts/${address}/coins?limit=200`);
+  const res = await fetch(`${nodeUrl}/accounts/${address}/coins?limit=200`);
   if (!res.ok) return out;
   const json = await res.json();
   const data = Array.isArray(json?.data) ? json.data : json;
@@ -53,24 +60,32 @@ Deno.serve(async (req) => {
   }
 
   let address: string | undefined;
+  let network: 'mainnet' | 'testnet' | 'devnet' = 'mainnet';
+  
   try {
     // Parse JSON body if present
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const body = (await req.json()) as BalanceRequest;
       address = body.address;
+      network = body.network || 'mainnet';
     }
   } catch (_e) {
     // ignore body parse errors, we'll try query param
   }
 
-  // Support GET with ?address=
+  // Support GET with ?address=&network=
   if (!address) {
     const url = new URL(req.url);
     address = url.searchParams.get('address') || undefined;
+    const networkParam = url.searchParams.get('network');
+    if (networkParam === 'testnet' || networkParam === 'devnet') {
+      network = networkParam;
+    }
   }
 
-  console.log(`[get-aptos-balance] Fetching balance for: ${address}`);
+  const nodeUrl = APTOS_NODES[network];
+  console.log(`[get-aptos-balance] Network: ${network}, Node URL: ${nodeUrl}, Address: ${address}`);
 
   if (!address) {
     return new Response(
@@ -88,7 +103,7 @@ Deno.serve(async (req) => {
     let usdcRaw: bigint = 0n;
 
     try {
-      const res = await fetchResourceBalance(normalizedAddress, APT_COIN_STORE);
+      const res = await fetchResourceBalance(nodeUrl, normalizedAddress, APT_COIN_STORE);
       if (res !== null) aptRaw = res;
       console.log(`[get-aptos-balance] APT resource result: ${aptRaw}`);
     } catch (e) {
@@ -96,7 +111,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-      const res = await fetchResourceBalance(normalizedAddress, USDC_COIN_STORE);
+      const res = await fetchResourceBalance(nodeUrl, normalizedAddress, USDC_COIN_STORE);
       if (res !== null) usdcRaw = res;
       console.log(`[get-aptos-balance] USDC resource result: ${usdcRaw}`);
     } catch (e) {
@@ -106,7 +121,7 @@ Deno.serve(async (req) => {
     // Fallback to coins list if either is zero
     if (aptRaw === 0n || usdcRaw === 0n) {
       try {
-        const coins = await fetchCoinsList(normalizedAddress);
+        const coins = await fetchCoinsList(nodeUrl, normalizedAddress);
         if (aptRaw === 0n) {
           const aptKey = Object.keys(coins).find((k) => k.includes("0x1::aptos_coin::AptosCoin"));
           if (aptKey) aptRaw = coins[aptKey] ?? 0n;
@@ -124,7 +139,7 @@ Deno.serve(async (req) => {
     const aptBalance = toNumberSafe(aptRaw, 8);
     const usdcBalance = toNumberSafe(usdcRaw, 6);
 
-    console.log(`[get-aptos-balance] Final - APT: ${aptBalance}, USDC: ${usdcBalance}`);
+    console.log(`[get-aptos-balance] Final - Network: ${network}, APT: ${aptBalance}, USDC: ${usdcBalance}`);
 
     return new Response(
       JSON.stringify({
@@ -132,6 +147,7 @@ Deno.serve(async (req) => {
         aptBalance,
         usdcBalance,
         address: normalizedAddress,
+        network,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
