@@ -16,6 +16,7 @@ export const Header: React.FC = () => {
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [isPetraConnected, setIsPetraConnected] = useState(false);
   const [showMyIds, setShowMyIds] = useState(false);
 
   useEffect(() => {
@@ -28,8 +29,17 @@ export const Header: React.FC = () => {
     const handleMintOpen = () => setIsMintWindowOpen(true);
     const handleMintClose = () => setIsMintWindowOpen(false);
     
-    const handleWalletConnected = () => setIsWalletConnected(true);
-    const handleWalletDisconnected = () => setIsWalletConnected(false);
+    const handleWalletConnected = (e?: CustomEvent) => {
+      setIsWalletConnected(true);
+      // Check if it's Petra wallet from event detail
+      if (e?.detail?.walletType === 'petra') {
+        setIsPetraConnected(true);
+      }
+    };
+    const handleWalletDisconnected = () => {
+      setIsWalletConnected(false);
+      setIsPetraConnected(false);
+    };
     
     const handleShowMyIds = () => setShowMyIds(true);
     const handleHideMyIds = () => setShowMyIds(false);
@@ -75,14 +85,17 @@ export const Header: React.FC = () => {
         <link rel="preload" as="image" href={vanityLogo} />
         
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
           {/* Mobile: Show left-aligned controls when wallet is connected */}
           {isWalletConnected && (
             <div className="flex items-center gap-1 md:hidden">
               {/* Logo - positioned at far left, moved slightly left, with Home Button */}
               <button
                 onClick={() => window.location.reload()}
-                className="flex items-center -ml-2 cursor-pointer hover:opacity-80 transition-opacity"
+                className={cn(
+                  "flex items-center -ml-2 cursor-pointer hover:opacity-80 transition-all duration-500",
+                  isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]"
+                )}
               >
                 <img 
                   src={vanityLogo} 
