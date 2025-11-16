@@ -47,7 +47,7 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user, is
 
   return (
     <div className="text-center px-4">
-      <h1 className="leading-tight">
+      <h1 className="leading-none m-0 p-0">
         {getHeaderText()}
       </h1>
     </div>
