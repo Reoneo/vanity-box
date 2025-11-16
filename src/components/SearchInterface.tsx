@@ -1150,14 +1150,14 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
                           {web3BioProfile.displayName || searchQuery}
                         </h3>
                         
-                        {/* Description below subdomain - full width */}
+                        {/* Description below subdomain - full width with better shadow */}
                         {web3BioProfile.description && (
-                          <div className="w-full px-2 mb-1">
+                          <div className="w-full max-w-3xl px-4 mb-2">
                             <p 
-                              className="text-sm sm:text-base leading-relaxed text-center"
+                              className="text-base sm:text-lg leading-relaxed text-center font-medium"
                               style={{
                                 color: '#D4AF37',
-                                textShadow: '-0.5px -0.5px 0 black, 0.5px -0.5px 0 black, -0.5px 0.5px 0 black, 0.5px 0.5px 0 black'
+                                textShadow: '0 2px 8px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 1), -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black'
                               }}
                             >
                               {web3BioProfile.description}
