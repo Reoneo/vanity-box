@@ -1,6 +1,0 @@
-<svg width="1000" height="1000" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-  <!-- Outer circle creates the ring when combined with inner transparent area -->
-  <circle cx="500" cy="500" r="490" fill="black" stroke="none"/>
-  <!-- Inner transparent circle cuts out the middle -->
-  <circle cx="500" cy="500" r="420" fill="white" stroke="none"/>
-</svg>

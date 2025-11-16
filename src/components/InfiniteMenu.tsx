@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { mat4, quat, vec2, vec3 } from 'gl-matrix';
 import './InfiniteMenu.css';
-import MetallicPaint, { parseLogoImage } from './MetallicPaint';
-import circleBorderSvg from '@/assets/circle-border.svg';
 
 const discVertShaderSource = `#version 300 es
 
@@ -912,26 +910,6 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
   const [activeItem, setActiveItem] = useState<any>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isMoving, setIsMoving] = useState(false);
-  const [borderImageData, setBorderImageData] = useState<ImageData | null>(null);
-
-  useEffect(() => {
-    async function loadBorderImage() {
-      try {
-        console.log('Loading border image...');
-        const response = await fetch(circleBorderSvg);
-        const blob = await response.blob();
-        console.log('Border SVG blob loaded:', blob.size, 'bytes');
-        const file = new File([blob], "circle-border.svg", { type: blob.type });
-        const parsedData = await parseLogoImage(file);
-        console.log('Border image parsed:', parsedData?.imageData ? 'success' : 'failed');
-        setBorderImageData(parsedData?.imageData ?? null);
-      } catch (err) {
-        console.error("Error loading border image:", err);
-      }
-    }
-
-    loadBorderImage();
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -986,32 +964,6 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <canvas id="infinite-grid-menu-canvas" ref={canvasRef} />
-
-      {borderImageData && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'min(85vh, 85vw)',
-          height: 'min(85vh, 85vw)',
-          pointerEvents: 'none',
-          zIndex: 5,
-          border: '2px solid red' // Debug border
-        }}>
-          <MetallicPaint 
-            imageData={borderImageData} 
-            params={{ 
-              edge: 1.5, 
-              patternBlur: 0.01, 
-              patternScale: 1.5, 
-              refraction: 0.02, 
-              speed: 0.2, 
-              liquid: 0.05 
-            }} 
-          />
-        </div>
-      )}
 
       {activeItem && (
         <>
