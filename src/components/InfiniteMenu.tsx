@@ -725,8 +725,12 @@ class InfiniteGridMenu {
     const gl = this.gl;
     this.control.update(deltaTime, this.TARGET_FRAME_DURATION);
 
-    // Optimize: Only recalculate matrices when needed
-    const isMoving = this.control.rotationVelocity > 0.001;
+    // Keep updating while snapping the active item to center to avoid freezing
+    const snapping = !!this.control.snapTargetDirection &&
+      vec3.squaredDistance(this.control.snapTargetDirection as vec3, this.control.snapDirection) > 1e-4;
+
+    // Only skip when fully idle and not snapping
+    const isMoving = this.control.rotationVelocity > 0.001 || this.control.isPointerDown || snapping;
     if (!isMoving && !this.movementActive) return;
 
     let positions = this.instancePositions.map(p => vec3.transformQuat(vec3.create(), p, this.control.orientation));
