@@ -244,7 +244,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
 
 
   const protocols = ["DNS", "ENS"];
-  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
+  const clubs = ["All", "Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
 
   // Auto-search when username is in URL
   useEffect(() => {
@@ -307,18 +307,33 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
   };
 
   const handleClubToggle = (club: string) => {
-    const newClubs = filters.club.includes(club) ? filters.club.filter((c) => c !== club) : [...filters.club, club];
+    if (club === "All") {
+      // If "All" is clicked, select all clubs except "All" itself
+      const allClubsExceptAll = clubs.filter(c => c !== "All");
+      setFilters({
+        ...filters,
+        club: allClubsExceptAll,
+      });
+    } else {
+      // Remove "All" if it's selected and a specific club is clicked
+      let newClubs = filters.club.filter(c => c !== "All");
+      
+      if (newClubs.includes(club)) {
+        newClubs = newClubs.filter((c) => c !== club);
+      } else {
+        newClubs = [...newClubs, club];
+      }
 
-    setFilters({
-      ...filters,
-      club: newClubs,
-    });
+      setFilters({
+        ...filters,
+        club: newClubs,
+      });
+    }
   };
 
   const handleClearFilters = () => {
-    setFilters({ protocol: [], club: [] });
-    setShowFilterDropdown(false);
-    setEnsResults([]);
+    setFilters({ protocol: [], club: ["All"] });
+    // Keep dropdown open - don't close it
   };
 
   const handleApplyFilters = () => {
@@ -354,7 +369,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
         imageUrl: vapeBoxAvatar,
         price: 5,
         category: ["ENS", "DNS"],
-        club: ["Startup", "DeFi"],
+        club: ["Startup"],
         enabled: false,
       },
       {
@@ -1027,29 +1042,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
                                     </div>
                                   </div>
 
-                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                                  <div className="space-y-3">
-                                    <div className="flex flex-wrap gap-2">
-                                      {protocols.map((protocol) => (
-                                        <label
-                                          key={protocol}
-                                          className={cn(
-                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
-                                            filters.protocol.includes(protocol)
-                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
-                                          )}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            handleProtocolToggle(protocol);
-                                          }}
-                                        >
-                                          {protocol}
-                                        </label>
-                                      ))}
-                                    </div>
-                                  </div>
 
                                   {totalFilters > 0 && (
                                     <>
@@ -1171,29 +1163,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
                                     </div>
                                   </div>
 
-                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                                  <div className="space-y-3">
-                                    <div className="flex flex-wrap gap-2">
-                                      {protocols.map((protocol) => (
-                                        <label
-                                          key={protocol}
-                                          className={cn(
-                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
-                                            filters.protocol.includes(protocol)
-                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
-                                          )}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            handleProtocolToggle(protocol);
-                                          }}
-                                        >
-                                          {protocol}
-                                        </label>
-                                      ))}
-                                    </div>
-                                  </div>
 
                                   <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
                                   <div className="flex gap-2">
