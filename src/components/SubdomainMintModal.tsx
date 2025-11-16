@@ -72,6 +72,11 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [isMinting, setIsMinting] = useState(false);
   const [networkFeeUSD, setNetworkFeeUSD] = useState(0.15);
   
+  // Aptos wallet balance states
+  const [aptBalance, setAptBalance] = useState<number | null>(null);
+  const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  
   // MiniKit status tracking
   const [miniKitStatus, setMiniKitStatus] = useState<"checking" | "ready" | "unavailable">("checking");
   const [miniKitError, setMiniKitError] = useState<string>("");
@@ -171,6 +176,34 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     }
   }, [isOpen]);
 
+  // Load Aptos wallet balance when connected
+  useEffect(() => {
+    const loadAptosBalance = async () => {
+      if (!isAptosDomain || !isConnected || !account?.address) {
+        return;
+      }
+
+      setIsLoadingBalance(true);
+      try {
+        // Call edge function to get balance
+        const balanceData = await callEdge<any>("get-aptos-balance", {
+          address: account.address,
+        });
+
+        if (balanceData.success) {
+          setAptBalance(balanceData.aptBalance || 0);
+          setUsdcBalance(balanceData.usdcBalance || 0);
+        }
+      } catch (error) {
+        console.error("[Aptos] Failed to load balance:", error);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    loadAptosBalance();
+  }, [isAptosDomain, isConnected, account?.address]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -188,12 +221,17 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
     const loadNetworkFee = async () => {
       try {
-        const { calculateNetworkFee } = await import("@/utils/worldChainGas");
-        const fee = await calculateNetworkFee(150000);
-        if (mounted) setNetworkFeeUSD(fee);
+        if (isAptosDomain) {
+          // Aptos has much lower fees
+          if (mounted) setNetworkFeeUSD(0.001);
+        } else {
+          const { calculateNetworkFee } = await import("@/utils/worldChainGas");
+          const fee = await calculateNetworkFee(150000);
+          if (mounted) setNetworkFeeUSD(fee);
+        }
       } catch (error) {
         console.error("Failed to fetch network fee:", error);
-        if (mounted) setNetworkFeeUSD(0.15);
+        if (mounted) setNetworkFeeUSD(isAptosDomain ? 0.001 : 0.15);
       }
     };
 
@@ -208,7 +246,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       clearInterval(priceInterval);
       clearInterval(feeInterval);
     };
-  }, []);
+  }, [isAptosDomain]);
 
   // ---------- pricing ----------
 
@@ -309,7 +347,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     try {
       // Check if Petra wallet is installed
       if (!isInstalled) {
-        toast.error("Petra Wallet is not installed. Please install it to mint .apt domains.");
+        toast.error("Petra Wallet is not installed. Please install it from petra.app");
+        window.open("https://petra.app/", "_blank");
         return;
       }
 
@@ -331,6 +370,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       // Determine which token to use and contract address
       const isUSDC = paymentMethod === "USDC";
       const tokenSymbol = isUSDC ? "USDC" : "APT";
+      
+      // Check if user has sufficient balance
+      const currentBalance = isUSDC ? usdcBalance : aptBalance;
+      if (currentBalance !== null && currentBalance < paymentAmountCrypto) {
+        toast.error(`Insufficient ${tokenSymbol} balance. You have ${currentBalance.toFixed(4)} ${tokenSymbol} but need ${paymentAmountCrypto.toFixed(4)} ${tokenSymbol}`);
+        return;
+      }
       
       // Aptos USDC contract address (mainnet)
       const USDC_ADDRESS = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC";
@@ -366,19 +412,21 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           };
         }
         
-        toast.info("Please approve the transaction in Petra Wallet...");
+        toast.info(`Please approve the transaction in Petra Wallet...`, { duration: 10000 });
         
         // Sign and submit transaction using Petra wallet
         const txResponse = await signAndSubmitTransaction(transaction);
         
         console.log("[Aptos] Transaction submitted:", txResponse);
-        toast.info("Transaction submitted! Waiting for confirmation...");
+        toast.success("Payment transaction confirmed!");
+        
+        // Show minting progress
+        const mintingToast = toast.loading("Registering your .apt subdomain on-chain...");
         
         // Wait a moment for transaction to be processed
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Call the edge function to register the subdomain
-        toast.info("Registering your .apt subdomain...");
         const response = await callEdge<any>("mint-apt-subdomain", {
           subdomain,
           walletAddress: account.address,
@@ -389,13 +437,25 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           txHash: txResponse.hash || txResponse,
         });
 
+        toast.dismiss(mintingToast);
+
         if (response.success) {
-          toast.success(`Successfully minted ${subdomain}!`);
+          toast.success(`Successfully minted ${subdomain}! 🎉`, { duration: 5000 });
           await sendHaptic("success");
           
           // Set default redirect
           const fullName = `${subdomain}.${domain}`;
           await setDefaultVanityRedirect(fullName, account.address);
+          
+          // Show transaction details
+          if (txResponse.hash) {
+            toast.info(
+              <div>
+                Transaction: <a href={`https://explorer.aptoslabs.com/txn/${txResponse.hash}?network=mainnet`} target="_blank" rel="noopener noreferrer" className="underline">View on Explorer</a>
+              </div>,
+              { duration: 10000 }
+            );
+          }
           
           onClose();
         } else {
@@ -403,16 +463,20 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         }
       } catch (txError: any) {
         console.error("[Aptos] Transaction error:", txError);
-        if (txError.message?.includes("User rejected")) {
-          toast.error("Transaction rejected by user");
+        if (txError.message?.includes("User rejected") || txError.message?.includes("User canceled")) {
+          toast.error("Transaction cancelled by user");
+        } else if (txError.message?.includes("Insufficient balance")) {
+          toast.error("Insufficient balance to complete transaction");
         } else {
-          toast.error(txError.message || "Transaction failed");
+          toast.error(txError.message || "Transaction failed. Please try again.");
         }
         throw txError;
       }
     } catch (error: any) {
       console.error("[Aptos Mint] Error:", error);
-      toast.error(error.message || "Failed to mint .apt subdomain");
+      if (!error.message?.includes("cancelled") && !error.message?.includes("rejected")) {
+        toast.error(error.message || "Failed to mint .apt subdomain");
+      }
       await sendHaptic("error");
     } finally {
       setIsMinting(false);
@@ -952,6 +1016,22 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               </>
             </div>
             {isLoadingPrices && <div className="text-xs text-gray-500">Updating prices…</div>}
+            {isAptosDomain && isConnected && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
+                {isLoadingBalance ? (
+                  <div>Loading balance...</div>
+                ) : (
+                  <>
+                    {paymentMethod === "APT" && aptBalance !== null && (
+                      <div>Balance: {aptBalance.toFixed(4)} APT</div>
+                    )}
+                    {paymentMethod === "USDC" && usdcBalance !== null && (
+                      <div>Balance: {usdcBalance.toFixed(2)} USDC</div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Breakdown */}
