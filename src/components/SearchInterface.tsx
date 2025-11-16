@@ -390,7 +390,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
         category: ["Aptos"],
         club: ["Personal"],
         selectable: true,
-        enabled: false,
+        enabled: true,
       },
       {
         name: "Vanity.hl",

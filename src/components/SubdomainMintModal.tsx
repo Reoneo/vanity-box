@@ -13,11 +13,13 @@ import { callEdge } from "@/lib/supaInvoke";
 import { setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
 import { fullEnsName } from "@/lib/ensRedirect/profile";
 import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
+import { usePetraWallet } from "@/hooks/use-petra-wallet";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
 import wldLogoDark from "@/assets/wld-logo-dark.svg";
 import wldLogoLight from "@/assets/wld-logo-light.png";
+import aptosLogo from "@/assets/aptos-logo.png";
 
 interface SubdomainMintModalProps {
   isOpen: boolean;
@@ -50,6 +52,10 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { account, connect, isConnected, isInstalled, signAndSubmitTransaction } = usePetraWallet();
+  
+  // Check if this is an Aptos domain
+  const isAptosDomain = domain.toLowerCase().endsWith('.apt');
 
   const [registrationYears, setRegistrationYears] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("USDC");
@@ -268,6 +274,63 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       console.debug("[Mint] Already minting, ignoring duplicate click");
       return;
     }
+
+    // Route to appropriate minting flow
+    if (isAptosDomain) {
+      await handleAptosMint();
+    } else {
+      await handleWorldChainMint();
+    }
+  };
+
+  const handleAptosMint = async () => {
+    setIsMinting(true);
+    
+    try {
+      // Check if Petra wallet is installed
+      if (!isInstalled) {
+        toast.error("Petra Wallet is not installed. Please install it to mint .apt domains.");
+        return;
+      }
+
+      // Connect to Petra wallet if not connected
+      if (!isConnected) {
+        toast.info("Please connect your Petra wallet...");
+        await connect();
+      }
+
+      if (!account?.address) {
+        toast.error("Failed to connect to Petra wallet");
+        return;
+      }
+
+      toast.info("Minting your .apt subdomain...");
+      
+      // Call the edge function to prepare the minting
+      const response = await callEdge<any>("mint-apt-subdomain", {
+        subdomain,
+        walletAddress: account.address,
+        domain,
+        registrationMonths: registrationYears * 12,
+      });
+
+      if (response.success) {
+        toast.success(`Successfully minted ${subdomain}.${domain}!`);
+        await sendHaptic("success");
+        onClose();
+      } else {
+        toast.error("Failed to mint .apt subdomain");
+      }
+    } catch (error: any) {
+      console.error("[Aptos Mint] Error:", error);
+      toast.error(error.message || "Failed to mint .apt subdomain");
+      await sendHaptic("error");
+    } finally {
+      setIsMinting(false);
+    }
+  };
+
+  const handleWorldChainMint = async () => {
 
     setIsMinting(true);
     setPaymentFlowStep("checking_minikit");
