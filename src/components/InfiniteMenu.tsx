@@ -385,20 +385,20 @@ class ArcballControl {
       vec2.set(this.pointerPos, e.clientX, e.clientY);
       vec2.copy(this.previousPointerPos, this.pointerPos);
       this.isPointerDown = true;
-    });
+    }, { passive: true });
     canvas.addEventListener('pointerup', () => {
       this.isPointerDown = false;
-    });
+    }, { passive: true });
     canvas.addEventListener('pointerleave', () => {
       this.isPointerDown = false;
-    });
+    }, { passive: true });
     canvas.addEventListener('pointermove', (e: PointerEvent) => {
       if (this.isPointerDown) {
         vec2.set(this.pointerPos, e.clientX, e.clientY);
       }
-    });
+    }, { passive: true });
 
-    canvas.style.touchAction = 'none';
+    canvas.style.touchAction = 'pan-y';
   }
 
   update(deltaTime: number, targetFrameDuration = 16) {
