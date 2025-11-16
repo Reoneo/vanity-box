@@ -73,7 +73,7 @@ import sanAndreasAvatar from "@/assets/sanandreas-avatar.png";
 import guavapayAvatar from "@/assets/guavapay-avatar.png";
 import mexipayAvatar from "@/assets/mexipay-avatar.png";
 import tonLogo from "@/assets/ton-logo.png";
-import vanityTonAvatar from "@/assets/vanity-ton-avatar.jpeg";
+import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
 import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
