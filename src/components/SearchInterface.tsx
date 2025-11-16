@@ -1019,46 +1019,33 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                   </div>
 
                                   <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                                  <div className="space-y-3">
-                                    <div className="flex flex-wrap gap-2">
-                                      {protocols.map((protocol) => (
-                                        <label
-                                          key={protocol}
-                                          className={cn(
-                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
-                                            filters.protocol.includes(protocol)
-                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
-                                          )}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            handleProtocolToggle(protocol);
-                                          }}
-                                        >
-                                          {protocol}
-                                        </label>
-                                      ))}
-                                    </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleClearFilters}
+                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (searchQuery.trim()) {
+                                          handleSearch(searchQuery);
+                                          setShowFilterDropdown(false);
+                                        }
+                                      }}
+                                      disabled={!searchQuery.trim()}
+                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      ✓
+                                    </Button>
                                   </div>
-
-                                  {totalFilters > 0 && (
-                                    <>
-                                      <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-                                      <div className="flex gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={handleClearFilters}
-                                          className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                                        >
-                                          Clear Filters
-                                        </Button>
-                                      </div>
-                                    </>
-                                  )}
                                 </div>
                               </div>
+                            </DropdownMenuContent>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1163,44 +1150,30 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                   </div>
 
                                   <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                                  <div className="space-y-3">
-                                    <div className="flex flex-wrap gap-2">
-                                      {protocols.map((protocol) => (
-                                        <label
-                                          key={protocol}
-                                          className={cn(
-                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
-                                            filters.protocol.includes(protocol)
-                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
-                                          )}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            handleProtocolToggle(protocol);
-                                          }}
-                                        >
-                                          {protocol}
-                                        </label>
-                                      ))}
-                                    </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleClearFilters}
+                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (searchQuery.trim()) {
+                                          handleSearch(searchQuery);
+                                          setShowFilterDropdown(false);
+                                        }
+                                      }}
+                                      disabled={!searchQuery.trim()}
+                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      ✓
+                                    </Button>
                                   </div>
-
-                                  {totalFilters > 0 && (
-                                    <>
-                                      <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-                                      <div className="flex gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={handleClearFilters}
-                                          className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                                        >
-                                          Clear Filters
-                                        </Button>
-                                      </div>
-                                    </>
-                                  )}
                                 </div>
                               </div>
                             </DropdownMenuContent>
