@@ -16,7 +16,7 @@ serve(async (req) => {
   try {
     // Fetch prices from CryptoCompare API (free tier, no API key needed)
     const response = await fetch(
-      'https://min-api.cryptocompare.com/data/pricemulti?fsyms=ETH,WLD,USDC&tsyms=USD',
+      'https://min-api.cryptocompare.com/data/pricemulti?fsyms=ETH,WLD,USDC,APT&tsyms=USD',
       {
         headers: {
           'Accept': 'application/json',
@@ -36,6 +36,7 @@ serve(async (req) => {
       eth: data.ETH?.USD || 2600,
       wld: data.WLD?.USD || 1.85,
       usdc: data.USDC?.USD || 1.0,
+      apt: data.APT?.USD || 8.5,
     };
 
     console.log('Processed prices:', prices);
@@ -60,6 +61,7 @@ serve(async (req) => {
           eth: 2600,
           wld: 1.85,
           usdc: 1.0,
+          apt: 8.5,
         },
         fallback: true,
       }),
