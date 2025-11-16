@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Button } from '@/components/ui/button';
 import { 
@@ -36,6 +37,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | null>(null);
+  const [aptBalance, setAptBalance] = useState<number>(0);
+  const [usdcBalance, setUsdcBalance] = useState<number>(0);
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
 
   useEffect(() => {
@@ -46,6 +50,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       window.dispatchEvent(new CustomEvent('wallet-connected', { 
         detail: { walletType: 'petra' } 
       }));
+      // Fetch balance when Petra connects
+      fetchAptosBalance();
     }
     
     // Check if we're running in World App
@@ -71,6 +77,27 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }, [user, petraConnected, petraAccount]);
 
   // Remove auto-connect - users must manually connect
+
+  // Fetch Aptos balance
+  const fetchAptosBalance = async () => {
+    if (!petraAccount?.address) return;
+    
+    setBalanceLoading(true);
+    try {
+      const balanceData = await callEdge<any>("get-aptos-balance", {
+        address: petraAccount.address,
+      });
+
+      if (balanceData.success) {
+        setAptBalance(balanceData.aptBalance || 0);
+        setUsdcBalance(balanceData.usdcBalance || 0);
+      }
+    } catch (error) {
+      console.error("[Aptos] Failed to load balance:", error);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
 
   const handleConnect = async () => {
     // If Petra is already connected, just return
@@ -345,6 +372,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   return (
     <DropdownMenu onOpenChange={(open) => {
       if (open) {
+        // Refresh balance when dropdown opens for Petra
+        if (walletType === 'petra') {
+          fetchAptosBalance();
+        }
         document.body.style.overflow = 'hidden';
         const backdrop = document.createElement('div');
         backdrop.id = 'wallet-dropdown-backdrop';
@@ -368,7 +399,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
+      <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
         <DropdownMenuItem 
           className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
           onClick={() => {
@@ -381,6 +412,34 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           <User className="mr-2 h-4 w-4" />
           My ID's
         </DropdownMenuItem>
+        
+        {/* Show balance for Petra wallet */}
+        {walletType === 'petra' && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-3 text-sm">
+              <div className="text-gray-500 dark:text-gray-400 mb-2">Wallet Balance</div>
+              {balanceLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span className="text-gray-700 dark:text-white">Loading...</span>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 dark:text-white font-medium">APT</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{aptBalance.toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 dark:text-white font-medium">USDC</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{usdcBalance.toFixed(4)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
