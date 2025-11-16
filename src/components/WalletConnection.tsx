@@ -35,11 +35,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
-  const { account: petraAccount, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
+  const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -51,17 +52,21 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
 
   useEffect(() => {
-    // Check Petra wallet connection
+    // Check Petra wallet connection and network changes
     if (petraConnected && petraAccount) {
       setWalletType('petra');
+      const networkName = petraNetwork?.name?.toLowerCase() || 'mainnet';
+      setActiveNetwork(networkName);
       // Dispatch event to notify Header about Petra connection
       window.dispatchEvent(new CustomEvent('wallet-connected', { 
         detail: { walletType: 'petra' } 
       }));
-      // Fetch balance when Petra connects
+      // Fetch balance when Petra connects or network changes
       fetchAptosBalance();
     }
-    
+  }, [petraConnected, petraAccount, petraNetwork]);
+
+  useEffect(() => {
     // Check if we're running in World App
     const isInWorldApp = MiniKit.isInstalled();
     
@@ -86,19 +91,25 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   // Remove auto-connect - users must manually connect
 
-  // Fetch Aptos balance
+  // Fetch Aptos balance with network awareness
   const fetchAptosBalance = async () => {
     if (!petraAccount?.address) return;
     
     setBalanceLoading(true);
+    const networkName = petraNetwork?.name?.toLowerCase() || 'mainnet';
+    const network = (networkName === 'testnet' || networkName === 'devnet') ? networkName : 'mainnet';
+    
     try {
+      console.log(`[WalletConnection] Fetching balance for ${petraAccount.address} on ${network}`);
       const balanceData = await callEdge<any>("get-aptos-balance", {
         address: petraAccount.address,
+        network,
       });
 
       if (balanceData.success) {
         setAptBalance(balanceData.aptBalance || 0);
         setUsdcBalance(balanceData.usdcBalance || 0);
+        setActiveNetwork(network);
       }
     } catch (error) {
       console.error("[Aptos] Failed to load balance:", error);
