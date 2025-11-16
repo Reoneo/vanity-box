@@ -41,6 +41,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
 
+  // Helper to format balance with proper decimals
+  const formatBalance = (value: number, decimals = 6): string => {
+    if (!isFinite(value) || value <= 0) return "0";
+    const threshold = Math.pow(10, -decimals);
+    if (value < threshold) return `<${threshold.toFixed(decimals)}`;
+    return value.toFixed(decimals);
+  };
+
 
   useEffect(() => {
     // Check Petra wallet connection
@@ -428,11 +436,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 dark:text-white font-medium">APT</span>
-                    <span className="text-gray-900 dark:text-white font-bold">{aptBalance.toFixed(4)}</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{formatBalance(aptBalance, 6)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 dark:text-white font-medium">USDC</span>
-                    <span className="text-gray-900 dark:text-white font-bold">{usdcBalance.toFixed(4)}</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{formatBalance(usdcBalance, 6)}</span>
                   </div>
                 </div>
               )}
