@@ -945,10 +945,9 @@ export default function InfiniteMenu({ items = [], onItemClick }: InfiniteMenuPr
 
       {activeItem && (
         <>
-          <div className={`face-title-container ${isMoving ? 'inactive' : 'active'}`}>
-            <h2 className="face-title-text">{activeItem.title}</h2>
-            <p className="face-description-text">{activeItem.description}</p>
-          </div>
+          <h2 className={`face-title ${isMoving ? 'inactive' : 'active'}`}>{activeItem.title}</h2>
+
+          <p className={`face-description ${isMoving ? 'inactive' : 'active'}`}>{activeItem.description}</p>
 
           {activeItem.badge && (
             <div className={`coming-soon-badge ${isMoving ? 'inactive' : 'active'}`}>
