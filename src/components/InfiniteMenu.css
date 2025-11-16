@@ -92,6 +92,7 @@
   transform: translate(20%, 0);
   color: #D4AF37;
   text-shadow: 
+    0 4px 12px rgba(0, 0, 0, 1),
     0 2px 8px rgba(0, 0, 0, 0.9),
     0 0 3px rgba(0, 0, 0, 1),
     -1px -1px 0 black,
