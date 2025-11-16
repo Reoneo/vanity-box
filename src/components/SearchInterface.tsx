@@ -15,6 +15,7 @@ import {
   Eye,
   Hourglass,
   Share2,
+  Check,
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
@@ -1186,21 +1187,32 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                     </div>
                                   </div>
 
-                                  {totalFilters > 0 && (
-                                    <>
-                                      <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-                                      <div className="flex gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={handleClearFilters}
-                                          className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                                        >
-                                          Clear Filters
-                                        </Button>
-                                      </div>
-                                    </>
-                                  )}
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleClearFilters}
+                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setShowFilterDropdown(false);
+                                        if (searchQuery.trim()) {
+                                          handleSearch();
+                                          setIsSearchActive(true);
+                                          onSearchClick?.();
+                                        }
+                                      }}
+                                      className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37]"
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             </DropdownMenuContent>
