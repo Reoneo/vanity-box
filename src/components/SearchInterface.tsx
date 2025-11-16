@@ -244,7 +244,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
 
 
   const protocols = ["DNS", "ENS"];
-  const clubs = ["All", "Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
+  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
 
   // Auto-search when username is in URL
   useEffect(() => {
@@ -307,32 +307,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
   };
 
   const handleClubToggle = (club: string) => {
-    if (club === "All") {
-      // If "All" is clicked, select all clubs except "All" itself
-      const allClubsExceptAll = clubs.filter(c => c !== "All");
-      setFilters({
-        ...filters,
-        club: allClubsExceptAll,
-      });
+    let newClubs = [...filters.club];
+    
+    if (newClubs.includes(club)) {
+      newClubs = newClubs.filter((c) => c !== club);
     } else {
-      // Remove "All" if it's selected and a specific club is clicked
-      let newClubs = filters.club.filter(c => c !== "All");
-      
-      if (newClubs.includes(club)) {
-        newClubs = newClubs.filter((c) => c !== club);
-      } else {
-        newClubs = [...newClubs, club];
-      }
-
-      setFilters({
-        ...filters,
-        club: newClubs,
-      });
+      newClubs = [...newClubs, club];
     }
+
+    setFilters({
+      ...filters,
+      club: newClubs,
+    });
   };
 
   const handleClearFilters = () => {
-    setFilters({ protocol: [], club: ["All"] });
+    // Select all clubs when X is pressed
+    setFilters({ protocol: [], club: clubs });
     // Keep dropdown open - don't close it
   };
 
@@ -896,9 +887,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
     let filteredResults = allResults;
 
     // Apply protocol and club filters if any are selected
-    // Check if "All" clubs are selected (all clubs except "All" itself)
-    const allClubsSelected = filters.club.length === clubs.length - 1 && 
-      clubs.filter(c => c !== "All").every(c => filters.club.includes(c));
+    // Check if all clubs are selected
+    const allClubsSelected = filters.club.length === clubs.length && 
+      clubs.every(c => filters.club.includes(c));
     
     if (filters.protocol.length > 0 || (filters.club.length > 0 && !allClubsSelected)) {
       filteredResults = allResults.filter((result) => {
