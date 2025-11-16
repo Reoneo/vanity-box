@@ -1,5 +1,8 @@
 project_id = "gdjjboorqviobvvygpca"
 
+[functions.get-aptos-balance]
+verify_jwt = false
+
 [functions.mint-subdomain]
 verify_jwt = false
 

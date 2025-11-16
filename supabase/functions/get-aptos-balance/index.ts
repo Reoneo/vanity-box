@@ -1,6 +1,4 @@
-// Edge function to get Aptos wallet balance for APT and USDC tokens
-import { Aptos, AptosConfig, Network } from "npm:@aptos-labs/ts-sdk@^1.28.0";
-
+// Edge function to get Aptos wallet balance for APT and USDC tokens using REST API
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -9,6 +7,8 @@ const corsHeaders = {
 interface BalanceRequest {
   address: string;
 }
+
+const APTOS_MAINNET_URL = "https://fullnode.mainnet.aptoslabs.com/v1";
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -28,36 +28,42 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Initialize Aptos client
-    const config = new AptosConfig({ network: Network.MAINNET });
-    const aptos = new Aptos(config);
+    // Normalize address (ensure 0x prefix)
+    const normalizedAddress = address.startsWith("0x") ? address : `0x${address}`;
 
     try {
-      // Get APT balance using the SDK's built-in method
+      // Define CoinStore types
+      const APT_COIN_STORE = "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>";
+      const USDC_COIN_STORE = "0x1::coin::CoinStore<0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC>";
+
+      // Fetch both balances in parallel
+      const [aptResponse, usdcResponse] = await Promise.all([
+        fetch(`${APTOS_MAINNET_URL}/accounts/${normalizedAddress}/resource/${encodeURIComponent(APT_COIN_STORE)}`),
+        fetch(`${APTOS_MAINNET_URL}/accounts/${normalizedAddress}/resource/${encodeURIComponent(USDC_COIN_STORE)}`)
+      ]);
+
       let aptBalance = 0;
-      try {
-        const balance = await aptos.getAccountAPTAmount({
-          accountAddress: address,
-        });
-        aptBalance = balance / 100_000_000; // Convert from Octas (8 decimals)
+      if (aptResponse.ok) {
+        const aptData = await aptResponse.json();
+        const aptValue = BigInt(aptData?.data?.coin?.value || "0");
+        aptBalance = Number(aptValue) / 100_000_000; // 8 decimals
         console.log(`[get-aptos-balance] APT balance fetched: ${aptBalance}`);
-      } catch (aptError: any) {
-        console.log(`[get-aptos-balance] APT balance fetch error: ${aptError.message}`);
+      } else if (aptResponse.status === 404) {
+        console.log("[get-aptos-balance] APT CoinStore not found, balance = 0");
+      } else {
+        console.log(`[get-aptos-balance] APT fetch error: ${aptResponse.status}`);
       }
 
-      // Get USDC balance
-      const USDC_ADDRESS = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC";
-      
       let usdcBalance = 0;
-      try {
-        const balance = await aptos.getAccountCoinAmount({
-          accountAddress: address,
-          coinType: USDC_ADDRESS,
-        });
-        usdcBalance = balance / 1_000_000; // Convert from micro-USDC (6 decimals)
+      if (usdcResponse.ok) {
+        const usdcData = await usdcResponse.json();
+        const usdcValue = BigInt(usdcData?.data?.coin?.value || "0");
+        usdcBalance = Number(usdcValue) / 1_000_000; // 6 decimals
         console.log(`[get-aptos-balance] USDC balance fetched: ${usdcBalance}`);
-      } catch (usdcError: any) {
-        console.log(`[get-aptos-balance] USDC balance fetch error: ${usdcError.message}`);
+      } else if (usdcResponse.status === 404) {
+        console.log("[get-aptos-balance] USDC CoinStore not found, balance = 0");
+      } else {
+        console.log(`[get-aptos-balance] USDC fetch error: ${usdcResponse.status}`);
       }
 
       console.log(`[get-aptos-balance] Final - APT: ${aptBalance}, USDC: ${usdcBalance}`);
@@ -67,7 +73,7 @@ Deno.serve(async (req) => {
           success: true,
           aptBalance,
           usdcBalance,
-          address,
+          address: normalizedAddress,
         }),
         { 
           status: 200, 
@@ -79,6 +85,7 @@ Deno.serve(async (req) => {
       console.error("[get-aptos-balance] Aptos API error:", error);
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: "Failed to fetch balance from Aptos network",
           details: error.message 
         }),
@@ -89,7 +96,10 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error("[get-aptos-balance] Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to get balance" }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message || "Failed to get balance" 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
