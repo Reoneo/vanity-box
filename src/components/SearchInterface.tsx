@@ -393,6 +393,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
         enabled: true,
       },
       {
+        name: "Smith.apt",
+        description: "Professional surname identity on Aptos blockchain",
+        imageUrl: smithAptAvatar,
+        price: 5,
+        category: ["Aptos"],
+        club: ["Surname"],
+        selectable: true,
+        enabled: true,
+      },
+      {
         name: "Vanity.hl",
         description: "Personal Web3 identity hub",
         imageUrl: vanityHlAvatar,
