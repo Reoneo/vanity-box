@@ -436,11 +436,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 dark:text-white font-medium">APT</span>
-                    <span className="text-gray-900 dark:text-white font-bold">{formatBalance(aptBalance, 6)}</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{formatBalance(aptBalance, 5)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 dark:text-white font-medium">USDC</span>
-                    <span className="text-gray-900 dark:text-white font-bold">{formatBalance(usdcBalance, 6)}</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{formatBalance(usdcBalance, 5)}</span>
                   </div>
                 </div>
               )}
