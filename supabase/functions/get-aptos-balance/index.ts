@@ -33,37 +33,34 @@ Deno.serve(async (req) => {
     const aptos = new Aptos(config);
 
     try {
-      // Get APT balance
-      const APTOS_COIN = "0x1::aptos_coin::AptosCoin";
-      const COIN_STORE = `0x1::coin::CoinStore<${APTOS_COIN}>`;
-      
+      // Get APT balance using the SDK's built-in method
       let aptBalance = 0;
       try {
-        const aptResource = await aptos.getAccountResource({
+        const balance = await aptos.getAccountAPTAmount({
           accountAddress: address,
-          resourceType: COIN_STORE,
         });
-        aptBalance = Number(aptResource.coin.value) / 100_000_000; // Convert from Octas (8 decimals)
-      } catch (aptError) {
-        console.log("[get-aptos-balance] APT resource not found, balance = 0");
+        aptBalance = balance / 100_000_000; // Convert from Octas (8 decimals)
+        console.log(`[get-aptos-balance] APT balance fetched: ${aptBalance}`);
+      } catch (aptError: any) {
+        console.log(`[get-aptos-balance] APT balance fetch error: ${aptError.message}`);
       }
 
       // Get USDC balance
       const USDC_ADDRESS = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC";
-      const USDC_STORE = `0x1::coin::CoinStore<${USDC_ADDRESS}>`;
       
       let usdcBalance = 0;
       try {
-        const usdcResource = await aptos.getAccountResource({
+        const balance = await aptos.getAccountCoinAmount({
           accountAddress: address,
-          resourceType: USDC_STORE,
+          coinType: USDC_ADDRESS,
         });
-        usdcBalance = Number(usdcResource.coin.value) / 1_000_000; // Convert from micro-USDC (6 decimals)
-      } catch (usdcError) {
-        console.log("[get-aptos-balance] USDC resource not found, balance = 0");
+        usdcBalance = balance / 1_000_000; // Convert from micro-USDC (6 decimals)
+        console.log(`[get-aptos-balance] USDC balance fetched: ${usdcBalance}`);
+      } catch (usdcError: any) {
+        console.log(`[get-aptos-balance] USDC balance fetch error: ${usdcError.message}`);
       }
 
-      console.log(`[get-aptos-balance] APT: ${aptBalance}, USDC: ${usdcBalance}`);
+      console.log(`[get-aptos-balance] Final - APT: ${aptBalance}, USDC: ${usdcBalance}`);
 
       return new Response(
         JSON.stringify({
