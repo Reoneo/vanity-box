@@ -324,22 +324,91 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         return;
       }
 
-      toast.info("Minting your .apt subdomain...");
+      // Calculate payment amount
+      const paymentAmountUSD = grandTotal;
+      const paymentAmountCrypto = convertedPrice;
       
-      // Call the edge function to prepare the minting
-      const response = await callEdge<any>("mint-apt-subdomain", {
-        subdomain,
-        walletAddress: account.address,
-        domain,
-        registrationMonths: registrationYears * 12,
-      });
+      // Determine which token to use and contract address
+      const isUSDC = paymentMethod === "USDC";
+      const tokenSymbol = isUSDC ? "USDC" : "APT";
+      
+      // Aptos USDC contract address (mainnet)
+      const USDC_ADDRESS = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC";
+      
+      // Payment receiver address (replace with your actual receiver address)
+      const RECEIVER_ADDRESS = "0x742d35cc6634c0532925a3b844bc9e7de5c05b0f0000000000000000000000001"; // TODO: Replace with actual receiver
+      
+      toast.info(`Preparing ${tokenSymbol} payment of ${paymentAmountCrypto.toFixed(isUSDC ? 2 : 4)} ${tokenSymbol}...`);
+      
+      try {
+        // Build transaction based on payment method
+        let transaction;
+        
+        if (isUSDC) {
+          // USDC transfer (using coin transfer for fungible assets)
+          const amountInOctas = Math.floor(paymentAmountCrypto * 1_000_000); // USDC has 6 decimals
+          
+          transaction = {
+            type: "entry_function_payload",
+            function: "0x1::coin::transfer",
+            type_arguments: [USDC_ADDRESS],
+            arguments: [RECEIVER_ADDRESS, amountInOctas.toString()],
+          };
+        } else {
+          // APT transfer (native token)
+          const amountInOctas = Math.floor(paymentAmountCrypto * 100_000_000); // APT has 8 decimals
+          
+          transaction = {
+            type: "entry_function_payload",
+            function: "0x1::aptos_account::transfer",
+            type_arguments: [],
+            arguments: [RECEIVER_ADDRESS, amountInOctas.toString()],
+          };
+        }
+        
+        toast.info("Please approve the transaction in Petra Wallet...");
+        
+        // Sign and submit transaction using Petra wallet
+        const txResponse = await signAndSubmitTransaction(transaction);
+        
+        console.log("[Aptos] Transaction submitted:", txResponse);
+        toast.info("Transaction submitted! Waiting for confirmation...");
+        
+        // Wait a moment for transaction to be processed
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Call the edge function to register the subdomain
+        toast.info("Registering your .apt subdomain...");
+        const response = await callEdge<any>("mint-apt-subdomain", {
+          subdomain,
+          walletAddress: account.address,
+          domain,
+          registrationMonths: registrationYears * 12,
+          paymentAmount: paymentAmountUSD,
+          paymentMethod: tokenSymbol,
+          txHash: txResponse.hash || txResponse,
+        });
 
-      if (response.success) {
-        toast.success(`Successfully minted ${subdomain}.${domain}!`);
-        await sendHaptic("success");
-        onClose();
-      } else {
-        toast.error("Failed to mint .apt subdomain");
+        if (response.success) {
+          toast.success(`Successfully minted ${subdomain}!`);
+          await sendHaptic("success");
+          
+          // Set default redirect
+          const fullName = `${subdomain}.${domain}`;
+          await setDefaultVanityRedirect(fullName, account.address);
+          
+          onClose();
+        } else {
+          toast.error("Failed to register .apt subdomain on-chain");
+        }
+      } catch (txError: any) {
+        console.error("[Aptos] Transaction error:", txError);
+        if (txError.message?.includes("User rejected")) {
+          toast.error("Transaction rejected by user");
+        } else {
+          toast.error(txError.message || "Transaction failed");
+        }
+        throw txError;
       }
     } catch (error: any) {
       console.error("[Aptos Mint] Error:", error);
