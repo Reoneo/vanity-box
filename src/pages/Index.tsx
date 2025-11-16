@@ -91,8 +91,8 @@ const Index = () => {
               onInfiniteMenuChange={setShowInfiniteMenu}
             />
 
-            {/* Mini Apps Section - Only on Home Page */}
-            {showMiniApps && isHomePage && (
+            {/* Mini Apps Section removed - user requested removal */}
+            {false && showMiniApps && isHomePage && (
               <div className="flex flex-col items-center gap-0.5 mt-1">
                 <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-0.5">
                   Mini Apps
