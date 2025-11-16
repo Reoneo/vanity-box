@@ -42,6 +42,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     // Check Petra wallet connection
     if (petraConnected && petraAccount) {
       setWalletType('petra');
+      // Dispatch event to notify Header about Petra connection
+      window.dispatchEvent(new CustomEvent('wallet-connected', { 
+        detail: { walletType: 'petra' } 
+      }));
     }
     
     // Check if we're running in World App
@@ -115,7 +119,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         sessionStorage.removeItem('skipAutoAuth');
         
         // Dispatch event for Index component
-        window.dispatchEvent(new CustomEvent('wallet-connected', { detail: userData }));
+        window.dispatchEvent(new CustomEvent('wallet-connected', { detail: { ...userData, walletType: 'worldchain' } }));
         
         console.log('✅ User authenticated successfully:', userData);
       } else {
@@ -358,7 +362,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           size="sm"
           className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-black hover:border-black hover:text-white transition-all duration-300 font-semibold flex items-center gap-2", className)}
         >
-          <img src={walletIcon} alt="Wallet" className="w-4 h-4" />
           <span className="font-bold text-white truncate max-w-48">
             {displayUsername}
           </span>
