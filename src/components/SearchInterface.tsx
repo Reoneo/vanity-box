@@ -1046,7 +1046,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 </div>
                               </div>
                             </DropdownMenuContent>
-                            </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
                         <Input
