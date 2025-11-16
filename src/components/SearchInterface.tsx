@@ -896,17 +896,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
     let filteredResults = allResults;
 
     // Apply protocol and club filters if any are selected
-    if (filters.protocol.length > 0 || filters.club.length > 0) {
+    // Check if "All" clubs are selected (all clubs except "All" itself)
+    const allClubsSelected = filters.club.length === clubs.length - 1 && 
+      clubs.filter(c => c !== "All").every(c => filters.club.includes(c));
+    
+    if (filters.protocol.length > 0 || (filters.club.length > 0 && !allClubsSelected)) {
       filteredResults = allResults.filter((result) => {
         const categories = Array.isArray(result.category) ? result.category : [result.category];
-        const clubs = Array.isArray(result.club) ? result.club : [result.club];
+        const resultClubs = Array.isArray(result.club) ? result.club : [result.club];
 
         const protocolMatch = filters.protocol.length === 0 || filters.protocol.some((p) => categories.includes(p));
-        const clubMatch = filters.club.length === 0 || filters.club.some((c) => clubs.includes(c));
+        const clubMatch = allClubsSelected || filters.club.length === 0 || filters.club.some((c) => resultClubs.includes(c));
         return protocolMatch && clubMatch;
       });
     } else {
-      // If no filters are applied, show all available subdomains
+      // If no filters are applied or all clubs selected, show all available subdomains
       filteredResults = allResults;
     }
 
