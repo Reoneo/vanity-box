@@ -223,6 +223,10 @@ class DiscGeometry extends Geometry {
     steps = Math.max(4, steps);
 
     const alpha = (2 * Math.PI) / steps;
+    
+    // Reduce radius by 30% on desktop (width >= 768px)
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    const adjustedRadius = isDesktop ? radius * 0.7 : radius;
 
     this.addVertex(0, 0, 0);
     this.lastVertex.uv[0] = 0.5;
@@ -231,7 +235,7 @@ class DiscGeometry extends Geometry {
     for (let i = 0; i < steps; ++i) {
       const x = Math.cos(alpha * i);
       const y = Math.sin(alpha * i);
-      this.addVertex(radius * x, radius * y, 0);
+      this.addVertex(adjustedRadius * x, adjustedRadius * y, 0);
       this.lastVertex.uv[0] = x * 0.5 + 0.5;
       this.lastVertex.uv[1] = y * 0.5 + 0.5;
 
