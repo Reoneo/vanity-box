@@ -69,8 +69,8 @@ void main() {
     vec2 cellSize = vec2(1.0) / vec2(float(cellsPerRow));
     vec2 cellOffset = vec2(float(cellX), float(cellY)) * cellSize;
 
-    // Use UVs directly without flipping or scaling
-    vec2 st = vUvs;
+    // Flip Y coordinate for correct orientation
+    vec2 st = vec2(vUvs.x, 1.0 - vUvs.y);
     
     // Map to the correct cell in the atlas
     st = st * cellSize + cellOffset;
