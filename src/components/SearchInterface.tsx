@@ -144,9 +144,10 @@ interface ENSRecords {
 
 interface SearchInterfaceProps {
   onSearchClick?: () => void;
+  onClearSearch?: () => void;
 }
 
-export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
+export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfaceProps) => {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
@@ -934,146 +935,303 @@ export const SearchInterface = ({ onSearchClick }: SearchInterfaceProps) => {
               avatar={web3BioProfile?.avatar}
               banner={web3BioProfile?.header}
             />
-            {/* Main Heading - always shown except on mint, My IDs pages, and profile views */}
-            {!showMintInterface && !showMyIDs && !web3BioProfile && (
-              <PersonalizedHeader user={null} />
-            )}
-
-            {/* Search bar container - hidden when showing My IDs - z-50 to appear over infinite menu */}
+            
+            {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && (
               <>
-                <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2 lg:mt-12">
-                  <div className="relative">
-                    <div className="absolute left-1 top-1 z-10 flex items-center h-10">
+                {!hasSearched && !isSearchActive ? (
+                  <>
+                    {/* Before search: Header on top, search below */}
+                    <div className="mt-2">
 
-                      <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
-                          >
-                            <Filter className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="start"
-                          className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-[60]"
-                        >
-                          <div className="relative">
-                            <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
-                            <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
+                      <PersonalizedHeader user={{ walletAddress }} />
+                    </div>
+                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
+                      <div className="relative">
+                        <div className="absolute left-1 top-1 z-10 flex items-center h-10">
+                          <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
+                              >
+                                <Filter className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="start"
+                              className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-[60]"
+                            >
+                              <div className="relative">
+                                <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
+                                <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
 
-                            <div className="relative z-10 space-y-4">
-                              <DropdownMenuLabel className="text-lg font-semibold text-white">Filter</DropdownMenuLabel>
-                              <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                                <div className="relative z-10 space-y-4">
+                                  <DropdownMenuLabel className="text-lg font-semibold text-white">Filter</DropdownMenuLabel>
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
 
-                              <div className="space-y-3">
-                                <div className="flex flex-wrap gap-2">
-                                  {clubs.map((club) => (
-                                    <label
-                                      key={club}
-                                      className={cn(
-                                        "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
-                                        filters.club.includes(club)
-                                          ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                                          : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
-                                      )}
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        handleClubToggle(club);
-                                      }}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        className="hidden"
-                                        checked={filters.club.includes(club)}
-                                        onChange={() => handleClubToggle(club)}
-                                      />
-                                      {club}
-                                    </label>
-                                  ))}
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      {clubs.map((club) => (
+                                        <label
+                                          key={club}
+                                          className={cn(
+                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                            filters.club.includes(club)
+                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
+                                          )}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleClubToggle(club);
+                                          }}
+                                        >
+                                          {club}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      {protocols.map((protocol) => (
+                                        <label
+                                          key={protocol}
+                                          className={cn(
+                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                            filters.protocol.includes(protocol)
+                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
+                                          )}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleProtocolToggle(protocol);
+                                          }}
+                                        >
+                                          {protocol}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {totalFilters > 0 && (
+                                    <>
+                                      <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                                      <div className="flex gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={handleClearFilters}
+                                          className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                        >
+                                          Clear Filters
+                                        </Button>
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                               </div>
-
-                              <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                              <div className="flex justify-between gap-3 pt-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={handleClearFilters}
-                                  className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37]"
-                                >
-                                  Clear
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    handleApplyFilters();
-                                    setShowFilterDropdown(false);
-                                  }}
-                                  className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-                                >
-                                  Apply
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <Input
-                      placeholder={t("Search for a name")}
-                      className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
-                      value={searchQuery}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleSearch();
-                          setIsSearchActive(true);
-                          onSearchClick?.();
-                        }
-                      }}
-                      onFocus={() => {
-                        setShowFilterDropdown(false);
-                      }}
-                    />
-                    <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
-                      {searchQuery && (
-                        <button
-                          onClick={() => {
-                            setSearchQuery("");
-                            setEnsResults([]);
-                            setIsAvailable(null);
-                            setHasSearched(false);
-                            setWeb3BioProfile(null);
-                            setIsSearchActive(false);
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <Input
+                          placeholder={t("Search for a name")}
+                          className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
+                          value={searchQuery}
+                          onChange={(e) => handleSearchChange(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }
                           }}
-                          className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label="Clear search"
-                        >
-                          <X className="w-4 h-4 text-black dark:text-white" />
-                        </button>
-                      )}
-                      <Button
-                        onClick={() => {
-                          handleSearch();
-                          setIsSearchActive(true);
-                          onSearchClick?.();
-                        }}
-                        size="sm"
-                        className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
-                        disabled={!searchQuery.trim() || isLoading}
-                      >
-                        <Search className="w-4 h-4 text-black" />
-                      </Button>
+                          onFocus={() => {
+                            setShowFilterDropdown(false);
+                          }}
+                        />
+                        <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
+                          {searchQuery && (
+                            <button
+                              onClick={() => {
+                                setSearchQuery("");
+                                setEnsResults([]);
+                                setIsAvailable(null);
+                                setHasSearched(false);
+                                setWeb3BioProfile(null);
+                                setIsSearchActive(false);
+                                onClearSearch?.();
+                              }}
+                              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              aria-label="Clear search"
+                            >
+                              <X className="w-4 h-4 text-black dark:text-white" />
+                            </button>
+                          )}
+                          <Button
+                            onClick={() => {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }}
+                            size="sm"
+                            className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                            disabled={!searchQuery.trim() || isLoading}
+                          >
+                            <Search className="w-4 h-4 text-black" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                    <WorldIdAnimation />
+                  </>
+                ) : (
+                  <>
+                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
+                      <div className="relative">
+                        <div className="absolute left-1 top-1 z-10 flex items-center h-10">
+                          <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
+                              >
+                                <Filter className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="start"
+                              className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-[60]"
+                            >
+                              <div className="relative">
+                                <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
+                                <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
 
-                {/* World ID Animation - shown when no search is active */}
-                {!hasSearched && !isSearchActive && <WorldIdAnimation />}
+                                <div className="relative z-10 space-y-4">
+                                  <DropdownMenuLabel className="text-lg font-semibold text-white">Filter</DropdownMenuLabel>
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      {clubs.map((club) => (
+                                        <label
+                                          key={club}
+                                          className={cn(
+                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                            filters.club.includes(club)
+                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
+                                          )}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleClubToggle(club);
+                                          }}
+                                        >
+                                          {club}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      {protocols.map((protocol) => (
+                                        <label
+                                          key={protocol}
+                                          className={cn(
+                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                            filters.protocol.includes(protocol)
+                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
+                                          )}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleProtocolToggle(protocol);
+                                          }}
+                                        >
+                                          {protocol}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {totalFilters > 0 && (
+                                    <>
+                                      <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                                      <div className="flex gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={handleClearFilters}
+                                          className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                        >
+                                          Clear Filters
+                                        </Button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <Input
+                          placeholder={t("Search for a name")}
+                          className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
+                          value={searchQuery}
+                          onChange={(e) => handleSearchChange(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }
+                          }}
+                          onFocus={() => {
+                            setShowFilterDropdown(false);
+                          }}
+                        />
+                        <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
+                          {searchQuery && (
+                            <button
+                              onClick={() => {
+                                setSearchQuery("");
+                                setEnsResults([]);
+                                setIsAvailable(null);
+                                setHasSearched(false);
+                                setWeb3BioProfile(null);
+                                setIsSearchActive(false);
+                                onClearSearch?.();
+                              }}
+                              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              aria-label="Clear search"
+                            >
+                              <X className="w-4 h-4 text-black dark:text-white" />
+                            </button>
+                          )}
+                          <Button
+                            onClick={() => {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }}
+                            size="sm"
+                            className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                            disabled={!searchQuery.trim() || isLoading}
+                          >
+                            <Search className="w-4 h-4 text-black" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
 
