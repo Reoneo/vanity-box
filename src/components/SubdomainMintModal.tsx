@@ -282,10 +282,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       ];
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
-  const domainPrice = getSubdomainPrice(subdomain);
-
+  
   const subdomainLabel = subdomain.split(".")[0];
-  const effectiveNetworkFee = subdomainLabel.toLowerCase() === "test321" ? 0 : networkFeeUSD;
+  
+  // Make test321 completely free for testing
+  const isTestSubdomain = subdomainLabel.toLowerCase() === "test321";
+  const baseDomainPrice = isTestSubdomain ? 0 : getSubdomainPrice(subdomain);
+  const domainPrice = baseDomainPrice;
+  
+  const effectiveNetworkFee = isTestSubdomain ? 0 : networkFeeUSD;
 
   const totalPrice = domainPrice * registrationYears + effectiveNetworkFee;
   const grandTotal = totalPrice;
