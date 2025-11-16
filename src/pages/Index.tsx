@@ -14,13 +14,11 @@ import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
-  const { setTheme } = useTheme();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const [showMiniApps, setShowMiniApps] = useState(true);
 
-  // Force dark mode and listen for wallet connection events
+  // Listen for wallet connection events
   useEffect(() => {
-    setTheme('dark');
     
     const handleWalletChange = (event: CustomEvent) => {
       setUser(event.detail);
@@ -33,7 +31,7 @@ const Index = () => {
       window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
       window.removeEventListener('wallet-disconnected', () => setUser(null));
     };
-  }, [setTheme]);
+  }, []);
 
   const handleWorldAppClick = () => {
     if (!MiniKit.isInstalled()) {
@@ -70,8 +68,8 @@ const Index = () => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-24 pb-4 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
-          <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
+        <main className="flex-1 px-4 pt-16 pb-20 relative z-10 flex flex-col items-center justify-center pointer-events-auto">
+          <article className="max-w-2xl mx-auto text-center w-full flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
             <SearchInterface 
               onSearchClick={() => setShowMiniApps(false)} 
               onClearSearch={() => setShowMiniApps(true)}
@@ -79,22 +77,22 @@ const Index = () => {
 
             {/* Mini Apps Section - Only on Home Page */}
             {showMiniApps && (
-              <div className="flex flex-col items-center gap-0.5 mt-2">
-                <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-0.5">
+              <div className="flex flex-col items-center gap-3 mt-6">
+                <h2 className="text-base md:text-lg font-semibold text-[#D4AF37] tracking-widest uppercase">
                   Mini Apps
                 </h2>
-                <div className="flex items-center justify-center gap-6">
+                <div className="flex items-center justify-center gap-8">
                   {/* World App Icon */}
                   <button
                     onClick={handleWorldAppClick}
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
                     aria-label="World App"
                   >
-                    <div className="rounded-full border border-[#D4AF37] p-1">
+                    <div className="rounded-full border-2 border-[#D4AF37] p-2 bg-background/50 backdrop-blur-sm group-hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all duration-300">
                       <img 
                         src={worldAppIcon} 
                         alt="World App" 
-                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                        className="w-14 h-14 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
                       />
                     </div>
                   </button>
@@ -105,11 +103,11 @@ const Index = () => {
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
                     aria-label="Telegram"
                   >
-                    <div className="rounded-full border border-[#D4AF37] p-1">
+                    <div className="rounded-full border-2 border-[#D4AF37] p-2 bg-background/50 backdrop-blur-sm group-hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all duration-300">
                       <img 
                         src={telegramIcon} 
                         alt="Telegram" 
-                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                        className="w-14 h-14 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
                       />
                     </div>
                   </button>
@@ -119,7 +117,7 @@ const Index = () => {
           </article>
         </main>
         
-        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom pointer-events-auto mt-2">
+        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom pointer-events-auto">
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">
