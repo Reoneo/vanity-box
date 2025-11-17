@@ -168,7 +168,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showMintInterface, setShowMintInterface] = useState(false);
   const [selectedResult, setSelectedResult] = useState<ENSResult | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({ protocol: [], club: ["Personal"] });
+  const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [hasManuallyAdjustedFilters, setHasManuallyAdjustedFilters] = useState(false);
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -1834,7 +1834,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           {fullName}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          {result.category}
+                          {Array.isArray(result.category) ? result.category.join('+') : result.category}
                         </div>
                       </div>
 
@@ -1946,7 +1946,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   {displayQuery ? `${displayQuery}.${detailViewResult.name}` : detailViewResult.name}
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  {detailViewResult.category}
+                  {Array.isArray(detailViewResult.category) ? detailViewResult.category.join('+') : detailViewResult.category}
                 </p>
               </div>
 
