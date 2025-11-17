@@ -21,7 +21,7 @@ const Index = () => {
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const [showMiniApps, setShowMiniApps] = useState(true);
-  const [showInfiniteMenu, setShowInfiniteMenu] = useState(false);
+  
 
   // Check if we're on the home page (only show mini apps there)
   const isHomePage = location.pathname === '/';
@@ -66,7 +66,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      <SplashCursor enabled={!showInfiniteMenu} />
+      <SplashCursor enabled={true} />
       
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
@@ -88,7 +88,6 @@ const Index = () => {
             <SearchInterface
               onSearchClick={() => setShowMiniApps(false)} 
               onClearSearch={() => setShowMiniApps(true)}
-              onInfiniteMenuChange={setShowInfiniteMenu}
             />
 
             {/* Supported Wallets Section - Only on Home Page */}
