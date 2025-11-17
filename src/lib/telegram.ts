@@ -23,26 +23,55 @@ declare global {
 
 /**
  * Detect if running in Telegram WebView
- * Uses multiple detection methods for reliability
+ * Uses multiple detection methods for maximum reliability across all devices including iPad
  */
 export const isTelegramWebView = (): boolean => {
   // Method 1: Check for Telegram WebApp object
   const hasTelegramWebApp = !!(window as any).Telegram?.WebApp;
   
-  // Method 2: Check user agent for Telegram
-  const userAgent = navigator.userAgent || '';
-  const hasTelegramUA = userAgent.includes('Telegram');
+  // Method 2: Check for TelegramWebviewProxy (iOS specific)
+  const hasTelegramWebviewProxy = !!(window as any).TelegramWebviewProxy;
   
-  // Method 3: Check if initDataUnsafe exists (Telegram-specific)
+  // Method 3: Check user agent for Telegram
+  const userAgent = navigator.userAgent || '';
+  const hasTelegramUA = userAgent.toLowerCase().includes('telegram');
+  
+  // Method 4: Check if initDataUnsafe exists (Telegram-specific)
   const hasInitData = !!(window as any).Telegram?.WebApp?.initDataUnsafe;
   
-  const isTelegram = hasTelegramWebApp || hasTelegramUA || hasInitData;
+  // Method 5: Check URL parameters that Telegram passes
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasTgWebAppData = urlParams.has('tgWebAppData') || urlParams.has('tgWebAppStartParam');
   
-  console.log('🔍 Telegram Detection:', {
+  // Method 6: Check for Telegram-specific window properties
+  const hasTelegramGameProxy = !!(window as any).TelegramGameProxy;
+  
+  // Method 7: Check localStorage for Telegram data
+  let hasTelegramStorage = false;
+  try {
+    hasTelegramStorage = localStorage.getItem('telegram-apps/launch-params') !== null;
+  } catch (e) {
+    // localStorage might not be available
+  }
+  
+  const isTelegram = hasTelegramWebApp || 
+                     hasTelegramWebviewProxy || 
+                     hasTelegramUA || 
+                     hasInitData || 
+                     hasTgWebAppData || 
+                     hasTelegramGameProxy ||
+                     hasTelegramStorage;
+  
+  console.log('🔍 Telegram Detection (Enhanced for iPad):', {
     hasTelegramWebApp,
+    hasTelegramWebviewProxy,
     hasTelegramUA,
     hasInitData,
-    userAgent: userAgent.substring(0, 100),
+    hasTgWebAppData,
+    hasTelegramGameProxy,
+    hasTelegramStorage,
+    userAgent: userAgent.substring(0, 150),
+    url: window.location.href,
     result: isTelegram
   });
   
