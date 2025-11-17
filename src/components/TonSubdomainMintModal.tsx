@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTonConnectUI, useTonAddress } from "@tonconnect/ui-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { X, Loader2, CheckCircle2, AlertCircle, Plus, Minus, ChevronDown } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { fetchCryptoPrices, type CryptoPrices } from "@/utils/cryptoPrices";
 import { cn } from "@/lib/utils";
@@ -15,6 +14,8 @@ import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 interface TonSubdomainMintModalProps {
   isOpen: boolean;
   onClose: () => void;
+  subdomain: string;
+  resultAvatar?: string;
 }
 
 type PaymentMethod = "TON" | "USDC_TON";
@@ -24,12 +25,13 @@ const VANITY_TON_CONTRACT = "EQDpBd8U9uFrxals7OqXMWp3EEWkL-DH3QDVM6xQ64pS5Lc_";
 export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
   isOpen,
   onClose,
+  subdomain: initialSubdomain,
+  resultAvatar,
 }) => {
   const [tonConnectUI] = useTonConnectUI();
   const userFriendlyAddress = useTonAddress();
   const rawAddress = useTonAddress(false);
 
-  const [subdomain, setSubdomain] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [isMinting, setIsMinting] = useState(false);
   const [mintingStep, setMintingStep] = useState<"idle" | "connecting" | "signing" | "waiting" | "success">("idle");
@@ -91,9 +93,9 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
     return 1;
   };
 
-  const subdomainLabel = subdomain.split(".")[0];
+  const subdomainLabel = initialSubdomain.split(".")[0];
   const isTestSubdomain = subdomainLabel.toLowerCase() === "test321";
-  const basePrice = isTestSubdomain ? 0 : getSubdomainPrice(subdomain);
+  const basePrice = isTestSubdomain ? 0 : getSubdomainPrice(initialSubdomain);
   const totalPriceUSD = basePrice * registrationYears;
   
   // Payment methods with conversion
@@ -142,22 +144,6 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
   };
 
   const handleMintSubdomain = async () => {
-    if (!subdomain.trim()) {
-      toast.error("Please enter a subdomain name");
-      return;
-    }
-
-    // Validate subdomain format
-    const label = subdomain.trim();
-    if (label.includes(".")) {
-      toast.error("Dots are not allowed in subdomains. Create recursive subdomains instead.");
-      return;
-    }
-    if (!/^[a-z0-9-]{1,63}$/i.test(label)) {
-      toast.error("Only letters, numbers, and hyphens allowed (1-63 chars)");
-      return;
-    }
-
     if (!userFriendlyAddress) {
       toast.error("Please connect your TON wallet first");
       return;
@@ -173,7 +159,7 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
       // Build the message to deploy subdomain
       const body = beginCell()
         .storeUint(paymentMethod === "TON" ? 0 : 1, 32) // op code: 0=TON, 1=USDC
-        .storeStringTail(subdomain)
+        .storeStringTail(initialSubdomain)
         .storeAddress(rawAddress ? Address.parse(rawAddress) : null)
         .storeUint(registrationYears, 32)
         .endCell();
@@ -197,13 +183,12 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
       console.log("Transaction sent:", result);
       
       setMintingStep("success");
-      toast.success(`Successfully minted ${subdomain}.vanity.ton for ${registrationYears} year${registrationYears > 1 ? 's' : ''}!`);
+      toast.success(`Successfully minted ${initialSubdomain}.vanity.ton for ${registrationYears} year${registrationYears > 1 ? 's' : ''}!`);
       
       // Wait a bit before closing
       setTimeout(() => {
         onClose();
         // Reset form
-        setSubdomain("");
         setWalletAddress("");
         setRegistrationYears(1);
         setMintingStep("idle");
@@ -229,30 +214,86 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-6 flex items-center justify-between z-10">
-          <div className="flex items-center gap-3">
-            <img src={vanityTonAvatar} alt="Vanity TON" className="w-12 h-12 rounded-full" />
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Mint .vanity.ton</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">TON Blockchain Identity</p>
-            </div>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden">
+        {/* Header with Back Button */}
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={onClose}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="gap-2 hover:bg-accent"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </Button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Wallet Connection */}
+        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+          {/* Avatar */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <img 
+                src={resultAvatar || vanityTonAvatar} 
+                alt={`${initialSubdomain}.vanity.ton`}
+                className="w-32 h-32 rounded-full object-cover border-4 border-primary"
+              />
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-foreground">
+              Register {initialSubdomain}.vanity.ton
+            </h2>
+          </div>
+
+          {/* Registration Years */}
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleDecreaseYears}
+              disabled={registrationYears <= 1 || isMinting}
+              className="rounded-full w-12 h-12 border-2"
+            >
+              <Minus className="w-5 h-5" />
+            </Button>
+            <div className="text-center min-w-[80px]">
+              <div className="text-4xl font-bold text-foreground">{registrationYears}</div>
+              <div className="text-sm text-muted-foreground">year{registrationYears > 1 ? "s" : ""}</div>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleIncreaseYears}
+              disabled={registrationYears >= 10 || isMinting}
+              className="rounded-full w-12 h-12 border-2"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Payment Method Toggle Pills */}
+          <div className="flex items-center justify-center gap-2">
+            {paymentMethods.map((method) => (
+              <Button
+                key={method.id}
+                onClick={() => !method.disabled && setPaymentMethod(method.id)}
+                disabled={isMinting || method.disabled}
+                variant={paymentMethod === method.id ? "default" : "outline"}
+                className={cn(
+                  "rounded-full px-6 py-2 font-semibold transition-all",
+                  paymentMethod === method.id && "bg-primary text-primary-foreground"
+                )}
+              >
+                {method.name === "USDC (TON)" ? "USDC" : method.name}
+              </Button>
+            ))}
+          </div>
+
+          {/* Wallet Connection Status */}
           {!userFriendlyAddress ? (
             <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="flex items-start gap-3">
@@ -279,10 +320,10 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
                   <span className="text-sm font-medium text-green-900 dark:text-green-100">
                     {userFriendlyAddress.slice(0, 6)}...{userFriendlyAddress.slice(-4)}
                   </span>
@@ -291,7 +332,7 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleDisconnectWallet}
-                  className="text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
+                  className="text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100 h-8 px-2"
                 >
                   Disconnect
                 </Button>
@@ -299,132 +340,40 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
             </div>
           )}
 
-          {/* Subdomain Input */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-              Subdomain Name
-            </label>
-            <div className="relative">
-              <Input
-                type="text"
-                value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                placeholder="yourname"
-                className="pr-32 text-base"
-                disabled={!userFriendlyAddress || isMinting}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">
-                .vanity.ton
-              </span>
-            </div>
-          </div>
-
-          {/* Registration Period */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-              Registration Period
-            </label>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleDecreaseYears}
-                disabled={registrationYears <= 1 || isMinting}
-              >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <div className="flex-1 text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {registrationYears}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  year{registrationYears > 1 ? "s" : ""}
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleIncreaseYears}
-                disabled={registrationYears >= 10 || isMinting}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              Expires: {getExpirationDate()}
-            </p>
-          </div>
-
-          {/* Payment Method Selection */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-              Payment Method
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {paymentMethods.map((method) => (
-                <button
-                  key={method.id}
-                  onClick={() => !method.disabled && setPaymentMethod(method.id)}
-                  disabled={isMinting || method.disabled}
-                  className={cn(
-                    "relative p-4 rounded-lg border-2 transition-all",
-                    paymentMethod === method.id
-                      ? "border-[#0088CC] bg-blue-50 dark:bg-blue-950"
-                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600",
-                    method.disabled && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <img src={method.icon} alt={method.name} className="w-8 h-8" />
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {method.name}
-                    </span>
-                  </div>
-                  {paymentMethod === method.id && (
-                    <div className="absolute top-2 right-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#0088CC]" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Price Summary */}
-          <div className="space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Base Price</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                ${basePrice.toFixed(2)} USD
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Years</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                × {registrationYears}
-              </span>
-            </div>
-            <Separator />
-            <div className="flex justify-between">
-              <span className="font-semibold text-gray-900 dark:text-white">Total</span>
-              <div className="text-right">
-                <div className="font-bold text-lg text-[#0088CC]">
-                  {isFree ? "FREE" : `${convertedPrice.toFixed(2)} ${selectedMethod.name}`}
-                </div>
-                {!isFree && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    ≈ ${totalPriceUSD.toFixed(2)} USD
-                  </div>
-                )}
-              </div>
+          {/* Large Price Display */}
+          <div className="text-center">
+            <div className="text-5xl font-bold text-primary mb-2">
+              {isFree ? "FREE" : `${convertedPrice.toFixed(2)} ${paymentMethod === "TON" ? "TON" : "USDC"}`}
             </div>
             {isLoadingPrices && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Updating prices...
-              </p>
+              <p className="text-xs text-muted-foreground">Updating prices...</p>
             )}
+          </div>
+
+          {/* Cost Breakdown */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground text-center mb-3">Cost Breakdown</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{registrationYears} year{registrationYears > 1 ? "s" : ""}</span>
+                <span className="font-medium text-primary">${totalPriceUSD.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Network Fee (TON Chain)</span>
+                <span className="font-medium text-green-600 dark:text-green-400">&lt; $0.03</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Expires</span>
+                <span className="font-medium text-foreground">{getExpirationDate()}</span>
+              </div>
+            </div>
+            
+            <Separator className="my-3" />
+            
+            <div className="flex justify-between text-base font-bold">
+              <span className="text-foreground">Total</span>
+              <span className="text-primary">${totalPriceUSD.toFixed(2)}</span>
+            </div>
           </div>
 
           {/* Status Messages */}
@@ -458,8 +407,8 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
           {/* Mint Button */}
           <Button
             onClick={handleMintSubdomain}
-            disabled={!userFriendlyAddress || !subdomain.trim() || isMinting}
-            className="w-full bg-[#0088CC] hover:bg-[#0077B3] text-white h-12 text-base font-semibold"
+            disabled={!userFriendlyAddress || isMinting}
+            className="w-full h-12 text-base font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {isMinting ? (
               <>
@@ -467,25 +416,9 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
                 Minting...
               </>
             ) : (
-              `Mint ${subdomain || "subdomain"}.vanity.ton`
+              `Mint on TON Chain`
             )}
           </Button>
-
-          {/* Info Box */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                <p className="font-semibold text-gray-900 dark:text-white">Important Notes:</p>
-                <ul className="space-y-1 list-disc list-inside">
-                  <li>Dots are NOT allowed in subdomain names</li>
-                  <li>Only letters, numbers, and hyphens (1-63 characters)</li>
-                  <li>Price based on subdomain length (shorter = more expensive)</li>
-                  <li>Transaction is irreversible once confirmed on blockchain</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
