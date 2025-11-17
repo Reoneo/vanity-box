@@ -188,35 +188,47 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const handleTelegramConnect = async () => {
     // Check if in Telegram WebView
     if (isTelegramWebView()) {
-      // User is already in Telegram, connect TON wallet using TON Connect SDK
       try {
         setIsLoading(true);
-        console.log('🔄 Connecting to TON wallet via TON Connect...');
+        console.log('🔄 Opening TON Connect wallet selection...');
         
-        // Prevent page reload by using TON Connect properly
-        const tonWallet = await tonConnectWallet(tonConnectUI);
+        // Check if already connected
+        if (tonConnectUI.wallet) {
+          const userData = {
+            walletAddress: tonConnectUI.wallet.account.address,
+            username: formatAddress(tonConnectUI.wallet.account.address)
+          };
+          setUser(userData);
+          setWalletType('worldchain');
+          window.dispatchEvent(new CustomEvent('wallet-connected', { detail: userData }));
+          setIsLoading(false);
+          return;
+        }
+
+        // Open TON Connect modal for wallet selection
+        await tonConnectUI.openModal();
         
-        const userData = {
-          walletAddress: tonWallet.address,
-          username: tonWallet.username || formatAddress(tonWallet.address)
-        };
-        setUser(userData);
-        
-        // Dispatch event for Index component
-        window.dispatchEvent(new CustomEvent('wallet-connected', { 
-          detail: userData
-        }));
-        
-        console.log('✅ TON wallet connected:', userData);
+        // Subscribe to connection status changes
+        const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
+          if (wallet) {
+            const userData = {
+              walletAddress: wallet.account.address,
+              username: formatAddress(wallet.account.address)
+            };
+            setUser(userData);
+            setWalletType('worldchain');
+            
+            window.dispatchEvent(new CustomEvent('wallet-connected', { 
+              detail: userData
+            }));
+            
+            console.log('✅ TON wallet connected:', userData);
+            setIsLoading(false);
+            unsubscribe();
+          }
+        });
       } catch (error) {
         console.error('❌ TON wallet connection failed:', error);
-        
-        // Only show alert if it's not a user cancellation
-        if (error instanceof Error && !error.message.includes('User rejected')) {
-          const errorMessage = error.message;
-          alert(`Failed to connect TON wallet: ${errorMessage}\n\nPlease try again.`);
-        }
-      } finally {
         setIsLoading(false);
       }
     } else {
