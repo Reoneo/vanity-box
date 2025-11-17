@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 
 import tonLogo from "@/assets/ton-logo.png";
+import usdcLogo from "@/assets/usdc-logo.png";
 import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 
 interface TonSubdomainMintModalProps {
@@ -32,6 +33,7 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
   const [tonStorage, setTonStorage] = useState("");
   const [isMinting, setIsMinting] = useState(false);
   const [mintingStep, setMintingStep] = useState<"idle" | "connecting" | "signing" | "waiting" | "success">("idle");
+  const [paymentMethod, setPaymentMethod] = useState<"TON" | "USDC_TON">("TON");
 
   useEffect(() => {
     if (userFriendlyAddress) {
@@ -57,8 +59,18 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
     }
 
     // Validate subdomain format
-    if (subdomain.includes(".")) {
+    const label = subdomain.trim();
+    if (label.includes(".")) {
       toast.error("Dots are not allowed in subdomains. Create recursive subdomains instead.");
+      return;
+    }
+    if (!/^[a-z0-9-]{1,63}$/i.test(label)) {
+      toast.error("Only letters, numbers, and hyphens allowed (1-63 chars)");
+      return;
+    }
+
+    if (paymentMethod === "USDC_TON") {
+      toast.info("USDC on TON is coming soon. Please choose TON for now.");
       return;
     }
 
