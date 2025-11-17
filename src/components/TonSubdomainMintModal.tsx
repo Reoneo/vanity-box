@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Address, beginCell, toNano } from "@ton/core";
+
 
 import tonLogo from "@/assets/ton-logo.png";
 import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
@@ -70,6 +70,9 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
     try {
       setIsMinting(true);
       setMintingStep("signing");
+
+      // Dynamically import TON core only when minting
+      const { Address, beginCell, toNano } = await import("@ton/core");
 
       // Build the message to deploy subdomain
       const body = beginCell()
