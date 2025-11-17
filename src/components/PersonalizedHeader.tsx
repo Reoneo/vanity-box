@@ -14,7 +14,7 @@ interface PersonalizedHeaderProps {
   isProfileDisplayed?: boolean;
 }
 
-export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user, isProfileDisplayed = false }) => {
+export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = React.memo(({ user, isProfileDisplayed = false }) => {
   const { t } = useLanguage();
   
   const handleWorldAppClick = () => {
@@ -52,4 +52,4 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user, is
       </h1>
     </div>
   );
-};
+});

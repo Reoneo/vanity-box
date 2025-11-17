@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
@@ -17,7 +17,7 @@ import petraIcon from '@/assets/petra-icon.png';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
-const Index = () => {
+const Index = React.memo(() => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
@@ -42,26 +42,21 @@ const Index = () => {
     };
   }, []);
 
-  const handleWorldAppClick = () => {
+  const handleWorldAppClick = useCallback(() => {
     if (!MiniKit.isInstalled()) {
       window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
-    } else {
-      console.log('Already in World App');
     }
-  };
+  }, []);
 
-  const handleTelegramClick = () => {
+  const handleTelegramClick = useCallback(() => {
     if (!isTelegramWebView()) {
       window.open('https://t.me/vanitybox_bot/vanity', '_blank');
-    } else {
-      console.log('Already in Telegram');
     }
-  };
+  }, []);
 
-  const handlePetraClick = () => {
-    // Deep link to open vanity.box in Petra wallet
+  const handlePetraClick = useCallback(() => {
     window.location.href = 'https://petra.app/explore?link=https://vanity.box';
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
@@ -178,6 +173,6 @@ const Index = () => {
       </div>
     </div>
   );
-};
+});
 
 export default Index;
