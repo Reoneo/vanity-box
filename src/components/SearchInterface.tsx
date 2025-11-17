@@ -40,6 +40,7 @@ import { TonDomainManagementPanel } from "@/components/TonDomainManagementPanel"
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
+import { TonBoundary } from "@/components/TonBoundary";
 
 import {
   DropdownMenu,
@@ -1039,21 +1040,25 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     <>
       {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
 
-      {/* TON Subdomain Mint Modal */}
-      {showTonMintModal && (
-        <TonSubdomainMintModal
-          isOpen={showTonMintModal}
-          onClose={handleBackToResults}
-        />
-      )}
+      {/* TON Subdomain Mint Modal (isolated errors) */}
+      <TonBoundary>
+        {showTonMintModal && (
+          <TonSubdomainMintModal
+            isOpen={showTonMintModal}
+            onClose={handleBackToResults}
+          />
+        )}
+      </TonBoundary>
 
-      {/* TON Domain Management Panel */}
-      {showTonManagementPanel && selectedTonDomain && (
-        <TonDomainManagementPanel
-          domain={selectedTonDomain}
-          onBack={handleBackToResults}
-        />
-      )}
+      {/* TON Domain Management Panel (isolated errors) */}
+      <TonBoundary>
+        {showTonManagementPanel && selectedTonDomain && (
+          <TonDomainManagementPanel
+            domain={selectedTonDomain}
+            onBack={handleBackToResults}
+          />
+        )}
+      </TonBoundary>
 
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
