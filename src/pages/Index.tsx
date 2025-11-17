@@ -59,14 +59,14 @@ const Index = React.memo(() => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+    <div className="h-screen bg-background flex flex-col relative overflow-hidden">
       <SplashCursor enabled={true} />
       
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
       
       {/* Content wrapper */}
-      <div className="min-h-screen flex flex-col relative z-40">
+      <div className="h-screen flex flex-col relative z-40 overflow-hidden">
         {/* Blur overlay when language selector is open */}
         <div className="fixed inset-0 z-[9998] pointer-events-none">
           <div className="absolute inset-0" id="page-blur-target"></div>
@@ -77,7 +77,7 @@ const Index = React.memo(() => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-20 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
+        <main className="flex-1 px-4 pt-20 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto overflow-hidden">
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
             <SearchInterface
               onSearchClick={() => setShowMiniApps(false)} 

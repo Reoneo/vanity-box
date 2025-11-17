@@ -52,6 +52,11 @@ Inspired by clean, modern ENS interface with crypto-native aesthetics.
 All colors MUST be HSL. */
 
 @layer base {
+  html, body {
+    overflow: hidden;
+    height: 100%;
+  }
+  
   :root {
     /* Ultra-luxurious crypto-native palette - Maximum luxury without breaking functionality */
     --background: 0 0% 99%;
