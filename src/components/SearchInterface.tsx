@@ -24,7 +24,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -158,6 +157,7 @@ interface SearchInterfaceProps {
 }
 
 export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfaceProps) => {
+  const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
@@ -1002,7 +1002,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setSelectedResult(result);
     // Check if this is vanity.ton
     if (result.name.toLowerCase() === 'vanity.ton') {
-      startTransition(() => setShowTonMintModal(true));
+      const subdomain = searchQuery || result.name.replace('.vanity.ton', '');
+      navigate('/ton-mint', { 
+        state: { 
+          subdomain,
+          resultAvatar: result.imageUrl 
+        } 
+      });
     } else {
       setShowMintInterface(true);
     }
