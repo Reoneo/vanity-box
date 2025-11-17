@@ -1048,15 +1048,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="outline"
-                            size="sm"
-                            className="h-10 px-3 bg-white dark:bg-gray-900 border-[#D4AF37] hover:bg-gray-50 dark:hover:bg-gray-800"
+                            size="icon"
+                            className="h-10 w-10 rounded-lg bg-white dark:bg-gray-900 border-[#D4AF37] hover:bg-gray-50 dark:hover:bg-gray-800"
                           >
-                            <Filter className="w-4 h-4 text-black dark:text-white mr-1" />
-                            {hasFilters && (
-                              <Badge className="ml-1 px-1.5 py-0 text-xs min-w-[20px] h-5 flex items-center justify-center bg-[#D4AF37] text-black border-none">
-                                {totalFilters}
-                              </Badge>
-                            )}
+                            <Filter className="w-4 h-4 text-black dark:text-white" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
@@ -1192,7 +1187,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setIsSearchActive(true);
                           onSearchClick?.();
                         }}
-                        className="h-10 px-6 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                        size="icon"
+                        className="h-10 w-10 rounded-lg bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                       >
                         <Search className="w-4 h-4" />
                       </Button>
