@@ -36,7 +36,7 @@ import { SubdomainMintModal } from "@/components/SubdomainMintModal";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
-import InfiniteMenu from "@/components/InfiniteMenu";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -148,10 +148,9 @@ interface ENSRecords {
 interface SearchInterfaceProps {
   onSearchClick?: () => void;
   onClearSearch?: () => void;
-  onInfiniteMenuChange?: (show: boolean) => void;
 }
 
-export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuChange }: SearchInterfaceProps) => {
+export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfaceProps) => {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
@@ -277,11 +276,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
     }
   }, [language]);
 
-  // Notify parent when infinite menu visibility changes
-  useEffect(() => {
-    const showInfiniteMenu = hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs;
-    onInfiniteMenuChange?.(showInfiniteMenu);
-  }, [hasSearched, ensResults.length, web3BioProfile, showMyIDs, onInfiniteMenuChange]);
 
 
   const getSubdomainPrice = (subdomain: string) => {
@@ -1779,34 +1773,113 @@ export const SearchInterface = ({ onSearchClick, onClearSearch, onInfiniteMenuCh
               </div>
             )}
 
-            {/* Results container - Fullscreen Infinite Menu */}
+            {/* Results container - Row-based layout with 60fps optimization */}
             {hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="fixed inset-0 z-30 bg-background/95 backdrop-blur-sm pointer-events-auto">
-                <InfiniteMenu
-                  items={ensResults.map((result) => {
-                    const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
-                    const isTaken = takenSubdomains.has(result.name.toLowerCase());
-                    const isComingSoon = result.enabled === false;
-                    
-                    return {
-                      image: result.imageUrl,
-                      link: `https://vanity.box/${encodeURIComponent(result.name.toLowerCase().replace(/\s+/g, ""))}`,
-                      title: displayQuery ? `${displayQuery}.${result.name}` : result.name,
-                      description: result.description || 'Premium digital identity',
-                      enabled: !isComingSoon && !isTaken,
-                      badge: isComingSoon ? 'Coming Soon' : isTaken ? 'Taken' : undefined
-                    };
-                  })}
-                  onItemClick={(item, index) => {
-                    const result = ensResults[index];
-                    const isComingSoon = result.enabled === false;
-                    const isTaken = takenSubdomains.has(result.name.toLowerCase());
-                    
-                    if (!isComingSoon && !isTaken) {
-                      handleMint(result);
-                    }
-                  }}
-                />
+              <div className="w-full max-w-6xl mx-auto px-4 mt-8 space-y-2 will-change-transform" style={{ transform: 'translateZ(0)' }}>
+                {ensResults.map((result, index) => {
+                  const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
+                  const isTaken = takenSubdomains.has(result.name.toLowerCase());
+                  const isComingSoon = result.enabled === false;
+                  const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-background/40 backdrop-blur-sm border border-border/50 rounded-lg hover:bg-background/60 transition-all duration-200 will-change-transform animate-fade-in"
+                      style={{ 
+                        transform: 'translateZ(0)',
+                        animationDelay: `${index * 50}ms`
+                      }}
+                    >
+                      {/* Avatar */}
+                      <img
+                        src={result.imageUrl || smithCashAvatar}
+                        alt={fullName}
+                        className="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-border/30"
+                        onError={(e) => {
+                          e.currentTarget.src = smithCashAvatar;
+                        }}
+                      />
+
+                      {/* Name */}
+                      <div className="min-w-0 flex-shrink flex-1">
+                        <div className="font-bold text-foreground truncate text-lg">
+                          {fullName}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {result.category}
+                        </div>
+                      </div>
+
+                      {/* Info Button */}
+                      {result.description && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="flex-shrink-0 h-9 w-9 hover:bg-primary/10"
+                          onClick={() => {
+                            toast.info(result.description, {
+                              duration: 5000,
+                            });
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+
+                      {/* View Profile Link */}
+                      <a
+                        href={`/${fullName}`}
+                        className="flex-shrink-0 text-primary hover:text-primary/80 transition-colors flex items-center gap-1 text-sm font-medium px-3 py-2 rounded-md hover:bg-primary/10"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleMint(result);
+                        }}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="hidden sm:inline">View</span>
+                      </a>
+
+                      {/* Price */}
+                      <div className="flex-shrink-0 text-right min-w-[80px]">
+                        <div className="font-bold text-[#D4AF37] text-lg">
+                          ${result.price?.toFixed(2) || '5.00'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">USD</div>
+                      </div>
+
+                      {/* Mint/Coming Soon Button */}
+                      <Button
+                        variant={isComingSoon || isTaken ? "secondary" : "default"}
+                        size="sm"
+                        className="flex-shrink-0 min-w-[120px] font-semibold"
+                        disabled={isComingSoon || isTaken}
+                        onClick={() => {
+                          if (!isComingSoon && !isTaken) {
+                            handleMint(result);
+                          }
+                        }}
+                      >
+                        {isTaken ? (
+                          <>
+                            <X className="h-4 w-4 mr-1" />
+                            Taken
+                          </>
+                        ) : isComingSoon ? (
+                          <>
+                            <Hourglass className="h-4 w-4 mr-1" />
+                            Coming Soon
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-1" />
+                            Mint Now
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
