@@ -344,3 +344,5 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
     </div>
   );
 };
+
+export default TonSubdomainMintModal;

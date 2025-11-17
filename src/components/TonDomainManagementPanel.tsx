@@ -520,3 +520,5 @@ export const TonDomainManagementPanel: React.FC<TonDomainManagementPanelProps> =
     </div>
   );
 };
+
+export default TonDomainManagementPanel;
