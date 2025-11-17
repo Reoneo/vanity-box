@@ -150,7 +150,6 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
     
     if (!windowAptos) {
       toast.error('Petra wallet not found. Please install Petra wallet extension.');
-      window.open('https://petra.app/', '_blank');
       return;
     }
 
