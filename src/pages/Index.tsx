@@ -62,22 +62,24 @@ const Index = React.memo(() => {
     <div className="h-screen bg-background flex flex-col relative overflow-hidden">
       <SplashCursor enabled={true} />
       
-      {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
-      <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
+      {/* Gold border wrapper - lower z-index to not interfere with header */}
+      <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-[30]" />
+      
+      {/* Header - highest z-index */}
+      <div className="pointer-events-auto flex-shrink-0 relative z-[100]">
+        <Header />
+      </div>
       
       {/* Content wrapper */}
-      <div className="h-screen flex flex-col relative z-40">
+      <div className="flex-1 flex flex-col relative z-[40] overflow-hidden">
         {/* Blur overlay when language selector is open */}
         <div className="fixed inset-0 z-[9998] pointer-events-none">
           <div className="absolute inset-0" id="page-blur-target"></div>
         </div>
         
-        <div className="pointer-events-auto flex-shrink-0">
-          <Header />
-        </div>
         
         {/* Hero Section */}
-        <main className="flex-1 overflow-hidden px-4 pt-2 pb-2 relative z-10 flex flex-col items-center justify-start pointer-events-auto">
+        <main className="flex-1 overflow-hidden px-4 pt-2 pb-2 relative flex flex-col items-center justify-start pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full h-full flex flex-col gap-0">
             <SearchInterface
               onSearchClick={() => setShowMiniApps(false)} 
@@ -143,8 +145,9 @@ const Index = React.memo(() => {
             )}
           </article>
         </main>
+      </div>
         
-        <footer className="fixed bottom-0 left-0 right-0 py-0.5 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom pointer-events-auto flex-shrink-0">
+      <footer className="fixed bottom-0 left-0 right-0 py-0.5 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[90] safe-area-inset-bottom pointer-events-auto flex-shrink-0">
           <div className="container mx-auto px-4 flex items-center justify-between text-[10px]">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">
@@ -169,8 +172,7 @@ const Index = React.memo(() => {
               )}
             </button>
           </div>
-        </footer>
-      </div>
+      </footer>
     </div>
   );
 });
