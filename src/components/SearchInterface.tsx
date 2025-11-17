@@ -169,6 +169,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [selectedResult, setSelectedResult] = useState<ENSResult | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: ["Personal"] });
+  const [hasManuallyAdjustedFilters, setHasManuallyAdjustedFilters] = useState(false);
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
@@ -304,6 +305,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   };
 
   const handleProtocolToggle = (protocol: string) => {
+    setHasManuallyAdjustedFilters(true);
     const newProtocols = filters.protocol.includes(protocol)
       ? filters.protocol.filter((p) => p !== protocol)
       : [...filters.protocol, protocol];
@@ -315,6 +317,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   };
 
   const handleClubToggle = (club: string) => {
+    setHasManuallyAdjustedFilters(true);
     let newClubs = [...filters.club];
     
     if (newClubs.includes(club)) {
@@ -330,6 +333,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   };
 
   const handleClearFilters = () => {
+    setHasManuallyAdjustedFilters(true);
     // Select all clubs when X is pressed
     setFilters({ protocol: [], club: clubs });
     // Keep dropdown open - don't close it
@@ -528,6 +532,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Prevent searches with spaces
     if (trimmedQuery.includes(" ")) {
       return;
+    }
+
+    // Auto-select all filters when searching, unless user has manually adjusted them
+    if (!hasManuallyAdjustedFilters) {
+      setFilters({ protocol: [], club: clubs });
     }
 
     // Only show search results and clear previous data when actually searching
