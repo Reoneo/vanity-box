@@ -311,8 +311,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
 
 
-  const getSubdomainPrice = (subdomain: string) => {
-    const length = subdomain.length;
+  const getSubdomainPrice = (fullSubdomain: string) => {
+    // Extract just the subdomain label (before first dot)
+    const subdomainLabel = fullSubdomain.split(".")[0];
+    
+    // test321 is free for testing
+    if (subdomainLabel.toLowerCase() === "test321") return 0;
+    
+    const length = subdomainLabel.length;
     if (length === 1) return 100;
     if (length === 2) return 50;
     if (length === 3) return 25;
