@@ -1049,9 +1049,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-10 w-10 rounded-lg bg-white dark:bg-gray-900 border-[#D4AF37] hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="h-10 w-10 rounded-lg bg-[#D4AF37] hover:bg-[#D4AF37]/90 border-[#D4AF37]"
                           >
-                            <Filter className="w-4 h-4 text-black dark:text-white" />
+                            <Filter className="w-4 h-4 text-black" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
@@ -1120,7 +1120,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={handleClearFilters}
+                                  onClick={() => setShowFilterDropdown(false)}
                                   className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
                                 >
                                   <X className="w-4 h-4" />
