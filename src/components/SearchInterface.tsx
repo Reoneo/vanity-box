@@ -1,3 +1,4 @@
+// SearchInterface Component - Main search and discovery interface
 import React, { useState, useEffect } from "react";
 import {
   Search,
