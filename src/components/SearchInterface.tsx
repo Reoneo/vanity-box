@@ -1013,7 +1013,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && (
               <>
-                {!hasSearched && !isSearchActive ? (
+                {!isSearchActive ? (
                   <>
                     {/* Before search: Header on top, search below */}
                     <div className="mt-2">
