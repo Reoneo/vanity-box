@@ -16,6 +16,7 @@ import {
   Hourglass,
   Share2,
   Check,
+  Info,
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
@@ -195,6 +196,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showSpotifyPlayer, setShowSpotifyPlayer] = useState(false);
   const [selectedSpotifyUrl, setSelectedSpotifyUrl] = useState("");
   const [selectedArtistName, setSelectedArtistName] = useState("");
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -255,6 +258,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       }, 100);
     }
   }, [username]);
+
+  // Show all subdomains initially when component mounts
+  useEffect(() => {
+    if (!hasSearched && !username) {
+      const allResults = getAllResults();
+      setEnsResults(allResults);
+      setHasSearched(true);
+      setDisplayQuery("");
+    }
+  }, []);
 
   // Re-fetch results when language changes
   useEffect(() => {
@@ -1795,15 +1808,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <img
                         src={result.imageUrl || smithCashAvatar}
                         alt={fullName}
-                        className="w-14 h-14 rounded-full object-cover flex-shrink-0 ring-2 ring-border/30"
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover flex-shrink-0 ring-2 ring-border/30"
                         onError={(e) => {
                           e.currentTarget.src = smithCashAvatar;
                         }}
                       />
 
                       {/* Name */}
-                      <div className="min-w-0 flex-shrink flex-1">
-                        <div className="font-bold text-foreground truncate text-lg">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-foreground truncate text-base sm:text-lg">
                           {fullName}
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -1818,31 +1831,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           size="icon"
                           className="flex-shrink-0 h-9 w-9 hover:bg-primary/10"
                           onClick={() => {
-                            toast.info(result.description, {
-                              duration: 5000,
-                            });
+                            setDetailViewResult(result);
+                            setShowDetailView(true);
                           }}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Info className="h-4 w-4" />
                         </Button>
                       )}
 
-                      {/* View Profile Link */}
-                      <a
-                        href={`/${fullName}`}
-                        className="flex-shrink-0 text-primary hover:text-primary/80 transition-colors flex items-center gap-1 text-sm font-medium px-3 py-2 rounded-md hover:bg-primary/10"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleMint(result);
-                        }}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        <span className="hidden sm:inline">View</span>
-                      </a>
-
                       {/* Price */}
-                      <div className="flex-shrink-0 text-right min-w-[80px]">
-                        <div className="font-bold text-[#D4AF37] text-lg">
+                      <div className="flex-shrink-0 text-right min-w-[70px]">
+                        <div className="font-bold text-[#D4AF37] text-base sm:text-lg">
                           ${result.price?.toFixed(2) || '5.00'}
                         </div>
                         <div className="text-xs text-muted-foreground">USD</div>
@@ -1852,7 +1851,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <Button
                         variant={isComingSoon || isTaken ? "secondary" : "default"}
                         size="sm"
-                        className="flex-shrink-0 min-w-[120px] font-semibold"
+                        className="flex-shrink-0 min-w-[100px] sm:min-w-[120px] font-semibold"
                         disabled={isComingSoon || isTaken}
                         onClick={() => {
                           if (!isComingSoon && !isTaken) {
@@ -1901,6 +1900,89 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       
       {/* Bottom spacing for scroll */}
       <div className="h-32" />
+
+      {/* Detail View Modal */}
+      {showDetailView && detailViewResult && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-background border border-border rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+            {/* Back Button */}
+            <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border p-4 flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowDetailView(false);
+                  setDetailViewResult(null);
+                }}
+                className="flex-shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h2 className="text-lg font-bold text-foreground">Domain Details</h2>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Avatar */}
+              <div className="flex justify-center">
+                <img
+                  src={detailViewResult.imageUrl || smithCashAvatar}
+                  alt={detailViewResult.name}
+                  className="w-48 h-48 rounded-full object-cover ring-4 ring-border/30"
+                  onError={(e) => {
+                    e.currentTarget.src = smithCashAvatar;
+                  }}
+                />
+              </div>
+
+              {/* Name */}
+              <div className="text-center">
+                <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent mb-2">
+                  {displayQuery ? `${displayQuery}.${detailViewResult.name}` : detailViewResult.name}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {detailViewResult.category}
+                </p>
+              </div>
+
+              {/* Description */}
+              {detailViewResult.description && (
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-foreground/80 text-center leading-relaxed">
+                    {detailViewResult.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Button */}
+              <Button
+                variant={detailViewResult.enabled === false ? "secondary" : "default"}
+                size="lg"
+                className="w-full font-semibold text-lg py-6"
+                disabled={detailViewResult.enabled === false}
+                onClick={() => {
+                  if (detailViewResult.enabled !== false) {
+                    setShowDetailView(false);
+                    handleMint(detailViewResult);
+                  }
+                }}
+              >
+                {detailViewResult.enabled === false ? (
+                  <>
+                    <Hourglass className="h-5 w-5 mr-2" />
+                    Coming Soon
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-5 w-5 mr-2" />
+                    Mint Now
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
