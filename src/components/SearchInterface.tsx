@@ -1803,7 +1803,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   return (
                     <div
                       key={index}
-                      className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-3 bg-background/40 backdrop-blur-sm border border-border/50 rounded-lg hover:bg-background/60 transition-all duration-200 will-change-transform animate-fade-in"
+                      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] gap-4 items-center p-4 bg-background/40 backdrop-blur-sm border border-border/50 rounded-lg hover:bg-background/60 transition-all duration-200 will-change-transform animate-fade-in"
                       style={{ 
                         transform: 'translateZ(0)',
                         animationDelay: `${index * 50}ms`
@@ -1813,18 +1813,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <img
                         src={result.imageUrl || smithCashAvatar}
                         alt={fullName}
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-border/30"
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-border/30 flex-shrink-0"
                         onError={(e) => {
                           e.currentTarget.src = smithCashAvatar;
                         }}
                       />
 
                       {/* Name */}
-                      <div className="min-w-0">
-                        <div className="font-bold text-foreground truncate text-base sm:text-lg">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-foreground text-base sm:text-lg break-words">
                           {fullName}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           {result.category}
                         </div>
                       </div>
@@ -1833,7 +1833,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 hover:bg-primary/10"
+                        className="h-9 w-9 hover:bg-primary/10 flex-shrink-0"
                         onClick={() => {
                           setDetailViewResult(result);
                           setShowDetailView(true);
@@ -1843,8 +1843,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </Button>
 
                       {/* Price */}
-                      <div className="text-right min-w-[70px]">
-                        <div className="font-bold text-[#D4AF37] text-base sm:text-lg">
+                      <div className="text-right min-w-[80px] flex-shrink-0">
+                        <div className="font-bold text-[#D4AF37] text-base sm:text-lg whitespace-nowrap">
                           ${result.price?.toFixed(2) || '5.00'}
                         </div>
                         <div className="text-xs text-muted-foreground">USD</div>
@@ -1854,7 +1854,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <Button
                         variant={isComingSoon || isTaken ? "secondary" : "default"}
                         size="sm"
-                        className="min-w-[100px] sm:min-w-[120px] font-semibold"
+                        className="min-w-[100px] sm:min-w-[120px] font-semibold flex-shrink-0"
                         disabled={isComingSoon || isTaken}
                         onClick={() => {
                           if (!isComingSoon && !isTaken) {
