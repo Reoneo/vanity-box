@@ -100,11 +100,13 @@ const Index = () => {
                     aria-label="World App"
                   >
                     <div className="rounded-full border border-[#D4AF37] p-1">
-                      <img 
-                        src={worldAppIcon} 
-                        alt="World App" 
-                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
-                      />
+                      <div className="rounded-full bg-black p-2">
+                        <img 
+                          src={worldAppIcon} 
+                          alt="World App" 
+                          className="w-12 h-12 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
+                        />
+                      </div>
                     </div>
                   </button>
 
@@ -115,11 +117,13 @@ const Index = () => {
                     aria-label="Telegram"
                   >
                     <div className="rounded-full border border-[#D4AF37] p-1">
-                      <img 
-                        src={telegramIcon} 
-                        alt="Telegram" 
-                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
-                      />
+                      <div className="rounded-full bg-black p-2">
+                        <img 
+                          src={telegramIcon} 
+                          alt="Telegram" 
+                          className="w-12 h-12 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
+                        />
+                      </div>
                     </div>
                   </button>
 
@@ -130,11 +134,13 @@ const Index = () => {
                     aria-label="Petra"
                   >
                     <div className="rounded-full border border-[#D4AF37] p-1">
-                      <img 
-                        src={petraIcon} 
-                        alt="Petra" 
-                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
-                      />
+                      <div className="rounded-full bg-black p-2">
+                        <img 
+                          src={petraIcon} 
+                          alt="Petra" 
+                          className="w-12 h-12 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
+                        />
+                      </div>
                     </div>
                   </button>
                 </div>
