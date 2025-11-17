@@ -5,7 +5,12 @@ import { THEME, TonConnectUI } from '@tonconnect/ui-react';
  * Get TON Connect manifest URL
  */
 export const getTonConnectManifest = (): string => {
-  return 'https://vanity.box/tonconnect-manifest.json';
+  try {
+    return `${window.location.origin}/tonconnect-manifest.json`;
+  } catch {
+    // Fallback for environments where window might be unavailable
+    return '/tonconnect-manifest.json';
+  }
 };
 
 /**
