@@ -66,7 +66,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     eth: 2600,
     wld: 1.85,
     usdc: 1.0,
-    apt: 8.5, // Add APT price
+    apt: 8.5,
+    ton: 5.5,
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
