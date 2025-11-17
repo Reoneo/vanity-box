@@ -1057,11 +1057,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             resultAvatar={selectedResult.imageUrl}
             domain={selectedResult.name.trim().toLowerCase()}
           />
-        ) : !showTonManagementPanel && (
+        ) : !showTonManagementPanel ? (
           <>
+            {!showMyIDs && (
+              <>
                 {/* Header always at the top */}
                 <div className="mt-2">
-                  <PersonalizedHeader 
+                  <PersonalizedHeader
                     user={{ walletAddress }} 
                     resultsCount={showInitialResults && hasSearched && ensResults.length > 0 ? ensResults.length : undefined}
                   />
@@ -1855,9 +1857,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               )}
             </div>
           </>
-          )}
-        </div>
-        )}
+        ) : null}
+      </div>
       
       {/* Bottom spacing for scroll */}
       <div className="h-32" />
