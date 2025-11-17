@@ -247,8 +247,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   }, []);
 
 
-  const protocols = ["DNS", "ENS"];
-  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
+  const protocols = ["DNS", "ENS", "Aptos", "HyperLiquid"];
+  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Surname", "Startup", "Artist", "Personal"];
 
   // Auto-search when username is in URL
   useEffect(() => {
@@ -438,7 +438,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         description: "Native Web3 ID for the HyperLiquid blockchain.",
         imageUrl: vanityHlAvatar,
         price: 5,
-        category: ["DNS"],
+        category: ["HyperLiquid"],
         club: ["Personal"],
         selectable: true,
         enabled: false,
