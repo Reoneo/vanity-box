@@ -1,81 +1,55 @@
-import React, { useState, useEffect } from "react";
+// TonMint Page - Dedicated page for minting .vanity.ton subdomains
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useTonConnectUI, useTonAddress } from "@tonconnect/ui-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, RefreshCw, Loader2, Plus, Minus } from "lucide-react";
-import { toast } from "sonner";
-import { fetchCryptoPrices, type CryptoPrices } from "@/utils/cryptoPrices";
+import { ArrowLeft, Plus, Minus, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Header } from "@/components/Header";
+import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
+import { toast } from "sonner";
+import { useTonConnectUI } from "@tonconnect/ui-react";
 
 import tonLogo from "@/assets/ton-logo.png";
 import usdcLogo from "@/assets/usdc-logo.png";
 import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 
-type PaymentMethod = "TON" | "USDC";
+type PaymentMethod = "TON" | "USDC_TON";
 
-// Recipient wallet address for all TON payments
 const TON_RECIPIENT_WALLET = "UQAS1gnthmx0ojQ_6SXqybdADAupKxvj3CPfF-sGmkf1EFGE";
 
 export const TonMint: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [tonConnectUI] = useTonConnectUI();
-  const userFriendlyAddress = useTonAddress();
-  const rawAddress = useTonAddress(false);
 
-  // Get subdomain and avatar from navigation state
-  const { subdomain = "yourname", resultAvatar } = (location.state || {}) as {
-    subdomain?: string;
-    resultAvatar?: string;
-  };
+  const subdomain = location.state?.subdomain || "";
+  const resultAvatar = location.state?.resultAvatar || vanityTonAvatar;
 
-  const [isMinting, setIsMinting] = useState(false);
-  const [mintingStep, setMintingStep] = useState<"idle" | "connecting" | "signing" | "waiting" | "success">("idle");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("TON");
   const [registrationYears, setRegistrationYears] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("TON");
   const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({
-    eth: 2600,
-    wld: 1.85,
-    usdc: 1.0,
-    apt: 8.5,
-    ton: 5.5,
+    eth: 2600, wld: 1.85, usdc: 1.0, apt: 8.5, ton: 5.5,
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  const [isMinting, setIsMinting] = useState(false);
+  const [mintingStep, setMintingStep] = useState<"idle" | "signing" | "waiting" | "success">("idle");
+  const [networkFeeUSD] = useState(0.15);
+  const mintInProgressRef = useRef(false);
 
-  // Fetch crypto prices
   useEffect(() => {
-    let mounted = true;
-    
-    const load = async () => {
-      try {
-        const prices = await fetchCryptoPrices();
-        if (mounted) {
-          setCryptoPrices(prices);
-          setIsLoadingPrices(false);
-        }
-      } catch (error) {
-        console.error("Failed to fetch crypto prices:", error);
-        if (mounted) setIsLoadingPrices(false);
-      }
+    const loadPrices = async () => {
+      setIsLoadingPrices(true);
+      const prices = await fetchCryptoPrices();
+      setCryptoPrices(prices);
+      setIsLoadingPrices(false);
     };
-
-    load();
-    const priceInterval = setInterval(load, 60_000);
-
-    return () => {
-      mounted = false;
-      clearInterval(priceInterval);
-    };
+    loadPrices();
+    const interval = setInterval(loadPrices, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Price calculation
-  const getSubdomainPrice = (fullSubdomain: string) => {
-    const subdomainLabel = fullSubdomain.split(".")[0];
-    if (subdomainLabel.toLowerCase() === "test321") return 0;
-    
-    const length = subdomainLabel.length;
+  const getSubdomainPrice = (fullSubdomain: string): number => {
+    const length = fullSubdomain.replace('.vanity.ton', '').length;
     if (length === 1) return 100;
     if (length === 2) return 50;
     if (length === 3) return 25;
@@ -85,294 +59,148 @@ export const TonMint: React.FC = () => {
     return 1;
   };
 
-  const subdomainLabel = subdomain.split(".")[0];
-  const isTestSubdomain = subdomainLabel.toLowerCase() === "test321";
-  const basePrice = isTestSubdomain ? 0 : getSubdomainPrice(subdomain);
+  const basePrice = getSubdomainPrice(subdomain);
   const totalPriceUSD = basePrice * registrationYears;
-  
-  // Payment methods with conversion
   const paymentMethods = [
-    {
-      id: "TON" as PaymentMethod,
-      name: "TON",
-      icon: tonLogo,
-      rate: 1 / cryptoPrices.ton,
-    },
-    {
-      id: "USDC" as PaymentMethod,
-      name: "USDC",
-      icon: usdcLogo,
-      rate: 1,
-    },
+    { id: "TON" as PaymentMethod, name: "TON", icon: tonLogo, rate: cryptoPrices.ton },
+    { id: "USDC_TON" as PaymentMethod, name: "USDC", icon: usdcLogo, rate: cryptoPrices.usdc },
   ];
+  const convertedPrice = totalPriceUSD / (paymentMethods.find(m => m.id === paymentMethod)?.rate || 1);
 
-  const selectedMethod = paymentMethods.find((m) => m.id === paymentMethod)!;
-  const convertedPrice = totalPriceUSD * selectedMethod.rate;
-  const isFree = totalPriceUSD < 0.01;
-
-  const handleIncreaseYears = () => setRegistrationYears((p) => Math.min(p + 1, 10));
-  const handleDecreaseYears = () => setRegistrationYears((p) => Math.max(p - 1, 1));
-
+  const handleIncreaseYears = () => { if (registrationYears < 10) setRegistrationYears(registrationYears + 1); };
+  const handleDecreaseYears = () => { if (registrationYears > 1) setRegistrationYears(registrationYears - 1); };
   const getExpirationDate = () => {
     const d = new Date();
     d.setFullYear(d.getFullYear() + registrationYears);
-    return d.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
   const handleConnectWallet = async () => {
-    try {
-      setMintingStep("connecting");
-      await tonConnectUI.openModal();
-      setMintingStep("idle");
-    } catch (error) {
-      console.error("Failed to connect wallet:", error);
-      toast.error("Failed to connect wallet");
-      setMintingStep("idle");
-    }
+    try { await tonConnectUI.openModal(); } 
+    catch (error) { console.error("Failed to open TON Connect modal:", error); toast.error("Failed to open wallet connection"); }
   };
 
   const handleMintSubdomain = async () => {
-    if (!userFriendlyAddress) {
-      toast.error("Please connect your TON wallet first");
-      return;
-    }
-
+    if (mintInProgressRef.current) return;
+    mintInProgressRef.current = true;
+    setIsMinting(true);
+    setMintingStep("signing");
     try {
-      setIsMinting(true);
-      setMintingStep("signing");
-
-      // Dynamically import TON core only when minting
       const { Address, beginCell, toNano } = await import("@ton/core");
-
-      // Build the message to deploy subdomain
-      const body = beginCell()
-        .storeUint(paymentMethod === "TON" ? 0 : 1, 32) // op code: 0=TON, 1=USDC
-        .storeStringTail(subdomain)
-        .storeAddress(rawAddress ? Address.parse(rawAddress) : null)
-        .storeUint(registrationYears, 32)
-        .endCell();
-
+      const recipientAddress = Address.parse(TON_RECIPIENT_WALLET);
+      const amountInTON = paymentMethod === "TON" ? convertedPrice : 0;
+      const amountInNano = toNano(amountInTON.toString());
+      const payload = beginCell().storeUint(0, 32).storeStringTail(`Mint ${subdomain} for ${registrationYears} year(s)`).endCell();
       const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 60, // 60 seconds
-        messages: [
-          {
-            address: TON_RECIPIENT_WALLET,
-            amount: toNano(convertedPrice.toFixed(2)).toString(),
-            payload: body.toBoc().toString("base64"),
-          },
-        ],
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: recipientAddress.toString(), amount: amountInNano.toString(), payload: payload.toBoc().toString("base64") }],
       };
-
-      console.log("Sending transaction:", transaction);
-
-      setMintingStep("waiting");
       const result = await tonConnectUI.sendTransaction(transaction);
-
-      console.log("Transaction sent:", result);
-      
+      setMintingStep("waiting");
+      await new Promise(resolve => setTimeout(resolve, 2000));
       setMintingStep("success");
-      toast.success(`Successfully minted ${subdomain}.vanity.ton for ${registrationYears} year${registrationYears > 1 ? 's' : ''}!`);
-      
-      // Wait a bit before navigating back
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      toast.success(`${subdomain} minted successfully!`);
+      setTimeout(() => navigate("/"), 2000);
     } catch (error: any) {
-      console.error("Failed to mint subdomain:", error);
-      toast.error(error.message || "Failed to mint subdomain");
+      console.error("Minting failed:", error);
+      toast.error(error?.message || "Failed to mint subdomain");
       setMintingStep("idle");
     } finally {
       setIsMinting(false);
+      mintInProgressRef.current = false;
     }
   };
 
-  const handleRefresh = () => {
-    window.location.reload();
-  };
+  const walletAddress = tonConnectUI.wallet?.account?.address;
+  const isWalletConnected = !!walletAddress;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="bg-card rounded-3xl shadow-2xl border border-border overflow-hidden">
-          {/* Header with Back and Refresh */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-              className="gap-2 hover:bg-accent"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              className="gap-2 hover:bg-accent bg-destructive/10 text-destructive hover:bg-destructive/20"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </Button>
-          </div>
+    <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+      <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 z-10">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+          <ArrowLeft className="w-4 h-4 mr-2" />Back
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => window.location.reload()} className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+          <RefreshCw className="w-4 h-4 mr-2" />Refresh
+        </Button>
+      </div>
 
-          {/* Content */}
-          <div className="p-6 md:p-8 space-y-6">
-            {/* Avatar */}
-            <div className="flex justify-center">
-              <div className="relative">
-                <img 
-                  src={resultAvatar || vanityTonAvatar} 
-                  alt={`${subdomain}.vanity.ton`}
-                  className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-primary shadow-lg"
-                />
-              </div>
-            </div>
+      {mintingStep === "signing" && (
+        <div className="absolute top-16 left-0 right-0 mx-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-center z-10">
+          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Please sign the transaction in your TON wallet...</p>
+        </div>
+      )}
+      {mintingStep === "waiting" && (
+        <div className="absolute top-16 left-0 right-0 mx-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center z-10">
+          <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Processing your transaction...</p>
+        </div>
+      )}
+      {mintingStep === "success" && (
+        <div className="absolute top-16 left-0 right-0 mx-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center z-10">
+          <p className="text-sm font-medium text-green-900 dark:text-green-100">🎉 Successfully minted {subdomain}!</p>
+        </div>
+      )}
 
-            {/* Title */}
+      <div className="p-4 pt-16 pb-4 flex flex-col items-center space-y-3">
+        <div className="w-24 h-24 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-white dark:bg-gray-800">
+          <img src={resultAvatar} alt="Name" className="w-full h-full object-cover" />
+        </div>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white text-center">Register {subdomain}</h2>
+
+        <div className="w-full max-w-sm space-y-1">
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={handleDecreaseYears} className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" disabled={registrationYears <= 1}>
+              <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
             <div className="text-center">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                Register {subdomain}.vanity.ton
-              </h1>
+              <div className="text-3xl font-bold text-[#D4AF37]">{registrationYears}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{registrationYears === 1 ? "Year" : "Years"}</div>
             </div>
-
-            {/* Registration Years */}
-            <div className="flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleDecreaseYears}
-                disabled={registrationYears <= 1 || isMinting}
-                className="rounded-full w-12 h-12 border-2"
-              >
-                <Minus className="w-5 h-5" />
-              </Button>
-              <div className="text-center min-w-[80px]">
-                <div className="text-4xl md:text-5xl font-bold text-foreground">{registrationYears}</div>
-                <div className="text-sm text-muted-foreground">year{registrationYears > 1 ? "s" : ""}</div>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleIncreaseYears}
-                disabled={registrationYears >= 10 || isMinting}
-                className="rounded-full w-12 h-12 border-2"
-              >
-                <Plus className="w-5 h-5" />
-              </Button>
-            </div>
-
-            {/* Payment Method Toggle Pills */}
-            <div className="flex items-center justify-center gap-2">
-              {paymentMethods.map((method) => (
-                <Button
-                  key={method.id}
-                  onClick={() => !isMinting && setPaymentMethod(method.id)}
-                  disabled={isMinting}
-                  variant={paymentMethod === method.id ? "default" : "outline"}
-                  className={cn(
-                    "rounded-full px-6 py-2 font-semibold transition-all",
-                    paymentMethod === method.id && "bg-primary text-primary-foreground"
-                  )}
-                >
-                  {method.name}
-                </Button>
-              ))}
-            </div>
-
-            {/* Large Price Display */}
-            <div className="text-center">
-              <div className="text-5xl md:text-6xl font-bold text-primary mb-2">
-                {isFree ? "FREE" : `${convertedPrice.toFixed(2)} ${paymentMethod}`}
-              </div>
-              {isLoadingPrices && (
-                <p className="text-xs text-muted-foreground">Updating prices...</p>
-              )}
-            </div>
-
-            {/* Cost Breakdown */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground text-center mb-3">Cost Breakdown</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{registrationYears} year{registrationYears > 1 ? "s" : ""}</span>
-                  <span className="font-medium text-primary">${totalPriceUSD.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Network Fee (TON Chain)</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">&lt; $0.03</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Expires</span>
-                  <span className="font-medium text-foreground">{getExpirationDate()}</span>
-                </div>
-              </div>
-              
-              <Separator className="my-3" />
-              
-              <div className="flex justify-between text-base font-bold">
-                <span className="text-foreground">Total</span>
-                <span className="text-primary">${totalPriceUSD.toFixed(2)}</span>
-              </div>
-            </div>
-
-            {/* Status Messages */}
-            {mintingStep === "signing" && (
-              <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-                <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
-                <p className="text-sm text-blue-900 dark:text-blue-100">
-                  Please sign the transaction in your wallet...
-                </p>
-              </div>
-            )}
-
-            {mintingStep === "waiting" && (
-              <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <Loader2 className="w-5 h-5 text-yellow-600 dark:text-yellow-400 animate-spin" />
-                <p className="text-sm text-yellow-900 dark:text-yellow-100">
-                  Waiting for blockchain confirmation...
-                </p>
-              </div>
-            )}
-
-            {mintingStep === "success" && (
-              <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-                <Loader2 className="w-5 h-5 text-green-600 dark:text-green-400 animate-spin" />
-                <p className="text-sm text-green-900 dark:text-green-100">
-                  Subdomain minted successfully! Redirecting...
-                </p>
-              </div>
-            )}
-
-            {/* Main CTA Button */}
-            <Button
-              onClick={userFriendlyAddress ? handleMintSubdomain : handleConnectWallet}
-              disabled={isMinting || mintingStep === "connecting"}
-              className="w-full h-14 text-lg font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
-            >
-              {mintingStep === "connecting" ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Connecting...
-                </>
-              ) : isMinting ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Minting...
-                </>
-              ) : userFriendlyAddress ? (
-                "Mint on TON Chain"
-              ) : (
-                "Connect TON Wallet"
-              )}
-            </Button>
+            <button onClick={handleIncreaseYears} className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" disabled={registrationYears >= 10}>
+              <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
           </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+          {paymentMethods.map((method) => (
+            <button key={method.id} onClick={() => setPaymentMethod(method.id)} className={cn("px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm", paymentMethod === method.id ? "bg-[#D4AF37] text-black shadow-md" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200")}>
+              {method.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col items-center gap-1">
+          <div className="text-4xl font-bold text-[#D4AF37]">
+            {paymentMethod === "TON" && `${convertedPrice.toFixed(4)} TON`}
+            {paymentMethod === "USDC_TON" && `${convertedPrice.toFixed(2)} USDC`}
+          </div>
+          {isLoadingPrices && <div className="text-xs text-gray-500">Updating prices…</div>}
+        </div>
+
+        <Separator className="my-2 bg-gray-200 dark:bg-gray-700" />
+
+        <div className="w-full max-w-md space-y-2 px-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Cost Breakdown</h3>
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Base Price</span><span className="font-medium text-gray-900 dark:text-white">${basePrice.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Registration Period</span><span className="font-medium text-gray-900 dark:text-white">{registrationYears} {registrationYears === 1 ? "year" : "years"}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Subtotal</span><span className="font-medium text-gray-900 dark:text-white">${totalPriceUSD.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Network Fee</span><span className="font-medium text-gray-900 dark:text-white">${networkFeeUSD.toFixed(2)}</span></div>
+            <Separator className="my-1 bg-gray-200 dark:bg-gray-700" />
+            <div className="flex justify-between text-base font-semibold"><span className="text-gray-900 dark:text-white">Total (USD)</span><span className="text-[#D4AF37]">${(totalPriceUSD + networkFeeUSD).toFixed(2)}</span></div>
+            <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700"><span className="text-gray-600 dark:text-gray-400">Expires On</span><span className="font-medium text-gray-900 dark:text-white">{getExpirationDate()}</span></div>
+          </div>
+        </div>
+
+        <div className="w-full max-w-md px-4 pt-4">
+          {!isWalletConnected ? (
+            <Button onClick={handleConnectWallet} className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-black font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all">Connect TON Wallet</Button>
+          ) : (
+            <Button onClick={handleMintSubdomain} disabled={isMinting || isLoadingPrices} className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-black font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              {isMinting ? "Minting..." : "Mint on TON Chain"}
+            </Button>
+          )}
         </div>
       </div>
     </div>
