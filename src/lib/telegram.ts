@@ -23,9 +23,30 @@ declare global {
 
 /**
  * Detect if running in Telegram WebView
+ * Uses multiple detection methods for reliability
  */
 export const isTelegramWebView = (): boolean => {
-  return !!(window as any).Telegram?.WebApp;
+  // Method 1: Check for Telegram WebApp object
+  const hasTelegramWebApp = !!(window as any).Telegram?.WebApp;
+  
+  // Method 2: Check user agent for Telegram
+  const userAgent = navigator.userAgent || '';
+  const hasTelegramUA = userAgent.includes('Telegram');
+  
+  // Method 3: Check if initDataUnsafe exists (Telegram-specific)
+  const hasInitData = !!(window as any).Telegram?.WebApp?.initDataUnsafe;
+  
+  const isTelegram = hasTelegramWebApp || hasTelegramUA || hasInitData;
+  
+  console.log('🔍 Telegram Detection:', {
+    hasTelegramWebApp,
+    hasTelegramUA,
+    hasInitData,
+    userAgent: userAgent.substring(0, 100),
+    result: isTelegram
+  });
+  
+  return isTelegram;
 };
 
 /**
