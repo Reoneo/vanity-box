@@ -1045,10 +1045,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       {/* TON Subdomain Mint Modal (isolated errors) */}
       <Suspense fallback={null}>
         <TonBoundary>
-          {showTonMintModal && (
+          {showTonMintModal && selectedResult && (
             <TonSubdomainMintModal
               isOpen={showTonMintModal}
               onClose={handleBackToResults}
+              subdomain={searchQuery || selectedResult.name.replace('.vanity.ton', '')}
+              resultAvatar={selectedResult.imageUrl}
             />
           )}
         </TonBoundary>
