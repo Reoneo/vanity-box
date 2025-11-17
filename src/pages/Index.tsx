@@ -27,10 +27,8 @@ const Index = () => {
   // Check if we're on the home page (only show mini apps there)
   const isHomePage = location.pathname === '/';
 
-  // Force dark mode and listen for wallet connection events
+  // Listen for wallet connection events
   useEffect(() => {
-    setTheme('dark');
-    
     const handleWalletChange = (event: CustomEvent) => {
       setUser(event.detail);
     };
@@ -42,7 +40,7 @@ const Index = () => {
       window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
       window.removeEventListener('wallet-disconnected', () => setUser(null));
     };
-  }, [setTheme]);
+  }, []);
 
   const handleWorldAppClick = () => {
     if (!MiniKit.isInstalled()) {
