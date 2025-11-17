@@ -1800,10 +1800,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   const isComingSoon = result.enabled === false;
                   const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
                   
-                  return (
+                   return (
                     <div
                       key={index}
-                      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] gap-4 items-center p-4 bg-background/40 backdrop-blur-sm border border-border/50 rounded-lg hover:bg-background/60 transition-all duration-200 will-change-transform animate-fade-in"
+                      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-background/40 backdrop-blur-sm border border-border/50 rounded-xl hover:bg-background/60 hover:border-border/70 transition-all duration-200 will-change-transform animate-fade-in"
                       style={{ 
                         transform: 'translateZ(0)',
                         animationDelay: `${index * 50}ms`
@@ -1813,15 +1813,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <img
                         src={result.imageUrl || smithCashAvatar}
                         alt={fullName}
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-border/30 flex-shrink-0"
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-border/30 flex-shrink-0"
                         onError={(e) => {
                           e.currentTarget.src = smithCashAvatar;
                         }}
                       />
 
-                      {/* Name */}
+                      {/* Name & Category */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-foreground text-base sm:text-lg break-words">
+                        <div className="font-bold text-foreground text-sm sm:text-base leading-tight">
                           {fullName}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
@@ -1829,41 +1829,49 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </div>
 
-                      {/* Info Button */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 hover:bg-primary/10 flex-shrink-0"
-                        onClick={() => {
-                          setDetailViewResult(result);
-                          setShowDetailView(true);
-                        }}
-                      >
-                        <Info className="h-4 w-4" />
-                      </Button>
-
-                      {/* Price */}
-                      <div className="text-right min-w-[80px] flex-shrink-0">
-                        <div className="font-bold text-[#D4AF37] text-base sm:text-lg whitespace-nowrap">
-                          ${result.price?.toFixed(2) || '5.00'}
+                      {/* Price & Actions Group */}
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        {/* Price - visible on larger screens */}
+                        <div className="text-right hidden sm:block">
+                          <div className="font-bold text-[#D4AF37] text-base">
+                            ${result.price?.toFixed(2) || '5.00'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">USD</div>
                         </div>
-                        <div className="text-xs text-muted-foreground">USD</div>
-                      </div>
 
-                      {/* Mint/Coming Soon Button */}
-                      <Button
-                        variant={isComingSoon || isTaken ? "secondary" : "default"}
-                        size="sm"
-                        className="min-w-[100px] sm:min-w-[120px] font-semibold flex-shrink-0"
-                        disabled={isComingSoon || isTaken}
-                        onClick={() => {
-                          if (!isComingSoon && !isTaken) {
-                            handleMint(result);
-                          }
-                        }}
-                      >
-                        {isTaken ? "Taken" : isComingSoon ? "Coming Soon" : "Mint Now"}
-                      </Button>
+                        {/* Info Icon */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 hover:bg-primary/10"
+                          onClick={() => {
+                            setDetailViewResult(result);
+                            setShowDetailView(true);
+                          }}
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
+
+                        {/* Mint/Coming Soon Button */}
+                        <Button
+                          variant={isComingSoon || isTaken ? "secondary" : "default"}
+                          size="sm"
+                          className="font-semibold whitespace-nowrap"
+                          disabled={isComingSoon || isTaken}
+                          onClick={() => {
+                            if (!isComingSoon && !isTaken) {
+                              handleMint(result);
+                            }
+                          }}
+                        >
+                          <span className="hidden sm:inline">
+                            {isTaken ? "Taken" : isComingSoon ? "Coming Soon" : "Mint Now"}
+                          </span>
+                          <span className="sm:hidden">
+                            {isTaken ? "Taken" : isComingSoon ? "Soon" : "Mint"}
+                          </span>
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
