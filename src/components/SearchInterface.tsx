@@ -1,5 +1,5 @@
 // SearchInterface Component - Main search and discovery interface
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, startTransition } from "react";
 import {
   Search,
   X,
@@ -1002,7 +1002,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setSelectedResult(result);
     // Check if this is vanity.ton
     if (result.name.toLowerCase() === 'vanity.ton') {
-      setShowTonMintModal(true);
+      startTransition(() => setShowTonMintModal(true));
     } else {
       setShowMintInterface(true);
     }
@@ -1018,7 +1018,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   const handleManageTonDomain = (domain: any) => {
     setSelectedTonDomain(domain);
-    setShowTonManagementPanel(true);
+    startTransition(() => setShowTonManagementPanel(true));
   };
 
   const handleFlipCard = (index: number) => {
@@ -1043,24 +1043,28 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
 
       {/* TON Subdomain Mint Modal (isolated errors) */}
-      <TonBoundary>
-        {showTonMintModal && (
-          <TonSubdomainMintModal
-            isOpen={showTonMintModal}
-            onClose={handleBackToResults}
-          />
-        )}
-      </TonBoundary>
+      <Suspense fallback={null}>
+        <TonBoundary>
+          {showTonMintModal && (
+            <TonSubdomainMintModal
+              isOpen={showTonMintModal}
+              onClose={handleBackToResults}
+            />
+          )}
+        </TonBoundary>
+      </Suspense>
 
       {/* TON Domain Management Panel (isolated errors) */}
-      <TonBoundary>
-        {showTonManagementPanel && selectedTonDomain && (
-          <TonDomainManagementPanel
-            domain={selectedTonDomain}
-            onBack={handleBackToResults}
-          />
-        )}
-      </TonBoundary>
+      <Suspense fallback={null}>
+        <TonBoundary>
+          {showTonManagementPanel && selectedTonDomain && (
+            <TonDomainManagementPanel
+              domain={selectedTonDomain}
+              onBack={handleBackToResults}
+            />
+          )}
+        </TonBoundary>
+      </Suspense>
 
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
