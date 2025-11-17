@@ -68,19 +68,23 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }, [petraConnected, petraAccount, petraNetwork]);
 
   useEffect(() => {
-    // Check if we're running in World App
-    const isInWorldApp = MiniKit.isInstalled();
-    
-    if (isInWorldApp) {
-      console.log('✅ Running in World App - MiniKit is available');
-    } else {
-      console.log('❌ Not running in World App - MiniKit is not available');
-    }
+    // Check environment on mount
+    console.log('🌍 Environment check on mount:');
+    console.log('  - Telegram WebView:', isTelegramWebView());
+    console.log('  - World App:', MiniKit.isInstalled());
+    console.log('  - User Agent:', navigator.userAgent.substring(0, 150));
 
     // Listen for wallet connection trigger from search
     const handleTriggerConnect = () => {
       if (!user && !petraConnected) {
-        handleConnect();
+        // Prioritize Telegram if in Telegram environment
+        if (isTelegramWebView()) {
+          console.log('🔄 Trigger: Connecting via Telegram');
+          handleTelegramConnect();
+        } else {
+          console.log('🔄 Trigger: Connecting via World App');
+          handleConnect();
+        }
       }
     };
 
@@ -372,12 +376,21 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return (
       <Button
         onClick={() => {
-          // Detect if in World App or Telegram and connect accordingly
-          if (MiniKit.isInstalled()) {
-            handleConnect();
-          } else if (isTelegramWebView()) {
+          // Check for Telegram FIRST (highest priority for mini apps)
+          console.log('🔍 Checking environment...');
+          console.log('  - window.Telegram:', !!(window as any).Telegram);
+          console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
+          console.log('  - isTelegramWebView():', isTelegramWebView());
+          console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
+          
+          if (isTelegramWebView()) {
+            console.log('✅ Detected Telegram WebView - connecting TON wallet');
             handleTelegramConnect();
+          } else if (MiniKit.isInstalled()) {
+            console.log('✅ Detected World App - connecting World ID');
+            handleConnect();
           } else {
+            console.log('✅ Desktop browser - connecting Petra wallet');
             // Try Petra wallet connection
             connectPetra();
           }
