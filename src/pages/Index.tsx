@@ -5,6 +5,7 @@ import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import SplashCursor from '@/components/SplashCursor';
+import { Sun, Moon } from 'lucide-react';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { isTelegramWebView } from '@/lib/telegram';
@@ -17,7 +18,7 @@ import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const [showMiniApps, setShowMiniApps] = useState(true);
@@ -90,12 +91,9 @@ const Index = () => {
               onClearSearch={() => setShowMiniApps(true)}
             />
 
-            {/* Supported Wallets Section - Only on Home Page */}
+            {/* Footer - Only on Home Page */}
             {showMiniApps && isHomePage && (
               <div className="flex flex-col items-center gap-0.5 mt-1">
-                <h2 className="text-sm md:text-base font-semibold text-[#D4AF37] tracking-wider uppercase mb-0.5">
-                  Supported Wallets
-                </h2>
                 <div className="flex items-center justify-center gap-6">
                   {/* World App Icon */}
                   <button
@@ -159,8 +157,18 @@ const Index = () => {
               © 2025 vanity.box. All rights reserved.
             </div>
             
-            {/* Empty div for spacing (theme toggle hidden) */}
-            <div className="w-7 h-7"></div>
+            {/* Theme Toggle on Right */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/20 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-black" />
+              ) : (
+                <Moon className="w-4 h-4 text-black" />
+              )}
+            </button>
           </div>
         </footer>
       </div>
