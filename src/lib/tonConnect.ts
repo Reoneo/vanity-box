@@ -1,5 +1,5 @@
 // TON Connect integration for Telegram Mini App
-import { THEME, TonConnectUI } from '@tonconnect/ui-react';
+import type { TonConnectUI } from '@tonconnect/ui-react';
 
 /**
  * Get TON Connect manifest URL

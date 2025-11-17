@@ -1,5 +1,5 @@
 // SearchInterface Component - Main search and discovery interface
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import {
   Search,
   X,
@@ -35,12 +35,14 @@ import { MiniKit } from "@worldcoin/minikit-js";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "next-themes";
 import { SubdomainMintModal } from "@/components/SubdomainMintModal";
-import { TonSubdomainMintModal } from "@/components/TonSubdomainMintModal";
-import { TonDomainManagementPanel } from "@/components/TonDomainManagementPanel";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
 import { TonBoundary } from "@/components/TonBoundary";
+
+// Lazy-load TON components (default exports)
+const TonSubdomainMintModal = React.lazy(() => import('@/components/TonSubdomainMintModal'));
+const TonDomainManagementPanel = React.lazy(() => import('@/components/TonDomainManagementPanel'));
 
 import {
   DropdownMenu,
