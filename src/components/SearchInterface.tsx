@@ -1802,7 +1802,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="w-full max-w-6xl mx-auto px-4 mt-8 space-y-2 will-change-transform" style={{ transform: 'translateZ(0)' }}>
+              <div className="w-full max-w-6xl mx-auto px-4 mt-8 mb-20 max-h-[calc(100vh-300px)] overflow-y-auto space-y-2 will-change-transform" style={{ transform: 'translateZ(0)' }}>
                 {ensResults.map((result, index) => {
                   const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
                   const isTaken = takenSubdomains.has(result.name.toLowerCase());
