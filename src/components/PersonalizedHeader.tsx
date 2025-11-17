@@ -39,14 +39,14 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = React.memo(
     console.log('PersonalizedHeader rendering with user:', user);
     // Always show the same text regardless of connection status
     return (
-      <span className="font-playfair text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide text-black dark:text-white whitespace-nowrap">
+      <span className="font-playfair text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold tracking-wide text-black dark:text-white whitespace-nowrap">
         Register
       </span>
     );
   };
 
   return (
-    <div className="text-center px-2 mb-0.5">
+    <div className="text-center px-4 mb-1">
       <h1 className="leading-tight mb-0">
         {getHeaderText()}
       </h1>

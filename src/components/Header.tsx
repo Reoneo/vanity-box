@@ -89,7 +89,7 @@ export const Header: React.FC = React.memo(() => {
         <link rel="preload" as="image" href={vanityLogo} />
         
         {/* Content */}
-          <div className="relative z-10 container mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
           {/* Mobile: Show left-aligned controls when wallet is connected */}
           {isWalletConnected && (
             <div className="flex items-center gap-1 md:hidden">
@@ -104,10 +104,10 @@ export const Header: React.FC = React.memo(() => {
                 <img 
                   src={vanityLogo} 
                   alt="Vanity.box Logo" 
-                  className="h-16 w-auto object-contain transform scale-100"
+                  className="h-24 w-auto object-contain transform scale-100"
                   loading="eager"
                   fetchPriority="high"
-                  style={{ marginTop: '1px', marginBottom: '1px' }}
+                  style={{ marginTop: '2px', marginBottom: '2px' }}
                 />
               </button>
 
