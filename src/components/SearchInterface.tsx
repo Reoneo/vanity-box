@@ -198,6 +198,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [selectedArtistName, setSelectedArtistName] = useState("");
   const [showDetailView, setShowDetailView] = useState(false);
   const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
+  const [showInitialResults, setShowInitialResults] = useState(false);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -844,6 +845,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     let allResults = getAllResults();
     const checkFailedDomains = new Set<string>();
     
+    // Show results now that user has searched
+    setShowInitialResults(true);
+    
     if (trimmedQuery) {
       const checkPromises = allResults.map(async (result) => {
         const domain = result.name.toLowerCase();
@@ -1244,6 +1248,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 setHasSearched(false);
                                 setWeb3BioProfile(null);
                                 setIsSearchActive(false);
+                                setShowInitialResults(false);
                                 onClearSearch?.();
                               }}
                               className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
