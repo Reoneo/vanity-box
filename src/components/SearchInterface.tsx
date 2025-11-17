@@ -35,6 +35,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "next-themes";
 import { SubdomainMintModal } from "@/components/SubdomainMintModal";
 import { TonSubdomainMintModal } from "@/components/TonSubdomainMintModal";
+import { TonDomainManagementPanel } from "@/components/TonDomainManagementPanel";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
@@ -168,6 +169,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
   const [showMintInterface, setShowMintInterface] = useState(false);
   const [showTonMintModal, setShowTonMintModal] = useState(false);
+  const [showTonManagementPanel, setShowTonManagementPanel] = useState(false);
+  const [selectedTonDomain, setSelectedTonDomain] = useState<any>(null);
   const [selectedResult, setSelectedResult] = useState<ENSResult | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
@@ -236,6 +239,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     });
     window.addEventListener("show-my-ids", handleShowMyIDs);
     window.addEventListener("show-search", handleShowSearch);
+    
+    const handleManageTonDomainEvent = (event: CustomEvent) => {
+      handleManageTonDomain(event.detail.domain);
+    };
+    window.addEventListener("manage-ton-domain", handleManageTonDomainEvent as EventListener);
 
     return () => {
       window.removeEventListener("wallet-connected", handleWalletChange as EventListener);
@@ -245,6 +253,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       });
       window.removeEventListener("show-my-ids", handleShowMyIDs);
       window.removeEventListener("show-search", handleShowSearch);
+      window.removeEventListener("manage-ton-domain", handleManageTonDomainEvent as EventListener);
     };
   }, []);
 
@@ -992,7 +1001,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const handleBackToResults = () => {
     setShowMintInterface(false);
     setShowTonMintModal(false);
+    setShowTonManagementPanel(false);
     setSelectedResult(null);
+    setSelectedTonDomain(null);
+  };
+
+  const handleManageTonDomain = (domain: any) => {
+    setSelectedTonDomain(domain);
+    setShowTonManagementPanel(true);
   };
 
   const handleFlipCard = (index: number) => {
@@ -1022,9 +1038,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         onClose={handleBackToResults}
       />
 
+      {/* TON Domain Management Panel */}
+      {showTonManagementPanel && selectedTonDomain && (
+        <TonDomainManagementPanel
+          domain={selectedTonDomain}
+          onBack={handleBackToResults}
+        />
+      )}
+
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
-        {showMintInterface && selectedResult ? (
+        {showMintInterface && selectedResult && !showTonManagementPanel ? (
           <SubdomainMintModal
             isOpen={true}
             onClose={handleBackToResults}
@@ -1033,7 +1057,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             resultAvatar={selectedResult.imageUrl}
             domain={selectedResult.name.trim().toLowerCase()}
           />
-        ) : (
+        ) : !showTonManagementPanel ? (
           <>
             <DynamicMetaTags
               username={web3BioProfile?.identity || displayQuery}
@@ -1826,7 +1850,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               )}
             </div>
           </>
-        )}
+        ) : null}
       </div>
       
       {/* Bottom spacing for scroll */}
