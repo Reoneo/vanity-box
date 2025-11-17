@@ -1,5 +1,6 @@
 // SearchInterface Component - Main search and discovery interface
 import React, { useState, useEffect, Suspense, startTransition } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Search,
   X,
