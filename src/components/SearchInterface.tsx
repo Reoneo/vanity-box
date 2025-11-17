@@ -1057,19 +1057,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             resultAvatar={selectedResult.imageUrl}
             domain={selectedResult.name.trim().toLowerCase()}
           />
-        ) : !showTonManagementPanel ? (
+        ) : !showTonManagementPanel && (
           <>
-            <DynamicMetaTags
-              username={web3BioProfile?.identity || displayQuery}
-              displayName={web3BioProfile?.displayName}
-              description={web3BioProfile?.description}
-              avatar={web3BioProfile?.avatar}
-              banner={web3BioProfile?.header}
-            />
-            
-            {/* Search bar and header - always shown */}
-            {!showMyIDs && (
-              <>
                 {/* Header always at the top */}
                 <div className="mt-2">
                   <PersonalizedHeader 
@@ -1866,8 +1855,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               )}
             </div>
           </>
-        ) : null}
-      </div>
+          )}
+        </div>
+        )}
       
       {/* Bottom spacing for scroll */}
       <div className="h-32" />
