@@ -20,6 +20,7 @@ import { isTelegramWebView, getTelegramUser } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
+import { toast } from 'sonner';
 
 interface User {
   walletAddress?: string;
@@ -190,7 +191,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     if (isTelegramWebView()) {
       try {
         setIsLoading(true);
-        console.log('🔄 Opening TON Connect wallet selection...');
+        console.log('🔄 Connecting TON wallet in Telegram mini app...');
         
         // Check if already connected
         if (tonConnectUI.wallet) {
@@ -202,34 +203,41 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           setWalletType('worldchain');
           window.dispatchEvent(new CustomEvent('wallet-connected', { detail: userData }));
           setIsLoading(false);
+          toast.success('TON wallet connected!');
           return;
         }
 
-        // Open TON Connect modal for wallet selection
-        await tonConnectUI.openModal();
+        // Use connectWallet() for Telegram mini apps instead of openModal()
+        // This triggers the native Telegram wallet picker
+        const walletInfo = await tonConnectUI.connectWallet();
         
-        // Subscribe to connection status changes
-        const unsubscribe = tonConnectUI.onStatusChange((wallet) => {
-          if (wallet) {
-            const userData = {
-              walletAddress: wallet.account.address,
-              username: formatAddress(wallet.account.address)
-            };
-            setUser(userData);
-            setWalletType('worldchain');
-            
-            window.dispatchEvent(new CustomEvent('wallet-connected', { 
-              detail: userData
-            }));
-            
-            console.log('✅ TON wallet connected:', userData);
-            setIsLoading(false);
-            unsubscribe();
-          }
-        });
+        if (tonConnectUI.wallet) {
+          const userData = {
+            walletAddress: tonConnectUI.wallet.account.address,
+            username: formatAddress(tonConnectUI.wallet.account.address)
+          };
+          setUser(userData);
+          setWalletType('worldchain');
+          
+          window.dispatchEvent(new CustomEvent('wallet-connected', { 
+            detail: userData
+          }));
+          
+          console.log('✅ TON wallet connected:', userData);
+          toast.success('TON wallet connected!');
+        } else {
+          throw new Error('No wallet connected after connection attempt');
+        }
+        
+        setIsLoading(false);
       } catch (error) {
         console.error('❌ TON wallet connection failed:', error);
         setIsLoading(false);
+        
+        // Only show error if it's not a user cancellation
+        if (error instanceof Error && !error.message.toLowerCase().includes('user')) {
+          toast.error('Failed to connect TON wallet. Please try again.');
+        }
       }
     } else {
       // User is on website, redirect to Telegram mini app
