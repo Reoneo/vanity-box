@@ -1798,7 +1798,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   return (
                     <div
                       key={index}
-                      className="flex items-center gap-3 p-3 bg-background/40 backdrop-blur-sm border border-border/50 rounded-lg hover:bg-background/60 transition-all duration-200 will-change-transform animate-fade-in"
+                      className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-3 bg-background/40 backdrop-blur-sm border border-border/50 rounded-lg hover:bg-background/60 transition-all duration-200 will-change-transform animate-fade-in"
                       style={{ 
                         transform: 'translateZ(0)',
                         animationDelay: `${index * 50}ms`
@@ -1808,14 +1808,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <img
                         src={result.imageUrl || smithCashAvatar}
                         alt={fullName}
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover flex-shrink-0 ring-2 ring-border/30"
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-border/30"
                         onError={(e) => {
                           e.currentTarget.src = smithCashAvatar;
                         }}
                       />
 
                       {/* Name */}
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0">
                         <div className="font-bold text-foreground truncate text-base sm:text-lg">
                           {fullName}
                         </div>
@@ -1825,22 +1825,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
 
                       {/* Info Button */}
-                      {result.description && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="flex-shrink-0 h-9 w-9 hover:bg-primary/10"
-                          onClick={() => {
-                            setDetailViewResult(result);
-                            setShowDetailView(true);
-                          }}
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 hover:bg-primary/10"
+                        onClick={() => {
+                          setDetailViewResult(result);
+                          setShowDetailView(true);
+                        }}
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
 
                       {/* Price */}
-                      <div className="flex-shrink-0 text-right min-w-[70px]">
+                      <div className="text-right min-w-[70px]">
                         <div className="font-bold text-[#D4AF37] text-base sm:text-lg">
                           ${result.price?.toFixed(2) || '5.00'}
                         </div>
@@ -1851,7 +1849,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <Button
                         variant={isComingSoon || isTaken ? "secondary" : "default"}
                         size="sm"
-                        className="flex-shrink-0 min-w-[100px] sm:min-w-[120px] font-semibold"
+                        className="min-w-[100px] sm:min-w-[120px] font-semibold"
                         disabled={isComingSoon || isTaken}
                         onClick={() => {
                           if (!isComingSoon && !isTaken) {
@@ -1859,22 +1857,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           }
                         }}
                       >
-                        {isTaken ? (
-                          <>
-                            <X className="h-4 w-4 mr-1" />
-                            Taken
-                          </>
-                        ) : isComingSoon ? (
-                          <>
-                            <Hourglass className="h-4 w-4 mr-1" />
-                            Coming Soon
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-4 w-4 mr-1" />
-                            Mint Now
-                          </>
-                        )}
+                        {isTaken ? "Taken" : isComingSoon ? "Coming Soon" : "Mint Now"}
                       </Button>
                     </div>
                   );
@@ -1967,17 +1950,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   }
                 }}
               >
-                {detailViewResult.enabled === false ? (
-                  <>
-                    <Hourglass className="h-5 w-5 mr-2" />
-                    Coming Soon
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-5 w-5 mr-2" />
-                    Mint Now
-                  </>
-                )}
+                {detailViewResult.enabled === false ? "Coming Soon" : "Mint Now"}
               </Button>
             </div>
           </div>
