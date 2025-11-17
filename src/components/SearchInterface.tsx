@@ -34,6 +34,7 @@ import { MiniKit } from "@worldcoin/minikit-js";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "next-themes";
 import { SubdomainMintModal } from "@/components/SubdomainMintModal";
+import { TonSubdomainMintModal } from "@/components/TonSubdomainMintModal";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
@@ -166,6 +167,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [isLoading, setIsLoading] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
   const [showMintInterface, setShowMintInterface] = useState(false);
+  const [showTonMintModal, setShowTonMintModal] = useState(false);
   const [selectedResult, setSelectedResult] = useState<ENSResult | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
@@ -247,7 +249,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   }, []);
 
 
-  const protocols = ["DNS", "ENS", "Aptos", "HyperLiquid"];
+  const protocols = ["DNS", "ENS", "Aptos", "HyperLiquid", "TON"];
   const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Surname", "Startup", "Artist", "Personal"];
 
   // Auto-search when username is in URL
@@ -411,7 +413,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         category: ["TON"],
         club: ["Personal"],
         selectable: true,
-        enabled: false,
+        enabled: true,
       },
       {
         name: "Vanity.apt",
@@ -979,11 +981,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   const handleMint = (result: ENSResult) => {
     setSelectedResult(result);
-    setShowMintInterface(true);
+    // Check if this is vanity.ton
+    if (result.name.toLowerCase() === 'vanity.ton') {
+      setShowTonMintModal(true);
+    } else {
+      setShowMintInterface(true);
+    }
   };
 
   const handleBackToResults = () => {
     setShowMintInterface(false);
+    setShowTonMintModal(false);
     setSelectedResult(null);
   };
 
@@ -1007,6 +1015,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   return (
     <>
       {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
+
+      {/* TON Subdomain Mint Modal */}
+      <TonSubdomainMintModal
+        isOpen={showTonMintModal}
+        onClose={handleBackToResults}
+      />
 
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
@@ -1056,7 +1070,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="start"
-                          className="w-72 bg-gray-900/95 dark:bg-gray-900/95 light:bg-white/95 backdrop-blur-md border-[#D4AF37]/50 shadow-xl"
+                          className="w-72 bg-white dark:bg-gray-900 backdrop-blur-md border-[#D4AF37]/50 shadow-xl z-50"
                         >
                           <div className="p-2">
                             <div className="space-y-3">
