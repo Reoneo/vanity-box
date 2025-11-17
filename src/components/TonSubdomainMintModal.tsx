@@ -31,8 +31,6 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
 
   const [subdomain, setSubdomain] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
-  const [tonSite, setTonSite] = useState("");
-  const [tonStorage, setTonStorage] = useState("");
   const [isMinting, setIsMinting] = useState(false);
   const [mintingStep, setMintingStep] = useState<"idle" | "connecting" | "signing" | "waiting" | "success">("idle");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("TON");
@@ -111,7 +109,7 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
       name: "USDC (TON)",
       icon: usdcLogo,
       rate: 1, // USD → USDC (1:1)
-      disabled: true, // Coming soon
+      disabled: false,
     },
   ];
 
@@ -160,11 +158,6 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
       return;
     }
 
-    if (paymentMethod === "USDC_TON") {
-      toast.info("USDC on TON is coming soon. Please choose TON for now.");
-      return;
-    }
-
     if (!userFriendlyAddress) {
       toast.error("Please connect your TON wallet first");
       return;
@@ -179,12 +172,10 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
 
       // Build the message to deploy subdomain
       const body = beginCell()
-        .storeUint(0, 32) // op code for subdomain creation
+        .storeUint(paymentMethod === "TON" ? 0 : 1, 32) // op code: 0=TON, 1=USDC
         .storeStringTail(subdomain)
         .storeAddress(rawAddress ? Address.parse(rawAddress) : null)
-        .storeStringTail(tonSite || "")
-        .storeStringTail(tonStorage || "")
-        .storeUint(registrationYears, 32) // Store registration years
+        .storeUint(registrationYears, 32)
         .endCell();
 
       const transaction = {
@@ -214,8 +205,6 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
         // Reset form
         setSubdomain("");
         setWalletAddress("");
-        setTonSite("");
-        setTonStorage("");
         setRegistrationYears(1);
         setMintingStep("idle");
       }, 2000);
@@ -390,9 +379,6 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {method.name}
                     </span>
-                    {method.disabled && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Coming Soon</span>
-                    )}
                   </div>
                   {paymentMethod === method.id && (
                     <div className="absolute top-2 right-2">
@@ -440,55 +426,6 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
               </p>
             )}
           </div>
-
-          {/* Optional DNS Settings */}
-          <details className="group">
-            <summary className="cursor-pointer text-sm font-semibold text-gray-900 dark:text-white list-none flex items-center justify-between">
-              <span>Optional DNS Settings</span>
-              <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Wallet Address
-                </label>
-                <Input
-                  type="text"
-                  value={tonSite}
-                  onChange={(e) => setTonSite(e.target.value)}
-                  placeholder="UQ..."
-                  className="text-sm"
-                  disabled={isMinting}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  TON Site
-                </label>
-                <Input
-                  type="text"
-                  value={tonSite}
-                  onChange={(e) => setTonSite(e.target.value)}
-                  placeholder="adnl://..."
-                  className="text-sm"
-                  disabled={isMinting}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  TON Storage
-                </label>
-                <Input
-                  type="text"
-                  value={tonStorage}
-                  onChange={(e) => setTonStorage(e.target.value)}
-                  placeholder="bag://..."
-                  className="text-sm"
-                  disabled={isMinting}
-                />
-              </div>
-            </div>
-          </details>
 
           {/* Status Messages */}
           {mintingStep === "signing" && (
