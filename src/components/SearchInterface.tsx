@@ -1103,7 +1103,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                   Protocol
                                 </DropdownMenuLabel>
                                 <div className="grid grid-cols-2 gap-2">
-                                  {protocols.map((protocol) => (
+                                  {protocols.slice(0, 4).map((protocol) => (
                                     <button
                                       key={protocol}
                                       onClick={() => handleFilterChange("protocol", protocol)}
@@ -1118,6 +1118,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                     </button>
                                   ))}
                                 </div>
+                                {/* TON protocol on its own row, centered */}
+                                {protocols.length > 4 && (
+                                  <div className="flex justify-center mt-2">
+                                    <button
+                                      onClick={() => handleFilterChange("protocol", protocols[4])}
+                                      className={cn(
+                                        "px-3 py-2 rounded-lg text-sm font-medium transition-all w-[calc(50%-0.25rem)]",
+                                        filters.protocol.includes(protocols[4])
+                                          ? "bg-[#D4AF37] text-black"
+                                          : "bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 text-white dark:text-white light:text-black hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-gray-100/50"
+                                      )}
+                                    >
+                                      {protocols[4]}
+                                    </button>
+                                  </div>
+                                )}
                               </div>
 
                               <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
