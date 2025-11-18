@@ -14,7 +14,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
-import TonMint from "./pages/TonMint";
+
 
 const queryClient = new QueryClient();
 const tonConnectManifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
@@ -43,7 +43,6 @@ const App = () => {
                     <BrowserRouter>
                       <Routes>
                         <Route path="/" element={<Index />} />
-                        <Route path="/ton-mint" element={<TonMint />} />
                         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                         <Route path="/terms-of-use" element={<TermsOfUse />} />
                         {/* User profile routes - must come before catch-all */}
