@@ -1829,7 +1829,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         {/* Price - visible on larger screens */}
                         <div className="text-right hidden sm:block">
                           <div className="font-bold text-[#D4AF37] text-base">
-                            ${searchQuery ? getSubdomainPrice(`${searchQuery}.${result.name}`).toFixed(2) : (result.price?.toFixed(2) || '5.00')}
+                            ${(() => {
+                              try {
+                                return displayQuery ? getSubdomainPrice(fullName).toFixed(2) : (result.price?.toFixed(2) || '5.00');
+                              } catch (e) {
+                                console.error('Price calculation error:', e);
+                                return result.price?.toFixed(2) || '5.00';
+                              }
+                            })()}
                           </div>
                           <div className="text-xs text-muted-foreground">USD</div>
                         </div>
