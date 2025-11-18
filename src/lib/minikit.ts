@@ -47,6 +47,17 @@ export function initMiniKit(appId: string): Promise<void> {
 }
 
 /**
+ * Check if the app is running inside World App
+ */
+export function isInWorldApp(): boolean {
+  const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
+  const hasWorldAppUA = navigator.userAgent.includes("World App") || 
+                       navigator.userAgent.includes("WorldApp");
+  const hasMiniKit = MiniKit.isInstalled();
+  return hasWorldApp || hasWorldAppUA || hasMiniKit;
+}
+
+/**
  * Get current MiniKit status without throwing
  */
 export function getMiniKitStatus() {
@@ -54,7 +65,7 @@ export function getMiniKitStatus() {
     isInstalled: MiniKit.isInstalled(),
     isReady,
     version: (MiniKit as any).version || "unknown",
-    inWorldApp: typeof (window as any).WorldApp !== "undefined",
+    inWorldApp: isInWorldApp(),
   };
 }
 
