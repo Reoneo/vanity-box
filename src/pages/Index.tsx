@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
@@ -17,7 +17,7 @@ import petraIcon from '@/assets/petra-icon.png';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
-const Index = React.memo(() => {
+const Index = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
@@ -42,31 +42,36 @@ const Index = React.memo(() => {
     };
   }, []);
 
-  const handleWorldAppClick = useCallback(() => {
+  const handleWorldAppClick = () => {
     if (!MiniKit.isInstalled()) {
       window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+    } else {
+      console.log('Already in World App');
     }
-  }, []);
+  };
 
-  const handleTelegramClick = useCallback(() => {
+  const handleTelegramClick = () => {
     if (!isTelegramWebView()) {
       window.open('https://t.me/vanitybox_bot/vanity', '_blank');
+    } else {
+      console.log('Already in Telegram');
     }
-  }, []);
+  };
 
-  const handlePetraClick = useCallback(() => {
+  const handlePetraClick = () => {
+    // Deep link to open vanity.box in Petra wallet
     window.location.href = 'https://petra.app/explore?link=https://vanity.box';
-  }, []);
+  };
 
   return (
-    <div className="h-screen bg-background flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       <SplashCursor enabled={true} />
       
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
       
       {/* Content wrapper */}
-      <div className="h-screen flex flex-col relative z-40 overflow-hidden">
+      <div className="min-h-screen flex flex-col relative z-40">
         {/* Blur overlay when language selector is open */}
         <div className="fixed inset-0 z-[9998] pointer-events-none">
           <div className="absolute inset-0" id="page-blur-target"></div>
@@ -77,7 +82,7 @@ const Index = React.memo(() => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-20 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto overflow-hidden">
+        <main className="flex-1 px-4 pt-20 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
             <SearchInterface
               onSearchClick={() => setShowMiniApps(false)} 
@@ -95,13 +100,11 @@ const Index = React.memo(() => {
                     aria-label="World App"
                   >
                     <div className="rounded-full border border-[#D4AF37] p-1">
-                      <div className="rounded-full bg-black p-2">
-                        <img 
-                          src={worldAppIcon} 
-                          alt="World App" 
-                          className="w-12 h-12 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
-                        />
-                      </div>
+                      <img 
+                        src={worldAppIcon} 
+                        alt="World App" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
                     </div>
                   </button>
 
@@ -112,13 +115,11 @@ const Index = React.memo(() => {
                     aria-label="Telegram"
                   >
                     <div className="rounded-full border border-[#D4AF37] p-1">
-                      <div className="rounded-full bg-black p-2">
-                        <img 
-                          src={telegramIcon} 
-                          alt="Telegram" 
-                          className="w-12 h-12 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
-                        />
-                      </div>
+                      <img 
+                        src={telegramIcon} 
+                        alt="Telegram" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
                     </div>
                   </button>
 
@@ -129,13 +130,11 @@ const Index = React.memo(() => {
                     aria-label="Petra"
                   >
                     <div className="rounded-full border border-[#D4AF37] p-1">
-                      <div className="rounded-full bg-black p-2">
-                        <img 
-                          src={petraIcon} 
-                          alt="Petra" 
-                          className="w-12 h-12 md:w-16 md:h-16 object-contain transition-transform group-hover:scale-110"
-                        />
-                      </div>
+                      <img 
+                        src={petraIcon} 
+                        alt="Petra" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
                     </div>
                   </button>
                 </div>
@@ -173,6 +172,6 @@ const Index = React.memo(() => {
       </div>
     </div>
   );
-});
+};
 
 export default Index;

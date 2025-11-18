@@ -221,12 +221,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   }
 
   const handleManageDomain = (domain: Domain, action: 'edit' | 'transfer') => {
-    // Check if this is a TON domain
-    if (domain.domain.toLowerCase() === 'vanity.ton') {
-      window.dispatchEvent(new CustomEvent('manage-ton-domain', { detail: { domain } }));
-      return;
-    }
-    
     setSelectedDomain(domain);
     setIsEditMode(true);
     // Dispatch event to tell DomainEditPanel which tab to show

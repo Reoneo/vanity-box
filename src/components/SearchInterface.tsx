@@ -34,8 +34,6 @@ import { MiniKit } from "@worldcoin/minikit-js";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "next-themes";
 import { SubdomainMintModal } from "@/components/SubdomainMintModal";
-import { TonSubdomainMintModal } from "@/components/TonSubdomainMintModal";
-import { TonDomainManagementPanel } from "@/components/TonDomainManagementPanel";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
@@ -168,9 +166,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [isLoading, setIsLoading] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
   const [showMintInterface, setShowMintInterface] = useState(false);
-  const [showTonMintModal, setShowTonMintModal] = useState(false);
-  const [showTonManagementPanel, setShowTonManagementPanel] = useState(false);
-  const [selectedTonDomain, setSelectedTonDomain] = useState<any>(null);
   const [selectedResult, setSelectedResult] = useState<ENSResult | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
@@ -239,11 +234,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     });
     window.addEventListener("show-my-ids", handleShowMyIDs);
     window.addEventListener("show-search", handleShowSearch);
-    
-    const handleManageTonDomainEvent = (event: CustomEvent) => {
-      handleManageTonDomain(event.detail.domain);
-    };
-    window.addEventListener("manage-ton-domain", handleManageTonDomainEvent as EventListener);
 
     return () => {
       window.removeEventListener("wallet-connected", handleWalletChange as EventListener);
@@ -253,13 +243,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       });
       window.removeEventListener("show-my-ids", handleShowMyIDs);
       window.removeEventListener("show-search", handleShowSearch);
-      window.removeEventListener("manage-ton-domain", handleManageTonDomainEvent as EventListener);
     };
   }, []);
 
 
-  const protocols = ["DNS", "ENS", "Aptos", "HyperLiquid", "TON"];
-  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Surname", "Startup", "Artist", "Personal"];
+  const protocols = ["DNS", "ENS"];
+  const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
 
   // Auto-search when username is in URL
   useEffect(() => {
@@ -358,25 +347,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setShowFilterDropdown(false);
   };
 
-  const handleFilterChange = (type: "protocol" | "club", value: string) => {
-    if (type === "protocol") {
-      handleProtocolToggle(value);
-    } else {
-      handleClubToggle(value);
-    }
-  };
-
-  const handleToggleAllClubs = () => {
-    setHasManuallyAdjustedFilters(true);
-    if (filters.club.length === clubs.length) {
-      // Deselect all
-      setFilters({ ...filters, club: [] });
-    } else {
-      // Select all
-      setFilters({ ...filters, club: clubs });
-    }
-  };
-
   const getAllResults = () => {
     const allResults = [
       {
@@ -422,7 +392,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         category: ["TON"],
         club: ["Personal"],
         selectable: true,
-        enabled: true,
+        enabled: false,
       },
       {
         name: "Vanity.apt",
@@ -449,7 +419,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         description: "Native Web3 ID for the HyperLiquid blockchain.",
         imageUrl: vanityHlAvatar,
         price: 5,
-        category: ["HyperLiquid"],
+        category: ["DNS"],
         club: ["Personal"],
         selectable: true,
         enabled: false,
@@ -990,25 +960,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   const handleMint = (result: ENSResult) => {
     setSelectedResult(result);
-    // Check if this is vanity.ton
-    if (result.name.toLowerCase() === 'vanity.ton') {
-      setShowTonMintModal(true);
-    } else {
-      setShowMintInterface(true);
-    }
+    setShowMintInterface(true);
   };
 
   const handleBackToResults = () => {
     setShowMintInterface(false);
-    setShowTonMintModal(false);
-    setShowTonManagementPanel(false);
     setSelectedResult(null);
-    setSelectedTonDomain(null);
-  };
-
-  const handleManageTonDomain = (domain: any) => {
-    setSelectedTonDomain(domain);
-    setShowTonManagementPanel(true);
   };
 
   const handleFlipCard = (index: number) => {
@@ -1032,23 +989,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     <>
       {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
 
-      {/* TON Subdomain Mint Modal */}
-      <TonSubdomainMintModal
-        isOpen={showTonMintModal}
-        onClose={handleBackToResults}
-      />
-
-      {/* TON Domain Management Panel */}
-      {showTonManagementPanel && selectedTonDomain && (
-        <TonDomainManagementPanel
-          domain={selectedTonDomain}
-          onBack={handleBackToResults}
-        />
-      )}
-
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
-        {showMintInterface && selectedResult && !showTonManagementPanel ? (
+        {showMintInterface && selectedResult ? (
           <SubdomainMintModal
             isOpen={true}
             onClose={handleBackToResults}
@@ -1057,7 +1000,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             resultAvatar={selectedResult.imageUrl}
             domain={selectedResult.name.trim().toLowerCase()}
           />
-        ) : !showTonManagementPanel ? (
+        ) : (
           <>
             <DynamicMetaTags
               username={web3BioProfile?.identity || displayQuery}
@@ -1067,172 +1010,279 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               banner={web3BioProfile?.header}
             />
             
-            {/* Search bar and header - always shown */}
+            {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && (
               <>
-                {/* Header always at the top */}
-                <div className="mt-2">
-                  <PersonalizedHeader 
-                    user={{ walletAddress }} 
-                    resultsCount={showInitialResults && hasSearched && ensResults.length > 0 ? ensResults.length : undefined}
-                  />
-                </div>
-                
-                {/* Search bar below header */}
-                <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
-                  <div className="relative">
-                    <div className="absolute left-1 top-1 z-10 flex items-center h-10">
-                      <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-10 w-10 rounded-lg bg-[#D4AF37] hover:bg-[#D4AF37]/90 border-[#D4AF37]"
-                          >
-                            <Filter className="w-4 h-4 text-black" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="start"
-                          className="w-72 bg-white dark:bg-gray-900 backdrop-blur-md border-[#D4AF37]/50 shadow-xl z-50"
-                        >
-                          <div className="p-2">
-                            <div className="space-y-3">
-                              <div>
-                                <DropdownMenuLabel className="text-[#D4AF37] text-xs uppercase tracking-wider mb-2 px-2">
-                                  Protocol
-                                </DropdownMenuLabel>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {protocols.map((protocol) => (
-                                    <button
-                                      key={protocol}
-                                      onClick={() => handleFilterChange("protocol", protocol)}
-                                      className={cn(
-                                        "px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                                        filters.protocol.includes(protocol)
-                                          ? "bg-[#D4AF37] text-black"
-                                          : "bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 text-white dark:text-white light:text-black hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-gray-100/50"
-                                      )}
-                                    >
-                                      {protocol}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
+                {!isSearchActive ? (
+                  <>
+                    {/* Before search: Header on top, search below */}
+                    <div className="mt-2">
 
-                              <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                              <div>
-                                <DropdownMenuLabel className="text-[#D4AF37] text-xs uppercase tracking-wider mb-2 px-2 flex items-center justify-between">
-                                  <span>
-                                    Club
-                                  </span>
-                                  <button
-                                    onClick={handleToggleAllClubs}
-                                    className="text-xs normal-case text-[#D4AF37] hover:text-[#D4AF37]/80 font-normal"
-                                  >
-                                    {filters.club.length === clubs.length ? "Deselect All" : "Select All"}
-                                  </button>
-                                </DropdownMenuLabel>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {clubs.map((club) => (
-                                    <button
-                                      key={club}
-                                      onClick={() => handleFilterChange("club", club)}
-                                      className={cn(
-                                        "px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                                        filters.club.includes(club)
-                                          ? "bg-[#D4AF37] text-black"
-                                          : "bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 text-white dark:text-white light:text-black hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-gray-100/50"
-                                      )}
-                                    >
-                                      {club}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-
-
-                              <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setShowFilterDropdown(false)}
-                                  className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setShowFilterDropdown(false);
-                                    if (searchQuery.trim()) {
-                                      handleSearch();
-                                      setIsSearchActive(true);
-                                      onSearchClick?.();
-                                    }
-                                  }}
-                                  className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37]"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <PersonalizedHeader user={{ walletAddress }} />
                     </div>
-                    <Input
-                      placeholder={t("Search for a name")}
-                      className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
-                      value={searchQuery}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleSearch();
-                          setIsSearchActive(true);
-                          onSearchClick?.();
-                        }
-                      }}
-                      onFocus={() => {
-                        setShowFilterDropdown(false);
-                      }}
-                    />
-                    <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
-                      {searchQuery && (
-                        <button
-                          onClick={() => {
-                            setSearchQuery("");
-                            setEnsResults([]);
-                            setIsAvailable(null);
-                            setHasSearched(false);
-                            setWeb3BioProfile(null);
-                            setIsSearchActive(false);
-                            setShowInitialResults(false);
-                            onClearSearch?.();
+                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
+                      <div className="relative">
+                        <div className="absolute left-1 top-1 z-10 flex items-center h-10">
+                          <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
+                              >
+                                <Filter className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="start"
+                              className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-[60]"
+                            >
+                              <div className="relative">
+                                <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
+                                <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
+
+                                <div className="relative z-10 space-y-4">
+                                  <DropdownMenuLabel className="text-lg font-semibold text-white">Filter</DropdownMenuLabel>
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      {clubs.map((club) => (
+                                        <label
+                                          key={club}
+                                          className={cn(
+                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                            filters.club.includes(club)
+                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
+                                          )}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleClubToggle(club);
+                                          }}
+                                        >
+                                          {club}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+
+
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleClearFilters}
+                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setShowFilterDropdown(false);
+                                        if (searchQuery.trim()) {
+                                          handleSearch();
+                                          setIsSearchActive(true);
+                                          onSearchClick?.();
+                                        }
+                                      }}
+                                      className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37]"
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <Input
+                          placeholder={t("Search for a name")}
+                          className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
+                          value={searchQuery}
+                          onChange={(e) => handleSearchChange(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }
                           }}
-                          className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          aria-label="Clear search"
-                        >
-                          <X className="w-4 h-4 text-black dark:text-white" />
-                        </button>
-                      )}
-                      <Button
-                        onClick={() => {
-                          handleSearch();
-                          setIsSearchActive(true);
-                          onSearchClick?.();
-                        }}
-                        size="icon"
-                        className="h-10 w-10 rounded-lg bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-                      >
-                        <Search className="w-4 h-4" />
-                      </Button>
+                          onFocus={() => {
+                            setShowFilterDropdown(false);
+                          }}
+                        />
+                        <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
+                          {searchQuery && (
+                            <button
+                              onClick={() => {
+                                setSearchQuery("");
+                                setEnsResults([]);
+                                setIsAvailable(null);
+                                setHasSearched(false);
+                                setWeb3BioProfile(null);
+                                setIsSearchActive(false);
+                                onClearSearch?.();
+                              }}
+                              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              aria-label="Clear search"
+                            >
+                              <X className="w-4 h-4 text-black dark:text-white" />
+                            </button>
+                          )}
+                          <Button
+                            onClick={() => {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }}
+                            size="sm"
+                            className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                            disabled={!searchQuery.trim() || isLoading}
+                          >
+                            <Search className="w-4 h-4 text-black" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                    <WorldIdAnimation />
+                  </>
+                ) : (
+                  <>
+                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2 lg:mt-6">
+                      <div className="relative">
+                        <div className="absolute left-1 top-1 z-10 flex items-center h-10">
+                          <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
+                              >
+                                <Filter className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="start"
+                              className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-[60]"
+                            >
+                              <div className="relative">
+                                <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
+                                <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
+
+                                <div className="relative z-10 space-y-4">
+                                  <DropdownMenuLabel className="text-lg font-semibold text-white">Filter</DropdownMenuLabel>
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+
+                                  <div className="space-y-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      {clubs.map((club) => (
+                                        <label
+                                          key={club}
+                                          className={cn(
+                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
+                                            filters.club.includes(club)
+                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
+                                          )}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            handleClubToggle(club);
+                                          }}
+                                        >
+                                          {club}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+
+
+                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleClearFilters}
+                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setShowFilterDropdown(false);
+                                        if (searchQuery.trim()) {
+                                          handleSearch();
+                                          setIsSearchActive(true);
+                                          onSearchClick?.();
+                                        }
+                                      }}
+                                      className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37]"
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <Input
+                          placeholder={t("Search for a name")}
+                          className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
+                          value={searchQuery}
+                          onChange={(e) => handleSearchChange(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }
+                          }}
+                          onFocus={() => {
+                            setShowFilterDropdown(false);
+                          }}
+                        />
+                        <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
+                          {searchQuery && (
+                            <button
+                              onClick={() => {
+                                setSearchQuery("");
+                                setEnsResults([]);
+                                setIsAvailable(null);
+                                setHasSearched(false);
+                                setWeb3BioProfile(null);
+                                setIsSearchActive(false);
+                                setShowInitialResults(false);
+                                onClearSearch?.();
+                              }}
+                              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              aria-label="Clear search"
+                            >
+                              <X className="w-4 h-4 text-black dark:text-white" />
+                            </button>
+                          )}
+                          <Button
+                            onClick={() => {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                            }}
+                            size="sm"
+                            className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                            disabled={!searchQuery.trim() || isLoading}
+                          >
+                            <Search className="w-4 h-4 text-black" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
 
@@ -1752,7 +1802,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="w-full max-w-6xl mx-auto px-4 mt-8 mb-20 max-h-[calc(100vh-300px)] overflow-y-auto space-y-2 will-change-transform" style={{ transform: 'translateZ(0)' }}>
+              <div className="w-full max-w-6xl mx-auto px-4 mt-8 space-y-2 will-change-transform" style={{ transform: 'translateZ(0)' }}>
                 {ensResults.map((result, index) => {
                   const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
                   const isTaken = takenSubdomains.has(result.name.toLowerCase());
@@ -1850,7 +1900,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               )}
             </div>
           </>
-        ) : null}
+        )}
       </div>
       
       {/* Bottom spacing for scroll */}

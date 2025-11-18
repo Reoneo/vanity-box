@@ -2,15 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Enable GPU acceleration for animations */
-* {
-  will-change: auto;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-}
-
 /* Disable all animations during theme transitions */
 .theme-transitioning * {
   animation: none !important;
@@ -52,11 +43,6 @@ Inspired by clean, modern ENS interface with crypto-native aesthetics.
 All colors MUST be HSL. */
 
 @layer base {
-  html, body {
-    overflow: hidden;
-    height: 100%;
-  }
-  
   :root {
     /* Ultra-luxurious crypto-native palette - Maximum luxury without breaking functionality */
     --background: 0 0% 99%;

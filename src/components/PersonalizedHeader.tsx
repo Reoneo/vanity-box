@@ -12,10 +12,9 @@ interface PersonalizedHeaderProps {
     walletAddress?: string;
   } | null;
   isProfileDisplayed?: boolean;
-  resultsCount?: number;
 }
 
-export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = React.memo(({ user, isProfileDisplayed = false, resultsCount }) => {
+export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = ({ user, isProfileDisplayed = false }) => {
   const { t } = useLanguage();
   
   const handleWorldAppClick = () => {
@@ -38,17 +37,7 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = React.memo(
 
   const getHeaderText = () => {
     console.log('PersonalizedHeader rendering with user:', user);
-    
-    // If we have results, show the count
-    if (resultsCount !== undefined && resultsCount > 0) {
-      return (
-        <span className="font-playfair text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold tracking-wide text-black dark:text-white whitespace-nowrap">
-          {resultsCount} ID{resultsCount !== 1 ? "'s" : ""} Found
-        </span>
-      );
-    }
-    
-    // Default state - show Register
+    // Always show the same text regardless of connection status
     return (
       <span className="font-playfair text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold tracking-wide text-black dark:text-white whitespace-nowrap">
         Register
@@ -63,4 +52,4 @@ export const PersonalizedHeader: React.FC<PersonalizedHeaderProps> = React.memo(
       </h1>
     </div>
   );
-});
+};

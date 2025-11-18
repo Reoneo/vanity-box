@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
 import { SpotifyPauseButton } from './SpotifyPauseButton';
 import vanityLogo from '../assets/vanity-logo.png';
@@ -11,7 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
-export const Header: React.FC = React.memo(() => {
+export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
@@ -20,17 +20,10 @@ export const Header: React.FC = React.memo(() => {
   const [showMyIds, setShowMyIds] = useState(false);
 
   useEffect(() => {
-    let ticking = false;
-    
     const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const searchBarArea = 200;
-          setShowSearchIcon(window.scrollY > searchBarArea);
-          ticking = false;
-        });
-        ticking = true;
-      }
+      // Show search icon when user has scrolled past the search bar area
+      const searchBarArea = 200; // Approximate height where search bar becomes out of view
+      setShowSearchIcon(window.scrollY > searchBarArea);
     };
 
     const handleMintOpen = () => setIsMintWindowOpen(true);
@@ -38,6 +31,7 @@ export const Header: React.FC = React.memo(() => {
     
     const handleWalletConnected = (e?: CustomEvent) => {
       setIsWalletConnected(true);
+      // Check if it's Petra wallet from event detail
       if (e?.detail?.walletType === 'petra') {
         setIsPetraConnected(true);
       }
@@ -50,7 +44,7 @@ export const Header: React.FC = React.memo(() => {
     const handleShowMyIds = () => setShowMyIds(true);
     const handleHideMyIds = () => setShowMyIds(false);
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll);
     window.addEventListener('mint-window-open', handleMintOpen);
     window.addEventListener('mint-window-close', handleMintClose);
     window.addEventListener('wallet-connected', handleWalletConnected);
@@ -69,17 +63,19 @@ export const Header: React.FC = React.memo(() => {
     };
   }, []);
 
-  const scrollToSearch = useCallback(() => {
+  const scrollToSearch = () => {
+    // If mint window is open, just close it and stay on search results
     if (isMintWindowOpen) {
       window.dispatchEvent(new Event('mint-window-close'));
       setIsMintWindowOpen(false);
       return;
     }
     
+    // Otherwise, reset to main page state
     setShowMyIds(false);
     window.dispatchEvent(new Event('back-to-domains'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [isMintWindowOpen]);
+  };
   
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
@@ -347,4 +343,4 @@ export const Header: React.FC = React.memo(() => {
       </SheetContent>
     </Sheet>
   );
-});
+};
