@@ -71,12 +71,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   }, [petraConnected, petraAccount, petraNetwork]);
 
   useEffect(() => {
-    // Check MiniKit readiness if in World App
-    if (!isInWorldApp()) {
-      console.log('📱 Not in World App, skipping MiniKit initialization check');
-      return;
-    }
-    
+    // ALWAYS check MiniKit readiness since MiniKit.install() is called on app load
+    // Don't skip this based on isInWorldApp() to avoid circular dependency
     console.log('🔄 Checking MiniKit readiness...');
     let attempts = 0;
     const maxAttempts = 10;
@@ -161,8 +157,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return;
     }
 
-    // Check if MiniKit is ready in World App
-    if (isInWorldApp() && !minikitReady) {
+    // Check if MiniKit is ready - required for World App authentication
+    if (!minikitReady && MiniKit.isInstalled()) {
       toast.error('World App is still initializing. Please wait a moment and try again.');
       return;
     }
@@ -456,7 +452,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             connectPetra();
           }
         }}
-        disabled={isLoading || (isInWorldApp() && !minikitReady)}
+        disabled={isLoading || (!minikitReady && MiniKit.isInstalled())}
         variant="outline"
         size="sm"
         className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
@@ -466,7 +462,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
             {t('connecting')}
           </>
-        ) : (isInWorldApp() && !minikitReady) ? (
+        ) : (!minikitReady && MiniKit.isInstalled()) ? (
           <>
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
             Initializing...

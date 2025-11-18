@@ -48,13 +48,16 @@ export function initMiniKit(appId: string): Promise<void> {
 
 /**
  * Check if the app is running inside World App
+ * NOTE: Do NOT check MiniKit.isInstalled() here as it creates circular dependency
  */
 export function isInWorldApp(): boolean {
   const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
   const hasWorldAppUA = navigator.userAgent.includes("World App") || 
                        navigator.userAgent.includes("WorldApp");
-  const hasMiniKit = MiniKit.isInstalled();
-  return hasWorldApp || hasWorldAppUA || hasMiniKit;
+  
+  console.log('[isInWorldApp] Detection:', { hasWorldApp, hasWorldAppUA });
+  
+  return hasWorldApp || hasWorldAppUA;
 }
 
 /**
