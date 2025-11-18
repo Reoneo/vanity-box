@@ -1831,10 +1831,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           <div className="font-bold text-[#D4AF37] text-base">
                             ${(() => {
                               try {
-                                return displayQuery ? getSubdomainPrice(fullName).toFixed(2) : (result.price?.toFixed(2) || '5.00');
+                                return getSubdomainPrice(fullName).toFixed(2);
                               } catch (e) {
-                                console.error('Price calculation error:', e);
-                                return result.price?.toFixed(2) || '5.00';
+                                console.error('Price calculation error:', e, 'fullName:', fullName);
+                                return '5.00';
                               }
                             })()}
                           </div>
