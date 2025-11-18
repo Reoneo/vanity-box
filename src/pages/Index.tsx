@@ -18,8 +18,6 @@ import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 const Index = React.memo(() => {
-  console.log('[Index] Component rendering');
-  
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);

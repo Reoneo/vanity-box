@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   build: {
-    target: 'es2015',
+    target: 'es2020',
     minify: 'esbuild',
     sourcemap: true,
   },
