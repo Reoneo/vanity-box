@@ -535,6 +535,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return;
     }
 
+    // Max 12 character limit - show no results if exceeded
+    if (trimmedQuery.length > 12) {
+      setEnsResults([]);
+      setWeb3BioProfile(null);
+      setEfpStats(null);
+      setEnsRecords(null);
+      setDisplayQuery(trimmedQuery);
+      setIsLoading(false);
+      setHasSearched(true);
+      setIsSearchActive(true);
+      return;
+    }
+
     // Auto-select all filters when searching, unless user has manually adjusted them
     if (!hasManuallyAdjustedFilters) {
       setFilters({ protocol: [], club: clubs });
@@ -1153,7 +1166,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </>
                 ) : (
                   <>
-                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2 lg:mt-6">
+                    {/* Header showing result count */}
+                    <div className="mt-2">
+                      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
+                        <span className="text-white dark:text-white">{ensResults.length} ID's</span>{' '}
+                        <span className="text-[#D4AF37]">Found</span>
+                      </h1>
+                    </div>
+                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                           <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
@@ -1851,9 +1871,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           </Badge>
                         </div>
 
-                        {/* Price - replaces USD */}
+                        {/* Price */}
                         <div className="text-right flex-shrink-0 min-w-[60px]">
-                          <div className="font-bold text-[#D4AF37] text-sm sm:text-base">
+                          <div className="font-bold text-[#D4AF37] text-sm">
                             ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                           </div>
                         </div>
