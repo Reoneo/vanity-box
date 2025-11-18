@@ -212,11 +212,18 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   }, [isAptosDomain, isConnected, account?.address]);
 
   useEffect(() => {
-    // Detect World App on mount
+    // Detect World App on mount AND when minikit status changes
     const detected = isInWorldApp();
-    setInWorldApp(detected);
-    console.log('[SubdomainMintModal] World App detection:', detected);
-  }, []);
+    const minikitInstalled = MiniKit.isInstalled();
+    const worldAppDetected = detected || minikitInstalled;
+    
+    setInWorldApp(worldAppDetected);
+    console.log('[SubdomainMintModal] World App detection:', { 
+      detected, 
+      minikitInstalled, 
+      final: worldAppDetected 
+    });
+  }, [miniKitStatus]); // Re-check when MiniKit status changes
 
   useEffect(() => {
     let mounted = true;
@@ -525,7 +532,9 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       paymentMethod, 
       amount: convertedPrice,
       isFree,
-      registrationYears 
+      registrationYears,
+      inWorldApp,
+      miniKitStatus
     });
     
     await sendHaptic("light");
@@ -535,16 +544,22 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         setPaymentFlowStep("idle");
         localStorage.removeItem('paymentFlowState');
         toast.info("Fetching prices — try again in a moment.");
+        setIsMinting(false);
         return;
       }
 
-      // Ensure MiniKit is ready
+      // Ensure MiniKit is ready FIRST before any wallet operations
       console.log("[PaymentFlow] Step: checking_minikit");
       
       try {
         await ensureReady();
         const status = getMiniKitStatus();
         console.log("[PaymentFlow] MiniKit ready:", status);
+        
+        // Update inWorldApp state based on actual MiniKit status
+        if (status.isInstalled) {
+          setInWorldApp(true);
+        }
       } catch (readyError: any) {
         setPaymentFlowStep("idle");
         localStorage.removeItem('paymentFlowState');
@@ -1114,7 +1129,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 isMinting || 
                 (isAptosDomain 
                   ? (!isInstalled || !isConnected) 
-                  : (miniKitStatus === "unavailable" || miniKitStatus === "checking" || (!inWorldApp && (paymentMethod === "WLD" || paymentMethod === "USDC")))
+                  : (miniKitStatus === "checking")
                 )
               }
               className="w-full mt-3 bg-gradient-to-r from-[#D4AF37] to-[#F2D574] hover:from-[#C9A532] hover:to-[#E8C760] text-black font-bold text-lg h-14 rounded-full shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1123,24 +1138,28 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 ? "Processing..." 
                 : isAptosDomain
                   ? (!isInstalled ? "Install Petra Wallet" : !isConnected ? "Connect Petra Wallet" : "Mint Now")
-                  : !inWorldApp && (paymentMethod === "WLD" || paymentMethod === "USDC")
-                    ? "Open in World App to Mint"
-                    : miniKitStatus === "unavailable" 
-                      ? "World App Required"
-                      : miniKitStatus === "checking"
-                        ? "Checking World App..."
-                        : "Mint Now"}
+                  : miniKitStatus === "checking"
+                    ? "Checking World App..."
+                    : "Mint Now"}
             </Button>
             
-            {/* Show guide link when button is disabled due to World App requirement */}
-            {!inWorldApp && (paymentMethod === "WLD" || paymentMethod === "USDC") && !isAptosDomain && (
-              <button
-                onClick={() => setShowWorldAppGuide(true)}
-                className="w-full mt-2 text-sm text-[#D4AF37] hover:underline"
-              >
-                How to open in World App?
-              </button>
+            {/* Show World App guide for users not in World App */}
+            {miniKitStatus === "unavailable" && !isAptosDomain && (
+              <div className="w-full mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-sm text-amber-900 dark:text-amber-100 text-center">
+                  World App is required for {paymentMethod} payments.
+                </p>
+                <button
+                  onClick={() => setShowWorldAppGuide(true)}
+                  className="w-full mt-2 text-sm text-[#D4AF37] hover:underline font-medium"
+                >
+                  How to open in World App?
+                </button>
+              </div>
             )}
+            
+            {/* Show guide link when button is disabled due to World App requirement - REMOVED as we now allow the mint to proceed */}
+            {/* The flow will connect wallet on demand */}
           </div>
         </div>
         
