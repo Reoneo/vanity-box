@@ -58,6 +58,27 @@ export function isInWorldApp(): boolean {
 }
 
 /**
+ * Wait for MiniKit to be ready with timeout.
+ * @param {number} timeoutMs - Maximum time to wait in milliseconds
+ * @returns {Promise<boolean>} True if MiniKit became ready, false on timeout
+ */
+export function waitForMiniKit(timeoutMs = 5000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    
+    const checkReady = setInterval(() => {
+      if (MiniKit.isInstalled()) {
+        clearInterval(checkReady);
+        resolve(true);
+      } else if (Date.now() - startTime > timeoutMs) {
+        clearInterval(checkReady);
+        resolve(false);
+      }
+    }, 100); // Check every 100ms
+  });
+}
+
+/**
  * Get current MiniKit status without throwing
  */
 export function getMiniKitStatus() {

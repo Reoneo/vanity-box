@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
+import { waitForMiniKit, isInWorldApp } from '@/lib/minikit';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -42,6 +43,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
+  const [minikitReady, setMinikitReady] = useState(false);
+  const [initializationError, setInitializationError] = useState<string | null>(null);
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -66,6 +69,35 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       fetchAptosBalance();
     }
   }, [petraConnected, petraAccount, petraNetwork]);
+
+  useEffect(() => {
+    // Check MiniKit readiness if in World App
+    if (!isInWorldApp()) {
+      console.log('📱 Not in World App, skipping MiniKit initialization check');
+      return;
+    }
+    
+    console.log('🔄 Checking MiniKit readiness...');
+    let attempts = 0;
+    const maxAttempts = 10;
+    const checkInterval = 500; // Check every 500ms
+    
+    const checkMiniKit = setInterval(() => {
+      attempts++;
+      
+      if (MiniKit.isInstalled()) {
+        setMinikitReady(true);
+        clearInterval(checkMiniKit);
+        console.log('✅ MiniKit ready after', attempts * checkInterval, 'ms');
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkMiniKit);
+        setInitializationError('MiniKit failed to initialize. Please close and reopen the app.');
+        console.error('❌ MiniKit initialization timeout after', maxAttempts * checkInterval, 'ms');
+      }
+    }, checkInterval);
+    
+    return () => clearInterval(checkMiniKit);
+  }, []);
 
   useEffect(() => {
     // Check environment on mount
@@ -129,6 +161,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return;
     }
 
+    // Check if MiniKit is ready in World App
+    if (isInWorldApp() && !minikitReady) {
+      toast.error('World App is still initializing. Please wait a moment and try again.');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -146,15 +184,18 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         return;
       }
       
-      // If we detect World App but MiniKit isn't installed, try to wait for it
+      // If we detect World App but MiniKit isn't installed, wait for it with better timeout
       if ((hasWorldApp || hasWorldAppUA) && !isInstalled) {
         console.log('⏳ World App detected, waiting for MiniKit to initialize...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const isReady = await waitForMiniKit(3000);
         
-        // Check again after waiting
-        if (!MiniKit.isInstalled()) {
-          console.warn('⚠️ MiniKit still not ready, but proceeding anyway since we detected World App');
+        if (!isReady) {
+          setIsLoading(false);
+          toast.error('MiniKit initialization timeout. Please try closing and reopening the app.');
+          return;
         }
+        
+        console.log('✅ MiniKit is now ready');
       }
 
       console.log('🔄 Initiating wallet authentication with World App native UI...');
@@ -401,6 +442,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
           console.log('  - isTelegramWebView():', isTelegramWebView());
           console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
+          console.log('  - minikitReady:', minikitReady);
           
           if (isTelegramWebView()) {
             console.log('✅ Detected Telegram WebView - connecting TON wallet');
@@ -414,7 +456,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             connectPetra();
           }
         }}
-        disabled={isLoading}
+        disabled={isLoading || (isInWorldApp() && !minikitReady)}
         variant="outline"
         size="sm"
         className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
@@ -423,6 +465,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           <>
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
             {t('connecting')}
+          </>
+        ) : (isInWorldApp() && !minikitReady) ? (
+          <>
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            Initializing...
           </>
         ) : (
           t('Connect')
