@@ -47,6 +47,18 @@ export function initMiniKit(appId: string): Promise<void> {
 }
 
 /**
+ * Safely check if MiniKit is installed without breaking during build/SSR
+ */
+export function safeIsInstalled(): boolean {
+  if (typeof window === 'undefined') return false; // SSR/build time
+  try {
+    return MiniKit.isInstalled();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Check if the app is running inside World App
  * NOTE: Do NOT check MiniKit.isInstalled() here as it creates circular dependency
  */
