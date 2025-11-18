@@ -437,13 +437,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           console.log('  - window.Telegram:', !!(window as any).Telegram);
           console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
           console.log('  - isTelegramWebView():', isTelegramWebView());
+          console.log('  - isInWorldApp():', isInWorldApp());
           console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
           console.log('  - minikitReady:', minikitReady);
           
           if (isTelegramWebView()) {
             console.log('✅ Detected Telegram WebView - connecting TON wallet');
             handleTelegramConnect();
-          } else if (MiniKit.isInstalled()) {
+          } else if (isInWorldApp() || minikitReady || MiniKit.isInstalled()) {
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
