@@ -338,12 +338,12 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 {deletingDomain === `${domain.name}.${domain.domain}` ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Deleting...
+                    {t('deleting')}
                   </>
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
+                    {t('delete')}
                   </>
                 )}
               </Button>
@@ -364,7 +364,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
           setDeleteDialogOpen(false);
 
           try {
-            toast.info('Deleting domain...');
+            toast.info(t('deleting_domain'));
 
             const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
               body: { 
@@ -380,14 +380,14 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             }
 
             if (data?.success) {
-              toast.success('Domain deleted successfully!');
+              toast.success(t('domain_deleted'));
               await fetchDomains();
             } else {
-              throw new Error(data?.error || 'Failed to delete domain');
+              throw new Error(data?.error || t('failed_to_delete'));
             }
           } catch (error) {
             console.error('Delete error:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to delete domain');
+            toast.error(error instanceof Error ? error.message : t('failed_to_delete'));
           } finally {
             setDeletingDomain(null);
             setDomainToDelete(null);
