@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { waitForMiniKit, isInWorldApp, safeIsInstalled, ensureReady } from '@/lib/minikit';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -43,8 +42,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
-  const [minikitReady, setMinikitReady] = useState(false);
-  const [initializationError, setInitializationError] = useState<string | null>(null);
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -69,31 +66,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       fetchAptosBalance();
     }
   }, [petraConnected, petraAccount, petraNetwork]);
-
-  useEffect(() => {
-    // ALWAYS check MiniKit readiness since MiniKit.install() is called on app load
-    // Don't skip this based on isInWorldApp() to avoid circular dependency
-    console.log('🔄 Checking MiniKit readiness...');
-    let attempts = 0;
-    const maxAttempts = 10;
-    const checkInterval = 500; // Check every 500ms
-    
-    const checkMiniKit = setInterval(() => {
-      attempts++;
-      
-      if (MiniKit.isInstalled()) {
-        setMinikitReady(true);
-        clearInterval(checkMiniKit);
-        console.log('✅ MiniKit ready after', attempts * checkInterval, 'ms');
-      } else if (attempts >= maxAttempts) {
-        clearInterval(checkMiniKit);
-        setInitializationError('MiniKit failed to initialize. Please close and reopen the app.');
-        console.error('❌ MiniKit initialization timeout after', maxAttempts * checkInterval, 'ms');
-      }
-    }, checkInterval);
-    
-    return () => clearInterval(checkMiniKit);
-  }, []);
 
   useEffect(() => {
     // Check environment on mount
@@ -152,31 +124,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const handleConnect = async () => {
-    if (petraConnected) return;
+    // If Petra is already connected, just return
+    if (petraConnected) {
+      return;
+    }
+
+    // Check if running in World App
+    if (!MiniKit.isInstalled()) {
+      console.log('Not in World App - redirecting to World App ecosystem page');
+      window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+      return;
+    }
 
     setIsLoading(true);
-    
     try {
-      // Try to ensure MiniKit is ready, but don't fail if it takes time
-      try {
-        await ensureReady();
-        console.log('✅ MiniKit confirmed ready');
-      } catch (readyError) {
-        // If ensureReady fails, check if we're actually in World App
-        const hasWorldApp = typeof (window as any).WorldApp !== 'undefined';
-        const hasWorldAppUA = navigator.userAgent.includes('World App') || navigator.userAgent.includes('WorldApp');
-        
-        if (!hasWorldApp && !hasWorldAppUA) {
-          // Not in World App at all - guide user
-          toast.error('Please open this in World App');
-          window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
-          setIsLoading(false);
-          return;
-        }
-        // Otherwise, continue trying - user IS in World App
-        console.log('⚠️ MiniKit not fully ready, but attempting connection...');
-      }
-
       console.log('🔄 Initiating wallet authentication with World App native UI...');
       
       const nonce = generateNonce();
@@ -410,69 +371,44 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
-  // Not connected - show connect dropdown menu
+  // Not connected - show connect button
   if (!user && !petraConnected) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-            className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
-          >
-            {isLoading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                {t('connecting')}
-              </>
-            ) : (
-              <>
-                <Wallet className="w-4 h-4 mr-2" />
-                {t('Connect')}
-                <ChevronDown className="w-4 h-4 ml-1" />
-              </>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2">
-          <DropdownMenuItem 
-            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
-            onSelect={(e) => {
-              e.preventDefault();
-              console.log('🌍 User selected World Chain');
-              handleConnect();
-            }}
-          >
-            <img src={wldLogo} alt="World Chain" className="w-5 h-5" />
-            <span>World Chain</span>
-          </DropdownMenuItem>
+      <Button
+        onClick={() => {
+          // Check for Telegram FIRST (highest priority for mini apps)
+          console.log('🔍 Checking environment...');
+          console.log('  - window.Telegram:', !!(window as any).Telegram);
+          console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
+          console.log('  - isTelegramWebView():', isTelegramWebView());
+          console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
           
-          <DropdownMenuItem 
-            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
-            onSelect={(e) => {
-              e.preventDefault();
-              console.log('⚡ User selected TON');
-              handleTelegramConnect();
-            }}
-          >
-            <img src={tonLogo} alt="TON" className="w-5 h-5" />
-            <span>TON</span>
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem 
-            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
-            onSelect={(e) => {
-              e.preventDefault();
-              console.log('🔷 User selected Aptos (Petra)');
-              connectPetra();
-            }}
-          >
-            <img src={petraIcon} alt="Aptos" className="w-5 h-5" />
-            <span>Aptos (Petra)</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          if (isTelegramWebView()) {
+            console.log('✅ Detected Telegram WebView - connecting TON wallet');
+            handleTelegramConnect();
+          } else if (MiniKit.isInstalled()) {
+            console.log('✅ Detected World App - connecting World ID');
+            handleConnect();
+          } else {
+            console.log('✅ Desktop browser - connecting Petra wallet');
+            // Try Petra wallet connection
+            connectPetra();
+          }
+        }}
+        disabled={isLoading}
+        variant="outline"
+        size="sm"
+        className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
+      >
+        {isLoading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            {t('connecting')}
+          </>
+        ) : (
+          t('Connect')
+        )}
+      </Button>
     );
   }
 

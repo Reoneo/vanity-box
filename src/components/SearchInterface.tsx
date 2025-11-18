@@ -1,6 +1,4 @@
-// SearchInterface Component - Main search and discovery interface
-import React, { useState, useEffect, Suspense, startTransition } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   X,
@@ -25,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
+import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,14 +34,11 @@ import { MiniKit } from "@worldcoin/minikit-js";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "next-themes";
 import { SubdomainMintModal } from "@/components/SubdomainMintModal";
+import { TonSubdomainMintModal } from "@/components/TonSubdomainMintModal";
+import { TonDomainManagementPanel } from "@/components/TonDomainManagementPanel";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
-import { TonBoundary } from "@/components/TonBoundary";
-
-// Lazy-load TON components (default exports)
-const TonSubdomainMintModal = React.lazy(() => import('@/components/TonSubdomainMintModal'));
-const TonDomainManagementPanel = React.lazy(() => import('@/components/TonDomainManagementPanel'));
 
 import {
   DropdownMenu,
@@ -158,7 +154,6 @@ interface SearchInterfaceProps {
 }
 
 export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfaceProps) => {
-  const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
@@ -309,14 +304,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
 
 
-  const getSubdomainPrice = (fullSubdomain: string) => {
-    // Extract just the subdomain label (before first dot)
-    const subdomainLabel = fullSubdomain.split(".")[0];
-    
-    // test321 is free for testing
-    if (subdomainLabel.toLowerCase() === "test321") return 0;
-    
-    const length = subdomainLabel.length;
+  const getSubdomainPrice = (subdomain: string) => {
+    const length = subdomain.length;
     if (length === 1) return 100;
     if (length === 2) return 50;
     if (length === 3) return 25;
@@ -1019,7 +1008,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   const handleManageTonDomain = (domain: any) => {
     setSelectedTonDomain(domain);
-    startTransition(() => setShowTonManagementPanel(true));
+    setShowTonManagementPanel(true);
   };
 
   const handleFlipCard = (index: number) => {
@@ -1043,31 +1032,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     <>
       {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
 
-      {/* TON Subdomain Mint Modal (isolated errors) */}
-      <Suspense fallback={null}>
-        <TonBoundary>
-          {showTonMintModal && selectedResult && (
-            <TonSubdomainMintModal
-              isOpen={showTonMintModal}
-              onClose={handleBackToResults}
-              subdomain={searchQuery || selectedResult.name.replace('.vanity.ton', '')}
-              resultAvatar={selectedResult.imageUrl}
-            />
-          )}
-        </TonBoundary>
-      </Suspense>
+      {/* TON Subdomain Mint Modal */}
+      <TonSubdomainMintModal
+        isOpen={showTonMintModal}
+        onClose={handleBackToResults}
+      />
 
-      {/* TON Domain Management Panel (isolated errors) */}
-      <Suspense fallback={null}>
-        <TonBoundary>
-          {showTonManagementPanel && selectedTonDomain && (
-            <TonDomainManagementPanel
-              domain={selectedTonDomain}
-              onBack={handleBackToResults}
-            />
-          )}
-        </TonBoundary>
-      </Suspense>
+      {/* TON Domain Management Panel */}
+      {showTonManagementPanel && selectedTonDomain && (
+        <TonDomainManagementPanel
+          domain={selectedTonDomain}
+          onBack={handleBackToResults}
+        />
+      )}
 
       <div className="w-full">
         {/* Show mint interface when a result is selected */}
@@ -1082,11 +1059,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           />
         ) : !showTonManagementPanel ? (
           <>
+            <DynamicMetaTags
+              username={web3BioProfile?.identity || displayQuery}
+              displayName={web3BioProfile?.displayName}
+              description={web3BioProfile?.description}
+              avatar={web3BioProfile?.avatar}
+              banner={web3BioProfile?.header}
+            />
+            
+            {/* Search bar and header - always shown */}
             {!showMyIDs && (
               <>
                 {/* Header always at the top */}
                 <div className="mt-2">
-                  <PersonalizedHeader
+                  <PersonalizedHeader 
                     user={{ walletAddress }} 
                     resultsCount={showInitialResults && hasSearched && ensResults.length > 0 ? ensResults.length : undefined}
                   />
@@ -1117,7 +1103,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                   Protocol
                                 </DropdownMenuLabel>
                                 <div className="grid grid-cols-2 gap-2">
-                                  {protocols.slice(0, 4).map((protocol) => (
+                                  {protocols.map((protocol) => (
                                     <button
                                       key={protocol}
                                       onClick={() => handleFilterChange("protocol", protocol)}
@@ -1132,22 +1118,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                     </button>
                                   ))}
                                 </div>
-                                {/* TON protocol on its own row, centered */}
-                                {protocols.length > 4 && (
-                                  <div className="flex justify-center mt-2">
-                                    <button
-                                      onClick={() => handleFilterChange("protocol", protocols[4])}
-                                      className={cn(
-                                        "px-3 py-2 rounded-lg text-sm font-medium transition-all w-[calc(50%-0.25rem)]",
-                                        filters.protocol.includes(protocols[4])
-                                          ? "bg-[#D4AF37] text-black"
-                                          : "bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 text-white dark:text-white light:text-black hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-gray-100/50"
-                                      )}
-                                    >
-                                      {protocols[4]}
-                                    </button>
-                                  </div>
-                                )}
                               </div>
 
                               <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
@@ -1823,14 +1793,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         {/* Price - visible on larger screens */}
                         <div className="text-right hidden sm:block">
                           <div className="font-bold text-[#D4AF37] text-base">
-                            ${(() => {
-                              try {
-                                return getSubdomainPrice(fullName).toFixed(2);
-                              } catch (e) {
-                                console.error('Price calculation error:', e, 'fullName:', fullName);
-                                return '5.00';
-                              }
-                            })()}
+                            ${result.price?.toFixed(2) || '5.00'}
                           </div>
                           <div className="text-xs text-muted-foreground">USD</div>
                         </div>

@@ -18,6 +18,7 @@ import {
   Edit3
 } from "lucide-react";
 import { toast } from "sonner";
+import { Address, beginCell, toNano } from "@ton/core";
 import { supabase } from "@/integrations/supabase/client";
 
 import tonLogo from "@/assets/ton-logo.png";
@@ -119,7 +120,6 @@ export const TonDomainManagementPanel: React.FC<TonDomainManagementPanelProps> =
       setIsSaving(true);
 
       // Build the message to update subdomain DNS records
-      const { Address, beginCell, toNano } = await import("@ton/core");
       const body = beginCell()
         .storeUint(1, 32) // op code for DNS update (different from creation)
         .storeStringTail(domain.subdomain)
@@ -177,7 +177,6 @@ export const TonDomainManagementPanel: React.FC<TonDomainManagementPanelProps> =
       setIsDeleting(true);
 
       // Build the message to delete subdomain
-      const { beginCell, toNano } = await import("@ton/core");
       const body = beginCell()
         .storeUint(2, 32) // op code for deletion
         .storeStringTail(domain.subdomain)
@@ -520,5 +519,3 @@ export const TonDomainManagementPanel: React.FC<TonDomainManagementPanelProps> =
     </div>
   );
 };
-
-export default TonDomainManagementPanel;

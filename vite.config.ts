@@ -10,11 +10,6 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  build: {
-    target: 'es2020',
-    minify: 'esbuild',
-    sourcemap: true,
-  },
   plugins: [
     react(), 
     mode === "development" && componentTagger(),

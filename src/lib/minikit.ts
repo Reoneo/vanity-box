@@ -47,53 +47,6 @@ export function initMiniKit(appId: string): Promise<void> {
 }
 
 /**
- * Safely check if MiniKit is installed without breaking during build/SSR
- */
-export function safeIsInstalled(): boolean {
-  if (typeof window === 'undefined') return false; // SSR/build time
-  try {
-    return MiniKit.isInstalled();
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Check if the app is running inside World App
- * NOTE: Do NOT check MiniKit.isInstalled() here as it creates circular dependency
- */
-export function isInWorldApp(): boolean {
-  const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
-  const hasWorldAppUA = navigator.userAgent.includes("World App") || 
-                       navigator.userAgent.includes("WorldApp");
-  
-  console.log('[isInWorldApp] Detection:', { hasWorldApp, hasWorldAppUA });
-  
-  return hasWorldApp || hasWorldAppUA;
-}
-
-/**
- * Wait for MiniKit to be ready with timeout.
- * @param {number} timeoutMs - Maximum time to wait in milliseconds
- * @returns {Promise<boolean>} True if MiniKit became ready, false on timeout
- */
-export function waitForMiniKit(timeoutMs = 5000): Promise<boolean> {
-  return new Promise((resolve) => {
-    const startTime = Date.now();
-    
-    const checkReady = setInterval(() => {
-      if (MiniKit.isInstalled()) {
-        clearInterval(checkReady);
-        resolve(true);
-      } else if (Date.now() - startTime > timeoutMs) {
-        clearInterval(checkReady);
-        resolve(false);
-      }
-    }, 100); // Check every 100ms
-  });
-}
-
-/**
  * Get current MiniKit status without throwing
  */
 export function getMiniKitStatus() {
@@ -101,7 +54,7 @@ export function getMiniKitStatus() {
     isInstalled: MiniKit.isInstalled(),
     isReady,
     version: (MiniKit as any).version || "unknown",
-    inWorldApp: isInWorldApp(),
+    inWorldApp: typeof (window as any).WorldApp !== "undefined",
   };
 }
 
@@ -209,43 +162,19 @@ export async function ensurePayPermission(): Promise<void> {
     const reqPerm = (MiniKit.commandsAsync as any).requestPermission;
     
     if (typeof getPerms === "function") {
-      console.log("[MiniKit] Checking existing permissions...");
-      const res = await Promise.race([
-        getPerms(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("getPermissions timeout")), 5000))
-      ]);
-      
+      const res = await getPerms();
       const hasPay = Array.isArray(res?.finalPayload?.permissions) 
         ? res.finalPayload.permissions.includes("pay") 
         : false;
         
-      console.log("[MiniKit] Current permissions:", { hasPay, permissions: res?.finalPayload?.permissions });
-        
       if (!hasPay && typeof reqPerm === "function") {
-        console.log("[MiniKit] Requesting 'pay' permission (30s timeout)...");
-        
-        // Add timeout to prevent indefinite hanging
-        await Promise.race([
-          reqPerm({ permissions: ["pay"] }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Permission request timed out after 30s. User may have denied or closed the prompt.")), 30000)
-          )
-        ]);
-        
-        console.log("[MiniKit] Pay permission granted");
+        console.log("[MiniKit] Requesting 'pay' permission");
+        await reqPerm({ permissions: ["pay"] });
       } else {
         console.log("[MiniKit] Pay permission already granted");
       }
-    } else {
-      console.log("[MiniKit] getPermissions not available, skipping permission check");
     }
-  } catch (e: any) {
-    console.error("[MiniKit] Permission error:", e);
-    // If it's a timeout, throw it so the UI can show proper error
-    if (e?.message?.includes("timeout") || e?.message?.includes("timed out")) {
-      throw new Error("Permission request timed out. Please try again and approve the permission request in World App.");
-    }
-    // For other errors, log but don't fail - payment might still work
+  } catch (e) {
     console.debug("[MiniKit] Permission preflight skipped (SDK may not support):", e);
   }
 }

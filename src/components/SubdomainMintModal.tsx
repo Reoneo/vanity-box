@@ -12,10 +12,8 @@ import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
 import { setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
 import { fullEnsName } from "@/lib/ensRedirect/profile";
-import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus, isInWorldApp } from "@/lib/minikit";
+import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
 import { usePetraWallet } from "@/hooks/use-petra-wallet";
-import { WorldAppRequiredBanner } from "@/components/WorldAppRequiredBanner";
-import { HowToOpenInWorldApp } from "@/components/HowToOpenInWorldApp";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
@@ -68,8 +66,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     eth: 2600,
     wld: 1.85,
     usdc: 1.0,
-    apt: 8.5,
-    ton: 5.5,
+    apt: 8.5, // Add APT price
   });
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
@@ -83,10 +80,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   // MiniKit status tracking
   const [miniKitStatus, setMiniKitStatus] = useState<"checking" | "ready" | "unavailable">("checking");
   const [miniKitError, setMiniKitError] = useState<string>("");
-  
-  // World App detection
-  const [inWorldApp, setInWorldApp] = useState(false);
-  const [showWorldAppGuide, setShowWorldAppGuide] = useState(false);
   
   // Wallet connection countdown
   const [walletConnectionTimeRemaining, setWalletConnectionTimeRemaining] = useState<number | null>(null);
@@ -212,20 +205,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   }, [isAptosDomain, isConnected, account?.address]);
 
   useEffect(() => {
-    // Detect World App on mount AND when minikit status changes
-    const detected = isInWorldApp();
-    const minikitInstalled = MiniKit.isInstalled();
-    const worldAppDetected = detected || minikitInstalled;
-    
-    setInWorldApp(worldAppDetected);
-    console.log('[SubdomainMintModal] World App detection:', { 
-      detected, 
-      minikitInstalled, 
-      final: worldAppDetected 
-    });
-  }, [miniKitStatus]); // Re-check when MiniKit status changes
-
-  useEffect(() => {
     let mounted = true;
 
     const load = async () => {
@@ -271,7 +250,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
   // ---------- pricing ----------
 
-  // Payment methods - conditional on domain type and World App availability
+  // Payment methods - conditional on domain type
   const paymentMethods = isAptosDomain 
     ? [
         {
@@ -279,14 +258,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           name: "APT",
           icon: aptosLogo,
           rate: 1 / cryptoPrices.apt, // $ → APT
-          requiresWorldApp: false,
         },
         {
           id: "USDC" as PaymentMethod,
           name: "USDC",
           icon: usdcLogo,
           rate: 1, // $ → USDC (1:1)
-          requiresWorldApp: true,
         },
       ]
     : [
@@ -295,14 +272,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           name: "USDC",
           icon: usdcLogo,
           rate: 1, // $ → USDC (1:1)
-          requiresWorldApp: true,
         },
         {
           id: "WLD" as PaymentMethod,
           name: "WLD",
           icon: theme === "dark" ? wldLogoDark : wldLogoLight,
           rate: 1 / cryptoPrices.wld, // $ → WLD
-          requiresWorldApp: true,
         },
       ];
 
@@ -532,9 +507,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       paymentMethod, 
       amount: convertedPrice,
       isFree,
-      registrationYears,
-      inWorldApp,
-      miniKitStatus
+      registrationYears 
     });
     
     await sendHaptic("light");
@@ -544,22 +517,16 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         setPaymentFlowStep("idle");
         localStorage.removeItem('paymentFlowState');
         toast.info("Fetching prices — try again in a moment.");
-        setIsMinting(false);
         return;
       }
 
-      // Ensure MiniKit is ready FIRST before any wallet operations
+      // Ensure MiniKit is ready
       console.log("[PaymentFlow] Step: checking_minikit");
       
       try {
         await ensureReady();
         const status = getMiniKitStatus();
         console.log("[PaymentFlow] MiniKit ready:", status);
-        
-        // Update inWorldApp state based on actual MiniKit status
-        if (status.isInstalled) {
-          setInWorldApp(true);
-        }
       } catch (readyError: any) {
         setPaymentFlowStep("idle");
         localStorage.removeItem('paymentFlowState');
@@ -983,12 +950,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
         )}
 
-        
-        {/* World App Required Banner */}
-        {!inWorldApp && (
-          <WorldAppRequiredBanner onLearnMore={() => setShowWorldAppGuide(true)} />
-        )}
-
         <div className="p-4 pt-16 pb-4 flex flex-col items-center space-y-3">
           {/* Avatar */}
           <div className="w-24 h-24 flex items-center justify-center rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-white dark:bg-gray-800">
@@ -1034,27 +995,20 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
           {/* Payment toggle */}
           <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-full p-1">
-            {paymentMethods.map((method) => {
-              const isDisabled = method.requiresWorldApp && !inWorldApp;
-              return (
-                <button
-                  key={method.id}
-                  onClick={() => !isDisabled && setPaymentMethod(method.id)}
-                  disabled={isDisabled}
-                  title={isDisabled ? `${method.name} payments require World App` : undefined}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm",
-                    paymentMethod === method.id
-                      ? "bg-[#D4AF37] text-black shadow-md"
-                      : isDisabled
-                      ? "text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
-                  )}
-                >
-                  {method.name}
-                </button>
-              );
-            })}
+            {paymentMethods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => setPaymentMethod(method.id)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full font-medium transition-all duration-200 text-sm",
+                  paymentMethod === method.id
+                    ? "bg-[#D4AF37] text-black shadow-md"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
+                )}
+              >
+                {method.name}
+              </button>
+            ))}
           </div>
 
           {/* Price */}
@@ -1127,10 +1081,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               onClick={handleMintNow}
               disabled={
                 isMinting || 
-                (isAptosDomain 
-                  ? (!isInstalled || !isConnected) 
-                  : (miniKitStatus === "checking")
-                )
+                (isAptosDomain ? (!isInstalled || !isConnected) : (miniKitStatus === "unavailable" || miniKitStatus === "checking"))
               }
               className="w-full mt-3 bg-gradient-to-r from-[#D4AF37] to-[#F2D574] hover:from-[#C9A532] hover:to-[#E8C760] text-black font-bold text-lg h-14 rounded-full shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -1138,28 +1089,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 ? "Processing..." 
                 : isAptosDomain
                   ? (!isInstalled ? "Install Petra Wallet" : !isConnected ? "Connect Petra Wallet" : "Mint Now")
-                  : miniKitStatus === "checking"
-                    ? "Checking World App..."
-                    : "Mint Now"}
+                  : miniKitStatus === "unavailable" 
+                    ? "Open in World App to Mint"
+                    : miniKitStatus === "checking"
+                      ? "Checking World App..."
+                      : "Mint Now"}
             </Button>
-            
-            {/* Show World App guide for users not in World App */}
-            {miniKitStatus === "unavailable" && !isAptosDomain && (
-              <div className="w-full mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <p className="text-sm text-amber-900 dark:text-amber-100 text-center">
-                  World App is required for {paymentMethod} payments.
-                </p>
-                <button
-                  onClick={() => setShowWorldAppGuide(true)}
-                  className="w-full mt-2 text-sm text-[#D4AF37] hover:underline font-medium"
-                >
-                  How to open in World App?
-                </button>
-              </div>
-            )}
-            
-            {/* Show guide link when button is disabled due to World App requirement - REMOVED as we now allow the mint to proceed */}
-            {/* The flow will connect wallet on demand */}
           </div>
         </div>
         
@@ -1192,12 +1127,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           </div>
         )}
       </div>
-      
-      {/* How to Open in World App Modal */}
-      <HowToOpenInWorldApp 
-        isOpen={showWorldAppGuide} 
-        onClose={() => setShowWorldAppGuide(false)} 
-      />
     </div>
   );
 };
