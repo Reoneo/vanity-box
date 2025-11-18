@@ -438,7 +438,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2">
           <DropdownMenuItem 
             className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
-            onClick={() => {
+            onSelect={(e) => {
+              e.preventDefault();
               console.log('🌍 User selected World Chain');
               handleConnect();
             }}
@@ -449,7 +450,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           
           <DropdownMenuItem 
             className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
-            onClick={() => {
+            onSelect={(e) => {
+              e.preventDefault();
               console.log('⚡ User selected TON');
               handleTelegramConnect();
             }}
@@ -460,7 +462,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           
           <DropdownMenuItem 
             className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
-            onClick={() => {
+            onSelect={(e) => {
+              e.preventDefault();
               console.log('🔷 User selected Aptos (Petra)');
               connectPetra();
             }}
