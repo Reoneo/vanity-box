@@ -902,7 +902,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           className="absolute top-6 left-6 z-10 flex items-center gap-2 text-gray-900 dark:text-white hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back</span>
+          <span className="font-medium">{t('back')}</span>
         </button>
         
         {/* MiniKit Status Badge */}
@@ -919,7 +919,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             }
           }}>
             <div className="w-2 h-2 bg-red-500 rounded-full" />
-            <span className="text-xs font-medium text-red-700 dark:text-red-300">Refresh</span>
+            <span className="text-xs font-medium text-red-700 dark:text-red-300">{t('refresh')}</span>
           </div>
         )}
         
@@ -929,7 +929,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           <div className="absolute top-20 left-0 right-0 z-10 flex flex-col items-center gap-2">
             <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded-full">
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                Waiting for wallet approval... ({walletConnectionTimeRemaining}s)
+                {t('waiting_for_wallet')} ({walletConnectionTimeRemaining}s)
               </span>
             </div>
             {walletConnectionTimeRemaining < 60 && (
@@ -944,7 +944,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 }}
                 className="text-xs hover:bg-white/10"
               >
-                Cancel & Retry
+                {t('cancel_retry')}
               </Button>
             )}
           </div>
@@ -1020,18 +1020,18 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 {paymentMethod === "APT" && `${convertedPrice.toFixed(4)} APT`}
               </>
             </div>
-            {isLoadingPrices && <div className="text-xs text-gray-500">Updating prices…</div>}
+            {isLoadingPrices && <div className="text-xs text-gray-500">{t('updating_prices')}</div>}
             {isAptosDomain && isConnected && (
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
                 {isLoadingBalance ? (
-                  <div>Loading balance...</div>
+                  <div>{t('loading_balance')}</div>
                 ) : (
                   <>
                     {paymentMethod === "APT" && aptBalance !== null && (
-                      <div>Balance: {aptBalance.toFixed(4)} APT</div>
+                      <div>{t('balance')}: {aptBalance.toFixed(4)} APT</div>
                     )}
                     {paymentMethod === "USDC" && usdcBalance !== null && (
-                      <div>Balance: {usdcBalance.toFixed(2)} USDC</div>
+                      <div>{t('balance')}: {usdcBalance.toFixed(2)} USDC</div>
                     )}
                   </>
                 )}
@@ -1086,14 +1086,14 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               className="w-full mt-3 bg-gradient-to-r from-[#D4AF37] to-[#F2D574] hover:from-[#C9A532] hover:to-[#E8C760] text-black font-bold text-lg h-14 rounded-full shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isMinting 
-                ? "Processing..." 
+                ? t('processing')
                 : isAptosDomain
-                  ? (!isInstalled ? "Install Petra Wallet" : !isConnected ? "Connect Petra Wallet" : "Mint Now")
+                  ? (!isInstalled ? t('install_petra_wallet') : !isConnected ? t('connect_petra_wallet') : t('mint_now'))
                   : miniKitStatus === "unavailable" 
-                    ? "Open in World App to Mint"
+                    ? t('open_in_world_app')
                     : miniKitStatus === "checking"
-                      ? "Checking World App..."
-                      : "Mint Now"}
+                      ? t('checking_world_app')
+                      : t('mint_now')}
             </Button>
           </div>
         </div>
@@ -1106,20 +1106,20 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 <div className="w-5 h-5 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {paymentFlowStep === "checking_minikit" && "Checking World App..."}
-                    {paymentFlowStep === "connecting_wallet" && "Connecting wallet..."}
-                    {paymentFlowStep === "requesting_permission" && "Requesting payment permission..."}
-                    {paymentFlowStep === "preparing_payment" && "Preparing payment..."}
-                    {paymentFlowStep === "processing_payment" && "Processing payment..."}
-                    {paymentFlowStep === "verifying_payment" && "Verifying on blockchain..."}
-                    {paymentFlowStep === "minting" && "Minting subdomain..."}
+                    {paymentFlowStep === "checking_minikit" && t('checking_world_app_step')}
+                    {paymentFlowStep === "connecting_wallet" && t('connecting_wallet')}
+                    {paymentFlowStep === "requesting_permission" && t('requesting_permission')}
+                    {paymentFlowStep === "preparing_payment" && t('preparing_payment')}
+                    {paymentFlowStep === "processing_payment" && t('processing_payment')}
+                    {paymentFlowStep === "verifying_payment" && t('verifying_blockchain')}
+                    {paymentFlowStep === "minting" && t('minting_subdomain')}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                    {paymentFlowStep === "connecting_wallet" && "Approve in World App"}
-                    {paymentFlowStep === "requesting_permission" && "Grant pay permission"}
-                    {paymentFlowStep === "processing_payment" && "Check World App to complete"}
-                    {paymentFlowStep === "verifying_payment" && "This may take a few seconds..."}
-                    {paymentFlowStep === "minting" && "Almost done!"}
+                    {paymentFlowStep === "connecting_wallet" && t('approve_in_world_app')}
+                    {paymentFlowStep === "requesting_permission" && t('grant_pay_permission')}
+                    {paymentFlowStep === "processing_payment" && t('check_world_app')}
+                    {paymentFlowStep === "verifying_payment" && t('verifying_wait')}
+                    {paymentFlowStep === "minting" && t('almost_done')}
                   </p>
                 </div>
               </div>
