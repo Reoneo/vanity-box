@@ -20,11 +20,8 @@ const queryClient = new QueryClient();
 const tonConnectManifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
 
 const App = () => {
-  console.log('[App] Component rendering');
-  
   // Prevent only pull-to-refresh, allow internal scrolling
   useEffect(() => {
-    console.log('[App] useEffect running');
     // Prevent pull-to-refresh on document level
     document.body.style.overscrollBehavior = 'none';
     return () => {
