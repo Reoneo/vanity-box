@@ -99,7 +99,7 @@ const Index = () => {
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
                     aria-label="World App"
                   >
-                    <div className="rounded-full border border-[#D4AF37] p-1">
+                    <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
                       <img 
                         src={worldAppIcon} 
                         alt="World App" 
@@ -114,7 +114,7 @@ const Index = () => {
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
                     aria-label="Telegram"
                   >
-                    <div className="rounded-full border border-[#D4AF37] p-1">
+                    <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
                       <img 
                         src={telegramIcon} 
                         alt="Telegram" 
@@ -129,7 +129,7 @@ const Index = () => {
                     className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
                     aria-label="Petra"
                   >
-                    <div className="rounded-full border border-[#D4AF37] p-1">
+                    <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
                       <img 
                         src={petraIcon} 
                         alt="Petra" 

@@ -1903,8 +1903,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         )}
       </div>
       
-      {/* Bottom spacing for scroll */}
-      <div className="h-32" />
+      {/* Bottom spacing for footer */}
+      <div className="h-20" />
 
       {/* Detail View Modal */}
       {showDetailView && detailViewResult && (
