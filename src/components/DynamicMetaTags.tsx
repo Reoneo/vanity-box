@@ -15,12 +15,12 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   avatar,
   banner,
 }) => {
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vanitybox.app';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://vanity.box';
   const supabaseUrl = 'https://nttbfocahntuwqtsgpfr.supabase.co';
   
   const title = username 
     ? `${displayName || username} - Vanity.box` 
-    : 'Vanity.box - Premium Web3 Identity';
+    : 'Vanity.box - Web3 Digital Identity';
   
   const desc = description || `View ${displayName || username}'s Web3 identity on Vanity.box`;
   const currentUrl = username 
