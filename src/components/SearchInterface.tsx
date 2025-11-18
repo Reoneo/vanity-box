@@ -1854,29 +1854,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         <div className="font-bold text-foreground text-sm sm:text-base leading-tight">
                           {fullName}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {Array.isArray(result.category) ? result.category.join('+') : result.category}
-                        </div>
-                      </div>
-
-                      {/* Price & Actions Group */}
-                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                        {/* Network Badge */}
-                        <div className="flex-shrink-0">
+                        <div className="flex items-center gap-2 mt-0.5">
                           <Badge 
                             variant="secondary" 
                             className="text-[10px] sm:text-xs px-2 py-0.5 bg-background/50 text-foreground border border-border/50"
                           >
                             {result.network}
                           </Badge>
-                        </div>
-
-                        {/* Price */}
-                        <div className="text-right flex-shrink-0 min-w-[60px]">
                           <div className="font-bold text-[#D4AF37] text-sm">
                             ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Actions Group */}
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
 
                         {/* Info Icon */}
                         <Button
