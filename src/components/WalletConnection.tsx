@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { waitForMiniKit, isInWorldApp } from '@/lib/minikit';
+import { waitForMiniKit, isInWorldApp, safeIsInstalled } from '@/lib/minikit';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -453,7 +453,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             connectPetra();
           }
         }}
-        disabled={isLoading || (!minikitReady && MiniKit.isInstalled())}
+        disabled={isLoading || (!minikitReady && safeIsInstalled())}
         variant="outline"
         size="sm"
         className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
@@ -463,7 +463,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
             {t('connecting')}
           </>
-        ) : (!minikitReady && MiniKit.isInstalled()) ? (
+        ) : (!minikitReady && safeIsInstalled()) ? (
           <>
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
             Initializing...
