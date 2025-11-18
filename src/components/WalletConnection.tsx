@@ -410,49 +410,66 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
-  // Not connected - show connect button
+  // Not connected - show connect dropdown menu
   if (!user && !petraConnected) {
     return (
-      <Button
-        onClick={() => {
-          if (isLoading) return; // Prevent double-clicks
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                {t('connecting')}
+              </>
+            ) : (
+              <>
+                <Wallet className="w-4 h-4 mr-2" />
+                {t('Connect')}
+                <ChevronDown className="w-4 h-4 ml-1" />
+              </>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2">
+          <DropdownMenuItem 
+            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
+            onClick={() => {
+              console.log('🌍 User selected World Chain');
+              handleConnect();
+            }}
+          >
+            <img src={wldLogo} alt="World Chain" className="w-5 h-5" />
+            <span>World Chain</span>
+          </DropdownMenuItem>
           
-          // 1. Check Telegram FIRST (highest priority)
-          if (isTelegramWebView()) {
-            console.log('✅ Telegram detected - connecting TON');
-            handleTelegramConnect();
-            return;
-          }
+          <DropdownMenuItem 
+            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
+            onClick={() => {
+              console.log('⚡ User selected TON');
+              handleTelegramConnect();
+            }}
+          >
+            <img src={tonLogo} alt="TON" className="w-5 h-5" />
+            <span>TON</span>
+          </DropdownMenuItem>
           
-          // 2. Check World App - be more permissive
-          const hasWorldApp = typeof (window as any).WorldApp !== 'undefined';
-          const hasWorldAppUA = navigator.userAgent.includes('World App') || 
-                                 navigator.userAgent.includes('WorldApp');
-          
-          if (hasWorldApp || hasWorldAppUA || safeIsInstalled()) {
-            console.log('✅ World App detected - connecting World Chain');
-            handleConnect();
-            return;
-          }
-          
-          // 3. Default to Petra (desktop browsers)
-          console.log('✅ Desktop browser - connecting Petra');
-          connectPetra();
-        }}
-        disabled={isLoading}
-        variant="outline"
-        size="sm"
-        className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
-      >
-        {isLoading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-            {t('connecting')}
-          </>
-        ) : (
-          t('Connect')
-        )}
-      </Button>
+          <DropdownMenuItem 
+            className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center gap-3"
+            onClick={() => {
+              console.log('🔷 User selected Aptos (Petra)');
+              connectPetra();
+            }}
+          >
+            <img src={petraIcon} alt="Aptos" className="w-5 h-5" />
+            <span>Aptos (Petra)</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
