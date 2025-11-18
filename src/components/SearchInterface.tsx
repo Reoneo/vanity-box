@@ -1003,13 +1003,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setSelectedResult(result);
     // Check if this is vanity.ton
     if (result.name.toLowerCase() === 'vanity.ton') {
-      const subdomain = searchQuery || result.name.replace('.vanity.ton', '');
-      navigate('/ton-mint', { 
-        state: { 
-          subdomain,
-          resultAvatar: result.imageUrl 
-        } 
-      });
+      setShowTonMintModal(true);
     } else {
       setShowMintInterface(true);
     }

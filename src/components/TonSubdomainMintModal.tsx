@@ -408,9 +408,11 @@ export const TonSubdomainMintModal: React.FC<TonSubdomainMintModalProps> = ({
           <Button
             onClick={handleMintSubdomain}
             disabled={!userFriendlyAddress || isMinting}
-            className="w-full h-12 text-base font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full h-12 text-base font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isMinting ? (
+            {!userFriendlyAddress ? (
+              "Connect Wallet First"
+            ) : isMinting ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Minting...
