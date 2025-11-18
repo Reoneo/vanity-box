@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { waitForMiniKit, isInWorldApp, safeIsInstalled } from '@/lib/minikit';
+import { waitForMiniKit, isInWorldApp, safeIsInstalled, ensureReady } from '@/lib/minikit';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -157,41 +157,32 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return;
     }
 
-    // Check if MiniKit is ready - required for World App authentication
-    if (!minikitReady && MiniKit.isInstalled()) {
-      toast.error('World App is still initializing. Please wait a moment and try again.');
-      return;
-    }
-
     setIsLoading(true);
     
     try {
-      // Check if running in World App - with enhanced detection
-      const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
-      const hasWorldAppUA = navigator.userAgent.includes("World App") || navigator.userAgent.includes("WorldApp");
-      const isInstalled = MiniKit.isInstalled();
+      // Always try to ensure MiniKit is ready first
+      console.log('🔄 Ensuring MiniKit is ready...');
       
-      console.log('🔍 World App detection:', { hasWorldApp, hasWorldAppUA, isInstalled });
-      
-      if (!isInstalled && !hasWorldApp && !hasWorldAppUA) {
-        console.log('Not in World App - redirecting to World App ecosystem page');
+      try {
+        await ensureReady();
+        console.log('✅ MiniKit confirmed ready');
+      } catch (readyError: any) {
+        console.error('❌ MiniKit not ready:', readyError);
         setIsLoading(false);
-        window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
-        return;
-      }
-      
-      // If we detect World App but MiniKit isn't installed, wait for it with better timeout
-      if ((hasWorldApp || hasWorldAppUA) && !isInstalled) {
-        console.log('⏳ World App detected, waiting for MiniKit to initialize...');
-        const isReady = await waitForMiniKit(3000);
         
-        if (!isReady) {
-          setIsLoading(false);
-          toast.error('MiniKit initialization timeout. Please try closing and reopening the app.');
-          return;
+        // Check if we're actually in World App
+        const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
+        const hasWorldAppUA = navigator.userAgent.includes("World App") || navigator.userAgent.includes("WorldApp");
+        
+        if (hasWorldApp || hasWorldAppUA) {
+          // We're in World App but MiniKit failed to initialize
+          toast.error('World App is still initializing. Please wait a moment and try again.');
+        } else {
+          // We're not in World App at all
+          toast.error('Please open this app in World App to connect.');
+          window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
         }
-        
-        console.log('✅ MiniKit is now ready');
+        return;
       }
 
       console.log('🔄 Initiating wallet authentication with World App native UI...');

@@ -209,19 +209,43 @@ export async function ensurePayPermission(): Promise<void> {
     const reqPerm = (MiniKit.commandsAsync as any).requestPermission;
     
     if (typeof getPerms === "function") {
-      const res = await getPerms();
+      console.log("[MiniKit] Checking existing permissions...");
+      const res = await Promise.race([
+        getPerms(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("getPermissions timeout")), 5000))
+      ]);
+      
       const hasPay = Array.isArray(res?.finalPayload?.permissions) 
         ? res.finalPayload.permissions.includes("pay") 
         : false;
         
+      console.log("[MiniKit] Current permissions:", { hasPay, permissions: res?.finalPayload?.permissions });
+        
       if (!hasPay && typeof reqPerm === "function") {
-        console.log("[MiniKit] Requesting 'pay' permission");
-        await reqPerm({ permissions: ["pay"] });
+        console.log("[MiniKit] Requesting 'pay' permission (30s timeout)...");
+        
+        // Add timeout to prevent indefinite hanging
+        await Promise.race([
+          reqPerm({ permissions: ["pay"] }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Permission request timed out after 30s. User may have denied or closed the prompt.")), 30000)
+          )
+        ]);
+        
+        console.log("[MiniKit] Pay permission granted");
       } else {
         console.log("[MiniKit] Pay permission already granted");
       }
+    } else {
+      console.log("[MiniKit] getPermissions not available, skipping permission check");
     }
-  } catch (e) {
+  } catch (e: any) {
+    console.error("[MiniKit] Permission error:", e);
+    // If it's a timeout, throw it so the UI can show proper error
+    if (e?.message?.includes("timeout") || e?.message?.includes("timed out")) {
+      throw new Error("Permission request timed out. Please try again and approve the permission request in World App.");
+    }
+    // For other errors, log but don't fail - payment might still work
     console.debug("[MiniKit] Permission preflight skipped (SDK may not support):", e);
   }
 }
