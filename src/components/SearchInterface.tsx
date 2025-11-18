@@ -1827,7 +1827,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 {ensResults.map((result, index) => {
                   const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
                   const isTaken = takenSubdomains.has(result.name.toLowerCase());
-                  const isComingSoon = result.enabled === false;
+                  const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt';
                   const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
                   
                    return (
