@@ -103,6 +103,7 @@ interface ENSResult {
   price: number;
   category: string | string[];
   club: string | string[];
+  network?: string;
   spotifyUrl?: string;
   selectable?: boolean;
   enabled?: boolean;
@@ -1840,12 +1841,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                       {/* Price & Actions Group */}
                       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                        {/* Price - always visible */}
-                        <div className="text-right">
-                          <div className="font-bold text-[#D4AF37] text-base">
+                        {/* Network Badge */}
+                        <div className="flex-shrink-0">
+                          <Badge 
+                            variant="secondary" 
+                            className="text-[10px] sm:text-xs px-2 py-0.5 bg-background/50 text-foreground border border-border/50"
+                          >
+                            {result.network}
+                          </Badge>
+                        </div>
+
+                        {/* Price - replaces USD */}
+                        <div className="text-right flex-shrink-0 min-w-[60px]">
+                          <div className="font-bold text-[#D4AF37] text-sm sm:text-base">
                             ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                           </div>
-                          <div className="text-xs text-muted-foreground">USD</div>
                         </div>
 
                         {/* Info Icon */}
