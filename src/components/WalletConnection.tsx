@@ -152,37 +152,29 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   const handleConnect = async () => {
-    // If Petra is already connected, just return
-    if (petraConnected) {
-      return;
-    }
+    if (petraConnected) return;
 
     setIsLoading(true);
     
     try {
-      // Always try to ensure MiniKit is ready first
-      console.log('🔄 Ensuring MiniKit is ready...');
-      
+      // Try to ensure MiniKit is ready, but don't fail if it takes time
       try {
         await ensureReady();
         console.log('✅ MiniKit confirmed ready');
-      } catch (readyError: any) {
-        console.error('❌ MiniKit not ready:', readyError);
-        setIsLoading(false);
+      } catch (readyError) {
+        // If ensureReady fails, check if we're actually in World App
+        const hasWorldApp = typeof (window as any).WorldApp !== 'undefined';
+        const hasWorldAppUA = navigator.userAgent.includes('World App') || navigator.userAgent.includes('WorldApp');
         
-        // Check if we're actually in World App
-        const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
-        const hasWorldAppUA = navigator.userAgent.includes("World App") || navigator.userAgent.includes("WorldApp");
-        
-        if (hasWorldApp || hasWorldAppUA) {
-          // We're in World App but MiniKit failed to initialize
-          toast.error('World App is still initializing. Please wait a moment and try again.');
-        } else {
-          // We're not in World App at all
-          toast.error('Please open this app in World App to connect.');
+        if (!hasWorldApp && !hasWorldAppUA) {
+          // Not in World App at all - guide user
+          toast.error('Please open this in World App');
           window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+          setIsLoading(false);
+          return;
         }
-        return;
+        // Otherwise, continue trying - user IS in World App
+        console.log('⚠️ MiniKit not fully ready, but attempting connection...');
       }
 
       console.log('🔄 Initiating wallet authentication with World App native UI...');
@@ -423,28 +415,31 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return (
       <Button
         onClick={() => {
-          // Check for Telegram FIRST (highest priority for mini apps)
-          console.log('🔍 Checking environment...');
-          console.log('  - window.Telegram:', !!(window as any).Telegram);
-          console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
-          console.log('  - isTelegramWebView():', isTelegramWebView());
-          console.log('  - isInWorldApp():', isInWorldApp());
-          console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
-          console.log('  - minikitReady:', minikitReady);
+          if (isLoading) return; // Prevent double-clicks
           
+          // 1. Check Telegram FIRST (highest priority)
           if (isTelegramWebView()) {
-            console.log('✅ Detected Telegram WebView - connecting TON wallet');
+            console.log('✅ Telegram detected - connecting TON');
             handleTelegramConnect();
-          } else if (isInWorldApp() || minikitReady || MiniKit.isInstalled()) {
-            console.log('✅ Detected World App - connecting World ID');
-            handleConnect();
-          } else {
-            console.log('✅ Desktop browser - connecting Petra wallet');
-            // Try Petra wallet connection
-            connectPetra();
+            return;
           }
+          
+          // 2. Check World App - be more permissive
+          const hasWorldApp = typeof (window as any).WorldApp !== 'undefined';
+          const hasWorldAppUA = navigator.userAgent.includes('World App') || 
+                                 navigator.userAgent.includes('WorldApp');
+          
+          if (hasWorldApp || hasWorldAppUA || safeIsInstalled()) {
+            console.log('✅ World App detected - connecting World Chain');
+            handleConnect();
+            return;
+          }
+          
+          // 3. Default to Petra (desktop browsers)
+          console.log('✅ Desktop browser - connecting Petra');
+          connectPetra();
         }}
-        disabled={isLoading || (!minikitReady && safeIsInstalled())}
+        disabled={isLoading}
         variant="outline"
         size="sm"
         className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
@@ -453,11 +448,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           <>
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
             {t('connecting')}
-          </>
-        ) : (!minikitReady && safeIsInstalled()) ? (
-          <>
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-            Initializing...
           </>
         ) : (
           t('Connect')
