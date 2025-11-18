@@ -1840,10 +1840,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                       {/* Price & Actions Group */}
                       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                        {/* Price - visible on larger screens */}
-                        <div className="text-right hidden sm:block">
+                        {/* Price - always visible */}
+                        <div className="text-right">
                           <div className="font-bold text-[#D4AF37] text-base">
-                            ${result.price?.toFixed(2) || '5.00'}
+                            ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                           </div>
                           <div className="text-xs text-muted-foreground">USD</div>
                         </div>
