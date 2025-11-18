@@ -129,15 +129,34 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return;
     }
 
-    // Check if running in World App
-    if (!MiniKit.isInstalled()) {
-      console.log('Not in World App - redirecting to World App ecosystem page');
-      window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
-      return;
-    }
-
     setIsLoading(true);
+    
     try {
+      // Check if running in World App - with enhanced detection
+      const hasWorldApp = typeof (window as any).WorldApp !== "undefined";
+      const hasWorldAppUA = navigator.userAgent.includes("World App") || navigator.userAgent.includes("WorldApp");
+      const isInstalled = MiniKit.isInstalled();
+      
+      console.log('🔍 World App detection:', { hasWorldApp, hasWorldAppUA, isInstalled });
+      
+      if (!isInstalled && !hasWorldApp && !hasWorldAppUA) {
+        console.log('Not in World App - redirecting to World App ecosystem page');
+        setIsLoading(false);
+        window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+        return;
+      }
+      
+      // If we detect World App but MiniKit isn't installed, try to wait for it
+      if ((hasWorldApp || hasWorldAppUA) && !isInstalled) {
+        console.log('⏳ World App detected, waiting for MiniKit to initialize...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check again after waiting
+        if (!MiniKit.isInstalled()) {
+          console.warn('⚠️ MiniKit still not ready, but proceeding anyway since we detected World App');
+        }
+      }
+
       console.log('🔄 Initiating wallet authentication with World App native UI...');
       
       const nonce = generateNonce();
