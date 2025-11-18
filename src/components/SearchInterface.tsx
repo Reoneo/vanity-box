@@ -1169,8 +1169,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     {/* Header showing result count */}
                     <div className="mt-2">
                       <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                        <span className="text-black dark:text-white">{ensResults.length} ID&apos;s</span>{' '}
-                        <span className="text-[#D4AF37]">Found</span>
+                        <span className="text-black dark:text-white">{ensResults.length} {t('ids_found')}</span>{' '}
+                        <span className="text-[#D4AF37]">{t('found')}</span>
                       </h1>
                     </div>
                     <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
@@ -1603,7 +1603,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
                 <div className="bg-gray-900/90 border-2 border-[#D4AF37] rounded-lg p-6 flex flex-col items-center gap-3">
                   <Hourglass className="w-12 h-12 text-[#D4AF37] animate-pulse" />
-                  <p className="text-white font-medium">Loading...</p>
+                  <p className="text-white font-medium">{t('loading')}</p>
                 </div>
               </div>
             )}
@@ -1613,7 +1613,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col pointer-events-auto">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">Followers ({totalFollowers})</h3>
+                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">{t('followers')} ({totalFollowers})</h3>
                     <button
                       onClick={() => setShowFollowersList(false)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -1624,7 +1624,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <div className="p-4 border-b border-[#D4AF37]/30">
                     <div className="relative">
                       <Input
-                        placeholder="Search followers..."
+                        placeholder={t('search_followers')}
                         value={followersSearchQuery}
                         onChange={(e) => setFollowersSearchQuery(e.target.value)}
                         className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
@@ -1703,7 +1703,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                         disabled={isLoadingMore}
                       >
-                        {isLoadingMore ? "Loading..." : "Load More"}
+                        {isLoadingMore ? t('loading') : t('load_more')}
                       </Button>
                     </div>
                   )}
@@ -1716,7 +1716,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col pointer-events-auto">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">Following ({totalFollowing})</h3>
+                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">{t('following')} ({totalFollowing})</h3>
                     <button
                       onClick={() => setShowFollowingList(false)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -1727,7 +1727,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <div className="p-4 border-b border-[#D4AF37]/30">
                     <div className="relative">
                       <Input
-                        placeholder="Search following..."
+                        placeholder={t('search_following')}
                         value={followingSearchQuery}
                         onChange={(e) => setFollowingSearchQuery(e.target.value)}
                         className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
@@ -1806,7 +1806,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
                         disabled={isLoadingMore}
                       >
-                        {isLoadingMore ? "Loading..." : "Load More"}
+                        {isLoadingMore ? t('loading') : t('load_more')}
                       </Button>
                     </div>
                   )}
@@ -1891,10 +1891,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           }}
                         >
                           <span className="hidden sm:inline">
-                            {isTaken ? "Taken" : isComingSoon ? "Coming Soon" : "Mint Now"}
+                            {isTaken ? t('taken') : isComingSoon ? t('coming_soon') : t('mint_now')}
                           </span>
                           <span className="sm:hidden">
-                            {isTaken ? "Taken" : isComingSoon ? "Soon" : "Mint"}
+                            {isTaken ? t('taken') : isComingSoon ? t('soon') : t('mint')}
                           </span>
                         </Button>
                       </div>
@@ -1908,8 +1908,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             <div className="w-full sm:max-w-3xl sm:mx-auto px-4">
               {hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
                 <div className="text-center py-12 animate-in fade-in duration-500">
-                  <p className="text-gray-400 text-lg mb-2">No results found</p>
-                  <p className="text-sm text-gray-500">Try searching with a different query</p>
+                  <p className="text-gray-400 text-lg mb-2">{t('no_results_found')}</p>
+                  <p className="text-sm text-gray-500">{t('try_different_query')}</p>
                   {theme === "light" && (
                     <img src={noResultsGif} alt="No results found" className="w-48 h-48 mx-auto mt-6 object-contain" />
                   )}
