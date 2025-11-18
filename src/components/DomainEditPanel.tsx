@@ -9,6 +9,7 @@ import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DomainEditPanelProps {
   domain: {
@@ -20,6 +21,7 @@ interface DomainEditPanelProps {
 }
 
 export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
+  const { t } = useLanguage();
   const [customRecords, setCustomRecords] = useState<{ key: string; value: string }[]>([]);
   const [newRecordKey, setNewRecordKey] = useState('');
   const [newRecordValue, setNewRecordValue] = useState('');
@@ -66,12 +68,12 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
 
   const handleDelete = async () => {
-    const confirmed = window.confirm(`Are you sure you want to delete ${domain.name}.${domain.domain}? This action cannot be undone.`);
+    const confirmed = window.confirm(t('delete_domain_confirm').replace('{domain}', `${domain.name}.${domain.domain}`));
     if (!confirmed) return;
     
     try {
       setIsLoading(true);
-      toast.info('Deleting domain from Namestone...');
+      toast.info(t('deleting_domain'));
       
       const subdomain = `${domain.name}.${domain.domain}`;
       
@@ -85,16 +87,16 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       }
 
       if (data?.success) {
-        toast.success('Domain deleted successfully!');
+        toast.success(t('domain_deleted'));
         window.dispatchEvent(new CustomEvent('domains-updated'));
         window.dispatchEvent(new CustomEvent('back-to-domains'));
       } else {
         console.error('Delete failed:', data);
-        throw new Error(data?.error || 'Failed to delete domain');
+        throw new Error(data?.error || t('failed_to_delete'));
       }
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete domain');
+      toast.error(error instanceof Error ? error.message : t('failed_to_delete'));
     } finally {
       setIsLoading(false);
     }
@@ -111,13 +113,13 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const confirmTransferAndSend = async () => {
     const to = transferAddress.trim();
     if (!/^0x[a-fA-F0-9]{40}$/.test(to)) {
-      toast.error('Invalid Ethereum address');
+      toast.error(t('invalid_eth_address'));
       return;
     }
 
     try {
       setIsLoading(true);
-      toast.info('Transferring domain...');
+      toast.info(t('transferring_domain'));
 
       const subdomain = `${domain.name}.${domain.domain}`;
 
@@ -137,7 +139,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       }
     } catch (error) {
       console.error('Transfer error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to transfer domain');
+      toast.error(error instanceof Error ? error.message : t('failed_to_transfer'));
     } finally {
       setIsLoading(false);
       setIsConfirmOpen(false);
@@ -147,7 +149,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const handleSaveRecords = async () => {
     try {
       setIsLoading(true);
-      toast.info('Saving records to Namestone...');
+      toast.info(t('saving_records'));
       
       const subdomain = `${domain.name}.${domain.domain}`;
       
@@ -199,18 +201,18 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       if (error) throw error;
 
       if (data?.success) {
-        toast.success('Records saved successfully!');
+        toast.success(t('records_saved'));
         window.dispatchEvent(new CustomEvent('domains-updated'));
         
         // Auto-launch ENS app with the domain
         const ensUrl = `https://app.ens.domains/${subdomain}`;
         window.open(ensUrl, '_blank', 'noopener,noreferrer');
       } else {
-        throw new Error(data?.error || 'Failed to save records');
+        throw new Error(data?.error || t('failed_to_save_records'));
       }
     } catch (error) {
       console.error('Save records error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to save records');
+      toast.error(error instanceof Error ? error.message : t('failed_to_save_records'));
     } finally {
       setIsLoading(false);
     }
@@ -241,13 +243,13 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Back
+        {t('back')}
       </button>
       <div className="bg-[hsl(var(--card))] dark:bg-[hsl(var(--card))] border border-border rounded-2xl shadow-lg p-6 luxury-card luxury-glow">
         {/* Records Section - Only show when activeTab is 'records' */}
         {activeTab === 'records' && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-foreground text-center">ENS Text Records</h3>
+            <h3 className="font-semibold text-foreground text-center">{t('ens_text_records')}</h3>
             {['email', 'url', 'avatar', 'description', 'com.github', 'com.twitter', 'com.discord'].map((key) => (
               <div key={key} className="space-y-2">
                 <Label className="text-foreground">{key}</Label>
@@ -314,14 +316,14 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Transfer</AlertDialogTitle>
+            <AlertDialogTitle>{t('confirm_transfer')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to transfer {domain.name}.{domain.domain} to {transferAddress}? This action cannot be undone.
+              {t('confirm_transfer_message').replace('{domain}', `${domain.name}.${domain.domain}`).replace('{address}', transferAddress)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTransferAndSend}>Transfer</AlertDialogAction>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTransferAndSend}>{t('transfer')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
