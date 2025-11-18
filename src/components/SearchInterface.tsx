@@ -1169,7 +1169,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     {/* Header showing result count */}
                     <div className="mt-2">
                       <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                        <span className="text-white dark:text-white">{ensResults.length} ID's</span>{' '}
+                        <span className="text-black dark:text-black">{ensResults.length} ID&apos;s</span>{' '}
                         <span className="text-[#D4AF37]">Found</span>
                       </h1>
                     </div>
@@ -1849,7 +1849,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         }}
                       />
 
-                      {/* Name & Category */}
+                      {/* Name, Badge & Price */}
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-foreground text-sm sm:text-base leading-tight">
                           {fullName}
@@ -1861,9 +1861,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           >
                             {result.network}
                           </Badge>
-                          <div className="font-bold text-[#D4AF37] text-sm">
-                            ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
-                          </div>
+                        </div>
+                        <div className="font-bold text-[#D4AF37] text-sm mt-1 text-center">
+                          ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                         </div>
                       </div>
 
