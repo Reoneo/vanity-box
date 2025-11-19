@@ -1,5 +1,8 @@
 project_id = "gdjjboorqviobvvygpca"
 
+[functions.get-ens-subdomain-profile]
+verify_jwt = false
+
 [functions.get-aptos-balance]
 verify_jwt = false
 
