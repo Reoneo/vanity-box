@@ -134,7 +134,7 @@ serve(async (req) => {
     }
 
     // Merge with Namestone text records if available
-    if (namestoneRecords?.textRecords) {
+    if (namestoneRecords?.textRecords && Array.isArray(namestoneRecords.textRecords)) {
       namestoneRecords.textRecords.forEach((record: any) => {
         const key = record.key.toLowerCase();
         if (key.includes('twitter') && !links.twitter) {
