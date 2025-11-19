@@ -224,6 +224,37 @@ Deno.serve(async (req) => {
       fullName: `${subdomainLabel}.${cleanDomain}`,
       expiryDate: expiryDate.toISOString()
     });
+
+    // Set default redirect (non-blocking)
+    console.log('[mint-subdomain] Setting default redirect...');
+    try {
+      const redirectResult = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/set-namestone-redirect`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          },
+          body: JSON.stringify({
+            parentDomain: cleanDomain,
+            subname: subdomainLabel,
+            redirectType: "default",
+          }),
+        }
+      );
+      
+      if (!redirectResult.ok) {
+        console.warn('[mint-subdomain] Redirect setup failed (non-blocking):', await redirectResult.text());
+      } else {
+        const redirectData = await redirectResult.json();
+        console.log('[mint-subdomain] Redirect set:', redirectData);
+      }
+    } catch (redirectErr) {
+      // Non-blocking - log but don't fail the mint
+      console.warn('[mint-subdomain] Redirect setup error (non-blocking):', redirectErr);
+    }
+
     return j({ ok: true, subdomain: `${subdomainLabel}.${cleanDomain}`, expiryDate: expiryDate.toISOString() });
   } catch (e: any) {
     console.error("[Mint] Fatal:", e);
