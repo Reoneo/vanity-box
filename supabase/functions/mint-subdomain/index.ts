@@ -225,34 +225,48 @@ Deno.serve(async (req) => {
       expiryDate: expiryDate.toISOString()
     });
 
-    // Set default redirect (non-blocking)
+    // Set default redirect using Supabase client (non-blocking)
     console.log('[mint-subdomain] Setting default redirect...');
     try {
-      const redirectResult = await fetch(
-        `${Deno.env.get("SUPABASE_URL")}/functions/v1/set-namestone-redirect`,
+      const { data: redirectData, error: redirectError } = await supabase.functions.invoke(
+        'set-namestone-redirect',
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-          },
-          body: JSON.stringify({
+          body: {
             parentDomain: cleanDomain,
             subname: subdomainLabel,
             redirectType: "default",
-          }),
+          },
         }
       );
       
-      if (!redirectResult.ok) {
-        console.warn('[mint-subdomain] Redirect setup failed (non-blocking):', await redirectResult.text());
+      if (redirectError) {
+        console.error('[mint-subdomain] ❌ Redirect setup FAILED:', {
+          error: redirectError,
+          domain: `${subdomainLabel}.${cleanDomain}`,
+          timestamp: new Date().toISOString()
+        });
+      } else if (redirectData?.error) {
+        console.error('[mint-subdomain] ❌ Redirect setup returned error:', {
+          error: redirectData.error,
+          domain: `${subdomainLabel}.${cleanDomain}`,
+          timestamp: new Date().toISOString()
+        });
       } else {
-        const redirectData = await redirectResult.json();
-        console.log('[mint-subdomain] Redirect set:', redirectData);
+        console.log('[mint-subdomain] ✅ Redirect set successfully:', {
+          domain: `${subdomainLabel}.${cleanDomain}`,
+          cid: redirectData?.cid,
+          contenthash: redirectData?.contenthash,
+          timestamp: new Date().toISOString()
+        });
       }
     } catch (redirectErr) {
       // Non-blocking - log but don't fail the mint
-      console.warn('[mint-subdomain] Redirect setup error (non-blocking):', redirectErr);
+      console.error('[mint-subdomain] ❌ Redirect setup exception:', {
+        error: redirectErr,
+        message: redirectErr?.message,
+        domain: `${subdomainLabel}.${cleanDomain}`,
+        timestamp: new Date().toISOString()
+      });
     }
 
     return j({ ok: true, subdomain: `${subdomainLabel}.${cleanDomain}`, expiryDate: expiryDate.toISOString() });

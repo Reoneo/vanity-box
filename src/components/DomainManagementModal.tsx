@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Send, Trash2, Plus, X } from 'lucide-react';
+import { Gift, Send, Trash2, Plus, X, RefreshCw, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniKit } from '@worldcoin/minikit-js';
@@ -33,6 +33,12 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
   const [newRecordKey, setNewRecordKey] = useState('');
   const [newRecordValue, setNewRecordValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSettingRedirect, setIsSettingRedirect] = useState(false);
+  const [redirectStatus, setRedirectStatus] = useState<{
+    hasRedirect: boolean;
+    url?: string;
+    cid?: string;
+  } | null>(null);
 
   // ENS standard text records
   const [ensRecords, setEnsRecords] = useState({
