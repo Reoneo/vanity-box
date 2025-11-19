@@ -255,6 +255,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     };
   }, []);
 
+  // Hide search bar when profile is loaded, show when cleared
+  useEffect(() => {
+    if (web3BioProfile) {
+      setShowSearchBar(false);
+      window.dispatchEvent(new Event('profile-loaded'));
+    } else {
+      setShowSearchBar(true);
+      window.dispatchEvent(new Event('profile-cleared'));
+    }
+  }, [web3BioProfile]);
+
 
   const protocols = ["DNS", "ENS"];
   const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];

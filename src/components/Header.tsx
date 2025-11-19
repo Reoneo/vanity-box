@@ -19,6 +19,7 @@ export const Header: React.FC = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [isPetraConnected, setIsPetraConnected] = useState(false);
   const [showMyIds, setShowMyIds] = useState(false);
+  const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,6 +45,12 @@ export const Header: React.FC = () => {
     
     const handleShowMyIds = () => setShowMyIds(true);
     const handleHideMyIds = () => setShowMyIds(false);
+    
+    const handleProfileLoaded = () => setHasProfile(true);
+    const handleProfileCleared = () => {
+      setHasProfile(false);
+      setShowSearchBar(false);
+    };
 
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('mint-window-open', handleMintOpen);
@@ -52,6 +59,8 @@ export const Header: React.FC = () => {
     window.addEventListener('wallet-disconnected', handleWalletDisconnected);
     window.addEventListener('show-my-ids', handleShowMyIds);
     window.addEventListener('back-to-domains', handleHideMyIds);
+    window.addEventListener('profile-loaded', handleProfileLoaded);
+    window.addEventListener('profile-cleared', handleProfileCleared);
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -61,6 +70,8 @@ export const Header: React.FC = () => {
       window.removeEventListener('wallet-disconnected', handleWalletDisconnected);
       window.removeEventListener('show-my-ids', handleShowMyIds);
       window.removeEventListener('back-to-domains', handleHideMyIds);
+      window.removeEventListener('profile-loaded', handleProfileLoaded);
+      window.removeEventListener('profile-cleared', handleProfileCleared);
     };
   }, []);
 
@@ -127,9 +138,21 @@ export const Header: React.FC = () => {
                   </div>
                 </button>
               </TriggerOrClose>
+              
+              {/* Show search icon only when profile is loaded */}
+              {hasProfile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-[#1a1a1a] hover:bg-[#1a1a1a]/5"
+                  onClick={toggleSearchBar}
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
+              )}
 
               {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
-              {showSearchIcon && !isMintWindowOpen && !showMyIds && (
+              {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
                 <>
                   <SpotifyPauseButton />
                   <button
@@ -141,11 +164,6 @@ export const Header: React.FC = () => {
                     <Search className="w-5 h-5 text-black" />
                   </button>
                 </>
-              )}
-              
-              {/* Spotify Pause when search icon is not visible */}
-              {!showSearchIcon && (
-                <SpotifyPauseButton />
               )}
             </div>
           )}
