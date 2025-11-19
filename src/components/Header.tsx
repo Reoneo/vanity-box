@@ -186,9 +186,21 @@ export const Header: React.FC = () => {
                     </div>
                   </button>
                 </TriggerOrClose>
+                
+                {/* Show search icon only when profile is loaded */}
+                {hasProfile && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#1a1a1a] hover:bg-[#1a1a1a]/5"
+                    onClick={toggleSearchBar}
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                )}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
-            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
               <>
                 <SpotifyPauseButton />
                 <button
@@ -239,9 +251,21 @@ export const Header: React.FC = () => {
                 </div>
               </button>
             </TriggerOrClose>
+            
+            {/* Show search icon only when profile is loaded */}
+            {hasProfile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-[#1a1a1a] hover:bg-[#1a1a1a]/5"
+                onClick={toggleSearchBar}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            )}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
-            {showSearchIcon && !isMintWindowOpen && !showMyIds && (
+            {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
               <>
                 <SpotifyPauseButton />
                 <button
