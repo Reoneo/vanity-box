@@ -141,14 +141,14 @@ export const Header: React.FC = () => {
               
               {/* Show search icon only when profile is loaded */}
               {hasProfile && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-[#1a1a1a] hover:bg-[#1a1a1a]/5"
+                <button
+                  type="button"
+                  aria-label="Toggle search"
                   onClick={toggleSearchBar}
+                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
                 >
-                  <Search className="h-5 w-5" />
-                </Button>
+                  <Search className="w-5 h-5 text-black" />
+                </button>
               )}
 
               {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
@@ -189,14 +189,14 @@ export const Header: React.FC = () => {
                 
                 {/* Show search icon only when profile is loaded */}
                 {hasProfile && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-[#1a1a1a] hover:bg-[#1a1a1a]/5"
+                  <button
+                    type="button"
+                    aria-label="Toggle search"
                     onClick={toggleSearchBar}
+                    className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
                   >
-                    <Search className="h-5 w-5" />
-                  </Button>
+                    <Search className="w-5 h-5 text-black" />
+                  </button>
                 )}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
@@ -254,14 +254,14 @@ export const Header: React.FC = () => {
             
             {/* Show search icon only when profile is loaded */}
             {hasProfile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-[#1a1a1a] hover:bg-[#1a1a1a]/5"
+              <button
+                type="button"
+                aria-label="Toggle search"
                 onClick={toggleSearchBar}
+                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
               >
-                <Search className="h-5 w-5" />
-              </Button>
+                <Search className="w-5 h-5 text-black" />
+              </button>
             )}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
