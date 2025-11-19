@@ -575,274 +575,285 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
 
-      // Use web3.bio for ALL lookups - it supports .eth, .box, wallet addresses, and more
-      console.log('🔍 Fetching web3.bio profile for:', normalizedQuery);
-      try {
-        // Retry logic with timeout for reliability
-        const fetchWithRetry = async (url: string, retries = 3, timeout = 10000) => {
-          for (let i = 0; i < retries; i++) {
-            try {
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), timeout);
-              
-              const response = await fetch(url, { 
-                signal: controller.signal,
-                headers: {
-                  'Accept': 'application/json',
-                }
-              });
-              
-              clearTimeout(timeoutId);
-              
-              if (!response.ok) {
-                throw new Error(`Web3.bio API error: ${response.statusText}`);
-              }
-              
-              return response;
-            } catch (error) {
-              if (i === retries - 1) throw error;
-              console.log(`Retry ${i + 1}/${retries} for web3.bio API...`);
-              await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+      // Detect if this is a Namestone subdomain (2+ dots = subdomain)
+      const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
+      const isNamestoneSubdomain = dotCount >= 2;
+      console.log(`🔍 Query has ${dotCount} dots. Is Namestone subdomain:`, isNamestoneSubdomain);
+
+      // Use different fetch strategies based on name type
+      if (isNamestoneSubdomain) {
+        // NEW PATH: Direct ENS + Namestone lookup for subdomains
+        console.log('🔗 Fetching ENS subdomain profile directly for:', normalizedQuery);
+        try {
+          const { data, error } = await supabase.functions.invoke('get-ens-subdomain-profile', {
+            body: { subdomain: normalizedQuery }
+          });
+
+          if (error) {
+            console.error('❌ Error fetching ENS subdomain profile:', error);
+          } else if (data) {
+            console.log('✅ ENS subdomain profile found:', data);
+            setWeb3BioProfile(data);
+            setEnsResults([]);
+            
+            // Store ENS records if available
+            if (data.ensRecords) {
+              setEnsRecords(data.ensRecords);
             }
           }
-          throw new Error('Max retries reached');
-        };
-        
-        const response = await fetchWithRetry(`https://api.web3.bio/profile/${trimmedQuery}`);
-        const data = await response.json();
-
-        // Only process if we got valid data (has results)
-        if (data && Array.isArray(data) && data.length > 0) {
-          const profileData = data[0];
-          console.log('✅ Web3.bio profile data:', profileData);
-          setWeb3BioProfile(profileData);
-          setEnsResults([]);
-
-          // Fetch ENS text records (for .eth inputs OR any input that resolves to a primary ENS name)
-          let ensTextRecords: Record<string, string> = {};
-          try {
-            const publicClient = createPublicClient({
-              chain: mainnet,
-              transport: http(),
-            });
-
-            // Determine ENS name to read text records from
-            let ensNameToQuery: string | null = null;
-
-            if (normalizedQuery.endsWith('.eth')) {
-              // Direct .eth lookup
-              ensNameToQuery = normalize(trimmedQuery);
-            } else if (profileData.address) {
-              // Resolve primary ENS name from the returned address
-              try {
-                const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
-                if (primary) ensNameToQuery = normalize(primary);
-              } catch (_) {
-                /* ignore ENS name resolution failure */
-              }
-            }
-
-            if (ensNameToQuery) {
-              console.log('Fetching ENS text records for:', ensNameToQuery);
-              // All standard ENS text record keys + common social platforms
-              const textRecordKeys = [
-                'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
-                'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram',
-                'org.telegram', 'io.keybase', 'vnd.twitter', 'vnd.github',
-              ];
-
-              // Fetch all text records in parallel with a timeout
-              const fetchPromises = textRecordKeys.map((key) =>
-                Promise.race([
-                  publicClient.getEnsText({ name: ensNameToQuery!, key }),
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
-                ]).catch(() => null),
-              );
-
-              const textValues = await Promise.all(fetchPromises);
-
-              // Build records object with all non-null values
-              textRecordKeys.forEach((key, index) => {
-                if (textValues[index]) {
-                  ensTextRecords[key] = textValues[index] as string;
-                }
-              });
-              console.log('Fetched ENS text records:', ensTextRecords);
-            }
-          } catch (ensError) {
-            console.error('Error fetching ENS text records:', ensError);
-          }
-
-          // Build ENS-like text records from web3.bio profile + direct ENS records
-          try {
-            const records: Record<string, string> = {};
-            
-            // Start with ENS records (if .eth domain)
-            Object.assign(records, ensTextRecords);
-            
-            // Fallback to web3.bio data if ENS records are missing
-            if (!records.email && profileData?.email) records.email = profileData.email;
-            if (!records.avatar && profileData?.avatar) records.avatar = profileData.avatar;
-            if (!records.description && profileData?.description) records.description = profileData.description;
-            if (!records.location && profileData?.location) records.location = profileData.location;
-            
-            const website = profileData?.links?.website?.link || profileData?.url;
-            if (!records.url && website) records.url = website;
-            
-            const links = profileData?.links || {};
-            if (!records['com.twitter'] && links?.twitter?.handle) {
-              records['com.twitter'] = String(links.twitter.handle).replace(/^@/, '');
-            }
-            if (!records['com.github'] && links?.github?.handle) {
-              records['com.github'] = String(links.github.handle).replace(/^@/, '');
-            }
-            if (!records['com.discord'] && links?.discord?.handle) {
-              records['com.discord'] = String(links.discord.handle);
-            }
-            if (!records['org.telegram'] && links?.telegram?.handle) {
-              records['org.telegram'] = String(links.telegram.handle).replace(/^@/, '');
-            }
-            if (!records.contenthash && profileData?.contenthash) {
-              records.contenthash = String(profileData.contenthash);
-            }
-
-            setEnsRecords({
-              name: trimmedQuery,
-              address: profileData?.address,
-              avatar: records.avatar || profileData?.avatar,
-              records,
-            });
-
-            // Update web3BioProfile with ENS social links
-            const updatedProfile = { ...profileData };
-            if (!updatedProfile.links) updatedProfile.links = {};
-            
-            if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
-              const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
-              updatedProfile.links.twitter = {
-                link: `https://twitter.com/${twitterHandle}`,
-                handle: twitterHandle
-              };
-            }
-            if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
-              const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
-              updatedProfile.links.github = {
-                link: `https://github.com/${githubHandle}`,
-                handle: githubHandle
-              };
-            }
-            if (ensTextRecords['com.discord']) {
-              updatedProfile.links.discord = {
-                handle: ensTextRecords['com.discord']
-              };
-            }
-            if (ensTextRecords['org.telegram']) {
-              updatedProfile.links.telegram = {
-                handle: ensTextRecords['org.telegram']
-              };
-            }
-            if (ensTextRecords['com.reddit']) {
-              updatedProfile.links.reddit = {
-                link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
-                handle: ensTextRecords['com.reddit']
-              };
-            }
-            if (ensTextRecords['com.youtube']) {
-              updatedProfile.links.youtube = {
-                link: ensTextRecords['com.youtube'].startsWith('http') 
-                  ? ensTextRecords['com.youtube']
-                  : `https://youtube.com/${ensTextRecords['com.youtube']}`,
-                handle: ensTextRecords['com.youtube']
-              };
-            }
-            if (ensTextRecords['com.facebook']) {
-              updatedProfile.links.facebook = {
-                link: ensTextRecords['com.facebook'].startsWith('http')
-                  ? ensTextRecords['com.facebook']
-                  : `https://facebook.com/${ensTextRecords['com.facebook']}`,
-                handle: ensTextRecords['com.facebook']
-              };
-            }
-            if (ensTextRecords['com.spotify']) {
-              updatedProfile.links.spotify = {
-                link: ensTextRecords['com.spotify'],
-                handle: ensTextRecords['com.spotify']
-              };
-            }
-            if (ensTextRecords['com.linkedin']) {
-              updatedProfile.links.linkedin = {
-                link: ensTextRecords['com.linkedin'].startsWith('http')
-                  ? ensTextRecords['com.linkedin']
-                  : `https://linkedin.com/in/${ensTextRecords['com.linkedin']}`,
-                handle: ensTextRecords['com.linkedin']
-              };
-            }
-            if (ensTextRecords['com.instagram']) {
-              updatedProfile.links.instagram = {
-                link: `https://instagram.com/${ensTextRecords['com.instagram']}`,
-                handle: ensTextRecords['com.instagram']
-              };
-            }
-            if (ensTextRecords['url']) {
-              updatedProfile.links.website = {
-                link: ensTextRecords['url']
-              };
-            }
-            
-            // Update header from ENS text record if available
-            if (ensTextRecords['header']) {
-              updatedProfile.header = ensTextRecords['header'];
-            }
-            
-            setWeb3BioProfile(updatedProfile);
-          } catch (e) {
-            console.warn('Failed to map web3.bio profile to ENS records:', e);
-          }
-
-          // Fetch EFP stats and ENS records if we have an address or ENS name
-          if (profileData.address || trimmedQuery.includes(".eth")) {
-            const addressOrName = profileData.address || trimmedQuery;
-
-            // Fetch EFP stats using the ethfollow.xyz API directly
-            try {
-              const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
-
-              if (efpResponse.ok) {
-                const efpData = await efpResponse.json();
-                setEfpStats({
-                  followers_count: parseInt(efpData.followers_count) || 0,
-                  following_count: parseInt(efpData.following_count) || 0,
-                });
-              }
-            } catch (efpError) {
-              console.error("Error fetching EFP stats:", efpError);
-            }
-
-            // Fetch POAP data
-            if (profileData.address) {
-              try {
-                setIsLoadingPoaps(true);
-                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                  body: { walletAddress: profileData.address },
-                });
-
-                if (!poapError && poapData?.success) {
-                  setPoapCount(poapData.count || 0);
-                } else {
-                  console.error("Error fetching POAP data:", poapError);
-                  setPoapCount(0);
-                }
-              } catch (poapFetchError) {
-                console.error("Error fetching POAPs:", poapFetchError);
-                setPoapCount(0);
-              } finally {
-                setIsLoadingPoaps(false);
-              }
-            }
-          }
+        } catch (error) {
+          console.log('❌ Error fetching ENS subdomain profile:', error);
         }
-      } catch (error) {
-        console.log("web3.bio failed:", error);
+      } else {
+        // EXISTING PATH: Web3.bio lookup for regular names
+        console.log('🔍 Fetching web3.bio profile for:', normalizedQuery);
+        try {
+          // Retry logic with timeout for reliability
+          const fetchWithRetry = async (url: string, retries = 3, timeout = 10000) => {
+            for (let i = 0; i < retries; i++) {
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                
+                const response = await fetch(url, { 
+                  signal: controller.signal,
+                  headers: {
+                    'Accept': 'application/json',
+                  }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                  throw new Error(`Web3.bio API error: ${response.statusText}`);
+                }
+                
+                return response;
+              } catch (error) {
+                if (i === retries - 1) throw error;
+                console.log(`Retry ${i + 1}/${retries} for web3.bio API...`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+              }
+            }
+            throw new Error('Max retries reached');
+          };
+          
+          const response = await fetchWithRetry(`https://api.web3.bio/profile/${trimmedQuery}`);
+          const data = await response.json();
+
+          // Only process if we got valid data (has results)
+          if (data && Array.isArray(data) && data.length > 0) {
+            const profileData = data[0];
+            console.log('✅ Web3.bio profile data:', profileData);
+            setWeb3BioProfile(profileData);
+            setEnsResults([]);
+
+            // Fetch ENS text records (for .eth inputs OR any input that resolves to a primary ENS name)
+            let ensTextRecords: Record<string, string> = {};
+            try {
+              const publicClient = createPublicClient({
+                chain: mainnet,
+                transport: http(),
+              });
+
+              // Determine ENS name to read text records from
+              let ensNameToQuery: string | null = null;
+
+              if (normalizedQuery.endsWith('.eth')) {
+                // Direct .eth lookup
+                ensNameToQuery = normalize(trimmedQuery);
+              } else if (profileData.address) {
+                // Resolve primary ENS name from the returned address
+                try {
+                  const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
+                  if (primary) ensNameToQuery = normalize(primary);
+                } catch (_) {
+                  /* ignore ENS name resolution failure */
+                }
+              }
+
+              if (ensNameToQuery) {
+                console.log('Fetching ENS text records for:', ensNameToQuery);
+                // All standard ENS text record keys + common social platforms
+                const textRecordKeys = [
+                  'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
+                  'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram',
+                  'org.telegram', 'vnd.twitter', 'vnd.github'
+                ];
+
+                const recordPromises = textRecordKeys.map(async (key) => {
+                  try {
+                    const value = await publicClient.getEnsText({
+                      name: ensNameToQuery!,
+                      key,
+                    });
+                    return { key, value };
+                  } catch {
+                    return { key, value: null };
+                  }
+                });
+
+                const recordResults = await Promise.all(recordPromises);
+                recordResults.forEach(({ key, value }) => {
+                  if (value) ensTextRecords[key] = value;
+                });
+
+                console.log('✅ Fetched ENS text records:', ensTextRecords);
+              }
+            } catch (e) {
+              console.warn('Failed to fetch ENS text records:', e);
+            }
+
+            // Map ENS records into state for compatibility
+            const records = {
+              avatar: ensTextRecords.avatar || '',
+              email: ensTextRecords.email || '',
+              url: ensTextRecords.url || '',
+              description: ensTextRecords.description || '',
+              notice: ensTextRecords.notice || '',
+              keywords: ensTextRecords.keywords || '',
+              'com.discord': ensTextRecords['com.discord'] || '',
+              'com.github': ensTextRecords['com.github'] || '',
+              'com.twitter': ensTextRecords['com.twitter'] || '',
+              'org.telegram': ensTextRecords['org.telegram'] || '',
+            };
+
+            try {
+              setEnsRecords({
+                name: trimmedQuery,
+                address: profileData?.address,
+                avatar: records.avatar || profileData?.avatar,
+                records,
+              });
+
+              // Update web3BioProfile with ENS social links
+              const updatedProfile = { ...profileData };
+              if (!updatedProfile.links) updatedProfile.links = {};
+              
+              if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
+                const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
+                updatedProfile.links.twitter = {
+                  link: `https://twitter.com/${twitterHandle}`,
+                  handle: twitterHandle
+                };
+              }
+              if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
+                const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
+                updatedProfile.links.github = {
+                  link: `https://github.com/${githubHandle}`,
+                  handle: githubHandle
+                };
+              }
+              if (ensTextRecords['com.discord']) {
+                updatedProfile.links.discord = {
+                  handle: ensTextRecords['com.discord']
+                };
+              }
+              if (ensTextRecords['org.telegram']) {
+                updatedProfile.links.telegram = {
+                  handle: ensTextRecords['org.telegram']
+                };
+              }
+              if (ensTextRecords['com.reddit']) {
+                updatedProfile.links.reddit = {
+                  link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
+                  handle: ensTextRecords['com.reddit']
+                };
+              }
+              if (ensTextRecords['com.youtube']) {
+                updatedProfile.links.youtube = {
+                  link: ensTextRecords['com.youtube'].startsWith('http') 
+                    ? ensTextRecords['com.youtube']
+                    : `https://youtube.com/${ensTextRecords['com.youtube']}`,
+                  handle: ensTextRecords['com.youtube']
+                };
+              }
+              if (ensTextRecords['com.facebook']) {
+                updatedProfile.links.facebook = {
+                  link: ensTextRecords['com.facebook'].startsWith('http')
+                    ? ensTextRecords['com.facebook']
+                    : `https://facebook.com/${ensTextRecords['com.facebook']}`,
+                  handle: ensTextRecords['com.facebook']
+                };
+              }
+              if (ensTextRecords['com.spotify']) {
+                updatedProfile.links.spotify = {
+                  link: ensTextRecords['com.spotify'],
+                  handle: ensTextRecords['com.spotify']
+                };
+              }
+              if (ensTextRecords['com.linkedin']) {
+                updatedProfile.links.linkedin = {
+                  link: ensTextRecords['com.linkedin'].startsWith('http')
+                    ? ensTextRecords['com.linkedin']
+                    : `https://linkedin.com/in/${ensTextRecords['com.linkedin']}`,
+                  handle: ensTextRecords['com.linkedin']
+                };
+              }
+              if (ensTextRecords['com.instagram']) {
+                updatedProfile.links.instagram = {
+                  link: ensTextRecords['com.instagram'].startsWith('http')
+                    ? ensTextRecords['com.instagram']
+                    : `https://instagram.com/${ensTextRecords['com.instagram']}`,
+                  handle: ensTextRecords['com.instagram']
+                };
+              }
+              
+              // Update header from ENS text record if available
+              if (ensTextRecords['header']) {
+                updatedProfile.header = ensTextRecords['header'];
+              }
+              
+              setWeb3BioProfile(updatedProfile);
+            } catch (e) {
+              console.warn('Failed to map web3.bio profile to ENS records:', e);
+            }
+
+            // Fetch EFP stats and ENS records if we have an address or ENS name
+            if (profileData.address || trimmedQuery.includes(".eth")) {
+              const addressOrName = profileData.address || trimmedQuery;
+
+              // Fetch EFP stats using the ethfollow.xyz API directly
+              try {
+                const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
+
+                if (efpResponse.ok) {
+                  const efpData = await efpResponse.json();
+                  setEfpStats({
+                    followers_count: parseInt(efpData.followers_count) || 0,
+                    following_count: parseInt(efpData.following_count) || 0,
+                  });
+                }
+              } catch (efpError) {
+                console.error("Error fetching EFP stats:", efpError);
+              }
+
+              // Fetch POAP data
+              if (profileData.address) {
+                try {
+                  setIsLoadingPoaps(true);
+                  const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+                    body: { walletAddress: profileData.address },
+                  });
+
+                  if (!poapError && poapData?.success) {
+                    setPoapCount(poapData.count || 0);
+                  } else {
+                    console.error("Error fetching POAP data:", poapError);
+                    setPoapCount(0);
+                  }
+                } catch (poapFetchError) {
+                  console.error("Error fetching POAPs:", poapFetchError);
+                  setPoapCount(0);
+                } finally {
+                  setIsLoadingPoaps(false);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.log("web3.bio failed:", error);
+        }
       }
 
       setIsLoading(false);
