@@ -152,6 +152,9 @@ export async function ensureReady(): Promise<void> {
 }
 
 /**
+ * @deprecated This function is no longer needed. The MiniKit.commandsAsync.pay() 
+ * command handles permissions internally. Keeping for backward compatibility.
+ * 
  * Request payment permission with explicit preflight check
  */
 export async function ensurePayPermission(): Promise<void> {
