@@ -80,24 +80,30 @@ async function pinToWeb3Storage(html: string, token: string, retries = 3): Promi
   throw lastError || new Error("Web3.Storage upload failed after retries");
 }
 
-// Fallback: Pin to Cloudflare IPFS (no auth required)
-async function pinToCloudflare(html: string): Promise<string> {
+// Pin HTML to Pinata IPFS
+async function pinToPinata(html: string, jwt: string): Promise<string> {
+  if (!jwt) throw new Error("Missing Pinata JWT");
+  
   const formData = new FormData();
   const blob = new Blob([html], { type: "text/html" });
   formData.append("file", blob, "index.html");
-
-  const response = await fetch("https://cloudflare-ipfs.com/api/v0/add?pin=true", {
+  
+  const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
     method: "POST",
+    headers: {
+      "Authorization": `Bearer ${jwt}`,
+    },
     body: formData,
   });
-
+  
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Cloudflare IPFS upload failed: ${response.status} ${errorText}`);
+    throw new Error(`Pinata upload failed: ${response.status} ${errorText}`);
   }
-
+  
   const data = await response.json();
-  return data.Hash; // Cloudflare returns "Hash" field
+  console.log("✅ Pinata upload successful");
+  return data.IpfsHash;
 }
 
 // Verify CID is accessible via multiple gateways (with timeout)
@@ -150,27 +156,38 @@ async function verifyCid(cid: string): Promise<{ success: boolean; urls: string[
 }
 
 // Pin with automatic fallback and retry logic
-async function pinRedirectHtml(html: string, web3StorageToken: string): Promise<{ cid: string; provider: string }> {
-  let cid: string;
-  let provider: string;
-
-  try {
-    console.log("Attempting Web3.Storage upload with retry logic...");
-    cid = await pinToWeb3Storage(html, web3StorageToken, 3);
-    provider = "web3.storage";
-    console.log(`✅ Pinned to Web3.Storage: ${cid}`);
-  } catch (error: any) {
-    console.warn(`⚠️ Web3.Storage failed (${error.message}), trying Cloudflare IPFS...`);
+async function pinRedirectHtml(html: string, web3StorageToken?: string, pinataJwt?: string): Promise<{ cid: string; provider: string }> {
+  const errors: string[] = [];
+  
+  // Try Pinata first (most reliable)
+  if (pinataJwt) {
     try {
-      cid = await pinToCloudflare(html);
-      provider = "cloudflare-ipfs";
-      console.log(`✅ Pinned to Cloudflare IPFS: ${cid}`);
-    } catch (fallbackError: any) {
-      throw new Error(`All IPFS providers failed. Web3.Storage: ${error.message}, Cloudflare: ${fallbackError.message}`);
+      console.log("📌 Attempting Pinata upload...");
+      const cid = await pinToPinata(html, pinataJwt);
+      console.log(`✅ Pinned to Pinata: ${cid}`);
+      return { cid, provider: "pinata" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`Pinata: ${msg}`);
+      console.warn("⚠️ Pinata failed, trying next provider...");
     }
   }
-
-  return { cid, provider };
+  
+  // Try Web3.Storage as backup
+  if (web3StorageToken) {
+    try {
+      console.log("📌 Attempting Web3.Storage upload with retry logic...");
+      const cid = await pinToWeb3Storage(html, web3StorageToken, 3);
+      console.log(`✅ Pinned to Web3.Storage: ${cid}`);
+      return { cid, provider: "web3.storage" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`Web3.Storage: ${msg}`);
+      console.warn("⚠️ Web3.Storage failed");
+    }
+  }
+  
+  throw new Error(`All IPFS providers failed. ${errors.join(", ")}`);
 }
 
 // Set contenthash via Namestone API
@@ -272,8 +289,10 @@ serve(async (req) => {
 
     // Get environment secrets
     const web3StorageToken = Deno.env.get("WEB3_STORAGE_TOKEN");
-    if (!web3StorageToken) {
-      throw new Error("WEB3_STORAGE_TOKEN not configured");
+    const pinataJwt = Deno.env.get("PINATA_JWT");
+    
+    if (!web3StorageToken && !pinataJwt) {
+      throw new Error("No IPFS provider configured. Set PINATA_JWT or WEB3_STORAGE_TOKEN");
     }
 
     // Get Namestone API key - check domain-specific key first
@@ -317,7 +336,7 @@ serve(async (req) => {
     const html = buildRedirectHtml({ mode: "EXACT", exactUrl: redirectUrl });
 
     // Pin to IPFS with automatic fallback
-    const { cid, provider } = await pinRedirectHtml(html, web3StorageToken);
+    const { cid, provider } = await pinRedirectHtml(html, web3StorageToken, pinataJwt);
     console.log(`Pinned to IPFS via ${provider}:`, cid);
 
     // Verify CID is accessible
