@@ -310,7 +310,7 @@ serve(async (req) => {
       .select("api_key_secret_name")
       .eq("domain_name", parentDomain)
       .eq("status", "active")
-      .single();
+      .maybeSingle();
 
     if (domainConfig?.api_key_secret_name) {
       namestoneApiKey = Deno.env.get(domainConfig.api_key_secret_name) || "";
