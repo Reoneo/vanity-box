@@ -585,38 +585,26 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
       // Use different fetch strategies based on name type
       if (isNamestoneSubdomain) {
-        // NEW PATH: Direct ENS + Namestone lookup for subdomains
+        // Direct ENS + Namestone lookup for subdomains
         console.log('🔗 Fetching ENS subdomain profile directly for:', normalizedQuery);
         try {
-          // Add timeout to prevent infinite loading
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Request timeout')), 15000)
-          );
-
-          const fetchPromise = supabase.functions.invoke('get-ens-subdomain-profile', {
+          const { data, error } = await supabase.functions.invoke('get-ens-subdomain-profile', {
             body: { subdomain: normalizedQuery }
           });
 
-          const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
           if (error) {
             console.error('❌ Error fetching ENS subdomain profile:', error);
-            // Don't throw - just continue without profile data
           } else if (data && !data.error) {
             console.log('✅ ENS subdomain profile found:', data);
             setWeb3BioProfile(data);
             setEnsResults([]);
             
-            // Store ENS records if available
             if (data.ensRecords) {
               setEnsRecords(data.ensRecords);
             }
-          } else {
-            console.log('⚠️ No ENS subdomain profile data:', data?.error);
           }
         } catch (error) {
           console.log('❌ Failed to fetch ENS subdomain profile:', error);
-          // Continue - we'll show "No results found" if no other data
         }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names
