@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.set-namestone-redirect]
 verify_jwt = false
 
+[functions.repair-domain-redirects]
+verify_jwt = false
+
 [functions.initiate-payment]
 verify_jwt = false
 
