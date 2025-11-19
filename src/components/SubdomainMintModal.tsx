@@ -12,7 +12,7 @@ import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
 import { callEdge } from "@/lib/supaInvoke";
 import { setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
 import { fullEnsName } from "@/lib/ensRedirect/profile";
-import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
+import { ensureReady, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
 import { usePetraWallet } from "@/hooks/use-petra-wallet";
 import { isTelegramWebView } from "@/lib/telegram";
 
@@ -37,7 +37,6 @@ type PaymentFlowStep =
   | "idle" 
   | "checking_minikit" 
   | "connecting_wallet" 
-  | "requesting_permission"
   | "preparing_payment"
   | "processing_payment" 
   | "verifying_payment"
@@ -645,27 +644,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           const { reference } = initResponse;
           console.log("[PaymentFlow] Payment reference created:", reference);
 
-          // Step 2: Request payment permission
-          setPaymentFlowStep("requesting_permission");
-          localStorage.setItem('paymentFlowState', JSON.stringify({
-            subdomain, paymentMethod, amount: convertedPrice, reference,
-            step: 'requesting_permission', timestamp: Date.now()
-          }));
-          console.log("[PaymentFlow] Step: requesting_permission");
-          
-          toast.info("Requesting payment permission...");
-          try {
-            await ensurePayPermission();
-            console.log("[PaymentFlow] Permission granted");
-          } catch (permError: any) {
-            setPaymentFlowStep("idle");
-            localStorage.removeItem('paymentFlowState');
-            console.error("[PaymentFlow] Permission denied:", permError);
-            toast.error("Payment permission required. Please enable 'Pay' permission in World App settings. [ERR_PERMISSION_DENIED]", { duration: 8000 });
-            return;
-          }
-
-          // Step 3: Execute payment via World App
+          // Step 2: Execute payment via World App (permission handled internally by pay command)
           setPaymentFlowStep("processing_payment");
           localStorage.setItem('paymentFlowState', JSON.stringify({
             subdomain, paymentMethod, amount: convertedPrice, reference,
@@ -1118,7 +1097,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                     {paymentFlowStep === "checking_minikit" && t('checking_world_app_step')}
                     {paymentFlowStep === "connecting_wallet" && t('connecting_wallet')}
-                    {paymentFlowStep === "requesting_permission" && t('requesting_permission')}
                     {paymentFlowStep === "preparing_payment" && t('preparing_payment')}
                     {paymentFlowStep === "processing_payment" && t('processing_payment')}
                     {paymentFlowStep === "verifying_payment" && t('verifying_blockchain')}
@@ -1126,7 +1104,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                     {paymentFlowStep === "connecting_wallet" && t('approve_in_world_app')}
-                    {paymentFlowStep === "requesting_permission" && t('grant_pay_permission')}
                     {paymentFlowStep === "processing_payment" && t('check_world_app')}
                     {paymentFlowStep === "verifying_payment" && t('verifying_wait')}
                     {paymentFlowStep === "minting" && t('almost_done')}
