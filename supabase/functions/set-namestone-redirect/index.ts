@@ -36,29 +36,48 @@ const PASSTHROUGH_BASE=${BASE}.replace ? ${BASE}.replace(/\\/+$/,"") : "";
 <noscript><meta http-equiv="refresh" content="0"><p>Redirecting…</p></noscript>`;
 }
 
-// Pin HTML to Web3.Storage and return CID
-async function pinToWeb3Storage(html: string, token: string): Promise<string> {
+// Pin HTML to Web3.Storage and return CID (with retry logic)
+async function pinToWeb3Storage(html: string, token: string, retries = 3): Promise<string> {
   if (!token) throw new Error("Missing Web3.Storage token");
 
-  const files = new FormData();
-  const blob = new Blob([html], { type: "text/html" });
-  files.append("file", blob, "index.html"); // Use index.html for better gateway compatibility
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const files = new FormData();
+      const blob = new Blob([html], { type: "text/html" });
+      files.append("file", blob, "index.html");
 
-  const response = await fetch("https://api.web3.storage/upload", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
-    body: files,
-  });
+      const response = await fetch("https://api.web3.storage/upload", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: files,
+      });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Web3.Storage upload failed: ${response.status} ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Web3.Storage upload failed: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`✅ Web3.Storage upload successful on attempt ${attempt}`);
+      return data.cid;
+    } catch (error) {
+      lastError = error as Error;
+      console.warn(`⚠️ Web3.Storage attempt ${attempt}/${retries} failed:`, error);
+      
+      if (attempt < retries) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
-
-  const data = await response.json();
-  return data.cid;
+  
+  throw lastError || new Error("Web3.Storage upload failed after retries");
 }
 
 // Fallback: Pin to Cloudflare IPFS (no auth required)
@@ -81,22 +100,48 @@ async function pinToCloudflare(html: string): Promise<string> {
   return data.Hash; // Cloudflare returns "Hash" field
 }
 
-// Verify CID is accessible via multiple gateways
+// Verify CID is accessible via multiple gateways (with timeout)
 async function verifyCid(cid: string): Promise<{ success: boolean; urls: string[] }> {
   const gateways = [
     `https://cloudflare-ipfs.com/ipfs/${cid}/`,
     `https://ipfs.io/ipfs/${cid}/`,
+    `https://${cid}.ipfs.dweb.link/`,
+    `https://${cid}.ipfs.w3s.link/`,
   ];
 
   const results = await Promise.allSettled(
-    gateways.map(url => 
-      fetch(url, { method: "HEAD" }).then(r => ({ url, ok: r.ok }))
-    )
+    gateways.map(async url => {
+      try {
+        // Add timeout for verification checks (5 seconds)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(url, { 
+          method: "HEAD",
+          signal: controller.signal 
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          console.log(`✅ CID verified on gateway: ${url}`);
+        }
+        
+        return { url, ok: response.ok };
+      } catch (error) {
+        console.warn(`Gateway check failed for ${url}:`, error);
+        return { url, ok: false };
+      }
+    })
   );
 
   const accessibleUrls = results
     .filter(r => r.status === "fulfilled" && r.value.ok)
     .map(r => r.status === "fulfilled" ? r.value.url : "");
+
+  if (accessibleUrls.length === 0) {
+    console.warn(`⚠️ CID verification failed on all gateways`);
+  }
 
   return {
     success: accessibleUrls.length > 0,
@@ -104,14 +149,14 @@ async function verifyCid(cid: string): Promise<{ success: boolean; urls: string[
   };
 }
 
-// Pin with automatic fallback
+// Pin with automatic fallback and retry logic
 async function pinRedirectHtml(html: string, web3StorageToken: string): Promise<{ cid: string; provider: string }> {
   let cid: string;
   let provider: string;
 
   try {
-    console.log("Attempting Web3.Storage upload...");
-    cid = await pinToWeb3Storage(html, web3StorageToken);
+    console.log("Attempting Web3.Storage upload with retry logic...");
+    cid = await pinToWeb3Storage(html, web3StorageToken, 3);
     provider = "web3.storage";
     console.log(`✅ Pinned to Web3.Storage: ${cid}`);
   } catch (error: any) {

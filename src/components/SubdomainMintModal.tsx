@@ -456,9 +456,21 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           toast.success(`Successfully minted ${subdomain}! 🎉`, { duration: 5000 });
           await sendHaptic("success");
           
-          // Set default redirect
-          const fullName = `${subdomain}.${domain}`;
-          await setDefaultVanityRedirect(fullName, account.address);
+          // Set default redirect with proper error handling
+          try {
+            const redirectResult = await setDefaultVanityRedirect(domain, subdomain);
+            if (redirectResult.success) {
+              console.log("APT redirect set:", redirectResult);
+              toast.success(`Redirect set to ${subdomain}.${domain} Vanity profile`, {
+                duration: 5000,
+              });
+            }
+          } catch (redirectErr: any) {
+            console.error("Failed to set APT redirect:", redirectErr);
+            toast.info("Minted successfully! You can set redirect in My IDs.", {
+              duration: 5000,
+            });
+          }
           
           // Show transaction details
           if (txResponse.hash) {

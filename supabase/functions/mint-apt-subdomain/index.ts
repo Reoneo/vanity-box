@@ -100,6 +100,35 @@ Deno.serve(async (req) => {
     console.log(`[mint-apt-subdomain] Transaction hash: ${txHash}`);
     console.log(`[mint-apt-subdomain] Expiry date: ${expiryDate.toISOString()}`);
 
+    // Set default redirect for the APT domain (non-blocking)
+    console.log('[mint-apt-subdomain] Setting default redirect...');
+    try {
+      const redirectResult = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/set-namestone-redirect`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          },
+          body: JSON.stringify({
+            parentDomain: domain,
+            subname: subdomain,
+            redirectType: "default",
+          }),
+        }
+      );
+      
+      if (!redirectResult.ok) {
+        console.warn('[mint-apt-subdomain] Redirect setup failed:', await redirectResult.text());
+      } else {
+        const redirectData = await redirectResult.json();
+        console.log('[mint-apt-subdomain] Redirect set:', redirectData);
+      }
+    } catch (redirectErr) {
+      console.warn('[mint-apt-subdomain] Redirect setup error:', redirectErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
