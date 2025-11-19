@@ -1397,8 +1397,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     <div className="space-y-1 flex flex-col items-center text-center w-full max-w-2xl mx-auto">
                       <div className="flex flex-col items-center w-full">
                         <h3 className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-black mb-1">
-                          {web3BioProfile.displayName || searchQuery}
-                        </h3>
+                        {searchQuery}
+                      </h3>
                         
                         {/* Description below subdomain - full width with better shadow */}
                         {web3BioProfile.description && (
