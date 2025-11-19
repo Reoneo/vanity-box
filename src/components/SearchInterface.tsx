@@ -1166,12 +1166,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </>
                 ) : (
                   <>
-                    {/* Header showing result count */}
+                    {/* Loading state or result count - only show when results are ready */}
                     <div className="mt-2">
-                      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                        <span className="text-black dark:text-white">{ensResults.length} {t('ids_found')}</span>{' '}
-                        <span className="text-[#D4AF37]">{t('found')}</span>
-                      </h1>
+                      {isLoading ? (
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
+                          <span className="text-black dark:text-white animate-pulse">{t('loading')}</span>
+                        </h1>
+                      ) : ensResults.length > 0 ? (
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
+                          <span className="text-black dark:text-white">{ensResults.length} {t('ids_found')}</span>{' '}
+                          <span className="text-[#D4AF37]">{t('found')}</span>
+                        </h1>
+                      ) : null}
                     </div>
                     <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
