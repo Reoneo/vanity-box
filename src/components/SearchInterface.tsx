@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
 import ensLogoWhite from "@/assets/ens-logo-white.png";
-import defaultHeaderPattern from "@/assets/default-header-pattern.png";
+import defaultHeaderPattern from "@/assets/eth-pattern-header.jpeg";
 import smithCashAvatar from "@/assets/smith-cash-avatar.png";
 import smithBoxAvatar from "@/assets/smith-box-avatar.jpeg";
 import vapeBoxAvatar from "@/assets/vape-box-avatar.webp";
