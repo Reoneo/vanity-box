@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [isPetraConnected, setIsPetraConnected] = useState(false);
@@ -62,6 +63,11 @@ export const Header: React.FC = () => {
       window.removeEventListener('back-to-domains', handleHideMyIds);
     };
   }, []);
+
+  const toggleSearchBar = () => {
+    setShowSearchBar(!showSearchBar);
+    window.dispatchEvent(new CustomEvent('toggle-search-bar', { detail: { show: !showSearchBar } }));
+  };
 
   const scrollToSearch = () => {
     // If mint window is open, just close it and stay on search results

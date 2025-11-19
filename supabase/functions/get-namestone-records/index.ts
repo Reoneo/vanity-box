@@ -103,8 +103,10 @@ serve(async (req) => {
     console.log('📋 Filtered text records:', textRecords);
     
     // Extract owner/address from the main record
-    const owner = records.owner || null;
+    // Namestone API returns the wallet address in the 'address' field
+    const owner = records.address || records.owner || records.eth_address || null;
     console.log('👤 Owner address:', owner);
+    console.log('📊 Full record structure:', JSON.stringify(records, null, 2));
 
     return new Response(
       JSON.stringify({
