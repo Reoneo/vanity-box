@@ -49,7 +49,16 @@ serve(async (req) => {
         ${banner ? `
           <image href="${banner}" x="0" y="0" width="${width}" height="300" preserveAspectRatio="xMidYMid slice" opacity="0.4"/>
           <rect x="0" y="0" width="${width}" height="300" fill="url(#bg)" opacity="0.6"/>
-        ` : ''}
+        ` : `
+          <!-- Default banner pattern -->
+          <defs>
+            <pattern id="defaultPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+              <rect width="100" height="100" fill="#2d2d2d"/>
+              <path d="M 0 50 L 50 0 L 100 50 L 50 100 Z" fill="#3d3d3d" opacity="0.5"/>
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="${width}" height="300" fill="url(#defaultPattern)" opacity="0.6"/>
+        `}
         
         <!-- Avatar -->
         ${avatar ? `

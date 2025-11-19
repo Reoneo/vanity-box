@@ -201,6 +201,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showDetailView, setShowDetailView] = useState(false);
   const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
   const [showInitialResults, setShowInitialResults] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(true);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -235,6 +236,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     });
     window.addEventListener("show-my-ids", handleShowMyIDs);
     window.addEventListener("show-search", handleShowSearch);
+    
+    const handleToggleSearchBar = (event: CustomEvent) => {
+      setShowSearchBar(event.detail.show);
+    };
+    
+    window.addEventListener("toggle-search-bar", handleToggleSearchBar as EventListener);
 
     return () => {
       window.removeEventListener("wallet-connected", handleWalletChange as EventListener);
@@ -244,6 +251,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       });
       window.removeEventListener("show-my-ids", handleShowMyIDs);
       window.removeEventListener("show-search", handleShowSearch);
+      window.removeEventListener("toggle-search-bar", handleToggleSearchBar as EventListener);
     };
   }, []);
 
@@ -1047,7 +1055,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                       <PersonalizedHeader user={{ walletAddress }} />
                     </div>
-                    <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
+                    
+                    {showSearchBar && (
+                      <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                           <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
@@ -1175,23 +1185,28 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </div>
                     </div>
+                    )}
                     <WorldIdAnimation />
                   </>
                 ) : (
                   <>
-                    {/* Loading state or result count - only show when results are ready */}
-                    <div className="mt-2">
-                      {isLoading ? (
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                          <span className="text-black dark:text-white animate-pulse">{t('loading')}</span>
-                        </h1>
-                      ) : ensResults.length > 0 ? (
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                          <span className="text-black dark:text-white">{ensResults.length} {t('ids_found')}</span>{' '}
-                          <span className="text-[#D4AF37]">{t('found')}</span>
-                        </h1>
-                      ) : null}
-                    </div>
+                    {/* Remove h1 header when showing user profile */}
+                    {!web3BioProfile && (
+                      <div className="mt-2">
+                        {isLoading ? (
+                          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
+                            <span className="text-black dark:text-white animate-pulse">{t('loading')}</span>
+                          </h1>
+                        ) : ensResults.length > 0 ? (
+                          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
+                            <span className="text-black dark:text-white">{ensResults.length} {t('ids_found')}</span>{' '}
+                            <span className="text-[#D4AF37]">{t('found')}</span>
+                          </h1>
+                        ) : null}
+                      </div>
+                    )}
+                    
+                    {showSearchBar && (
                     <div className="w-full max-w-md mx-auto mb-3 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -1321,6 +1336,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </div>
                     </div>
+                    )}
                   </>
                 )}
               </>
