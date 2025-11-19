@@ -20,6 +20,8 @@ import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
 import wldLogoDark from "@/assets/wld-logo-dark.svg";
 import wldLogoLight from "@/assets/wld-logo-light.png";
+import ethLogoDark from "@/assets/eth-logo-dark.png";
+import ethLogoLight from "@/assets/eth-logo-light.png";
 import aptosLogo from "@/assets/aptos-logo.png";
 
 interface SubdomainMintModalProps {
@@ -31,7 +33,7 @@ interface SubdomainMintModalProps {
   domain?: string; // e.g., "30315.eth", "teamxrp.eth", "termux.eth", "smith.cash"
 }
 
-type PaymentMethod = "USDC" | "WLD" | "APT";
+type PaymentMethod = "USDC" | "WLD" | "ETH" | "APT";
 
 type PaymentFlowStep = 
   | "idle" 
@@ -278,6 +280,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           name: "WLD",
           icon: theme === "dark" ? wldLogoDark : wldLogoLight,
           rate: 1 / cryptoPrices.wld, // $ → WLD
+        },
+        {
+          id: "ETH" as PaymentMethod,
+          name: "ETH",
+          icon: theme === "dark" ? ethLogoDark : ethLogoLight,
+          rate: 1 / cryptoPrices.eth, // $ → ETH
         },
       ];
 
@@ -651,18 +659,27 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             step: 'processing_payment', timestamp: Date.now()
           }));
           
-          // Build payment payload using tokenToDecimals
+          // Build payment payload - CRITICAL: Must use whole numbers (integers) for token amounts
           let tokenSymbol: any;
           let tokenAmount: string;
           
           if (paymentMethod === "USDC") {
             tokenSymbol = Tokens.USDC;
-            tokenAmount = tokenToDecimals(convertedPrice, Tokens.USDC).toString();
+            // USDC has 6 decimals - convert and round to ensure whole number
+            const rawAmount = tokenToDecimals(convertedPrice, Tokens.USDC);
+            tokenAmount = Math.floor(rawAmount).toString();
           } else if (paymentMethod === "WLD") {
             tokenSymbol = Tokens.WLD;
-            tokenAmount = tokenToDecimals(convertedPrice, Tokens.WLD).toString();
+            // WLD has 18 decimals - convert and round to ensure whole number
+            const rawAmount = tokenToDecimals(convertedPrice, Tokens.WLD);
+            tokenAmount = Math.floor(rawAmount).toString();
+          } else if (paymentMethod === "ETH") {
+            // ETH payments - calculate token amount manually (18 decimals)
+            tokenSymbol = "ETH"; // Use string literal for ETH
+            // Convert USD to ETH (convertedPrice is already in ETH from the rate calculation)
+            const ethInWei = convertedPrice * Math.pow(10, 18);
+            tokenAmount = Math.floor(ethInWei).toString();
           } else {
-            // This shouldn't happen since ETH is removed
             throw new Error("Unsupported payment method");
           }
 
