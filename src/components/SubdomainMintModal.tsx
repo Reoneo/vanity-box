@@ -1023,6 +1023,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               <>
                 {paymentMethod === "USDC" && `${convertedPrice.toFixed(2)} USDC`}
                 {paymentMethod === "WLD" && `${convertedPrice.toFixed(4)} WLD`}
+                {paymentMethod === "ETH" && `${convertedPrice.toFixed(6)} ETH`}
                 {paymentMethod === "APT" && `${convertedPrice.toFixed(4)} APT`}
               </>
             </div>
@@ -1054,7 +1055,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                 <span className="text-gray-600 dark:text-gray-400">
                   {registrationYears} {registrationYears > 1 ? t("years") : t("year")}
                 </span>
-                <span className="font-medium text-[#D4AF37]">${(domainPrice * registrationYears).toFixed(2)}</span>
+                <span className="font-medium text-[#D4AF37]">
+                  {paymentMethod === "USDC" && `${(domainPrice * registrationYears).toFixed(2)} USDC`}
+                  {paymentMethod === "WLD" && `${((domainPrice * registrationYears) / cryptoPrices.wld).toFixed(4)} WLD`}
+                  {paymentMethod === "ETH" && `${((domainPrice * registrationYears) / cryptoPrices.eth).toFixed(6)} ETH`}
+                  {paymentMethod === "APT" && `${((domainPrice * registrationYears) / cryptoPrices.apt).toFixed(4)} APT`}
+                </span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -1062,11 +1068,18 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                   {t("network_fee")} ({isAptosDomain ? "Aptos" : "World Chain"})
                 </span>
                 <span className="font-medium text-[#D4AF37]">
-                  {effectiveNetworkFee === 0
-                    ? "FREE"
-                    : effectiveNetworkFee < 0.03
-                      ? "< $0.03"
-                      : `$${effectiveNetworkFee.toFixed(2)}`}
+                  {effectiveNetworkFee === 0 ? (
+                    "FREE"
+                  ) : effectiveNetworkFee < 0.03 && paymentMethod === "USDC" ? (
+                    "< 0.03 USDC"
+                  ) : (
+                    <>
+                      {paymentMethod === "USDC" && `${effectiveNetworkFee.toFixed(2)} USDC`}
+                      {paymentMethod === "WLD" && `${(effectiveNetworkFee / cryptoPrices.wld).toFixed(4)} WLD`}
+                      {paymentMethod === "ETH" && `${(effectiveNetworkFee / cryptoPrices.eth).toFixed(6)} ETH`}
+                      {paymentMethod === "APT" && `${effectiveNetworkFee.toFixed(2)} APT`}
+                    </>
+                  )}
                 </span>
               </div>
 
@@ -1079,7 +1092,12 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-gray-900 dark:text-white">{t("total")}</span>
-                <span className="font-bold text-gray-900 dark:text-white">${grandTotal.toFixed(2)}</span>
+                <span className="font-bold text-gray-900 dark:text-white">
+                  {paymentMethod === "USDC" && `${grandTotal.toFixed(2)} USDC`}
+                  {paymentMethod === "WLD" && `${(grandTotal / cryptoPrices.wld).toFixed(4)} WLD`}
+                  {paymentMethod === "ETH" && `${(grandTotal / cryptoPrices.eth).toFixed(6)} ETH`}
+                  {paymentMethod === "APT" && `${(grandTotal / cryptoPrices.apt).toFixed(4)} APT`}
+                </span>
               </div>
             </div>
 
