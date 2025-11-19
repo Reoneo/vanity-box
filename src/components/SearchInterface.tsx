@@ -535,8 +535,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return;
     }
 
-    // Max 12 character limit - show no results if exceeded
-    if (trimmedQuery.length > 12) {
+    // Max character limit: 12 for single names, but allow longer for full subdomains (with dots)
+    const hasMultipleDots = trimmedQuery.split('.').filter(Boolean).length > 2;
+    const maxLength = hasMultipleDots ? 50 : 12; // Allow up to 50 chars for subdomains
+    
+    if (trimmedQuery.length > maxLength) {
       setEnsResults([]);
       setWeb3BioProfile(null);
       setEfpStats(null);
