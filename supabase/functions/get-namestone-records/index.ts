@@ -101,12 +101,17 @@ serve(async (req) => {
     });
 
     console.log('📋 Filtered text records:', textRecords);
+    
+    // Extract owner/address from the main record
+    const owner = records.owner || null;
+    console.log('👤 Owner address:', owner);
 
     return new Response(
       JSON.stringify({
         success: true,
         subdomain,
         textRecords,
+        owner,
         message: 'Records fetched successfully'
       }),
       {

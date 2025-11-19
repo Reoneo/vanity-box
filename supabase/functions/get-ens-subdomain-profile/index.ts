@@ -102,7 +102,7 @@ serve(async (req) => {
       description: textRecords['description'] || null,
       email: textRecords['email'] || null,
       location: textRecords['location'] || null,
-      address: textRecords['eth'] || namestoneData.address || null,
+      address: textRecords['eth'] || namestoneData.owner || null,
       links,
       contenthash: textRecords['contenthash'] || null,
       ensRecords: textRecords,
