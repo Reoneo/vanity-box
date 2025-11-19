@@ -251,7 +251,7 @@ serve(async (req) => {
 
     console.log("Set redirect request (raw):", { parentDomain, rawSubname, redirectType, customUrl });
 
-    if (!parentDomain || !rawSubname) {
+    if (!parentDomain || rawSubname === undefined || rawSubname === null) {
       throw new Error("Missing required fields: parentDomain, subname");
     }
 
@@ -265,7 +265,8 @@ serve(async (req) => {
       console.log(`⚠️ Stripped parent domain from subname: "${rawSubname}" → "${subname}"`);
     }
     
-    console.log("Normalized subname:", subname);
+    // Empty string means root domain
+    console.log("Normalized subname:", subname === "" ? "(root domain)" : subname);
 
     if (!redirectType || !["default", "custom"].includes(redirectType)) {
       throw new Error("redirectType must be 'default' or 'custom'");
