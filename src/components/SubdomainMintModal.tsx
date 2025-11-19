@@ -14,6 +14,7 @@ import { setDefaultVanityRedirect } from "@/lib/ensRedirect/service";
 import { fullEnsName } from "@/lib/ensRedirect/profile";
 import { ensureReady, ensurePayPermission, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
 import { usePetraWallet } from "@/hooks/use-petra-wallet";
+import { isTelegramWebView } from "@/lib/telegram";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
@@ -522,6 +523,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
       // Ensure MiniKit is ready
       console.log("[PaymentFlow] Step: checking_minikit");
+      
+      // CRITICAL: Ensure we're in World App environment, not Telegram
+      if (isTelegramWebView()) {
+        setPaymentFlowStep("idle");
+        localStorage.removeItem('paymentFlowState');
+        console.error("[PaymentFlow] ERROR: Attempted to use World App payment in Telegram environment");
+        toast.error("World Chain payments are only available in World App. Please use TON wallet for payments in Telegram.", { duration: 8000 });
+        return;
+      }
       
       try {
         await ensureReady();
