@@ -8,14 +8,30 @@ const corsHeaders = {
 
 // Redirect HTML builder
 function buildRedirectHtml(opts: 
-  | { mode: "EXACT"; exactUrl: string }
-  | { mode: "PASSTHROUGH"; baseOrigin: string }
+  | { mode: "EXACT"; exactUrl: string; profileName?: string; fullName?: string }
+  | { mode: "PASSTHROUGH"; baseOrigin: string; profileName?: string; fullName?: string }
 ) {
   const EXACT = opts.mode === "EXACT" ? JSON.stringify(opts.exactUrl) : `""`;
   const BASE  = opts.mode === "PASSTHROUGH" ? JSON.stringify(opts.baseOrigin) : `""`;
+  
+  const profileName = opts.profileName || "Web3 Profile";
+  const fullName = opts.fullName || "";
+  const profileUrl = fullName ? `https://vanity.box/${encodeURIComponent(fullName)}` : "";
+  const metaImage = "https://vanity.box/vanity-meta-image.jpeg";
 
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Redirecting…</title>
+<title>${profileName} - Vanity.box</title>
+<meta property="og:type" content="profile">
+<meta property="og:title" content="${profileName} - Vanity.box">
+<meta property="og:description" content="View ${profileName}'s Web3 identity on Vanity.box">
+<meta property="og:image" content="${metaImage}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+${profileUrl ? `<meta property="og:url" content="${profileUrl}">` : ''}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${profileName} - Vanity.box">
+<meta name="twitter:description" content="View ${profileName}'s Web3 identity on Vanity.box">
+<meta name="twitter:image" content="${metaImage}">
 <script>
 const EXACT_DEST=${EXACT};
 const PASSTHROUGH_BASE=${BASE}.replace ? ${BASE}.replace(/\\/+$/,"") : "";
@@ -333,8 +349,13 @@ serve(async (req) => {
 
     console.log("Creating redirect to:", redirectUrl);
 
-    // Build redirect HTML
-    const html = buildRedirectHtml({ mode: "EXACT", exactUrl: redirectUrl });
+    // Build redirect HTML with profile info for OG tags
+    const html = buildRedirectHtml({ 
+      mode: "EXACT", 
+      exactUrl: redirectUrl,
+      profileName: subname || parentDomain,
+      fullName: fullName
+    });
 
     // Pin to IPFS with automatic fallback
     const { cid, provider } = await pinRedirectHtml(html, web3StorageToken, pinataJwt);
