@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Pencil, Send, Trash2, ExternalLink } from 'lucide-react';
+import { Loader2, Pencil, Send, Trash2, ExternalLink, RefreshCw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
@@ -43,6 +43,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   const [deletingDomain, setDeletingDomain] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [domainToDelete, setDomainToDelete] = useState<Domain | null>(null);
+  const [isRepairing, setIsRepairing] = useState(false);
 
   const fetchDomains = async () => {
     if (!walletAddress) {
@@ -232,6 +233,28 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
     return <DomainEditPanel domain={selectedDomain} />;
   }
 
+  const handleRepairRedirects = async () => {
+    try {
+      setIsRepairing(true);
+      toast.info('Regenerating redirects with updated thumbnails...');
+      
+      const { data, error } = await supabase.functions.invoke('repair-domain-redirects');
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast.success(`Successfully regenerated ${data.successful} redirects!`);
+      } else {
+        toast.error(data?.error || 'Failed to repair redirects');
+      }
+    } catch (error: any) {
+      console.error('Error repairing redirects:', error);
+      toast.error(error.message || 'Failed to repair redirects');
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <button 
@@ -243,7 +266,28 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         </svg>
         {t('back')}
       </button>
-      <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-6">{t('my_ids')}</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t('my_ids')}</h2>
+        <Button
+          onClick={handleRepairRedirects}
+          disabled={isRepairing}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          {isRepairing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Regenerating...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4" />
+              Fix Thumbnails
+            </>
+          )}
+        </Button>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {domains.map((domain, index) => (
           <div 
