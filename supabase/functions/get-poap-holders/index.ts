@@ -26,7 +26,7 @@ serve(async (req) => {
 
     console.log('Fetching POAP holders for event:', eventId);
 
-    const poapApiKey = Deno.env.get('POAP_CLIENT_ID');
+    const poapApiKey = Deno.env.get('POAP_API_KEY');
 
     if (!poapApiKey) {
       console.error('POAP API key not configured');
