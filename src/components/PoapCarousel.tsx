@@ -138,6 +138,18 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
     setIsModalOpen(true);
   };
 
+  const handleNextPoap = () => {
+    const nextIndex = (currentIndex + 1) % poaps.length;
+    setCurrentIndex(nextIndex);
+    setSelectedPoap(poaps[nextIndex]);
+  };
+
+  const handlePreviousPoap = () => {
+    const prevIndex = (currentIndex - 1 + poaps.length) % poaps.length;
+    setCurrentIndex(prevIndex);
+    setSelectedPoap(poaps[prevIndex]);
+  };
+
   return (
     <>
       <div className="w-full py-3 flex-shrink-0">
@@ -222,6 +234,10 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
           setIsModalOpen(false);
           setSelectedPoap(null);
         }}
+        onNext={poaps.length > 1 ? handleNextPoap : undefined}
+        onPrevious={poaps.length > 1 ? handlePreviousPoap : undefined}
+        hasNext={poaps.length > 1}
+        hasPrevious={poaps.length > 1}
       />
     </>
   );
