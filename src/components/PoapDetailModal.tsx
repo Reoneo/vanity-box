@@ -190,7 +190,7 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-5 pb-3 border-b border-[#D4AF37]/20">
           <div className="flex items-center gap-2.5">
-            <img src={poapIcon} alt="POAP" className="w-10 h-10" />
+            <img src={poapIcon} alt="POAP" className="w-15 h-15" />
             <span className="text-xl font-bold text-white">POAP</span>
           </div>
           <button
