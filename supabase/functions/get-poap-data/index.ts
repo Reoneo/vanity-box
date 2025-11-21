@@ -40,14 +40,14 @@ serve(async (req) => {
       );
     }
 
-    // Fetch POAPs for the wallet using Authorization Bearer token
+    // Fetch POAPs for the wallet using X-API-Key header
     console.log('Calling POAP API:', `https://api.poap.tech/actions/scan/${walletAddress}`);
     
     const poapsResponse = await fetch(
       `https://api.poap.tech/actions/scan/${walletAddress}`,
       {
         headers: {
-          'Authorization': `Bearer ${poapApiKey}`,
+          'X-API-Key': poapApiKey,
           'Accept': 'application/json',
         },
       }
