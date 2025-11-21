@@ -87,7 +87,7 @@ import linkedinIcon from "@/assets/linkedin-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import telegramIcon from "@/assets/telegram-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
-import { WorldIdAnimation } from "@/components/WorldIdAnimation";
+import { HomePitch } from "@/components/HomePitch";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
 
@@ -1269,7 +1269,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
                     </div>
                     )}
-                    <WorldIdAnimation />
+                    <HomePitch />
                   </>
                 ) : (
                   <>
