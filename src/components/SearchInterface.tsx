@@ -36,7 +36,6 @@ import { useTheme } from "next-themes";
 import { SubdomainMintModal } from "@/components/SubdomainMintModal";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
-import { DomainAvatar } from "@/components/DomainAvatar";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
 
 import {
@@ -677,12 +676,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             // Fall back to Web3.bio
             console.log('⤵️ Falling back to Web3.bio for:', normalizedQuery);
             try {
-              // Validate before calling
-              if (!normalizedQuery || normalizedQuery.trim().length === 0) {
-                console.warn('⚠️ Invalid query for Web3.bio fallback');
-                return;
-              }
-              
               const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
                 body: { handle: normalizedQuery }
               });
@@ -708,12 +701,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             // No ENS data, try Web3.bio
             console.log('⤵️ No ENS data, falling back to Web3.bio for:', normalizedQuery);
             try {
-              // Validate before calling
-              if (!normalizedQuery || normalizedQuery.trim().length === 0) {
-                console.warn('⚠️ Invalid query for Web3.bio fallback');
-                return;
-              }
-              
               const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
                 body: { handle: normalizedQuery }
               });
@@ -733,20 +720,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
-        const handleToFetch = isWalletAddress ? normalizedAddress : trimmedQuery;
-        console.log('🔍 Fetching web3.bio profile for:', handleToFetch);
-        
-        // Validate handle before making the call
-        if (!handleToFetch || handleToFetch.trim().length === 0) {
-          console.warn('⚠️ Invalid or empty handle, skipping Web3.bio fetch');
-          setIsLoading(false);
-          return;
-        }
-        
+        console.log('🔍 Fetching web3.bio profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
           // Use edge function to call web3.bio API with proper authentication
           const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
-            body: { handle: handleToFetch }
+            body: { handle: isWalletAddress ? normalizedAddress : trimmedQuery }
           });
 
           console.log('📥 Web3.bio response:', { data, error });
@@ -1496,33 +1474,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </div>
 
                   <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
-                    {/* Avatar with World ID Verification Badge */}
+                    {/* Avatar - No description overlay */}
                     <div className="relative inline-block mb-2">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      {searchQuery.includes('.') ? (
-                        <DomainAvatar 
-                          domain={{ 
-                            name: searchQuery.split('.')[0], 
-                            domain: searchQuery.split('.').slice(1).join('.')
-                          }}
-                          walletAddress={web3BioProfile.address}
-                          size="large"
-                        />
-                      ) : (
-                        <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
-                          {web3BioProfile.avatar ? (
-                            <img
-                              src={web3BioProfile.avatar}
-                              alt={web3BioProfile.displayName || searchQuery}
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold rounded-full">
-                              {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                        {web3BioProfile.avatar ? (
+                          <img
+                            src={web3BioProfile.avatar}
+                            alt={web3BioProfile.displayName || searchQuery}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold rounded-full">
+                            {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Profile Info - Centered */}
