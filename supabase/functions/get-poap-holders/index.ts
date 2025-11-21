@@ -50,6 +50,8 @@ serve(async (req) => {
       }
     );
 
+    console.log('POAP API response status:', holdersResponse.status);
+
     if (!holdersResponse.ok) {
       const error = await holdersResponse.text();
       console.error('Failed to fetch POAP holders:', error);
@@ -62,8 +64,24 @@ serve(async (req) => {
       );
     }
 
-    const holders = await holdersResponse.json();
+    const responseData = await holdersResponse.json();
+    console.log('POAP API response type:', typeof responseData);
+    console.log('POAP API response is array:', Array.isArray(responseData));
+    
+    // Handle different response structures
+    let holders = [];
+    if (Array.isArray(responseData)) {
+      holders = responseData;
+    } else if (responseData && typeof responseData === 'object') {
+      // Check if response has a tokens, poaps, or data property
+      holders = responseData.tokens || responseData.poaps || responseData.data || [];
+      console.log('Extracted holders from object property');
+    }
+    
     console.log(`Found ${holders.length} holders for event ${eventId}`);
+    if (holders.length > 0) {
+      console.log('First holder sample:', JSON.stringify(holders[0]));
+    }
 
     return new Response(
       JSON.stringify({ 
