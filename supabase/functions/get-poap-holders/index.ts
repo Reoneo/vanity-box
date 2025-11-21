@@ -40,7 +40,7 @@ serve(async (req) => {
     }
 
     // Fetch all holders using pagination
-    const limit = 300; // Maximum allowed by POAP API
+    const limit = 100; // Actual maximum enforced by POAP API
     let offset = 0;
     let allHolders = [];
     let hasMore = true;
@@ -93,8 +93,8 @@ serve(async (req) => {
       console.log(`Fetched ${holders.length} holders (offset: ${offset}, total: ${allHolders.length})`);
       
       // Check if there are more results
-      if (holders.length < limit) {
-        hasMore = false; // Last page reached
+      if (holders.length === 0) {
+        hasMore = false; // No more pages
       } else {
         offset += limit; // Move to next page
       }
