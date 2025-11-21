@@ -677,6 +677,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             // Fall back to Web3.bio
             console.log('⤵️ Falling back to Web3.bio for:', normalizedQuery);
             try {
+              // Validate before calling
+              if (!normalizedQuery || normalizedQuery.trim().length === 0) {
+                console.warn('⚠️ Invalid query for Web3.bio fallback');
+                return;
+              }
+              
               const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
                 body: { handle: normalizedQuery }
               });
@@ -702,6 +708,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             // No ENS data, try Web3.bio
             console.log('⤵️ No ENS data, falling back to Web3.bio for:', normalizedQuery);
             try {
+              // Validate before calling
+              if (!normalizedQuery || normalizedQuery.trim().length === 0) {
+                console.warn('⚠️ Invalid query for Web3.bio fallback');
+                return;
+              }
+              
               const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
                 body: { handle: normalizedQuery }
               });
@@ -721,11 +733,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
-        console.log('🔍 Fetching web3.bio profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
+        const handleToFetch = isWalletAddress ? normalizedAddress : trimmedQuery;
+        console.log('🔍 Fetching web3.bio profile for:', handleToFetch);
+        
+        // Validate handle before making the call
+        if (!handleToFetch || handleToFetch.trim().length === 0) {
+          console.warn('⚠️ Invalid or empty handle, skipping Web3.bio fetch');
+          setIsLoading(false);
+          return;
+        }
+        
         try {
           // Use edge function to call web3.bio API with proper authentication
           const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
-            body: { handle: isWalletAddress ? normalizedAddress : trimmedQuery }
+            body: { handle: handleToFetch }
           });
 
           console.log('📥 Web3.bio response:', { data, error });

@@ -73,6 +73,12 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
         const fullName = `${domain.name}.${domain.domain}`;
         console.log('[DomainManagementModal] Fetching ENS records from Web3.bio for:', fullName);
         
+        // Validate before calling
+        if (!fullName || !fullName.includes('.') || fullName.trim().length === 0) {
+          console.warn('[DomainManagementModal] Invalid domain format, skipping Web3.bio fetch');
+          return;
+        }
+        
         // Fetch ENS records from Web3.bio API
         const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
           body: { handle: fullName },
