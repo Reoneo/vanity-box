@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { useParams } from "react-router-dom";
@@ -592,6 +592,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Check if query is a valid Ethereum wallet address (0x + 40 hex chars = 42 total)
     const isWalletAddress = trimmedQuery && /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
 
+    // Validate and normalize wallet address if it looks like one
+    let normalizedAddress = trimmedQuery;
+    if (isWalletAddress) {
+      if (!isAddress(trimmedQuery)) {
+        console.error("❌ Invalid Ethereum address:", trimmedQuery);
+        toast.error("Invalid Ethereum address format");
+        setIsLoading(false);
+        return;
+      }
+      // Normalize to checksummed format
+      normalizedAddress = getAddress(trimmedQuery);
+      console.log("✅ Normalized address:", normalizedAddress);
+    }
+
     // If query contains a dot OR is a wallet address, try fetching profile
     if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
       // Normalize for matching (users may type with caps)
@@ -627,22 +641,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
-        console.log('🔍 Fetching web3.bio profile for:', normalizedQuery);
+        console.log('🔍 Fetching web3.bio profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
           // Use edge function to call web3.bio API with proper authentication
           const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
-            body: { handle: trimmedQuery }
+            body: { handle: isWalletAddress ? normalizedAddress : trimmedQuery }
           });
 
           console.log('📥 Web3.bio response:', { data, error });
 
           if (error) {
             console.error('❌ Error fetching web3.bio profile:', error);
-            throw error;
-          }
-
-          // Only process if we got valid data (has results)
-          if (data && Array.isArray(data) && data.length > 0) {
+            toast.error("Failed to fetch profile from Web3.bio");
+          } else if (data && Array.isArray(data) && data.length > 0) {
+            // Only process if we got valid data (has results)
             const profileData = data[0];
             console.log('✅ Web3.bio profile data:', profileData);
             setWeb3BioProfile(profileData);
