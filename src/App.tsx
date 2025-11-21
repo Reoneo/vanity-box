@@ -9,6 +9,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
+import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -33,7 +34,8 @@ const App = () => {
           <LanguageProvider>
             <TonConnectProvider>
               <PetraWalletProvider>
-                <TooltipProvider>
+                <FarcasterAuthProvider>
+                  <TooltipProvider>
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
@@ -47,7 +49,8 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
-                </TooltipProvider>
+                  </TooltipProvider>
+                </FarcasterAuthProvider>
               </PetraWalletProvider>
             </TonConnectProvider>
           </LanguageProvider>
