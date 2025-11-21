@@ -88,6 +88,60 @@ const Index = () => {
               onSearchClick={() => setShowMiniApps(false)} 
             />
 
+            {/* Supported Wallets Section - Only on Home Page */}
+            {showMiniApps && isHomePage && (
+              <div className="flex flex-col items-center gap-2 mt-4">
+                <h3 className="text-black dark:text-white font-semibold text-lg">
+                  Supported Wallets
+                </h3>
+                <div className="flex items-center justify-center gap-6">
+                  {/* World App Icon */}
+                  <button
+                    onClick={handleWorldAppClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="World App"
+                  >
+                    <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
+                      <img 
+                        src={worldAppIcon} 
+                        alt="World App" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
+                    </div>
+                  </button>
+
+                  {/* Telegram Icon */}
+                  <button
+                    onClick={handleTelegramClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="Telegram"
+                  >
+                    <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
+                      <img 
+                        src={telegramIcon} 
+                        alt="Telegram" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
+                    </div>
+                  </button>
+
+                  {/* Petra Icon */}
+                  <button
+                    onClick={handlePetraClick}
+                    className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
+                    aria-label="Petra"
+                  >
+                    <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
+                      <img 
+                        src={petraIcon} 
+                        alt="Petra" 
+                        className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110"
+                      />
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </article>
         </main>
         

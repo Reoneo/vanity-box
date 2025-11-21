@@ -36,7 +36,6 @@ import { useTheme } from "next-themes";
 import { SubdomainMintModal } from "@/components/SubdomainMintModal";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
-import { DomainAvatar } from "@/components/DomainAvatar";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
 
 import {
@@ -88,7 +87,7 @@ import linkedinIcon from "@/assets/linkedin-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import telegramIcon from "@/assets/telegram-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
-import { HomePitch } from "@/components/HomePitch";
+import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
 
@@ -632,13 +631,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Detect if this is a Namestone subdomain (2+ dots = subdomain)
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
       const isNamestoneSubdomain = dotCount >= 2;
-      
-      // Detect ENS-enabled TLDs (.eth, .box, .cash)
-      const isEnsEnabledDomain = normalizedQuery.endsWith('.eth') || 
-                                 normalizedQuery.endsWith('.box') || 
-                                 normalizedQuery.endsWith('.cash');
-      
-      console.log(`🔍 Query has ${dotCount} dots. Is Namestone subdomain:`, isNamestoneSubdomain, 'Is ENS-enabled:', isEnsEnabledDomain);
+      console.log(`🔍 Query has ${dotCount} dots. Is Namestone subdomain:`, isNamestoneSubdomain);
 
       // Use different fetch strategies based on name type
       if (isNamestoneSubdomain) {
@@ -663,90 +656,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         } catch (error) {
           console.log('❌ Failed to fetch ENS subdomain profile:', error);
         }
-      } else if (isEnsEnabledDomain && dotCount === 1) {
-        // ENS-enabled single-dot domains (.box, .eth, .cash)
-        // Try ENS subdomain profile first (which includes ENS resolution), then fall back to Web3.bio
-        console.log('🔗 Fetching ENS-enabled domain profile for:', normalizedQuery);
-        try {
-          const { data, error } = await supabase.functions.invoke('get-ens-subdomain-profile', {
-            body: { subdomain: normalizedQuery }
-          });
-
-          if (error) {
-            console.error('❌ Error fetching ENS domain profile:', error);
-            // Fall back to Web3.bio
-            console.log('⤵️ Falling back to Web3.bio for:', normalizedQuery);
-            try {
-              // Validate before calling
-              if (!normalizedQuery || normalizedQuery.trim().length === 0) {
-                console.warn('⚠️ Invalid query for Web3.bio fallback');
-                return;
-              }
-              
-              const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
-                body: { handle: normalizedQuery }
-              });
-
-              if (!web3bioError && web3bioData && Array.isArray(web3bioData) && web3bioData.length > 0) {
-                const profileData = web3bioData[0];
-                console.log('✅ Web3.bio profile data:', profileData);
-                setWeb3BioProfile(profileData);
-                setEnsResults([]);
-              }
-            } catch (web3bioErr) {
-              console.log('❌ Web3.bio fallback also failed:', web3bioErr);
-            }
-          } else if (data && !data.error) {
-            console.log('✅ ENS domain profile found:', data);
-            setWeb3BioProfile(data);
-            setEnsResults([]);
-            
-            if (data.ensRecords) {
-              setEnsRecords(data.ensRecords);
-            }
-          } else {
-            // No ENS data, try Web3.bio
-            console.log('⤵️ No ENS data, falling back to Web3.bio for:', normalizedQuery);
-            try {
-              // Validate before calling
-              if (!normalizedQuery || normalizedQuery.trim().length === 0) {
-                console.warn('⚠️ Invalid query for Web3.bio fallback');
-                return;
-              }
-              
-              const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
-                body: { handle: normalizedQuery }
-              });
-
-              if (!web3bioError && web3bioData && Array.isArray(web3bioData) && web3bioData.length > 0) {
-                const profileData = web3bioData[0];
-                console.log('✅ Web3.bio profile data:', profileData);
-                setWeb3BioProfile(profileData);
-                setEnsResults([]);
-              }
-            } catch (web3bioErr) {
-              console.log('❌ Web3.bio fallback also failed:', web3bioErr);
-            }
-          }
-        } catch (error) {
-          console.log('❌ Failed to fetch ENS domain profile:', error);
-        }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
-        const handleToFetch = isWalletAddress ? normalizedAddress : trimmedQuery;
-        console.log('🔍 Fetching web3.bio profile for:', handleToFetch);
-        
-        // Validate handle before making the call
-        if (!handleToFetch || handleToFetch.trim().length === 0) {
-          console.warn('⚠️ Invalid or empty handle, skipping Web3.bio fetch');
-          setIsLoading(false);
-          return;
-        }
-        
+        console.log('🔍 Fetching web3.bio profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
           // Use edge function to call web3.bio API with proper authentication
           const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
-            body: { handle: handleToFetch }
+            body: { handle: isWalletAddress ? normalizedAddress : trimmedQuery }
           });
 
           console.log('📥 Web3.bio response:', { data, error });
@@ -1291,7 +1207,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
                     </div>
                     )}
-                    <HomePitch />
+                    <WorldIdAnimation />
                   </>
                 ) : (
                   <>
@@ -1496,33 +1412,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </div>
 
                   <CardContent className="relative -mt-16 sm:-mt-20 px-4 sm:px-6 pb-6 flex flex-col items-center">
-                    {/* Avatar with World ID Verification Badge */}
+                    {/* Avatar - No description overlay */}
                     <div className="relative inline-block mb-2">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      {searchQuery.includes('.') ? (
-                        <DomainAvatar 
-                          domain={{ 
-                            name: searchQuery.split('.')[0], 
-                            domain: searchQuery.split('.').slice(1).join('.')
-                          }}
-                          walletAddress={web3BioProfile.address}
-                          size="large"
-                        />
-                      ) : (
-                        <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
-                          {web3BioProfile.avatar ? (
-                            <img
-                              src={web3BioProfile.avatar}
-                              alt={web3BioProfile.displayName || searchQuery}
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold rounded-full">
-                              {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                        {web3BioProfile.avatar ? (
+                          <img
+                            src={web3BioProfile.avatar}
+                            alt={web3BioProfile.displayName || searchQuery}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold rounded-full">
+                            {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Profile Info - Centered */}
