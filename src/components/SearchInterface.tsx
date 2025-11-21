@@ -1194,6 +1194,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                               handleSearch();
                               setIsSearchActive(true);
                               onSearchClick?.();
+                              // Close POAP modal if open
+                              window.dispatchEvent(new CustomEvent('close-poap-modal'));
                             }}
                             size="sm"
                             className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
@@ -1432,7 +1434,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     <div className="space-y-1 flex flex-col items-center text-center w-full max-w-2xl mx-auto">
                       <div className="flex flex-col items-center w-full">
                         <h3 className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-black mb-1">
-                        {searchQuery}
+                        {web3BioProfile.displayName && web3BioProfile.displayName !== web3BioProfile.identity 
+                          ? web3BioProfile.displayName 
+                          : "No Name"}
                       </h3>
                         
                         {/* Description below subdomain - full width with better shadow */}

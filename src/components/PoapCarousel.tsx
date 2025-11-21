@@ -69,6 +69,17 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
     fetchPoaps();
   }, [walletAddress]);
 
+  // Listen for close modal event
+  useEffect(() => {
+    const handleCloseModal = () => {
+      setIsModalOpen(false);
+      setSelectedPoap(null);
+    };
+
+    window.addEventListener('close-poap-modal', handleCloseModal);
+    return () => window.removeEventListener('close-poap-modal', handleCloseModal);
+  }, []);
+
   // Calculate statistics
   const statistics = useMemo(() => {
     if (poaps.length === 0) return null;
