@@ -11,23 +11,35 @@ serve(async (req) => {
   }
 
   try {
-    // Add error handling for empty or invalid request body
     let handle;
+    
+    // Parse request body safely
     try {
+      const contentType = req.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Content-Type must be application/json');
+      }
+      
       const body = await req.json();
       handle = body?.handle;
+      
+      console.log('🔍 Web3.bio lookup request for handle:', handle, 'from body:', JSON.stringify(body));
+      
     } catch (parseError) {
       console.error('❌ Failed to parse request body:', parseError);
-      return new Response(JSON.stringify({ error: 'Invalid request body. Expected JSON with "handle" field.' }), {
+      return new Response(JSON.stringify({ error: 'Invalid request: ' + parseError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    console.log('🔍 Web3.bio lookup request for handle:', handle);
-    
-    if (!handle) {
-      throw new Error('Handle is required');
+    // Validate handle
+    if (!handle || typeof handle !== 'string' || handle.trim().length === 0) {
+      console.error('❌ Invalid or missing handle:', handle);
+      return new Response(JSON.stringify({ error: 'Handle is required and must be a non-empty string' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const WEB3BIO_API_KEY = Deno.env.get('WEB3BIO_API_KEY');
