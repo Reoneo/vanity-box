@@ -346,12 +346,12 @@ export const Header: React.FC = () => {
       </header>
 
       {/* Slide-over Menu */}
-      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-24 overflow-y-auto">
+      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-6 overflow-y-auto">
         <nav className="space-y-6">
           
           {/* Supported Wallets - at top of menu */}
           <div className="space-y-3">
-            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white text-center">
+            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">
               Supported Wallets
             </h3>
             <div className="flex items-center justify-center gap-6">
