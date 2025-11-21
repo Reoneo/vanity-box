@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, ExternalLink, Users, Calendar, MapPin, Hash, Share2, Globe } from 'lucide-react';
+import { X, ExternalLink, Users, Calendar, Hash, Share2, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import poapLogo from '@/assets/poap-logo.png';
+import poapIcon from '@/assets/poap-icon.png';
 
 interface PoapToken {
   tokenId: string;
@@ -30,12 +30,26 @@ interface PoapDetailModalProps {
   poap: PoapToken | null;
   isOpen: boolean;
   onClose: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
 }
 
-export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ poap, isOpen, onClose }) => {
+export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ 
+  poap, 
+  isOpen, 
+  onClose, 
+  onNext, 
+  onPrevious,
+  hasNext = false,
+  hasPrevious = false 
+}) => {
   const [holders, setHolders] = useState<PoapHolder[]>([]);
   const [isLoadingHolders, setIsLoadingHolders] = useState(false);
   const [enrichedHolders, setEnrichedHolders] = useState<any[]>([]);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen && poap) {
@@ -120,17 +134,63 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ poap, isOpen, 
     }
   };
 
+  // Swipe handlers
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && hasNext && onNext) {
+      onNext();
+    }
+    if (isRightSwipe && hasPrevious && onPrevious) {
+      onPrevious();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col border border-[#D4AF37]/20">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm pt-24">
+      <div 
+        className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col border border-[#D4AF37]/20 relative"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Navigation Arrows */}
+        {hasPrevious && onPrevious && (
+          <button
+            onClick={onPrevious}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-sm border border-[#D4AF37]/30 transition-all"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
+        {hasNext && onNext && (
+          <button
+            onClick={onNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-sm border border-[#D4AF37]/30 transition-all"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between p-5 pb-3 border-b border-[#D4AF37]/20">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#6534FF] to-[#8B5CF6] rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-            </div>
+            <img src={poapIcon} alt="POAP" className="w-10 h-10" />
             <span className="text-xl font-bold text-white">POAP</span>
           </div>
           <button
