@@ -626,41 +626,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           console.log('❌ Failed to fetch ENS subdomain profile:', error);
         }
       } else {
-        // EXISTING PATH: Web3.bio lookup for regular names
+        // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
         console.log('🔍 Fetching web3.bio profile for:', normalizedQuery);
         try {
-          // Retry logic with timeout for reliability
-          const fetchWithRetry = async (url: string, retries = 3, timeout = 10000) => {
-            for (let i = 0; i < retries; i++) {
-              try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeout);
-                
-                const response = await fetch(url, { 
-                  signal: controller.signal,
-                  headers: {
-                    'Accept': 'application/json',
-                  }
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                  throw new Error(`Web3.bio API error: ${response.statusText}`);
-                }
-                
-                return response;
-              } catch (error) {
-                if (i === retries - 1) throw error;
-                console.log(`Retry ${i + 1}/${retries} for web3.bio API...`);
-                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
-              }
-            }
-            throw new Error('Max retries reached');
-          };
-          
-          const response = await fetchWithRetry(`https://api.web3.bio/profile/${trimmedQuery}`);
-          const data = await response.json();
+          // Use edge function to call web3.bio API with proper authentication
+          const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
+            body: { handle: trimmedQuery }
+          });
+
+          if (error) {
+            console.error('❌ Error fetching web3.bio profile:', error);
+            throw error;
+          }
 
           // Only process if we got valid data (has results)
           if (data && Array.isArray(data) && data.length > 0) {
