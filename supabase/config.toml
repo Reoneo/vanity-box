@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.get-namestone-domain]
 verify_jwt = false
+
+[functions.get-farcaster-casts]
+verify_jwt = false

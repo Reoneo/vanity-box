@@ -90,6 +90,7 @@ import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
+import { FarcasterFeed } from "@/components/FarcasterFeed";
 
 export interface FilterState {
   protocol: string[];
@@ -706,7 +707,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 // All standard ENS text record keys + common social platforms
                 const textRecordKeys = [
                   'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
-                  'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram',
+                  'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram', 'com.farcaster',
                   'org.telegram', 'vnd.twitter', 'vnd.github'
                 ];
 
@@ -1662,6 +1663,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                   </CardContent>
                 </Card>
+
+                {/* Farcaster Activity Feed */}
+                {(web3BioProfile?.links?.farcaster || ensRecords?.records?.['com.farcaster']) && (
+                  <div className="mt-6">
+                    <FarcasterFeed 
+                      username={web3BioProfile?.links?.farcaster || ensRecords?.records?.['com.farcaster']} 
+                    />
+                  </div>
+                )}
               </div>
             )}
 
