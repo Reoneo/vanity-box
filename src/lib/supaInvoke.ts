@@ -19,6 +19,11 @@ function parseContext(err: any): string {
 }
 
 export async function callEdge<T = any>(name: string, body?: unknown): Promise<T> {
+  // Validate that we have a proper body before calling
+  if (!body || (typeof body === 'object' && Object.keys(body).length === 0)) {
+    console.warn(`⚠️ callEdge: Calling ${name} with empty or undefined body:`, body);
+  }
+  
   // 1) Try the official client
   try {
     const { data, error } = await supabase.functions.invoke(name, {
