@@ -15,19 +15,25 @@ serve(async (req) => {
     
     // Parse request body safely
     try {
-      const contentType = req.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
-        throw new Error('Content-Type must be application/json');
+      const text = await req.text();
+      
+      // Handle empty body
+      if (!text || text.trim().length === 0) {
+        console.error('❌ Empty request body');
+        return new Response(JSON.stringify({ error: 'Request body is empty. Expected JSON with "handle" field.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
       
-      const body = await req.json();
+      const body = JSON.parse(text);
       handle = body?.handle;
       
-      console.log('🔍 Web3.bio lookup request for handle:', handle, 'from body:', JSON.stringify(body));
+      console.log('🔍 Web3.bio lookup request for handle:', handle);
       
     } catch (parseError) {
       console.error('❌ Failed to parse request body:', parseError);
-      return new Response(JSON.stringify({ error: 'Invalid request: ' + parseError.message }), {
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
