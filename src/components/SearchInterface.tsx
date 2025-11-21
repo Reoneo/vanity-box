@@ -631,7 +631,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Detect if this is a Namestone subdomain (2+ dots = subdomain)
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
       const isNamestoneSubdomain = dotCount >= 2;
-      console.log(`🔍 Query has ${dotCount} dots. Is Namestone subdomain:`, isNamestoneSubdomain);
+      
+      // Detect ENS-enabled TLDs (.eth, .box, .cash)
+      const isEnsEnabledDomain = normalizedQuery.endsWith('.eth') || 
+                                 normalizedQuery.endsWith('.box') || 
+                                 normalizedQuery.endsWith('.cash');
+      
+      console.log(`🔍 Query has ${dotCount} dots. Is Namestone subdomain:`, isNamestoneSubdomain, 'Is ENS-enabled:', isEnsEnabledDomain);
 
       // Use different fetch strategies based on name type
       if (isNamestoneSubdomain) {
@@ -655,6 +661,62 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           }
         } catch (error) {
           console.log('❌ Failed to fetch ENS subdomain profile:', error);
+        }
+      } else if (isEnsEnabledDomain && dotCount === 1) {
+        // ENS-enabled single-dot domains (.box, .eth, .cash)
+        // Try ENS subdomain profile first (which includes ENS resolution), then fall back to Web3.bio
+        console.log('🔗 Fetching ENS-enabled domain profile for:', normalizedQuery);
+        try {
+          const { data, error } = await supabase.functions.invoke('get-ens-subdomain-profile', {
+            body: { subdomain: normalizedQuery }
+          });
+
+          if (error) {
+            console.error('❌ Error fetching ENS domain profile:', error);
+            // Fall back to Web3.bio
+            console.log('⤵️ Falling back to Web3.bio for:', normalizedQuery);
+            try {
+              const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
+                body: { handle: normalizedQuery }
+              });
+
+              if (!web3bioError && web3bioData && Array.isArray(web3bioData) && web3bioData.length > 0) {
+                const profileData = web3bioData[0];
+                console.log('✅ Web3.bio profile data:', profileData);
+                setWeb3BioProfile(profileData);
+                setEnsResults([]);
+              }
+            } catch (web3bioErr) {
+              console.log('❌ Web3.bio fallback also failed:', web3bioErr);
+            }
+          } else if (data && !data.error) {
+            console.log('✅ ENS domain profile found:', data);
+            setWeb3BioProfile(data);
+            setEnsResults([]);
+            
+            if (data.ensRecords) {
+              setEnsRecords(data.ensRecords);
+            }
+          } else {
+            // No ENS data, try Web3.bio
+            console.log('⤵️ No ENS data, falling back to Web3.bio for:', normalizedQuery);
+            try {
+              const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
+                body: { handle: normalizedQuery }
+              });
+
+              if (!web3bioError && web3bioData && Array.isArray(web3bioData) && web3bioData.length > 0) {
+                const profileData = web3bioData[0];
+                console.log('✅ Web3.bio profile data:', profileData);
+                setWeb3BioProfile(profileData);
+                setEnsResults([]);
+              }
+            } catch (web3bioErr) {
+              console.log('❌ Web3.bio fallback also failed:', web3bioErr);
+            }
+          }
+        } catch (error) {
+          console.log('❌ Failed to fetch ENS domain profile:', error);
         }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
