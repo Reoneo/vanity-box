@@ -1499,14 +1499,30 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     {/* Avatar with World ID Verification Badge */}
                     <div className="relative inline-block mb-2">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
-                      <DomainAvatar 
-                        domain={{ 
-                          name: searchQuery.includes('.') ? searchQuery.split('.')[0] : searchQuery, 
-                          domain: searchQuery.includes('.') ? searchQuery.split('.').slice(1).join('.') : ''
-                        }}
-                        walletAddress={web3BioProfile.address}
-                        size="large"
-                      />
+                      {searchQuery.includes('.') ? (
+                        <DomainAvatar 
+                          domain={{ 
+                            name: searchQuery.split('.')[0], 
+                            domain: searchQuery.split('.').slice(1).join('.')
+                          }}
+                          walletAddress={web3BioProfile.address}
+                          size="large"
+                        />
+                      ) : (
+                        <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-[#D4AF37] overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-gray-800">
+                          {web3BioProfile.avatar ? (
+                            <img
+                              src={web3BioProfile.avatar}
+                              alt={web3BioProfile.displayName || searchQuery}
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl text-white font-bold rounded-full">
+                              {(web3BioProfile.displayName || searchQuery).charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Profile Info - Centered */}

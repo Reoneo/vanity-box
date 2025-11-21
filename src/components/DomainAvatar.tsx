@@ -26,8 +26,16 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddres
         const fullName = `${domain.name}.${domain.domain}`;
         
         // Validate the handle before making the API call
-        if (!domain.name || !domain.domain || !fullName.includes('.')) {
-          console.warn('Invalid domain format, skipping avatar fetch:', { domain, fullName });
+        const trimmedName = domain.name?.trim() || '';
+        const trimmedDomain = domain.domain?.trim() || '';
+        
+        if (!trimmedName || !trimmedDomain || trimmedName.length === 0 || trimmedDomain.length === 0) {
+          console.warn('Invalid domain format, skipping avatar fetch:', { 
+            domain, 
+            fullName,
+            trimmedName,
+            trimmedDomain 
+          });
           setIsLoading(false);
           return;
         }
