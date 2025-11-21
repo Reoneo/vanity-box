@@ -110,7 +110,14 @@ serve(async (req) => {
       throw new Error(`Failed to fetch casts: ${castsResponse.statusText}`);
     }
 
-    const castsData = await castsResponse.json();
+    let castsData;
+    try {
+      castsData = await castsResponse.json();
+    } catch (e) {
+      console.error('❌ Failed to parse Neynar response:', e);
+      throw new Error('Invalid response from Farcaster API');
+    }
+    
     console.log('✅ Fetched casts:', castsData.casts?.length || 0);
 
     return new Response(JSON.stringify({
