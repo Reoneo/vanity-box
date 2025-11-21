@@ -592,18 +592,32 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Check if query is a valid Ethereum wallet address (0x + 40 hex chars = 42 total)
     const isWalletAddress = trimmedQuery && /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
 
+    console.log("🔍 Query analysis:", {
+      query: trimmedQuery,
+      isWalletAddress,
+      hasDot: trimmedQuery?.includes("."),
+      length: trimmedQuery?.length
+    });
+
     // Validate and normalize wallet address if it looks like one
     let normalizedAddress = trimmedQuery;
     if (isWalletAddress) {
-      if (!isAddress(trimmedQuery)) {
-        console.error("❌ Invalid Ethereum address:", trimmedQuery);
-        toast.error("Invalid Ethereum address format");
-        setIsLoading(false);
-        return;
+      try {
+        if (!isAddress(trimmedQuery)) {
+          console.error("❌ Invalid Ethereum address checksum:", trimmedQuery);
+          toast.error("Invalid Ethereum address");
+          setIsLoading(false);
+          return;
+        }
+        // Normalize to checksummed format
+        normalizedAddress = getAddress(trimmedQuery);
+        console.log("✅ Normalized address:", normalizedAddress);
+      } catch (err) {
+        console.error("❌ Address validation error:", err);
+        // If checksum validation fails, still try with original address
+        normalizedAddress = trimmedQuery;
+        console.log("⚠️ Using original address despite validation error");
       }
-      // Normalize to checksummed format
-      normalizedAddress = getAddress(trimmedQuery);
-      console.log("✅ Normalized address:", normalizedAddress);
     }
 
     // If query contains a dot OR is a wallet address, try fetching profile
