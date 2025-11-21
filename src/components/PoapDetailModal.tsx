@@ -191,58 +191,53 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ poap, isOpen, 
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
-            
-            <Input
-              placeholder="Search holders..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-gray-800/50 border-[#D4AF37]/30 text-white placeholder:text-gray-500"
-            />
           </div>
 
-          <div className="overflow-y-auto p-6 space-y-2 flex-1">
+          <div className="p-6 flex-1 overflow-hidden">
             {isLoadingHolders ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4AF37]"></div>
               </div>
-            ) : filteredHolders.length === 0 ? (
+            ) : enrichedHolders.length === 0 ? (
               <p className="text-center text-gray-400 py-8">No holders found</p>
             ) : (
-              filteredHolders.map((holder, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar className="h-10 w-10 border-2 border-[#D4AF37]/50">
-                      <AvatarImage src={holder.avatar} alt={holder.displayName} />
-                      <AvatarFallback className="bg-gray-700 text-white">
-                        {holder.displayName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-white font-medium truncate">
-                        {holder.displayName}
-                      </span>
-                      {holder.owner.id !== holder.displayName && (
-                        <span className="text-xs text-gray-400 truncate">
-                          {holder.owner.id.slice(0, 6)}...{holder.owner.id.slice(-4)}
-                        </span>
-                      )}
+              <div className="h-full overflow-x-auto overflow-y-hidden pb-4">
+                <div className="flex gap-4 h-full">
+                  {enrichedHolders.map((holder, index) => (
+                    <div
+                      key={index}
+                      className="flex-shrink-0 w-[200px] bg-gray-800/50 hover:bg-gray-700/50 rounded-xl p-4 transition-all hover:scale-105 cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50"
+                      onClick={() => handleViewProfile(holder.owner.id)}
+                    >
+                      <div className="flex flex-col items-center text-center gap-3">
+                        <Avatar className="h-20 w-20 border-2 border-[#D4AF37]/50">
+                          <AvatarImage src={holder.avatar} alt={holder.displayName} />
+                          <AvatarFallback className="bg-gray-700 text-white text-xl">
+                            {holder.displayName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-1 w-full">
+                          <span className="text-white font-medium truncate">
+                            {holder.displayName}
+                          </span>
+                          <span className="text-xs text-gray-400 truncate">
+                            {holder.owner.id.slice(0, 6)}...{holder.owner.id.slice(-4)}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black text-xs px-3 py-1 h-auto w-full"
+                        >
+                          View Profile
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleViewProfile(holder.owner.id)}
-                    className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black text-xs px-3 py-1 h-auto"
-                  >
-                    View Profile
-                  </Button>
+                  ))}
                 </div>
-              ))
+              </div>
             )}
-            {!isLoadingHolders && enrichedHolders.length < holders.length && (
-              <p className="text-center text-gray-500 text-xs py-2">
+            {!isLoadingHolders && enrichedHolders.length > 0 && enrichedHolders.length < holders.length && (
+              <p className="text-center text-gray-500 text-xs mt-2">
                 Showing first {enrichedHolders.length} of {holders.length} holders
               </p>
             )}
