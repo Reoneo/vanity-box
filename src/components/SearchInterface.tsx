@@ -1332,10 +1332,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 setEnsResults([]);
                                 setIsAvailable(null);
                                 setHasSearched(false);
-                                setWeb3BioProfile(null);
-                                setIsSearchActive(false);
                                 setShowInitialResults(false);
-                                onClearSearch?.();
+                                // Don't clear profile - keep user on current view
+                                // setWeb3BioProfile(null);
+                                // setIsSearchActive(false);
+                                // onClearSearch?.();
                               }}
                               className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                               aria-label="Clear search"
