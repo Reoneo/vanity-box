@@ -5,7 +5,7 @@ import vanityLogo from '../assets/vanity-logo.png';
 import vanityContactIcon from '../assets/vanity-contact-icon.png';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, Home } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -139,6 +139,18 @@ export const Header: React.FC = () => {
                 </button>
               </TriggerOrClose>
               
+              {/* Home Button - Mobile */}
+              {hasProfile && (
+                <button
+                  type="button"
+                  aria-label="Home"
+                  onClick={() => window.location.href = '/'}
+                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                >
+                  <Home className="w-5 h-5 text-black" />
+                </button>
+              )}
+              
               {/* Show search icon only when profile is loaded */}
               {hasProfile && (
                 <button
@@ -186,6 +198,18 @@ export const Header: React.FC = () => {
                     </div>
                   </button>
                 </TriggerOrClose>
+                
+                {/* Home Button - Mobile (disconnected) */}
+                {hasProfile && (
+                  <button
+                    type="button"
+                    aria-label="Home"
+                    onClick={() => window.location.href = '/'}
+                    className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                  >
+                    <Home className="w-5 h-5 text-black" />
+                  </button>
+                )}
                 
                 {/* Show search icon only when profile is loaded */}
                 {hasProfile && (
@@ -251,6 +275,18 @@ export const Header: React.FC = () => {
                 </div>
               </button>
             </TriggerOrClose>
+            
+            {/* Home Button - Desktop */}
+            {hasProfile && (
+              <button
+                type="button"
+                aria-label="Home"
+                onClick={() => window.location.href = '/'}
+                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+              >
+                <Home className="w-5 h-5 text-black" />
+              </button>
+            )}
             
             {/* Show search icon only when profile is loaded */}
             {hasProfile && (

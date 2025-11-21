@@ -86,7 +86,6 @@ const Index = () => {
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
             <SearchInterface
               onSearchClick={() => setShowMiniApps(false)} 
-              onClearSearch={() => setShowMiniApps(true)}
             />
 
             {/* Footer - Only on Home Page */}
