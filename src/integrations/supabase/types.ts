@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      farcaster_signers: {
+        Row: {
+          created_at: string | null
+          fid: number
+          id: string
+          public_key: string | null
+          signer_uuid: string
+          status: string | null
+          updated_at: string | null
+          world_id_hash: string
+        }
+        Insert: {
+          created_at?: string | null
+          fid: number
+          id?: string
+          public_key?: string | null
+          signer_uuid: string
+          status?: string | null
+          updated_at?: string | null
+          world_id_hash: string
+        }
+        Update: {
+          created_at?: string | null
+          fid?: number
+          id?: string
+          public_key?: string | null
+          signer_uuid?: string
+          status?: string | null
+          updated_at?: string | null
+          world_id_hash?: string
+        }
+        Relationships: []
+      }
       minted_domains: {
         Row: {
           created_at: string
