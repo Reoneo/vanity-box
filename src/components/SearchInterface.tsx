@@ -599,24 +599,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       length: trimmedQuery?.length
     });
 
-    // Validate and normalize wallet address if it looks like one
+    // Normalize wallet address to checksummed format if it's a wallet address
     let normalizedAddress = trimmedQuery;
     if (isWalletAddress) {
       try {
-        if (!isAddress(trimmedQuery)) {
-          console.error("❌ Invalid Ethereum address checksum:", trimmedQuery);
-          toast.error("Invalid Ethereum address");
-          setIsLoading(false);
-          return;
-        }
-        // Normalize to checksummed format
-        normalizedAddress = getAddress(trimmedQuery);
-        console.log("✅ Normalized address:", normalizedAddress);
+        // Try to get checksummed version, but don't fail if it doesn't validate
+        normalizedAddress = getAddress(trimmedQuery.toLowerCase());
+        console.log("✅ Checksummed address:", normalizedAddress);
       } catch (err) {
-        console.error("❌ Address validation error:", err);
-        // If checksum validation fails, still try with original address
+        // If getAddress fails, use the original - Web3.bio can handle it
+        console.log("⚠️ Using original address format:", trimmedQuery);
         normalizedAddress = trimmedQuery;
-        console.log("⚠️ Using original address despite validation error");
       }
     }
 
