@@ -88,9 +88,12 @@ const Index = () => {
               onSearchClick={() => setShowMiniApps(false)} 
             />
 
-            {/* Footer - Only on Home Page */}
+            {/* Supported Wallets Section - Only on Home Page */}
             {showMiniApps && isHomePage && (
-              <div className="flex flex-col items-center gap-0.5 mt-1">
+              <div className="flex flex-col items-center gap-2 mt-4">
+                <h3 className="text-black dark:text-white font-semibold text-lg">
+                  Supported Wallets
+                </h3>
                 <div className="flex items-center justify-center gap-6">
                   {/* World App Icon */}
                   <button

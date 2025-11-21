@@ -106,11 +106,10 @@ export const Header: React.FC = () => {
           {/* Mobile: Show left-aligned controls when wallet is connected */}
           {isWalletConnected && (
             <div className="flex items-center gap-1 md:hidden">
-              {/* Logo - positioned at far left, moved slightly left, with Home Button */}
-              <button
-                onClick={() => window.location.reload()}
+              {/* Logo - positioned at far left, moved slightly left - NO CLICK */}
+              <div
                 className={cn(
-                  "flex items-center -ml-2 cursor-pointer hover:opacity-80 transition-all duration-500",
+                  "flex items-center -ml-2 transition-all duration-500",
                   isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]"
                 )}
               >
@@ -122,7 +121,7 @@ export const Header: React.FC = () => {
                   fetchPriority="high"
                   style={{ marginTop: '2px', marginBottom: '2px' }}
                 />
-              </button>
+              </div>
 
               {/* Menu Button */}
               <TriggerOrClose asChild>
@@ -244,10 +243,9 @@ export const Header: React.FC = () => {
             )}
               </div>
 
-              {/* Centered Logo (Mobile when wallet disconnected) with Home Button */}
-              <button
-                onClick={() => window.location.reload()}
-                className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden cursor-pointer hover:opacity-80 transition-opacity"
+              {/* Centered Logo (Mobile when wallet disconnected) - NO CLICK */}
+              <div
+                className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden"
               >
                 <img 
                   src={vanityLogo} 
@@ -256,7 +254,7 @@ export const Header: React.FC = () => {
                   loading="eager"
                   fetchPriority="high"
                 />
-              </button>
+              </div>
             </>
           )}
 
@@ -321,10 +319,9 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Desktop/Tablet: Centered Logo with Home Button */}
-          <button
-            onClick={() => window.location.reload()}
-            className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2 cursor-pointer hover:opacity-80 transition-opacity"
+          {/* Desktop/Tablet: Centered Logo - NO CLICK */}
+          <div
+            className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2"
           >
             <img 
               src={vanityLogo} 
@@ -333,7 +330,7 @@ export const Header: React.FC = () => {
               loading="eager"
               fetchPriority="high"
             />
-          </button>
+          </div>
 
           
           {/* Wallet Connection - Right Side */}
