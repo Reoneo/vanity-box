@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PoapDetailModal } from "@/components/PoapDetailModal";
@@ -67,6 +67,50 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
     fetchPoaps();
   }, [walletAddress]);
 
+  // Calculate statistics
+  const statistics = useMemo(() => {
+    if (poaps.length === 0) return null;
+
+    // Count event types (extract category from event name)
+    const eventTypeCount: { [key: string]: number } = {};
+    
+    poaps.forEach((poap) => {
+      // Try to categorize events by common keywords
+      const name = poap.eventName.toLowerCase();
+      let category = 'Other';
+      
+      if (name.includes('conference') || name.includes('summit')) category = 'Conference';
+      else if (name.includes('meetup') || name.includes('gathering')) category = 'Meetup';
+      else if (name.includes('workshop') || name.includes('tutorial')) category = 'Workshop';
+      else if (name.includes('hackathon') || name.includes('hack')) category = 'Hackathon';
+      else if (name.includes('concert') || name.includes('music')) category = 'Concert';
+      else if (name.includes('art') || name.includes('gallery')) category = 'Art';
+      else if (name.includes('gaming') || name.includes('game')) category = 'Gaming';
+      else if (name.includes('nft') || name.includes('mint')) category = 'NFT';
+      
+      eventTypeCount[category] = (eventTypeCount[category] || 0) + 1;
+    });
+
+    // Get top event type
+    const sortedTypes = Object.entries(eventTypeCount)
+      .sort(([, a], [, b]) => b - a);
+    
+    const topEventType = sortedTypes[0];
+    
+    // Get years distribution
+    const years = poaps
+      .map(p => p.eventYear)
+      .filter((year): year is number => year !== undefined);
+    const uniqueYears = [...new Set(years)].length;
+
+    return {
+      total: poaps.length,
+      topEventType: topEventType ? topEventType[0] : 'Various',
+      topEventCount: topEventType ? topEventType[1] : 0,
+      yearsActive: uniqueYears,
+    };
+  }, [poaps]);
+
   const goToNext = () => {
     setCurrentIndex((prev) => (prev + 1) % poaps.length);
   };
@@ -97,6 +141,34 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
   return (
     <>
       <div className="w-full py-3 flex-shrink-0">
+        {/* Statistics Header */}
+        {statistics && (
+          <div className="mb-3 px-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-[#D4AF37]" />
+                <span className="text-gray-400">Total:</span>
+                <span className="text-[#D4AF37] font-semibold">{statistics.total}</span>
+              </div>
+              <div className="text-gray-400">
+                {statistics.topEventType !== 'Other' && (
+                  <>
+                    <span className="text-gray-500">Top:</span>{' '}
+                    <span className="text-[#D4AF37]">{statistics.topEventType}</span>
+                    <span className="text-gray-500 ml-1">({statistics.topEventCount})</span>
+                  </>
+                )}
+                {statistics.yearsActive > 0 && (
+                  <span className="ml-2 text-gray-500">
+                    {statistics.yearsActive} {statistics.yearsActive === 1 ? 'year' : 'years'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Carousel */}
         <div className="flex items-center justify-between gap-2">
           <Button
             size="sm"
