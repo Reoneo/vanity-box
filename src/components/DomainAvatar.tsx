@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
+import { VerificationBadge } from './VerificationBadge';
+import { checkWorldIdVerification } from '@/utils/worldIdVerification';
 
 interface DomainAvatarProps {
   domain: {
     name: string;
     domain: string;
   };
+  walletAddress?: string;
 }
 
-export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain }) => {
+export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddress }) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationChecked, setVerificationChecked] = useState(false);
 
   useEffect(() => {
     const fetchAvatar = async () => {
@@ -43,8 +48,21 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain }) => {
     fetchAvatar();
   }, [domain.name, domain.domain]);
 
+  // Check World ID verification status
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (walletAddress && !verificationChecked) {
+        const verified = await checkWorldIdVerification(walletAddress);
+        setIsVerified(verified);
+        setVerificationChecked(true);
+      }
+    };
+
+    checkVerification();
+  }, [walletAddress, verificationChecked]);
+
   return (
-    <div className="w-20 h-20 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
+    <div className="relative w-20 h-20 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
       {isLoading ? (
         <div className="w-full h-full bg-gray-700 animate-pulse" />
       ) : (
@@ -57,6 +75,9 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain }) => {
             (e.target as HTMLImageElement).src = smithCashAvatar;
           }}
         />
+      )}
+      {walletAddress && verificationChecked && (
+        <VerificationBadge isVerified={isVerified} />
       )}
     </div>
   );
