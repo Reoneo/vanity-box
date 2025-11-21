@@ -27,12 +27,13 @@ serve(async (req) => {
 
     console.log('Fetching POAPs for wallet:', walletAddress);
 
-    const poapApiKey = Deno.env.get('POAP_CLIENT_ID');
+    const clientId = Deno.env.get('POAP_CLIENT_ID');
+    const clientSecret = Deno.env.get('POAP_CLIENT_SECRET');
 
-    if (!poapApiKey) {
-      console.error('POAP API key not configured');
+    if (!clientId || !clientSecret) {
+      console.error('POAP OAuth credentials not configured');
       return new Response(
-        JSON.stringify({ error: 'POAP API key not configured' }),
+        JSON.stringify({ error: 'POAP OAuth credentials not configured' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -40,14 +41,67 @@ serve(async (req) => {
       );
     }
 
-    // Fetch POAPs for the wallet using X-API-Key header
+    // Step 1: Get OAuth access token using client credentials flow
+    console.log('Requesting OAuth access token from POAP...');
+    
+    const tokenResponse = await fetch('https://api.poap.tech/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+      }).toString(),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('OAuth token request failed:', tokenResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          count: 0,
+          error: 'Failed to authenticate with POAP API',
+          details: errorText,
+          status: tokenResponse.status
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      console.error('No access token received from POAP OAuth');
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          count: 0,
+          error: 'Failed to obtain access token from POAP'
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('OAuth access token obtained successfully');
+
+    // Step 2: Fetch POAPs using the access token
     console.log('Calling POAP API:', `https://api.poap.tech/actions/scan/${walletAddress}`);
     
     const poapsResponse = await fetch(
       `https://api.poap.tech/actions/scan/${walletAddress}`,
       {
         headers: {
-          'X-API-Key': poapApiKey,
+          'Authorization': `Bearer ${accessToken}`,
           'Accept': 'application/json',
         },
       }
