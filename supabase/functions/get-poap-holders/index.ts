@@ -39,55 +39,77 @@ serve(async (req) => {
       );
     }
 
-    // Fetch holders for the event using X-API-Key header
-    const holdersResponse = await fetch(
-      `https://api.poap.tech/event/${eventId}/poaps`,
-      {
-        headers: {
-          'X-API-Key': poapApiKey,
-          'Accept': 'application/json',
-        },
-      }
-    );
+    // Fetch all holders using pagination
+    const limit = 300; // Maximum allowed by POAP API
+    let offset = 0;
+    let allHolders = [];
+    let hasMore = true;
 
-    console.log('POAP API response status:', holdersResponse.status);
-
-    if (!holdersResponse.ok) {
-      const error = await holdersResponse.text();
-      console.error('Failed to fetch POAP holders:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch holders from API' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    while (hasMore) {
+      const holdersResponse = await fetch(
+        `https://api.poap.tech/event/${eventId}/poaps?limit=${limit}&offset=${offset}`,
+        {
+          headers: {
+            'X-API-Key': poapApiKey,
+            'Accept': 'application/json',
+          },
         }
       );
-    }
 
-    const responseData = await holdersResponse.json();
-    console.log('POAP API response type:', typeof responseData);
-    console.log('POAP API response is array:', Array.isArray(responseData));
-    
-    // Handle different response structures
-    let holders = [];
-    if (Array.isArray(responseData)) {
-      holders = responseData;
-    } else if (responseData && typeof responseData === 'object') {
-      // Check if response has a tokens, poaps, or data property
-      holders = responseData.tokens || responseData.poaps || responseData.data || [];
-      console.log('Extracted holders from object property');
+      console.log(`POAP API response status (offset ${offset}):`, holdersResponse.status);
+
+      if (!holdersResponse.ok) {
+        const error = await holdersResponse.text();
+        console.error('Failed to fetch POAP holders:', error);
+        
+        // If we already have some holders, return them instead of erroring
+        if (allHolders.length > 0) {
+          console.log(`⚠️ Partial fetch - returning ${allHolders.length} holders collected so far`);
+          break;
+        }
+        
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch holders from API' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      const responseData = await holdersResponse.json();
+      
+      // Handle different response structures
+      let holders = [];
+      if (Array.isArray(responseData)) {
+        holders = responseData;
+      } else if (responseData && typeof responseData === 'object') {
+        holders = responseData.tokens || responseData.poaps || responseData.data || [];
+      }
+
+      // Add to total collection
+      allHolders = [...allHolders, ...holders];
+      
+      console.log(`Fetched ${holders.length} holders (offset: ${offset}, total: ${allHolders.length})`);
+      
+      // Check if there are more results
+      if (holders.length < limit) {
+        hasMore = false; // Last page reached
+      } else {
+        offset += limit; // Move to next page
+      }
     }
     
-    console.log(`Found ${holders.length} holders for event ${eventId}`);
-    if (holders.length > 0) {
-      console.log('First holder sample:', JSON.stringify(holders[0]));
+    console.log(`✅ Fetched all ${allHolders.length} holders for event ${eventId}`);
+    if (allHolders.length > 0) {
+      console.log('First holder sample:', JSON.stringify(allHolders[0]));
     }
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        count: holders.length,
-        holders: holders 
+        count: allHolders.length,
+        holders: allHolders 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
