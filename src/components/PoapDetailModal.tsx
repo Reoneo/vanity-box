@@ -50,12 +50,29 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
   const [enrichedHolders, setEnrichedHolders] = useState<any[]>([]);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [displayedCount, setDisplayedCount] = useState(10);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     if (isOpen && poap) {
       fetchHolders();
+      setDisplayedCount(10); // Reset to 10 when opening a new POAP
     }
   }, [isOpen, poap]);
+
+  // Close modal when search is toggled
+  useEffect(() => {
+    const handleSearchToggle = () => {
+      if (isOpen) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('toggle-search-bar', handleSearchToggle);
+    return () => {
+      window.removeEventListener('toggle-search-bar', handleSearchToggle);
+    };
+  }, [isOpen, onClose]);
 
   const fetchHolders = async () => {
     if (!poap) return;
@@ -69,41 +86,58 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
       if (!error && data?.success) {
         setHolders(data.holders || []);
         
-        // Enrich first 20 holders with web3.bio data
-        const holdersToEnrich = (data.holders || []).slice(0, 20);
-        const enriched = await Promise.all(
-          holdersToEnrich.map(async (holder: PoapHolder) => {
-            try {
-              const address = holder.owner.id;
-              const { data: bioData } = await supabase.functions.invoke('get-web3bio-profile', {
-                body: { handle: address },
-              });
-              
-              if (bioData && Array.isArray(bioData) && bioData.length > 0) {
-                return { 
-                  ...holder, 
-                  web3bio: bioData[0],
-                  displayName: bioData[0].displayName || holder.owner.ens || address,
-                  avatar: bioData[0].avatar
-                };
-              }
-            } catch (error) {
-              console.error('Error fetching web3.bio for holder:', error);
-            }
-            return {
-              ...holder,
-              displayName: holder.owner.ens || holder.owner.id,
-              avatar: null
-            };
-          })
-        );
-        setEnrichedHolders(enriched);
+        // Enrich first batch with web3.bio data
+        await enrichNextBatch(data.holders || [], 0);
       }
     } catch (error) {
       console.error('Error fetching POAP holders:', error);
     } finally {
       setIsLoadingHolders(false);
     }
+  };
+
+  const enrichNextBatch = async (allHolders: PoapHolder[], startIndex: number) => {
+    const batchSize = 10;
+    const endIndex = Math.min(startIndex + batchSize, allHolders.length);
+    const holdersToEnrich = allHolders.slice(startIndex, endIndex);
+    
+    const enriched = await Promise.all(
+      holdersToEnrich.map(async (holder: PoapHolder) => {
+        try {
+          const address = holder.owner.id;
+          const { data: bioData } = await supabase.functions.invoke('get-web3bio-profile', {
+            body: { handle: address },
+          });
+          
+          if (bioData && Array.isArray(bioData) && bioData.length > 0) {
+            return { 
+              ...holder, 
+              web3bio: bioData[0],
+              displayName: bioData[0].displayName || holder.owner.ens || address,
+              avatar: bioData[0].avatar
+            };
+          }
+        } catch (error) {
+          console.error('Error fetching web3.bio for holder:', error);
+        }
+        return {
+          ...holder,
+          displayName: holder.owner.ens || holder.owner.id,
+          avatar: null
+        };
+      })
+    );
+    
+    setEnrichedHolders(prev => startIndex === 0 ? enriched : [...prev, ...enriched]);
+  };
+
+  const loadMoreHolders = async () => {
+    if (isLoadingMore || enrichedHolders.length >= holders.length) return;
+    
+    setIsLoadingMore(true);
+    await enrichNextBatch(holders, enrichedHolders.length);
+    setDisplayedCount(prev => prev + 10);
+    setIsLoadingMore(false);
   };
 
   const handleViewProfile = (address: string) => {
@@ -260,7 +294,7 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
           {/* Holders Section */}
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <span className="text-[#D4AF37]">{holders.length}</span> 
+              <span className="text-[#D4AF37]">{holders.length.toLocaleString()}</span> 
               <span>Collector{holders.length !== 1 ? 's' : ''}</span>
             </h3>
 
@@ -271,44 +305,64 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
             ) : enrichedHolders.length === 0 ? (
               <p className="text-center text-gray-500 py-8 text-sm">No holders found</p>
             ) : (
-              <div className="space-y-2.5">
-                {enrichedHolders.map((holder, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3.5 bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm group"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Avatar className="h-11 w-11 border-2 border-[#D4AF37]/50 shadow-lg shadow-[#D4AF37]/10">
-                        <AvatarImage src={holder.avatar} alt={holder.displayName} />
-                        <AvatarFallback className="bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] text-black font-bold text-sm">
-                          {holder.displayName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-white font-semibold truncate text-sm">
-                          {holder.displayName}
-                        </span>
-                        <span className="text-xs text-gray-400 truncate">
-                          {holder.owner.id.slice(0, 6)}...{holder.owner.id.slice(-4)}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleViewProfile(holder.owner.id)}
-                      className="bg-[#D4AF37] hover:bg-[#F7E06C] text-black text-xs px-3.5 py-2 h-auto rounded-full font-semibold flex items-center gap-1.5 shadow-lg shadow-[#D4AF37]/20 transition-all group-hover:scale-105"
+              <>
+                <div className="space-y-2.5">
+                  {enrichedHolders.slice(0, displayedCount).map((holder, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3.5 bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm group"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      View
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar className="h-11 w-11 border-2 border-[#D4AF37]/50 shadow-lg shadow-[#D4AF37]/10">
+                          <AvatarImage src={holder.avatar} alt={holder.displayName} />
+                          <AvatarFallback className="bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] text-black font-bold text-sm">
+                            {holder.displayName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-white font-semibold truncate text-sm">
+                            {holder.displayName}
+                          </span>
+                          <span className="text-xs text-gray-400 truncate">
+                            {holder.owner.id.slice(0, 6)}...{holder.owner.id.slice(-4)}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleViewProfile(holder.owner.id)}
+                        className="bg-[#D4AF37] hover:bg-[#F7E06C] text-black text-xs px-3.5 py-2 h-auto rounded-full font-semibold flex items-center gap-1.5 shadow-lg shadow-[#D4AF37]/20 transition-all group-hover:scale-105"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        View
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Load More Button */}
+                {enrichedHolders.length < holders.length && (
+                  <div className="mt-4 flex flex-col items-center gap-2">
+                    <Button
+                      onClick={loadMoreHolders}
+                      disabled={isLoadingMore}
+                      className="w-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 text-white border border-[#D4AF37]/50 rounded-xl font-semibold py-3"
+                    >
+                      {isLoadingMore ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Loading...</span>
+                        </div>
+                      ) : (
+                        `Load More (${Math.min(10, holders.length - enrichedHolders.length)} more)`
+                      )}
                     </Button>
+                    <p className="text-center text-gray-500 text-xs">
+                      Showing {displayedCount} of {holders.length.toLocaleString()} collectors
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-            {!isLoadingHolders && enrichedHolders.length > 0 && enrichedHolders.length < holders.length && (
-              <p className="text-center text-gray-500 text-xs mt-4">
-                Showing first {enrichedHolders.length} of {holders.length} holders
-              </p>
+                )}
+              </>
             )}
           </div>
         </div>
