@@ -1480,8 +1480,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] rounded-full blur-xl opacity-60"></div>
                       <DomainAvatar 
                         domain={{ 
-                          name: searchQuery.split('.')[0], 
-                          domain: searchQuery.split('.').slice(1).join('.') 
+                          name: searchQuery.includes('.') ? searchQuery.split('.')[0] : searchQuery, 
+                          domain: searchQuery.includes('.') ? searchQuery.split('.').slice(1).join('.') : ''
                         }}
                         walletAddress={web3BioProfile.address}
                         size="large"
