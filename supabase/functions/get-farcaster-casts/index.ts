@@ -11,9 +11,9 @@ serve(async (req) => {
   }
 
   try {
-    const { username, fid, limit = 10, cursor } = await req.json();
+    const { username, fid, walletAddress, limit = 10, cursor } = await req.json();
     
-    console.log('🎭 Farcaster casts request:', { username, fid, limit, cursor });
+    console.log('🎭 Farcaster casts request:', { username, fid, walletAddress, limit, cursor });
     
     const NEYNAR_API_KEY = Deno.env.get('NEYNAR_API_KEY');
     
@@ -23,6 +23,30 @@ serve(async (req) => {
     }
 
     let userFid = fid;
+
+    // If no username/fid but wallet address provided, lookup by address
+    if (!username && !userFid && walletAddress) {
+      console.log('🔍 Looking up FID for wallet:', walletAddress);
+      
+      const addressLookupUrl = `https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${walletAddress}`;
+      
+      const addressResponse = await fetch(addressLookupUrl, {
+        headers: {
+          'accept': 'application/json',
+          'api_key': NEYNAR_API_KEY,
+        },
+      });
+
+      if (addressResponse.ok) {
+        const addressData = await addressResponse.json();
+        // addressData format: { [address]: [{ fid, ... }] }
+        const users = addressData[walletAddress.toLowerCase()];
+        if (users && users.length > 0) {
+          userFid = users[0].fid;
+          console.log('✅ Found FID from address:', userFid);
+        }
+      }
+    }
 
     // If username provided but no FID, lookup the FID first
     if (username && !userFid) {
