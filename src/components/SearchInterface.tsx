@@ -589,8 +589,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setHasSearched(true);
     setIsSearchActive(true);
 
-    // Check if query is a wallet address (starts with 0x and 42 characters)
-    const isWalletAddress = trimmedQuery && trimmedQuery.startsWith("0x") && trimmedQuery.length === 42;
+    // Check if query is a valid Ethereum wallet address (0x + 40 hex chars = 42 total)
+    const isWalletAddress = trimmedQuery && /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
 
     // If query contains a dot OR is a wallet address, try fetching profile
     if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
