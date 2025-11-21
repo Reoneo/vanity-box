@@ -10,9 +10,10 @@ interface DomainAvatarProps {
     domain: string;
   };
   walletAddress?: string;
+  size?: 'small' | 'large';
 }
 
-export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddress }) => {
+export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddress, size = 'small' }) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
@@ -61,8 +62,12 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddres
     checkVerification();
   }, [walletAddress, verificationChecked]);
 
+  const sizeClasses = size === 'large' 
+    ? 'w-48 h-48 sm:w-64 sm:h-64 border-4' 
+    : 'w-20 h-20 border-2';
+
   return (
-    <div className="relative w-20 h-20 flex items-center justify-center rounded-full border-2 border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm">
+    <div className={`relative flex items-center justify-center rounded-full border-[#D4AF37] overflow-hidden bg-black/30 backdrop-blur-sm shadow-[0_0_30px_rgba(212,175,55,0.6)] ${sizeClasses}`}>
       {isLoading ? (
         <div className="w-full h-full bg-gray-700 animate-pulse" />
       ) : (
@@ -77,7 +82,7 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddres
         />
       )}
       {walletAddress && verificationChecked && (
-        <VerificationBadge isVerified={isVerified} />
+        <VerificationBadge isVerified={isVerified} size={size} />
       )}
     </div>
   );
