@@ -6,9 +6,10 @@ import worldAppIcon from '@/assets/world-app-icon.png';
 interface VerificationBadgeProps {
   isVerified: boolean;
   className?: string;
+  size?: 'small' | 'large';
 }
 
-export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ isVerified, className = '' }) => {
+export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ isVerified, className = '', size = 'small' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const badgeRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +30,10 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ isVerified
     };
   }, [isOpen]);
 
+  const badgeSize = size === 'large' ? 'w-10 h-10' : 'w-6 h-6';
+  const iconSize = size === 'large' ? 'w-6 h-6' : 'w-3.5 h-3.5';
+  const borderSize = size === 'large' ? 'border-4' : 'border-2';
+
   return (
     <div ref={badgeRef} className={className}>
       <TooltipProvider>
@@ -40,18 +45,18 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ isVerified
                 setIsOpen(!isOpen);
               }}
               className={`
-                absolute bottom-0 right-0 w-6 h-6 rounded-full 
+                absolute bottom-0 right-0 ${badgeSize} rounded-full 
                 flex items-center justify-center
-                border-2 border-white shadow-lg
+                ${borderSize} border-white shadow-lg
                 transition-all duration-200 hover:scale-110
                 ${isVerified ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}
               `}
               aria-label={isVerified ? 'World ID Verified' : 'ID Unverified'}
             >
               {isVerified ? (
-                <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                <Check className={`${iconSize} text-white`} strokeWidth={3} />
               ) : (
-                <X className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                <X className={`${iconSize} text-white`} strokeWidth={3} />
               )}
             </button>
           </TooltipTrigger>
