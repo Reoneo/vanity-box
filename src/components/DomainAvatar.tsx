@@ -21,24 +21,26 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddres
 
   useEffect(() => {
     const fetchAvatar = async () => {
+      // Validate the handle before making the API call
+      const trimmedName = domain.name?.trim() || '';
+      const trimmedDomain = domain.domain?.trim() || '';
+      
+      if (!trimmedName || !trimmedDomain || trimmedName.length === 0 || trimmedDomain.length === 0) {
+        console.warn('Invalid domain format, skipping avatar fetch:', { 
+          domain, 
+          trimmedName,
+          trimmedDomain 
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      const fullName = `${trimmedName}.${trimmedDomain}`;
+      
       try {
         setIsLoading(true);
-        const fullName = `${domain.name}.${domain.domain}`;
         
-        // Validate the handle before making the API call
-        const trimmedName = domain.name?.trim() || '';
-        const trimmedDomain = domain.domain?.trim() || '';
-        
-        if (!trimmedName || !trimmedDomain || trimmedName.length === 0 || trimmedDomain.length === 0) {
-          console.warn('Invalid domain format, skipping avatar fetch:', { 
-            domain, 
-            fullName,
-            trimmedName,
-            trimmedDomain 
-          });
-          setIsLoading(false);
-          return;
-        }
+        console.log('Fetching avatar for:', fullName);
         
         // Fetch ENS avatar from Web3.bio API
         const profile = await callEdge<any>('get-web3bio-profile', { handle: fullName });
@@ -55,7 +57,7 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddres
           setAvatarUrl(avatarUrl);
         }
       } catch (error) {
-        console.error(`Error fetching avatar for ${domain.name}.${domain.domain}:`, error);
+        console.error(`Error fetching avatar for ${fullName}:`, error);
       } finally {
         setIsLoading(false);
       }
