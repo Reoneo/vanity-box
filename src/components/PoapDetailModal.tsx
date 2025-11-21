@@ -121,70 +121,70 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ poap, isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-[#F5F5F7] rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col border border-[#D4AF37]/20">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#6534FF] rounded-full flex items-center justify-center">
+        <div className="flex items-center justify-between p-5 pb-3 border-b border-[#D4AF37]/20">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#6534FF] to-[#8B5CF6] rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
             </div>
-            <span className="text-xl font-semibold text-gray-900">POAP</span>
+            <span className="text-xl font-bold text-white">POAP</span>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-900 transition-colors p-2 hover:bg-gray-200 rounded-full"
+            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-6 pb-6">
+        <div className="overflow-y-auto flex-1 px-5 pb-5">
           {/* POAP Image */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center my-6">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-blue-400/20 rounded-full blur-2xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/30 to-purple-500/30 rounded-full blur-3xl"></div>
               <img
                 src={poap.eventImageUrl}
                 alt={poap.eventName}
-                className="relative w-64 h-64 rounded-full object-cover border-4 border-white shadow-lg"
+                className="relative w-56 h-56 rounded-full object-cover border-4 border-[#D4AF37]/40 shadow-2xl shadow-[#D4AF37]/20"
               />
             </div>
           </div>
 
           {/* Event Title */}
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">
+          <h2 className="text-2xl font-bold text-white text-center mb-4 leading-tight">
             {poap.eventName}
           </h2>
 
           {/* Event Metadata */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1.5 bg-gray-200/60 px-3 py-1.5 rounded-full">
-              <Hash className="w-4 h-4" />
-              <span>{poap.eventId}</span>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mb-4 text-sm">
+            <div className="flex items-center gap-1.5 bg-white/5 border border-[#D4AF37]/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
+              <Hash className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span className="text-gray-300">{poap.eventId}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-gray-200/60 px-3 py-1.5 rounded-full">
-              <Users className="w-4 h-4" />
-              <span>{holders.length} Collectors</span>
+            <div className="flex items-center gap-1.5 bg-white/5 border border-[#D4AF37]/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
+              <Users className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span className="text-gray-300">{holders.length}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-gray-200/60 px-3 py-1.5 rounded-full">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <div className="flex items-center gap-1.5 bg-white/5 border border-[#D4AF37]/30 px-3 py-1.5 rounded-full backdrop-blur-sm">
+              <svg className="w-3.5 h-3.5 text-[#D4AF37]" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z"/>
               </svg>
-              <span>Ethereum</span>
+              <span className="text-gray-300">Ethereum</span>
             </div>
           </div>
 
           {/* Date */}
           {poap.eventStartDate && (
-            <div className="flex items-center justify-center gap-2 mb-6 bg-gray-200/60 px-4 py-2.5 rounded-xl w-fit mx-auto">
-              <Calendar className="w-4 h-4 text-gray-700" />
-              <span className="text-sm font-medium text-gray-900">
+            <div className="flex items-center justify-center gap-2 mb-6 bg-[#D4AF37]/10 border border-[#D4AF37]/30 px-4 py-2.5 rounded-xl w-fit mx-auto backdrop-blur-sm">
+              <Calendar className="w-4 h-4 text-[#D4AF37]" />
+              <span className="text-sm font-medium text-white">
                 {formatDate(poap.eventStartDate)}
                 {poap.eventEndDate && poap.eventEndDate !== poap.eventStartDate && 
-                  `-${formatDate(poap.eventEndDate).split(' ')[1]}`}
+                  `-${formatDate(poap.eventEndDate).split(',')[0].split(' ')[1]}`}
                 {poap.eventYear && `, ${poap.eventYear}`}
               </span>
             </div>
@@ -192,42 +192,43 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ poap, isOpen, 
 
           {/* Description */}
           {poap.eventDescription && (
-            <p className="text-gray-700 text-center text-sm leading-relaxed mb-8 max-w-md mx-auto">
+            <p className="text-gray-300 text-center text-sm leading-relaxed mb-8 max-w-md mx-auto">
               {poap.eventDescription}
             </p>
           )}
 
           {/* Holders Section */}
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              {holders.length} Collector{holders.length !== 1 ? 's' : ''}
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <span className="text-[#D4AF37]">{holders.length}</span> 
+              <span>Collector{holders.length !== 1 ? 's' : ''}</span>
             </h3>
 
             {isLoadingHolders ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#6534FF]"></div>
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#D4AF37]"></div>
               </div>
             ) : enrichedHolders.length === 0 ? (
               <p className="text-center text-gray-500 py-8 text-sm">No holders found</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {enrichedHolders.map((holder, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-4 bg-white rounded-2xl hover:bg-gray-50 transition-all"
+                    className="flex items-center justify-between p-3.5 bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm group"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Avatar className="h-12 w-12 border-2 border-gray-200">
+                      <Avatar className="h-11 w-11 border-2 border-[#D4AF37]/50 shadow-lg shadow-[#D4AF37]/10">
                         <AvatarImage src={holder.avatar} alt={holder.displayName} />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-blue-400 text-white font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-[#D4AF37] to-[#F7E06C] text-black font-bold text-sm">
                           {holder.displayName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-gray-900 font-semibold truncate">
+                        <span className="text-white font-semibold truncate text-sm">
                           {holder.displayName}
                         </span>
-                        <span className="text-xs text-gray-500 truncate">
+                        <span className="text-xs text-gray-400 truncate">
                           {holder.owner.id.slice(0, 6)}...{holder.owner.id.slice(-4)}
                         </span>
                       </div>
@@ -235,7 +236,7 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ poap, isOpen, 
                     <Button
                       size="sm"
                       onClick={() => handleViewProfile(holder.owner.id)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm px-4 py-2 h-auto rounded-full font-medium flex items-center gap-1"
+                      className="bg-[#D4AF37] hover:bg-[#F7E06C] text-black text-xs px-3.5 py-2 h-auto rounded-full font-semibold flex items-center gap-1.5 shadow-lg shadow-[#D4AF37]/20 transition-all group-hover:scale-105"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       View
@@ -253,17 +254,17 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({ poap, isOpen, 
         </div>
 
         {/* Footer Buttons */}
-        <div className="grid grid-cols-2 gap-3 p-6 pt-4 border-t border-gray-200/80">
+        <div className="grid grid-cols-2 gap-3 p-5 pt-4 border-t border-[#D4AF37]/20">
           <button
             onClick={() => window.open(`https://poap.gallery/event/${poap.eventId}`, '_blank')}
-            className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-gray-50 text-gray-900 rounded-2xl font-medium transition-all border border-gray-200"
+            className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#D4AF37]/50 text-white rounded-xl font-medium transition-all"
           >
             <Globe className="w-4 h-4" />
             Website
           </button>
           <button
             onClick={handleShare}
-            className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-gray-50 text-gray-900 rounded-2xl font-medium transition-all border border-gray-200"
+            className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#D4AF37]/50 text-white rounded-xl font-medium transition-all"
           >
             <Share2 className="w-4 h-4" />
             Share
