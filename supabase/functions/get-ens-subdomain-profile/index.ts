@@ -55,6 +55,47 @@ serve(async (req) => {
 
     console.log('Parsed text records:', textRecords);
 
+    // Resolve ENS address if not available in text records or owner
+    let resolvedAddress = textRecords['eth'] || namestoneData.owner || null;
+    
+    if (!resolvedAddress) {
+      console.log('No address found in records, attempting ENS resolution for:', subdomain);
+      try {
+        // Use Cloudflare's public Ethereum RPC to resolve ENS name
+        const rpcResponse = await fetch('https://cloudflare-eth.com', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'eth_call',
+            params: [{
+              to: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e', // ENS Registry
+              data: `0x3b3b57de${subdomain.split('.').reverse().map(label => {
+                // Convert label to namehash format
+                const hex = Array.from(label).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+                return hex.padEnd(64, '0');
+              }).join('')}`
+            }, 'latest'],
+            id: 1
+          })
+        });
+
+        if (rpcResponse.ok) {
+          const rpcData = await rpcResponse.json();
+          if (rpcData.result && rpcData.result !== '0x') {
+            // Extract address from result (last 40 chars)
+            const addressHex = '0x' + rpcData.result.slice(-40);
+            if (addressHex !== '0x0000000000000000000000000000000000000000') {
+              resolvedAddress = addressHex;
+              console.log('✅ Resolved address from ENS:', resolvedAddress);
+            }
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ ENS resolution failed:', error.message);
+      }
+    }
+
     // Build social links from Namestone records
     const links: any = {};
     
@@ -102,7 +143,7 @@ serve(async (req) => {
       description: textRecords['description'] || null,
       email: textRecords['email'] || null,
       location: textRecords['location'] || null,
-      address: textRecords['eth'] || namestoneData.owner || null,
+      address: resolvedAddress,
       links,
       contenthash: textRecords['contenthash'] || null,
       ensRecords: textRecords,
