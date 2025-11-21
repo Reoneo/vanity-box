@@ -27,6 +27,8 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPoap, setSelectedPoap] = useState<PoapToken | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchPoaps = async () => {
@@ -119,6 +121,33 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
     setCurrentIndex((prev) => (prev - 1 + poaps.length) % poaps.length);
   };
 
+  // Swipe handlers
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && poaps.length > 1) {
+      goToNext();
+    }
+    if (isRightSwipe && poaps.length > 1) {
+      goToPrev();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full flex items-center justify-center py-8">
@@ -152,78 +181,36 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
 
   return (
     <>
-      <div className="w-full py-3 flex-shrink-0">
-        {/* Statistics Header */}
-        {statistics && (
-          <div className="mb-3 px-2">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-[#D4AF37]" />
-                <span className="text-gray-400">Total:</span>
-                <span className="text-[#D4AF37] font-semibold">{statistics.total}</span>
-              </div>
-              <div className="text-gray-400">
-                {statistics.topEventType !== 'Other' && (
-                  <>
-                    <span className="text-gray-500">Top:</span>{' '}
-                    <span className="text-[#D4AF37]">{statistics.topEventType}</span>
-                    <span className="text-gray-500 ml-1">({statistics.topEventCount})</span>
-                  </>
-                )}
-                {statistics.yearsActive > 0 && (
-                  <span className="ml-2 text-gray-500">
-                    {statistics.yearsActive} {statistics.yearsActive === 1 ? 'year' : 'years'}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
+      <div 
+        className="w-full py-3 flex-shrink-0"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {/* Carousel */}
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={goToPrev}
-            disabled={poaps.length <= 1}
-            className="h-8 w-8 p-0 hover:bg-gray-700/50 disabled:opacity-30"
-          >
-            <ChevronLeft className="w-4 h-4 text-[#D4AF37]" />
-          </Button>
-
+        <div className="flex flex-col items-center gap-3">
           <button
             onClick={handlePoapClick}
-            className="flex-1 flex flex-col items-center gap-2 group cursor-pointer"
+            className="flex flex-col items-center gap-2 group cursor-pointer"
           >
-            <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#D4AF37]/50 group-hover:border-[#D4AF37] transition-colors group-hover:scale-105 transform duration-200">
+            <div className="relative w-40 h-40 rounded-full overflow-hidden border-2 border-[#D4AF37]/50 group-hover:border-[#D4AF37] transition-colors group-hover:scale-105 transform duration-200">
               <img
                 src={currentPoap.eventImageUrl}
                 alt={currentPoap.eventName}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-300 line-clamp-1 max-w-[150px] group-hover:text-[#D4AF37] transition-colors">
+            <div className="text-center px-4">
+              <p className="text-sm text-gray-200 font-medium group-hover:text-[#D4AF37] transition-colors">
                 {currentPoap.eventName}
               </p>
               {poaps.length > 1 && (
-                <p className="text-[10px] text-gray-500">
+                <p className="text-xs text-gray-500 mt-1">
                   {currentIndex + 1} of {poaps.length}
                 </p>
               )}
             </div>
           </button>
-
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={goToNext}
-            disabled={poaps.length <= 1}
-            className="h-8 w-8 p-0 hover:bg-gray-700/50 disabled:opacity-30"
-          >
-            <ChevronRight className="w-4 h-4 text-[#D4AF37]" />
-          </Button>
         </div>
       </div>
 

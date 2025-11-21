@@ -1539,9 +1539,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </button>
                       </div>
 
-                      {/* Social Links - Flexbox layout that centers dynamically */}
-                      <div className="flex flex-wrap justify-center gap-4 pt-2 px-4">
-                        {web3BioProfile.links && Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
+                      {/* Social Links Section with Header */}
+                      {web3BioProfile.links && Object.keys(web3BioProfile.links).filter(p => p !== 'website').length > 0 && (
+                        <div className="pt-4 mt-4 border-t border-gray-700/50">
+                          <div className="flex items-center justify-center gap-2 mb-3">
+                            <h4 className="text-sm font-semibold text-white">
+                              Social
+                            </h4>
+                          </div>
+                          <div className="flex flex-wrap justify-center gap-4 px-4">
+                            {Object.entries(web3BioProfile.links).map(([platform, linkData]: [string, any]) => {
                           if (!linkData || platform === 'website') return null;
                           
                           const socialIcons: { [key: string]: string } = {
@@ -1603,7 +1610,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             </a>
                           );
                         })}
-                      </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* POAP Collection - Display under social icons */}
                       {web3BioProfile.address && poapCount > 0 && (
