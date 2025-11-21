@@ -105,6 +105,12 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
       holdersToEnrich.map(async (holder: PoapHolder) => {
         try {
           const address = holder.owner.id;
+          
+          // Validate address before calling
+          if (!address || address.trim().length === 0) {
+            return holder; // Return un-enriched holder
+          }
+          
           const { data: bioData } = await supabase.functions.invoke('get-web3bio-profile', {
             body: { handle: address },
           });

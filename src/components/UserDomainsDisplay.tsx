@@ -308,7 +308,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             )}
 
             <div className="flex items-start gap-4 mb-6">
-              <DomainAvatar domain={domain} />
+              <DomainAvatar domain={domain} walletAddress={walletAddress} />
 
               <div className="flex-1 min-w-0 pr-8">
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
