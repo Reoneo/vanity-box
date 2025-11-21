@@ -11,7 +11,18 @@ serve(async (req) => {
   }
 
   try {
-    const { handle } = await req.json();
+    // Add error handling for empty or invalid request body
+    let handle;
+    try {
+      const body = await req.json();
+      handle = body?.handle;
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      return new Response(JSON.stringify({ error: 'Invalid request body. Expected JSON with "handle" field.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     console.log('🔍 Web3.bio lookup request for handle:', handle);
     
