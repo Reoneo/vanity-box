@@ -25,6 +25,13 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain, walletAddres
         setIsLoading(true);
         const fullName = `${domain.name}.${domain.domain}`;
         
+        // Validate the handle before making the API call
+        if (!domain.name || !domain.domain || !fullName.includes('.')) {
+          console.warn('Invalid domain format, skipping avatar fetch:', { domain, fullName });
+          setIsLoading(false);
+          return;
+        }
+        
         // Fetch ENS avatar from Web3.bio API
         const profile = await callEdge<any>('get-web3bio-profile', { handle: fullName });
         
