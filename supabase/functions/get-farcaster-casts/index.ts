@@ -11,7 +11,15 @@ serve(async (req) => {
   }
 
   try {
-    const { username, fid, walletAddress, limit = 10, cursor } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      console.error('❌ Failed to parse request body:', e);
+      throw new Error('Invalid request body');
+    }
+    
+    const { username, fid, walletAddress, limit = 10, cursor } = body;
     
     console.log('🎭 Farcaster casts request:', { username, fid, walletAddress, limit, cursor });
     

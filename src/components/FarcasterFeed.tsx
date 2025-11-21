@@ -208,10 +208,10 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
                 </p>
 
                 {/* Embedded images */}
-                {cast.embeds.length > 0 && cast.embeds.some(e => e.url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) && (
+                {cast.embeds.length > 0 && cast.embeds.some(e => e?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) && (
                   <div className="mb-3 rounded-lg overflow-hidden border border-border/50">
                     <img
-                      src={cast.embeds.find(e => e.url.match(/\.(jpg|jpeg|png|gif|webp)$/i))?.url}
+                      src={cast.embeds.find(e => e?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i))?.url}
                       alt="Cast media"
                       className="w-full max-h-96 object-cover"
                     />
