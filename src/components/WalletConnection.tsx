@@ -390,9 +390,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
-            console.log('✅ Desktop browser - connecting Petra wallet');
-            // Try Petra wallet connection
-            connectPetra();
+            console.log('✅ Desktop browser - redirecting to World App ecosystem');
+            // Redirect to World App instead of connecting Petra
+            window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
           }
         }}
         disabled={isLoading}
