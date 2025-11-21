@@ -96,7 +96,7 @@ serve(async (req) => {
     const profile = {
       identity: subdomain,
       platform: 'ens',
-      displayName: textRecords['display'] || textRecords['name'] || subdomain.split('.')[0],
+      displayName: textRecords['display'] || textRecords['name'] || subdomain,
       avatar: textRecords['avatar'] || null,
       header: textRecords['header'] || null,
       description: textRecords['description'] || null,
