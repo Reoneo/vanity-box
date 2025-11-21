@@ -41,19 +41,20 @@ serve(async (req) => {
       );
     }
 
-    // Step 1: Get OAuth access token using client credentials flow
+    // Step 1: Get OAuth access token using POAP's auth endpoint
     console.log('Requesting OAuth access token from POAP...');
     
-    const tokenResponse = await fetch('https://api.poap.tech/oauth/token', {
+    const tokenResponse = await fetch('https://auth.accounts.poap.xyz/oauth/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
+      body: JSON.stringify({
+        audience: 'https://api.poap.tech',
         grant_type: 'client_credentials',
         client_id: clientId,
         client_secret: clientSecret,
-      }).toString(),
+      }),
     });
 
     if (!tokenResponse.ok) {
