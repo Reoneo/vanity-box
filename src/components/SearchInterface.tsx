@@ -673,7 +673,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             toast.error("Failed to fetch profile from Web3.bio");
           } else if (data && Array.isArray(data) && data.length > 0) {
             // Only process if we got valid data (has results)
-            const profileData = data[0];
+            let profileData = data[0];
+            
+            // If response is an array, look for Farcaster profile and merge it
+            if (data.length > 1) {
+              const farcasterProfile = data.find((p: any) => p.platform === 'farcaster');
+              if (farcasterProfile) {
+                console.log('✅ Found Farcaster profile in web3.bio response:', farcasterProfile);
+                if (!profileData.links) profileData.links = {};
+                profileData.links.farcaster = {
+                  link: `https://warpcast.com/${farcasterProfile.identity}`,
+                  handle: farcasterProfile.identity,
+                  fid: farcasterProfile.social?.uid
+                };
+              }
+            }
+            
             console.log('✅ Web3.bio profile data:', profileData);
             setWeb3BioProfile(profileData);
             setEnsResults([]);
@@ -746,6 +761,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               'com.github': ensTextRecords['com.github'] || '',
               'com.twitter': ensTextRecords['com.twitter'] || '',
               'org.telegram': ensTextRecords['org.telegram'] || '',
+              'com.farcaster': ensTextRecords['com.farcaster'] || '',
             };
 
             try {
@@ -826,6 +842,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     ? ensTextRecords['com.instagram']
                     : `https://instagram.com/${ensTextRecords['com.instagram']}`,
                   handle: ensTextRecords['com.instagram']
+                };
+              }
+              if (ensTextRecords['com.farcaster']) {
+                updatedProfile.links.farcaster = {
+                  link: `https://warpcast.com/${ensTextRecords['com.farcaster']}`,
+                  handle: ensTextRecords['com.farcaster']
                 };
               }
               
@@ -1665,10 +1687,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 </Card>
 
                 {/* Farcaster Activity Feed */}
-                {(web3BioProfile?.links?.farcaster || ensRecords?.records?.['com.farcaster']) && (
+                {(web3BioProfile?.links?.farcaster?.handle || 
+                  ensRecords?.records?.['com.farcaster'] || 
+                  web3BioProfile?.address) && (
                   <div className="mt-6">
                     <FarcasterFeed 
-                      username={web3BioProfile?.links?.farcaster || ensRecords?.records?.['com.farcaster']} 
+                      username={
+                        web3BioProfile?.links?.farcaster?.handle || 
+                        ensRecords?.records?.['com.farcaster']
+                      }
+                      fid={web3BioProfile?.links?.farcaster?.fid}
+                      walletAddress={web3BioProfile?.address}
                     />
                   </div>
                 )}

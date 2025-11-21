@@ -12,9 +12,10 @@ import { formatDistanceToNow } from "date-fns";
 interface FarcasterFeedProps {
   username?: string;
   fid?: number;
+  walletAddress?: string;
 }
 
-export const FarcasterFeed = ({ username, fid }: FarcasterFeedProps) => {
+export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedProps) => {
   const [casts, setCasts] = useState<FarcasterCast[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -37,6 +38,7 @@ export const FarcasterFeed = ({ username, fid }: FarcasterFeedProps) => {
       const data = await callEdge<FarcasterFeedResponse>("get-farcaster-casts", {
         username,
         fid,
+        walletAddress,
         limit: 10,
         cursor,
       });
