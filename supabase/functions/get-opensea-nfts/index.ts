@@ -11,7 +11,20 @@ serve(async (req) => {
   }
 
   try {
-    const { walletAddress, limit = 20, next } = await req.json();
+    let body;
+    try {
+      const text = await req.text();
+      body = text ? JSON.parse(text) : {};
+    } catch (e) {
+      console.error('Failed to parse request body:', e);
+      body = {};
+    }
+    
+    const { walletAddress, limit = 20, next } = body;
+    
+    if (!walletAddress) {
+      throw new Error('walletAddress is required');
+    }
     
     console.log('🖼️ Fetching OpenSea NFTs for:', walletAddress);
     
