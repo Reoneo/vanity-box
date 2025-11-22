@@ -1683,24 +1683,24 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
                     )}
 
+                    {/* Farcaster Activity Feed */}
+                    {(web3BioProfile?.links?.farcaster?.handle || 
+                      ensRecords?.records?.['com.farcaster'] || 
+                      web3BioProfile?.address) && (
+                      <div className="pt-4 mt-4 border-t border-gray-700/50">
+                        <FarcasterFeed 
+                          username={
+                            web3BioProfile?.links?.farcaster?.handle || 
+                            ensRecords?.records?.['com.farcaster']
+                          }
+                          fid={web3BioProfile?.links?.farcaster?.fid}
+                          walletAddress={web3BioProfile?.address}
+                        />
+                      </div>
+                    )}
+
                   </CardContent>
                 </Card>
-
-                {/* Farcaster Activity Feed */}
-                {(web3BioProfile?.links?.farcaster?.handle || 
-                  ensRecords?.records?.['com.farcaster'] || 
-                  web3BioProfile?.address) && (
-                  <div className="mt-6">
-                    <FarcasterFeed 
-                      username={
-                        web3BioProfile?.links?.farcaster?.handle || 
-                        ensRecords?.records?.['com.farcaster']
-                      }
-                      fid={web3BioProfile?.links?.farcaster?.fid}
-                      walletAddress={web3BioProfile?.address}
-                    />
-                  </div>
-                )}
               </div>
             )}
 

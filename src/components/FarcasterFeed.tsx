@@ -74,9 +74,9 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
-          🎭 Feed: Farcaster
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-white text-center">
+          Feed
         </h3>
         <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
           <div className="flex gap-3">
@@ -94,9 +94,9 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
-          🎭 Feed: Farcaster
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-white text-center">
+          Feed
         </h3>
         <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
           <p className="text-muted-foreground">{error}</p>
@@ -107,9 +107,9 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
 
   if (!displayCast) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
-          🎭 Feed: Farcaster
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-white text-center">
+          Feed
         </h3>
         <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
           <p className="text-muted-foreground">No Farcaster activity found</p>
@@ -119,9 +119,9 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
-        🎭 Feed: Farcaster
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold text-white text-center">
+        Feed
       </h3>
 
       <Card
@@ -167,11 +167,12 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
             </p>
 
             {displayCast.embeds.length > 0 && displayCast.embeds.some(e => e?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) && (
-              <div className="mb-3 rounded-lg overflow-hidden border border-border/50">
+              <div className="mb-3 rounded-xl overflow-hidden border-2 border-[#D4AF37]/20 shadow-lg">
                 <img
                   src={displayCast.embeds.find(e => e?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i))?.url}
                   alt="Cast media"
-                  className="w-full max-h-96 object-cover"
+                  className="w-full max-h-[400px] object-contain bg-black/20"
+                  loading="lazy"
                 />
               </div>
             )}

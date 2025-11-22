@@ -50,7 +50,7 @@ export const FarcasterAuthProvider: React.FC<FarcasterAuthProviderProps> = ({ ch
     }
   }, []);
 
-  const login = async () => {
+  const login = async (providedFid?: number) => {
     setIsLoading(true);
     try {
       // Mock World ID verification for now (replace with actual MiniKit.commandsAsync.verify)
@@ -62,13 +62,19 @@ export const FarcasterAuthProvider: React.FC<FarcasterAuthProviderProps> = ({ ch
       // const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
       // const worldIdHash = finalPayload.proof;
 
-      // For now, ask user for their FID (in production, this would be retrieved from Farcaster)
-      const userFid = prompt('Enter your Farcaster ID (FID):');
-      if (!userFid || isNaN(Number(userFid))) {
-        throw new Error('Invalid FID');
+      let fidNumber: number;
+      
+      if (providedFid) {
+        // Use the FID passed from the profile
+        fidNumber = providedFid;
+      } else {
+        // Fallback: ask user for their FID
+        const userFid = prompt('Enter your Farcaster ID (FID):');
+        if (!userFid || isNaN(Number(userFid))) {
+          throw new Error('Invalid FID');
+        }
+        fidNumber = Number(userFid);
       }
-
-      const fidNumber = Number(userFid);
 
       // Check if signer exists
       const existingSigner = await callEdge('get-farcaster-signer', {
