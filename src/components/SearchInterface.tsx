@@ -29,6 +29,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -38,11 +40,8 @@ import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
 import Dock from "@/components/Dock";
-import { ProfilePanel } from "@/components/ProfilePanel";
-import { SocialsPanel } from "@/components/SocialsPanel";
-import { PoapPanel } from "@/components/PoapPanel";
-import { NftPanel } from "@/components/NftPanel";
-import { FarcasterPanel } from "@/components/FarcasterPanel";
+import { ProfileCard } from "@/components/ProfileCard";
+import { MessageCircle, Repeat2, Heart } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -69,6 +68,18 @@ import termuxAvatar from "@/assets/termux-avatar.png";
 import mithEthAvatar from "@/assets/mith-eth-avatar.png";
 import teamxrpAvatar from "@/assets/teamxrp-avatar.png";
 import eth30315Avatar from "@/assets/30315-eth-avatar.png";
+import telegramIcon from "@/assets/telegram-icon.png";
+import discordIcon from "@/assets/discord-icon.png";
+import githubIcon from "@/assets/github-icon.png";
+import instagramIcon from "@/assets/instagram-icon.png";
+import linkedinIcon from "@/assets/linkedin-icon.png";
+import redditIcon from "@/assets/reddit-icon.png";
+import blueskyIcon from "@/assets/bluesky-icon.png";
+import whatsappIcon from "@/assets/whatsapp-icon.png";
+import { formatDistanceToNow } from "date-fns";
+import type { FarcasterCast } from "@/types/farcaster";
+import { callEdge } from "@/lib/supaInvoke";
+import { User, Link2, Image, FileImage, MessageSquare } from "lucide-react";
 import ensV2Logo from "@/assets/ens-v2-logo.png";
 import web3BioLogo from "@/assets/web3bio-logo.png";
 import efpLogoFullDark from "@/assets/efp-logo-full-dark.png";
@@ -84,15 +95,7 @@ import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
 import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
-import discordIcon from "@/assets/discord-icon.png";
-import githubIcon from "@/assets/github-icon.png";
-import whatsappIcon from "@/assets/whatsapp-icon.png";
-import blueskyIcon from "@/assets/bluesky-icon.png";
-import instagramIcon from "@/assets/instagram-icon.png";
-import linkedinIcon from "@/assets/linkedin-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
-import telegramIcon from "@/assets/telegram-icon.png";
-import redditIcon from "@/assets/reddit-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
@@ -129,6 +132,9 @@ interface Web3BioProfile {
   location?: string;
   email?: string;
   website?: string;
+  farcaster?: {
+    fid?: number;
+  };
 }
 
 interface EFPStats {
@@ -213,12 +219,28 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showSearchBar, setShowSearchBar] = useState(true);
   
   // Dock panel states
-  const [showProfilePanel, setShowProfilePanel] = useState(false);
-  const [showSocialsPanel, setShowSocialsPanel] = useState(false);
-  const [showPoapPanel, setShowPoapPanel] = useState(false);
-  const [showNftPanel, setShowNftPanel] = useState(false);
-  const [showFarcasterPanel, setShowFarcasterPanel] = useState(false);
+  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'poaps' | 'nfts' | 'farcaster'>('profile');
   const [poapTokens, setPoapTokens] = useState<any[]>([]);
+  const [selectedPoap, setSelectedPoap] = useState<any>(null);
+  const [showEFPFollowingModal, setShowEFPFollowingModal] = useState(false);
+  const [efpFollowingUsers, setEfpFollowingUsers] = useState<EFPUser[]>([]);
+  const [nfts, setNfts] = useState<any[]>([]);
+  const [nftLoading, setNftLoading] = useState(false);
+  const [nftNextCursor, setNftNextCursor] = useState<string | null>(null);
+  const [latestCast, setLatestCast] = useState<FarcasterCast | null>(null);
+  const [castLoading, setCastLoading] = useState(false);
+
+  // Social icons mapping
+  const socialIcons: Record<string, string> = {
+    telegram: telegramIcon,
+    discord: discordIcon,
+    github: githubIcon,
+    instagram: instagramIcon,
+    linkedin: linkedinIcon,
+    reddit: redditIcon,
+    bluesky: blueskyIcon,
+    whatsapp: whatsappIcon,
+  };
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -1070,6 +1092,58 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setIsAvailable(!searchQuery.toLowerCase().includes("taken"));
     }
     setIsLoading(false);
+  };
+
+
+  // Fetch functions for dock sections
+  const fetchNfts = async (next?: string) => {
+    const address = web3BioProfile?.address || walletAddress;
+    if (!address) return;
+    try {
+      setNftLoading(true);
+      const data = await callEdge("get-opensea-nfts", {
+        walletAddress: address,
+        limit: 20,
+        next,
+      });
+      if (next) {
+        setNfts((prev) => [...prev, ...data.nfts]);
+      } else {
+        setNfts(data.nfts || []);
+      }
+      setNftNextCursor(data.next || null);
+    } catch (err) {
+      console.error("Error fetching NFTs:", err);
+    } finally {
+      setNftLoading(false);
+    }
+  };
+
+  const fetchLatestCast = async () => {
+    try {
+      setCastLoading(true);
+      const data = await callEdge("get-farcaster-casts", {
+        username: web3BioProfile?.identity,
+        fid: web3BioProfile?.farcaster?.fid,
+        walletAddress: web3BioProfile?.address || walletAddress,
+        limit: 1,
+      });
+      setLatestCast(data.casts?.[0] || null);
+    } catch (err) {
+      console.error("Error fetching Farcaster cast:", err);
+    } finally {
+      setCastLoading(false);
+    }
+  };
+
+  const handleFollowingClick = () => {
+    setShowFollowingList(true);
+  };
+
+  const handleLoadMoreNfts = () => {
+    if (nftNextCursor && !nftLoading) {
+      fetchNfts(nftNextCursor);
+    }
   };
 
   const handleMint = (result: ENSResult) => {
@@ -2142,79 +2216,68 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         </div>
       )}
 
-      {/* Dock */}
+      {/* Profile Card with Dock Navigation */}
       {web3BioProfile && (
         <>
+          <ProfileCard
+            activeSection={activeDockSection}
+            web3BioProfile={web3BioProfile}
+            currentWalletAddress={web3BioProfile.address}
+            efpStats={efpStats || undefined}
+            poaps={poapTokens}
+            socialIcons={socialIcons}
+            nfts={nfts}
+            nftLoading={nftLoading}
+            nftNextCursor={nftNextCursor}
+            latestCast={latestCast}
+            castLoading={castLoading}
+            onFollowingClick={handleFollowingClick}
+            onLoadMoreNfts={handleLoadMoreNfts}
+          />
+
           <Dock
             items={[
-              { icon: '👤', label: 'Profile', onClick: () => setShowProfilePanel(true) },
-              { icon: '🔗', label: 'Socials', onClick: () => setShowSocialsPanel(true) },
-              { icon: <span style={{ transform: 'rotate(180deg)', display: 'inline-block' }}>🏅</span>, label: 'POAPs', onClick: () => setShowPoapPanel(true) },
-              { icon: '🖼️', label: 'NFTs', onClick: () => setShowNftPanel(true) },
-              { icon: '📰', label: 'Feed', onClick: () => setShowFarcasterPanel(true) },
+              {
+                icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                label: t('profile'),
+                onClick: () => setActiveDockSection('profile'),
+                isActive: activeDockSection === 'profile',
+              },
+              {
+                icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
+                label: t('socials'),
+                onClick: () => setActiveDockSection('socials'),
+                isActive: activeDockSection === 'socials',
+              },
+              {
+                icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
+                label: t('poaps'),
+                onClick: () => setActiveDockSection('poaps'),
+                isActive: activeDockSection === 'poaps',
+              },
+              {
+                icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
+                label: t('nfts'),
+                onClick: () => {
+                  setActiveDockSection('nfts');
+                  if (nfts.length === 0) {
+                    fetchNfts();
+                  }
+                },
+                isActive: activeDockSection === 'nfts',
+              },
+              {
+                icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
+                label: t('farcaster'),
+                onClick: () => {
+                  setActiveDockSection('farcaster');
+                  if (!latestCast) {
+                    fetchLatestCast();
+                  }
+                },
+                isActive: activeDockSection === 'farcaster',
+              },
             ]}
-          />
-
-          <ProfilePanel
-            open={showProfilePanel}
-            onOpenChange={setShowProfilePanel}
-            headerImage={web3BioProfile.header}
-            avatar={web3BioProfile.avatar}
-            primaryName={web3BioProfile.displayName}
-            walletAddress={web3BioProfile.address}
-            bio={web3BioProfile.description}
-            followingCount={totalFollowing}
-            email={web3BioProfile.email}
-            website={web3BioProfile.website}
-          />
-
-          <SocialsPanel
-            open={showSocialsPanel}
-            onOpenChange={setShowSocialsPanel}
-            socialLinks={{
-              telegram: typeof web3BioProfile.links?.telegram === 'string' 
-                ? web3BioProfile.links.telegram 
-                : web3BioProfile.links?.telegram?.link || '',
-              discord: typeof web3BioProfile.links?.discord === 'string' 
-                ? web3BioProfile.links.discord 
-                : web3BioProfile.links?.discord?.link || '',
-              github: typeof web3BioProfile.links?.github === 'string' 
-                ? web3BioProfile.links.github 
-                : web3BioProfile.links?.github?.link || '',
-              instagram: typeof web3BioProfile.links?.instagram === 'string' 
-                ? web3BioProfile.links.instagram 
-                : web3BioProfile.links?.instagram?.link || '',
-              linkedin: typeof web3BioProfile.links?.linkedin === 'string' 
-                ? web3BioProfile.links.linkedin 
-                : web3BioProfile.links?.linkedin?.link || '',
-              reddit: typeof web3BioProfile.links?.reddit === 'string' 
-                ? web3BioProfile.links.reddit 
-                : web3BioProfile.links?.reddit?.link || '',
-              bluesky: typeof web3BioProfile.links?.bluesky === 'string' 
-                ? web3BioProfile.links.bluesky 
-                : web3BioProfile.links?.bluesky?.link || '',
-              whatsapp: typeof web3BioProfile.links?.whatsapp === 'string' 
-                ? web3BioProfile.links.whatsapp 
-                : web3BioProfile.links?.whatsapp?.link || '',
-            }}
-          />
-
-          <PoapPanel
-            open={showPoapPanel}
-            onOpenChange={setShowPoapPanel}
-            poaps={poapTokens}
-          />
-
-          <NftPanel
-            open={showNftPanel}
-            onOpenChange={setShowNftPanel}
-            walletAddress={web3BioProfile.address}
-          />
-
-          <FarcasterPanel
-            open={showFarcasterPanel}
-            onOpenChange={setShowFarcasterPanel}
-            walletAddress={web3BioProfile.address}
           />
         </>
       )}
