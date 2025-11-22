@@ -92,6 +92,7 @@ import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { FarcasterFeed } from "@/components/FarcasterFeed";
+import { NftCarousel } from "@/components/NftCarousel";
 
 export interface FilterState {
   protocol: string[];
@@ -881,7 +882,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 console.error("Error fetching EFP stats:", efpError);
               }
 
-              // Fetch POAP data
+              // Fetch POAP count only (lazy load actual POAPs in modal)
               if (profileData.address) {
                 try {
                   setIsLoadingPoaps(true);
@@ -892,11 +893,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   if (!poapError && poapData?.success) {
                     setPoapCount(poapData.count || 0);
                   } else {
-                    console.error("Error fetching POAP data:", poapError);
+                    console.error("Error fetching POAP count:", poapError);
                     setPoapCount(0);
                   }
                 } catch (poapFetchError) {
-                  console.error("Error fetching POAPs:", poapFetchError);
+                  console.error("Error fetching POAP count:", poapFetchError);
                   setPoapCount(0);
                 } finally {
                   setIsLoadingPoaps(false);
@@ -1674,18 +1675,35 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       )}
 
-                      {/* POAP Collection - Display under social icons */}
-                      {web3BioProfile.address && poapCount > 0 && (
-                      <div className="pt-4 mt-4 border-t border-gray-700/50">
-                        <div className="flex items-center justify-center gap-2 mb-3">
-                          <img src={poapLogo} alt="POAP" className="w-5 h-5" />
-                          <h4 className="text-sm font-semibold text-white">
-                            POAPs ({poapCount})
-                          </h4>
+                      {/* Collections Section - POAPs & NFTs */}
+                      {web3BioProfile.address && (poapCount > 0 || true) && (
+                        <div className="pt-6 mt-6 border-t border-gray-700/50 space-y-4">
+                          <div className="text-center mb-4">
+                            <h4 className="text-xl font-bold text-[#D4AF37] mb-1">Collections</h4>
+                            <p className="text-sm text-gray-400">Digital Assets & Memories</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            {poapCount > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 justify-center">
+                                  <span className="text-lg">🏅</span>
+                                  <span className="text-sm font-semibold text-gray-300">POAPs ({poapCount})</span>
+                                </div>
+                                <PoapCarousel walletAddress={web3BioProfile.address} />
+                              </div>
+                            )}
+                            
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 justify-center">
+                                <span className="text-lg">🖼️</span>
+                                <span className="text-sm font-semibold text-gray-300">NFTs</span>
+                              </div>
+                              <NftCarousel walletAddress={web3BioProfile.address} />
+                            </div>
+                          </div>
                         </div>
-                        <PoapCarousel walletAddress={web3BioProfile.address} />
-                      </div>
-                    )}
+                      )}
 
                     {/* Farcaster Activity Feed */}
                     {(web3BioProfile?.links?.farcaster?.handle || 
