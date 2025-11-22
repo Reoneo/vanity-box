@@ -27,6 +27,12 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
   }, [username, fid, walletAddress]);
 
   const fetchCasts = async () => {
+    // Don't attempt to fetch if we don't have any identifier
+    if (!username && !fid && !walletAddress) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
 
