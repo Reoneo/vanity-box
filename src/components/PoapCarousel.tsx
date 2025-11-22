@@ -24,53 +24,50 @@ interface PoapCarouselProps {
 export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => {
   const [poaps, setPoaps] = useState<PoapToken[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPoap, setSelectedPoap] = useState<PoapToken | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  // Lazy load POAPs only when modal opens
   useEffect(() => {
-    if (isModalOpen && poaps.length === 0) {
-      fetchPoaps();
-    }
-  }, [isModalOpen]);
+    const fetchPoaps = async () => {
+      if (!walletAddress) return;
+      
+      setIsLoading(true);
+      try {
+        // Use edge function to fetch POAPs with authentication
+        const { data, error } = await supabase.functions.invoke('get-poap-data', {
+          body: { walletAddress },
+        });
 
-  const fetchPoaps = async () => {
-    if (!walletAddress) return;
-    
-    setIsLoading(true);
-    try {
-      // Use edge function to fetch POAPs with authentication
-      const { data, error } = await supabase.functions.invoke('get-poap-data', {
-        body: { walletAddress },
-      });
-
-      if (!error && data?.success) {
-        // Map the POAP data to our format
-        const formattedPoaps: PoapToken[] = (data.poaps || []).map((poap: any) => ({
-          tokenId: poap.tokenId,
-          eventId: poap.event?.id,
-          eventName: poap.event?.name || 'Unknown Event',
-          eventDescription: poap.event?.description,
-          eventImageUrl: poap.event?.image_url || '',
-          eventYear: poap.event?.year,
-          eventStartDate: poap.event?.start_date,
-          eventEndDate: poap.event?.end_date,
-          eventCity: poap.event?.city,
-          eventCountry: poap.event?.country,
-        }));
-        setPoaps(formattedPoaps);
-      } else {
+        if (!error && data?.success) {
+          // Map the POAP data to our format
+          const formattedPoaps: PoapToken[] = (data.poaps || []).map((poap: any) => ({
+            tokenId: poap.tokenId,
+            eventId: poap.event?.id,
+            eventName: poap.event?.name || 'Unknown Event',
+            eventDescription: poap.event?.description,
+            eventImageUrl: poap.event?.image_url || '',
+            eventYear: poap.event?.year,
+            eventStartDate: poap.event?.start_date,
+            eventEndDate: poap.event?.end_date,
+            eventCity: poap.event?.city,
+            eventCountry: poap.event?.country,
+          }));
+          setPoaps(formattedPoaps);
+        } else {
+          console.error("Error fetching POAPs:", error);
+        }
+      } catch (error) {
         console.error("Error fetching POAPs:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching POAPs:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+    fetchPoaps();
+  }, [walletAddress]);
 
   // Listen for close modal event
   useEffect(() => {

@@ -65,12 +65,3 @@ verify_jwt = false
 
 [functions.react-to-farcaster-cast]
 verify_jwt = false
-
-[functions.get-poap-data]
-verify_jwt = false
-
-[functions.get-poap-holders]
-verify_jwt = false
-
-[functions.get-opensea-nfts]
-verify_jwt = false
