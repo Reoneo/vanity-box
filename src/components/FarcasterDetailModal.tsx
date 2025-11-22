@@ -240,16 +240,18 @@ export const FarcasterDetailModal = ({
             </div>
 
             {currentCast.embeds?.length > 0 && (
-              <div className="mb-3 space-y-2">
+              <div className="mb-3 space-y-3">
                 {currentCast.embeds.map((embed, i) => {
                   if (embed?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
                     return (
-                      <img
-                        key={i}
-                        src={embed.url}
-                        alt="Embedded content"
-                        className="rounded-lg max-w-full h-auto"
-                      />
+                      <div key={i} className="rounded-xl overflow-hidden border-2 border-primary/20 shadow-lg bg-black/10">
+                        <img
+                          src={embed.url}
+                          alt="Embedded content"
+                          className="w-full h-auto max-h-[500px] object-contain"
+                          loading="lazy"
+                        />
+                      </div>
                     );
                   }
                   return null;
