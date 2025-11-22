@@ -244,12 +244,24 @@ export const FarcasterDetailModal = ({
                 {currentCast.embeds.map((embed, i) => {
                   if (embed?.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
                     return (
-                      <div key={i} className="rounded-xl overflow-hidden border-2 border-primary/20 shadow-lg bg-black/10">
+                      <div key={i} className="rounded-xl overflow-hidden border-2 border-[#D4AF37]/20 shadow-lg">
                         <img
                           src={embed.url}
                           alt="Embedded content"
-                          className="w-full h-auto max-h-[500px] object-contain"
+                          className="w-full max-h-[400px] object-contain bg-black/20"
                           loading="lazy"
+                        />
+                      </div>
+                    );
+                  }
+                  if (embed?.url?.match(/\.(mp4|webm|mov)$/i)) {
+                    return (
+                      <div key={i} className="rounded-xl overflow-hidden border-2 border-[#D4AF37]/20 shadow-lg">
+                        <video
+                          src={embed.url}
+                          controls
+                          className="w-full max-h-[400px] bg-black/20"
+                          playsInline
                         />
                       </div>
                     );

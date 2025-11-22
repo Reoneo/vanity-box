@@ -86,6 +86,7 @@ import instagramIcon from "@/assets/instagram-icon.png";
 import linkedinIcon from "@/assets/linkedin-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import telegramIcon from "@/assets/telegram-icon.png";
+import redditIcon from "@/assets/reddit-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
@@ -1599,6 +1600,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       {web3BioProfile.links && Object.keys(web3BioProfile.links).filter(p => p !== 'website').length > 0 && (
                         <div className="pt-4 mt-4 border-t border-gray-700/50">
                           <div className="flex items-center justify-center gap-2 mb-3">
+                            <span className="text-lg">🔗</span>
                             <h4 className="text-sm font-semibold text-white">
                               Social
                             </h4>
@@ -1619,6 +1621,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             bluesky: blueskyIcon,
                             instagram: instagramIcon,
                             linkedin: linkedinIcon,
+                            farcaster: 'https://cdn.prod.website-files.com/65f1289e1eff9d3e1e47abae/65f7e5f2a1a42d96e4ca45ba_farcaster-icon.png',
+                            reddit: redditIcon,
                           };
                           
                           // Construct href when ENS record only provided a handle
