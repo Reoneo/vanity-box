@@ -54,6 +54,9 @@ verify_jwt = false
 [functions.get-farcaster-casts]
 verify_jwt = false
 
+[functions.get-opensea-nfts]
+verify_jwt = false
+
 [functions.create-farcaster-signer]
 verify_jwt = false
 
