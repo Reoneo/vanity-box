@@ -37,6 +37,12 @@ import { SubdomainMintModal } from "@/components/SubdomainMintModal";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
+import Dock from "@/components/Dock";
+import { ProfilePanel } from "@/components/ProfilePanel";
+import { SocialsPanel } from "@/components/SocialsPanel";
+import { PoapPanel } from "@/components/PoapPanel";
+import { NftPanel } from "@/components/NftPanel";
+import { FarcasterPanel } from "@/components/FarcasterPanel";
 
 import {
   DropdownMenu,
@@ -122,6 +128,7 @@ interface Web3BioProfile {
   header?: string;
   location?: string;
   email?: string;
+  website?: string;
 }
 
 interface EFPStats {
@@ -204,6 +211,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
   const [showInitialResults, setShowInitialResults] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(true);
+  
+  // Dock panel states
+  const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const [showSocialsPanel, setShowSocialsPanel] = useState(false);
+  const [showPoapPanel, setShowPoapPanel] = useState(false);
+  const [showNftPanel, setShowNftPanel] = useState(false);
+  const [showFarcasterPanel, setShowFarcasterPanel] = useState(false);
+  const [poapTokens, setPoapTokens] = useState<any[]>([]);
 
   // Get wallet address from MiniKit
   useEffect(() => {
@@ -891,6 +906,27 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                   if (!poapError && poapData?.success) {
                     setPoapCount(poapData.count || 0);
+                    
+                    // Fetch and store full POAP tokens
+                    const { data: tokensData } = await supabase
+                      .from('poap_tokens')
+                      .select('*')
+                      .eq('wallet_address', profileData.address.toLowerCase());
+                    
+                    if (tokensData) {
+                      setPoapTokens(tokensData.map((token: any) => ({
+                        eventId: token.event_id,
+                        eventName: token.event_name,
+                        eventDescription: token.event_description,
+                        eventImageUrl: token.event_image_url,
+                        eventStartDate: token.event_start_date,
+                        eventEndDate: token.event_end_date,
+                        eventYear: token.event_year,
+                        tokenId: token.token_id,
+                        owner: token.owner,
+                        chain: token.chain,
+                      })));
+                    }
                   } else {
                     console.error("Error fetching POAP data:", poapError);
                     setPoapCount(0);
@@ -2104,6 +2140,67 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             </div>
           </div>
         </div>
+      )}
+
+      {/* Dock */}
+      {web3BioProfile && (
+        <>
+          <Dock
+            items={[
+              { icon: '👤', label: 'Profile', onClick: () => setShowProfilePanel(true) },
+              { icon: '🔗', label: 'Socials', onClick: () => setShowSocialsPanel(true) },
+              { icon: <span style={{ transform: 'rotate(180deg)', display: 'inline-block' }}>🏅</span>, label: 'POAPs', onClick: () => setShowPoapPanel(true) },
+              { icon: '🖼️', label: 'NFTs', onClick: () => setShowNftPanel(true) },
+              { icon: '📰', label: 'Feed', onClick: () => setShowFarcasterPanel(true) },
+            ]}
+          />
+
+          <ProfilePanel
+            open={showProfilePanel}
+            onOpenChange={setShowProfilePanel}
+            headerImage={web3BioProfile.header}
+            avatar={web3BioProfile.avatar}
+            primaryName={web3BioProfile.displayName}
+            walletAddress={web3BioProfile.address}
+            bio={web3BioProfile.description}
+            followingCount={totalFollowing}
+            email={web3BioProfile.email}
+            website={web3BioProfile.website}
+          />
+
+          <SocialsPanel
+            open={showSocialsPanel}
+            onOpenChange={setShowSocialsPanel}
+            socialLinks={{
+              telegram: web3BioProfile.links?.telegram || '',
+              discord: web3BioProfile.links?.discord || '',
+              github: web3BioProfile.links?.github || '',
+              instagram: web3BioProfile.links?.instagram || '',
+              linkedin: web3BioProfile.links?.linkedin || '',
+              reddit: web3BioProfile.links?.reddit || '',
+              bluesky: web3BioProfile.links?.bluesky || '',
+              whatsapp: web3BioProfile.links?.whatsapp || '',
+            }}
+          />
+
+          <PoapPanel
+            open={showPoapPanel}
+            onOpenChange={setShowPoapPanel}
+            poaps={poapTokens}
+          />
+
+          <NftPanel
+            open={showNftPanel}
+            onOpenChange={setShowNftPanel}
+            walletAddress={web3BioProfile.address}
+          />
+
+          <FarcasterPanel
+            open={showFarcasterPanel}
+            onOpenChange={setShowFarcasterPanel}
+            walletAddress={web3BioProfile.address}
+          />
+        </>
       )}
     </>
   );
