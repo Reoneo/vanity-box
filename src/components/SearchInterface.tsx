@@ -2172,14 +2172,30 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             open={showSocialsPanel}
             onOpenChange={setShowSocialsPanel}
             socialLinks={{
-              telegram: web3BioProfile.links?.telegram || '',
-              discord: web3BioProfile.links?.discord || '',
-              github: web3BioProfile.links?.github || '',
-              instagram: web3BioProfile.links?.instagram || '',
-              linkedin: web3BioProfile.links?.linkedin || '',
-              reddit: web3BioProfile.links?.reddit || '',
-              bluesky: web3BioProfile.links?.bluesky || '',
-              whatsapp: web3BioProfile.links?.whatsapp || '',
+              telegram: typeof web3BioProfile.links?.telegram === 'string' 
+                ? web3BioProfile.links.telegram 
+                : web3BioProfile.links?.telegram?.link || '',
+              discord: typeof web3BioProfile.links?.discord === 'string' 
+                ? web3BioProfile.links.discord 
+                : web3BioProfile.links?.discord?.link || '',
+              github: typeof web3BioProfile.links?.github === 'string' 
+                ? web3BioProfile.links.github 
+                : web3BioProfile.links?.github?.link || '',
+              instagram: typeof web3BioProfile.links?.instagram === 'string' 
+                ? web3BioProfile.links.instagram 
+                : web3BioProfile.links?.instagram?.link || '',
+              linkedin: typeof web3BioProfile.links?.linkedin === 'string' 
+                ? web3BioProfile.links.linkedin 
+                : web3BioProfile.links?.linkedin?.link || '',
+              reddit: typeof web3BioProfile.links?.reddit === 'string' 
+                ? web3BioProfile.links.reddit 
+                : web3BioProfile.links?.reddit?.link || '',
+              bluesky: typeof web3BioProfile.links?.bluesky === 'string' 
+                ? web3BioProfile.links.bluesky 
+                : web3BioProfile.links?.bluesky?.link || '',
+              whatsapp: typeof web3BioProfile.links?.whatsapp === 'string' 
+                ? web3BioProfile.links.whatsapp 
+                : web3BioProfile.links?.whatsapp?.link || '',
             }}
           />
 
