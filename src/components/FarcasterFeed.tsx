@@ -20,8 +20,11 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCasts();
-  }, [username, fid]);
+    // Only fetch if we have at least one identifier
+    if (username || fid || walletAddress) {
+      fetchCasts();
+    }
+  }, [username, fid, walletAddress]);
 
   const fetchCasts = async () => {
     try {
