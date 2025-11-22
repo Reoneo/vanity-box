@@ -7,7 +7,7 @@
 
 .dock-panel {
   position: fixed;
-  bottom: 1rem;
+  bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -15,11 +15,12 @@
   width: fit-content;
   gap: 1rem;
   border-radius: 1rem;
-  background-color: rgba(6, 0, 16, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  padding: 0 0.5rem 0.5rem;
+  background-color: rgba(6, 0, 16, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 0.75rem 1rem 0.75rem;
   z-index: 9999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.1);
 }
 
 .dock-item {
@@ -40,6 +41,12 @@
 
 .dock-item:hover {
   border-color: rgba(212, 175, 55, 0.6);
+}
+
+.dock-item-active {
+  background-color: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
 }
 
 .dock-icon {

@@ -116,7 +116,7 @@ export default function Dock({
           <DockItem
             key={index}
             onClick={item.onClick}
-            className={item.className}
+            className={`${item.className || ''} ${item.isActive ? 'dock-item-active' : ''}`}
             mouseX={mouseX}
             spring={spring}
             distance={distance}
