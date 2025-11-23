@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
@@ -10,29 +10,40 @@ import patternTiles from '@/assets/pattern-tiles.jpeg';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
+// Memoize expensive components for 60fps performance
+const MemoizedHeader = memo(Header);
+const MemoizedSearchInterface = memo(SearchInterface);
+const MemoizedLanguageSelector = memo(LanguageSelector);
+const MemoizedSplashCursor = memo(SplashCursor);
+
 const Index = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
 
+  // Optimize event handlers with useCallback to prevent re-renders
+  const handleWalletChange = useCallback((event: CustomEvent) => {
+    setUser(event.detail);
+  }, []);
+
+  const handleWalletDisconnect = useCallback(() => {
+    setUser(null);
+  }, []);
+
   // Listen for wallet connection events
   useEffect(() => {
-    const handleWalletChange = (event: CustomEvent) => {
-      setUser(event.detail);
-    };
-
     window.addEventListener('wallet-connected', handleWalletChange as EventListener);
-    window.addEventListener('wallet-disconnected', () => setUser(null));
+    window.addEventListener('wallet-disconnected', handleWalletDisconnect);
 
     return () => {
       window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
-      window.removeEventListener('wallet-disconnected', () => setUser(null));
+      window.removeEventListener('wallet-disconnected', handleWalletDisconnect);
     };
-  }, []);
+  }, [handleWalletChange, handleWalletDisconnect]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      <SplashCursor key={theme} enabled={true} />
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden will-change-transform">
+      <MemoizedSplashCursor key={theme} enabled={true} />
       
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
@@ -45,13 +56,13 @@ const Index = () => {
         </div>
         
         <div className="pointer-events-auto">
-          <Header />
+          <MemoizedHeader />
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-20 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
+        <main className="flex-1 px-4 pt-20 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto transform-gpu">
           <article className="max-w-2xl mx-auto text-center w-full flex flex-col gap-0">
-            <SearchInterface />
+            <MemoizedSearchInterface />
           </article>
         </main>
         
@@ -59,7 +70,7 @@ const Index = () => {
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">
-              <LanguageSelector />
+              <MemoizedLanguageSelector />
             </div>
             
             {/* Copyright Centered */}
