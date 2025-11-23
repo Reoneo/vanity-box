@@ -1715,8 +1715,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           </h1>
                         ) : ensResults.length > 0 ? (
                           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                            <span className="text-black dark:text-white">{ensResults.length} {t('ids_found')}</span>{' '}
-                            <span className="text-[#D4AF37]">{t('found')}</span>
+                            <span className="text-black dark:text-white">{ensResults.length} ID's </span>
+                            <span className="text-[#D4AF37]">Found</span>
                           </h1>
                         ) : null}
                       </div>

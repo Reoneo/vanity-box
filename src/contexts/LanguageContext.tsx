@@ -79,6 +79,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       register: 'Register',
       cost_breakdown: 'Cost Breakdown',
       network_fee: 'Network Fee',
+      ids_found: "ID's Found",
+      found: 'Found',
     },
     ca: {
       inbox: 'Safata d\'entrada',
