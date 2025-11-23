@@ -3,12 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
+import { NFTDetailModal } from "./NFTDetailModal";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 
 interface ProfileCardProps {
   activeSection: 'profile' | 'socials' | 'poaps' | 'nfts' | 'farcaster';
@@ -45,6 +55,10 @@ export const ProfileCard = ({
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
+  const [selectedNft, setSelectedNft] = useState<any>(null);
+  const [nftSearchQuery, setNftSearchQuery] = useState("");
+  const [selectedChains, setSelectedChains] = useState<string[]>([]);
+  const [groupByCollection, setGroupByCollection] = useState(true);
 
   // Disable body scrolling when profile card is displayed
   useEffect(() => {
@@ -53,6 +67,65 @@ export const ProfileCard = ({
       document.body.style.overflow = 'unset';
     };
   }, []);
+
+  // Get unique chains from NFTs
+  const availableChains = useMemo(() => {
+    const chains = new Set(nfts.map(nft => nft.chain).filter(Boolean));
+    return Array.from(chains).sort();
+  }, [nfts]);
+
+  // Filter and search NFTs
+  const filteredNfts = useMemo(() => {
+    let filtered = [...nfts];
+
+    // Filter by search query
+    if (nftSearchQuery) {
+      const query = nftSearchQuery.toLowerCase();
+      filtered = filtered.filter(nft => 
+        nft.name?.toLowerCase().includes(query) ||
+        nft.collection?.toLowerCase().includes(query) ||
+        nft.identifier?.includes(query)
+      );
+    }
+
+    // Filter by selected chains
+    if (selectedChains.length > 0) {
+      filtered = filtered.filter(nft => 
+        nft.chain && selectedChains.includes(nft.chain)
+      );
+    }
+
+    return filtered;
+  }, [nfts, nftSearchQuery, selectedChains]);
+
+  // Group NFTs by collection
+  const groupedNfts = useMemo(() => {
+    if (!groupByCollection) {
+      return { 'All NFTs': filteredNfts };
+    }
+
+    const groups: Record<string, any[]> = {};
+    filteredNfts.forEach(nft => {
+      const collection = nft.collection || 'Unknown Collection';
+      if (!groups[collection]) {
+        groups[collection] = [];
+      }
+      groups[collection].push(nft);
+    });
+
+    // Sort collections by NFT count
+    return Object.fromEntries(
+      Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
+    );
+  }, [filteredNfts, groupByCollection]);
+
+  const handleChainToggle = (chain: string) => {
+    setSelectedChains(prev => 
+      prev.includes(chain)
+        ? prev.filter(c => c !== chain)
+        : [...prev, chain]
+    );
+  };
 
   const copyAddress = async () => {
     if (currentWalletAddress) {
@@ -356,52 +429,65 @@ export const ProfileCard = ({
                   <p className="text-muted-foreground mb-2">No NFTs found</p>
                   <p className="text-xs text-muted-foreground">This wallet doesn't have any NFTs yet</p>
                 </div>
+              ) : filteredNfts.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4 opacity-50">🔍</div>
+                  <p className="text-muted-foreground mb-2">No NFTs match your filters</p>
+                  <p className="text-xs text-muted-foreground">Try adjusting your search or filters</p>
+                </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
-                    {nfts.map((nft, index) => (
-                      <Card
-                        key={`${nft.contract}-${nft.identifier}-${index}`}
-                        className="p-3 bg-card/50 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/30 transition-all duration-300"
-                      >
-                        <div className="aspect-square rounded-lg overflow-hidden border-2 border-[#D4AF37]/20 mb-2 bg-black/20">
-                          {nft.image_url ? (
-                            <img
-                              src={nft.image_url}
-                              alt={nft.name || 'NFT'}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                              No Image
-                            </div>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-xs font-semibold text-foreground truncate">
-                            {nft.name || `#${nft.identifier}`}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {nft.collection}
-                          </div>
-                          {nft.chain && (
-                            <Badge variant="outline" className="text-xs border-[#D4AF37]/30 bg-[#D4AF37]/5 capitalize">
-                              {nft.chain}
+                  <div className="max-h-[60vh] overflow-y-auto space-y-6">
+                    {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
+                      <div key={collection}>
+                        {groupByCollection && (
+                          <div className="mb-3 flex items-center justify-between">
+                            <h4 className="font-semibold text-foreground text-sm">{collection}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {collectionNfts.length}
                             </Badge>
-                          )}
-                          {nft.opensea_url && (
-                            <a
-                              href={nft.opensea_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-[#D4AF37] hover:underline"
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {collectionNfts.map((nft: any, index: number) => (
+                            <Card
+                              key={`${nft.contract}-${nft.identifier}-${index}`}
+                              className="p-3 bg-card/50 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/30 transition-all duration-300 cursor-pointer"
+                              onClick={() => setSelectedNft(nft)}
                             >
-                              View <ExternalLink className="w-3 h-3" />
-                            </a>
-                          )}
+                              <div className="aspect-square rounded-lg overflow-hidden border-2 border-[#D4AF37]/20 mb-2 bg-black/20">
+                                {nft.image_url ? (
+                                  <img
+                                    src={nft.image_url}
+                                    alt={nft.name || 'NFT'}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                                    No Image
+                                  </div>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="text-xs font-semibold text-foreground truncate">
+                                  {nft.name || `#${nft.identifier}`}
+                                </div>
+                                {!groupByCollection && (
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {nft.collection}
+                                  </div>
+                                )}
+                                {nft.chain && (
+                                  <Badge variant="outline" className="text-xs border-[#D4AF37]/30 bg-[#D4AF37]/5 capitalize">
+                                    {nft.chain}
+                                  </Badge>
+                                )}
+                              </div>
+                            </Card>
+                          ))}
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
 
@@ -549,6 +635,14 @@ export const ProfileCard = ({
           poap={selectedPoap}
           isOpen={!!selectedPoap}
           onClose={() => setSelectedPoap(null)}
+        />
+      )}
+
+      {selectedNft && (
+        <NFTDetailModal
+          nft={selectedNft}
+          isOpen={!!selectedNft}
+          onClose={() => setSelectedNft(null)}
         />
       )}
     </>
