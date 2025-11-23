@@ -41,9 +41,9 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
           body: { walletAddress },
         });
 
-        if (!error && data?.success) {
+        if (!error && data?.success && data?.poaps) {
           // Map the POAP data to our format
-          const formattedPoaps: PoapToken[] = (data.poaps || []).map((poap: any) => ({
+          const formattedPoaps: PoapToken[] = data.poaps.map((poap: any) => ({
             tokenId: poap.tokenId,
             eventId: poap.event?.id,
             eventName: poap.event?.name || 'Unknown Event',
@@ -56,7 +56,7 @@ export const PoapCarousel: React.FC<PoapCarouselProps> = ({ walletAddress }) => 
             eventCountry: poap.event?.country,
           }));
           setPoaps(formattedPoaps);
-        } else {
+        } else if (error) {
           console.error("Error fetching POAPs:", error);
         }
       } catch (error) {
