@@ -5,42 +5,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Single Etherscan V2 API key that covers all networks
+const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY');
+
 // Chain configurations
 const CHAINS = {
   ethereum: {
     name: 'Ethereum',
     apiUrl: 'https://api.etherscan.io/api',
-    apiKey: Deno.env.get('ETHERSCAN_API_KEY'),
+    apiKey: etherscanApiKey,
   },
   polygon: {
     name: 'Polygon',
     apiUrl: 'https://api.polygonscan.com/api',
-    apiKey: Deno.env.get('POLYGONSCAN_API_KEY'),
+    apiKey: etherscanApiKey,
   },
   arbitrum: {
     name: 'Arbitrum',
     apiUrl: 'https://api.arbiscan.io/api',
-    apiKey: Deno.env.get('ARBISCAN_API_KEY'),
+    apiKey: etherscanApiKey,
   },
   optimism: {
     name: 'Optimism',
     apiUrl: 'https://api-optimistic.etherscan.io/api',
-    apiKey: Deno.env.get('OPTIMISM_ETHERSCAN_API_KEY'),
+    apiKey: etherscanApiKey,
   },
   base: {
     name: 'Base',
     apiUrl: 'https://api.basescan.org/api',
-    apiKey: Deno.env.get('BASESCAN_API_KEY'),
+    apiKey: etherscanApiKey,
   },
   bsc: {
     name: 'BNB Chain',
     apiUrl: 'https://api.bscscan.com/api',
-    apiKey: Deno.env.get('BSCSCAN_API_KEY'),
+    apiKey: etherscanApiKey,
   },
   avalanche: {
     name: 'Avalanche',
     apiUrl: 'https://api.snowtrace.io/api',
-    apiKey: Deno.env.get('SNOWTRACE_API_KEY'),
+    apiKey: etherscanApiKey,
   },
 };
 
