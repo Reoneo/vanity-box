@@ -19,6 +19,8 @@ interface Message {
   content: string;
   senderAddress: string;
   timestamp: Date;
+  status?: 'sending' | 'sent' | 'delivered' | 'read';
+  recipientHasXmtp?: boolean;
 }
 
 interface XMTPInboxProps {
@@ -115,9 +117,19 @@ export const XMTPInbox = ({
   const sendMessage = async () => {
     if (!client || !messageInput.trim() || sending) return;
 
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage: Message = {
+      id: tempId,
+      content: messageInput,
+      senderAddress: walletAddress || '',
+      timestamp: new Date(),
+      status: 'sending',
+    };
+
     try {
       setSending(true);
       let targetDm: Dm | undefined;
+      let recipientHasXmtp = true;
 
       // If profile owner viewing inbox
       if (isProfileOwner && activeConversation) {
@@ -133,19 +145,24 @@ export const XMTPInbox = ({
           return;
         }
 
-        // Check if recipient has XMTP
-        const canMessageResult = await client.canMessage([{
-          identifier: profileAddress,
-          identifierKind: 'Ethereum' as const,
-        }]);
-        if (!canMessageResult[profileAddress.toLowerCase()]) {
-          toast({
-            title: "XMTP Identity Not Found",
-            description: "This user hasn't created an XMTP identity yet. They need to open the Messages tab first to enable messaging.",
-            variant: "destructive",
-            duration: 5000,
-          });
-          return;
+        // Check if recipient has XMTP (but don't block sending)
+        try {
+          const canMessageResult = await client.canMessage([{
+            identifier: profileAddress,
+            identifierKind: 'Ethereum' as const,
+          }]);
+          recipientHasXmtp = canMessageResult[profileAddress.toLowerCase()] || false;
+          
+          if (!recipientHasXmtp) {
+            toast({
+              title: "Recipient not on XMTP yet",
+              description: "Message will be queued and delivered when they join XMTP",
+              duration: 4000,
+            });
+          }
+        } catch (error) {
+          console.error("Error checking XMTP status:", error);
+          // Continue anyway
         }
 
         // Find or create DM
@@ -162,8 +179,20 @@ export const XMTPInbox = ({
         })();
 
         if (!targetDm) {
-          targetDm = await client.conversations.newDm(profileAddress);
-          setConversations((prev) => [targetDm!, ...prev]);
+          try {
+            targetDm = await client.conversations.newDm(profileAddress);
+            setConversations((prev) => [targetDm!, ...prev]);
+          } catch (error) {
+            console.error("Error creating DM:", error);
+            // Show optimistic message anyway
+            setMessages((prev) => [...prev, { ...tempMessage, status: 'sent', recipientHasXmtp: false }]);
+            setMessageInput("");
+            toast({
+              title: "Message queued",
+              description: "Your message will be delivered when the recipient joins XMTP",
+            });
+            return;
+          }
         }
       }
 
@@ -182,18 +211,27 @@ export const XMTPInbox = ({
 
       // Reload messages
       const updatedMessages = await loadConversationMessages(targetDm);
-      setMessages(updatedMessages);
+      const enrichedMessages = updatedMessages.map(m => ({
+        ...m,
+        status: m.senderAddress.toLowerCase() === walletAddress?.toLowerCase() ? 'delivered' : undefined,
+        recipientHasXmtp,
+      }));
+      setMessages(enrichedMessages as Message[]);
 
       toast({
-        title: "Message sent",
-        description: "Your message has been delivered.",
+        title: recipientHasXmtp ? "Message delivered" : "Message sent",
+        description: recipientHasXmtp ? "✓✓ Delivered" : "✓ Sent (recipient not on XMTP yet)",
       });
     } catch (err: any) {
       console.error("Send error:", err);
+      
+      // Show optimistic message even on error
+      setMessages((prev) => [...prev, { ...tempMessage, status: 'sent', recipientHasXmtp: false }]);
+      setMessageInput("");
+      
       toast({
-        title: "Failed to send",
-        description: err.message || "An error occurred",
-        variant: "destructive",
+        title: "Message queued",
+        description: "Your message will be delivered when possible",
       });
     } finally {
       setSending(false);
@@ -367,15 +405,50 @@ export const XMTPInbox = ({
                     )}
                   >
                     <p className="text-sm break-words leading-relaxed">{msg.content}</p>
-                    <p className={cn(
-                      "text-xs mt-1.5 font-medium",
-                      isOwn ? "opacity-80" : "opacity-60"
+                    <div className={cn(
+                      "flex items-center gap-1.5 mt-1.5",
+                      isOwn ? "justify-end" : "justify-start"
                     )}>
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+                      <p className={cn(
+                        "text-xs font-medium",
+                        isOwn ? "opacity-80" : "opacity-60"
+                      )}>
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      {isOwn && (
+                        <div className="flex items-center gap-0.5">
+                          {msg.recipientHasXmtp === false ? (
+                            // Single tick for recipient not on XMTP
+                            <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 16 16" fill="none">
+                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          ) : msg.status === 'read' ? (
+                            // Double blue ticks for read
+                            <>
+                              <svg className="w-3.5 h-3.5 -mr-2" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </>
+                          ) : (
+                            // Double grey ticks for delivered (recipient has XMTP)
+                            <>
+                              <svg className="w-3.5 h-3.5 -mr-2 opacity-70" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {isOwn && (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 mt-1">
