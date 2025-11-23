@@ -512,14 +512,21 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         {/* Profile Button */}
         <DropdownMenuItem 
           className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-          onClick={() => {
-            if (ensName || displayAddress) {
-              const profilePath = ensName || displayAddress;
-              window.location.href = `/${profilePath}`;
-            }
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const backdrop = document.getElementById('wallet-dropdown-backdrop');
             if (backdrop) backdrop.remove();
             document.body.style.overflow = '';
+            
+            // Dispatch custom event to directly load profile without search
+            if (ensName || displayAddress) {
+              const identifier = ensName || displayAddress;
+              window.dispatchEvent(new CustomEvent('load-direct-profile', { 
+                detail: { identifier, skipSearch: true } 
+              }));
+            }
           }}
         >
           <UserCircle className="mr-2 h-4 w-4" />

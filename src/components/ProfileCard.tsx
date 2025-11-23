@@ -403,8 +403,8 @@ export const ProfileCard = ({
           </div>
         )}
 
-        {/* NFTs Section */}
-        {activeSection === 'nfts' && (
+        {/* NFTs Section - Only show if user has NFTs or POAPs */}
+        {activeSection === 'nfts' && (nfts.length > 0 || poaps.length > 0 || nftLoading) && (
           <div className="flex flex-col h-full">
             <div className="p-4 border-b border-border/30">
               <div className="flex items-center justify-between gap-3">
