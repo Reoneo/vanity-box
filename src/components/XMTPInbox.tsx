@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, MessageSquare, Send, User, Mail, ChevronRight, Plus, Search, X } from "lucide-react";
+import { AlertCircle, MessageSquare, Send, User, Mail, ChevronRight, Plus, Search, X, ChevronLeft } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -382,7 +382,7 @@ export const XMTPInbox = ({
         </div>
       )}
 
-      {/* Conversation List - Only for profile owner */}
+      {/* Conversation List - Only for profile owner when no active conversation */}
       {isProfileOwner && conversations.length > 0 && !activeConversation && (
         <div className="flex-1 overflow-auto">
           <div className="space-y-1 p-2">
@@ -430,6 +430,34 @@ export const XMTPInbox = ({
         </div>
       ) : activeConversation || !isProfileOwner ? (
         <div className="flex-1 flex flex-col">
+          {/* Header with back button */}
+          {isProfileOwner && activeConversation && (
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0"
+                onClick={() => setActiveConversation(null)}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {(() => {
+                      const peerInboxIdRaw = activeConversation.peerInboxId;
+                      const displayId = (typeof peerInboxIdRaw === 'string' ? peerInboxIdRaw : activeConversation.id);
+                      return typeof displayId === 'string' ? `${displayId.slice(0, 8)}...${displayId.slice(-6)}` : 'Conversation';
+                    })()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Message area */}
           <div className="flex-1 overflow-auto p-4 bg-background/50">
             {messages.length === 0 ? (
