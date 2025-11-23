@@ -1137,6 +1137,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const fetchNfts = async (next?: string) => {
     const address = web3BioProfile?.address || walletAddress;
     
+    console.log('fetchNfts called with:', { address, web3BioProfile: web3BioProfile?.address, walletAddress, next });
+    
     // Check for undefined, null, empty string, or MiniKit's undefined object format
     if (!address || 
         address === 'undefined' || 
@@ -1147,10 +1149,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
     
     const addressString = typeof address === 'string' ? address : (address as any)?.value;
-    if (!addressString || addressString === 'undefined') {
+    if (!addressString || addressString === 'undefined' || addressString.trim() === '') {
       console.warn('Cannot fetch NFTs: Invalid address format', { address, addressString });
       return;
     }
+    
+    console.log('Fetching NFTs with valid address:', addressString);
+    
     try {
       setNftLoading(true);
       const data = await callEdge("get-opensea-nfts", {
