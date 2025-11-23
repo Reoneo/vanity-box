@@ -1161,11 +1161,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   };
 
   const fetchLatestCast = async () => {
+    // Check if we have any valid Farcaster identifier
+    const hasFarcasterData = web3BioProfile?.links?.farcaster?.fid || 
+                            web3BioProfile?.links?.farcaster?.handle ||
+                            web3BioProfile?.identity;
+    const hasAddress = web3BioProfile?.address || walletAddress;
+    
+    if (!hasFarcasterData && !hasAddress) {
+      console.warn('Cannot fetch Farcaster casts: No valid identifier available');
+      return;
+    }
+
     try {
       setCastLoading(true);
       const data = await callEdge("get-farcaster-casts", {
-        username: web3BioProfile?.identity,
-        fid: web3BioProfile?.farcaster?.fid,
+        username: web3BioProfile?.links?.farcaster?.handle || web3BioProfile?.identity,
+        fid: web3BioProfile?.links?.farcaster?.fid,
         walletAddress: web3BioProfile?.address || walletAddress,
         limit: 1,
       });
