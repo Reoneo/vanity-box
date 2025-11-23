@@ -1199,12 +1199,26 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       
       try {
         const data = await callEdge("get-opensea-nfts", requestBody);
+        
+        // Sanitize the next cursor from the response
+        const responseNext = data.next;
+        const sanitizedResponseNext = 
+          responseNext && 
+          typeof responseNext === 'object' && 
+          (responseNext as any)?._type === 'undefined'
+            ? undefined
+            : typeof responseNext === 'string' && 
+              responseNext !== 'undefined' && 
+              responseNext.trim() !== ''
+            ? responseNext
+            : undefined;
+        
         if (sanitizedNext) {
           setNfts((prev) => [...prev, ...data.nfts]);
         } else {
           setNfts(data.nfts || []);
         }
-        setNftNextCursor(data.next || null);
+        setNftNextCursor(sanitizedResponseNext || null);
       } catch (apiError: any) {
         console.error("Error calling get-opensea-nfts API:", apiError);
         // Check if it's the walletAddress error
