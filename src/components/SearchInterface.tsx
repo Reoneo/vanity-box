@@ -285,7 +285,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setShowSearchBar(event.detail.show);
     };
     
+    // Listen for direct profile load from wallet menu
+    const handleDirectProfileLoad = (event: CustomEvent) => {
+      const { identifier, skipSearch } = event.detail;
+      if (skipSearch && identifier) {
+        // Directly load profile without showing search UI
+        console.log('🔍 Direct profile load requested for:', identifier);
+        handleSearch(identifier);
+      }
+    };
+    
     window.addEventListener("toggle-search-bar", handleToggleSearchBar as EventListener);
+    window.addEventListener("load-direct-profile", handleDirectProfileLoad as EventListener);
 
     return () => {
       window.removeEventListener("wallet-connected", handleWalletChange as EventListener);
@@ -296,6 +307,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       window.removeEventListener("show-my-ids", handleShowMyIDs);
       window.removeEventListener("show-search", handleShowSearch);
       window.removeEventListener("toggle-search-bar", handleToggleSearchBar as EventListener);
+      window.removeEventListener("load-direct-profile", handleDirectProfileLoad as EventListener);
     };
   }, []);
 
