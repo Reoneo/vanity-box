@@ -1318,6 +1318,30 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   };
 
+  const handleFollowersClick = async () => {
+    setShowFollowersList(true);
+    
+    // Preload followers list if not already loaded
+    if (followersList.length === 0 && web3BioProfile?.address) {
+      setIsLoadingMore(true);
+      try {
+        const response = await fetch(
+          `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=10&offset=0`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const followers = data.followers || [];
+          setFollowersList(followers);
+          setTotalFollowers(data.followers_count || efpStats?.followers_count || 0);
+          setFollowersPage(0);
+        }
+      } catch (error) {
+        console.error("Error loading followers list:", error);
+      }
+      setIsLoadingMore(false);
+    }
+  };
+
   const handleLoadMoreNfts = () => {
     if (!nftNextCursor || nftLoading) return;
     
@@ -1705,6 +1729,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   castLoading={castLoading}
                   firstTransactionDate={firstTransactionDate}
                   onFollowingClick={handleFollowingClick}
+                  onFollowersClick={handleFollowersClick}
                   onLoadMoreNfts={handleLoadMoreNfts}
                 />
 
@@ -1791,8 +1816,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Followers List Modal */}
             {showFollowersList && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col pointer-events-auto">
+              <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col">
                   <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
                     <h3 className="text-lg font-bold text-white dark:text-white light:text-black">{t('followers')} ({totalFollowers})</h3>
                     <button

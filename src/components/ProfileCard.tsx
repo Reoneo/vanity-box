@@ -34,6 +34,7 @@ interface ProfileCardProps {
   castLoading?: boolean;
   firstTransactionDate?: string | null;
   onFollowingClick?: () => void;
+  onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
 }
 
@@ -51,6 +52,7 @@ export const ProfileCard = ({
   castLoading = false,
   firstTransactionDate = null,
   onFollowingClick,
+  onFollowersClick,
   onLoadMoreNfts,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
@@ -246,15 +248,13 @@ export const ProfileCard = ({
                     <span className="text-muted-foreground">Following</span>
                   </button>
                   <span className="text-muted-foreground">·</span>
-                  <a
-                    href={`https://ethfollow.xyz/${currentWalletAddress}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={onFollowersClick}
                     className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
                   >
                     <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
                     <span className="text-muted-foreground">Followers</span>
-                  </a>
+                  </button>
                 </div>
               )}
 
