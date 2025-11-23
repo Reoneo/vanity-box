@@ -307,6 +307,55 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile]);
 
+  // Preload EFP lists in background when profile loads
+  useEffect(() => {
+    if (web3BioProfile?.address && efpStats) {
+      // Preload following list if count > 0
+      if (efpStats.following_count > 0 && followingList.length === 0) {
+        console.log('🔄 Background: Preloading EFP following list...');
+        fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=10&offset=0`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.following) {
+              setFollowingList(data.following);
+              setTotalFollowing(data.following_count || efpStats.following_count);
+              setFollowingPage(0);
+              console.log(`✅ Background: Preloaded ${data.following.length} following users`);
+            }
+          })
+          .catch(err => console.log('Background: EFP following preload failed', err));
+      }
+
+      // Preload followers list if count > 0
+      if (efpStats.followers_count > 0 && followersList.length === 0) {
+        console.log('🔄 Background: Preloading EFP followers list...');
+        fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=10&offset=0`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.followers) {
+              setFollowersList(data.followers);
+              setTotalFollowers(data.followers_count || efpStats.followers_count);
+              setFollowersPage(0);
+              console.log(`✅ Background: Preloaded ${data.followers.length} followers`);
+            }
+          })
+          .catch(err => console.log('Background: EFP followers preload failed', err));
+      }
+    }
+  }, [web3BioProfile?.address, efpStats]);
+
+  // Preload NFTs in background when profile loads
+  useEffect(() => {
+    if (web3BioProfile?.address && nfts.length === 0 && !nftLoading) {
+      console.log('🔄 Background: Preloading OpenSea NFTs...');
+      // Small delay to let initial profile load complete
+      const timer = setTimeout(() => {
+        fetchNfts();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [web3BioProfile?.address]);
+
   // Hide search bar when profile is loaded, show when cleared
   useEffect(() => {
     if (web3BioProfile) {
