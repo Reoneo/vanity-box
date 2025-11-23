@@ -115,7 +115,7 @@ export const ProfileCard = ({
 
             <div className="p-6 space-y-4">
               {web3BioProfile?.avatar && (
-                <div className="flex justify-center -mt-20 mb-4">
+                <div className="flex justify-center -mt-32 mb-4">
                   <Avatar className="h-48 w-48 border-4 border-background">
                     <AvatarImage src={web3BioProfile.avatar} alt={web3BioProfile.displayName} />
                     <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
