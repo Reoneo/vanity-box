@@ -2,6 +2,13 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { initMiniKit } from "@/lib/minikit";
+import { Buffer } from 'buffer';
+
+// Polyfill Buffer globally for XMTP and other libraries
+if (typeof window !== 'undefined') {
+  window.Buffer = Buffer;
+  (window as any).global = window;
+}
 
 // Bootstrap MiniKit once on app load with enhanced logging
 const APP_ID = 'app_ed7e61cb0c52630464178eed59e3fbdd';

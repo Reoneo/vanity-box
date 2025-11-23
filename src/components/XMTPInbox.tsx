@@ -9,17 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Client } from "@xmtp/xmtp-js";
 import { ethers } from "ethers";
 import { formatDistanceToNow } from "date-fns";
-import { Buffer } from 'buffer';
-
-// Polyfill Buffer for XMTP
-if (typeof window !== 'undefined') {
-  window.Buffer = Buffer;
-}
 
 declare global {
   interface Window {
     ethereum?: any;
-    Buffer: typeof Buffer;
   }
 }
 
