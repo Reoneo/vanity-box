@@ -204,7 +204,7 @@ export const ProfileCard = ({
       <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
             <div className="space-y-4 pb-24">
               <div className="relative">
               <div className="w-full h-48 overflow-hidden">
@@ -334,7 +334,7 @@ export const ProfileCard = ({
 
         {/* Socials Section */}
         {activeSection === 'socials' && (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
             <div className="p-6 pb-24">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
@@ -459,7 +459,7 @@ export const ProfileCard = ({
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 min-h-0" style={{ minHeight: '400px' }}>
               {nftLoading && nfts.length === 0 ? (
                 <div className="space-y-4">
                   <div className="text-center py-8 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
@@ -471,11 +471,10 @@ export const ProfileCard = ({
                     <p className="text-sm text-muted-foreground">Scanning multiple chains...</p>
                   </div>
                   <div className="space-y-3">
-                    {[...Array(6)].map((_, i) => (
+                    {[...Array(3)].map((_, i) => (
                       <Card 
                         key={i} 
-                        className="p-4 bg-card/50 backdrop-blur-sm border-border/40 animate-pulse"
-                        style={{ animationDelay: `${i * 0.05}s` }}
+                        className="p-4 bg-card/50 backdrop-blur-sm border-border/40"
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex-1">
@@ -617,7 +616,7 @@ export const ProfileCard = ({
 
         {/* Activity/Transactions Section - Only show if user has transactions */}
         {activeSection === 'activity' && (transactions?.chains?.length > 0 || transactionsLoading) && (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
             <div className="p-6 pb-24">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-6">
@@ -631,10 +630,10 @@ export const ProfileCard = ({
 
               {transactionsLoading ? (
                 <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
+                  {[...Array(2)].map((_, i) => (
                     <Card 
                       key={i} 
-                      className="p-4 bg-card/50 backdrop-blur-sm border-border/40 animate-pulse"
+                      className="p-4 bg-card/50 backdrop-blur-sm border-border/40"
                     >
                       <div className="flex justify-between items-center mb-3">
                         <Skeleton className="h-6 w-32 bg-[#D4AF37]/10 rounded-md" />
@@ -837,7 +836,7 @@ export const ProfileCard = ({
 
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
-          <div className="absolute inset-0 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
             <div className="p-6 pb-24">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
@@ -953,7 +952,7 @@ export const ProfileCard = ({
 
         {/* XMTP Inbox Section */}
         {activeSection === 'inbox' && (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden" style={{ minHeight: '400px' }}>
             <XMTPInbox 
               profileAddress={currentWalletAddress}
               currentUserAddress={connectedWalletAddress}
