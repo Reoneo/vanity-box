@@ -20,7 +20,31 @@ serve(async (req) => {
       body = {};
     }
     
-    const { walletAddress, limit = 20, next } = body;
+    const { walletAddress: rawWalletAddress, limit = 20, next: rawNext } = body;
+    
+    // Sanitize walletAddress - handle MiniKit's undefined object format
+    const walletAddress = 
+      rawWalletAddress && 
+      typeof rawWalletAddress === 'object' && 
+      (rawWalletAddress as any)?._type === 'undefined'
+        ? undefined
+        : typeof rawWalletAddress === 'string' && 
+          rawWalletAddress !== 'undefined' && 
+          rawWalletAddress.trim() !== ''
+        ? rawWalletAddress
+        : undefined;
+    
+    // Sanitize next cursor
+    const next = 
+      rawNext && 
+      typeof rawNext === 'object' && 
+      (rawNext as any)?._type === 'undefined'
+        ? undefined
+        : typeof rawNext === 'string' && 
+          rawNext !== 'undefined' && 
+          rawNext.trim() !== ''
+        ? rawNext
+        : undefined;
     
     if (!walletAddress) {
       throw new Error('walletAddress is required');
