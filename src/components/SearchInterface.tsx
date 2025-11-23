@@ -1147,6 +1147,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Check for undefined, null, empty string, or MiniKit's undefined object format
     if (!address || 
         address === 'undefined' || 
+        typeof address !== 'string' ||
+        address.trim() === '' ||
         (typeof address === 'object' && (address as any)?._type === 'undefined') ||
         (typeof address === 'string' && address.trim() === '')) {
       console.warn('Cannot fetch NFTs: No valid wallet address available', { address });
@@ -1638,7 +1640,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Profile Card with Dock Navigation - placed outside conditionals */}
             {web3BioProfile && !showMyIDs && (
-              <div className="mt-4">
+              <div className="mt-24">
                 <ProfileCard
                   activeSection={activeDockSection}
                   web3BioProfile={web3BioProfile}
@@ -2046,7 +2048,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       </div>
       
       {/* Bottom spacing for footer */}
-      <div className="h-20" />
+      <div className="h-24" />
 
       {/* Detail View Modal */}
       {showDetailView && detailViewResult && (

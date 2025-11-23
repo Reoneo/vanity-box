@@ -22,8 +22,12 @@ serve(async (req) => {
     
     const { walletAddress, limit = 20, next } = body;
     
-    if (!walletAddress) {
-      throw new Error('walletAddress is required');
+    if (!walletAddress || walletAddress.trim() === '') {
+      console.warn('⚠️ No walletAddress provided, returning empty results');
+      return new Response(
+        JSON.stringify({ nfts: [], next: null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     }
     
     console.log('🖼️ Fetching OpenSea NFTs for:', walletAddress);
