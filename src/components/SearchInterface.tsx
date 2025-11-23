@@ -350,13 +350,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Preload NFTs in background when profile loads
   useEffect(() => {
-    if (web3BioProfile?.address && nfts.length === 0 && !nftLoading) {
-      console.log('🔄 Background: Preloading OpenSea NFTs...');
+    const address = web3BioProfile?.address;
+    const isValidAddress = address && 
+                          address !== 'undefined' && 
+                          typeof address === 'string' && 
+                          address.trim() !== '' &&
+                          !(typeof address === 'object' && (address as any)?._type === 'undefined');
+    
+    if (isValidAddress && nfts.length === 0 && !nftLoading) {
+      console.log('🔄 Background: Preloading OpenSea NFTs for address:', address);
       // Small delay to let initial profile load complete
       const timer = setTimeout(() => {
         fetchNfts();
       }, 1000);
       return () => clearTimeout(timer);
+    } else if (address && !isValidAddress) {
+      console.warn('🔄 Background: Skipping NFT preload - invalid address:', address);
     }
   }, [web3BioProfile?.address]);
 
