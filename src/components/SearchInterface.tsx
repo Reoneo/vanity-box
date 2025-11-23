@@ -1863,7 +1863,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div 
                 className={cn(
                   "fixed left-0 right-0 flex flex-col z-[9997] px-4",
-                  showSearchBar ? "top-[140px] bottom-[140px]" : "top-[80px] bottom-[140px]"
+                  showSearchBar ? "top-[140px] bottom-[100px]" : "top-4 bottom-[100px]"
                 )}
               >
                 {/* Profile Card - scrollable content */}
