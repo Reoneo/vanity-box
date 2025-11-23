@@ -281,7 +281,7 @@ export const ProfileCard = ({
 
               {/* Email/Website - Always render with fixed height */}
               <div className="flex items-center justify-center gap-4 flex-wrap min-h-[24px]">
-                {web3BioProfile ? (
+                {web3BioProfile && (
                   <>
                     {web3BioProfile?.email && (
                       <a 
@@ -305,8 +305,6 @@ export const ProfileCard = ({
                       </a>
                     )}
                   </>
-                ) : (
-                  <Skeleton className="h-5 w-64" />
                 )}
               </div>
 
