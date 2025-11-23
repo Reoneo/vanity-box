@@ -414,73 +414,70 @@ export const ProfileCard = ({
         {activeSection === 'nfts' && (
           <div className="p-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                <div className="flex items-baseline gap-3">
+              <div className="flex items-center justify-between mb-4 gap-3">
+                <div className="flex items-center gap-3">
+                  {/* Collection Filter */}
+                  {availableCollections.length > 1 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 w-10 rounded-xl">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="4" y1="21" x2="4" y2="14"></line>
+                            <line x1="4" y1="10" x2="4" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12" y2="3"></line>
+                            <line x1="20" y1="21" x2="20" y2="16"></line>
+                            <line x1="20" y1="12" x2="20" y2="3"></line>
+                            <line x1="2" y1="14" x2="6" y2="14"></line>
+                            <line x1="10" y1="8" x2="14" y2="8"></line>
+                            <line x1="18" y1="16" x2="22" y2="16"></line>
+                          </svg>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-72 bg-background/95 backdrop-blur-xl border-border/50 max-h-96 overflow-y-auto">
+                        {availableCollections.map(collection => (
+                          <DropdownMenuCheckboxItem
+                            key={collection}
+                            checked={selectedCollections.includes(collection)}
+                            onCheckedChange={() => handleCollectionToggle(collection)}
+                            className="hover:bg-[#D4AF37]/10 cursor-pointer"
+                          >
+                            <span className="font-medium">{formatCollectionName(collection)}</span>
+                          </DropdownMenuCheckboxItem>
+                        ))}
+                        {selectedCollections.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => setSelectedCollections([])}
+                              className="text-[#D4AF37] hover:bg-[#D4AF37]/10 cursor-pointer font-medium"
+                            >
+                              Clear all filters
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                   <h3 className="text-2xl font-bold text-[#D4AF37]">NFTs</h3>
                 </div>
+
+                {/* Active Filter Badges on the right */}
+                {availableCollections.length > 1 && selectedCollections.length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {selectedCollections.map(collection => (
+                      <Badge
+                        key={collection}
+                        variant="secondary"
+                        className="cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-all font-medium px-3 py-1"
+                        onClick={() => handleCollectionToggle(collection)}
+                      >
+                        {formatCollectionName(collection)} ×
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              {/* Collection Filter */}
-              {availableCollections.length > 1 && (
-                <div className="flex items-center gap-3 flex-wrap">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 w-10 rounded-xl">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="4" y1="21" x2="4" y2="14"></line>
-                          <line x1="4" y1="10" x2="4" y2="3"></line>
-                          <line x1="12" y1="21" x2="12" y2="12"></line>
-                          <line x1="12" y1="8" x2="12" y2="3"></line>
-                          <line x1="20" y1="21" x2="20" y2="16"></line>
-                          <line x1="20" y1="12" x2="20" y2="3"></line>
-                          <line x1="2" y1="14" x2="6" y2="14"></line>
-                          <line x1="10" y1="8" x2="14" y2="8"></line>
-                          <line x1="18" y1="16" x2="22" y2="16"></line>
-                        </svg>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-72 bg-background/95 backdrop-blur-xl border-border/50 max-h-96 overflow-y-auto">
-                      {availableCollections.map(collection => (
-                        <DropdownMenuCheckboxItem
-                          key={collection}
-                          checked={selectedCollections.includes(collection)}
-                          onCheckedChange={() => handleCollectionToggle(collection)}
-                          className="hover:bg-[#D4AF37]/10 cursor-pointer"
-                        >
-                          <span className="font-medium">{formatCollectionName(collection)}</span>
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                      {selectedCollections.length > 0 && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={() => setSelectedCollections([])}
-                            className="text-[#D4AF37] hover:bg-[#D4AF37]/10 cursor-pointer font-medium"
-                          >
-                            Clear all filters
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  {/* Active Filter Badges */}
-                  {selectedCollections.length > 0 && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {selectedCollections.map(collection => (
-                        <Badge
-                          key={collection}
-                          variant="secondary"
-                          className="cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-all font-medium px-3 py-1"
-                          onClick={() => handleCollectionToggle(collection)}
-                        >
-                          {formatCollectionName(collection)} ×
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
             
             <div className="space-y-6">

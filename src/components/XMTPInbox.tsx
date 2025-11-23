@@ -272,8 +272,36 @@ export const XMTPInbox = ({
     }
   };
 
-  // Not connected state
-  if (!isConnected) {
+  // Not connected state - but still allow XMTP initialization
+  if (!isConnected && !client) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <Inbox className="w-5 h-5 text-[#D4AF37]" />
+          <h3 className="text-sm font-semibold text-white">Inbox</h3>
+        </div>
+        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
+          <Inbox className="w-12 h-12 text-[#D4AF37] mx-auto mb-3" />
+          <p className="text-foreground font-medium mb-2">Enable Messaging</p>
+          <p className="text-muted-foreground text-sm mb-4">
+            Connect to XMTP to send and receive messages
+          </p>
+          <Button
+            onClick={() => {
+              // Try to initialize XMTP - this will trigger wallet connection if needed
+              initializeXMTP();
+            }}
+            className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+          >
+            Connect to XMTP
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Not connected but has client - unlikely but handle gracefully
+  if (!isConnected && client) {
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-center gap-2 mb-3">
