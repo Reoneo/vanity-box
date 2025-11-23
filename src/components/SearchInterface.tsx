@@ -356,6 +356,55 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address]);
 
+  // Preload POAPs in background when profile loads  
+  useEffect(() => {
+    if (web3BioProfile?.address && poapTokens.length === 0 && !isLoadingPoaps) {
+      console.log('🔄 Background: Ensuring POAPs are loaded...');
+      // POAPs should already be loading from main search, but ensure they're triggered
+      const loadPoaps = async () => {
+        try {
+          setIsLoadingPoaps(true);
+          const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+            body: { walletAddress: web3BioProfile.address },
+          });
+
+          if (!poapError && poapData?.success) {
+            setPoapCount(poapData.count || 0);
+            
+            const { data: tokensData } = await supabase
+              .from('poap_tokens')
+              .select('*')
+              .eq('wallet_address', web3BioProfile.address.toLowerCase());
+            
+            if (tokensData) {
+              setPoapTokens(tokensData.map((token: any) => ({
+                eventId: token.event_id,
+                eventName: token.event_name,
+                eventDescription: token.event_description,
+                eventImageUrl: token.event_image_url,
+                eventStartDate: token.event_start_date,
+                eventEndDate: token.event_end_date,
+                eventYear: token.event_year,
+                tokenId: token.token_id,
+                owner: token.owner,
+                chain: token.chain,
+              })));
+              console.log(`✅ Background: Loaded ${tokensData.length} POAPs`);
+            }
+          }
+        } catch (error) {
+          console.log('Background: POAP preload failed', error);
+        } finally {
+          setIsLoadingPoaps(false);
+        }
+      };
+      
+      // Small delay to let other critical data load first
+      const timer = setTimeout(loadPoaps, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [web3BioProfile?.address]);
+
   // Hide search bar when profile is loaded, show when cleared
   useEffect(() => {
     if (web3BioProfile) {
