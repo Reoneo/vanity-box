@@ -44,6 +44,8 @@ export const XMTPInbox = ({
 }: XMTPInboxProps) => {
   const [client, setClient] = useState<Client | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [initStep, setInitStep] = useState<string>("");
+  const [initError, setInitError] = useState<string>("");
   const [recipientAddress, setRecipientAddress] = useState("");
   const [message, setMessage] = useState("");
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -194,7 +196,7 @@ export const XMTPInbox = ({
     };
   }, [client, isProfileOwner, currentUserAddress]);
 
-  const initializeXMTP = async () => {
+  const initializeXMTP = async (retryCount = 0) => {
     if (!currentUserAddress) {
       toast({
         title: "No wallet connected",
@@ -204,114 +206,185 @@ export const XMTPInbox = ({
       return;
     }
 
+    const MAX_RETRIES = 2;
+    const TIMEOUT_MS = 60000; // 60 seconds timeout
+
     try {
       setIsInitializing(true);
+      setInitError("");
+      setInitStep("Preparing connection...");
+      console.log('[XMTP] Starting initialization (attempt', retryCount + 1, ')');
       
-      // Create a custom signer for World App
+      // Create a custom signer for World App with improved error handling
       const createWorldAppSigner = (address: string): Signer => {
         return {
-          getAddress: async () => address,
+          getAddress: async () => {
+            console.log('[XMTP] Getting address:', address);
+            return address;
+          },
           signMessage: async (message: string | Uint8Array) => {
             try {
-              console.log('[XMTP] Requesting signature from World App...');
+              console.log('[XMTP] Sign request - message type:', typeof message);
+              setInitStep("Requesting signature from World App...");
               
-              // Convert message to string if it's Uint8Array
+              // CRITICAL FIX: Use hexlify to preserve data integrity
               const messageToSign = typeof message === 'string' 
                 ? message 
-                : ethers.utils.toUtf8String(message);
+                : ethers.utils.hexlify(message); // Changed from toUtf8String to hexlify
               
-              // Use MiniKit signMessage command
-              const result = await MiniKit.commandsAsync.signMessage({
+              console.log('[XMTP] Requesting signature for:', messageToSign.substring(0, 50) + '...');
+              
+              // Use MiniKit signMessage command with timeout
+              const signPromise = MiniKit.commandsAsync.signMessage({
                 message: messageToSign
               });
+
+              const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Signature request timed out')), 30000)
+              );
+
+              const result = await Promise.race([signPromise, timeoutPromise]) as any;
               
               if (result.finalPayload?.status === 'success' && result.finalPayload.signature) {
-                console.log('[XMTP] Signature received from World App');
+                console.log('[XMTP] ✓ Signature received successfully');
+                setInitStep("Signature received, creating XMTP client...");
                 return result.finalPayload.signature;
               }
               
-              throw new Error('Failed to sign message with World App');
+              if (result.finalPayload?.status === 'error') {
+                throw new Error(result.finalPayload.error_message || 'Signature rejected');
+              }
+              
+              throw new Error('Signature request failed or was cancelled');
             } catch (error) {
-              console.error('[XMTP] Signature error:', error);
+              console.error('[XMTP] ✗ Signature error:', error);
+              if (error instanceof Error && error.message.includes('cancelled')) {
+                throw new Error('You cancelled the signature request. Please try again.');
+              }
               throw error;
             }
           }
         } as Signer;
       };
 
-      // Try World App wallet first if connected
-      if (currentUserAddress && MiniKit.isInstalled()) {
-        console.log('[XMTP] Initializing with World App wallet:', currentUserAddress);
-        const worldAppSigner = createWorldAppSigner(currentUserAddress);
-        const xmtpClient = await Client.create(worldAppSigner, { env: 'production' });
-        setClient(xmtpClient);
+      // Wrap the entire initialization in a timeout
+      const initPromise = (async () => {
+        // Try World App wallet first if connected
+        if (currentUserAddress && MiniKit.isInstalled()) {
+          console.log('[XMTP] Using World App wallet:', currentUserAddress);
+          setInitStep("Creating World App signer...");
+          
+          const worldAppSigner = createWorldAppSigner(currentUserAddress);
+          
+          setInitStep("Creating XMTP client...");
+          console.log('[XMTP] Creating XMTP client...');
+          const xmtpClient = await Client.create(worldAppSigner, { env: 'production' });
+          
+          console.log('[XMTP] ✓ Client created successfully');
+          setClient(xmtpClient);
 
-        // Load conversations if profile owner
-        if (isProfileOwner) {
-          setLoadingMessages(true);
-          const allConversations = await xmtpClient.conversations.list();
+          // Load conversations if profile owner
+          if (isProfileOwner) {
+            setInitStep("Loading conversations...");
+            setLoadingMessages(true);
+            const allConversations = await xmtpClient.conversations.list();
+            
+            const conversationsWithMessages = await Promise.all(
+              allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
+            );
+            
+            conversationsWithMessages.sort((a, b) => 
+              b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
+            );
+            
+            setConversations(conversationsWithMessages);
+            setLoadingMessages(false);
+          }
+
+          toast({
+            title: "Connected to XMTP",
+            description: "You can now send and receive messages",
+          });
+        } else if (typeof window.ethereum !== 'undefined') {
+          // Fallback to MetaMask/Web3 wallet
+          console.log('[XMTP] Using Web3 wallet');
+          setInitStep("Connecting to Web3 wallet...");
           
-          const conversationsWithMessages = await Promise.all(
-            allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
-          );
+          const provider = new ethers.providers.Web3Provider(window.ethereum as any);
+          const signer = provider.getSigner();
           
-          conversationsWithMessages.sort((a, b) => 
-            b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
-          );
-          
-          setConversations(conversationsWithMessages);
-          setLoadingMessages(false);
+          setInitStep("Creating XMTP client...");
+          const xmtpClient = await Client.create(signer, { env: 'production' });
+          setClient(xmtpClient);
+
+          if (isProfileOwner) {
+            setInitStep("Loading conversations...");
+            setLoadingMessages(true);
+            const allConversations = await xmtpClient.conversations.list();
+            
+            const conversationsWithMessages = await Promise.all(
+              allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
+            );
+            
+            conversationsWithMessages.sort((a, b) => 
+              b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
+            );
+            
+            setConversations(conversationsWithMessages);
+            setLoadingMessages(false);
+          }
+
+          toast({
+            title: "Connected to XMTP",
+            description: "You can now send and receive messages",
+          });
+        } else {
+          throw new Error('No compatible wallet found');
         }
+      })();
 
-        toast({
-          title: "Connected to XMTP",
-          description: "You can now send and receive messages",
-        });
-      } else if (typeof window.ethereum !== 'undefined') {
-        // Fallback to MetaMask/Web3 wallet
-        console.log('[XMTP] Initializing with Web3 wallet');
-        const provider = new ethers.providers.Web3Provider(window.ethereum as any);
-        const signer = provider.getSigner();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out after 60 seconds')), TIMEOUT_MS)
+      );
+
+      await Promise.race([initPromise, timeoutPromise]);
+      
+      console.log('[XMTP] ✓ Initialization complete');
+      setInitStep("");
+      
+    } catch (error) {
+      console.error('[XMTP] ✗ Initialization error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : "Failed to connect to XMTP";
+      setInitError(errorMessage);
+      
+      // Retry logic with exponential backoff
+      if (retryCount < MAX_RETRIES && !errorMessage.includes('cancelled') && !errorMessage.includes('rejected')) {
+        const backoffDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`[XMTP] Retrying in ${backoffDelay}ms...`);
         
-        const xmtpClient = await Client.create(signer, { env: 'production' });
-        setClient(xmtpClient);
-
-        if (isProfileOwner) {
-          setLoadingMessages(true);
-          const allConversations = await xmtpClient.conversations.list();
-          
-          const conversationsWithMessages = await Promise.all(
-            allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
-          );
-          
-          conversationsWithMessages.sort((a, b) => 
-            b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
-          );
-          
-          setConversations(conversationsWithMessages);
-          setLoadingMessages(false);
-        }
-
         toast({
-          title: "Connected to XMTP",
-          description: "You can now send and receive messages",
+          title: "Retrying connection...",
+          description: `Attempt ${retryCount + 2} of ${MAX_RETRIES + 1}`,
         });
+        
+        setTimeout(() => {
+          initializeXMTP(retryCount + 1);
+        }, backoffDelay);
       } else {
         toast({
-          title: "Connect your wallet",
-          description: "Please connect your World App or Web3 wallet to use messaging",
+          title: "Connection failed",
+          description: errorMessage,
           variant: "destructive",
         });
+        setIsInitializing(false);
+        setInitStep("");
       }
-    } catch (error) {
-      console.error("Error initializing XMTP:", error);
-      toast({
-        title: "Connection failed",
-        description: error instanceof Error ? error.message : "Failed to connect to XMTP",
-        variant: "destructive",
-      });
     } finally {
-      setIsInitializing(false);
+      if (retryCount >= MAX_RETRIES || initError.includes('cancelled') || initError.includes('rejected')) {
+        setIsInitializing(false);
+        setInitStep("");
+      }
     }
   };
 
@@ -434,7 +507,7 @@ export const XMTPInbox = ({
     );
   }
 
-  // Initializing XMTP
+  // Initializing XMTP - show detailed status
   if (isInitializing) {
     return (
       <div className="space-y-3">
@@ -442,9 +515,27 @@ export const XMTPInbox = ({
           <Inbox className="w-5 h-5 text-[#D4AF37]" />
           <h3 className="text-sm font-semibold text-white">Inbox</h3>
         </div>
-        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
-          <Skeleton className="h-20 w-full mb-3" />
-          <p className="text-muted-foreground text-sm">Connecting to XMTP...</p>
+        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-[#D4AF37] mx-auto animate-spin" />
+          <div className="space-y-2">
+            <p className="text-foreground font-medium">Connecting to XMTP</p>
+            {initStep && (
+              <p className="text-muted-foreground text-sm">{initStep}</p>
+            )}
+            {initError && (
+              <>
+                <p className="text-destructive text-sm mt-2">{initError}</p>
+                <Button
+                  onClick={() => initializeXMTP(0)}
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                >
+                  Retry Connection
+                </Button>
+              </>
+            )}
+          </div>
         </Card>
       </div>
     );
@@ -648,7 +739,7 @@ export const XMTPInbox = ({
           <Inbox className="w-12 h-12 text-[#D4AF37] mx-auto mb-3" />
           <p className="text-foreground font-medium mb-4">Enable Messaging</p>
           <Button
-            onClick={initializeXMTP}
+            onClick={() => initializeXMTP(0)}
             className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
           >
             Connect to XMTP
