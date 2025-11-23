@@ -296,55 +296,82 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
     }
   };
 
+  const fullDomainName = `${domain.name}.${domain.domain}`;
+  const vanityProfileUrl = `https://vanity.box/${fullDomainName}`;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 mt-20 md:mt-0">
-        <DialogHeader className="pt-4 md:pt-0">
-          <DialogTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-            {domain.name}.{domain.domain}
-            {domain.isWrapped && (
-              <Badge className="bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30">
-                <Gift className="w-3 h-3 mr-1" />
-                Wrapped
-              </Badge>
-            )}
-          </DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background via-background to-accent/5 border-primary/20 mt-20 md:mt-0">
+        <DialogHeader className="pt-4 md:pt-0 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <DialogTitle className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent flex items-center gap-2 flex-wrap mb-2">
+                {domain.name}.{domain.domain}
+                {domain.isWrapped && (
+                  <Badge className="bg-primary/10 text-primary border-primary/30">
+                    <Gift className="w-3 h-3 mr-1" />
+                    Wrapped
+                  </Badge>
+                )}
+              </DialogTitle>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Link className="w-4 h-4" />
+                <span className="break-all">
+                  Redirect set to{' '}
+                  <a 
+                    href={vanityProfileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {fullDomainName} Vanity profile
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
         <Tabs defaultValue="records" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="records">{t('records')}</TabsTrigger>
-            <TabsTrigger value="transfer">{t('transfer')}</TabsTrigger>
-            <TabsTrigger value="wrap">{t('wrap_delete')}</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+            <TabsTrigger value="records" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{t('records')}</TabsTrigger>
+            <TabsTrigger value="transfer" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{t('transfer')}</TabsTrigger>
+            <TabsTrigger value="wrap" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{t('wrap_delete')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="records" className="space-y-4">
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">ENS Text Records</h3>
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <div className="h-1 w-1 rounded-full bg-primary" />
+                ENS Text Records
+              </h3>
               {Object.entries(ensRecords).map(([key, value]) => (
                 <div key={key} className="space-y-2">
-                  <Label className="text-gray-700 dark:text-gray-300">{key}</Label>
+                  <Label className="text-muted-foreground font-medium">{key}</Label>
                   <Input
                     value={value}
                     onChange={(e) => setEnsRecords({ ...ensRecords, [key]: e.target.value })}
                     placeholder={`Enter ${key}`}
-                    className="bg-gray-50 dark:bg-gray-800"
+                    className="bg-muted/30 border-border focus:border-primary transition-colors"
                   />
                 </div>
               ))}
 
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Custom Records</h3>
+              <div className="pt-4 border-t border-border">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-primary" />
+                  Custom Records
+                </h3>
                 
                 {customRecords.map((record, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <Input value={record.key} disabled className="flex-1" />
-                    <Input value={record.value} disabled className="flex-1" />
+                  <div key={index} className="flex gap-2 mb-2 p-2 bg-muted/20 rounded-lg border border-border/50">
+                    <Input value={record.key} disabled className="flex-1 bg-background/50" />
+                    <Input value={record.value} disabled className="flex-1 bg-background/50" />
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => handleRemoveCustomRecord(index)}
-                      className="border-red-500 text-red-500 hover:bg-red-50"
+                      className="border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </Button>
@@ -376,27 +403,34 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
               <Button
                 onClick={handleSaveRecords}
                 disabled={isLoading}
-                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold disabled:opacity-50"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold disabled:opacity-50 transition-all shadow-sm hover:shadow-md"
               >
-                {isLoading ? 'Saving...' : 'Save Records'}
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Records'
+                )}
               </Button>
             </div>
           </TabsContent>
 
           <TabsContent value="transfer" className="space-y-4">
-            <div className="space-y-4">
+            <div className="space-y-4 p-4 bg-muted/20 rounded-lg border border-border/50">
               <div>
-                <Label className="text-gray-700 dark:text-gray-300">Transfer to Address</Label>
+                <Label className="text-muted-foreground font-medium">Transfer to Address</Label>
                 <Input
                   value={transferAddress}
                   onChange={(e) => setTransferAddress(e.target.value)}
                   placeholder="0x..."
-                  className="mt-2 bg-gray-50 dark:bg-gray-800"
+                  className="mt-2 bg-background border-border focus:border-primary transition-colors"
                 />
               </div>
               <Button
                 onClick={handleTransfer}
-                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-all shadow-sm hover:shadow-md"
               >
                 <Send className="w-4 h-4 mr-2" />
                 Transfer Domain
@@ -407,48 +441,61 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
           <TabsContent value="wrap" className="space-y-4">
             <div className="space-y-4">
               {!domain.isWrapped ? (
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Wrap Domain</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <div className="p-4 bg-muted/20 rounded-lg border border-border/50">
+                  <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-primary" />
+                    Wrap Domain
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
                     Wrapping your domain converts it to an ERC-1155 NFT via Durin on World Chain, enabling enhanced features.
                   </p>
                   <Button
                     onClick={handleWrap}
-                    className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-all shadow-sm hover:shadow-md"
                   >
                     <Gift className="w-4 h-4 mr-2" />
                     Wrap Domain
                   </Button>
                 </div>
               ) : (
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Unwrap Domain</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <div className="p-4 bg-muted/20 rounded-lg border border-border/50">
+                  <h4 className="font-semibold text-foreground mb-2">Unwrap Domain</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
                     Unwrapping will convert your domain back to a standard subdomain.
                   </p>
                   <Button
                     onClick={handleUnwrap}
-                    className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-all shadow-sm hover:shadow-md"
                   >
                     Unwrap Domain
                   </Button>
                 </div>
               )}
 
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <h4 className="font-semibold text-red-900 dark:text-red-400 mb-2">Danger Zone</h4>
-                  <p className="text-sm text-red-600 dark:text-red-400 mb-4">
+              <div className="pt-4 border-t border-border">
+                <div className="p-4 bg-destructive/5 rounded-lg border border-destructive/20">
+                  <h4 className="font-semibold text-destructive mb-2 flex items-center gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    Danger Zone
+                  </h4>
+                  <p className="text-sm text-destructive/80 mb-4">
                     Deleting a domain is permanent and cannot be undone.
                   </p>
                   <Button
                     onClick={handleDelete}
                     disabled={isLoading}
                     variant="destructive"
-                    className="w-full disabled:opacity-50"
+                    className="w-full disabled:opacity-50 transition-all shadow-sm hover:shadow-md"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {isLoading ? 'Deleting...' : 'Delete Domain'}
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete Domain'
+                    )}
                   </Button>
                 </div>
               </div>
