@@ -742,6 +742,16 @@ export const ProfileCard = ({
                 </div>
               ) : transactions.chains && transactions.chains.length > 0 ? (
                 <div className="space-y-6">
+                  {/* Loading indicator for partial data */}
+                  {transactions.partial && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />
+                      <span className="text-sm text-blue-400">
+                        Showing World Chain first. Loading other chains in background...
+                      </span>
+                    </div>
+                  )}
+                  
                   {/* Activity Overview Stats */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <Card className="p-3 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
