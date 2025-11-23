@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
@@ -45,6 +45,14 @@ export const ProfileCard = ({
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
+
+  // Disable body scrolling when profile card is displayed
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const copyAddress = async () => {
     if (currentWalletAddress) {
@@ -104,8 +112,8 @@ export const ProfileCard = ({
       <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="space-y-4">
-            <div className="w-full h-48 overflow-hidden">
+          <div className="space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="w-full h-48 overflow-hidden sticky top-0 z-10">
               <img
                 src={web3BioProfile?.header || defaultHeader}
                 alt="Header"
@@ -358,6 +366,11 @@ export const ProfileCard = ({
                           <div className="text-xs text-muted-foreground truncate">
                             {nft.collection}
                           </div>
+                          {nft.chain && (
+                            <Badge variant="outline" className="text-xs border-[#D4AF37]/30 bg-[#D4AF37]/5 capitalize">
+                              {nft.chain}
+                            </Badge>
+                          )}
                           {nft.opensea_url && (
                             <a
                               href={nft.opensea_url}

@@ -35,33 +35,71 @@ serve(async (req) => {
       throw new Error('OPENSEA_API_KEY not configured');
     }
 
-    let url = `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?limit=${limit}`;
-    if (next) {
-      url += `&next=${next}`;
+    // OpenSea supported chains
+    const chains = [
+      'ethereum',
+      'polygon',
+      'arbitrum',
+      'optimism',
+      'base',
+      'avalanche',
+      'bsc',
+      'klaytn',
+      'solana',
+      'zora'
+    ];
+
+    let allNfts: any[] = [];
+    let nextCursor = null;
+
+    // Fetch NFTs from all supported chains
+    for (const chain of chains) {
+      try {
+        let url = `https://api.opensea.io/api/v2/chain/${chain}/account/${walletAddress}/nfts?limit=${limit}`;
+        if (next && chain === 'ethereum') {
+          // Only use cursor for initial chain to maintain pagination
+          url += `&next=${next}`;
+        }
+        
+        console.log(`📡 Fetching from OpenSea (${chain}):`, url);
+        
+        const response = await fetch(url, {
+          headers: {
+            'accept': 'application/json',
+            'x-api-key': OPENSEA_API_KEY,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.nfts && data.nfts.length > 0) {
+            // Add chain info to each NFT
+            const nftsWithChain = data.nfts.map((nft: any) => ({
+              ...nft,
+              chain: chain
+            }));
+            allNfts = [...allNfts, ...nftsWithChain];
+            console.log(`✅ Fetched ${data.nfts.length} NFTs from ${chain}`);
+          }
+          
+          // Save cursor from ethereum for pagination
+          if (chain === 'ethereum' && data.next) {
+            nextCursor = data.next;
+          }
+        } else {
+          console.log(`⚠️ No NFTs found on ${chain} or API error`);
+        }
+      } catch (chainError) {
+        console.log(`⚠️ Error fetching from ${chain}:`, chainError.message);
+        // Continue with next chain
+      }
     }
     
-    console.log('📡 Fetching from OpenSea:', url);
-    
-    const response = await fetch(url, {
-      headers: {
-        'accept': 'application/json',
-        'x-api-key': OPENSEA_API_KEY,
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ OpenSea API error:', response.status, errorText);
-      throw new Error(`Failed to fetch NFTs: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    console.log('✅ Fetched NFTs:', data.nfts?.length || 0);
+    console.log(`✅ Total NFTs fetched across all chains: ${allNfts.length}`);
 
     return new Response(JSON.stringify({
-      nfts: data.nfts || [],
-      next: data.next || null,
+      nfts: allNfts,
+      next: nextCursor,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
