@@ -58,71 +58,87 @@ serve(async (req) => {
       }
 
       try {
-        // V2 API format: base URL + chainid parameter - increased to 50 transactions
-        const url = `${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`;
+        // Fetch both regular transactions and ERC-20 token transfers
+        const [txResponse, tokenTxResponse] = await Promise.all([
+          // Regular transactions
+          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`),
+          // ERC-20 token transfers
+          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`)
+        ]);
         
         console.log(`📡 Calling ${chain.name} API (Chain ID: ${chain.chainId})...`);
-        console.log(`🔗 API URL: ${url.replace(etherscanApiKey || '', 'HIDDEN_API_KEY')}`);
         
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          console.error(`❌ ${chain.name} API HTTP error:`, response.status, response.statusText);
-          const errorText = await response.text();
-          console.error(`❌ ${chain.name} API error response:`, errorText);
+        if (!txResponse.ok || !tokenTxResponse.ok) {
+          console.error(`❌ ${chain.name} API HTTP error`);
           return null;
         }
 
-        const data = await response.json();
+        const [txData, tokenTxData] = await Promise.all([
+          txResponse.json(),
+          tokenTxResponse.json()
+        ]);
         
-        // Log the full API response for debugging
-        console.log(`📦 ${chain.name} API Response:`, JSON.stringify({
-          status: data.status,
-          message: data.message,
-          resultCount: Array.isArray(data.result) ? data.result.length : 'not an array',
-          resultType: typeof data.result,
+        console.log(`📦 ${chain.name} Regular TX Response:`, JSON.stringify({
+          status: txData.status,
+          message: txData.message,
+          resultCount: Array.isArray(txData.result) ? txData.result.length : 'not an array',
         }));
         
-        // Check for API-specific error messages
-        if (data.message && data.message !== 'OK') {
-          console.warn(`⚠️ ${chain.name} API message: ${data.message}`);
-          
-          // Handle common API errors
-          if (data.message.includes('rate limit')) {
-            console.error(`🚫 ${chain.name}: Rate limit exceeded`);
-          } else if (data.message.includes('Invalid API Key')) {
-            console.error(`🚫 ${chain.name}: Invalid API Key`);
-          } else if (data.message.includes('No transactions found')) {
-            console.log(`ℹ️ ${chain.name}: No transactions found (API message)`);
-          }
-        }
+        console.log(`📦 ${chain.name} Token TX Response:`, JSON.stringify({
+          status: tokenTxData.status,
+          message: tokenTxData.message,
+          resultCount: Array.isArray(tokenTxData.result) ? tokenTxData.result.length : 'not an array',
+        }));
         
-        if (data.status === '1' && data.result && Array.isArray(data.result) && data.result.length > 0) {
-          console.log(`✅ ${chain.name}: Found ${data.result.length} transactions`);
-          return {
-            chain: chain.name,
-            chainKey,
-            transactions: data.result.map((tx: any) => ({
-              hash: tx.hash,
-              from: tx.from,
-              to: tx.to,
-              value: tx.value,
-              timestamp: parseInt(tx.timeStamp) * 1000,
-              blockNumber: tx.blockNumber,
-              gasUsed: tx.gasUsed,
-              gasPrice: tx.gasPrice,
-              isError: tx.isError === '1',
-              methodId: tx.methodId,
-            })),
-            totalTransactions: data.result.length,
-          };
-        }
+        const hasRegularTx = txData.status === '1' && Array.isArray(txData.result) && txData.result.length > 0;
+        const hasTokenTx = tokenTxData.status === '1' && Array.isArray(tokenTxData.result) && tokenTxData.result.length > 0;
         
-        console.log(`ℹ️ ${chain.name}: No transactions found (status: ${data.status}, result type: ${typeof data.result})`);
-        return null;
+        if (!hasRegularTx && !hasTokenTx) {
+          console.log(`ℹ️ ${chain.name}: No transactions found`);
+          return null;
+        }
+
+        const transactions = hasRegularTx ? txData.result.map((tx: any) => ({
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          value: tx.value,
+          timestamp: parseInt(tx.timeStamp) * 1000,
+          blockNumber: tx.blockNumber,
+          gasUsed: tx.gasUsed,
+          gasPrice: tx.gasPrice,
+          isError: tx.isError === '1',
+          methodId: tx.methodId,
+          type: 'transaction'
+        })) : [];
+
+        const tokenTransfers = hasTokenTx ? tokenTxData.result.map((tx: any) => ({
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          value: tx.value,
+          timestamp: parseInt(tx.timeStamp) * 1000,
+          blockNumber: tx.blockNumber,
+          gasUsed: tx.gasUsed,
+          gasPrice: tx.gasPrice,
+          tokenName: tx.tokenName,
+          tokenSymbol: tx.tokenSymbol,
+          tokenDecimal: tx.tokenDecimal,
+          contractAddress: tx.contractAddress,
+          type: 'token'
+        })) : [];
+
+        console.log(`✅ ${chain.name}: Found ${transactions.length} regular tx, ${tokenTransfers.length} token transfers`);
+        
+        return {
+          chain: chain.name,
+          chainKey,
+          transactions,
+          tokenTransfers,
+          totalTransactions: transactions.length + tokenTransfers.length,
+        };
       } catch (error) {
         console.error(`❌ Error fetching ${chain.name} transactions:`, error);
-        console.error(`❌ ${chain.name} Error details:`, error instanceof Error ? error.message : 'Unknown error');
         return null;
       }
     });
