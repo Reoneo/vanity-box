@@ -608,115 +608,33 @@ export const ProfileCard = ({
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                           {collectionNfts.map((nft: any, index: number) => {
-                            const rarity = nft.rarity_score ? getRarityLabel(nft.rarity_score) : null;
-                            
                             return (
-                              <Card
+                              <div
                                 key={`${nft.contract}-${nft.identifier}-${index}`}
-                                className="group relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/60 hover:shadow-2xl hover:shadow-[#D4AF37]/20 transition-all duration-500 cursor-pointer hover:-translate-y-1"
+                                className="group relative overflow-hidden rounded-xl cursor-pointer hover:scale-105 transition-transform duration-300"
                                 onClick={() => setSelectedNft(nft)}
                               >
-                                {/* Rarity Badge */}
-                                {rarity && (
-                                  <div className="absolute top-2.5 left-2.5 z-10">
-                                    <Badge 
-                                      variant="secondary" 
-                                      className={`${rarity.color} bg-black/70 backdrop-blur-md border-0 text-xs font-bold px-2.5 py-1 shadow-lg`}
-                                    >
-                                      ⭐ {rarity.label}
-                                    </Badge>
-                                  </div>
-                                )}
-
-                                {/* Chain Badge */}
-                                {nft.chain && !nft.quantity && (
-                                  <div className="absolute top-2.5 right-2.5 z-10">
-                                    <Badge 
-                                      variant="outline" 
-                                      className="bg-black/70 backdrop-blur-md border-white/20 text-white text-xs capitalize px-2.5 py-1 font-semibold shadow-lg"
-                                    >
-                                      {nft.chain}
-                                    </Badge>
-                                  </div>
-                                )}
-
-                                {/* Quantity Badge - shows when user owns multiple copies */}
-                                {nft.quantity && nft.quantity > 1 && (
-                                  <div className="absolute top-2.5 right-2.5 z-10">
-                                    <Badge 
-                                      className="bg-emerald-600/90 backdrop-blur-md border-0 text-white text-xs font-bold px-2.5 py-1 shadow-lg"
-                                    >
-                                      x{nft.quantity}
-                                    </Badge>
-                                  </div>
-                                )}
-
-                                {/* NFT Image */}
-                                <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-black/30 to-black/50">
+                                {/* NFT Image Only */}
+                                <div className="aspect-square relative overflow-hidden bg-black/20">
                                   {nft.image_url ? (
                                     <img
                                       src={nft.image_url}
                                       alt={nft.name || 'NFT'}
-                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                      className="w-full h-full object-cover"
                                       loading="lazy"
                                     />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/30 to-muted/10">
-                                      <div className="text-center">
-                                        <div className="text-5xl mb-2 opacity-40">🖼️</div>
-                                        <p className="text-xs text-muted-foreground font-medium">No Preview</p>
-                                      </div>
+                                    <div className="w-full h-full flex items-center justify-center bg-muted/20">
+                                      <div className="text-4xl opacity-40">🖼️</div>
                                     </div>
                                   )}
                                   
-                                  {/* Hover Overlay with Gradient */}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-4">
-                                    <Button 
-                                      size="sm" 
-                                      variant="secondary"
-                                      className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B8941F] hover:from-[#B8941F] hover:to-[#D4AF37] text-black font-bold shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-all duration-300"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedNft(nft);
-                                      }}
-                                    >
-                                      View Details
-                                    </Button>
+                                  {/* Subtle hover overlay */}
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                    <div className="text-white text-sm font-semibold">View Details</div>
                                   </div>
                                 </div>
-
-                                {/* NFT Info */}
-                                <div className="p-4 space-y-2.5 bg-gradient-to-b from-card/80 to-card/60">
-                                  <div className="space-y-1">
-                                    <p className="text-sm font-bold text-foreground truncate leading-tight">
-                                      {nft.name || `#${nft.identifier}`}
-                                    </p>
-                                  </div>
-
-                                  {/* Price and Rarity Score */}
-                                  <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                                    {nft.floor_price ? (
-                                      <div className="flex flex-col gap-0.5">
-                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Floor</span>
-                                        <span className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
-                                          💎 {nft.floor_price} ETH
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground font-mono">#{nft.identifier}</span>
-                                    )}
-                                    
-                                    {nft.rarity_score > 0 && (
-                                      <div className="flex flex-col items-end gap-0.5">
-                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Rarity</span>
-                                        <span className={`text-sm font-bold ${rarity?.color || 'text-foreground'}`}>
-                                          {nft.rarity_score}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </Card>
+                              </div>
                             );
                           })}
                         </div>
