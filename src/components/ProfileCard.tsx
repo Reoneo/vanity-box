@@ -412,11 +412,10 @@ export const ProfileCard = ({
 
         {/* NFTs Section */}
         {activeSection === 'nfts' && (
-          <div className="p-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4 gap-3">
+          <div className="flex flex-col h-full">
+            <div className="p-4 border-b border-border/30">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  {/* Collection Filter */}
                   {availableCollections.length > 1 && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -434,7 +433,7 @@ export const ProfileCard = ({
                           </svg>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-72 bg-background/95 backdrop-blur-xl border-border/50 max-h-96 overflow-y-auto">
+                      <DropdownMenuContent align="start" className="w-72 bg-background/95 backdrop-blur-xl border-border/50 max-h-80 overflow-y-auto">
                         {availableCollections.map(collection => (
                           <DropdownMenuCheckboxItem
                             key={collection}
@@ -462,7 +461,6 @@ export const ProfileCard = ({
                   <h3 className="text-2xl font-bold text-[#D4AF37]">NFTs</h3>
                 </div>
 
-                {/* Active Filter Badges on the right */}
                 {availableCollections.length > 1 && selectedCollections.length > 0 && (
                   <div className="flex items-center gap-2 flex-wrap">
                     {selectedCollections.map(collection => (
@@ -480,9 +478,9 @@ export const ProfileCard = ({
               </div>
             </div>
             
-            <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto p-4">
               {nftLoading && nfts.length === 0 ? (
-                <div className="space-y-6 animate-fade-in">
+                <div className="space-y-4">
                   <div className="text-center py-8 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
                     <div className="relative inline-block">
                       <Loader2 className="w-12 h-12 animate-spin text-[#D4AF37] mx-auto mb-3" />
@@ -490,37 +488,27 @@ export const ProfileCard = ({
                     </div>
                     <p className="text-base font-medium text-foreground mb-1">Loading NFT Collection</p>
                     <p className="text-sm text-muted-foreground">Scanning multiple chains...</p>
-                    <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
-                      {['Ethereum', 'Polygon', 'Base', 'Arbitrum', 'Optimism'].map((chain, i) => (
-                        <Badge 
-                          key={chain} 
-                          variant="outline" 
-                          className="text-xs border-border/40 bg-background/40 animate-pulse"
-                          style={{ animationDelay: `${i * 0.1}s` }}
-                        >
-                          {chain}
-                        </Badge>
-                      ))}
-                    </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {[...Array(12)].map((_, i) => (
+                  <div className="space-y-3">
+                    {[...Array(6)].map((_, i) => (
                       <Card 
                         key={i} 
-                        className="overflow-hidden bg-card/50 backdrop-blur-sm border-border/40 animate-pulse"
+                        className="p-4 bg-card/50 backdrop-blur-sm border-border/40 animate-pulse"
                         style={{ animationDelay: `${i * 0.05}s` }}
                       >
-                        <Skeleton className="aspect-square rounded-none bg-gradient-to-br from-[#D4AF37]/10 to-[#D4AF37]/5" />
-                        <div className="p-3 space-y-2">
-                          <Skeleton className="h-4 w-3/4 bg-[#D4AF37]/10 rounded-md" />
-                          <Skeleton className="h-3 w-1/2 bg-[#D4AF37]/10 rounded-md" />
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <Skeleton className="h-5 w-40 bg-[#D4AF37]/10 rounded-md mb-2" />
+                            <Skeleton className="h-4 w-24 bg-[#D4AF37]/10 rounded-md" />
+                          </div>
+                          <Skeleton className="h-5 w-5 bg-[#D4AF37]/10 rounded-md" />
                         </div>
                       </Card>
                     ))}
                   </div>
                 </div>
               ) : nfts.length === 0 ? (
-                <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30 animate-fade-in">
+                <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
                   <div className="relative inline-block mb-4">
                     <div className="text-7xl opacity-30">🖼️</div>
                     <div className="absolute inset-0 bg-[#D4AF37]/10 blur-2xl"></div>
@@ -531,7 +519,7 @@ export const ProfileCard = ({
                   </p>
                 </div>
               ) : filteredNfts.length === 0 ? (
-                <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30 animate-fade-in">
+                <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
                   <div className="relative inline-block mb-4">
                     <div className="text-7xl opacity-30">🔍</div>
                     <div className="absolute inset-0 bg-[#D4AF37]/10 blur-2xl"></div>
@@ -551,9 +539,8 @@ export const ProfileCard = ({
               ) : (
                 <>
                   {expandedCollection ? (
-                    // Show NFTs from selected collection
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 pb-3 border-b border-border/40">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -571,7 +558,7 @@ export const ProfileCard = ({
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {groupedNfts[expandedCollection]?.map((nft: any, index: number) => (
                           <div
                             key={`${nft.contract}-${nft.identifier}-${index}`}
@@ -601,88 +588,49 @@ export const ProfileCard = ({
                       </div>
                     </div>
                   ) : (
-                    // Show collection buttons
-                    <div className="max-h-[calc(100vh-400px)] overflow-y-auto space-y-3 pr-2">
+                    <div className="space-y-3">
                       {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                         <button
                           key={collection}
                           onClick={() => setExpandedCollection(collection)}
-                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-all duration-300 hover:scale-[1.02] group"
+                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-all duration-300 hover:scale-[1.01] group"
                         >
-                          <div className="flex items-center justify-between gap-4">
-                            {/* Collection Name on Left */}
-                            <div className="flex-shrink-0 text-left min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="text-left flex-1 min-w-0 mr-3">
                               <h4 className="font-bold text-foreground text-base group-hover:text-[#D4AF37] transition-colors truncate">
                                 {formatCollectionName(collection)}
                               </h4>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {(() => {
-                                  const uniqueCount = collectionNfts.length;
-                                  const totalCount = collectionNfts.reduce((sum, nft) => sum + (nft.quantity || 1), 0);
-                                  return totalCount > uniqueCount 
-                                    ? `${uniqueCount} unique (${totalCount} total)`
-                                    : `${uniqueCount} ${uniqueCount === 1 ? 'item' : 'items'}`;
-                                })()}
+                              <p className="text-sm text-muted-foreground mt-0.5">
+                                {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
                               </p>
                             </div>
-
-                            {/* Collection Preview Images & Arrow */}
-                            <div className="flex items-center gap-3">
-                              <div className="flex -space-x-3">
-                                {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
-                                  <div 
-                                    key={idx}
-                                    className={`w-12 h-12 ${collection === 'POAPs' ? 'rounded-full' : 'rounded-lg'} overflow-hidden border-2 border-background bg-muted/20`}
-                                  >
-                                    {nft.image_url ? (
-                                      <img 
-                                        src={nft.image_url} 
-                                        alt="" 
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-xl">
-                                        {collection === 'POAPs' ? '🏅' : '🖼️'}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {collectionNfts.length > 3 && (
-                                  <div className="w-12 h-12 rounded-lg bg-[#D4AF37]/20 border-2 border-background flex items-center justify-center">
-                                    <span className="text-xs font-bold text-[#D4AF37]">
-                                      +{collectionNfts.length - 3}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-                            </div>
+                            <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                           </div>
                         </button>
                       ))}
                     </div>
                   )}
-
-                  {web3BioProfile?.address && !expandedCollection && (
-                    <div className="flex justify-center pt-4">
-                      <Button
-                        asChild
-                        className="bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30"
-                      >
-                        <a
-                          href={`https://opensea.io/${web3BioProfile.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          View On OpenSea
-                        </a>
-                      </Button>
-                    </div>
-                  )}
                 </>
               )}
             </div>
+
+            {web3BioProfile?.address && !expandedCollection && nfts.length > 0 && (
+              <div className="p-4 border-t border-border/30">
+                <Button
+                  asChild
+                  className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30"
+                >
+                  <a
+                    href={`https://opensea.io/${web3BioProfile.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View On OpenSea
+                  </a>
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
