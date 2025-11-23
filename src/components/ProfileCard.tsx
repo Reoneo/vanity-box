@@ -56,10 +56,7 @@ export const ProfileCard = ({
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
   const [selectedNft, setSelectedNft] = useState<any>(null);
-  const [nftSearchQuery, setNftSearchQuery] = useState("");
-  const [selectedChains, setSelectedChains] = useState<string[]>([]);
-  const [groupByCollection, setGroupByCollection] = useState(true);
-  const [nftSortBy, setNftSortBy] = useState<'rarity' | 'recent' | 'price' | 'name'>('rarity');
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
 
   // Disable body scrolling when profile card is displayed
   useEffect(() => {
@@ -69,70 +66,27 @@ export const ProfileCard = ({
     };
   }, []);
 
-  // Get unique chains from NFTs
-  const availableChains = useMemo(() => {
-    const chains = new Set(nfts.map(nft => nft.chain).filter(Boolean));
-    return Array.from(chains).sort();
+  // Get unique collections from NFTs
+  const availableCollections = useMemo(() => {
+    const collections = new Set(nfts.map(nft => nft.collection || 'Unknown Collection'));
+    return Array.from(collections).sort();
   }, [nfts]);
 
-  // Filter and search NFTs
+  // Filter NFTs by selected collections
   const filteredNfts = useMemo(() => {
-    let filtered = [...nfts];
-
-    // Filter by search query
-    if (nftSearchQuery) {
-      const query = nftSearchQuery.toLowerCase();
-      filtered = filtered.filter(nft => 
-        nft.name?.toLowerCase().includes(query) ||
-        nft.collection?.toLowerCase().includes(query) ||
-        nft.identifier?.includes(query)
-      );
+    if (selectedCollections.length === 0) {
+      return nfts;
     }
-
-    // Filter by selected chains
-    if (selectedChains.length > 0) {
-      filtered = filtered.filter(nft => 
-        nft.chain && selectedChains.includes(nft.chain)
-      );
-    }
-
-    return filtered;
-  }, [nfts, nftSearchQuery, selectedChains]);
-
-  // Sort NFTs
-  const sortedNfts = useMemo(() => {
-    const sorted = [...filteredNfts];
-    
-    switch (nftSortBy) {
-      case 'rarity':
-        return sorted.sort((a, b) => (b.rarity_score || 0) - (a.rarity_score || 0));
-      case 'recent':
-        return sorted.sort((a, b) => {
-          const dateA = new Date(a.created_date || 0).getTime();
-          const dateB = new Date(b.created_date || 0).getTime();
-          return dateB - dateA;
-        });
-      case 'price':
-        return sorted.sort((a, b) => (b.floor_price || 0) - (a.floor_price || 0));
-      case 'name':
-        return sorted.sort((a, b) => {
-          const nameA = (a.name || a.identifier || '').toLowerCase();
-          const nameB = (b.name || b.identifier || '').toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-      default:
-        return sorted;
-    }
-  }, [filteredNfts, nftSortBy]);
+    return nfts.filter(nft => {
+      const collection = nft.collection || 'Unknown Collection';
+      return selectedCollections.includes(collection);
+    });
+  }, [nfts, selectedCollections]);
 
   // Group NFTs by collection
   const groupedNfts = useMemo(() => {
-    if (!groupByCollection) {
-      return { 'All NFTs': sortedNfts };
-    }
-
     const groups: Record<string, any[]> = {};
-    sortedNfts.forEach(nft => {
+    filteredNfts.forEach(nft => {
       const collection = nft.collection || 'Unknown Collection';
       if (!groups[collection]) {
         groups[collection] = [];
@@ -144,14 +98,22 @@ export const ProfileCard = ({
     return Object.fromEntries(
       Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
     );
-  }, [sortedNfts, groupByCollection]);
+  }, [filteredNfts]);
 
-  const handleChainToggle = (chain: string) => {
-    setSelectedChains(prev => 
-      prev.includes(chain)
-        ? prev.filter(c => c !== chain)
-        : [...prev, chain]
+  const handleCollectionToggle = (collection: string) => {
+    setSelectedCollections(prev => 
+      prev.includes(collection)
+        ? prev.filter(c => c !== collection)
+        : [...prev, collection]
     );
+  };
+
+  // Format collection name: capitalize first letters and remove hyphens
+  const formatCollectionName = (name: string) => {
+    return name
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   const getRarityLabel = (score: number) => {
@@ -220,7 +182,7 @@ export const ProfileCard = ({
       <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative z-[10000]">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="space-y-4 max-h-[80vh] overflow-y-auto">
+          <div className="space-y-4 max-h-[80vh] overflow-y-auto pb-32">
             <div className="relative">
               <div className="w-full h-48 overflow-hidden">
                 <img
@@ -340,7 +302,7 @@ export const ProfileCard = ({
 
         {/* Socials Section */}
         {activeSection === 'socials' && (
-          <div className="p-6">
+          <div className="p-6 pb-32">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🔗 Social Links</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
@@ -397,7 +359,7 @@ export const ProfileCard = ({
 
         {/* POAPs Section */}
         {activeSection === 'poaps' && (
-          <div className="p-6">
+          <div className="p-6 pb-32">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🏅 POAPs</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
               {poaps.length === 0 ? (
@@ -433,161 +395,78 @@ export const ProfileCard = ({
 
         {/* NFTs Section */}
         {activeSection === 'nfts' && (
-          <div className="p-6 space-y-6">
-            {/* Header with Stats */}
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center">
-                    <span className="text-2xl">🖼️</span>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-foreground">NFT Collection</h3>
-                    {nfts.length > 0 && !nftLoading && (
-                      <p className="text-sm text-muted-foreground">
-                        {filteredNfts.length} {filteredNfts.length === 1 ? 'item' : 'items'} • {availableChains.length} {availableChains.length === 1 ? 'chain' : 'chains'}
-                      </p>
-                    )}
-                  </div>
+          <div className="p-6 pb-32">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <div className="flex items-baseline gap-3">
+                  <h3 className="text-2xl font-bold text-[#D4AF37]">🎨 NFT Collection</h3>
+                  {nfts.length > 0 && (
+                    <Badge variant="secondary" className="bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 text-sm font-semibold">
+                      {nfts.length} {nfts.length === 1 ? 'NFT' : 'NFTs'}
+                    </Badge>
+                  )}
                 </div>
               </div>
-              {nfts.length > 0 && !nftLoading && (
-                <Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30 bg-[#D4AF37]/5 text-lg px-4 py-2 font-semibold">
-                  {nfts.length}
-                </Badge>
-              )}
-            </div>
 
-            {/* OpenSea-style Search, Filter, and Sort Controls */}
-            {nfts.length > 0 && (
-              <div className="space-y-3 bg-gradient-to-br from-card/40 to-card/20 backdrop-blur-md p-5 rounded-2xl border border-border/50 shadow-lg">
-                {/* Search Bar */}
-                <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
-                  <Input
-                    placeholder="Search by name, collection, or token ID..."
-                    value={nftSearchQuery}
-                    onChange={(e) => setNftSearchQuery(e.target.value)}
-                    className="pl-12 pr-4 h-12 bg-background/60 border-border/40 focus:border-[#D4AF37]/60 focus:ring-2 focus:ring-[#D4AF37]/20 text-base rounded-xl transition-all"
-                  />
-                </div>
-
-                {/* Filters and Sorting Row */}
-                <div className="flex flex-wrap gap-2.5 items-center">
-                  {/* Sort By Dropdown */}
+              {/* Collection Filter */}
+              {availableCollections.length > 1 && (
+                <div className="flex items-center gap-3 flex-wrap">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 rounded-xl">
-                        <Filter className="w-4 h-4 mr-2" />
-                        <span className="font-medium">Sort: {nftSortBy.charAt(0).toUpperCase() + nftSortBy.slice(1)}</span>
+                        <span className="mr-2">📚</span>
+                        <span className="font-medium">Collections</span>
+                        {selectedCollections.length > 0 && (
+                          <Badge variant="secondary" className="ml-2 bg-[#D4AF37]/20 text-[#D4AF37] border-0 px-1.5 py-0 text-xs">
+                            {selectedCollections.length}
+                          </Badge>
+                        )}
                         <ChevronDown className="w-4 h-4 ml-2" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-xl border-border/50">
-                      <DropdownMenuItem 
-                        onClick={() => setNftSortBy('rarity')}
-                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
-                      >
-                        <span className="mr-2">⭐</span>
-                        <span className="font-medium">Rarity Score</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => setNftSortBy('price')}
-                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
-                      >
-                        <span className="mr-2">💎</span>
-                        <span className="font-medium">Floor Price</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => setNftSortBy('recent')}
-                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
-                      >
-                        <span className="mr-2">🕒</span>
-                        <span className="font-medium">Recently Acquired</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => setNftSortBy('name')}
-                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
-                      >
-                        <span className="mr-2">🔤</span>
-                        <span className="font-medium">Name (A-Z)</span>
-                      </DropdownMenuItem>
+                    <DropdownMenuContent align="start" className="w-72 bg-background/95 backdrop-blur-xl border-border/50 max-h-96 overflow-y-auto">
+                      {availableCollections.map(collection => (
+                        <DropdownMenuCheckboxItem
+                          key={collection}
+                          checked={selectedCollections.includes(collection)}
+                          onCheckedChange={() => handleCollectionToggle(collection)}
+                          className="hover:bg-[#D4AF37]/10 cursor-pointer"
+                        >
+                          <span className="font-medium">{formatCollectionName(collection)}</span>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                      {selectedCollections.length > 0 && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => setSelectedCollections([])}
+                            className="text-[#D4AF37] hover:bg-[#D4AF37]/10 cursor-pointer font-medium"
+                          >
+                            Clear all filters
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Chain Filter Dropdown */}
-                  {availableChains.length > 1 && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 rounded-xl">
-                          <span className="mr-2">🔗</span>
-                          <span className="font-medium">Chains</span>
-                          {selectedChains.length > 0 && (
-                            <Badge variant="secondary" className="ml-2 bg-[#D4AF37]/20 text-[#D4AF37] border-0 px-1.5 py-0 text-xs">
-                              {selectedChains.length}
-                            </Badge>
-                          )}
-                          <ChevronDown className="w-4 h-4 ml-2" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-xl border-border/50">
-                        {availableChains.map(chain => (
-                          <DropdownMenuCheckboxItem
-                            key={chain}
-                            checked={selectedChains.includes(chain)}
-                            onCheckedChange={() => handleChainToggle(chain)}
-                            className="capitalize hover:bg-[#D4AF37]/10 cursor-pointer"
-                          >
-                            <span className="font-medium">{chain}</span>
-                          </DropdownMenuCheckboxItem>
-                        ))}
-                        {selectedChains.length > 0 && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => setSelectedChains([])}
-                              className="text-[#D4AF37] hover:bg-[#D4AF37]/10 cursor-pointer font-medium"
-                            >
-                              Clear all filters
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-
-                  {/* Group Toggle */}
-                  <Button
-                    variant="outline"
-                    onClick={() => setGroupByCollection(!groupByCollection)}
-                    className={`border-border/50 h-10 rounded-xl transition-all ${
-                      groupByCollection 
-                        ? 'bg-[#D4AF37]/15 text-[#D4AF37] border-[#D4AF37]/40 hover:bg-[#D4AF37]/20' 
-                        : 'bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50'
-                    }`}
-                  >
-                    <span className="mr-2">{groupByCollection ? '📚' : '📋'}</span>
-                    <span className="font-medium">{groupByCollection ? 'Grouped' : 'List View'}</span>
-                  </Button>
-
                   {/* Active Filter Badges */}
-                  {selectedChains.length > 0 && (
-                    <div className="flex items-center gap-2 pl-2 border-l border-border/30">
-                      {selectedChains.map(chain => (
+                  {selectedCollections.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedCollections.map(collection => (
                         <Badge
-                          key={chain}
+                          key={collection}
                           variant="secondary"
-                          className="capitalize cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-all font-medium px-3 py-1"
-                          onClick={() => handleChainToggle(chain)}
+                          className="cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-all font-medium px-3 py-1"
+                          onClick={() => handleCollectionToggle(collection)}
                         >
-                          {chain} ×
+                          {formatCollectionName(collection)} ×
                         </Badge>
                       ))}
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
             <div className="space-y-6">
               {nftLoading && nfts.length === 0 ? (
@@ -647,14 +526,11 @@ export const ProfileCard = ({
                   </div>
                   <h4 className="text-lg font-semibold text-foreground mb-2">No Matches Found</h4>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
-                    No NFTs match your current search or filter criteria
+                    No NFTs match your current filter criteria
                   </p>
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      setNftSearchQuery('');
-                      setSelectedChains([]);
-                    }}
+                    onClick={() => setSelectedCollections([])}
                     className="border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10"
                   >
                     Clear All Filters
@@ -665,29 +541,28 @@ export const ProfileCard = ({
                   <div className="max-h-[60vh] overflow-y-auto space-y-8 pr-2">
                     {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                       <div key={collection} className="animate-fade-in">
-                        {groupByCollection && (
-                          <div className="mb-5 pb-4 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-card/40 to-transparent -mx-2 px-2 py-3 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
-                                <span className="text-xl">📦</span>
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-foreground text-base">{collection}</h4>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
-                                </p>
-                              </div>
+                        <div className="mb-5 pb-4 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-card/40 to-transparent -mx-2 px-2 py-3 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
+                              <span className="text-xl">📦</span>
                             </div>
-                            {collectionNfts[0]?.floor_price && (
-                              <div className="text-right bg-[#D4AF37]/5 px-4 py-2 rounded-lg border border-[#D4AF37]/20">
-                                <p className="text-xs text-muted-foreground">Floor Price</p>
-                                <p className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
-                                  <span>💎</span> {collectionNfts[0].floor_price} ETH
-                                </p>
-                              </div>
-                            )}
+                            <div>
+                              <h4 className="font-bold text-foreground text-base">{formatCollectionName(collection)}</h4>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
+                              </p>
+                            </div>
                           </div>
-                        )}
+                          {collectionNfts[0]?.floor_price && (
+                            <div className="text-right bg-[#D4AF37]/5 px-4 py-2 rounded-lg border border-[#D4AF37]/20">
+                              <p className="text-xs text-muted-foreground">Floor Price</p>
+                              <p className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
+                                <span>💎</span> {collectionNfts[0].floor_price} ETH
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                           {collectionNfts.map((nft: any, index: number) => {
                             const rarity = nft.rarity_score ? getRarityLabel(nft.rarity_score) : null;
@@ -762,11 +637,6 @@ export const ProfileCard = ({
                                     <p className="text-sm font-bold text-foreground truncate leading-tight">
                                       {nft.name || `#${nft.identifier}`}
                                     </p>
-                                    {!groupByCollection && (
-                                      <p className="text-xs text-muted-foreground truncate font-medium">
-                                        {nft.collection}
-                                      </p>
-                                    )}
                                   </div>
 
                                   {/* Price and Rarity Score */}
@@ -826,7 +696,7 @@ export const ProfileCard = ({
 
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
-          <div className="p-6">
+          <div className="p-6 pb-32">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div className="max-h-[60vh] overflow-y-auto">
               {castLoading ? (
