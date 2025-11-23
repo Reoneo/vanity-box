@@ -758,7 +758,7 @@ export const ProfileCard = ({
                                 <span className="text-[#D4AF37]">{chain.chain}</span>
                               </h4>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {chain.totalTransactions} {chain.totalTransactions === 1 ? 'transaction' : 'transactions'} found
+                                {chain.transactions?.length || 0} regular tx · {chain.tokenTransfers?.length || 0} token transfers
                               </p>
                             </div>
                             <a
@@ -771,53 +771,116 @@ export const ProfileCard = ({
                             </a>
                           </div>
                         </div>
-                        <div className="divide-y divide-border/30">
-                          {chain.transactions.slice(0, 5).map((tx: any, idx: number) => (
-                            <div key={tx.hash} className="p-4 hover:bg-muted/20 transition-colors">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className={`text-xs px-2 py-1 rounded-full ${tx.isError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                                      {tx.isError ? '✗ Failed' : '✓ Success'}
-                                    </span>
-                                    {tx.methodId && tx.methodId !== '0x' && (
-                                      <span className="text-xs px-2 py-1 rounded-full bg-muted/30 text-muted-foreground">
-                                        {tx.methodId.slice(0, 10)}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                      <span className="text-muted-foreground">From: </span>
-                                      <span className="font-mono">{tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
+                        
+                        {/* Token Transfers Section */}
+                        {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
+                          <div className="border-b border-border/30">
+                            <div className="bg-muted/10 px-4 py-2">
+                              <h5 className="text-sm font-semibold text-foreground">🪙 Token Transfers</h5>
+                            </div>
+                            <div className="divide-y divide-border/30">
+                              {chain.tokenTransfers.slice(0, 5).map((tx: any) => (
+                                <div key={tx.hash + tx.contractAddress} className="p-4 hover:bg-muted/20 transition-colors">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium">
+                                          {tx.tokenSymbol}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">{tx.tokenName}</span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <span className="text-muted-foreground">From: </span>
+                                          <span className="font-mono">{tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">To: </span>
+                                          <span className="font-mono">{tx.to.slice(0, 6)}...{tx.to.slice(-4)}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Amount: </span>
+                                          <span className="font-medium">
+                                            {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Time: </span>
+                                          <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <span className="text-muted-foreground">To: </span>
-                                      <span className="font-mono">{tx.to.slice(0, 6)}...{tx.to.slice(-4)}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Value: </span>
-                                      <span className="font-medium">{(parseInt(tx.value) / 1e18).toFixed(4)} ETH</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Time: </span>
-                                      <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
-                                    </div>
+                                    <a
+                                      href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
+                                      title="View transaction"
+                                    >
+                                      <ExternalLink className="w-4 h-4" />
+                                    </a>
                                   </div>
                                 </div>
-                                <a
-                                  href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
-                                  title="View transaction"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                </a>
-                              </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        )}
+                        
+                        {/* Regular Transactions Section */}
+                        {chain.transactions && chain.transactions.length > 0 && (
+                          <div>
+                            <div className="bg-muted/10 px-4 py-2">
+                              <h5 className="text-sm font-semibold text-foreground">💸 Regular Transactions</h5>
+                            </div>
+                            <div className="divide-y divide-border/30">
+                              {chain.transactions.slice(0, 5).map((tx: any) => (
+                                <div key={tx.hash} className="p-4 hover:bg-muted/20 transition-colors">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-xs px-2 py-1 rounded-full ${tx.isError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                          {tx.isError ? '✗ Failed' : '✓ Success'}
+                                        </span>
+                                        {tx.methodId && tx.methodId !== '0x' && (
+                                          <span className="text-xs px-2 py-1 rounded-full bg-muted/30 text-muted-foreground">
+                                            {tx.methodId.slice(0, 10)}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <span className="text-muted-foreground">From: </span>
+                                          <span className="font-mono">{tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">To: </span>
+                                          <span className="font-mono">{tx.to.slice(0, 6)}...{tx.to.slice(-4)}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Value: </span>
+                                          <span className="font-medium">{(parseInt(tx.value) / 1e18).toFixed(4)} ETH</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Time: </span>
+                                          <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <a
+                                      href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
+                                      title="View transaction"
+                                    >
+                                      <ExternalLink className="w-4 h-4" />
+                                    </a>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
