@@ -1,6 +1,8 @@
 import type { Signer, Identifier } from '@xmtp/browser-sdk';
 import { MiniKit } from '@worldcoin/minikit-js';
 
+const WORLD_CHAIN_ID = 480n; // World Chain mainnet
+
 // Tiny helper – converts 0x… hex to Uint8Array
 function hexToBytes(hex: string): Uint8Array {
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
@@ -12,21 +14,20 @@ function hexToBytes(hex: string): Uint8Array {
 }
 
 /**
- * Create an XMTP Signer that uses World App via MiniKit.signMessage.
- * `walletAddress` should come from Wallet Auth (MiniKit.commands.walletAuth).
+ * XMTP SCW signer backed by World App (MiniKit).
+ * World App wallet is a Smart Contract Wallet on World Chain (chainId 480).
  */
 export function createWorldXmtpSigner(walletAddress: string): Signer {
   const identifier: Identifier = {
-    identifier: walletAddress,
-    identifierKind: 'Ethereum', // XMTP treats this as an Ethereum identity
+    identifier: walletAddress.toLowerCase(),
+    identifierKind: 'Ethereum',
   };
 
   return {
-    type: 'EOA',
-    getIdentifier: async () => identifier,
-    // XMTP only needs signMessage in browser env
+    type: 'SCW', // Smart Contract Wallet
+    getIdentifier: () => identifier,
+    // XMTP asks us to sign arbitrary strings; World App returns an EIP-191 sig
     signMessage: async (message: string): Promise<Uint8Array> => {
-      // Ask World App to sign the message
       const { finalPayload } = await MiniKit.commandsAsync.signMessage({
         message,
       });
@@ -35,8 +36,9 @@ export function createWorldXmtpSigner(walletAddress: string): Signer {
         throw new Error('World App signMessage failed or was cancelled');
       }
 
-      // XMTP expects bytes, convert 0x… signature to Uint8Array
       return hexToBytes(finalPayload.signature);
     },
+    // Let XMTP know which chain this SCW lives on
+    getChainId: () => WORLD_CHAIN_ID,
   };
 }

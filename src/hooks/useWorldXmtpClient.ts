@@ -41,6 +41,7 @@ export function useWorldXmtpClient() {
         // 3. Create XMTP client
         const xmtpClient = await Client.create(signer, {
           env: 'production', // production XMTP network
+          appVersion: 'vanity-box/world-miniapp/1.0.0',
         });
 
         if (!cancelled) {
