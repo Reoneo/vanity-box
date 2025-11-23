@@ -275,9 +275,11 @@ serve(async (req) => {
     let subname = rawSubname.toLowerCase().trim();
     const parentLower = parentDomain.toLowerCase();
     
-    // If subname contains the parent domain, extract just the label
-    if (subname.includes(`.${parentLower}`)) {
-      subname = subname.replace(`.${parentLower}`, '');
+    // If subname already contains the full parent domain, extract just the label
+    // e.g., "test321.30315.eth" → "test321"
+    const fullDomainPattern = `.${parentLower}`;
+    if (subname.endsWith(fullDomainPattern)) {
+      subname = subname.slice(0, -fullDomainPattern.length);
       console.log(`⚠️ Stripped parent domain from subname: "${rawSubname}" → "${subname}"`);
     }
     
