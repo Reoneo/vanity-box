@@ -14,6 +14,7 @@ import { ActivityGraph } from "./ActivityGraph";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
+import worldcoinAvatar from '@/assets/worldcoin-default-avatar.svg';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -214,16 +215,17 @@ export const ProfileCard = ({
                 />
               </div>
 
-              {web3BioProfile?.avatar && (
-                <div className="flex justify-center absolute -bottom-24 left-0 right-0">
-                  <Avatar className="h-48 w-48 border-4 border-background">
-                    <AvatarImage src={web3BioProfile.avatar} alt={web3BioProfile.displayName} />
-                    <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
-                      {web3BioProfile.displayName?.charAt(0).toUpperCase() || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              )}
+              <div className="flex justify-center absolute -bottom-24 left-0 right-0">
+                <Avatar className="h-48 w-48 border-4 border-background">
+                  <AvatarImage 
+                    src={web3BioProfile?.avatar || worldcoinAvatar} 
+                    alt={web3BioProfile?.displayName || 'User'} 
+                  />
+                  <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
+                    {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             </div>
 
             <div className="p-6 pt-28 space-y-4">
