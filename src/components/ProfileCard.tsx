@@ -260,64 +260,79 @@ export const ProfileCard = ({
                 </p>
               )}
 
-              {efpStats && (
-                <div className="flex justify-center items-center gap-1.5 text-sm">
-                  <button
-                    onClick={onFollowingClick}
-                    className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
-                  >
-                    <span className="font-semibold text-foreground">{efpStats.following_count}</span>
-                    <span className="text-muted-foreground">Following</span>
-                  </button>
-                  <span className="text-muted-foreground">·</span>
-                  <button
-                    onClick={onFollowersClick}
-                    className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
-                  >
-                    <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
-                    <span className="text-muted-foreground">Followers</span>
-                  </button>
-                </div>
-              )}
-
-              {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                <div className="flex items-center justify-center gap-4 flex-wrap">
-                  {web3BioProfile?.email && (
-                    <a 
-                      href={`mailto:${web3BioProfile.email}`} 
-                      className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+              {/* Following/Followers - Always render with fixed height */}
+              <div className="flex justify-center items-center gap-1.5 text-sm min-h-[24px]">
+                {efpStats ? (
+                  <>
+                    <button
+                      onClick={onFollowingClick}
+                      className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
                     >
-                      <Mail className="w-4 h-4" />
-                      {web3BioProfile.email}
-                    </a>
-                  )}
-                  
-                  {(web3BioProfile?.website || web3BioProfile?.url) && (
-                    <a
-                      href={web3BioProfile.website || web3BioProfile.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                      <span className="font-semibold text-foreground">{efpStats.following_count}</span>
+                      <span className="text-muted-foreground">Following</span>
+                    </button>
+                    <span className="text-muted-foreground">·</span>
+                    <button
+                      onClick={onFollowersClick}
+                      className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
                     >
-                      <Globe className="w-4 h-4" />
-                      {(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}
-                    </a>
-                  )}
-                </div>
-              )}
+                      <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
+                      <span className="text-muted-foreground">Followers</span>
+                    </button>
+                  </>
+                ) : (
+                  <Skeleton className="h-5 w-48" />
+                )}
+              </div>
 
-              {firstTransactionDate && (
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      year: 'numeric',
-                      day: 'numeric' 
-                    })}
-                  </span>
-                </div>
-              )}
+              {/* Email/Website - Always render with fixed height */}
+              <div className="flex items-center justify-center gap-4 flex-wrap min-h-[24px]">
+                {web3BioProfile ? (
+                  <>
+                    {web3BioProfile?.email && (
+                      <a 
+                        href={`mailto:${web3BioProfile.email}`} 
+                        className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                      >
+                        <Mail className="w-4 h-4" />
+                        {web3BioProfile.email}
+                      </a>
+                    )}
+                    
+                    {(web3BioProfile?.website || web3BioProfile?.url) && (
+                      <a
+                        href={web3BioProfile.website || web3BioProfile.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                      >
+                        <Globe className="w-4 h-4" />
+                        {(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <Skeleton className="h-5 w-64" />
+                )}
+              </div>
+
+              {/* On-chain date - Always render with fixed height */}
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground min-h-[24px]">
+                {firstTransactionDate ? (
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        year: 'numeric',
+                        day: 'numeric' 
+                      })}
+                    </span>
+                  </>
+                ) : web3BioProfile ? (
+                  <Skeleton className="h-5 w-56" />
+                ) : null}
+              </div>
             </div>
             </div>
           </div>
