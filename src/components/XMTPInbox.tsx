@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Client } from "@xmtp/browser-sdk";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useWorldXmtpClient } from "@/hooks/useWorldXmtpClient";
+import { useWorldXmtpClient, resetXmtpInstallation } from "@/hooks/useWorldXmtpClient";
 import { MiniKit } from "@worldcoin/minikit-js";
 
 import type { Dm } from '@xmtp/browser-sdk';
@@ -283,9 +283,25 @@ export const XMTPInbox = ({
                   <li>Go to Privacy & Security</li>
                   <li>Select "Manage XMTP Installations"</li>
                   <li>Revoke old/unused installations</li>
-                  <li>Return here and refresh the page</li>
+                  <li>Return here and try the Reset button below</li>
                 </ol>
               </div>
+              <Button
+                variant="destructive"
+                className="mt-4"
+                onClick={() => {
+                  if (walletAddress) {
+                    resetXmtpInstallation(walletAddress);
+                    toast({
+                      title: "XMTP Reset",
+                      description: "Please refresh the page to reconnect",
+                    });
+                    setTimeout(() => window.location.reload(), 2000);
+                  }
+                }}
+              >
+                Reset XMTP Installation
+              </Button>
             </>
           ) : (
             <>
