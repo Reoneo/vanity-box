@@ -395,7 +395,9 @@ export const ProfileCard = ({
         {/* POAPs Section */}
         {activeSection === 'poaps' && (
           <div className="p-6 pb-6">
-            <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🏅 POAPs</h3>
+            <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">
+              <span className="inline-block rotate-180">🏅</span> POAPs
+            </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
               {poaps.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
