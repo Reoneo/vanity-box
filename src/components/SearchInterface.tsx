@@ -1717,7 +1717,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         
                         // Only fetch NFTs if we have a valid wallet address and no NFTs loaded yet
                         if (isValidAddress && nfts.length === 0) {
-                          fetchNfts();
+                          // Double-check that web3BioProfile or walletAddress are actually set
+                          const currentAddress = web3BioProfile?.address || walletAddress;
+                          if (currentAddress && typeof currentAddress === 'string' && currentAddress.trim() !== '') {
+                            fetchNfts();
+                          } else {
+                            console.warn('Cannot fetch NFTs: Address validation passed but address is now invalid', {
+                              web3BioAddress: web3BioProfile?.address,
+                              walletAddress,
+                              currentAddress
+                            });
+                          }
                         } else if (!isValidAddress) {
                           console.warn('Cannot fetch NFTs: Invalid or missing wallet address');
                         }
