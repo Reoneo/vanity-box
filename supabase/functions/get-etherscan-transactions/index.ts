@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,57 +8,32 @@ const corsHeaders = {
 const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY');
 const V2_API_BASE = 'https://api.etherscan.io/v2/api';
 
-// Rate limit: 3 calls per second for Etherscan V2
-const RATE_LIMIT_DELAY = 350; // milliseconds between API calls
-const BATCH_SIZE = 3; // Process 3 chains at a time
-
-// Priority chain to fetch first
-const PRIORITY_CHAIN = { name: 'World Chain', chainId: 480, key: 'worldchain' };
-
-// All other chains
-const OTHER_CHAINS = {
-  ethereum: { name: 'Ethereum', chainId: 1 },
-  polygon: { name: 'Polygon', chainId: 137 },
-  arbitrum: { name: 'Arbitrum', chainId: 42161 },
-  optimism: { name: 'Optimism', chainId: 10 },
-  base: { name: 'Base', chainId: 8453 },
-  bsc: { name: 'BNB Chain', chainId: 56 },
-  avalanche: { name: 'Avalanche', chainId: 43114 },
-  linea: { name: 'Linea', chainId: 59144 },
-  scroll: { name: 'Scroll', chainId: 534352 },
-  zksync: { name: 'zkSync Era', chainId: 324 },
-  mantle: { name: 'Mantle', chainId: 5000 },
-  mode: { name: 'Mode', chainId: 34443 },
-  celo: { name: 'Celo', chainId: 42220 },
-  gnosis: { name: 'Gnosis', chainId: 100 },
-  fantom: { name: 'Fantom', chainId: 250 },
-  moonriver: { name: 'Moonriver', chainId: 1285 },
-  cronos: { name: 'Cronos', chainId: 25 },
-};
+// Only fetch World Chain data
+const WORLD_CHAIN = { name: 'World Chain', chainId: 480, key: 'worldchain' };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fetchChainData(address: string, chainKey: string, chain: { name: string; chainId: number }) {
-  console.log(`📡 Calling ${chain.name} API (Chain ID: ${chain.chainId})...`);
+async function fetchWorldChainData(address: string) {
+  console.log(`📡 Calling World Chain API (Chain ID: ${WORLD_CHAIN.chainId})...`);
 
   try {
-    await sleep(RATE_LIMIT_DELAY);
-    const balanceResponse = await fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`);
+    await sleep(350);
+    const balanceResponse = await fetch(`${V2_API_BASE}?chainid=${WORLD_CHAIN.chainId}&module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`);
     
-    await sleep(RATE_LIMIT_DELAY);
-    const txResponse = await fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`);
+    await sleep(350);
+    const txResponse = await fetch(`${V2_API_BASE}?chainid=${WORLD_CHAIN.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${etherscanApiKey}`);
     
-    await sleep(RATE_LIMIT_DELAY);
-    const tokenTxResponse = await fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`);
+    await sleep(350);
+    const tokenTxResponse = await fetch(`${V2_API_BASE}?chainid=${WORLD_CHAIN.chainId}&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${etherscanApiKey}`);
     
-    await sleep(RATE_LIMIT_DELAY);
-    const nftTxResponse = await fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`);
+    await sleep(350);
+    const nftTxResponse = await fetch(`${V2_API_BASE}?chainid=${WORLD_CHAIN.chainId}&module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${etherscanApiKey}`);
     
-    await sleep(RATE_LIMIT_DELAY);
-    const erc1155Response = await fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=token1155tx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`);
+    await sleep(350);
+    const erc1155Response = await fetch(`${V2_API_BASE}?chainid=${WORLD_CHAIN.chainId}&module=account&action=token1155tx&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${etherscanApiKey}`);
     
-    await sleep(RATE_LIMIT_DELAY);
-    const internalTxResponse = await fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`);
+    await sleep(350);
+    const internalTxResponse = await fetch(`${V2_API_BASE}?chainid=${WORLD_CHAIN.chainId}&module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${etherscanApiKey}`);
 
     const [balanceData, txData, tokenTxData, nftTxData, erc1155Data, internalTxData] = await Promise.all([
       balanceResponse.json(),
@@ -70,7 +44,7 @@ async function fetchChainData(address: string, chainKey: string, chain: { name: 
       internalTxResponse.json()
     ]);
     
-    console.log(`📦 ${chain.name} Balance:`, balanceData.result);
+    console.log(`📦 World Chain Balance:`, balanceData.result);
     
     const balance = balanceData.status === '1' ? balanceData.result : '0';
     const hasRegularTx = txData.status === '1' && Array.isArray(txData.result) && txData.result.length > 0;
@@ -82,7 +56,7 @@ async function fetchChainData(address: string, chainKey: string, chain: { name: 
     const hasBalance = balance !== '0';
     
     if (!hasRegularTx && !hasTokenTx && !hasNftTx && !hasErc1155 && !hasInternalTx && !hasBalance) {
-      console.log(`ℹ️ ${chain.name}: No activity found`);
+      console.log(`ℹ️ World Chain: No activity found`);
       return null;
     }
 
@@ -149,20 +123,37 @@ async function fetchChainData(address: string, chainKey: string, chain: { name: 
       type: 'internal'
     })) : [];
 
-    console.log(`✅ ${chain.name}: Balance: ${balance}, TX: ${transactions.length}, Tokens: ${tokenTransfers.length}, NFTs: ${nftTransfers.length + erc1155Transfers.length}, Internal: ${internalTransactions.length}`);
+    // Find earliest transaction
+    const allTransactions = [
+      ...transactions,
+      ...tokenTransfers,
+      ...nftTransfers,
+      ...erc1155Transfers,
+      ...internalTransactions
+    ];
+    
+    const firstTransaction = allTransactions.length > 0 
+      ? allTransactions.reduce((earliest, tx) => 
+          tx.timestamp < earliest.timestamp ? tx : earliest
+        )
+      : null;
+
+    console.log(`✅ World Chain: Balance: ${balance}, TX: ${transactions.length}, Tokens: ${tokenTransfers.length}, NFTs: ${nftTransfers.length + erc1155Transfers.length}, Internal: ${internalTransactions.length}`);
+    console.log(`📅 First transaction timestamp:`, firstTransaction?.timestamp);
     
     return {
-      chain: chain.name,
-      chainKey,
+      chain: WORLD_CHAIN.name,
+      chainKey: WORLD_CHAIN.key,
       balance,
       transactions,
       tokenTransfers,
       nftTransfers: [...nftTransfers, ...erc1155Transfers],
       internalTransactions,
       totalTransactions: transactions.length + tokenTransfers.length + nftTransfers.length + erc1155Transfers.length + internalTransactions.length,
+      firstTransactionDate: firstTransaction?.timestamp || null,
     };
   } catch (error) {
-    console.error(`❌ Error fetching ${chain.name} data:`, error);
+    console.error(`❌ Error fetching World Chain data:`, error);
     return null;
   }
 }
@@ -175,7 +166,7 @@ serve(async (req) => {
   try {
     const { address } = await req.json();
     
-    console.log('🔍 Etherscan lookup request for address:', address);
+    console.log('🔍 World Chain lookup request for address:', address);
     
     if (!address) {
       throw new Error('Address is required');
@@ -189,55 +180,23 @@ serve(async (req) => {
       });
     }
 
-    // Fetch World Chain data first
-    console.log('🚀 Fetching World Chain data first...');
-    const priorityResult = await fetchChainData(address, PRIORITY_CHAIN.key, PRIORITY_CHAIN);
-    const initialResults = priorityResult ? [priorityResult] : [];
+    // Fetch World Chain data only
+    console.log('🚀 Fetching World Chain data...');
+    const worldChainData = await fetchWorldChainData(address);
+    const results = worldChainData ? [worldChainData] : [];
 
-    // Start background task to fetch remaining chains
-    const fetchRemainingChains = async () => {
-      console.log('🔄 Starting background fetch for remaining chains...');
-      const allResults: any[] = [...initialResults];
-      const chainEntries = Object.entries(OTHER_CHAINS);
-      
-      for (let i = 0; i < chainEntries.length; i += BATCH_SIZE) {
-        const batch = chainEntries.slice(i, i + BATCH_SIZE);
-        
-        const batchPromises = batch.map(([chainKey, chain]) => 
-          fetchChainData(address, chainKey, chain)
-        );
-
-        const batchResults = await Promise.all(batchPromises);
-        allResults.push(...batchResults);
-        
-        if (i + BATCH_SIZE < chainEntries.length) {
-          await sleep(RATE_LIMIT_DELAY * 2);
-        }
-      }
-
-      const validResults = allResults.filter(r => r !== null);
-      console.log(`✅ Background fetch complete: ${validResults.length} chains with activity`);
-      
-      return validResults;
-    };
-
-    // Queue background task
-    EdgeRuntime.waitUntil(fetchRemainingChains());
-
-    // Return World Chain data immediately
-    console.log(`✅ Returning initial World Chain data (${initialResults.length} chains)`);
+    console.log(`✅ World Chain data fetched: ${results.length} chain(s) with activity`);
     
     return new Response(JSON.stringify({
       address,
-      chains: initialResults,
-      totalChains: initialResults.length,
-      partial: true, // Indicates more data is being fetched in background
-      priority: 'worldchain'
+      chains: results,
+      totalChains: results.length,
+      firstTransactionDate: worldChainData?.firstTransactionDate || null,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('❌ Error fetching Etherscan transactions:', error);
+    console.error('❌ Error fetching World Chain transactions:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
