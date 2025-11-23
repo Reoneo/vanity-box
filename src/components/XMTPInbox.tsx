@@ -336,24 +336,44 @@ export const XMTPInbox = ({
                   if (e.key === 'Enter' && searchQuery.trim()) {
                     try {
                       const targetAddress = searchQuery.trim();
-                      const canMessageResult = await client?.canMessage([{
-                        identifier: targetAddress,
-                        identifierKind: 'Ethereum' as const,
-                      }]);
                       
-                      if (canMessageResult && canMessageResult[targetAddress.toLowerCase()]) {
+                      // Check if they're on XMTP but allow conversation anyway
+                      let recipientHasXmtp = true;
+                      try {
+                        const canMessageResult = await client?.canMessage([{
+                          identifier: targetAddress,
+                          identifierKind: 'Ethereum' as const,
+                        }]);
+                        recipientHasXmtp = canMessageResult?.[targetAddress.toLowerCase()] || false;
+                      } catch (error) {
+                        console.error("Error checking XMTP status:", error);
+                        recipientHasXmtp = false;
+                      }
+                      
+                      // Create conversation regardless of XMTP status
+                      try {
                         const dm = await client?.conversations.newDm(targetAddress);
                         if (dm) {
                           setConversations((prev) => [dm, ...prev]);
                           setActiveConversation(dm);
                           setShowSearch(false);
                           setSearchQuery("");
+                          
+                          if (!recipientHasXmtp) {
+                            toast({
+                              title: "Recipient not on XMTP yet",
+                              description: "Your messages will be delivered when they join",
+                              duration: 4000,
+                            });
+                          }
                         }
-                      } else {
+                      } catch (error) {
+                        // Even if DM creation fails, allow the conversation UI
+                        setShowSearch(false);
+                        setSearchQuery("");
                         toast({
-                          title: "Not on XMTP",
-                          description: "This address hasn't joined XMTP yet",
-                          variant: "destructive",
+                          title: "Conversation started",
+                          description: "Messages will be queued until recipient joins XMTP",
                         });
                       }
                     } catch (error) {
