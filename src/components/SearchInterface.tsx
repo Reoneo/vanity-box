@@ -1865,7 +1865,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   "fixed left-0 right-0 bottom-[28px] flex flex-col z-[9997] px-4",
                   showSearchBar ? "top-[160px]" : "top-[90px]"
                 )}
-                style={{ display: 'flex', flexDirection: 'column' }}
+                style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}
               >
                 {/* Profile Card - scrollable content */}
                 <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
@@ -1891,8 +1891,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   />
                 </div>
 
-                {/* Dock - fixed at bottom of container */}
-                <div className="flex-shrink-0 pb-20 flex items-center justify-center pointer-events-none">
+                {/* Dock - absolutely positioned to prevent layout shifts */}
+                <div className="absolute bottom-20 left-0 right-0 flex items-center justify-center pointer-events-none">
                   <div className="pointer-events-auto">
                     <Dock
                       items={[
