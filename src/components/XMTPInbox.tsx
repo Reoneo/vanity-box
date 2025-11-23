@@ -50,16 +50,64 @@ export const XMTPInbox = ({
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [ensNames, setEnsNames] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const isConnected = !!currentUserAddress;
   const canMessage = isConnected && profileAddress;
 
+  // Helper to shorten address
+  const shortenAddress = (address: string) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  // Resolve ENS name for an address
+  const resolveENS = async (address: string): Promise<string> => {
+    if (ensNames[address]) return ensNames[address];
+    
+    try {
+      if (typeof window.ethereum !== 'undefined') {
+        const provider = new ethers.providers.Web3Provider(window.ethereum as any);
+        const ensName = await provider.lookupAddress(address);
+        if (ensName) {
+          setEnsNames(prev => ({ ...prev, [address]: ensName }));
+          return ensName;
+        }
+      }
+    } catch (error) {
+      console.debug('ENS resolution failed for', address);
+    }
+    
+    return shortenAddress(address);
+  };
+
+  // Get display name (ENS or shortened address)
+  const getDisplayName = (address: string) => {
+    return ensNames[address] || shortenAddress(address);
+  };
+
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversations, activeConversation]);
+
+  // Resolve ENS for all conversation participants
+  useEffect(() => {
+    if (conversations.length > 0) {
+      conversations.forEach(conv => {
+        resolveENS(conv.peerAddress);
+        // Also resolve ENS for message senders
+        conv.messages.forEach(msg => {
+          if (msg.senderAddress !== currentUserAddress) {
+            resolveENS(msg.senderAddress);
+          }
+        });
+      });
+    }
+  }, [conversations]);
 
   const loadConversationMessages = async (conv: any, peerAddr: string) => {
     try {
@@ -615,17 +663,26 @@ export const XMTPInbox = ({
     <div className="space-y-3">
       <div className="flex items-center justify-center gap-2 mb-3">
         <Inbox className="w-5 h-5 text-[#D4AF37]" />
-        <h3 className="text-sm font-semibold text-white">Message</h3>
+        <h3 className="text-sm font-semibold text-white">Send Message</h3>
       </div>
       
       <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground text-center mb-3">
-            Send a message to{" "}
-            <span className="font-mono text-foreground">
-              {profileAddress?.slice(0, 6)}...{profileAddress?.slice(-4)}
-            </span>
-          </p>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-border/30">
+            <Avatar className="w-12 h-12 border-2 border-[#D4AF37]/30">
+              <AvatarFallback className="bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/10 text-[#D4AF37] font-bold">
+                {getDisplayName(profileAddress || '').slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">
+                {getDisplayName(profileAddress || '')}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {profileAddress}
+              </p>
+            </div>
+          </div>
           <Input
             placeholder="Type your message..."
             value={message}
@@ -636,14 +693,14 @@ export const XMTPInbox = ({
                 sendMessage();
               }
             }}
-            className="bg-background/50 border-border/50"
+            className="bg-background/50 border-border/50 rounded-full px-4"
           />
           <Button
             onClick={sendMessage}
             disabled={loading || !message.trim()}
-            className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+            className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-full"
           >
-            <Send className="w-4 h-4 mr-2" />
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
             Send Message
           </Button>
         </div>
