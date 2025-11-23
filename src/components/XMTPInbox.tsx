@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, MessageSquare, Send, User, ChevronRight, Plus, Search, X, ChevronLeft } from "lucide-react";
+import { AlertCircle, MessageSquare, Send, User, ChevronRight, Plus, Search, X, ChevronLeft, Check, CheckCheck } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Client, Conversation, DecodedMessage } from "@xmtp/xmtp-js";
@@ -13,7 +13,8 @@ interface Message {
   content: string;
   senderAddress: string;
   timestamp: Date;
-  status?: 'sending' | 'sent' | 'delivered';
+  status?: 'sending' | 'sent' | 'delivered' | 'read';
+  isReadReceipt?: boolean;
 }
 
 interface XMTPInboxProps {
@@ -35,22 +36,57 @@ export const XMTPInbox = ({
   const [sending, setSending] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [readReceipts, setReadReceipts] = useState<Record<string, string[]>>({}); // messageId -> [readerAddresses]
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // Load messages for a conversation
   const loadConversationMessages = async (conv: Conversation): Promise<Message[]> => {
     try {
       const msgs = await conv.messages();
-      return msgs.map((m: DecodedMessage) => ({
-        id: m.id,
-        content: m.content as string,
-        senderAddress: m.senderAddress,
-        timestamp: m.sent,
-      }));
+      return msgs
+        .filter((m: DecodedMessage) => {
+          // Filter out read receipt messages from display
+          if (typeof m.content === 'string' && m.content.startsWith('__READ_RECEIPT__:')) {
+            return false;
+          }
+          return true;
+        })
+        .map((m: DecodedMessage) => ({
+          id: m.id,
+          content: m.content as string,
+          senderAddress: m.senderAddress,
+          timestamp: m.sent,
+        }));
     } catch (error) {
       console.error("Error loading messages:", error);
       return [];
     }
+  };
+
+  // Send read receipt for a message
+  const sendReadReceipt = async (conv: Conversation, messageId: string) => {
+    try {
+      await conv.send(`__READ_RECEIPT__:${messageId}`);
+      console.log('[XMTP] Sent read receipt for message:', messageId);
+    } catch (error) {
+      console.error('[XMTP] Error sending read receipt:', error);
+    }
+  };
+
+  // Process read receipts from messages
+  const processReadReceipts = (msgs: DecodedMessage[]) => {
+    const receipts: Record<string, string[]> = {};
+    msgs.forEach((m: DecodedMessage) => {
+      if (typeof m.content === 'string' && m.content.startsWith('__READ_RECEIPT__:')) {
+        const messageId = m.content.replace('__READ_RECEIPT__:', '');
+        if (!receipts[messageId]) {
+          receipts[messageId] = [];
+        }
+        receipts[messageId].push(m.senderAddress.toLowerCase());
+      }
+    });
+    return receipts;
   };
 
   // Listen for new messages
@@ -65,8 +101,14 @@ export const XMTPInbox = ({
         for await (const message of stream) {
           if (isCancelled) break;
           console.log('[XMTP] New message received');
-          const msgs = await loadConversationMessages(activeConversation);
-          setMessages(msgs);
+          
+          // Reload messages and read receipts
+          const allMsgs = await activeConversation.messages();
+          const filteredMsgs = await loadConversationMessages(activeConversation);
+          const receipts = processReadReceipts(allMsgs);
+          
+          setMessages(filteredMsgs);
+          setReadReceipts(receipts);
         }
       } catch (error) {
         console.error('[XMTP] Stream error:', error);
@@ -100,16 +142,42 @@ export const XMTPInbox = ({
   useEffect(() => {
     if (!activeConversation) {
       setMessages([]);
+      setReadReceipts({});
       return;
     }
 
     const load = async () => {
       const msgs = await loadConversationMessages(activeConversation);
+      const allMsgs = await activeConversation.messages();
+      const receipts = processReadReceipts(allMsgs);
+      
       setMessages(msgs);
+      setReadReceipts(receipts);
     };
 
     load();
   }, [activeConversation]);
+
+  // Send read receipts for messages when they become visible
+  useEffect(() => {
+    if (!activeConversation || !walletAddress || messages.length === 0) return;
+
+    const sendReceipts = async () => {
+      // Send read receipts for messages from other users
+      const unreadMessages = messages.filter(
+        m => m.senderAddress.toLowerCase() !== walletAddress.toLowerCase() &&
+        !readReceipts[m.id]?.includes(walletAddress.toLowerCase())
+      );
+
+      for (const msg of unreadMessages) {
+        await sendReadReceipt(activeConversation, msg.id);
+      }
+    };
+
+    // Delay to ensure messages are visible
+    const timer = setTimeout(sendReceipts, 500);
+    return () => clearTimeout(timer);
+  }, [messages, activeConversation, walletAddress]);
 
   // Send message
   const sendMessage = async () => {
@@ -166,9 +234,13 @@ export const XMTPInbox = ({
       await targetConv.send(messageInput);
       setMessageInput("");
 
-      // Reload messages
+      // Reload messages and receipts
+      const allMsgs = await targetConv.messages();
       const updatedMessages = await loadConversationMessages(targetConv);
+      const receipts = processReadReceipts(allMsgs);
+      
       setMessages(updatedMessages);
+      setReadReceipts(receipts);
 
       toast({
         title: "Message sent",
@@ -387,7 +459,7 @@ export const XMTPInbox = ({
       {/* Messages Display */}
       {(activeConversation || !isProfileOwner) && (
         <>
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
@@ -396,6 +468,8 @@ export const XMTPInbox = ({
               ) : (
                 messages.map((msg) => {
                   const isMine = msg.senderAddress.toLowerCase() === walletAddress?.toLowerCase();
+                  const isRead = isMine && readReceipts[msg.id]?.length > 0;
+                  
                   return (
                     <div
                       key={msg.id}
@@ -409,9 +483,20 @@ export const XMTPInbox = ({
                         }`}
                       >
                         <p className="text-sm break-words">{msg.content}</p>
-                        <p className={`text-xs mt-1 ${isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                          {formatDistanceToNow(msg.timestamp, { addSuffix: true })}
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <p className={`text-xs ${isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                            {formatDistanceToNow(msg.timestamp, { addSuffix: true })}
+                          </p>
+                          {isMine && (
+                            <div className="flex items-center">
+                              {isRead ? (
+                                <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/70" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5 text-primary-foreground/70" />
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
