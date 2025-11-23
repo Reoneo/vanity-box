@@ -205,8 +205,9 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
-            <div className="space-y-4 pb-24">
-              <div className="relative">
+          <div className="space-y-4 pb-24">
+              {/* Header and Avatar - Always visible */}
+              <div className="relative flex-shrink-0">
               <div className="w-full h-48 overflow-hidden">
                 <img
                   src={web3BioProfile?.header || defaultHeader}
@@ -229,7 +230,7 @@ export const ProfileCard = ({
               </div>
             </div>
 
-            <div className="p-6 pt-28 space-y-4">
+            <div className="p-6 pt-28 space-y-4 flex-shrink-0">
 
               {web3BioProfile?.displayName && (
                 <h2 className="text-3xl font-bold text-center text-foreground">
