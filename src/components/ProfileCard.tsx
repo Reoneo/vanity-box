@@ -741,35 +741,25 @@ export const ProfileCard = ({
                   </div>
                 </div>
               ) : transactions.chains && transactions.chains.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Premium Loading State - Mobile Optimized */}
-                  {transactions.partial && (
-                    <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg p-3 border border-primary/20">
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">Loading chains...</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Mobile-Optimized Summary Banner */}
-                  <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-card via-card to-primary/5">
-                    <div className="p-4">
-                      <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-6 animate-fade-in">
+                  {/* Premium Summary Card */}
+                  <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 shadow-2xl">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 animate-royal-shimmer" />
+                    <div className="relative p-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {/* Date Joined */}
                         {transactions.firstTransactionDate && (
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
-                                <Calendar className="w-5 h-5 text-primary-foreground" />
+                          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 to-transparent p-4 border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-primary-luxury to-primary-glow flex items-center justify-center shadow-xl shadow-primary/30 group-hover:scale-110 transition-transform duration-300">
+                                  <Calendar className="w-7 h-7 text-primary-foreground" />
+                                </div>
+                                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-primary-glow rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300" />
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground font-medium">Date Joined</p>
-                                <p className="text-sm font-bold text-foreground">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Date Joined</p>
+                                <p className="text-lg sm:text-xl font-display font-bold bg-gradient-to-r from-primary via-primary-luxury to-primary bg-clip-text text-transparent">
                                   {new Date(transactions.firstTransactionDate).toLocaleDateString('en-US', { 
                                     month: 'short', 
                                     day: 'numeric', 
@@ -781,15 +771,18 @@ export const ProfileCard = ({
                           </div>
                         )}
                         
-                        {/* Total Transactions */}
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
-                              <Activity className="w-5 h-5 text-primary-foreground" />
+                        {/* Total Activities */}
+                        <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-accent/10 to-transparent p-4 border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:shadow-lg hover:shadow-accent/10">
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent via-accent to-primary flex items-center justify-center shadow-xl shadow-accent/30 group-hover:scale-110 transition-transform duration-300">
+                                <Activity className="w-7 h-7 text-primary-foreground" />
+                              </div>
+                              <div className="absolute -inset-1 bg-gradient-to-r from-accent to-primary rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300" />
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground font-medium">Activities</p>
-                              <p className="text-sm font-bold text-foreground">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Activity</p>
+                              <p className="text-2xl sm:text-3xl font-display font-bold bg-gradient-to-r from-accent via-primary to-primary-luxury bg-clip-text text-transparent">
                                 {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)}
                               </p>
                             </div>
@@ -799,212 +792,186 @@ export const ProfileCard = ({
                     </div>
                   </div>
                   
-                  {/* Mobile-Optimized Chain Cards */}
-                  <div className="space-y-3">
-                    {transactions.chains.map((chain: any) => {
-                      const getChainConfig = (chainKey: string) => {
-                        const configs: Record<string, { url: string; currency: string; color: string; icon: string }> = {
-                          worldchain: { 
-                            url: 'https://worldscan.org', 
-                            currency: 'WLD',
-                            color: 'from-purple-500/20 via-blue-500/20 to-purple-500/20',
-                            icon: '🌐'
-                          },
-                          ethereum: { 
-                            url: 'https://etherscan.io', 
-                            currency: 'ETH',
-                            color: 'from-blue-500/20 via-cyan-500/20 to-blue-500/20',
-                            icon: '💎'
-                          },
-                          base: { 
-                            url: 'https://basescan.org', 
-                            currency: 'ETH',
-                            color: 'from-blue-600/20 via-indigo-600/20 to-blue-600/20',
-                            icon: '🔷'
-                          },
-                          optimism: { 
-                            url: 'https://optimistic.etherscan.io', 
-                            currency: 'ETH',
-                            color: 'from-red-500/20 via-pink-500/20 to-red-500/20',
-                            icon: '🔴'
-                          },
-                          arbitrum: { 
-                            url: 'https://arbiscan.io', 
-                            currency: 'ETH',
-                            color: 'from-blue-400/20 via-sky-400/20 to-blue-400/20',
-                            icon: '🔵'
-                          },
-                          polygon: { 
-                            url: 'https://polygonscan.com', 
-                            currency: 'MATIC',
-                            color: 'from-purple-600/20 via-violet-600/20 to-purple-600/20',
-                            icon: '🟣'
-                          },
-                        };
-                        return configs[chainKey] || { 
-                          url: `https://${chainKey}.etherscan.io`, 
-                          currency: 'ETH',
-                          color: 'from-gray-500/20 via-slate-500/20 to-gray-500/20',
-                          icon: '⛓️'
-                        };
-                      };
-                      
-                      const config = getChainConfig(chain.chainKey);
-                      const explorerBaseUrl = config.url;
-                      
-                      return (
-                        <Card 
-                          key={chain.chainKey} 
-                          className="overflow-hidden border-primary/30 bg-card/95 backdrop-blur-sm animate-fade-in"
-                        >
-                          {/* Mobile-Optimized Chain Header */}
-                          <div className={`bg-gradient-to-r ${config.color} border-b border-primary/20`}>
-                            <div className="p-3 sm:p-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  <div className="text-2xl sm:text-3xl flex-shrink-0">{config.icon}</div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <h4 className="text-base sm:text-lg font-bold text-foreground">{chain.chain}</h4>
-                                      {chain.balance && chain.balance !== '0' && (
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold border border-primary/40 whitespace-nowrap">
-                                          {(parseInt(chain.balance) / 1e18).toFixed(4)} {config.currency}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-0.5">
+                  {/* World Chain Card */}
+                  {transactions.chains.map((chain: any) => {
+                    const config = {
+                      url: 'https://worldscan.org',
+                      currency: 'WLD',
+                      color: 'from-purple-500 via-blue-500 to-indigo-500',
+                      icon: '🌐'
+                    };
+                    
+                    const explorerBaseUrl = config.url;
+                    const balance = chain.balance && chain.balance !== '0' 
+                      ? (parseInt(chain.balance) / 1e18).toFixed(4)
+                      : null;
+                    
+                    return (
+                      <Card 
+                        key={chain.chainKey} 
+                        className="group relative overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-card via-card to-card shadow-2xl hover:shadow-primary/20 transition-all duration-500 animate-slide-up"
+                      >
+                        {/* Animated gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        
+                        {/* Header Section */}
+                        <div className="relative border-b border-primary/20 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/5">
+                          <div className="p-6">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <div className="text-4xl sm:text-5xl animate-royal-float">{config.icon}</div>
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-xl sm:text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary-luxury bg-clip-text text-transparent mb-1">
+                                    {chain.chain}
+                                  </h4>
+                                  <div className="flex items-center gap-3 flex-wrap">
+                                    {balance && (
+                                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-primary-luxury/20 border border-primary/40 backdrop-blur-sm">
+                                        <div className="w-2 h-2 rounded-full bg-primary animate-golden-pulse" />
+                                        <span className="text-sm font-bold text-primary">{balance} {config.currency}</span>
+                                      </div>
+                                    )}
+                                    <span className="text-xs px-3 py-1.5 rounded-full bg-accent/20 text-accent-foreground font-semibold border border-accent/40">
                                       {chain.totalTransactions} {chain.totalTransactions === 1 ? 'Activity' : 'Activities'}
-                                    </p>
+                                    </span>
                                   </div>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-primary hover:text-primary-luxury hover:bg-primary/10 flex-shrink-0 h-8 px-2 sm:px-3"
-                                  onClick={() => window.open(`${explorerBaseUrl}/address/${web3BioProfile?.address}`, '_blank')}
-                                >
-                                  <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
-                                </Button>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary hover:text-primary-foreground hover:scale-110 transition-all duration-300 border border-primary/20 hover:border-primary/40"
+                                onClick={() => window.open(`${explorerBaseUrl}/address/${web3BioProfile?.address}`, '_blank')}
+                              >
+                                <ExternalLink className="w-5 h-5" />
+                              </Button>
                             </div>
                           </div>
-                        
-                          {/* Mobile-Optimized Activity Sections */}
-                          <div className="p-3 sm:p-4 space-y-3">
-                            {/* NFT Transfers */}
-                            {chain.nftTransfers && chain.nftTransfers.length > 0 && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 pb-1.5 border-b border-border/50">
-                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs">🖼️</span>
-                                  </div>
-                                  <h5 className="text-xs sm:text-sm font-bold text-foreground">NFT Transfers</h5>
-                                  <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-pink-500/10 text-pink-400 font-semibold">
-                                    {chain.nftTransfers.length}
-                                  </span>
+                        </div>
+                      
+                        {/* Activity Sections */}
+                        <div className="relative p-6 space-y-6">
+                          {/* NFT Transfers */}
+                          {chain.nftTransfers && chain.nftTransfers.length > 0 && (
+                            <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                              <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center border border-pink-500/30">
+                                  <span className="text-xl">🖼️</span>
                                 </div>
-                                <div className="space-y-1.5">
-                                  {chain.nftTransfers.slice(0, 3).map((tx: any, idx: number) => (
-                                    <div 
-                                      key={tx.hash + tx.tokenID + idx} 
-                                      className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-card/50 border border-border/50 active:scale-[0.98] transition-transform"
-                                      onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                    >
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-xs sm:text-sm font-semibold text-foreground truncate">{tx.tokenName || 'Unknown NFT'}</p>
-                                        <p className="text-xs text-muted-foreground font-mono truncate">#{tx.tokenID}</p>
-                                      </div>
-                                      <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
-                                    </div>
-                                  ))}
+                                <div className="flex-1">
+                                  <h5 className="text-sm font-display font-bold text-foreground">NFT Transfers</h5>
                                 </div>
+                                <span className="px-3 py-1 rounded-full bg-pink-500/10 text-pink-400 text-xs font-bold border border-pink-500/30">
+                                  {chain.nftTransfers.length}
+                                </span>
                               </div>
-                            )}
+                              <div className="space-y-2">
+                                {chain.nftTransfers.slice(0, 3).map((tx: any, idx: number) => (
+                                  <div 
+                                    key={tx.hash + tx.tokenID + idx} 
+                                    className="group/item flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-card to-card/50 border border-border/50 hover:border-pink-500/40 hover:bg-pink-500/5 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-pink-500/10"
+                                    onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-foreground truncate group-hover/item:text-pink-400 transition-colors">
+                                        {tx.tokenName || 'Unknown NFT'}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground font-mono truncate">#{tx.tokenID}</p>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-pink-400 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                            {/* Token Transfers */}
-                            {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 pb-1.5 border-b border-border/50">
-                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs">🪙</span>
-                                  </div>
-                                  <h5 className="text-xs sm:text-sm font-bold text-foreground">Token Transfers</h5>
-                                  <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold">
-                                    {chain.tokenTransfers.length}
-                                  </span>
+                          {/* Token Transfers */}
+                          {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
+                            <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                              <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center border border-blue-500/30">
+                                  <span className="text-xl">🪙</span>
                                 </div>
-                                <div className="space-y-1.5">
-                                  {chain.tokenTransfers.slice(0, 3).map((tx: any, idx: number) => (
-                                    <div 
-                                      key={tx.hash + tx.contractAddress + idx} 
-                                      className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-card/50 border border-border/50 active:scale-[0.98] transition-transform"
-                                      onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                    >
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-xs sm:text-sm font-bold text-foreground truncate">
-                                          {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground truncate">{tx.tokenName}</p>
-                                      </div>
-                                      <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
-                                    </div>
-                                  ))}
+                                <div className="flex-1">
+                                  <h5 className="text-sm font-display font-bold text-foreground">Token Transfers</h5>
                                 </div>
+                                <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/30">
+                                  {chain.tokenTransfers.length}
+                                </span>
                               </div>
-                            )}
+                              <div className="space-y-2">
+                                {chain.tokenTransfers.slice(0, 3).map((tx: any, idx: number) => (
+                                  <div 
+                                    key={tx.hash + tx.contractAddress + idx} 
+                                    className="group/item flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-card to-card/50 border border-border/50 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-blue-500/10"
+                                    onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-foreground truncate group-hover/item:text-blue-400 transition-colors">
+                                        {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground truncate">{tx.tokenName}</p>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-blue-400 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                            {/* Regular Transactions */}
-                            {chain.transactions && chain.transactions.length > 0 && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 pb-1.5 border-b border-border/50">
-                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs">💸</span>
-                                  </div>
-                                  <h5 className="text-xs sm:text-sm font-bold text-foreground">Transactions</h5>
-                                  <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 font-semibold">
-                                    {chain.transactions.length}
-                                  </span>
+                          {/* Regular Transactions */}
+                          {chain.transactions && chain.transactions.length > 0 && (
+                            <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                              <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center border border-green-500/30">
+                                  <span className="text-xl">💸</span>
                                 </div>
-                                <div className="space-y-1.5">
-                                  {chain.transactions.slice(0, 3).map((tx: any, idx: number) => (
-                                    <div 
-                                      key={tx.hash + idx} 
-                                      className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-card/50 border border-border/50 active:scale-[0.98] transition-transform"
-                                      onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                    >
-                                      <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-                                        tx.isError 
-                                          ? 'bg-red-500/20 text-red-400' 
-                                          : 'bg-green-500/20 text-green-400'
-                                      }`}>
-                                        {tx.isError ? '✗' : '✓'}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-xs sm:text-sm font-bold text-foreground truncate">
-                                          {(parseInt(tx.value) / 1e18).toFixed(6)} {config.currency}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {tx.isError ? 'Failed' : 'Success'}
-                                        </p>
-                                      </div>
-                                      <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
-                                    </div>
-                                  ))}
+                                <div className="flex-1">
+                                  <h5 className="text-sm font-display font-bold text-foreground">Transactions</h5>
                                 </div>
+                                <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-bold border border-green-500/30">
+                                  {chain.transactions.length}
+                                </span>
                               </div>
-                            )}
-                          </div>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                              <div className="space-y-2">
+                                {chain.transactions.slice(0, 3).map((tx: any, idx: number) => (
+                                  <div 
+                                    key={tx.hash + idx} 
+                                    className="group/item flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-card to-card/50 border border-border/50 hover:border-green-500/40 hover:bg-green-500/5 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-green-500/10"
+                                    onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
+                                  >
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                                      tx.isError 
+                                        ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                                        : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    }`}>
+                                      {tx.isError ? '✗' : '✓'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-foreground truncate group-hover/item:text-green-400 transition-colors">
+                                        {(parseInt(tx.value) / 1e18).toFixed(6)} {config.currency}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {tx.isError ? 'Failed' : 'Success'}
+                                      </p>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4 text-green-400 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📭</div>
-                  <p className="text-lg font-medium text-foreground mb-2">No Transactions Found</p>
-                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    This wallet doesn't have any recent transactions on the supported chains, or the transactions are still being indexed.
+                <div className="text-center py-20 animate-fade-in">
+                  <div className="text-8xl mb-6 animate-royal-float">📭</div>
+                  <p className="text-2xl font-display font-bold text-foreground mb-3">No Activity Yet</p>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                    This wallet doesn't have any transactions on World Chain yet. Start your journey by making your first transaction!
                   </p>
                 </div>
               )}
