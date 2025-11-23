@@ -72,14 +72,40 @@ serve(async (req) => {
         const url = `${chain.apiUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc&apikey=${chain.apiKey}`;
         
         console.log(`📡 Calling ${chain.name} API...`);
+        console.log(`🔗 API URL: ${url.replace(chain.apiKey || '', 'HIDDEN_API_KEY')}`);
+        
         const response = await fetch(url);
         
         if (!response.ok) {
-          console.error(`❌ ${chain.name} API error:`, response.status);
+          console.error(`❌ ${chain.name} API HTTP error:`, response.status, response.statusText);
+          const errorText = await response.text();
+          console.error(`❌ ${chain.name} API error response:`, errorText);
           return null;
         }
 
         const data = await response.json();
+        
+        // Log the full API response for debugging
+        console.log(`📦 ${chain.name} API Response:`, JSON.stringify({
+          status: data.status,
+          message: data.message,
+          resultCount: Array.isArray(data.result) ? data.result.length : 'not an array',
+          resultType: typeof data.result,
+        }));
+        
+        // Check for API-specific error messages
+        if (data.message && data.message !== 'OK') {
+          console.warn(`⚠️ ${chain.name} API message: ${data.message}`);
+          
+          // Handle common API errors
+          if (data.message.includes('rate limit')) {
+            console.error(`🚫 ${chain.name}: Rate limit exceeded`);
+          } else if (data.message.includes('Invalid API Key')) {
+            console.error(`🚫 ${chain.name}: Invalid API Key`);
+          } else if (data.message.includes('No transactions found')) {
+            console.log(`ℹ️ ${chain.name}: No transactions found (API message)`);
+          }
+        }
         
         if (data.status === '1' && data.result && Array.isArray(data.result) && data.result.length > 0) {
           console.log(`✅ ${chain.name}: Found ${data.result.length} transactions`);
@@ -102,10 +128,11 @@ serve(async (req) => {
           };
         }
         
-        console.log(`ℹ️ ${chain.name}: No transactions found`);
+        console.log(`ℹ️ ${chain.name}: No transactions found (status: ${data.status}, result type: ${typeof data.result})`);
         return null;
       } catch (error) {
         console.error(`❌ Error fetching ${chain.name} transactions:`, error);
+        console.error(`❌ ${chain.name} Error details:`, error instanceof Error ? error.message : 'Unknown error');
         return null;
       }
     });
