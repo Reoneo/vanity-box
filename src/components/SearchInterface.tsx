@@ -1858,9 +1858,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </>
             )}
 
-            {/* Profile Card with Dock Navigation - fixed height container */}
+            {/* Profile Card with Dock Navigation - dynamic positioning based on search bar */}
             {web3BioProfile && !showMyIDs && (
-              <div className="fixed inset-0 top-[120px] bottom-[28px] flex flex-col z-[9997]">
+              <div 
+                className={cn(
+                  "fixed left-0 right-0 bottom-[28px] flex flex-col z-[9997] px-4",
+                  showSearchBar ? "top-[190px]" : "top-[120px]"
+                )}
+              >
                 {/* Profile Card - scrollable content */}
                 <div className="flex-1 overflow-hidden">
                   <ProfileCard
