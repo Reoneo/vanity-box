@@ -250,7 +250,7 @@ export const ProfileCard = ({
               )}
 
               {web3BioProfile?.description && (
-                <p className="text-center text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-center text-muted-foreground max-w-2xl mx-auto text-sm">
                   {web3BioProfile.description}
                 </p>
               )}
