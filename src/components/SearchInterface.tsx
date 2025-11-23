@@ -229,6 +229,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [nftNextCursor, setNftNextCursor] = useState<string | null>(null);
   const [latestCast, setLatestCast] = useState<FarcasterCast | null>(null);
   const [castLoading, setCastLoading] = useState(false);
+  const [firstTransactionDate, setFirstTransactionDate] = useState<string | null>(null);
 
   // Social icons mapping
   const socialIcons: Record<string, string> = {
@@ -293,6 +294,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       window.removeEventListener("toggle-search-bar", handleToggleSearchBar as EventListener);
     };
   }, []);
+
+  // Reset to profile section when new profile loads
+  useEffect(() => {
+    if (web3BioProfile) {
+      setActiveDockSection('profile');
+    }
+  }, [web3BioProfile]);
 
   // Hide search bar when profile is loaded, show when cleared
   useEffect(() => {
@@ -916,6 +924,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 }
               } catch (efpError) {
                 console.error("Error fetching EFP stats:", efpError);
+              }
+
+              // Fetch first transaction date using Etherscan
+              if (profileData.address) {
+                try {
+                  const { data: txData, error: txError } = await supabase.functions.invoke("get-first-transaction", {
+                    body: { address: profileData.address },
+                  });
+
+                  if (!txError && txData?.date) {
+                    setFirstTransactionDate(txData.date);
+                  }
+                } catch (txError) {
+                  console.error("Error fetching first transaction:", txError);
+                }
               }
 
               // Fetch POAP data
@@ -1898,7 +1921,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
       {/* Profile Card with Dock Navigation */}
       {web3BioProfile && (
-        <div className="mt-2">
+        <div className="mt-8">
           <ProfileCard
             activeSection={activeDockSection}
             web3BioProfile={web3BioProfile}
@@ -1911,6 +1934,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             nftNextCursor={nftNextCursor}
             latestCast={latestCast}
             castLoading={castLoading}
+            firstTransactionDate={firstTransactionDate}
             onFollowingClick={handleFollowingClick}
             onLoadMoreNfts={handleLoadMoreNfts}
           />
