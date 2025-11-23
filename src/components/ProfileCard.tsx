@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
@@ -310,8 +310,14 @@ export const ProfileCard = ({
         {/* Socials Section */}
         {activeSection === 'socials' && (
           <div className="p-6 pb-6">
-            <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🔗 Social Links</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
+                <Link2 className="w-5 h-5 text-[#D4AF37]" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#D4AF37]">Social Links</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2">
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
                 .filter(([platform, url]) => {
                   if (!url) return false;
@@ -331,26 +337,48 @@ export const ProfileCard = ({
                     return (
                       <Card
                         key={platform}
-                        className="p-4 bg-card/50 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/30 transition-all duration-300"
+                        className="group relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/60 hover:shadow-xl hover:shadow-[#D4AF37]/10 transition-all duration-300 cursor-pointer hover:-translate-y-1"
                       >
                         <a
                           href={link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 group"
+                          className="block p-4"
                         >
-                          {socialIcons[platform.toLowerCase()] && (
-                            <img
-                              src={socialIcons[platform.toLowerCase()]}
-                              alt={platform}
-                              className="w-8 h-8 rounded-full border border-[#D4AF37]/20"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-foreground capitalize">{platform}</div>
-                            <div className="text-xs text-[#D4AF37] truncate">{extractHandle(platform, link)}</div>
+                          <div className="flex items-center gap-4">
+                            {/* Icon */}
+                            <div className="relative flex-shrink-0">
+                              {socialIcons[platform.toLowerCase()] ? (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center ring-2 ring-[#D4AF37]/30 group-hover:ring-[#D4AF37]/60 transition-all">
+                                  <img
+                                    src={socialIcons[platform.toLowerCase()]}
+                                    alt={platform}
+                                    className="w-6 h-6 object-contain"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center ring-2 ring-[#D4AF37]/30 group-hover:ring-[#D4AF37]/60 transition-all">
+                                  <Globe className="w-6 h-6 text-[#D4AF37]" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Text Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-foreground capitalize text-base leading-tight mb-1">
+                                {platform}
+                              </div>
+                              <div className="text-sm text-[#D4AF37] truncate font-medium">
+                                {extractHandle(platform, link)}
+                              </div>
+                            </div>
+
+                            {/* Arrow Icon */}
+                            <ExternalLink className="w-5 h-5 text-[#D4AF37] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
                           </div>
-                          <ExternalLink className="w-4 h-4 text-[#D4AF37] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                          {/* Hover Gradient Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                         </a>
                       </Card>
                     );
