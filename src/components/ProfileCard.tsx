@@ -433,18 +433,26 @@ export const ProfileCard = ({
 
         {/* NFTs Section */}
         {activeSection === 'nfts' && (
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-2xl font-bold text-[#D4AF37]">🖼️ NFT Collection</h3>
-                {nfts.length > 0 && !nftLoading && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {filteredNfts.length} {filteredNfts.length === 1 ? 'item' : 'items'} • {availableChains.length} {availableChains.length === 1 ? 'chain' : 'chains'}
-                  </p>
-                )}
+          <div className="p-6 space-y-6">
+            {/* Header with Stats */}
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#B8941F] flex items-center justify-center">
+                    <span className="text-2xl">🖼️</span>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-foreground">NFT Collection</h3>
+                    {nfts.length > 0 && !nftLoading && (
+                      <p className="text-sm text-muted-foreground">
+                        {filteredNfts.length} {filteredNfts.length === 1 ? 'item' : 'items'} • {availableChains.length} {availableChains.length === 1 ? 'chain' : 'chains'}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
               {nfts.length > 0 && !nftLoading && (
-                <Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30 text-lg px-3 py-1">
+                <Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30 bg-[#D4AF37]/5 text-lg px-4 py-2 font-semibold">
                   {nfts.length}
                 </Badge>
               )}
@@ -452,41 +460,57 @@ export const ProfileCard = ({
 
             {/* OpenSea-style Search, Filter, and Sort Controls */}
             {nfts.length > 0 && (
-              <div className="space-y-3 mb-6 bg-card/30 backdrop-blur-sm p-4 rounded-xl border border-border/50">
+              <div className="space-y-3 bg-gradient-to-br from-card/40 to-card/20 backdrop-blur-md p-5 rounded-2xl border border-border/50 shadow-lg">
                 {/* Search Bar */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-[#D4AF37] transition-colors" />
                   <Input
                     placeholder="Search by name, collection, or token ID..."
                     value={nftSearchQuery}
                     onChange={(e) => setNftSearchQuery(e.target.value)}
-                    className="pl-11 h-12 bg-background/50 border-border/30 focus:border-[#D4AF37]/50 text-base"
+                    className="pl-12 pr-4 h-12 bg-background/60 border-border/40 focus:border-[#D4AF37]/60 focus:ring-2 focus:ring-[#D4AF37]/20 text-base rounded-xl transition-all"
                   />
                 </div>
 
                 {/* Filters and Sorting Row */}
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-wrap gap-2.5 items-center">
                   {/* Sort By Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="border-border/50 bg-background/50">
+                      <Button variant="outline" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 rounded-xl">
                         <Filter className="w-4 h-4 mr-2" />
-                        Sort: {nftSortBy.charAt(0).toUpperCase() + nftSortBy.slice(1)}
+                        <span className="font-medium">Sort: {nftSortBy.charAt(0).toUpperCase() + nftSortBy.slice(1)}</span>
                         <ChevronDown className="w-4 h-4 ml-2" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-48">
-                      <DropdownMenuItem onClick={() => setNftSortBy('rarity')}>
-                        ⭐ Rarity Score
+                    <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-xl border-border/50">
+                      <DropdownMenuItem 
+                        onClick={() => setNftSortBy('rarity')}
+                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
+                      >
+                        <span className="mr-2">⭐</span>
+                        <span className="font-medium">Rarity Score</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setNftSortBy('price')}>
-                        💎 Floor Price
+                      <DropdownMenuItem 
+                        onClick={() => setNftSortBy('price')}
+                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
+                      >
+                        <span className="mr-2">💎</span>
+                        <span className="font-medium">Floor Price</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setNftSortBy('recent')}>
-                        🕒 Recently Acquired
+                      <DropdownMenuItem 
+                        onClick={() => setNftSortBy('recent')}
+                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
+                      >
+                        <span className="mr-2">🕒</span>
+                        <span className="font-medium">Recently Acquired</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setNftSortBy('name')}>
-                        🔤 Name (A-Z)
+                      <DropdownMenuItem 
+                        onClick={() => setNftSortBy('name')}
+                        className="hover:bg-[#D4AF37]/10 hover:text-[#D4AF37] cursor-pointer"
+                      >
+                        <span className="mr-2">🔤</span>
+                        <span className="font-medium">Name (A-Z)</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -495,27 +519,36 @@ export const ProfileCard = ({
                   {availableChains.length > 1 && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="border-border/50 bg-background/50">
-                          🔗 Chains {selectedChains.length > 0 && `(${selectedChains.length})`}
+                        <Button variant="outline" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 rounded-xl">
+                          <span className="mr-2">🔗</span>
+                          <span className="font-medium">Chains</span>
+                          {selectedChains.length > 0 && (
+                            <Badge variant="secondary" className="ml-2 bg-[#D4AF37]/20 text-[#D4AF37] border-0 px-1.5 py-0 text-xs">
+                              {selectedChains.length}
+                            </Badge>
+                          )}
                           <ChevronDown className="w-4 h-4 ml-2" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-52">
+                      <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-xl border-border/50">
                         {availableChains.map(chain => (
                           <DropdownMenuCheckboxItem
                             key={chain}
                             checked={selectedChains.includes(chain)}
                             onCheckedChange={() => handleChainToggle(chain)}
-                            className="capitalize"
+                            className="capitalize hover:bg-[#D4AF37]/10 cursor-pointer"
                           >
-                            {chain}
+                            <span className="font-medium">{chain}</span>
                           </DropdownMenuCheckboxItem>
                         ))}
                         {selectedChains.length > 0 && (
                           <>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setSelectedChains([])}>
-                              Clear filters
+                            <DropdownMenuItem 
+                              onClick={() => setSelectedChains([])}
+                              className="text-[#D4AF37] hover:bg-[#D4AF37]/10 cursor-pointer font-medium"
+                            >
+                              Clear all filters
                             </DropdownMenuItem>
                           </>
                         )}
@@ -527,74 +560,129 @@ export const ProfileCard = ({
                   <Button
                     variant="outline"
                     onClick={() => setGroupByCollection(!groupByCollection)}
-                    className={`border-border/50 ${groupByCollection ? 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30' : 'bg-background/50'}`}
+                    className={`border-border/50 h-10 rounded-xl transition-all ${
+                      groupByCollection 
+                        ? 'bg-[#D4AF37]/15 text-[#D4AF37] border-[#D4AF37]/40 hover:bg-[#D4AF37]/20' 
+                        : 'bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50'
+                    }`}
                   >
-                    {groupByCollection ? '📚 Grouped' : '📋 List View'}
+                    <span className="mr-2">{groupByCollection ? '📚' : '📋'}</span>
+                    <span className="font-medium">{groupByCollection ? 'Grouped' : 'List View'}</span>
                   </Button>
 
                   {/* Active Filter Badges */}
-                  {selectedChains.map(chain => (
-                    <Badge
-                      key={chain}
-                      variant="secondary"
-                      className="capitalize cursor-pointer bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20"
-                      onClick={() => handleChainToggle(chain)}
-                    >
-                      {chain} ×
-                    </Badge>
-                  ))}
+                  {selectedChains.length > 0 && (
+                    <div className="flex items-center gap-2 pl-2 border-l border-border/30">
+                      {selectedChains.map(chain => (
+                        <Badge
+                          key={chain}
+                          variant="secondary"
+                          className="capitalize cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-all font-medium px-3 py-1"
+                          onClick={() => handleChainToggle(chain)}
+                        >
+                          {chain} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               {nftLoading && nfts.length === 0 ? (
-                <div className="space-y-4">
-                  <div className="text-center py-4">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37] mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Loading NFTs from multiple chains...</p>
-                    <p className="text-xs text-muted-foreground mt-1">Ethereum • Polygon • Base • Arbitrum • and more</p>
+                <div className="space-y-6 animate-fade-in">
+                  <div className="text-center py-8 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
+                    <div className="relative inline-block">
+                      <Loader2 className="w-12 h-12 animate-spin text-[#D4AF37] mx-auto mb-3" />
+                      <div className="absolute inset-0 w-12 h-12 bg-[#D4AF37]/20 blur-xl animate-pulse"></div>
+                    </div>
+                    <p className="text-base font-medium text-foreground mb-1">Loading NFT Collection</p>
+                    <p className="text-sm text-muted-foreground">Scanning multiple chains...</p>
+                    <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+                      {['Ethereum', 'Polygon', 'Base', 'Arbitrum', 'Optimism'].map((chain, i) => (
+                        <Badge 
+                          key={chain} 
+                          variant="outline" 
+                          className="text-xs border-border/40 bg-background/40 animate-pulse"
+                          style={{ animationDelay: `${i * 0.1}s` }}
+                        >
+                          {chain}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {[...Array(12)].map((_, i) => (
-                      <Card key={i} className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-                        <Skeleton className="aspect-square rounded-lg mb-2 bg-[#D4AF37]/10" />
-                        <Skeleton className="h-4 w-3/4 mb-1 bg-[#D4AF37]/10" />
-                        <Skeleton className="h-3 w-1/2 bg-[#D4AF37]/10" />
+                      <Card 
+                        key={i} 
+                        className="overflow-hidden bg-card/50 backdrop-blur-sm border-border/40 animate-pulse"
+                        style={{ animationDelay: `${i * 0.05}s` }}
+                      >
+                        <Skeleton className="aspect-square rounded-none bg-gradient-to-br from-[#D4AF37]/10 to-[#D4AF37]/5" />
+                        <div className="p-3 space-y-2">
+                          <Skeleton className="h-4 w-3/4 bg-[#D4AF37]/10 rounded-md" />
+                          <Skeleton className="h-3 w-1/2 bg-[#D4AF37]/10 rounded-md" />
+                        </div>
                       </Card>
                     ))}
                   </div>
                 </div>
               ) : nfts.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4 opacity-50">🖼️</div>
-                  <p className="text-muted-foreground mb-2">No NFTs found</p>
-                  <p className="text-xs text-muted-foreground">This wallet doesn't have any NFTs yet</p>
+                <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30 animate-fade-in">
+                  <div className="relative inline-block mb-4">
+                    <div className="text-7xl opacity-30">🖼️</div>
+                    <div className="absolute inset-0 bg-[#D4AF37]/10 blur-2xl"></div>
+                  </div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">No NFTs Found</h4>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    This wallet doesn't have any NFTs yet on supported chains
+                  </p>
                 </div>
               ) : filteredNfts.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4 opacity-50">🔍</div>
-                  <p className="text-muted-foreground mb-2">No NFTs match your filters</p>
-                  <p className="text-xs text-muted-foreground">Try adjusting your search or filters</p>
+                <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30 animate-fade-in">
+                  <div className="relative inline-block mb-4">
+                    <div className="text-7xl opacity-30">🔍</div>
+                    <div className="absolute inset-0 bg-[#D4AF37]/10 blur-2xl"></div>
+                  </div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">No Matches Found</h4>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
+                    No NFTs match your current search or filter criteria
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setNftSearchQuery('');
+                      setSelectedChains([]);
+                    }}
+                    className="border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                  >
+                    Clear All Filters
+                  </Button>
                 </div>
               ) : (
                 <>
-                  <div className="max-h-[60vh] overflow-y-auto space-y-8">
+                  <div className="max-h-[60vh] overflow-y-auto space-y-8 pr-2">
                     {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
-                      <div key={collection}>
+                      <div key={collection} className="animate-fade-in">
                         {groupByCollection && (
-                          <div className="mb-4 pb-3 border-b border-border/30 flex items-center justify-between">
-                            <div>
-                              <h4 className="font-bold text-foreground text-base">{collection}</h4>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
-                              </p>
+                          <div className="mb-5 pb-4 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-card/40 to-transparent -mx-2 px-2 py-3 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
+                                <span className="text-xl">📦</span>
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-foreground text-base">{collection}</h4>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
+                                </p>
+                              </div>
                             </div>
                             {collectionNfts[0]?.floor_price && (
-                              <div className="text-right">
+                              <div className="text-right bg-[#D4AF37]/5 px-4 py-2 rounded-lg border border-[#D4AF37]/20">
                                 <p className="text-xs text-muted-foreground">Floor Price</p>
-                                <p className="text-sm font-semibold text-[#D4AF37]">
-                                  {collectionNfts[0].floor_price} ETH
+                                <p className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
+                                  <span>💎</span> {collectionNfts[0].floor_price} ETH
                                 </p>
                               </div>
                             )}
@@ -607,15 +695,15 @@ export const ProfileCard = ({
                             return (
                               <Card
                                 key={`${nft.contract}-${nft.identifier}-${index}`}
-                                className="group relative overflow-hidden bg-card/80 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/50 hover:shadow-2xl hover:shadow-[#D4AF37]/10 transition-all duration-300 cursor-pointer"
+                                className="group relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/60 hover:shadow-2xl hover:shadow-[#D4AF37]/20 transition-all duration-500 cursor-pointer hover:-translate-y-1"
                                 onClick={() => setSelectedNft(nft)}
                               >
                                 {/* Rarity Badge */}
                                 {rarity && (
-                                  <div className="absolute top-2 left-2 z-10">
+                                  <div className="absolute top-2.5 left-2.5 z-10">
                                     <Badge 
                                       variant="secondary" 
-                                      className={`${rarity.color} bg-black/60 backdrop-blur-sm border-0 text-xs font-bold px-2 py-0.5`}
+                                      className={`${rarity.color} bg-black/70 backdrop-blur-md border-0 text-xs font-bold px-2.5 py-1 shadow-lg`}
                                     >
                                       ⭐ {rarity.label}
                                     </Badge>
@@ -624,10 +712,10 @@ export const ProfileCard = ({
 
                                 {/* Chain Badge */}
                                 {nft.chain && (
-                                  <div className="absolute top-2 right-2 z-10">
+                                  <div className="absolute top-2.5 right-2.5 z-10">
                                     <Badge 
                                       variant="outline" 
-                                      className="bg-black/60 backdrop-blur-sm border-border/30 text-xs capitalize px-2 py-0.5"
+                                      className="bg-black/70 backdrop-blur-md border-white/20 text-white text-xs capitalize px-2.5 py-1 font-semibold shadow-lg"
                                     >
                                       {nft.chain}
                                     </Badge>
@@ -635,29 +723,29 @@ export const ProfileCard = ({
                                 )}
 
                                 {/* NFT Image */}
-                                <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-black/20 to-black/40">
+                                <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-black/30 to-black/50">
                                   {nft.image_url ? (
                                     <img
                                       src={nft.image_url}
                                       alt={nft.name || 'NFT'}
-                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                       loading="lazy"
                                     />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/30 to-muted/10">
                                       <div className="text-center">
-                                        <div className="text-4xl mb-2 opacity-50">🖼️</div>
-                                        <p>No Preview</p>
+                                        <div className="text-5xl mb-2 opacity-40">🖼️</div>
+                                        <p className="text-xs text-muted-foreground font-medium">No Preview</p>
                                       </div>
                                     </div>
                                   )}
                                   
-                                  {/* Hover Overlay */}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                                  {/* Hover Overlay with Gradient */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-4">
                                     <Button 
                                       size="sm" 
                                       variant="secondary"
-                                      className="w-full bg-[#D4AF37]/90 hover:bg-[#D4AF37] text-black font-semibold"
+                                      className="w-full bg-gradient-to-r from-[#D4AF37] to-[#B8941F] hover:from-[#B8941F] hover:to-[#D4AF37] text-black font-bold shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-all duration-300"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedNft(nft);
@@ -669,34 +757,35 @@ export const ProfileCard = ({
                                 </div>
 
                                 {/* NFT Info */}
-                                <div className="p-3 space-y-2">
+                                <div className="p-4 space-y-2.5 bg-gradient-to-b from-card/80 to-card/60">
                                   <div className="space-y-1">
-                                    <p className="text-sm font-semibold text-foreground truncate">
+                                    <p className="text-sm font-bold text-foreground truncate leading-tight">
                                       {nft.name || `#${nft.identifier}`}
                                     </p>
                                     {!groupByCollection && (
-                                      <p className="text-xs text-muted-foreground truncate">
+                                      <p className="text-xs text-muted-foreground truncate font-medium">
                                         {nft.collection}
                                       </p>
                                     )}
                                   </div>
 
                                   {/* Price and Rarity Score */}
-                                  <div className="flex items-center justify-between text-xs">
+                                  <div className="flex items-center justify-between pt-2 border-t border-border/30">
                                     {nft.floor_price ? (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-muted-foreground">Floor:</span>
-                                        <span className="font-semibold text-[#D4AF37]">
-                                          {nft.floor_price} ETH
+                                      <div className="flex flex-col gap-0.5">
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Floor</span>
+                                        <span className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
+                                          💎 {nft.floor_price} ETH
                                         </span>
                                       </div>
                                     ) : (
-                                      <span className="text-muted-foreground">#{nft.identifier}</span>
+                                      <span className="text-xs text-muted-foreground font-mono">#{nft.identifier}</span>
                                     )}
                                     
                                     {nft.rarity_score > 0 && (
-                                      <div className="flex items-center gap-1">
-                                        <span className={rarity?.color}>
+                                      <div className="flex flex-col items-end gap-0.5">
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Rarity</span>
+                                        <span className={`text-sm font-bold ${rarity?.color || 'text-foreground'}`}>
                                           {nft.rarity_score}
                                         </span>
                                       </div>
