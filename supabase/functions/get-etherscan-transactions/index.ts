@@ -12,25 +12,25 @@ const V2_API_BASE = 'https://api.etherscan.io/v2/api';
 const RATE_LIMIT_DELAY = 350; // milliseconds between API calls
 const BATCH_SIZE = 3; // Process 3 chains at a time
 
-// Chain configurations with V2 chain IDs
+// Chain configurations with V2 chain IDs (ordered by priority)
 const CHAINS = {
   ethereum: { name: 'Ethereum', chainId: 1 },
   polygon: { name: 'Polygon', chainId: 137 },
   arbitrum: { name: 'Arbitrum', chainId: 42161 },
   optimism: { name: 'Optimism', chainId: 10 },
   base: { name: 'Base', chainId: 8453 },
+  worldchain: { name: 'World Chain', chainId: 480 },
   bsc: { name: 'BNB Chain', chainId: 56 },
   avalanche: { name: 'Avalanche', chainId: 43114 },
-  worldchain: { name: 'World Chain', chainId: 480 },
   linea: { name: 'Linea', chainId: 59144 },
   scroll: { name: 'Scroll', chainId: 534352 },
   zksync: { name: 'zkSync Era', chainId: 324 },
   mantle: { name: 'Mantle', chainId: 5000 },
-  blast: { name: 'Blast', chainId: 81457 },
   mode: { name: 'Mode', chainId: 34443 },
   celo: { name: 'Celo', chainId: 42220 },
   gnosis: { name: 'Gnosis', chainId: 100 },
   fantom: { name: 'Fantom', chainId: 250 },
+  blast: { name: 'Blast', chainId: 81457 },
   moonbeam: { name: 'Moonbeam', chainId: 1284 },
   moonriver: { name: 'Moonriver', chainId: 1285 },
   cronos: { name: 'Cronos', chainId: 25 },
