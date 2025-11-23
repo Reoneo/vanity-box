@@ -8,6 +8,7 @@ import { useState } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
+import defaultHeader from '@/assets/default-header-pattern.png';
 
 interface ProfileCardProps {
   activeSection: 'profile' | 'socials' | 'poaps' | 'nfts' | 'farcaster';
@@ -83,15 +84,13 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="space-y-4">
-            {web3BioProfile?.header && (
-              <div className="w-full h-48 overflow-hidden">
-                <img
-                  src={web3BioProfile.header}
-                  alt="Header"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <div className="w-full h-48 overflow-hidden">
+              <img
+                src={web3BioProfile?.header || defaultHeader}
+                alt="Header"
+                className="w-full h-full object-cover"
+              />
+            </div>
 
             <div className="p-6 space-y-4">
               {web3BioProfile?.avatar && (
