@@ -59,6 +59,7 @@ export const ProfileCard = ({
   const [nftSearchQuery, setNftSearchQuery] = useState("");
   const [selectedChains, setSelectedChains] = useState<string[]>([]);
   const [groupByCollection, setGroupByCollection] = useState(true);
+  const [nftSortBy, setNftSortBy] = useState<'rarity' | 'recent' | 'price' | 'name'>('rarity');
 
   // Disable body scrolling when profile card is displayed
   useEffect(() => {
@@ -98,14 +99,40 @@ export const ProfileCard = ({
     return filtered;
   }, [nfts, nftSearchQuery, selectedChains]);
 
+  // Sort NFTs
+  const sortedNfts = useMemo(() => {
+    const sorted = [...filteredNfts];
+    
+    switch (nftSortBy) {
+      case 'rarity':
+        return sorted.sort((a, b) => (b.rarity_score || 0) - (a.rarity_score || 0));
+      case 'recent':
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.created_date || 0).getTime();
+          const dateB = new Date(b.created_date || 0).getTime();
+          return dateB - dateA;
+        });
+      case 'price':
+        return sorted.sort((a, b) => (b.floor_price || 0) - (a.floor_price || 0));
+      case 'name':
+        return sorted.sort((a, b) => {
+          const nameA = (a.name || a.identifier || '').toLowerCase();
+          const nameB = (b.name || b.identifier || '').toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+      default:
+        return sorted;
+    }
+  }, [filteredNfts, nftSortBy]);
+
   // Group NFTs by collection
   const groupedNfts = useMemo(() => {
     if (!groupByCollection) {
-      return { 'All NFTs': filteredNfts };
+      return { 'All NFTs': sortedNfts };
     }
 
     const groups: Record<string, any[]> = {};
-    filteredNfts.forEach(nft => {
+    sortedNfts.forEach(nft => {
       const collection = nft.collection || 'Unknown Collection';
       if (!groups[collection]) {
         groups[collection] = [];
@@ -117,7 +144,7 @@ export const ProfileCard = ({
     return Object.fromEntries(
       Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
     );
-  }, [filteredNfts, groupByCollection]);
+  }, [sortedNfts, groupByCollection]);
 
   const handleChainToggle = (chain: string) => {
     setSelectedChains(prev => 
@@ -125,6 +152,14 @@ export const ProfileCard = ({
         ? prev.filter(c => c !== chain)
         : [...prev, chain]
     );
+  };
+
+  const getRarityLabel = (score: number) => {
+    if (score >= 80) return { label: 'Legendary', color: 'text-purple-400' };
+    if (score >= 60) return { label: 'Epic', color: 'text-blue-400' };
+    if (score >= 40) return { label: 'Rare', color: 'text-green-400' };
+    if (score >= 20) return { label: 'Uncommon', color: 'text-gray-400' };
+    return { label: 'Common', color: 'text-gray-500' };
   };
 
   const copyAddress = async () => {
@@ -396,14 +431,118 @@ export const ProfileCard = ({
         {/* NFTs Section */}
         {activeSection === 'nfts' && (
           <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-[#D4AF37]">🖼️ NFTs</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-2xl font-bold text-[#D4AF37]">🖼️ NFT Collection</h3>
+                {nfts.length > 0 && !nftLoading && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {filteredNfts.length} {filteredNfts.length === 1 ? 'item' : 'items'} • {availableChains.length} {availableChains.length === 1 ? 'chain' : 'chains'}
+                  </p>
+                )}
+              </div>
               {nfts.length > 0 && !nftLoading && (
-                <Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">
-                  {nfts.length} NFTs
+                <Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30 text-lg px-3 py-1">
+                  {nfts.length}
                 </Badge>
               )}
             </div>
+
+            {/* OpenSea-style Search, Filter, and Sort Controls */}
+            {nfts.length > 0 && (
+              <div className="space-y-3 mb-6 bg-card/30 backdrop-blur-sm p-4 rounded-xl border border-border/50">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, collection, or token ID..."
+                    value={nftSearchQuery}
+                    onChange={(e) => setNftSearchQuery(e.target.value)}
+                    className="pl-11 h-12 bg-background/50 border-border/30 focus:border-[#D4AF37]/50 text-base"
+                  />
+                </div>
+
+                {/* Filters and Sorting Row */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  {/* Sort By Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="border-border/50 bg-background/50">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Sort: {nftSortBy.charAt(0).toUpperCase() + nftSortBy.slice(1)}
+                        <ChevronDown className="w-4 h-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <DropdownMenuItem onClick={() => setNftSortBy('rarity')}>
+                        ⭐ Rarity Score
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setNftSortBy('price')}>
+                        💎 Floor Price
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setNftSortBy('recent')}>
+                        🕒 Recently Acquired
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setNftSortBy('name')}>
+                        🔤 Name (A-Z)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Chain Filter Dropdown */}
+                  {availableChains.length > 1 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="border-border/50 bg-background/50">
+                          🔗 Chains {selectedChains.length > 0 && `(${selectedChains.length})`}
+                          <ChevronDown className="w-4 h-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-52">
+                        {availableChains.map(chain => (
+                          <DropdownMenuCheckboxItem
+                            key={chain}
+                            checked={selectedChains.includes(chain)}
+                            onCheckedChange={() => handleChainToggle(chain)}
+                            className="capitalize"
+                          >
+                            {chain}
+                          </DropdownMenuCheckboxItem>
+                        ))}
+                        {selectedChains.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setSelectedChains([])}>
+                              Clear filters
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+
+                  {/* Group Toggle */}
+                  <Button
+                    variant="outline"
+                    onClick={() => setGroupByCollection(!groupByCollection)}
+                    className={`border-border/50 ${groupByCollection ? 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30' : 'bg-background/50'}`}
+                  >
+                    {groupByCollection ? '📚 Grouped' : '📋 List View'}
+                  </Button>
+
+                  {/* Active Filter Badges */}
+                  {selectedChains.map(chain => (
+                    <Badge
+                      key={chain}
+                      variant="secondary"
+                      className="capitalize cursor-pointer bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20"
+                      onClick={() => handleChainToggle(chain)}
+                    >
+                      {chain} ×
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <div className="space-y-4">
               {nftLoading && nfts.length === 0 ? (
@@ -437,55 +576,133 @@ export const ProfileCard = ({
                 </div>
               ) : (
                 <>
-                  <div className="max-h-[60vh] overflow-y-auto space-y-6">
+                  <div className="max-h-[60vh] overflow-y-auto space-y-8">
                     {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                       <div key={collection}>
                         {groupByCollection && (
-                          <div className="mb-3 flex items-center justify-between">
-                            <h4 className="font-semibold text-foreground text-sm">{collection}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              {collectionNfts.length}
-                            </Badge>
+                          <div className="mb-4 pb-3 border-b border-border/30 flex items-center justify-between">
+                            <div>
+                              <h4 className="font-bold text-foreground text-base">{collection}</h4>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
+                              </p>
+                            </div>
+                            {collectionNfts[0]?.floor_price && (
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Floor Price</p>
+                                <p className="text-sm font-semibold text-[#D4AF37]">
+                                  {collectionNfts[0].floor_price} ETH
+                                </p>
+                              </div>
+                            )}
                           </div>
                         )}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {collectionNfts.map((nft: any, index: number) => (
-                            <Card
-                              key={`${nft.contract}-${nft.identifier}-${index}`}
-                              className="p-3 bg-card/50 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/30 transition-all duration-300 cursor-pointer"
-                              onClick={() => setSelectedNft(nft)}
-                            >
-                              <div className="aspect-square rounded-lg overflow-hidden border-2 border-[#D4AF37]/20 mb-2 bg-black/20">
-                                {nft.image_url ? (
-                                  <img
-                                    src={nft.image_url}
-                                    alt={nft.name || 'NFT'}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                                    No Image
+                          {collectionNfts.map((nft: any, index: number) => {
+                            const rarity = nft.rarity_score ? getRarityLabel(nft.rarity_score) : null;
+                            
+                            return (
+                              <Card
+                                key={`${nft.contract}-${nft.identifier}-${index}`}
+                                className="group relative overflow-hidden bg-card/80 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/50 hover:shadow-2xl hover:shadow-[#D4AF37]/10 transition-all duration-300 cursor-pointer"
+                                onClick={() => setSelectedNft(nft)}
+                              >
+                                {/* Rarity Badge */}
+                                {rarity && (
+                                  <div className="absolute top-2 left-2 z-10">
+                                    <Badge 
+                                      variant="secondary" 
+                                      className={`${rarity.color} bg-black/60 backdrop-blur-sm border-0 text-xs font-bold px-2 py-0.5`}
+                                    >
+                                      ⭐ {rarity.label}
+                                    </Badge>
                                   </div>
                                 )}
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-xs font-semibold text-foreground truncate">
-                                  {nft.name || `#${nft.identifier}`}
-                                </div>
-                                {!groupByCollection && (
-                                  <div className="text-xs text-muted-foreground truncate">
-                                    {nft.collection}
-                                  </div>
-                                )}
+
+                                {/* Chain Badge */}
                                 {nft.chain && (
-                                  <Badge variant="outline" className="text-xs border-[#D4AF37]/30 bg-[#D4AF37]/5 capitalize">
-                                    {nft.chain}
-                                  </Badge>
+                                  <div className="absolute top-2 right-2 z-10">
+                                    <Badge 
+                                      variant="outline" 
+                                      className="bg-black/60 backdrop-blur-sm border-border/30 text-xs capitalize px-2 py-0.5"
+                                    >
+                                      {nft.chain}
+                                    </Badge>
+                                  </div>
                                 )}
-                              </div>
-                            </Card>
-                          ))}
+
+                                {/* NFT Image */}
+                                <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-black/20 to-black/40">
+                                  {nft.image_url ? (
+                                    <img
+                                      src={nft.image_url}
+                                      alt={nft.name || 'NFT'}
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                                      <div className="text-center">
+                                        <div className="text-4xl mb-2 opacity-50">🖼️</div>
+                                        <p>No Preview</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Hover Overlay */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                                    <Button 
+                                      size="sm" 
+                                      variant="secondary"
+                                      className="w-full bg-[#D4AF37]/90 hover:bg-[#D4AF37] text-black font-semibold"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedNft(nft);
+                                      }}
+                                    >
+                                      View Details
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {/* NFT Info */}
+                                <div className="p-3 space-y-2">
+                                  <div className="space-y-1">
+                                    <p className="text-sm font-semibold text-foreground truncate">
+                                      {nft.name || `#${nft.identifier}`}
+                                    </p>
+                                    {!groupByCollection && (
+                                      <p className="text-xs text-muted-foreground truncate">
+                                        {nft.collection}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Price and Rarity Score */}
+                                  <div className="flex items-center justify-between text-xs">
+                                    {nft.floor_price ? (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-muted-foreground">Floor:</span>
+                                        <span className="font-semibold text-[#D4AF37]">
+                                          {nft.floor_price} ETH
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">#{nft.identifier}</span>
+                                    )}
+                                    
+                                    {nft.rarity_score > 0 && (
+                                      <div className="flex items-center gap-1">
+                                        <span className={rarity?.color}>
+                                          {nft.rarity_score}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
