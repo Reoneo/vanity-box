@@ -1612,7 +1612,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       label: t('nfts'),
                       onClick: () => {
                         setActiveDockSection('nfts');
-                        if (nfts.length === 0) {
+                        const address = web3BioProfile?.address || walletAddress;
+                        // Only fetch NFTs if we have a valid wallet address
+                        if (nfts.length === 0 && address && address !== 'undefined') {
                           fetchNfts();
                         }
                       },
