@@ -22,6 +22,7 @@ interface ProfileCardProps {
   nftNextCursor?: string | null;
   latestCast?: FarcasterCast | null;
   castLoading?: boolean;
+  firstTransactionDate?: string | null;
   onFollowingClick?: () => void;
   onLoadMoreNfts?: () => void;
 }
@@ -38,6 +39,7 @@ export const ProfileCard = ({
   nftNextCursor = null,
   latestCast = null,
   castLoading = false,
+  firstTransactionDate = null,
   onFollowingClick,
   onLoadMoreNfts,
 }: ProfileCardProps) => {
@@ -180,18 +182,38 @@ export const ProfileCard = ({
                 </div>
               )}
 
-              {web3BioProfile?.website && (
+              {(web3BioProfile?.website || web3BioProfile?.url) && (
                 <div className="text-center">
                   <span className="text-sm text-muted-foreground">Website: </span>
                   <a
-                    href={web3BioProfile.website}
+                    href={web3BioProfile.website || web3BioProfile.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-[#D4AF37] hover:underline inline-flex items-center gap-1"
                   >
-                    {web3BioProfile.website}
+                    {web3BioProfile.website || web3BioProfile.url}
                     <ExternalLink className="w-3 h-3" />
                   </a>
+                </div>
+              )}
+
+              {web3BioProfile?.location && (
+                <div className="text-center">
+                  <span className="text-sm text-muted-foreground">Location: </span>
+                  <span className="text-sm text-[#D4AF37]">{web3BioProfile.location}</span>
+                </div>
+              )}
+
+              {firstTransactionDate && (
+                <div className="text-center">
+                  <span className="text-sm text-muted-foreground">Date Joined: </span>
+                  <span className="text-sm text-[#D4AF37]">
+                    {new Date(firstTransactionDate).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </span>
                 </div>
               )}
             </div>
