@@ -220,7 +220,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   
   // Dock panel states
   const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'poaps' | 'nfts' | 'farcaster'>('profile');
-  const [activeNftSubSection, setActiveNftSubSection] = useState<'opensea' | 'poaps'>('opensea');
   const [poapTokens, setPoapTokens] = useState<any[]>([]);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
   const [showEFPFollowingModal, setShowEFPFollowingModal] = useState(false);
@@ -1673,8 +1672,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   firstTransactionDate={firstTransactionDate}
                   onFollowingClick={handleFollowingClick}
                   onLoadMoreNfts={handleLoadMoreNfts}
-                  activeNftSubSection={activeNftSubSection}
-                  onNftSubSectionChange={setActiveNftSubSection}
                 />
 
                 <Dock
@@ -1693,11 +1690,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       isActive: activeDockSection === 'socials',
                     }] : []),
                     {
+                      icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
+                      label: t('poaps'),
+                      onClick: () => setActiveDockSection('poaps'),
+                      isActive: activeDockSection === 'poaps',
+                    },
+                    {
                       icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
                       label: t('nfts'),
                       onClick: () => {
                         setActiveDockSection('nfts');
-                        setActiveNftSubSection('opensea'); // Default to OpenSea NFTs
                         const address = web3BioProfile?.address || walletAddress;
                         
                         // Comprehensive validation before fetching
@@ -1717,17 +1719,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         
                         // Only fetch NFTs if we have a valid wallet address and no NFTs loaded yet
                         if (isValidAddress && nfts.length === 0) {
-                          // Double-check that web3BioProfile or walletAddress are actually set
-                          const currentAddress = web3BioProfile?.address || walletAddress;
-                          if (currentAddress && typeof currentAddress === 'string' && currentAddress.trim() !== '') {
-                            fetchNfts();
-                          } else {
-                            console.warn('Cannot fetch NFTs: Address validation passed but address is now invalid', {
-                              web3BioAddress: web3BioProfile?.address,
-                              walletAddress,
-                              currentAddress
-                            });
-                          }
+                          fetchNfts();
                         } else if (!isValidAddress) {
                           console.warn('Cannot fetch NFTs: Invalid or missing wallet address');
                         }
