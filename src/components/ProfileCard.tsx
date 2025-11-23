@@ -556,7 +556,13 @@ export const ProfileCard = ({
                             <div>
                               <h4 className="font-bold text-foreground text-base">{formatCollectionName(collection)}</h4>
                               <p className="text-xs text-muted-foreground mt-0.5">
-                                {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
+                                {(() => {
+                                  const uniqueCount = collectionNfts.length;
+                                  const totalCount = collectionNfts.reduce((sum, nft) => sum + (nft.quantity || 1), 0);
+                                  return totalCount > uniqueCount 
+                                    ? `${uniqueCount} unique (${totalCount} total)`
+                                    : `${uniqueCount} ${uniqueCount === 1 ? 'item' : 'items'}`;
+                                })()}
                               </p>
                             </div>
                           </div>
@@ -593,13 +599,24 @@ export const ProfileCard = ({
                                 )}
 
                                 {/* Chain Badge */}
-                                {nft.chain && (
+                                {nft.chain && !nft.quantity && (
                                   <div className="absolute top-2.5 right-2.5 z-10">
                                     <Badge 
                                       variant="outline" 
                                       className="bg-black/70 backdrop-blur-md border-white/20 text-white text-xs capitalize px-2.5 py-1 font-semibold shadow-lg"
                                     >
                                       {nft.chain}
+                                    </Badge>
+                                  </div>
+                                )}
+
+                                {/* Quantity Badge - shows when user owns multiple copies */}
+                                {nft.quantity && nft.quantity > 1 && (
+                                  <div className="absolute top-2.5 right-2.5 z-10">
+                                    <Badge 
+                                      className="bg-emerald-600/90 backdrop-blur-md border-0 text-white text-xs font-bold px-2.5 py-1 shadow-lg"
+                                    >
+                                      x{nft.quantity}
                                     </Badge>
                                   </div>
                                 )}

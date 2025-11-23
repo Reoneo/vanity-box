@@ -65,6 +65,11 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
                 {getChainIcon(nft.chain)} {nft.chain}
               </Badge>
             )}
+            {nft.quantity && nft.quantity > 1 && (
+              <Badge className="bg-emerald-600 text-white border-0">
+                x{nft.quantity} Owned
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
