@@ -206,10 +206,11 @@ export const ProfileCard = ({
 
   return (
     <>
-      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative z-[9999]">
+      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative z-[9999] h-[calc(100vh-120px)] flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pb-6">
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-4 pb-6">
             <div className="relative">
               <div className="w-full h-48 overflow-hidden">
                 <img
@@ -302,32 +303,26 @@ export const ProfileCard = ({
                 </div>
               )}
 
-              {web3BioProfile?.location && (
-                <div className="text-center">
-                  <span className="text-sm text-muted-foreground">Location: </span>
-                  <span className="text-sm text-[#D4AF37]">{web3BioProfile.location}</span>
-                </div>
-              )}
-
               {firstTransactionDate && (
-                <div className="text-center">
-                  <span className="text-sm text-muted-foreground">Date Joined: </span>
-                  <span className="text-sm text-[#D4AF37]">
-                    {new Date(firstTransactionDate).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      year: 'numeric',
                       day: 'numeric' 
                     })}
                   </span>
                 </div>
               )}
             </div>
+            </div>
           </div>
         )}
 
         {/* Socials Section */}
         {activeSection === 'socials' && (
-          <div className="p-6 pb-6">
+          <div className="flex-1 overflow-y-auto p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
                 <Link2 className="w-5 h-5 text-[#D4AF37]" />
@@ -335,7 +330,7 @@ export const ProfileCard = ({
               <h3 className="text-2xl font-bold text-[#D4AF37]">Social Links</h3>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
                 .filter(([platform, url]) => {
                   if (!url) return false;
@@ -367,36 +362,34 @@ export const ProfileCard = ({
                             {/* Icon */}
                             <div className="relative flex-shrink-0">
                               {socialIcons[platform.toLowerCase()] ? (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center ring-2 ring-[#D4AF37]/30 group-hover:ring-[#D4AF37]/60 transition-all">
-                                  <img
-                                    src={socialIcons[platform.toLowerCase()]}
-                                    alt={platform}
-                                    className="w-6 h-6 object-contain"
-                                  />
-                                </div>
+                                <img 
+                                  src={socialIcons[platform.toLowerCase()]} 
+                                  alt={platform}
+                                  className="w-12 h-12 rounded-xl border-2 border-border/30 group-hover:border-[#D4AF37]/40 transition-all shadow-md object-cover"
+                                />
                               ) : (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center ring-2 ring-[#D4AF37]/30 group-hover:ring-[#D4AF37]/60 transition-all">
-                                  <Globe className="w-6 h-6 text-[#D4AF37]" />
+                                <div className="w-12 h-12 rounded-xl border-2 border-border/30 group-hover:border-[#D4AF37]/40 transition-all flex items-center justify-center bg-gradient-to-br from-[#D4AF37]/10 to-[#D4AF37]/5">
+                                  <span className="text-xl">{platform.charAt(0).toUpperCase()}</span>
                                 </div>
                               )}
+                              <div className="absolute inset-0 bg-[#D4AF37]/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity blur-xl"></div>
                             </div>
-
-                            {/* Text Content */}
+                            
+                            {/* Platform Name & Link */}
                             <div className="flex-1 min-w-0">
-                              <div className="font-bold text-foreground capitalize text-base leading-tight mb-1">
+                              <p className="text-sm font-semibold text-foreground mb-0.5 capitalize group-hover:text-[#D4AF37] transition-colors">
                                 {platform}
-                              </div>
-                              <div className="text-sm text-[#D4AF37] truncate font-medium">
-                                {extractHandle(platform, link)}
-                              </div>
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors">
+                                {typeof url === 'object' ? extractHandle(link, platform) : extractHandle(link, platform)}
+                              </p>
                             </div>
-
-                            {/* Arrow Icon */}
-                            <ExternalLink className="w-5 h-5 text-[#D4AF37] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                            
+                            {/* External Link Icon */}
+                            <div className="text-muted-foreground/60 group-hover:text-[#D4AF37] transition-colors flex-shrink-0">
+                              <ExternalLink className="w-4 h-4" />
+                            </div>
                           </div>
-
-                          {/* Hover Gradient Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                         </a>
                       </Card>
                     );
@@ -636,7 +629,7 @@ export const ProfileCard = ({
 
         {/* Activity/Transactions Section */}
         {activeSection === 'activity' && (
-          <div className="p-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-6">{/* Changed from max-h to flex-1 */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl font-bold text-[#D4AF37]">⚡ Wallet Activity</h3>
@@ -915,9 +908,9 @@ export const ProfileCard = ({
 
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
-          <div className="p-6 pb-6">
+          <div className="flex-1 overflow-y-auto p-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
-            <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
+            <div>{/* Removed max-h and overflow-y-auto */}
               {castLoading ? (
                 <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
                   <div className="flex gap-3">
@@ -1026,6 +1019,15 @@ export const ProfileCard = ({
             </div>
           </div>
         )}
+
+        {/* XMTP Inbox Section */}
+        {activeSection === 'inbox' && (
+          <XMTPInbox 
+            profileAddress={currentWalletAddress}
+            currentUserAddress={connectedWalletAddress}
+            isProfileOwner={currentWalletAddress === connectedWalletAddress}
+          />
+        )}
       </Card>
 
       {selectedPoap && (
@@ -1042,20 +1044,6 @@ export const ProfileCard = ({
           isOpen={!!selectedNft}
           onClose={() => setSelectedNft(null)}
         />
-      )}
-
-      {/* XMTP Inbox Section */}
-      {activeSection === 'inbox' && (
-        <div className="p-6 pb-6">
-          <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">💬 Messages</h3>
-          <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
-            <XMTPInbox 
-              profileAddress={currentWalletAddress}
-              currentUserAddress={connectedWalletAddress}
-              isProfileOwner={currentWalletAddress === connectedWalletAddress}
-            />
-          </div>
-        </div>
       )}
     </>
   );
