@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Wallet, LogOut, User, ChevronDown } from 'lucide-react';
+import { Wallet, LogOut, User, ChevronDown, UserCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
@@ -42,6 +42,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
+  const [ensName, setEnsName] = useState<string | null>(null);
+  const [ensLoading, setEnsLoading] = useState(false);
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -64,6 +66,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       }));
       // Fetch balance when Petra connects or network changes
       fetchAptosBalance();
+      // Fetch ENS for Petra wallet
+      if (petraAccount.address) {
+        fetchEnsName(petraAccount.address);
+      }
     }
   }, [petraConnected, petraAccount, petraNetwork]);
 
@@ -123,6 +129,39 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
+  // Fetch ENS name for connected wallet
+  const fetchEnsName = async (address: string) => {
+    setEnsLoading(true);
+    try {
+      // Try to get ENS name from Ethereum mainnet
+      const response = await fetch(`https://api.ensideas.com/ens/resolve/${address}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.name) {
+          setEnsName(data.name);
+          return;
+        }
+      }
+      
+      // If no ENS, try World ID
+      if (walletType === 'worldchain') {
+        const worldEns = await getWorldChainENS(address);
+        if (worldEns) {
+          setEnsName(worldEns);
+          return;
+        }
+      }
+      
+      // No ENS found
+      setEnsName(null);
+    } catch (error) {
+      console.error('Failed to fetch ENS:', error);
+      setEnsName(null);
+    } finally {
+      setEnsLoading(false);
+    }
+  };
+
   const handleConnect = async () => {
     // If Petra is already connected, just return
     if (petraConnected) {
@@ -168,6 +207,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         setUser(userData);
         setWalletType('worldchain');
         sessionStorage.removeItem('skipAutoAuth');
+        
+        // Fetch ENS name
+        fetchEnsName(finalPayload.address);
         
         // Dispatch event for Index component
         window.dispatchEvent(new CustomEvent('wallet-connected', { detail: { ...userData, walletType: 'worldchain' } }));
@@ -253,6 +295,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     if (walletType === 'petra') {
       disconnectPetra();
       setWalletType(null);
+      setEnsName(null);
+    setEnsName(null);
     } else if (walletType === 'worldchain') {
       setUser(null);
       setWalletType(null);
@@ -463,6 +507,32 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         >
           <User className="mr-2 h-4 w-4" />
           My ID's
+        </DropdownMenuItem>
+        
+        {/* Profile Button */}
+        <DropdownMenuItem 
+          className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+          onClick={() => {
+            if (ensName || displayAddress) {
+              const profilePath = ensName || displayAddress;
+              window.location.href = `/${profilePath}`;
+            }
+            const backdrop = document.getElementById('wallet-dropdown-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.style.overflow = '';
+          }}
+        >
+          <UserCircle className="mr-2 h-4 w-4" />
+          <div className="flex flex-col">
+            <span className="font-medium">Profile</span>
+            {ensLoading ? (
+              <span className="text-xs text-gray-500 dark:text-gray-400">Loading...</span>
+            ) : (
+              <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[180px]">
+                {ensName || formatAddress(displayAddress)}
+              </span>
+            )}
+          </div>
         </DropdownMenuItem>
         
         {/* Show balance for Petra wallet */}
