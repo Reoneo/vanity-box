@@ -242,22 +242,17 @@ export const ProfileCard = ({
               )}
 
               {efpStats && (
-                <div className="flex justify-center gap-6">
+                <div className="flex justify-center items-center gap-1.5 text-sm">
                   <button
                     onClick={onFollowingClick}
-                    className="text-center hover:opacity-80 transition-opacity"
+                    className="font-semibold text-foreground hover:text-[#D4AF37] transition-colors"
                   >
-                    <div className="text-2xl font-bold text-[#D4AF37]">
-                      {efpStats.following_count}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Following</div>
+                    {efpStats.following_count}
                   </button>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-[#D4AF37]">
-                      {efpStats.followers_count}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Followers</div>
-                  </div>
+                  <span className="text-muted-foreground">Following</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
+                  <span className="text-muted-foreground">Followers</span>
                 </div>
               )}
 
