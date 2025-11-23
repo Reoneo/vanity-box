@@ -1136,7 +1136,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   // Fetch functions for dock sections
   const fetchNfts = async (next?: string) => {
     const address = web3BioProfile?.address || walletAddress;
-    if (!address) return;
+    if (!address || address === 'undefined') {
+      console.warn('Cannot fetch NFTs: No valid wallet address available');
+      return;
+    }
     try {
       setNftLoading(true);
       const data = await callEdge("get-opensea-nfts", {
