@@ -637,21 +637,20 @@ export const ProfileCard = ({
                     ))}
                   </div>
 
-                  {nftNextCursor && (
+                  {web3BioProfile?.address && (
                     <div className="flex justify-center pt-4">
                       <Button
-                        onClick={onLoadMoreNfts}
-                        disabled={nftLoading}
+                        asChild
                         className="bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30"
                       >
-                        {nftLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Loading...
-                          </>
-                        ) : (
-                          'Load More'
-                        )}
+                        <a
+                          href={`https://opensea.io/${web3BioProfile.address}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View On OpenSea
+                        </a>
                       </Button>
                     </div>
                   )}
