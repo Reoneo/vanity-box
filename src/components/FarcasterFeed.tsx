@@ -20,10 +20,20 @@ export const FarcasterFeed = ({ username, fid, walletAddress }: FarcasterFeedPro
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCasts();
-  }, [username, fid]);
+    // Only fetch if we have at least one identifier
+    if (username || fid || walletAddress) {
+      fetchCasts();
+    }
+  }, [username, fid, walletAddress]);
 
   const fetchCasts = async () => {
+    // Additional validation before making the API call
+    if (!username && !fid && !walletAddress) {
+      console.warn('Cannot fetch Farcaster casts: No valid identifier provided');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
 
