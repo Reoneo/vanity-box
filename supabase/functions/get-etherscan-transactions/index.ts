@@ -58,8 +58,8 @@ serve(async (req) => {
       }
 
       try {
-        // V2 API format: base URL + chainid parameter
-        const url = `${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc&apikey=${etherscanApiKey}`;
+        // V2 API format: base URL + chainid parameter - increased to 50 transactions
+        const url = `${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`;
         
         console.log(`📡 Calling ${chain.name} API (Chain ID: ${chain.chainId})...`);
         console.log(`🔗 API URL: ${url.replace(etherscanApiKey || '', 'HIDDEN_API_KEY')}`);
@@ -102,7 +102,7 @@ serve(async (req) => {
           return {
             chain: chain.name,
             chainKey,
-            transactions: data.result.slice(0, 10).map((tx: any) => ({
+            transactions: data.result.map((tx: any) => ({
               hash: tx.hash,
               from: tx.from,
               to: tx.to,
