@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,38 +11,19 @@ import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
 import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
 
-// Lazy load non-critical pages for faster initial load
-const NotFound = lazy(() => import("./pages/NotFound"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
-
-// Optimize QueryClient for 60fps performance
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => {
-  // Optimize scroll performance for 60fps
+  // Prevent only pull-to-refresh, allow internal scrolling
   useEffect(() => {
-    // Prevent pull-to-refresh and enable GPU acceleration
+    // Prevent pull-to-refresh on document level
     document.body.style.overscrollBehavior = 'none';
-    (document.body.style as any).webkitOverflowScrolling = 'touch';
-    document.documentElement.style.overscrollBehavior = 'none';
-    
-    // Enable CSS containment for better paint performance
-    document.body.style.contain = 'layout style paint';
-    
     return () => {
       document.body.style.overscrollBehavior = 'auto';
-      document.documentElement.style.overscrollBehavior = 'auto';
     };
   }, []);
 
@@ -58,17 +39,15 @@ const App = () => {
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
-                  <Suspense fallback={<div className="min-h-screen bg-background" />}>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                      <Route path="/terms-of-use" element={<TermsOfUse />} />
-                      {/* User profile routes - must come before catch-all */}
-                      <Route path="/:username" element={<Index />} />
-                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms-of-use" element={<TermsOfUse />} />
+                    {/* User profile routes - must come before catch-all */}
+                    <Route path="/:username" element={<Index />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
                 </BrowserRouter>
                   </TooltipProvider>
                 </FarcasterAuthProvider>
