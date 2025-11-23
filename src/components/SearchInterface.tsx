@@ -1863,7 +1863,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div 
                 className={cn(
                   "fixed left-0 right-0 bottom-[28px] flex flex-col z-[9997] px-4",
-                  showSearchBar ? "top-[190px]" : "top-[120px]"
+                  showSearchBar ? "top-[160px]" : "top-[90px]"
                 )}
               >
                 {/* Profile Card - scrollable content */}
@@ -1908,7 +1908,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           onClick: () => setActiveDockSection('socials'),
                           isActive: activeDockSection === 'socials',
                         }] : []),
-                        {
+                        // Only show NFT icon if NFTs are found or still loading
+                        ...((nfts && nfts.length > 0) || nftLoading ? [{
                           icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
                           label: t('nfts'),
                           onClick: () => {
@@ -1938,7 +1939,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             }
                           },
                           isActive: activeDockSection === 'nfts',
-                        },
+                        }] : []),
                         {
                           icon: <Activity className="w-6 h-6 text-[#D4AF37]" />,
                           label: t('activity'),

@@ -203,7 +203,7 @@ export const ProfileCard = ({
       <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)]">
             <div className="space-y-4 pb-6">
             <div className="relative">
               <div className="w-full h-48 overflow-hidden">
@@ -232,6 +232,15 @@ export const ProfileCard = ({
                 <h2 className="text-3xl font-bold text-center text-foreground">
                   {web3BioProfile.displayName}
                 </h2>
+              )}
+
+              {/* World App ENS Domain */}
+              {web3BioProfile?.identity && (
+                <div className="flex items-center justify-center">
+                  <span className="text-sm text-[#D4AF37] font-medium">
+                    {web3BioProfile.identity}
+                  </span>
+                </div>
               )}
 
               {currentWalletAddress && (
@@ -316,7 +325,7 @@ export const ProfileCard = ({
 
         {/* Socials Section */}
         {activeSection === 'socials' && (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)] p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
                 <Link2 className="w-5 h-5 text-[#D4AF37]" />
@@ -399,7 +408,7 @@ export const ProfileCard = ({
 
         {/* NFTs Section - Only show if user has NFTs or POAPs */}
         {activeSection === 'nfts' && (nfts.length > 0 || poaps.length > 0 || nftLoading) && (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-[calc(100vh-320px)]">
             <div className="p-4 border-b border-border/30">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -623,7 +632,7 @@ export const ProfileCard = ({
 
         {/* Activity/Transactions Section - Only show if user has transactions */}
         {activeSection === 'activity' && (transactions?.chains?.length > 0 || transactionsLoading) && (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)] p-6">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-[#D4AF37]">Wallet Activity</h3>
@@ -841,7 +850,7 @@ export const ProfileCard = ({
 
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)] p-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
               {castLoading ? (
@@ -955,11 +964,13 @@ export const ProfileCard = ({
 
         {/* XMTP Inbox Section */}
         {activeSection === 'inbox' && (
-          <XMTPInbox 
-            profileAddress={currentWalletAddress}
-            currentUserAddress={connectedWalletAddress}
-            isProfileOwner={currentWalletAddress === connectedWalletAddress}
-          />
+          <div className="h-[calc(100vh-320px)] overflow-hidden">
+            <XMTPInbox 
+              profileAddress={currentWalletAddress}
+              currentUserAddress={connectedWalletAddress}
+              isProfileOwner={currentWalletAddress === connectedWalletAddress}
+            />
+          </div>
         )}
       </Card>
 
