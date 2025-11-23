@@ -71,13 +71,7 @@ export const ProfileCard = ({
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
   const [selectedChain, setSelectedChain] = useState<string>("all");
 
-  // Disable body scrolling when profile card is displayed
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+  // No need to disable body scrolling - parent container handles overflow
 
   // Get unique collections from NFTs
   const availableCollections = useMemo(() => {
@@ -206,7 +200,7 @@ export const ProfileCard = ({
 
   return (
     <>
-      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative z-[9999] h-[calc(100vh-120px)] flex flex-col">
+      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto">

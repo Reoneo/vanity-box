@@ -1858,96 +1858,104 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </>
             )}
 
-            {/* Profile Card with Dock Navigation - placed outside conditionals */}
+            {/* Profile Card with Dock Navigation - fixed height container */}
             {web3BioProfile && !showMyIDs && (
-              <div className="mt-4">
-                <ProfileCard
-                  activeSection={activeDockSection}
-                  web3BioProfile={web3BioProfile}
-                  currentWalletAddress={web3BioProfile.address}
-                  connectedWalletAddress={walletAddress}
-                  efpStats={efpStats || undefined}
-                  poaps={poapTokens}
-                  socialIcons={socialIcons}
-                  nfts={nfts}
-                  nftLoading={nftLoading}
-                  nftNextCursor={nftNextCursor}
-                  latestCast={latestCast}
-                  castLoading={castLoading}
-                  firstTransactionDate={firstTransactionDate}
-                  onFollowingClick={handleFollowingClick}
-                  onFollowersClick={handleFollowersClick}
-                  onLoadMoreNfts={handleLoadMoreNfts}
-                  transactions={transactions}
-                  transactionsLoading={transactionsLoading}
-                />
+              <div className="fixed inset-0 top-[120px] bottom-[28px] flex flex-col z-[9997]">
+                {/* Profile Card - scrollable content */}
+                <div className="flex-1 overflow-hidden">
+                  <ProfileCard
+                    activeSection={activeDockSection}
+                    web3BioProfile={web3BioProfile}
+                    currentWalletAddress={web3BioProfile.address}
+                    connectedWalletAddress={walletAddress}
+                    efpStats={efpStats || undefined}
+                    poaps={poapTokens}
+                    socialIcons={socialIcons}
+                    nfts={nfts}
+                    nftLoading={nftLoading}
+                    nftNextCursor={nftNextCursor}
+                    latestCast={latestCast}
+                    castLoading={castLoading}
+                    firstTransactionDate={firstTransactionDate}
+                    onFollowingClick={handleFollowingClick}
+                    onFollowersClick={handleFollowersClick}
+                    onLoadMoreNfts={handleLoadMoreNfts}
+                    transactions={transactions}
+                    transactionsLoading={transactionsLoading}
+                  />
+                </div>
 
-                <Dock
-                  items={[
-                    {
-                      icon: <User className="w-6 h-6 text-[#D4AF37]" />,
-                      label: t('profile'),
-                      onClick: () => setActiveDockSection('profile'),
-                      isActive: activeDockSection === 'profile',
-                    },
-                    // Only show social links if user has any social links
-                    ...(web3BioProfile?.links && Object.keys(web3BioProfile.links).length > 0 ? [{
-                      icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
-                      label: t('socials'),
-                      onClick: () => setActiveDockSection('socials'),
-                      isActive: activeDockSection === 'socials',
-                    }] : []),
-                    {
-                      icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
-                      label: t('nfts'),
-                      onClick: () => {
-                        setActiveDockSection('nfts');
-                        const address = web3BioProfile?.address || walletAddress;
-                        
-                        // Comprehensive validation before fetching
-                        const isValidAddress = address && 
-                                              address !== 'undefined' && 
-                                              typeof address === 'string' && 
-                                              address.trim() !== '' &&
-                                              !(typeof address === 'object' && (address as any)?._type === 'undefined');
-                        
-                        console.log('NFT section clicked - validation:', { 
-                          address, 
-                          isValidAddress,
-                          web3BioAddress: web3BioProfile?.address,
-                          walletAddress,
-                          nftsLength: nfts.length 
-                        });
-                        
-                        // Only fetch NFTs if we have a valid wallet address and no NFTs loaded yet
-                        if (isValidAddress && nfts.length === 0) {
-                          fetchNfts();
-                        } else if (!isValidAddress) {
-                          console.warn('Cannot fetch NFTs: Invalid or missing wallet address');
-                        }
-                      },
-                      isActive: activeDockSection === 'nfts',
-                    },
-                    {
-                      icon: <Activity className="w-6 h-6 text-[#D4AF37]" />,
-                      label: t('activity'),
-                      onClick: () => {
-                        setActiveDockSection('activity');
-                        if (!transactions) {
-                          fetchTransactions();
-                        }
-                      },
-                      isActive: activeDockSection === 'activity',
-                    },
-                    // Inbox - Always show for messaging
-                    {
-                      icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,
-                      label: t('inbox'),
-                      onClick: () => setActiveDockSection('inbox'),
-                      isActive: activeDockSection === 'inbox',
-                    },
-                  ]}
-                />
+                {/* Dock - fixed at bottom of container */}
+                <div className="flex-shrink-0 pb-20 flex items-center justify-center pointer-events-none">
+                  <div className="pointer-events-auto">
+                    <Dock
+                      items={[
+                        {
+                          icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                          label: t('profile'),
+                          onClick: () => setActiveDockSection('profile'),
+                          isActive: activeDockSection === 'profile',
+                        },
+                        // Only show social links if user has any social links
+                        ...(web3BioProfile?.links && Object.keys(web3BioProfile.links).length > 0 ? [{
+                          icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
+                          label: t('socials'),
+                          onClick: () => setActiveDockSection('socials'),
+                          isActive: activeDockSection === 'socials',
+                        }] : []),
+                        {
+                          icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
+                          label: t('nfts'),
+                          onClick: () => {
+                            setActiveDockSection('nfts');
+                            const address = web3BioProfile?.address || walletAddress;
+                            
+                            // Comprehensive validation before fetching
+                            const isValidAddress = address && 
+                                                  address !== 'undefined' && 
+                                                  typeof address === 'string' && 
+                                                  address.trim() !== '' &&
+                                                  !(typeof address === 'object' && (address as any)?._type === 'undefined');
+                            
+                            console.log('NFT section clicked - validation:', { 
+                              address, 
+                              isValidAddress,
+                              web3BioAddress: web3BioProfile?.address,
+                              walletAddress,
+                              nftsLength: nfts.length 
+                            });
+                            
+                            // Only fetch NFTs if we have a valid wallet address and no NFTs loaded yet
+                            if (isValidAddress && nfts.length === 0) {
+                              fetchNfts();
+                            } else if (!isValidAddress) {
+                              console.warn('Cannot fetch NFTs: Invalid or missing wallet address');
+                            }
+                          },
+                          isActive: activeDockSection === 'nfts',
+                        },
+                        {
+                          icon: <Activity className="w-6 h-6 text-[#D4AF37]" />,
+                          label: t('activity'),
+                          onClick: () => {
+                            setActiveDockSection('activity');
+                            if (!transactions) {
+                              fetchTransactions();
+                            }
+                          },
+                          isActive: activeDockSection === 'activity',
+                        },
+                        // Inbox - Always show for messaging
+                        {
+                          icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,
+                          label: t('inbox'),
+                          onClick: () => setActiveDockSection('inbox'),
+                          isActive: activeDockSection === 'inbox',
+                        },
+                      ]}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
