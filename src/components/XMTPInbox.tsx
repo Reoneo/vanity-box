@@ -255,10 +255,10 @@ export const XMTPInbox = ({
 
   // Main inbox UI
   return (
-    <div className="flex flex-col h-[600px] rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+    <div className="flex flex-col h-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
       {/* Conversation List - Only for profile owner */}
       {isProfileOwner && (
-        <div className="border-b border-border bg-muted/30">
+        <div className="border-b border-border bg-muted/30 flex-shrink-0">
           <div className="p-3 border-b border-border/50">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-primary" />
@@ -270,7 +270,7 @@ export const XMTPInbox = ({
               )}
             </div>
           </div>
-          <ScrollArea className="h-52">
+          <div className="h-52 overflow-auto">
             {conversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="p-3 rounded-full bg-muted mb-3">
@@ -317,12 +317,12 @@ export const XMTPInbox = ({
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       )}
 
       {/* Messages Display */}
-      <ScrollArea className="flex-1 p-4 bg-background/50">
+      <div className="flex-1 overflow-auto p-4 bg-background/50">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <div className="p-4 rounded-full bg-muted/50 mb-4">
@@ -387,7 +387,7 @@ export const XMTPInbox = ({
             })}
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* Message Input */}
       <div className="p-4 border-t border-border bg-background">
