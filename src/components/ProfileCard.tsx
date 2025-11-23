@@ -405,25 +405,25 @@ export const ProfileCard = ({
                 </div>
               ) : (
                 poaps.map((poap) => (
-                  <Card
+                  <div
                     key={poap.tokenId}
-                    className="p-3 bg-card/50 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/30 transition-all duration-300 cursor-pointer"
+                    className="flex flex-col items-center gap-2 cursor-pointer group"
                     onClick={() => setSelectedPoap(poap)}
                   >
-                    <div className="aspect-square rounded-lg overflow-hidden border-2 border-[#D4AF37]/20 mb-2">
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-[#D4AF37]/30 group-hover:border-[#D4AF37] transition-all duration-300 group-hover:scale-105">
                       <img
                         src={poap.eventImageUrl}
                         alt={poap.eventName}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="text-xs font-semibold text-foreground text-center truncate">
+                    <div className="text-xs font-semibold text-foreground text-center truncate max-w-[140px]">
                       {poap.eventName}
                     </div>
                     <div className="text-xs text-muted-foreground text-center">
                       {poap.eventYear}
                     </div>
-                  </Card>
+                  </div>
                 ))
               )}
             </div>
