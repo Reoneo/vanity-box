@@ -299,6 +299,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   useEffect(() => {
     if (web3BioProfile) {
       setActiveDockSection('profile');
+      // Clear previous profile's NFT data
+      setNfts([]);
+      setNftNextCursor(null);
+      setLatestCast(null);
+      setPoapTokens([]);
     }
   }, [web3BioProfile]);
 
