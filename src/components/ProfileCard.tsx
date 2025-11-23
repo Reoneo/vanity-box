@@ -328,6 +328,7 @@ export const ProfileCard = ({
                 ) : null}
               </div>
             </div>
+            </div>
           </div>
         )}
 
