@@ -189,10 +189,9 @@ export const ProfileCard = ({
                     href={web3BioProfile.website || web3BioProfile.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-[#D4AF37] hover:underline inline-flex items-center gap-1"
+                    className="text-sm text-[#D4AF37] hover:underline"
                   >
-                    {web3BioProfile.website || web3BioProfile.url}
-                    <ExternalLink className="w-3 h-3" />
+                    {(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}
                   </a>
                 </div>
               )}
