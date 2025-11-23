@@ -1158,11 +1158,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     
     try {
       setNftLoading(true);
-      const data = await callEdge("get-opensea-nfts", {
+      
+      // Final validation before API call
+      if (!addressString || addressString.trim() === '' || addressString === 'undefined') {
+        console.error('Cannot call API: Invalid addressString', addressString);
+        return;
+      }
+      
+      const requestBody = {
         walletAddress: addressString,
         limit: 20,
         next,
-      });
+      };
+      
+      console.log('Calling get-opensea-nfts with body:', requestBody);
+      
+      const data = await callEdge("get-opensea-nfts", requestBody);
       if (next) {
         setNfts((prev) => [...prev, ...data.nfts]);
       } else {
