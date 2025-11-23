@@ -1,18 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Inbox, Wallet } from "lucide-react";
+import { Send, Inbox, Wallet, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Client } from "@xmtp/xmtp-js";
 import { ethers } from "ethers";
+import { formatDistanceToNow } from "date-fns";
+import { Buffer } from 'buffer';
+
+// Polyfill Buffer for XMTP
+if (typeof window !== 'undefined') {
+  window.Buffer = Buffer;
+}
 
 declare global {
   interface Window {
     ethereum?: any;
+    Buffer: typeof Buffer;
   }
+}
+
+interface Message {
+  id: string;
+  content: string;
+  senderAddress: string;
+  sent: Date;
+}
+
+interface Conversation {
+  peerAddress: string;
+  messages: Message[];
+  lastMessageTime: Date;
 }
 
 interface XMTPInboxProps {
@@ -30,12 +51,45 @@ export const XMTPInbox = ({
   const [isInitializing, setIsInitializing] = useState(false);
   const [recipientAddress, setRecipientAddress] = useState("");
   const [message, setMessage] = useState("");
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const isConnected = !!currentUserAddress;
   const canMessage = isConnected && profileAddress;
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversations, activeConversation]);
+
+  const loadConversationMessages = async (conv: any, peerAddr: string) => {
+    try {
+      const msgs = await conv.messages();
+      const formattedMessages: Message[] = msgs.map((m: any) => ({
+        id: m.id,
+        content: m.content,
+        senderAddress: m.senderAddress,
+        sent: m.sent,
+      }));
+
+      return {
+        peerAddress: peerAddr,
+        messages: formattedMessages,
+        lastMessageTime: formattedMessages[formattedMessages.length - 1]?.sent || new Date(),
+      };
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      return {
+        peerAddress: peerAddr,
+        messages: [],
+        lastMessageTime: new Date(),
+      };
+    }
+  };
 
   const initializeXMTP = async () => {
     if (!currentUserAddress) return;
@@ -43,19 +97,30 @@ export const XMTPInbox = ({
     try {
       setIsInitializing(true);
       
-      // Request wallet connection via browser wallet (MetaMask, etc.)
       if (typeof window.ethereum !== 'undefined') {
         const provider = new ethers.providers.Web3Provider(window.ethereum as any);
         const signer = provider.getSigner();
         
-        // Create XMTP client
         const xmtpClient = await Client.create(signer, { env: 'production' });
         setClient(xmtpClient);
 
         // Load conversations if profile owner
         if (isProfileOwner) {
+          setLoadingMessages(true);
           const allConversations = await xmtpClient.conversations.list();
-          setConversations(allConversations);
+          
+          // Load messages for each conversation
+          const conversationsWithMessages = await Promise.all(
+            allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
+          );
+          
+          // Sort by last message time
+          conversationsWithMessages.sort((a, b) => 
+            b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
+          );
+          
+          setConversations(conversationsWithMessages);
+          setLoadingMessages(false);
         }
 
         toast({
@@ -84,11 +149,11 @@ export const XMTPInbox = ({
   const sendMessage = async () => {
     if (!client || !message.trim()) return;
 
-    const targetAddress = recipientAddress || profileAddress;
+    const targetAddress = recipientAddress || activeConversation || profileAddress;
     if (!targetAddress) {
       toast({
         title: "No recipient",
-        description: "Please enter a wallet address or ENS name",
+        description: "Please select a conversation or enter an address",
         variant: "destructive",
       });
       return;
@@ -97,7 +162,6 @@ export const XMTPInbox = ({
     try {
       setLoading(true);
       
-      // Resolve ENS if needed
       let resolvedAddress = targetAddress;
       if (targetAddress.includes('.')) {
         const provider = new ethers.providers.Web3Provider(window.ethereum as any);
@@ -107,7 +171,6 @@ export const XMTPInbox = ({
         }
       }
 
-      // Check if recipient can receive XMTP messages
       const canMessage = await client.canMessage(resolvedAddress);
       if (!canMessage) {
         toast({
@@ -118,22 +181,30 @@ export const XMTPInbox = ({
         return;
       }
 
-      // Create conversation and send message
       const conversation = await client.conversations.newConversation(resolvedAddress);
       await conversation.send(message);
 
       toast({
         title: "Message sent",
-        description: `Your message was delivered to ${targetAddress}`,
+        description: `Your message was delivered`,
       });
 
       setMessage("");
       setRecipientAddress("");
 
-      // Refresh conversations if owner
+      // Refresh conversations
       if (isProfileOwner) {
+        setLoadingMessages(true);
         const allConversations = await client.conversations.list();
-        setConversations(allConversations);
+        const conversationsWithMessages = await Promise.all(
+          allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
+        );
+        conversationsWithMessages.sort((a, b) => 
+          b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
+        );
+        setConversations(conversationsWithMessages);
+        setActiveConversation(resolvedAddress);
+        setLoadingMessages(false);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -182,8 +253,10 @@ export const XMTPInbox = ({
     );
   }
 
-  // Profile owner inbox view
+  // Profile owner inbox view with conversation history
   if (isProfileOwner && client) {
+    const activeConv = conversations.find(c => c.peerAddress === activeConversation);
+
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-center gap-2 mb-3">
@@ -191,55 +264,177 @@ export const XMTPInbox = ({
           <h3 className="text-sm font-semibold text-white">Inbox</h3>
         </div>
         
-        <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
-          <div className="space-y-3">
-            <h4 className="font-semibold text-foreground">Start a Conversation</h4>
-            <Input
-              placeholder="Enter wallet address or ENS/Namestone domain"
-              value={recipientAddress}
-              onChange={(e) => setRecipientAddress(e.target.value)}
-              className="bg-background/50 border-border/50"
-            />
-            <Input
-              placeholder="Type your message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              className="bg-background/50 border-border/50"
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={loading || !message.trim() || !recipientAddress}
-              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Send Message
-            </Button>
-          </div>
-
-          {conversations.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border/50">
-              <h4 className="font-semibold text-foreground mb-3">Recent Conversations</h4>
+        <div className="flex gap-3 h-[500px]">
+          {/* Conversations List */}
+          <Card className="w-1/3 p-3 bg-card/50 backdrop-blur-sm border-border/50 overflow-y-auto">
+            <h4 className="font-semibold text-foreground mb-3 text-sm">Conversations</h4>
+            {loadingMessages ? (
               <div className="space-y-2">
-                {conversations.slice(0, 3).map((conv, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2 rounded-lg bg-background/30 hover:bg-background/50 transition-colors"
-                  >
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {conv.peerAddress.slice(0, 6)}...{conv.peerAddress.slice(-4)}
-                    </p>
-                  </div>
+                {[1, 2, 3].map(i => (
+                  <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
-            </div>
-          )}
-        </Card>
+            ) : conversations.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                No conversations yet
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {conversations.map((conv) => (
+                  <button
+                    key={conv.peerAddress}
+                    onClick={() => setActiveConversation(conv.peerAddress)}
+                    className={`w-full p-2 rounded-lg text-left transition-colors ${
+                      activeConversation === conv.peerAddress
+                        ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/50'
+                        : 'bg-background/30 hover:bg-background/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <Avatar className="w-8 h-8 border border-[#D4AF37]/30">
+                        <AvatarFallback className="bg-[#D4AF37]/10 text-[#D4AF37] text-xs">
+                          {conv.peerAddress.slice(2, 4).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-mono text-foreground truncate">
+                          {conv.peerAddress.slice(0, 6)}...{conv.peerAddress.slice(-4)}
+                        </p>
+                        {conv.messages.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {conv.messages[conv.messages.length - 1].content}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(conv.lastMessageTime, { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Messages View */}
+          <Card className="flex-1 p-4 bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
+            {activeConv ? (
+              <>
+                {/* Conversation Header */}
+                <div className="pb-3 border-b border-border/50 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-10 h-10 border-2 border-[#D4AF37]/30">
+                      <AvatarFallback className="bg-[#D4AF37]/10 text-[#D4AF37]">
+                        {activeConv.peerAddress.slice(2, 4).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold text-foreground font-mono text-sm">
+                        {activeConv.peerAddress.slice(0, 8)}...{activeConv.peerAddress.slice(-6)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {activeConv.messages.length} messages
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto space-y-3 mb-3">
+                  {activeConv.messages.map((msg) => {
+                    const isOwnMessage = msg.senderAddress.toLowerCase() === currentUserAddress?.toLowerCase();
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
+                      >
+                        <Avatar className="w-8 h-8 border border-[#D4AF37]/30 flex-shrink-0">
+                          <AvatarFallback className="bg-[#D4AF37]/10 text-[#D4AF37] text-xs">
+                            {msg.senderAddress.slice(2, 4).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className={`flex flex-col max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                          <div
+                            className={`rounded-lg px-3 py-2 ${
+                              isOwnMessage
+                                ? 'bg-[#D4AF37] text-black'
+                                : 'bg-background/80 text-foreground'
+                            }`}
+                          >
+                            <p className="text-sm break-words">{msg.content}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(new Date(msg.sent), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Message Input */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Type your message..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    className="bg-background/50 border-border/50"
+                  />
+                  <Button
+                    onClick={sendMessage}
+                    disabled={loading || !message.trim()}
+                    className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+                <Inbox className="w-16 h-16 text-[#D4AF37]/50 mb-4" />
+                <h4 className="font-semibold text-foreground mb-2">Start a Conversation</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Enter a wallet address or ENS/Namestone domain below
+                </p>
+                <div className="w-full max-w-md space-y-3">
+                  <Input
+                    placeholder="0x... or name.eth"
+                    value={recipientAddress}
+                    onChange={(e) => setRecipientAddress(e.target.value)}
+                    className="bg-background/50 border-border/50"
+                  />
+                  <Input
+                    placeholder="Type your message..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    className="bg-background/50 border-border/50"
+                  />
+                  <Button
+                    onClick={sendMessage}
+                    disabled={loading || !message.trim() || !recipientAddress}
+                    className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                    Send Message
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
     );
   }
