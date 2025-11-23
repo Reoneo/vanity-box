@@ -13,10 +13,11 @@ serve(async (req) => {
   try {
     let body;
     try {
-      body = await req.json();
+      const text = await req.text();
+      body = text ? JSON.parse(text) : {};
     } catch (e) {
       console.error('❌ Failed to parse request body:', e);
-      throw new Error('Invalid request body');
+      body = {};
     }
     
     const { username, fid, walletAddress, limit = 10, cursor } = body;
