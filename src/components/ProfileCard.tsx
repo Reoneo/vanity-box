@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
@@ -759,23 +759,41 @@ export const ProfileCard = ({
                   {/* Mobile-Optimized Summary Banner */}
                   <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-card via-card to-primary/5">
                     <div className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
-                          <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-2">
-                            <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary via-primary-luxury to-primary bg-clip-text text-transparent">
-                              {transactions.chains.length}
-                            </p>
-                            <p className="text-sm text-muted-foreground font-medium">Active Networks</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Date Joined */}
+                        {transactions.firstTransactionDate && (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
+                                <Calendar className="w-5 h-5 text-primary-foreground" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground font-medium">Date Joined</p>
+                                <p className="text-sm font-bold text-foreground">
+                                  {new Date(transactions.firstTransactionDate).toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric', 
+                                    year: 'numeric' 
+                                  })}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl sm:text-3xl font-bold text-foreground">
-                            {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)}
-                          </p>
-                          <p className="text-xs text-muted-foreground font-medium">Total</p>
+                        )}
+                        
+                        {/* Total Transactions */}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
+                              <Activity className="w-5 h-5 text-primary-foreground" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground font-medium">Activities</p>
+                              <p className="text-sm font-bold text-foreground">
+                                {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
