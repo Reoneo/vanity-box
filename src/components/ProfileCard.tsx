@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ProfileCardProps {
-  activeSection: 'profile' | 'socials' | 'poaps' | 'nfts' | 'farcaster';
+  activeSection: 'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity';
   web3BioProfile?: any;
   currentWalletAddress?: string;
   efpStats?: any;
@@ -36,6 +36,8 @@ interface ProfileCardProps {
   onFollowingClick?: () => void;
   onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
+  transactions?: any;
+  transactionsLoading?: boolean;
 }
 
 export const ProfileCard = ({
@@ -54,13 +56,14 @@ export const ProfileCard = ({
   onFollowingClick,
   onFollowersClick,
   onLoadMoreNfts,
+  transactions,
+  transactionsLoading = false,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
   const [selectedNft, setSelectedNft] = useState<any>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
-  const [showAllPoaps, setShowAllPoaps] = useState(false);
 
   // Disable body scrolling when profile card is displayed
   useEffect(() => {
@@ -76,27 +79,34 @@ export const ProfileCard = ({
     return Array.from(collections).sort();
   }, [nfts]);
 
-  // Filter NFTs by selected collections and exclude POAPs
+  // Filter NFTs by selected collections (no longer excluding POAPs)
   const filteredNfts = useMemo(() => {
-    // First, filter out POAP v2 NFTs
-    const nonPoapNfts = nfts.filter(nft => {
-      const isPoapV2 = nft.contract?.toLowerCase() === '0x22c1f6050e56d2876009903609a2cc3fef83b415' ||
-                      nft.collection?.toLowerCase().includes('poap');
-      return !isPoapV2;
-    });
-    
     if (selectedCollections.length === 0) {
-      return nonPoapNfts;
+      return nfts;
     }
-    return nonPoapNfts.filter(nft => {
+    return nfts.filter(nft => {
       const collection = nft.collection || 'Unknown Collection';
       return selectedCollections.includes(collection);
     });
   }, [nfts, selectedCollections]);
 
-  // Group NFTs by collection
+  // Group NFTs by collection, including POAPs as a collection
   const groupedNfts = useMemo(() => {
     const groups: Record<string, any[]> = {};
+    
+    // Add POAPs as a collection if there are any
+    if (poaps && poaps.length > 0) {
+      groups['POAPs'] = poaps.map(poap => ({
+        ...poap,
+        collection: 'POAPs',
+        name: poap.eventName,
+        image_url: poap.eventImageUrl,
+        identifier: poap.tokenId,
+        isPoap: true,
+      }));
+    }
+    
+    // Add regular NFTs
     filteredNfts.forEach(nft => {
       const collection = nft.collection || 'Unknown Collection';
       if (!groups[collection]) {
@@ -394,113 +404,6 @@ export const ProfileCard = ({
           </div>
         )}
 
-        {/* POAPs Section */}
-        {activeSection === 'poaps' && (
-          <div className="p-6 pb-6">
-            <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">
-              <span className="inline-block rotate-180">🏅</span> POAPs
-            </h3>
-            
-            {poaps.length === 0 ? (
-              <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
-                <div className="text-7xl opacity-30 mb-4">🏅</div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">No POAPs Found</h4>
-                <p className="text-sm text-muted-foreground">This wallet doesn't have any POAPs yet</p>
-              </div>
-            ) : showAllPoaps ? (
-              // Show all POAPs in grid
-              <div className="space-y-4 animate-fade-in">
-                <div className="flex items-center gap-3 pb-4 border-b border-border/40">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllPoaps(false)}
-                    className="text-[#D4AF37] hover:text-[#D4AF37]/80 hover:bg-[#D4AF37]/10"
-                  >
-                    <ChevronDown className="w-4 h-4 mr-2 rotate-90" />
-                    Back
-                  </Button>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-foreground text-lg">All POAPs</h4>
-                    <p className="text-xs text-muted-foreground">{poaps.length} events attended</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
-                  {poaps.map((poap) => (
-                    <div
-                      key={poap.tokenId}
-                      className="flex flex-col items-center gap-2 cursor-pointer group"
-                      onClick={() => setSelectedPoap(poap)}
-                    >
-                      <div className="relative w-full aspect-square rounded-full overflow-hidden border-2 border-[#D4AF37]/30 group-hover:border-[#D4AF37] transition-all duration-300 group-hover:scale-105">
-                        <img
-                          src={poap.eventImageUrl}
-                          alt={poap.eventName}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                      <div className="text-xs font-semibold text-foreground text-center line-clamp-2 px-1">
-                        {poap.eventName}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {poap.eventYear}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              // Show expandable button
-              <button
-                onClick={() => setShowAllPoaps(true)}
-                className="w-full p-6 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-all duration-300 hover:scale-[1.02] group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* Preview Images */}
-                    <div className="flex -space-x-4">
-                      {poaps.slice(0, 4).map((poap, idx) => (
-                        <div 
-                          key={idx}
-                          className="w-16 h-16 rounded-full overflow-hidden border-2 border-background bg-muted/20 ring-2 ring-[#D4AF37]/30"
-                        >
-                          <img 
-                            src={poap.eventImageUrl} 
-                            alt="" 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                      {poaps.length > 4 && (
-                        <div className="w-16 h-16 rounded-full bg-[#D4AF37]/20 border-2 border-background flex items-center justify-center ring-2 ring-[#D4AF37]/30">
-                          <span className="text-sm font-bold text-[#D4AF37]">
-                            +{poaps.length - 4}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Collection Info */}
-                    <div className="text-left">
-                      <h4 className="font-bold text-foreground text-xl group-hover:text-[#D4AF37] transition-colors">
-                        View All POAPs
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {poaps.length} events attended across {new Set(poaps.map(p => p.eventYear)).size} years
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Arrow */}
-                  <ChevronDown className="w-6 h-6 text-[#D4AF37] -rotate-90 group-hover:translate-x-2 transition-transform" />
-                </div>
-              </button>
-            )}
-          </div>
-        )}
-
         {/* NFTs Section */}
         {activeSection === 'nfts' && (
           <div className="p-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
@@ -712,7 +615,7 @@ export const ProfileCard = ({
                                 {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
                                   <div 
                                     key={idx}
-                                    className="w-12 h-12 rounded-lg overflow-hidden border-2 border-background bg-muted/20"
+                                    className={`w-12 h-12 ${collection === 'POAPs' ? 'rounded-full' : 'rounded-lg'} overflow-hidden border-2 border-background bg-muted/20`}
                                   >
                                     {nft.image_url ? (
                                       <img 
@@ -722,7 +625,7 @@ export const ProfileCard = ({
                                       />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center text-xl">
-                                        🖼️
+                                        {collection === 'POAPs' ? '🏅' : '🖼️'}
                                       </div>
                                     )}
                                   </div>
