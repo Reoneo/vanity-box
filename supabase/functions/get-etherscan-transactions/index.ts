@@ -58,43 +58,53 @@ serve(async (req) => {
       }
 
       try {
-        // Fetch both regular transactions and ERC-20 token transfers
-        const [txResponse, tokenTxResponse] = await Promise.all([
+        // Fetch multiple data types in parallel
+        const [balanceResponse, txResponse, tokenTxResponse, nftTxResponse, erc1155Response, internalTxResponse] = await Promise.all([
+          // Native balance
+          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`),
           // Regular transactions
           fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`),
           // ERC-20 token transfers
-          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`)
+          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`),
+          // ERC-721 NFT transfers
+          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`),
+          // ERC-1155 NFT transfers
+          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=token1155tx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`),
+          // Internal transactions
+          fetch(`${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${etherscanApiKey}`)
         ]);
         
         console.log(`📡 Calling ${chain.name} API (Chain ID: ${chain.chainId})...`);
         
-        if (!txResponse.ok || !tokenTxResponse.ok) {
+        if (!txResponse.ok) {
           console.error(`❌ ${chain.name} API HTTP error`);
           return null;
         }
 
-        const [txData, tokenTxData] = await Promise.all([
+        const [balanceData, txData, tokenTxData, nftTxData, erc1155Data, internalTxData] = await Promise.all([
+          balanceResponse.json(),
           txResponse.json(),
-          tokenTxResponse.json()
+          tokenTxResponse.json(),
+          nftTxResponse.json(),
+          erc1155Response.json(),
+          internalTxResponse.json()
         ]);
         
-        console.log(`📦 ${chain.name} Regular TX Response:`, JSON.stringify({
+        console.log(`📦 ${chain.name} Balance:`, balanceData.result);
+        console.log(`📦 ${chain.name} Regular TX:`, JSON.stringify({
           status: txData.status,
-          message: txData.message,
-          resultCount: Array.isArray(txData.result) ? txData.result.length : 'not an array',
+          count: Array.isArray(txData.result) ? txData.result.length : 0,
         }));
         
-        console.log(`📦 ${chain.name} Token TX Response:`, JSON.stringify({
-          status: tokenTxData.status,
-          message: tokenTxData.message,
-          resultCount: Array.isArray(tokenTxData.result) ? tokenTxData.result.length : 'not an array',
-        }));
-        
+        const balance = balanceData.status === '1' ? balanceData.result : '0';
         const hasRegularTx = txData.status === '1' && Array.isArray(txData.result) && txData.result.length > 0;
         const hasTokenTx = tokenTxData.status === '1' && Array.isArray(tokenTxData.result) && tokenTxData.result.length > 0;
+        const hasNftTx = nftTxData.status === '1' && Array.isArray(nftTxData.result) && nftTxData.result.length > 0;
+        const hasErc1155 = erc1155Data.status === '1' && Array.isArray(erc1155Data.result) && erc1155Data.result.length > 0;
+        const hasInternalTx = internalTxData.status === '1' && Array.isArray(internalTxData.result) && internalTxData.result.length > 0;
         
-        if (!hasRegularTx && !hasTokenTx) {
-          console.log(`ℹ️ ${chain.name}: No transactions found`);
+        if (!hasRegularTx && !hasTokenTx && !hasNftTx && !hasErc1155 && !hasInternalTx && balance === '0') {
+          console.log(`ℹ️ ${chain.name}: No activity found`);
           return null;
         }
 
@@ -119,8 +129,6 @@ serve(async (req) => {
           value: tx.value,
           timestamp: parseInt(tx.timeStamp) * 1000,
           blockNumber: tx.blockNumber,
-          gasUsed: tx.gasUsed,
-          gasPrice: tx.gasPrice,
           tokenName: tx.tokenName,
           tokenSymbol: tx.tokenSymbol,
           tokenDecimal: tx.tokenDecimal,
@@ -128,17 +136,55 @@ serve(async (req) => {
           type: 'token'
         })) : [];
 
-        console.log(`✅ ${chain.name}: Found ${transactions.length} regular tx, ${tokenTransfers.length} token transfers`);
+        const nftTransfers = hasNftTx ? nftTxData.result.map((tx: any) => ({
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          tokenID: tx.tokenID,
+          tokenName: tx.tokenName,
+          tokenSymbol: tx.tokenSymbol,
+          contractAddress: tx.contractAddress,
+          timestamp: parseInt(tx.timeStamp) * 1000,
+          type: 'nft-721'
+        })) : [];
+
+        const erc1155Transfers = hasErc1155 ? erc1155Data.result.map((tx: any) => ({
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          tokenID: tx.tokenID,
+          tokenValue: tx.tokenValue,
+          tokenName: tx.tokenName,
+          tokenSymbol: tx.tokenSymbol,
+          contractAddress: tx.contractAddress,
+          timestamp: parseInt(tx.timeStamp) * 1000,
+          type: 'nft-1155'
+        })) : [];
+
+        const internalTransactions = hasInternalTx ? internalTxData.result.map((tx: any) => ({
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          value: tx.value,
+          timestamp: parseInt(tx.timeStamp) * 1000,
+          isError: tx.isError === '1',
+          type: 'internal'
+        })) : [];
+
+        console.log(`✅ ${chain.name}: Balance: ${balance}, TX: ${transactions.length}, Tokens: ${tokenTransfers.length}, NFTs: ${nftTransfers.length + erc1155Transfers.length}, Internal: ${internalTransactions.length}`);
         
         return {
           chain: chain.name,
           chainKey,
+          balance,
           transactions,
           tokenTransfers,
-          totalTransactions: transactions.length + tokenTransfers.length,
+          nftTransfers: [...nftTransfers, ...erc1155Transfers],
+          internalTransactions,
+          totalTransactions: transactions.length + tokenTransfers.length + nftTransfers.length + erc1155Transfers.length + internalTransactions.length,
         };
       } catch (error) {
-        console.error(`❌ Error fetching ${chain.name} transactions:`, error);
+        console.error(`❌ Error fetching ${chain.name} data:`, error);
         return null;
       }
     });

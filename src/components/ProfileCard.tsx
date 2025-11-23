@@ -740,6 +740,32 @@ export const ProfileCard = ({
                 </div>
               ) : transactions.chains && transactions.chains.length > 0 ? (
                 <div className="space-y-6">
+                  {/* Activity Overview Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+                      <div className="text-xs text-muted-foreground mb-1">Total Chains</div>
+                      <div className="text-2xl font-bold text-blue-400">{transactions.chains.length}</div>
+                    </Card>
+                    <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+                      <div className="text-xs text-muted-foreground mb-1">Total Activity</div>
+                      <div className="text-2xl font-bold text-green-400">
+                        {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)}
+                      </div>
+                    </Card>
+                    <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                      <div className="text-xs text-muted-foreground mb-1">Token Transfers</div>
+                      <div className="text-2xl font-bold text-purple-400">
+                        {transactions.chains.reduce((sum: number, c: any) => sum + (c.tokenTransfers?.length || 0), 0)}
+                      </div>
+                    </Card>
+                    <Card className="p-4 bg-gradient-to-br from-pink-500/10 to-pink-600/5 border-pink-500/20">
+                      <div className="text-xs text-muted-foreground mb-1">NFT Transfers</div>
+                      <div className="text-2xl font-bold text-pink-400">
+                        {transactions.chains.reduce((sum: number, c: any) => sum + (c.nftTransfers?.length || 0), 0)}
+                      </div>
+                    </Card>
+                  </div>
+
                   <ActivityGraph 
                     chains={transactions.chains.map((c: any) => ({
                       chain: c.chain,
@@ -750,138 +776,224 @@ export const ProfileCard = ({
                   
                   <div className="space-y-4">
                     {transactions.chains.map((chain: any) => (
-                      <div key={chain.chainKey} className="border border-border/50 rounded-xl overflow-hidden bg-card/30">
-                        <div className="bg-gradient-to-r from-[#D4AF37]/10 to-transparent p-4 border-b border-border/50">
+                      <Card key={chain.chainKey} className="overflow-hidden bg-card/50 backdrop-blur-sm border-primary/20">
+                        {/* Chain Header */}
+                        <div className="bg-gradient-to-r from-[#D4AF37]/20 via-[#D4AF37]/10 to-transparent p-4 border-b border-border/50">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-bold text-foreground flex items-center gap-2">
-                                <span className="text-[#D4AF37]">{chain.chain}</span>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-foreground flex items-center gap-2 mb-2">
+                                <span className="text-[#D4AF37] text-lg">{chain.chain}</span>
                               </h4>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {chain.transactions?.length || 0} regular tx · {chain.tokenTransfers?.length || 0} token transfers
-                              </p>
+                              <div className="flex flex-wrap gap-3 text-xs">
+                                {chain.balance && chain.balance !== '0' && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Balance:</span>
+                                    <span className="font-semibold text-green-400">
+                                      {(parseInt(chain.balance) / 1e18).toFixed(6)}
+                                    </span>
+                                  </div>
+                                )}
+                                {chain.transactions?.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">💸</span>
+                                    <span className="font-medium">{chain.transactions.length} TX</span>
+                                  </div>
+                                )}
+                                {chain.tokenTransfers?.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">🪙</span>
+                                    <span className="font-medium">{chain.tokenTransfers.length} Tokens</span>
+                                  </div>
+                                )}
+                                {chain.nftTransfers?.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">🖼️</span>
+                                    <span className="font-medium">{chain.nftTransfers.length} NFTs</span>
+                                  </div>
+                                )}
+                                {chain.internalTransactions?.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">🔄</span>
+                                    <span className="font-medium">{chain.internalTransactions.length} Internal</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <a
                               href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/address/${web3BioProfile?.address}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-[#D4AF37] hover:underline flex items-center gap-1"
+                              className="text-xs text-[#D4AF37] hover:underline flex items-center gap-1 shrink-0"
                             >
-                              View on Explorer →
+                              Explorer →
                             </a>
                           </div>
                         </div>
                         
-                        {/* Token Transfers Section */}
-                        {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
-                          <div className="border-b border-border/30">
-                            <div className="bg-muted/10 px-4 py-2">
-                              <h5 className="text-sm font-semibold text-foreground">🪙 Token Transfers</h5>
-                            </div>
-                            <div className="divide-y divide-border/30">
-                              {chain.tokenTransfers.slice(0, 5).map((tx: any) => (
-                                <div key={tx.hash + tx.contractAddress} className="p-4 hover:bg-muted/20 transition-colors">
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium">
-                                          {tx.tokenSymbol}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">{tx.tokenName}</span>
+                        <div className="divide-y divide-border/30">
+                          {/* NFT Transfers */}
+                          {chain.nftTransfers && chain.nftTransfers.length > 0 && (
+                            <div className="p-4 bg-pink-500/5">
+                              <h5 className="text-sm font-semibold text-pink-400 mb-3 flex items-center gap-2">
+                                🖼️ NFT Transfers ({chain.nftTransfers.length})
+                              </h5>
+                              <div className="space-y-2">
+                                {chain.nftTransfers.slice(0, 3).map((tx: any, idx: number) => (
+                                  <div key={tx.hash + tx.tokenID + idx} className="p-3 bg-card/50 rounded-lg border border-pink-500/20">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                          <span className="text-xs px-2 py-1 rounded-full bg-pink-500/20 text-pink-300 font-medium">
+                                            {tx.type === 'nft-1155' ? 'ERC-1155' : 'ERC-721'}
+                                          </span>
+                                          <span className="text-xs font-medium text-foreground truncate">
+                                            {tx.tokenName || 'Unknown NFT'}
+                                          </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1 text-xs">
+                                          <div className="truncate">
+                                            <span className="text-muted-foreground">Token ID: </span>
+                                            <span className="font-mono text-pink-300">#{tx.tokenID}</span>
+                                          </div>
+                                          {tx.tokenValue && (
+                                            <div>
+                                              <span className="text-muted-foreground">Qty: </span>
+                                              <span className="font-medium">{tx.tokenValue}</span>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="grid grid-cols-2 gap-2 text-xs">
-                                        <div>
-                                          <span className="text-muted-foreground">From: </span>
-                                          <span className="font-mono">{tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
+                                      <a
+                                        href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-pink-400 hover:text-pink-300"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Token Transfers */}
+                          {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
+                            <div className="p-4 bg-blue-500/5">
+                              <h5 className="text-sm font-semibold text-blue-400 mb-3 flex items-center gap-2">
+                                🪙 Token Transfers ({chain.tokenTransfers.length})
+                              </h5>
+                              <div className="space-y-2">
+                                {chain.tokenTransfers.slice(0, 3).map((tx: any, idx: number) => (
+                                  <div key={tx.hash + tx.contractAddress + idx} className="p-3 bg-card/50 rounded-lg border border-blue-500/20">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-300 font-medium">
+                                            {tx.tokenSymbol}
+                                          </span>
                                         </div>
-                                        <div>
-                                          <span className="text-muted-foreground">To: </span>
-                                          <span className="font-mono">{tx.to.slice(0, 6)}...{tx.to.slice(-4)}</span>
-                                        </div>
-                                        <div>
+                                        <div className="text-xs">
                                           <span className="text-muted-foreground">Amount: </span>
-                                          <span className="font-medium">
+                                          <span className="font-semibold text-blue-300">
                                             {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
                                           </span>
                                         </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Time: </span>
-                                          <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
-                                        </div>
                                       </div>
+                                      <a
+                                        href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-400 hover:text-blue-300"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
                                     </div>
-                                    <a
-                                      href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
-                                      title="View transaction"
-                                    >
-                                      <ExternalLink className="w-4 h-4" />
-                                    </a>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        
-                        {/* Regular Transactions Section */}
-                        {chain.transactions && chain.transactions.length > 0 && (
-                          <div>
-                            <div className="bg-muted/10 px-4 py-2">
-                              <h5 className="text-sm font-semibold text-foreground">💸 Regular Transactions</h5>
-                            </div>
-                            <div className="divide-y divide-border/30">
-                              {chain.transactions.slice(0, 5).map((tx: any) => (
-                                <div key={tx.hash} className="p-4 hover:bg-muted/20 transition-colors">
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className={`text-xs px-2 py-1 rounded-full ${tx.isError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                                          {tx.isError ? '✗ Failed' : '✓ Success'}
-                                        </span>
-                                        {tx.methodId && tx.methodId !== '0x' && (
-                                          <span className="text-xs px-2 py-1 rounded-full bg-muted/30 text-muted-foreground">
-                                            {tx.methodId.slice(0, 10)}
+                          )}
+
+                          {/* Internal Transactions */}
+                          {chain.internalTransactions && chain.internalTransactions.length > 0 && (
+                            <div className="p-4 bg-purple-500/5">
+                              <h5 className="text-sm font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                                🔄 Internal Transactions ({chain.internalTransactions.length})
+                              </h5>
+                              <div className="space-y-2">
+                                {chain.internalTransactions.slice(0, 3).map((tx: any, idx: number) => (
+                                  <div key={tx.hash + idx} className="p-3 bg-card/50 rounded-lg border border-purple-500/20">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className={`text-xs px-2 py-1 rounded-full ${tx.isError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                            {tx.isError ? '✗' : '✓'}
                                           </span>
-                                        )}
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-2 text-xs">
-                                        <div>
-                                          <span className="text-muted-foreground">From: </span>
-                                          <span className="font-mono">{tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
                                         </div>
-                                        <div>
-                                          <span className="text-muted-foreground">To: </span>
-                                          <span className="font-mono">{tx.to.slice(0, 6)}...{tx.to.slice(-4)}</span>
-                                        </div>
-                                        <div>
+                                        <div className="text-xs">
                                           <span className="text-muted-foreground">Value: </span>
-                                          <span className="font-medium">{(parseInt(tx.value) / 1e18).toFixed(4)} ETH</span>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Time: </span>
-                                          <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
+                                          <span className="font-semibold text-purple-300">{(parseInt(tx.value) / 1e18).toFixed(6)}</span>
                                         </div>
                                       </div>
+                                      <a
+                                        href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-purple-400 hover:text-purple-300"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
                                     </div>
-                                    <a
-                                      href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
-                                      title="View transaction"
-                                    >
-                                      <ExternalLink className="w-4 h-4" />
-                                    </a>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        
+                          {/* Regular Transactions */}
+                          {chain.transactions && chain.transactions.length > 0 && (
+                            <div className="p-4 bg-green-500/5">
+                              <h5 className="text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
+                                💸 Transactions ({chain.transactions.length})
+                              </h5>
+                              <div className="space-y-2">
+                                {chain.transactions.slice(0, 3).map((tx: any, idx: number) => (
+                                  <div key={tx.hash + idx} className="p-3 bg-card/50 rounded-lg border border-green-500/20">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className={`text-xs px-2 py-1 rounded-full ${tx.isError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                            {tx.isError ? '✗ Failed' : '✓ Success'}
+                                          </span>
+                                          {tx.methodId && tx.methodId !== '0x' && (
+                                            <span className="text-xs px-2 py-1 rounded-full bg-muted/30 text-muted-foreground font-mono">
+                                              {tx.methodId.slice(0, 10)}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-xs">
+                                          <span className="text-muted-foreground">Value: </span>
+                                          <span className="font-semibold text-green-300">{(parseInt(tx.value) / 1e18).toFixed(6)}</span>
+                                        </div>
+                                      </div>
+                                      <a
+                                        href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-green-400 hover:text-green-300"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
                     ))}
                   </div>
                 </div>
