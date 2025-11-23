@@ -1167,6 +1167,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Final validation before API call
       if (!addressString || addressString.trim() === '' || addressString === 'undefined') {
         console.error('Cannot call API: Invalid addressString', addressString);
+        setNftLoading(false);
         return;
       }
       
@@ -1178,13 +1179,28 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       
       console.log('Calling get-opensea-nfts with body:', requestBody);
       
-      const data = await callEdge("get-opensea-nfts", requestBody);
-      if (next) {
-        setNfts((prev) => [...prev, ...data.nfts]);
-      } else {
-        setNfts(data.nfts || []);
+      try {
+        const data = await callEdge("get-opensea-nfts", requestBody);
+        if (next) {
+          setNfts((prev) => [...prev, ...data.nfts]);
+        } else {
+          setNfts(data.nfts || []);
+        }
+        setNftNextCursor(data.next || null);
+      } catch (apiError: any) {
+        console.error("Error calling get-opensea-nfts API:", apiError);
+        // Check if it's the walletAddress error
+        if (apiError?.message?.includes('walletAddress is required')) {
+          console.error('Invalid wallet address sent to API despite validation', {
+            addressString,
+            requestBody,
+            originalAddress: address
+          });
+        }
+        // Don't throw, just log and set loading to false
+        setNftLoading(false);
+        return;
       }
-      setNftNextCursor(data.next || null);
     } catch (err) {
       console.error("Error fetching NFTs:", err);
     } finally {
