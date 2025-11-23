@@ -408,6 +408,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address]);
 
+  // Preload transactions in background when profile loads
+  useEffect(() => {
+    if (web3BioProfile?.address && !transactions && !transactionsLoading) {
+      console.log('🔄 Background: Preloading wallet transactions...');
+      const timer = setTimeout(() => {
+        fetchTransactions();
+      }, 1500); // Delay slightly after NFTs/POAPs
+      return () => clearTimeout(timer);
+    }
+  }, [web3BioProfile?.address]);
+
   // Hide search bar when profile is loaded, show when cleared
   useEffect(() => {
     if (web3BioProfile) {

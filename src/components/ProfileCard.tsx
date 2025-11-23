@@ -697,6 +697,111 @@ export const ProfileCard = ({
           </div>
         )}
 
+        {/* Activity/Transactions Section */}
+        {activeSection === 'activity' && (
+          <div className="p-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-[#D4AF37]">⚡ Wallet Activity</h3>
+                {transactions && transactions.totalChains > 0 && (
+                  <Badge variant="secondary" className="bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30">
+                    {transactions.totalChains} {transactions.totalChains === 1 ? 'Chain' : 'Chains'}
+                  </Badge>
+                )}
+              </div>
+
+              {transactionsLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#D4AF37] border-r-transparent mb-4"></div>
+                  <p className="text-muted-foreground">Loading transactions...</p>
+                </div>
+              ) : transactions && transactions.chains && transactions.chains.length > 0 ? (
+                <div className="space-y-4">
+                  {transactions.chains.map((chain: any) => (
+                    <div key={chain.chainKey} className="border border-border/50 rounded-xl overflow-hidden bg-card/30">
+                      <div className="bg-gradient-to-r from-[#D4AF37]/10 to-transparent p-4 border-b border-border/50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-bold text-foreground flex items-center gap-2">
+                              <span className="text-[#D4AF37]">{chain.chain}</span>
+                            </h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {chain.totalTransactions} {chain.totalTransactions === 1 ? 'transaction' : 'transactions'} found
+                            </p>
+                          </div>
+                          <a
+                            href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/address/${web3BioProfile?.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#D4AF37] hover:underline flex items-center gap-1"
+                          >
+                            View on Explorer →
+                          </a>
+                        </div>
+                      </div>
+                      <div className="divide-y divide-border/30">
+                        {chain.transactions.slice(0, 5).map((tx: any, idx: number) => (
+                          <div key={tx.hash} className="p-4 hover:bg-muted/20 transition-colors">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className={`text-xs px-2 py-1 rounded-full ${tx.isError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                    {tx.isError ? '✗ Failed' : '✓ Success'}
+                                  </span>
+                                  {tx.methodId && tx.methodId !== '0x' && (
+                                    <span className="text-xs px-2 py-1 rounded-full bg-muted/30 text-muted-foreground">
+                                      {tx.methodId.slice(0, 10)}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div>
+                                    <span className="text-muted-foreground">From: </span>
+                                    <span className="font-mono">{tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">To: </span>
+                                    <span className="font-mono">{tx.to.slice(0, 6)}...{tx.to.slice(-4)}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Value: </span>
+                                    <span className="font-medium">{(parseInt(tx.value) / 1e18).toFixed(4)} ETH</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Time: </span>
+                                    <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <a
+                                href={`https://${chain.chainKey === 'ethereum' ? '' : `${chain.chainKey}.`}etherscan.io/tx/${tx.hash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#D4AF37] hover:text-[#D4AF37]/80 transition-colors"
+                                title="View transaction"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">📭</div>
+                  <p className="text-lg font-medium text-foreground mb-2">No Transactions Found</p>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    This wallet doesn't have any recent transactions on the supported chains, or the transactions are still being indexed.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
           <div className="p-6 pb-6">
