@@ -1682,12 +1682,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       onClick: () => setActiveDockSection('profile'),
                       isActive: activeDockSection === 'profile',
                     },
-                    {
+                    // Only show social links if user has any social links
+                    ...(web3BioProfile?.links && Object.keys(web3BioProfile.links).length > 0 ? [{
                       icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
                       label: t('socials'),
                       onClick: () => setActiveDockSection('socials'),
                       isActive: activeDockSection === 'socials',
-                    },
+                    }] : []),
                     {
                       icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
                       label: t('poaps'),
@@ -1725,7 +1726,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       isActive: activeDockSection === 'nfts',
                     },
-                    {
+                    // Only show Farcaster if user has ENS, Farcaster platform, or FID
+                    ...((web3BioProfile?.platform === 'ens' || 
+                         web3BioProfile?.platform === 'farcaster' || 
+                         web3BioProfile?.farcaster?.fid) ? [{
                       icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
                       label: t('farcaster'),
                       onClick: () => {
@@ -1735,7 +1739,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         }
                       },
                       isActive: activeDockSection === 'farcaster',
-                    },
+                    }] : []),
                   ]}
                 />
               </div>
