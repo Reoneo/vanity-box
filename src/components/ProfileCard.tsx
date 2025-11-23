@@ -240,14 +240,21 @@ export const ProfileCard = ({
                 <div className="flex justify-center items-center gap-1.5 text-sm">
                   <button
                     onClick={onFollowingClick}
-                    className="font-semibold text-foreground hover:text-[#D4AF37] transition-colors"
+                    className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
                   >
-                    {efpStats.following_count}
+                    <span className="font-semibold text-foreground">{efpStats.following_count}</span>
+                    <span className="text-muted-foreground">Following</span>
                   </button>
-                  <span className="text-muted-foreground">Following</span>
                   <span className="text-muted-foreground">·</span>
-                  <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
-                  <span className="text-muted-foreground">Followers</span>
+                  <a
+                    href={`https://ethfollow.xyz/${currentWalletAddress}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
+                  >
+                    <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
+                    <span className="text-muted-foreground">Followers</span>
+                  </a>
                 </div>
               )}
 
