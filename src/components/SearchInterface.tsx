@@ -1682,9 +1682,27 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       onClick: () => {
                         setActiveDockSection('nfts');
                         const address = web3BioProfile?.address || walletAddress;
-                        // Only fetch NFTs if we have a valid wallet address
-                        if (nfts.length === 0 && address && address !== 'undefined') {
+                        
+                        // Comprehensive validation before fetching
+                        const isValidAddress = address && 
+                                              address !== 'undefined' && 
+                                              typeof address === 'string' && 
+                                              address.trim() !== '' &&
+                                              !(typeof address === 'object' && (address as any)?._type === 'undefined');
+                        
+                        console.log('NFT section clicked - validation:', { 
+                          address, 
+                          isValidAddress,
+                          web3BioAddress: web3BioProfile?.address,
+                          walletAddress,
+                          nftsLength: nfts.length 
+                        });
+                        
+                        // Only fetch NFTs if we have a valid wallet address and no NFTs loaded yet
+                        if (isValidAddress && nfts.length === 0) {
                           fetchNfts();
+                        } else if (!isValidAddress) {
+                          console.warn('Cannot fetch NFTs: Invalid or missing wallet address');
                         }
                       },
                       isActive: activeDockSection === 'nfts',
