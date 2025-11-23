@@ -1198,6 +1198,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     const addressString = typeof address === 'string' ? address : (address as any)?.value;
     const hasValidAddress = addressString && 
                            addressString !== 'undefined' && 
+                           addressString.trim() !== '' &&
                            !(typeof address === 'object' && (address as any)?._type === 'undefined');
     
     if (!hasFarcasterData && !hasValidAddress) {
@@ -1205,14 +1206,33 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return;
     }
 
+    // Prepare request body, only including defined values
+    const requestBody: any = { limit: 1 };
+    
+    if (web3BioProfile?.links?.farcaster?.handle) {
+      requestBody.username = web3BioProfile.links.farcaster.handle;
+    } else if (web3BioProfile?.identity && typeof web3BioProfile.identity === 'string') {
+      requestBody.username = web3BioProfile.identity;
+    }
+    
+    if (web3BioProfile?.links?.farcaster?.fid) {
+      requestBody.fid = web3BioProfile.links.farcaster.fid;
+    }
+    
+    if (hasValidAddress) {
+      requestBody.walletAddress = addressString;
+    }
+    
+    // Final check: ensure we have at least one valid identifier
+    if (!requestBody.username && !requestBody.fid && !requestBody.walletAddress) {
+      console.warn('Cannot call get-farcaster-casts: No valid identifier in request body');
+      return;
+    }
+
     try {
       setCastLoading(true);
-      const data = await callEdge("get-farcaster-casts", {
-        username: web3BioProfile?.links?.farcaster?.handle || web3BioProfile?.identity,
-        fid: web3BioProfile?.links?.farcaster?.fid,
-        walletAddress: hasValidAddress ? addressString : undefined,
-        limit: 1,
-      });
+      console.log('Calling get-farcaster-casts with:', requestBody);
+      const data = await callEdge("get-farcaster-casts", requestBody);
       setLatestCast(data.casts?.[0] || null);
     } catch (err) {
       console.error("Error fetching Farcaster cast:", err);
