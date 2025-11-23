@@ -914,7 +914,7 @@ export const ProfileCard = ({
 
         {/* XMTP Inbox Section */}
         {activeSection === 'inbox' && (
-          <div className="flex-1 overflow-hidden" style={{ minHeight: '400px' }}>
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 280px)', maxHeight: '600px' }}>
             <XMTPInbox 
               profileAddress={currentWalletAddress}
               currentUserAddress={connectedWalletAddress}

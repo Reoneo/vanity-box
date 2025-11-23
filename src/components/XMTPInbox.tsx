@@ -337,8 +337,8 @@ export const XMTPInbox = ({
                     try {
                       const targetAddress = searchQuery.trim();
                       
-                      // Check if they're on XMTP but allow conversation anyway
-                      let recipientHasXmtp = true;
+                      // Check if they're on XMTP
+                      let recipientHasXmtp = false;
                       try {
                         const canMessageResult = await client?.canMessage([{
                           identifier: targetAddress,
@@ -347,40 +347,29 @@ export const XMTPInbox = ({
                         recipientHasXmtp = canMessageResult?.[targetAddress.toLowerCase()] || false;
                       } catch (error) {
                         console.error("Error checking XMTP status:", error);
-                        recipientHasXmtp = false;
                       }
                       
-                      // Create conversation regardless of XMTP status
-                      try {
-                        const dm = await client?.conversations.newDm(targetAddress);
-                        if (dm) {
-                          setConversations((prev) => [dm, ...prev]);
-                          setActiveConversation(dm);
-                          setShowSearch(false);
-                          setSearchQuery("");
-                          
-                          if (!recipientHasXmtp) {
-                            toast({
-                              title: "Recipient not on XMTP yet",
-                              description: "Your messages will be delivered when they join",
-                              duration: 4000,
-                            });
-                          }
-                        }
-                      } catch (error) {
-                        // Even if DM creation fails, allow the conversation UI
+                      // ALWAYS create conversation regardless of XMTP status
+                      const dm = await client?.conversations.newDm(targetAddress);
+                      if (dm) {
+                        setConversations((prev) => [dm, ...prev]);
+                        setActiveConversation(dm);
                         setShowSearch(false);
                         setSearchQuery("");
-                        toast({
-                          title: "Conversation started",
-                          description: "Messages will be queued until recipient joins XMTP",
-                        });
+                        
+                        if (!recipientHasXmtp) {
+                          toast({
+                            title: "Recipient not on XMTP yet",
+                            description: "Your messages will be queued until they join",
+                            duration: 4000,
+                          });
+                        }
                       }
                     } catch (error) {
                       console.error("Error starting conversation:", error);
                       toast({
                         title: "Error",
-                        description: "Could not start conversation",
+                        description: "Could not start conversation. Try again.",
                         variant: "destructive",
                       });
                     }
