@@ -1142,7 +1142,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const fetchNfts = async (next?: string) => {
     const address = web3BioProfile?.address || walletAddress;
     
-    console.log('fetchNfts called with:', { address, web3BioProfile: web3BioProfile?.address, walletAddress, next });
+    // Sanitize the next parameter to handle MiniKit undefined objects
+    const sanitizedNext = (next && typeof next === 'string' && next !== 'undefined') 
+      ? next 
+      : (next && typeof next === 'object' && (next as any)?._type === 'undefined')
+        ? undefined
+        : next;
+    
+    console.log('fetchNfts called with:', { 
+      address, 
+      web3BioProfile: web3BioProfile?.address, 
+      walletAddress, 
+      next,
+      sanitizedNext 
+    });
     
     // Check for undefined, null, empty string, or MiniKit's undefined object format
     if (!address || 
@@ -1171,17 +1184,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         return;
       }
       
-      const requestBody = {
+      // Build request body with sanitized next parameter
+      const requestBody: any = {
         walletAddress: addressString,
         limit: 20,
-        next,
       };
+      
+      // Only add next if it's a valid string
+      if (sanitizedNext && typeof sanitizedNext === 'string') {
+        requestBody.next = sanitizedNext;
+      }
       
       console.log('Calling get-opensea-nfts with body:', requestBody);
       
       try {
         const data = await callEdge("get-opensea-nfts", requestBody);
-        if (next) {
+        if (sanitizedNext) {
           setNfts((prev) => [...prev, ...data.nfts]);
         } else {
           setNfts(data.nfts || []);
