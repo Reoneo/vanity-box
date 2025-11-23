@@ -204,9 +204,9 @@ export const ProfileCard = ({
       <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)]">
-            <div className="space-y-4 pb-6 min-h-full">
-            <div className="relative">
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-4 pb-24">
+              <div className="relative">
               <div className="w-full h-48 overflow-hidden">
                 <img
                   src={web3BioProfile?.header || defaultHeader}
@@ -328,14 +328,13 @@ export const ProfileCard = ({
                 ) : null}
               </div>
             </div>
-            </div>
           </div>
         )}
 
         {/* Socials Section */}
         {activeSection === 'socials' && (
-          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)] flex-shrink-0">
-            <div className="p-6">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 pb-24">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
                 <Link2 className="w-5 h-5 text-[#D4AF37]" />
@@ -345,81 +344,51 @@ export const ProfileCard = ({
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
-                .filter(([platform, url]) => {
-                  if (!url) return false;
-                  const websiteKeys = ['website', 'url', 'homepage'];
-                  return !websiteKeys.includes(platform.toLowerCase());
-                }).length > 0 ? (
-                Object.entries(web3BioProfile.links)
-                  .filter(([platform, url]) => {
-                    if (!url) return false;
-                    const websiteKeys = ['website', 'url', 'homepage'];
-                    return !websiteKeys.includes(platform.toLowerCase());
-                  })
-                  .map(([platform, url]: [string, any]) => {
-                    const link = typeof url === 'string' ? url : url?.link || '';
-                    if (!link) return null;
-                    
-                    return (
-                      <Card
-                        key={platform}
-                        className="group relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-sm border-border/50 hover:border-[#D4AF37]/60 hover:shadow-xl hover:shadow-[#D4AF37]/10 transition-all duration-300 cursor-pointer hover:-translate-y-1"
-                      >
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block p-4"
-                        >
-                          <div className="flex items-center gap-4">
-                            {/* Icon */}
-                            <div className="relative flex-shrink-0">
-                              {socialIcons[platform.toLowerCase()] ? (
-                                <img 
-                                  src={socialIcons[platform.toLowerCase()]} 
-                                  alt={platform}
-                                  className="w-12 h-12 rounded-xl border-2 border-border/30 group-hover:border-[#D4AF37]/40 transition-all shadow-md object-cover"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-xl border-2 border-border/30 group-hover:border-[#D4AF37]/40 transition-all flex items-center justify-center bg-gradient-to-br from-[#D4AF37]/10 to-[#D4AF37]/5">
-                                  <span className="text-xl">{platform.charAt(0).toUpperCase()}</span>
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-[#D4AF37]/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity blur-xl"></div>
-                            </div>
-                            
-                            {/* Platform Name & Link */}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-foreground mb-0.5 capitalize group-hover:text-[#D4AF37] transition-colors">
-                                {platform}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate group-hover:text-muted-foreground/80 transition-colors">
-                                {typeof url === 'object' ? extractHandle(link, platform) : extractHandle(link, platform)}
-                              </p>
-                            </div>
-                            
-                            {/* External Link Icon */}
-                            <div className="text-muted-foreground/60 group-hover:text-[#D4AF37] transition-colors flex-shrink-0">
-                              <ExternalLink className="w-4 h-4" />
-                            </div>
-                          </div>
-                        </a>
-                      </Card>
-                    );
-                  })
-              ) : (
-                <div className="col-span-2 text-center py-8 text-muted-foreground">
-                  No social links available
-                </div>
-              )}
+                .filter(([_, url]) => url)
+                .map(([platform, url]) => {
+                  const icon = socialIcons[platform];
+                  const displayLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
+                  
+                  return (
+                    <button
+                      key={platform}
+                      onClick={() => window.open(url as string, '_blank')}
+                      className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-all group"
+                    >
+                      {icon ? (
+                        <img src={icon} alt={displayLabel} className="w-12 h-12 rounded-xl object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center">
+                          <span className="text-[#D4AF37] text-xl font-bold">{displayLabel[0]}</span>
+                        </div>
+                      )}
+                      <div className="flex-1 text-left">
+                        <div className="font-semibold text-base text-foreground group-hover:text-[#D4AF37] transition-colors">
+                          {displayLabel}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                          {extractHandle(platform, url as string)}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#D4AF37] transition-colors flex-shrink-0" />
+                    </button>
+                  );
+                })}
             </div>
+
+            {(!web3BioProfile?.links || Object.keys(web3BioProfile.links).length === 0) && (
+              <div className="text-center py-12 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
+                <Globe className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground text-base">No social links configured</p>
+              </div>
+            )}
             </div>
           </div>
         )}
 
         {/* NFTs Section - Only show if user has NFTs or POAPs */}
         {activeSection === 'nfts' && (nfts.length > 0 || poaps.length > 0 || nftLoading) && (
-          <div className="flex flex-col h-[calc(100vh-320px)] flex-shrink-0">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <div className="p-4 border-b border-border/30">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -643,8 +612,8 @@ export const ProfileCard = ({
 
         {/* Activity/Transactions Section - Only show if user has transactions */}
         {activeSection === 'activity' && (transactions?.chains?.length > 0 || transactionsLoading) && (
-          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)] flex-shrink-0">
-            <div className="p-6">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 pb-24">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-[#D4AF37]">Wallet Activity</h3>
@@ -863,8 +832,8 @@ export const ProfileCard = ({
 
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
-          <div className="flex-1 overflow-y-auto h-[calc(100vh-320px)] flex-shrink-0">
-            <div className="p-6">
+          <div className="absolute inset-0 overflow-y-auto">
+            <div className="p-6 pb-24">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
               {castLoading ? (
@@ -979,7 +948,7 @@ export const ProfileCard = ({
 
         {/* XMTP Inbox Section */}
         {activeSection === 'inbox' && (
-          <div className="h-[calc(100vh-320px)] overflow-hidden">
+          <div className="flex-1 overflow-hidden">
             <XMTPInbox 
               profileAddress={currentWalletAddress}
               currentUserAddress={connectedWalletAddress}
