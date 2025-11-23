@@ -323,20 +323,39 @@ export const ProfileCard = ({
         {/* NFTs Section */}
         {activeSection === 'nfts' && (
           <div className="p-6">
-            <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🖼️ NFTs</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-[#D4AF37]">🖼️ NFTs</h3>
+              {nfts.length > 0 && !nftLoading && (
+                <Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30">
+                  {nfts.length} NFTs
+                </Badge>
+              )}
+            </div>
+            
             <div className="space-y-4">
               {nftLoading && nfts.length === 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {[...Array(8)].map((_, i) => (
-                    <Card key={i} className="p-3 bg-card/50">
-                      <Skeleton className="aspect-square rounded-lg mb-2" />
-                      <Skeleton className="h-4 w-3/4 mb-1" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </Card>
-                  ))}
+                <div className="space-y-4">
+                  <div className="text-center py-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37] mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading NFTs from multiple chains...</p>
+                    <p className="text-xs text-muted-foreground mt-1">Ethereum • Polygon • Base • Arbitrum • and more</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+                    {[...Array(12)].map((_, i) => (
+                      <Card key={i} className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
+                        <Skeleton className="aspect-square rounded-lg mb-2 bg-[#D4AF37]/10" />
+                        <Skeleton className="h-4 w-3/4 mb-1 bg-[#D4AF37]/10" />
+                        <Skeleton className="h-3 w-1/2 bg-[#D4AF37]/10" />
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               ) : nfts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">No NFTs found</div>
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4 opacity-50">🖼️</div>
+                  <p className="text-muted-foreground mb-2">No NFTs found</p>
+                  <p className="text-xs text-muted-foreground">This wallet doesn't have any NFTs yet</p>
+                </div>
               ) : (
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
