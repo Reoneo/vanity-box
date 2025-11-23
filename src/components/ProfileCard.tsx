@@ -220,18 +220,13 @@ export const ProfileCard = ({
               )}
 
               {currentWalletAddress && (
-                <div className="flex items-center justify-center gap-2">
-                  <code className="px-3 py-1 bg-muted rounded-md text-sm text-muted-foreground">
-                    {shortenAddress(currentWalletAddress)}
-                  </code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                <div className="flex items-center justify-center">
+                  <code 
                     onClick={copyAddress}
-                    className="h-8 w-8"
+                    className="px-3 py-1 bg-muted rounded-md text-sm text-[#D4AF37] cursor-pointer hover:bg-muted/80 transition-colors"
                   >
-                    <Copy className={`h-4 w-4 ${copied ? 'text-green-500' : 'text-muted-foreground'}`} />
-                  </Button>
+                    {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
+                  </code>
                 </div>
               )}
 
