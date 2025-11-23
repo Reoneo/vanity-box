@@ -17,6 +17,7 @@ import {
   Share2,
   Check,
   Info,
+  Activity,
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
@@ -219,9 +220,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showSearchBar, setShowSearchBar] = useState(true);
   
   // Dock panel states
-  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'poaps' | 'nfts' | 'farcaster'>('profile');
+  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity'>('profile');
   const [poapTokens, setPoapTokens] = useState<any[]>([]);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any>(null);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [showEFPFollowingModal, setShowEFPFollowingModal] = useState(false);
   const [efpFollowingUsers, setEfpFollowingUsers] = useState<EFPUser[]>([]);
   const [nfts, setNfts] = useState<any[]>([]);
@@ -1237,6 +1240,27 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
 
   // Fetch functions for dock sections
+  const fetchTransactions = async () => {
+    const address = web3BioProfile?.address || walletAddress;
+    if (!address) return;
+
+    setTransactionsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-etherscan-transactions', {
+        body: { address },
+      });
+
+      if (error) throw error;
+      setTransactions(data);
+      console.log('✅ Transactions loaded:', data);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to load transaction data');
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
   const fetchNfts = async (next?: string) => {
     const address = web3BioProfile?.address || walletAddress;
     
@@ -1829,6 +1853,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   onFollowingClick={handleFollowingClick}
                   onFollowersClick={handleFollowersClick}
                   onLoadMoreNfts={handleLoadMoreNfts}
+                  transactions={transactions}
+                  transactionsLoading={transactionsLoading}
                 />
 
                 <Dock
@@ -1846,12 +1872,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       onClick: () => setActiveDockSection('socials'),
                       isActive: activeDockSection === 'socials',
                     }] : []),
-                    {
-                      icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
-                      label: t('poaps'),
-                      onClick: () => setActiveDockSection('poaps'),
-                      isActive: activeDockSection === 'poaps',
-                    },
                     {
                       icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
                       label: t('nfts'),
@@ -1882,6 +1902,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         }
                       },
                       isActive: activeDockSection === 'nfts',
+                    },
+                    {
+                      icon: <Activity className="w-6 h-6 text-[#D4AF37]" />,
+                      label: t('activity'),
+                      onClick: () => {
+                        setActiveDockSection('activity');
+                        if (!transactions) {
+                          fetchTransactions();
+                        }
+                      },
+                      isActive: activeDockSection === 'activity',
                     },
                     // Only show Farcaster if user has ENS, Farcaster platform, or FID
                     ...((web3BioProfile?.platform === 'ens' || 
