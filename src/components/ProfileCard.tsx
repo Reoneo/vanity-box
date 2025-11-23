@@ -72,12 +72,19 @@ export const ProfileCard = ({
     return Array.from(collections).sort();
   }, [nfts]);
 
-  // Filter NFTs by selected collections
+  // Filter NFTs by selected collections and exclude POAPs
   const filteredNfts = useMemo(() => {
+    // First, filter out POAP v2 NFTs
+    const nonPoapNfts = nfts.filter(nft => {
+      const isPoapV2 = nft.contract?.toLowerCase() === '0x22c1f6050e56d2876009903609a2cc3fef83b415' ||
+                      nft.collection?.toLowerCase().includes('poap');
+      return !isPoapV2;
+    });
+    
     if (selectedCollections.length === 0) {
-      return nfts;
+      return nonPoapNfts;
     }
-    return nfts.filter(nft => {
+    return nonPoapNfts.filter(nft => {
       const collection = nft.collection || 'Unknown Collection';
       return selectedCollections.includes(collection);
     });
