@@ -52,6 +52,7 @@
     "@worldcoin/minikit-js": "^1.9.6",
     "@xmtp/react-sdk": "^9.0.0",
     "@xmtp/xmtp-js": "^13.0.4",
+    "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
