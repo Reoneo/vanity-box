@@ -416,12 +416,7 @@ export const ProfileCard = ({
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-baseline gap-3">
-                  <h3 className="text-2xl font-bold text-[#D4AF37]">🎨 NFT Collection</h3>
-                  {nfts.length > 0 && (
-                    <Badge variant="secondary" className="bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 text-sm font-semibold">
-                      {nfts.length} {nfts.length === 1 ? 'NFT' : 'NFTs'}
-                    </Badge>
-                  )}
+                  <h3 className="text-2xl font-bold text-[#D4AF37]">NFTs</h3>
                 </div>
               </div>
 
@@ -430,15 +425,18 @@ export const ProfileCard = ({
                 <div className="flex items-center gap-3 flex-wrap">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 rounded-xl">
-                        <span className="mr-2">📚</span>
-                        <span className="font-medium">Collections</span>
-                        {selectedCollections.length > 0 && (
-                          <Badge variant="secondary" className="ml-2 bg-[#D4AF37]/20 text-[#D4AF37] border-0 px-1.5 py-0 text-xs">
-                            {selectedCollections.length}
-                          </Badge>
-                        )}
-                        <ChevronDown className="w-4 h-4 ml-2" />
+                      <Button variant="outline" size="icon" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 w-10 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="4" y1="21" x2="4" y2="14"></line>
+                          <line x1="4" y1="10" x2="4" y2="3"></line>
+                          <line x1="12" y1="21" x2="12" y2="12"></line>
+                          <line x1="12" y1="8" x2="12" y2="3"></line>
+                          <line x1="20" y1="21" x2="20" y2="16"></line>
+                          <line x1="20" y1="12" x2="20" y2="3"></line>
+                          <line x1="2" y1="14" x2="6" y2="14"></line>
+                          <line x1="10" y1="8" x2="14" y2="8"></line>
+                          <line x1="18" y1="16" x2="22" y2="16"></line>
+                        </svg>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-72 bg-background/95 backdrop-blur-xl border-border/50 max-h-96 overflow-y-auto">
@@ -614,9 +612,25 @@ export const ProfileCard = ({
                           onClick={() => setExpandedCollection(collection)}
                           className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-all duration-300 hover:scale-[1.02] group"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              {/* Collection Preview Images */}
+                          <div className="flex items-center justify-between gap-4">
+                            {/* Collection Name on Left */}
+                            <div className="flex-shrink-0 text-left min-w-0">
+                              <h4 className="font-bold text-foreground text-base group-hover:text-[#D4AF37] transition-colors truncate">
+                                {formatCollectionName(collection)}
+                              </h4>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {(() => {
+                                  const uniqueCount = collectionNfts.length;
+                                  const totalCount = collectionNfts.reduce((sum, nft) => sum + (nft.quantity || 1), 0);
+                                  return totalCount > uniqueCount 
+                                    ? `${uniqueCount} unique (${totalCount} total)`
+                                    : `${uniqueCount} ${uniqueCount === 1 ? 'item' : 'items'}`;
+                                })()}
+                              </p>
+                            </div>
+
+                            {/* Collection Preview Images & Arrow */}
+                            <div className="flex items-center gap-3">
                               <div className="flex -space-x-3">
                                 {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
                                   <div 
@@ -644,35 +658,7 @@ export const ProfileCard = ({
                                   </div>
                                 )}
                               </div>
-                              
-                              {/* Collection Info */}
-                              <div className="text-left">
-                                <h4 className="font-bold text-foreground text-base group-hover:text-[#D4AF37] transition-colors">
-                                  {formatCollectionName(collection)}
-                                </h4>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {(() => {
-                                    const uniqueCount = collectionNfts.length;
-                                    const totalCount = collectionNfts.reduce((sum, nft) => sum + (nft.quantity || 1), 0);
-                                    return totalCount > uniqueCount 
-                                      ? `${uniqueCount} unique (${totalCount} total)`
-                                      : `${uniqueCount} ${uniqueCount === 1 ? 'item' : 'items'}`;
-                                  })()}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Floor Price & Arrow */}
-                            <div className="flex items-center gap-4">
-                              {collectionNfts[0]?.floor_price && (
-                                <div className="text-right bg-[#D4AF37]/5 px-3 py-2 rounded-lg border border-[#D4AF37]/20">
-                                  <p className="text-xs text-muted-foreground">Floor</p>
-                                  <p className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
-                                    💎 {collectionNfts[0].floor_price} ETH
-                                  </p>
-                                </div>
-                              )}
-                              <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 group-hover:translate-x-1 transition-transform" />
+                              <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                             </div>
                           </div>
                         </button>
