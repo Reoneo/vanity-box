@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.get-etherscan-transactions]
 verify_jwt = false
+
+[functions.send-world-notification]
+verify_jwt = false
