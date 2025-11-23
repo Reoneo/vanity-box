@@ -1858,12 +1858,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </>
             )}
 
-            {/* Profile Card with Dock Navigation - dynamic positioning based on search bar */}
+            {/* Profile Card with Dock Navigation - equal spacing (px-4 = pt-4) */}
             {web3BioProfile && !showMyIDs && (
               <div 
                 className={cn(
                   "fixed left-0 right-0 flex flex-col z-[9997] px-4",
-                  showSearchBar ? "top-[140px] bottom-[140px]" : "top-[140px] bottom-[140px]"
+                  showSearchBar ? "top-[140px] bottom-[100px]" : "top-[140px] bottom-[100px]"
                 )}
               >
                 {/* Profile Card - scrollable content */}
@@ -1890,8 +1890,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   />
                 </div>
 
-                {/* Dock - fixed at bottom with matching gap */}
-                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4">
+                {/* Dock - sits flush at bottom, zero gap to footer */}
+                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center">
                   <Dock
                     items={[
                       {
