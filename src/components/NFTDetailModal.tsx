@@ -56,149 +56,84 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-[#D4AF37]/30">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[#D4AF37] flex items-center gap-2">
-            {nft.name || `NFT #${nft.identifier}`}
-            {nft.chain && (
-              <Badge variant="outline" className="text-[#D4AF37] border-[#D4AF37]/30 capitalize">
-                {getChainIcon(nft.chain)} {nft.chain}
-              </Badge>
-            )}
-            {nft.quantity && nft.quantity > 1 && (
-              <Badge className="bg-emerald-600 text-white border-0">
-                x{nft.quantity} Owned
-              </Badge>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Image Section */}
-          <div className="space-y-4">
-            <div className="aspect-square rounded-xl overflow-hidden border-4 border-[#D4AF37]/20 bg-black/20">
-              {nft.image_url ? (
-                <img
-                  src={nft.image_url}
-                  alt={nft.name || 'NFT'}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  No Image Available
-                </div>
+      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-[#D4AF37]/30 p-0">
+        {/* Full Width Image */}
+        <div className="relative w-full aspect-square overflow-hidden bg-black/20">
+          {nft.image_url ? (
+            <img
+              src={nft.image_url}
+              alt={nft.name || 'NFT'}
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              No Image Available
+            </div>
+          )}
+          
+          {/* Title Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
+              {nft.name || `NFT #${nft.identifier}`}
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              {nft.chain && (
+                <Badge variant="outline" className="bg-black/70 backdrop-blur-sm border-white/30 text-white capitalize">
+                  {getChainIcon(nft.chain)} {nft.chain}
+                </Badge>
+              )}
+              {nft.quantity && nft.quantity > 1 && (
+                <Badge className="bg-emerald-600 text-white border-0">
+                  x{nft.quantity} Owned
+                </Badge>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              {nft.opensea_url && (
-                <Button
-                  onClick={() => window.open(nft.opensea_url, '_blank')}
-                  className="flex-1 bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  View on OpenSea
-                </Button>
-              )}
+        {/* Action Buttons - Mobile Optimized */}
+        <div className="p-4 sm:p-6 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            {nft.opensea_url && (
               <Button
-                onClick={handleShare}
-                variant="outline"
-                className="border-[#D4AF37]/30"
+                onClick={() => window.open(nft.opensea_url, '_blank')}
+                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold active:scale-95 transition-transform touch-manipulation"
+                size="lg"
               >
-                <Share2 className="w-4 h-4" />
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View on OpenSea
               </Button>
-            </div>
+            )}
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              className="w-full border-[#D4AF37]/30 hover:bg-[#D4AF37]/10 active:scale-95 transition-transform touch-manipulation"
+              size="lg"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
           </div>
-
-          {/* Details Section */}
-          <div className="space-y-6">
-            {/* Collection Info */}
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Collection</h3>
-              <p className="text-muted-foreground">{nft.collection || 'Unknown Collection'}</p>
-            </div>
-
-            <Separator className="bg-border/50" />
-
-            {/* Contract Address */}
-            {nft.contract && (
-              <>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Contract Address</h3>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 px-3 py-2 bg-muted/50 rounded-md text-xs text-muted-foreground truncate">
-                      {nft.contract}
-                    </code>
-                    <Button
-                      onClick={handleCopyContract}
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                    >
-                      {copied ? (
-                        <Check className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                <Separator className="bg-border/50" />
-              </>
-            )}
-
-            {/* Token ID */}
-            {nft.identifier && (
-              <>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Token ID</h3>
-                  <p className="text-muted-foreground font-mono">#{nft.identifier}</p>
-                </div>
-                <Separator className="bg-border/50" />
-              </>
-            )}
-
-            {/* Description */}
-            {nft.description && (
-              <>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {nft.description}
-                  </p>
-                </div>
-                <Separator className="bg-border/50" />
-              </>
-            )}
-
-            {/* Metadata/Traits */}
-            {nft.metadata?.attributes && nft.metadata.attributes.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">Traits</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {nft.metadata.attributes.slice(0, 8).map((trait: any, index: number) => (
-                    <Card
-                      key={index}
-                      className="p-3 bg-card/50 backdrop-blur-sm border-[#D4AF37]/20"
-                    >
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                        {trait.trait_type}
-                      </div>
-                      <div className="text-sm font-semibold text-foreground truncate">
-                        {trait.value}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-                {nft.metadata.attributes.length > 8 && (
-                  <p className="text-xs text-muted-foreground mt-3">
-                    +{nft.metadata.attributes.length - 8} more traits
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          
+          {nft.contract && (
+            <Button
+              onClick={handleCopyContract}
+              variant="outline"
+              className="w-full border-border/50 hover:bg-muted/50 active:scale-95 transition-transform touch-manipulation"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-green-500" />
+                  Contract Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Contract Address
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
