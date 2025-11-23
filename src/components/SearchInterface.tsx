@@ -1380,7 +1380,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     </div>
                     )}
 
-                    {/* Profile Card with Dock Navigation - moved to top */}
+                    <WorldIdAnimation />
+
+                    {/* Profile Card with Dock Navigation - moved outside showSearchBar conditional */}
                     {web3BioProfile && (
                       <div className="mt-0">
                         <ProfileCard
@@ -1446,8 +1448,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         />
                       </div>
                     )}
-
-                    <WorldIdAnimation />
                   </>
                 ) : (
                   <>
