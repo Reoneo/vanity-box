@@ -57,7 +57,15 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
     if (isOpen && poap) {
       fetchHolders();
       setDisplayedCount(10); // Reset to 10 when opening a new POAP
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, poap]);
 
   // Close modal when search is toggled
@@ -196,7 +204,7 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm pt-24">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm pt-24">
       <div 
         className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col border border-[#D4AF37]/20 relative"
         onTouchStart={onTouchStart}
