@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar } from "lucide-react";
+import { XMTPInbox } from "@/components/XMTPInbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
@@ -23,9 +24,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ProfileCardProps {
-  activeSection: 'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity';
+  activeSection: 'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity' | 'inbox';
   web3BioProfile?: any;
   currentWalletAddress?: string;
+  connectedWalletAddress?: string;
   efpStats?: any;
   poaps?: any[];
   socialIcons?: Record<string, string>;
@@ -46,6 +48,7 @@ export const ProfileCard = ({
   activeSection,
   web3BioProfile,
   currentWalletAddress,
+  connectedWalletAddress,
   efpStats,
   poaps = [],
   socialIcons = {},
@@ -1108,6 +1111,20 @@ export const ProfileCard = ({
           isOpen={!!selectedNft}
           onClose={() => setSelectedNft(null)}
         />
+      )}
+
+      {/* XMTP Inbox Section */}
+      {activeSection === 'inbox' && (
+        <div className="p-6 pb-6">
+          <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">💬 Messages</h3>
+          <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
+            <XMTPInbox 
+              profileAddress={currentWalletAddress}
+              currentUserAddress={connectedWalletAddress}
+              isProfileOwner={currentWalletAddress === connectedWalletAddress}
+            />
+          </div>
+        </div>
       )}
     </>
   );

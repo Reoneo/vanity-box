@@ -18,6 +18,7 @@ import {
   Check,
   Info,
   Activity,
+  Inbox,
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,7 +102,7 @@ import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
-import { FarcasterFeed } from "@/components/FarcasterFeed";
+import { XMTPInbox } from "@/components/XMTPInbox";
 
 export interface FilterState {
   protocol: string[];
@@ -220,7 +221,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showSearchBar, setShowSearchBar] = useState(true);
   
   // Dock panel states
-  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity'>('profile');
+  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity' | 'inbox'>('profile');
   const [poapTokens, setPoapTokens] = useState<any[]>([]);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
   const [transactions, setTransactions] = useState<any>(null);
@@ -1852,6 +1853,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   activeSection={activeDockSection}
                   web3BioProfile={web3BioProfile}
                   currentWalletAddress={web3BioProfile.address}
+                  connectedWalletAddress={walletAddress}
                   efpStats={efpStats || undefined}
                   poaps={poapTokens}
                   socialIcons={socialIcons}
@@ -1925,20 +1927,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       isActive: activeDockSection === 'activity',
                     },
-                    // Only show Farcaster if user has ENS, Farcaster platform, or FID
-                    ...((web3BioProfile?.platform === 'ens' || 
-                         web3BioProfile?.platform === 'farcaster' || 
-                         web3BioProfile?.farcaster?.fid) ? [{
-                      icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
-                      label: t('farcaster'),
-                      onClick: () => {
-                        setActiveDockSection('farcaster');
-                        if (!latestCast) {
-                          fetchLatestCast();
-                        }
-                      },
-                      isActive: activeDockSection === 'farcaster',
-                    }] : []),
+                    // Inbox - Always show for messaging
+                    {
+                      icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,
+                      label: t('inbox'),
+                      onClick: () => setActiveDockSection('inbox'),
+                      isActive: activeDockSection === 'inbox',
+                    },
                   ]}
                 />
               </div>
