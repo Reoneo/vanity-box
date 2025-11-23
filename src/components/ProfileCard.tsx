@@ -179,10 +179,10 @@ export const ProfileCard = ({
 
   return (
     <>
-      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative z-[10000]">
+      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative z-[9999]">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="space-y-4 max-h-[80vh] overflow-y-auto pb-32">
+          <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pb-6">
             <div className="relative">
               <div className="w-full h-48 overflow-hidden">
                 <img
@@ -302,7 +302,7 @@ export const ProfileCard = ({
 
         {/* Socials Section */}
         {activeSection === 'socials' && (
-          <div className="p-6 pb-32">
+          <div className="p-6 pb-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🔗 Social Links</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
@@ -359,7 +359,7 @@ export const ProfileCard = ({
 
         {/* POAPs Section */}
         {activeSection === 'poaps' && (
-          <div className="p-6 pb-32">
+          <div className="p-6 pb-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🏅 POAPs</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
               {poaps.length === 0 ? (
@@ -395,7 +395,7 @@ export const ProfileCard = ({
 
         {/* NFTs Section */}
         {activeSection === 'nfts' && (
-          <div className="p-6 pb-32">
+          <div className="p-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-baseline gap-3">
@@ -538,7 +538,7 @@ export const ProfileCard = ({
                 </div>
               ) : (
                 <>
-                  <div className="max-h-[60vh] overflow-y-auto space-y-8 pr-2">
+                  <div className="max-h-[calc(100vh-500px)] overflow-y-auto space-y-8 pr-2">
                     {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                       <div key={collection} className="animate-fade-in">
                         <div className="mb-5 pb-4 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-card/40 to-transparent -mx-2 px-2 py-3 rounded-lg">
@@ -696,9 +696,9 @@ export const ProfileCard = ({
 
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
-          <div className="p-6 pb-32">
+          <div className="p-6 pb-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
-            <div className="max-h-[60vh] overflow-y-auto">
+            <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
               {castLoading ? (
                 <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
                   <div className="flex gap-3">
