@@ -221,17 +221,17 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="space-y-4 max-h-[80vh] overflow-y-auto">
-            <div className="w-full h-48 overflow-hidden sticky top-0 z-10">
-              <img
-                src={web3BioProfile?.header || defaultHeader}
-                alt="Header"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <div className="relative">
+              <div className="w-full h-48 overflow-hidden">
+                <img
+                  src={web3BioProfile?.header || defaultHeader}
+                  alt="Header"
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-            <div className="p-6 space-y-4">
               {web3BioProfile?.avatar && (
-                <div className="flex justify-center -mt-32 mb-4">
+                <div className="flex justify-center absolute -bottom-24 left-0 right-0">
                   <Avatar className="h-48 w-48 border-4 border-background">
                     <AvatarImage src={web3BioProfile.avatar} alt={web3BioProfile.displayName} />
                     <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
@@ -240,6 +240,9 @@ export const ProfileCard = ({
                   </Avatar>
                 </div>
               )}
+            </div>
+
+            <div className="p-6 pt-28 space-y-4">
 
               {web3BioProfile?.displayName && (
                 <h2 className="text-3xl font-bold text-center text-foreground">
