@@ -258,17 +258,41 @@ export const XMTPInbox = ({
 
   // Error state
   if (xmtpError) {
+    const isInstallationLimitError = xmtpError.message.includes('already registered') && xmtpError.message.includes('10/10 installations');
+    
     return (
-      <div className="flex flex-col items-center justify-center py-16 space-y-4">
+      <div className="flex flex-col items-center justify-center py-16 space-y-4 px-4">
         <div className="p-4 rounded-full bg-destructive/10">
           <AlertCircle className="w-8 h-8 text-destructive" />
         </div>
-        <div className="text-center space-y-2 max-w-sm">
+        <div className="text-center space-y-3 max-w-md">
           <p className="text-base font-semibold">Connection Failed</p>
-          <p className="text-sm text-muted-foreground">{xmtpError.message}</p>
-          <p className="text-xs text-muted-foreground/70">
-            Try refreshing the page or check your World App connection
-          </p>
+          
+          {isInstallationLimitError ? (
+            <>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Cannot register a new installation because the InboxID has already registered 10/10 installations. 
+                Please revoke existing installations first.
+              </p>
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-left">
+                <p className="text-xs font-semibold text-foreground">How to fix this:</p>
+                <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                  <li>Open World App Settings</li>
+                  <li>Go to Privacy & Security</li>
+                  <li>Select "Manage XMTP Installations"</li>
+                  <li>Revoke old/unused installations</li>
+                  <li>Return here and refresh the page</li>
+                </ol>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">{xmtpError.message}</p>
+              <p className="text-xs text-muted-foreground/70">
+                Try refreshing the page or check your World App connection
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
