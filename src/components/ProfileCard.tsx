@@ -459,34 +459,7 @@ export const ProfileCard = ({
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 min-h-0" style={{ minHeight: '400px' }}>
-              {nftLoading && nfts.length === 0 ? (
-                <div className="space-y-4">
-                  <div className="text-center py-8 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
-                    <div className="relative inline-block">
-                      <Loader2 className="w-12 h-12 animate-spin text-[#D4AF37] mx-auto mb-3" />
-                      <div className="absolute inset-0 w-12 h-12 bg-[#D4AF37]/20 blur-xl animate-pulse"></div>
-                    </div>
-                    <p className="text-base font-medium text-foreground mb-1">Loading NFT Collection</p>
-                    <p className="text-sm text-muted-foreground">Scanning multiple chains...</p>
-                  </div>
-                  <div className="space-y-3">
-                    {[...Array(3)].map((_, i) => (
-                      <Card 
-                        key={i} 
-                        className="p-4 bg-card/50 backdrop-blur-sm border-border/40"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <Skeleton className="h-5 w-40 bg-[#D4AF37]/10 rounded-md mb-2" />
-                            <Skeleton className="h-4 w-24 bg-[#D4AF37]/10 rounded-md" />
-                          </div>
-                          <Skeleton className="h-5 w-5 bg-[#D4AF37]/10 rounded-md" />
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : nfts.length === 0 ? (
+              {nfts.length === 0 ? (
                 <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
                   <div className="relative inline-block mb-4">
                     <div className="text-7xl opacity-30">🖼️</div>
@@ -627,25 +600,7 @@ export const ProfileCard = ({
                 )}
               </div>
 
-              {transactionsLoading ? (
-                <div className="space-y-4">
-                  {[...Array(2)].map((_, i) => (
-                    <Card 
-                      key={i} 
-                      className="p-4 bg-card/50 backdrop-blur-sm border-border/40"
-                    >
-                      <div className="flex justify-between items-center mb-3">
-                        <Skeleton className="h-6 w-32 bg-[#D4AF37]/10 rounded-md" />
-                        <Skeleton className="h-5 w-20 bg-[#D4AF37]/10 rounded-md" />
-                      </div>
-                      <div className="space-y-2">
-                        <Skeleton className="h-16 w-full bg-[#D4AF37]/10 rounded-md" />
-                        <Skeleton className="h-16 w-full bg-[#D4AF37]/10 rounded-md" />
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : transactions.chains && transactions.chains.length > 0 ? (
+              {transactions.chains && transactions.chains.length > 0 ? (
                 <div className="space-y-4">
                   {/* Summary Stats */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
