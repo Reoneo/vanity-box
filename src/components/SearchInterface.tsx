@@ -1863,7 +1863,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div 
                 className={cn(
                   "fixed left-0 right-0 bottom-[28px] flex flex-col z-[9997] px-4",
-                  showSearchBar ? "top-[160px]" : "top-[90px]"
+                  showSearchBar ? "top-[120px]" : "top-[68px]"
                 )}
                 style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}
               >
