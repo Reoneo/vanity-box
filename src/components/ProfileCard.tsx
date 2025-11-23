@@ -78,6 +78,25 @@ export const ProfileCard = ({
     });
   };
 
+  const extractHandle = (platform: string, url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      const handle = pathParts[pathParts.length - 1] || urlObj.hostname;
+      
+      // Platforms that use @ prefix
+      const atPlatforms = ['twitter', 'x', 'instagram', 'threads', 'bluesky'];
+      
+      if (atPlatforms.includes(platform.toLowerCase())) {
+        return `@${handle}`;
+      }
+      
+      return handle;
+    } catch {
+      return url; // Fallback to full URL if parsing fails
+    }
+  };
+
   return (
     <>
       <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
@@ -211,7 +230,7 @@ export const ProfileCard = ({
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-foreground capitalize">{platform}</div>
-                            <div className="text-xs text-muted-foreground truncate">{link}</div>
+                            <div className="text-xs text-[#D4AF37] truncate">{extractHandle(platform, link)}</div>
                           </div>
                           <ExternalLink className="w-4 h-4 text-[#D4AF37] opacity-0 group-hover:opacity-100 transition-opacity" />
                         </a>
