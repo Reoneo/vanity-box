@@ -741,97 +741,92 @@ export const ProfileCard = ({
                   </div>
                 </div>
               ) : transactions.chains && transactions.chains.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Premium Loading State */}
+                <div className="space-y-4">
+                  {/* Premium Loading State - Mobile Optimized */}
                   {transactions.partial && (
-                    <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-4 border border-primary/20">
-                      <div className="flex items-center gap-3">
+                    <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg p-3 border border-primary/20">
+                      <div className="flex items-center gap-2">
                         <div className="relative">
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-                          <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-foreground">Fetching blockchain data...</p>
-                          <p className="text-xs text-muted-foreground">Scanning across 20+ networks</p>
+                          <p className="text-xs font-semibold text-foreground">Loading chains...</p>
                         </div>
                       </div>
                     </div>
                   )}
                   
-                  {/* Elegant Summary Banner */}
-                  <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 backdrop-blur-sm">
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyMTIsIDE3NSwgNTUsIDAuMSkiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40" />
-                    <div className="relative p-6 flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
-                            <Activity className="w-6 h-6 text-primary-foreground" />
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold bg-gradient-to-r from-primary via-primary-luxury to-primary bg-clip-text text-transparent">
+                  {/* Mobile-Optimized Summary Banner */}
+                  <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-card via-card to-primary/5">
+                    <div className="p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
+                          <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary via-primary-luxury to-primary bg-clip-text text-transparent">
                               {transactions.chains.length}
                             </p>
                             <p className="text-sm text-muted-foreground font-medium">Active Networks</p>
                           </div>
                         </div>
-                        <div className="h-12 w-px bg-border/50" />
-                        <div>
-                          <p className="text-2xl font-bold text-foreground">
-                            {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0).toLocaleString()}
+                        <div className="text-right">
+                          <p className="text-2xl sm:text-3xl font-bold text-foreground">
+                            {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)}
                           </p>
-                          <p className="text-sm text-muted-foreground font-medium">Total Activities</p>
+                          <p className="text-xs text-muted-foreground font-medium">Total</p>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Luxurious Chain Cards */}
-                  <div className="space-y-4">
+                  {/* Mobile-Optimized Chain Cards */}
+                  <div className="space-y-3">
                     {transactions.chains.map((chain: any) => {
-                      // Get correct explorer URL and chain icon
                       const getChainConfig = (chainKey: string) => {
                         const configs: Record<string, { url: string; currency: string; color: string; icon: string }> = {
                           worldchain: { 
                             url: 'https://worldscan.org', 
                             currency: 'WLD',
-                            color: 'from-purple-500 to-blue-500',
+                            color: 'from-purple-500/20 via-blue-500/20 to-purple-500/20',
                             icon: '🌐'
                           },
                           ethereum: { 
                             url: 'https://etherscan.io', 
                             currency: 'ETH',
-                            color: 'from-blue-500 to-cyan-500',
+                            color: 'from-blue-500/20 via-cyan-500/20 to-blue-500/20',
                             icon: '💎'
                           },
                           base: { 
                             url: 'https://basescan.org', 
                             currency: 'ETH',
-                            color: 'from-blue-600 to-indigo-600',
+                            color: 'from-blue-600/20 via-indigo-600/20 to-blue-600/20',
                             icon: '🔷'
                           },
                           optimism: { 
                             url: 'https://optimistic.etherscan.io', 
                             currency: 'ETH',
-                            color: 'from-red-500 to-pink-500',
+                            color: 'from-red-500/20 via-pink-500/20 to-red-500/20',
                             icon: '🔴'
                           },
                           arbitrum: { 
                             url: 'https://arbiscan.io', 
                             currency: 'ETH',
-                            color: 'from-blue-400 to-sky-400',
+                            color: 'from-blue-400/20 via-sky-400/20 to-blue-400/20',
                             icon: '🔵'
                           },
                           polygon: { 
                             url: 'https://polygonscan.com', 
                             currency: 'MATIC',
-                            color: 'from-purple-600 to-violet-600',
+                            color: 'from-purple-600/20 via-violet-600/20 to-purple-600/20',
                             icon: '🟣'
                           },
                         };
                         return configs[chainKey] || { 
                           url: `https://${chainKey}.etherscan.io`, 
                           currency: 'ETH',
-                          color: 'from-gray-500 to-slate-500',
+                          color: 'from-gray-500/20 via-slate-500/20 to-gray-500/20',
                           icon: '⛓️'
                         };
                       };
@@ -842,76 +837,66 @@ export const ProfileCard = ({
                       return (
                         <Card 
                           key={chain.chainKey} 
-                          className="group relative overflow-hidden border-primary/20 bg-gradient-to-br from-card/95 via-card to-card/95 backdrop-blur-xl hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
+                          className="overflow-hidden border-primary/30 bg-card/95 backdrop-blur-sm animate-fade-in"
                         >
-                          {/* Animated gradient border effect */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent group-hover:animate-royal-shimmer pointer-events-none" />
-                          
-                          {/* Luxury Chain Header */}
-                          <div className={`relative bg-gradient-to-r ${config.color} p-[1px]`}>
-                            <div className="bg-card/95 backdrop-blur-sm px-5 py-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <div className="text-3xl">{config.icon}</div>
-                                  <div>
-                                    <h4 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
-                                      {chain.chain}
+                          {/* Mobile-Optimized Chain Header */}
+                          <div className={`bg-gradient-to-r ${config.color} border-b border-primary/20`}>
+                            <div className="p-3 sm:p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="text-2xl sm:text-3xl flex-shrink-0">{config.icon}</div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="text-base sm:text-lg font-bold text-foreground">{chain.chain}</h4>
                                       {chain.balance && chain.balance !== '0' && (
-                                        <span className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold border border-primary/30">
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold border border-primary/40 whitespace-nowrap">
                                           {(parseInt(chain.balance) / 1e18).toFixed(4)} {config.currency}
                                         </span>
                                       )}
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground font-medium">
-                                      {chain.totalTransactions.toLocaleString()} {chain.totalTransactions === 1 ? 'Activity' : 'Activities'}
+                                    </div>
+                                    <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-0.5">
+                                      {chain.totalTransactions} {chain.totalTransactions === 1 ? 'Activity' : 'Activities'}
                                     </p>
                                   </div>
                                 </div>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="text-primary hover:text-primary-luxury hover:bg-primary/10"
+                                  className="text-primary hover:text-primary-luxury hover:bg-primary/10 flex-shrink-0 h-8 px-2 sm:px-3"
                                   onClick={() => window.open(`${explorerBaseUrl}/address/${web3BioProfile?.address}`, '_blank')}
                                 >
-                                  <ExternalLink className="w-4 h-4 mr-1" />
-                                  Explorer
+                                  <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
                                 </Button>
                               </div>
                             </div>
                           </div>
                         
-                          {/* Elegant Activity Sections */}
-                          <div className="p-5 space-y-4 bg-gradient-to-b from-transparent to-muted/20">
+                          {/* Mobile-Optimized Activity Sections */}
+                          <div className="p-3 sm:p-4 space-y-3">
                             {/* NFT Transfers */}
                             {chain.nftTransfers && chain.nftTransfers.length > 0 && (
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center">
-                                    <span className="text-sm">🖼️</span>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 pb-1.5 border-b border-border/50">
+                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs">🖼️</span>
                                   </div>
-                                  <h5 className="text-sm font-bold text-foreground">NFT Transfers</h5>
-                                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-pink-500/10 text-pink-400 font-semibold">
+                                  <h5 className="text-xs sm:text-sm font-bold text-foreground">NFT Transfers</h5>
+                                  <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-pink-500/10 text-pink-400 font-semibold">
                                     {chain.nftTransfers.length}
                                   </span>
                                 </div>
-                                <div className="grid gap-2">
+                                <div className="space-y-1.5">
                                   {chain.nftTransfers.slice(0, 3).map((tx: any, idx: number) => (
                                     <div 
                                       key={tx.hash + tx.tokenID + idx} 
-                                      className="group flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card/80 transition-all duration-200"
+                                      className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-card/50 border border-border/50 active:scale-[0.98] transition-transform"
+                                      onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
                                     >
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-foreground truncate">{tx.tokenName || 'Unknown NFT'}</p>
-                                        <p className="text-xs text-muted-foreground font-mono">#{tx.tokenID}</p>
+                                        <p className="text-xs sm:text-sm font-semibold text-foreground truncate">{tx.tokenName || 'Unknown NFT'}</p>
+                                        <p className="text-xs text-muted-foreground font-mono truncate">#{tx.tokenID}</p>
                                       </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                      >
-                                        <ExternalLink className="w-3 h-3 text-primary" />
-                                      </Button>
+                                      <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
                                     </div>
                                   ))}
                                 </div>
@@ -920,36 +905,30 @@ export const ProfileCard = ({
 
                             {/* Token Transfers */}
                             {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-                                    <span className="text-sm">🪙</span>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 pb-1.5 border-b border-border/50">
+                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs">🪙</span>
                                   </div>
-                                  <h5 className="text-sm font-bold text-foreground">Token Transfers</h5>
-                                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 font-semibold">
+                                  <h5 className="text-xs sm:text-sm font-bold text-foreground">Token Transfers</h5>
+                                  <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold">
                                     {chain.tokenTransfers.length}
                                   </span>
                                 </div>
-                                <div className="grid gap-2">
+                                <div className="space-y-1.5">
                                   {chain.tokenTransfers.slice(0, 3).map((tx: any, idx: number) => (
                                     <div 
                                       key={tx.hash + tx.contractAddress + idx} 
-                                      className="group flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card/80 transition-all duration-200"
+                                      className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-card/50 border border-border/50 active:scale-[0.98] transition-transform"
+                                      onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
                                     >
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-foreground">
+                                        <p className="text-xs sm:text-sm font-bold text-foreground truncate">
                                           {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate">{tx.tokenName}</p>
                                       </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                      >
-                                        <ExternalLink className="w-3 h-3 text-primary" />
-                                      </Button>
+                                      <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
                                     </div>
                                   ))}
                                 </div>
@@ -958,23 +937,24 @@ export const ProfileCard = ({
 
                             {/* Regular Transactions */}
                             {chain.transactions && chain.transactions.length > 0 && (
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                                    <span className="text-sm">💸</span>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 pb-1.5 border-b border-border/50">
+                                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs">💸</span>
                                   </div>
-                                  <h5 className="text-sm font-bold text-foreground">Transactions</h5>
-                                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-400 font-semibold">
+                                  <h5 className="text-xs sm:text-sm font-bold text-foreground">Transactions</h5>
+                                  <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 font-semibold">
                                     {chain.transactions.length}
                                   </span>
                                 </div>
-                                <div className="grid gap-2">
+                                <div className="space-y-1.5">
                                   {chain.transactions.slice(0, 3).map((tx: any, idx: number) => (
                                     <div 
                                       key={tx.hash + idx} 
-                                      className="group flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card/80 transition-all duration-200"
+                                      className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-card/50 border border-border/50 active:scale-[0.98] transition-transform"
+                                      onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
                                     >
-                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                      <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
                                         tx.isError 
                                           ? 'bg-red-500/20 text-red-400' 
                                           : 'bg-green-500/20 text-green-400'
@@ -982,21 +962,14 @@ export const ProfileCard = ({
                                         {tx.isError ? '✗' : '✓'}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-foreground">
+                                        <p className="text-xs sm:text-sm font-bold text-foreground truncate">
                                           {(parseInt(tx.value) / 1e18).toFixed(6)} {config.currency}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                           {tx.isError ? 'Failed' : 'Success'}
                                         </p>
                                       </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                      >
-                                        <ExternalLink className="w-3 h-3 text-primary" />
-                                      </Button>
+                                      <ExternalLink className="w-3 h-3 text-primary flex-shrink-0" />
                                     </div>
                                   ))}
                                 </div>
