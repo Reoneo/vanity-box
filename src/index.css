@@ -236,15 +236,15 @@ All colors MUST be HSL. */
 
   @keyframes royal-float {
     0%, 100% { 
-      transform: translateY(0px) scale(1) rotateZ(0deg); 
+      transform: translateY(0px) rotateZ(0deg); 
       filter: drop-shadow(0 10px 30px hsl(43 96% 56% / 0.3));
     }
     33% { 
-      transform: translateY(-8px) scale(1.02) rotateZ(1deg); 
+      transform: translateY(-8px) rotateZ(1deg); 
       filter: drop-shadow(0 15px 40px hsl(43 96% 56% / 0.4));
     }
     66% { 
-      transform: translateY(-4px) scale(0.98) rotateZ(-1deg); 
+      transform: translateY(-4px) rotateZ(-1deg); 
       filter: drop-shadow(0 12px 35px hsl(43 96% 56% / 0.35));
     }
   }
@@ -265,11 +265,9 @@ All colors MUST be HSL. */
 
   @keyframes golden-pulse {
     0%, 100% { 
-      transform: scale(1);
       box-shadow: 0 0 20px hsl(43 96% 56% / 0.5);
     }
     50% { 
-      transform: scale(1.05);
       box-shadow: 0 0 40px hsl(43 96% 56% / 0.8), 0 0 80px hsl(43 96% 56% / 0.4);
     }
   }
@@ -382,18 +380,26 @@ All colors MUST be HSL. */
     animation: royal-shimmer 3s ease-in-out infinite;
   }
 
-  /* Enhanced smooth transitions */
-  * {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Opt-in transitions for colors and opacity only */
+  .transition-colors {
+    transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Luxury interaction effects */
+  .transition-opacity {
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Luxury interaction effects - no scale */
   .luxury-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .luxury-hover:hover {
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-2px);
     box-shadow: 0 20px 60px hsl(43 96% 56% / 0.25);
     filter: brightness(1.1);
   }

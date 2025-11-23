@@ -560,7 +560,7 @@ export const ProfileCard = ({
                                 </div>
                               )}
                               
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-[background-color,opacity] duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                                 <div className="text-white text-sm font-semibold">View Details</div>
                               </div>
                             </div>
@@ -585,7 +585,7 @@ export const ProfileCard = ({
                                 {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
                               </p>
                             </div>
-                            <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                            <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 transition-transform flex-shrink-0" />
                           </div>
                         </button>
                       ))}
