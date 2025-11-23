@@ -8,42 +8,38 @@ const corsHeaders = {
 // Single Etherscan V2 API key that covers all networks
 const etherscanApiKey = Deno.env.get('ETHERSCAN_API_KEY');
 
-// Chain configurations
+// V2 API base URL
+const V2_API_BASE = 'https://api.etherscan.io/v2/api';
+
+// Chain configurations with V2 chain IDs
 const CHAINS = {
   ethereum: {
     name: 'Ethereum',
-    apiUrl: 'https://api.etherscan.io/api',
-    apiKey: etherscanApiKey,
+    chainId: 1,
   },
   polygon: {
     name: 'Polygon',
-    apiUrl: 'https://api.polygonscan.com/api',
-    apiKey: etherscanApiKey,
+    chainId: 137,
   },
   arbitrum: {
     name: 'Arbitrum',
-    apiUrl: 'https://api.arbiscan.io/api',
-    apiKey: etherscanApiKey,
+    chainId: 42161,
   },
   optimism: {
     name: 'Optimism',
-    apiUrl: 'https://api-optimistic.etherscan.io/api',
-    apiKey: etherscanApiKey,
+    chainId: 10,
   },
   base: {
     name: 'Base',
-    apiUrl: 'https://api.basescan.org/api',
-    apiKey: etherscanApiKey,
+    chainId: 8453,
   },
   bsc: {
     name: 'BNB Chain',
-    apiUrl: 'https://api.bscscan.com/api',
-    apiKey: etherscanApiKey,
+    chainId: 56,
   },
   avalanche: {
     name: 'Avalanche',
-    apiUrl: 'https://api.snowtrace.io/api',
-    apiKey: etherscanApiKey,
+    chainId: 43114,
   },
 };
 
@@ -63,16 +59,17 @@ serve(async (req) => {
 
     // Fetch transaction data from all chains in parallel
     const chainPromises = Object.entries(CHAINS).map(async ([chainKey, chain]) => {
-      if (!chain.apiKey) {
-        console.warn(`⚠️ ${chain.name} API key not configured, skipping...`);
+      if (!etherscanApiKey) {
+        console.warn(`⚠️ Etherscan API key not configured, skipping all chains...`);
         return null;
       }
 
       try {
-        const url = `${chain.apiUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc&apikey=${chain.apiKey}`;
+        // V2 API format: base URL + chainid parameter
+        const url = `${V2_API_BASE}?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc&apikey=${etherscanApiKey}`;
         
-        console.log(`📡 Calling ${chain.name} API...`);
-        console.log(`🔗 API URL: ${url.replace(chain.apiKey || '', 'HIDDEN_API_KEY')}`);
+        console.log(`📡 Calling ${chain.name} API (Chain ID: ${chain.chainId})...`);
+        console.log(`🔗 API URL: ${url.replace(etherscanApiKey || '', 'HIDDEN_API_KEY')}`);
         
         const response = await fetch(url);
         
