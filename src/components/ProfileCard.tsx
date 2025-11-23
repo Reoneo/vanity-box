@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
@@ -251,26 +251,29 @@ export const ProfileCard = ({
                 </div>
               )}
 
-              {web3BioProfile?.email && (
-                <div className="text-center">
-                  <span className="text-sm text-muted-foreground">Email: </span>
-                  <a href={`mailto:${web3BioProfile.email}`} className="text-sm text-[#D4AF37] hover:underline">
-                    {web3BioProfile.email}
-                  </a>
-                </div>
-              )}
-
-              {(web3BioProfile?.website || web3BioProfile?.url) && (
-                <div className="text-center">
-                  <span className="text-sm text-muted-foreground">Website: </span>
-                  <a
-                    href={web3BioProfile.website || web3BioProfile.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#D4AF37] hover:underline"
-                  >
-                    {(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}
-                  </a>
+              {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                  {web3BioProfile?.email && (
+                    <a 
+                      href={`mailto:${web3BioProfile.email}`} 
+                      className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {web3BioProfile.email}
+                    </a>
+                  )}
+                  
+                  {(web3BioProfile?.website || web3BioProfile?.url) && (
+                    <a
+                      href={web3BioProfile.website || web3BioProfile.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                    >
+                      <Globe className="w-4 h-4" />
+                      {(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}
+                    </a>
+                  )}
                 </div>
               )}
 
