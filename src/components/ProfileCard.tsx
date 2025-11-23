@@ -225,9 +225,18 @@ export const ProfileCard = ({
           <div className="p-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🔗 Social Links</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-              {web3BioProfile?.links && Object.entries(web3BioProfile.links).filter(([_, url]) => url).length > 0 ? (
+              {web3BioProfile?.links && Object.entries(web3BioProfile.links)
+                .filter(([platform, url]) => {
+                  if (!url) return false;
+                  const websiteKeys = ['website', 'url', 'homepage'];
+                  return !websiteKeys.includes(platform.toLowerCase());
+                }).length > 0 ? (
                 Object.entries(web3BioProfile.links)
-                  .filter(([_, url]) => url)
+                  .filter(([platform, url]) => {
+                    if (!url) return false;
+                    const websiteKeys = ['website', 'url', 'homepage'];
+                    return !websiteKeys.includes(platform.toLowerCase());
+                  })
                   .map(([platform, url]: [string, any]) => {
                     const link = typeof url === 'string' ? url : url?.link || '';
                     if (!link) return null;
