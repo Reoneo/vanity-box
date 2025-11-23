@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Client } from "@xmtp/xmtp-js";
 import { ethers } from "ethers";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 declare global {
   interface Window {
@@ -83,6 +84,66 @@ export const XMTPInbox = ({
       };
     }
   };
+
+  // Set up message streaming to listen for new messages
+  useEffect(() => {
+    if (!client || !isProfileOwner) return;
+
+    let streamCleanup: (() => void) | null = null;
+
+    const setupMessageStream = async () => {
+      try {
+        console.log('[XMTP] Setting up message stream...');
+        
+        // Stream all messages
+        const stream = await client.conversations.streamAllMessages();
+        
+        for await (const message of stream) {
+          console.log('[XMTP] New message received:', {
+            from: message.senderAddress,
+            content: message.content.substring(0, 50),
+          });
+
+          // Only notify if message is from someone else
+          if (message.senderAddress.toLowerCase() !== currentUserAddress?.toLowerCase()) {
+            // Send World App notification
+            try {
+              await supabase.functions.invoke('send-world-notification', {
+                body: {
+                  walletAddress: currentUserAddress,
+                  senderAddress: message.senderAddress,
+                  message: message.content,
+                },
+              });
+              console.log('[XMTP] Notification sent for new message');
+            } catch (error) {
+              console.error('[XMTP] Failed to send notification:', error);
+            }
+
+            // Refresh conversations to show new message
+            const allConversations = await client.conversations.list();
+            const conversationsWithMessages = await Promise.all(
+              allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
+            );
+            conversationsWithMessages.sort((a, b) => 
+              b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
+            );
+            setConversations(conversationsWithMessages);
+          }
+        }
+      } catch (error) {
+        console.error('[XMTP] Error setting up message stream:', error);
+      }
+    };
+
+    setupMessageStream();
+
+    return () => {
+      if (streamCleanup) {
+        streamCleanup();
+      }
+    };
+  }, [client, isProfileOwner, currentUserAddress]);
 
   const initializeXMTP = async () => {
     if (!currentUserAddress) return;
