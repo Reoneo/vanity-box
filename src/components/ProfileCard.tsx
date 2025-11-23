@@ -334,7 +334,8 @@ export const ProfileCard = ({
         {/* Socials Section */}
         {activeSection === 'socials' && (
           <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
-            <div className="p-6 pb-24">
+            <div className="space-y-4 pb-24">
+            <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
                 <Link2 className="w-5 h-5 text-[#D4AF37]" />
@@ -387,13 +388,15 @@ export const ProfileCard = ({
               </div>
             )}
             </div>
+            </div>
           </div>
         )}
 
         {/* NFTs Section - Only show if user has NFTs or POAPs */}
         {activeSection === 'nfts' && (nfts.length > 0 || poaps.length > 0 || nftLoading) && (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-border/30">
+          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
+            <div className="space-y-4 pb-24">
+            <div className="p-4 border-b border-border/30 flex-shrink-0">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   {availableCollections.length > 1 && (
@@ -458,7 +461,7 @@ export const ProfileCard = ({
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 min-h-0" style={{ minHeight: '400px' }}>
+            <div className="p-4">
               {nfts.length === 0 ? (
                 <div className="text-center py-16 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
                   <div className="relative inline-block mb-4">
@@ -583,13 +586,15 @@ export const ProfileCard = ({
                 </Button>
               </div>
             )}
+            </div>
           </div>
         )}
 
         {/* Activity/Transactions Section - Only show if user has transactions */}
         {activeSection === 'activity' && (transactions?.chains?.length > 0 || transactionsLoading) && (
           <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
-            <div className="p-6 pb-24">
+            <div className="space-y-4 pb-24">
+            <div className="p-6">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-[#D4AF37]">Wallet Activity</h3>
@@ -785,13 +790,15 @@ export const ProfileCard = ({
               ) : null}
             </div>
             </div>
+            </div>
           </div>
         )}
 
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
           <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
-            <div className="p-6 pb-24">
+            <div className="space-y-4 pb-24">
+            <div className="p-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
               {castLoading ? (
@@ -899,6 +906,7 @@ export const ProfileCard = ({
                   </div>
                 </Card>
               )}
+            </div>
             </div>
             </div>
           </div>
