@@ -1538,7 +1538,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Profile Card with Dock Navigation - placed outside conditionals */}
             {web3BioProfile && !showMyIDs && (
-              <div className={showSearchBar ? "mt-4" : "mt-0"}>
+              <div className="mt-4">
                 <ProfileCard
                   activeSection={activeDockSection}
                   web3BioProfile={web3BioProfile}
