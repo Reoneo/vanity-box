@@ -59,6 +59,7 @@ export const ProfileCard = ({
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
   const [selectedNft, setSelectedNft] = useState<any>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
 
   // Disable body scrolling when profile card is displayed
   useEffect(() => {
@@ -575,74 +576,132 @@ export const ProfileCard = ({
                 </div>
               ) : (
                 <>
-                  <div className="max-h-[calc(100vh-500px)] overflow-y-auto space-y-8 pr-2">
-                    {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
-                      <div key={collection} className="animate-fade-in">
-                        <div className="mb-5 pb-4 border-b border-border/40 flex items-center justify-between bg-gradient-to-r from-card/40 to-transparent -mx-2 px-2 py-3 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
-                              <span className="text-xl">📦</span>
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-foreground text-base">{formatCollectionName(collection)}</h4>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {(() => {
-                                  const uniqueCount = collectionNfts.length;
-                                  const totalCount = collectionNfts.reduce((sum, nft) => sum + (nft.quantity || 1), 0);
-                                  return totalCount > uniqueCount 
-                                    ? `${uniqueCount} unique (${totalCount} total)`
-                                    : `${uniqueCount} ${uniqueCount === 1 ? 'item' : 'items'}`;
-                                })()}
-                              </p>
-                            </div>
-                          </div>
-                          {collectionNfts[0]?.floor_price && (
-                            <div className="text-right bg-[#D4AF37]/5 px-4 py-2 rounded-lg border border-[#D4AF37]/20">
-                              <p className="text-xs text-muted-foreground">Floor Price</p>
-                              <p className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
-                                <span>💎</span> {collectionNfts[0].floor_price} ETH
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {collectionNfts.map((nft: any, index: number) => {
-                            return (
-                              <div
-                                key={`${nft.contract}-${nft.identifier}-${index}`}
-                                className="group relative overflow-hidden rounded-xl cursor-pointer hover:scale-105 transition-transform duration-300"
-                                onClick={() => setSelectedNft(nft)}
-                              >
-                                {/* NFT Image Only */}
-                                <div className="aspect-square relative overflow-hidden bg-black/20">
-                                  {nft.image_url ? (
-                                    <img
-                                      src={nft.image_url}
-                                      alt={nft.name || 'NFT'}
-                                      className="w-full h-full object-cover"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-muted/20">
-                                      <div className="text-4xl opacity-40">🖼️</div>
-                                    </div>
-                                  )}
-                                  
-                                  {/* Subtle hover overlay */}
-                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                    <div className="text-white text-sm font-semibold">View Details</div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                  {expandedCollection ? (
+                    // Show NFTs from selected collection
+                    <div className="space-y-4 animate-fade-in">
+                      <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExpandedCollection(null)}
+                          className="text-[#D4AF37] hover:text-[#D4AF37]/80 hover:bg-[#D4AF37]/10"
+                        >
+                          <ChevronDown className="w-4 h-4 mr-2 rotate-90" />
+                          Back to Collections
+                        </Button>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-foreground text-lg">{formatCollectionName(expandedCollection)}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {groupedNfts[expandedCollection]?.length || 0} items
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+                        {groupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                          <div
+                            key={`${nft.contract}-${nft.identifier}-${index}`}
+                            className="group relative overflow-hidden rounded-xl cursor-pointer hover:scale-105 transition-transform duration-300"
+                            onClick={() => setSelectedNft(nft)}
+                          >
+                            <div className="aspect-square relative overflow-hidden bg-black/20">
+                              {nft.image_url ? (
+                                <img
+                                  src={nft.image_url}
+                                  alt={nft.name || 'NFT'}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-muted/20">
+                                  <div className="text-4xl opacity-40">🖼️</div>
+                                </div>
+                              )}
+                              
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <div className="text-white text-sm font-semibold">View Details</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    // Show collection buttons
+                    <div className="max-h-[calc(100vh-400px)] overflow-y-auto space-y-3 pr-2">
+                      {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
+                        <button
+                          key={collection}
+                          onClick={() => setExpandedCollection(collection)}
+                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-all duration-300 hover:scale-[1.02] group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {/* Collection Preview Images */}
+                              <div className="flex -space-x-3">
+                                {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
+                                  <div 
+                                    key={idx}
+                                    className="w-12 h-12 rounded-lg overflow-hidden border-2 border-background bg-muted/20"
+                                  >
+                                    {nft.image_url ? (
+                                      <img 
+                                        src={nft.image_url} 
+                                        alt="" 
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-xl">
+                                        🖼️
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                {collectionNfts.length > 3 && (
+                                  <div className="w-12 h-12 rounded-lg bg-[#D4AF37]/20 border-2 border-background flex items-center justify-center">
+                                    <span className="text-xs font-bold text-[#D4AF37]">
+                                      +{collectionNfts.length - 3}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Collection Info */}
+                              <div className="text-left">
+                                <h4 className="font-bold text-foreground text-base group-hover:text-[#D4AF37] transition-colors">
+                                  {formatCollectionName(collection)}
+                                </h4>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {(() => {
+                                    const uniqueCount = collectionNfts.length;
+                                    const totalCount = collectionNfts.reduce((sum, nft) => sum + (nft.quantity || 1), 0);
+                                    return totalCount > uniqueCount 
+                                      ? `${uniqueCount} unique (${totalCount} total)`
+                                      : `${uniqueCount} ${uniqueCount === 1 ? 'item' : 'items'}`;
+                                  })()}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Floor Price & Arrow */}
+                            <div className="flex items-center gap-4">
+                              {collectionNfts[0]?.floor_price && (
+                                <div className="text-right bg-[#D4AF37]/5 px-3 py-2 rounded-lg border border-[#D4AF37]/20">
+                                  <p className="text-xs text-muted-foreground">Floor</p>
+                                  <p className="text-sm font-bold text-[#D4AF37] flex items-center gap-1">
+                                    💎 {collectionNfts[0].floor_price} ETH
+                                  </p>
+                                </div>
+                              )}
+                              <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-                  {web3BioProfile?.address && (
+                  {web3BioProfile?.address && !expandedCollection && (
                     <div className="flex justify-center pt-4">
                       <Button
                         asChild
