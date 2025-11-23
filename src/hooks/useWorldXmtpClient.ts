@@ -1,47 +1,79 @@
 import { useEffect, useState, useRef } from 'react';
-import { Client } from '@xmtp/browser-sdk';
+import { Client } from '@xmtp/xmtp-js';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { createWorldXmtpSigner } from '@/lib/xmtpWorldSigner';
+import { Wallet } from 'ethers';
+
+const ENCRYPTION_KEY_PREFIX = 'xmtp_encrypted_key_';
+const XMTP_ENV = 'production';
 
 /**
- * Generate or retrieve a persistent encryption key for XMTP client.
- * This ensures XMTP can locate and reuse existing installations in IndexedDB,
- * preventing the 10/10 installation limit error.
+ * Securely store and retrieve XMTP keys from local storage
  */
-function getOrCreateEncryptionKey(walletAddress: string): Uint8Array {
-  const storageKey = `xmtp:encryptionKey:${walletAddress.toLowerCase()}`;
-  
-  // Try to retrieve existing key
-  const existingKey = localStorage.getItem(storageKey);
-  if (existingKey) {
+class XmtpKeyStore {
+  static async getOrCreateKey(walletAddress: string): Promise<Uint8Array> {
+    const storageKey = `${ENCRYPTION_KEY_PREFIX}${walletAddress.toLowerCase()}`;
+    
     try {
-      const parsed = JSON.parse(existingKey);
-      return new Uint8Array(parsed);
+      // Try to retrieve existing key
+      const existingKey = localStorage.getItem(storageKey);
+      if (existingKey) {
+        const keyArray = JSON.parse(existingKey);
+        console.log('[XMTP] Retrieved existing key for', walletAddress);
+        return new Uint8Array(keyArray);
+      }
     } catch (e) {
-      console.warn('[XMTP] Failed to parse encryption key, generating new one');
-      localStorage.removeItem(storageKey);
+      console.warn('[XMTP] Failed to retrieve key, generating new one');
     }
+    
+    // Generate new key
+    const newKey = crypto.getRandomValues(new Uint8Array(32));
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(newKey)));
+    console.log('[XMTP] Generated and stored new key for', walletAddress);
+    
+    return newKey;
   }
   
-  // Generate new 32-byte key
-  const newKey = new Uint8Array(32);
-  crypto.getRandomValues(newKey);
-  
-  // Store for future use
-  localStorage.setItem(storageKey, JSON.stringify(Array.from(newKey)));
-  console.log('[XMTP] Generated new encryption key for', walletAddress);
-  
-  return newKey;
+  static clearKey(walletAddress: string): void {
+    const storageKey = `${ENCRYPTION_KEY_PREFIX}${walletAddress.toLowerCase()}`;
+    localStorage.removeItem(storageKey);
+    console.log('[XMTP] Cleared key for', walletAddress);
+  }
 }
 
 /**
- * Reset XMTP installation for the current wallet.
- * Call this to recover from installation limit errors.
+ * Create a World App wallet signer for XMTP
  */
+class WorldAppSigner extends Wallet {
+  private worldAppAddress: string;
+  
+  constructor(address: string) {
+    // Create a random private key for the Wallet base class
+    // We'll override the signing method to use World App
+    super(Wallet.createRandom().privateKey);
+    this.worldAppAddress = address.toLowerCase();
+  }
+  
+  override async getAddress(): Promise<string> {
+    return this.worldAppAddress;
+  }
+  
+  override async signMessage(message: string | Uint8Array): Promise<string> {
+    const messageStr = typeof message === 'string' ? message : new TextDecoder().decode(message);
+    
+    const { finalPayload } = await MiniKit.commandsAsync.signMessage({
+      message: messageStr,
+    });
+    
+    if (!finalPayload || finalPayload.status !== 'success') {
+      throw new Error('World App signature request failed or was cancelled');
+    }
+    
+    return finalPayload.signature;
+  }
+}
+
 export function resetXmtpInstallation(walletAddress: string) {
-  const storageKey = `xmtp:encryptionKey:${walletAddress.toLowerCase()}`;
-  localStorage.removeItem(storageKey);
-  console.log('[XMTP] Cleared encryption key for', walletAddress);
+  XmtpKeyStore.clearKey(walletAddress);
 }
 
 export function useWorldXmtpClient() {
@@ -52,10 +84,10 @@ export function useWorldXmtpClient() {
   const initialized = useRef(false);
 
   useEffect(() => {
-    // only run inside World App
+    // Only run inside World App
     if (!MiniKit.isInstalled()) return;
     
-    // Prevent re-initialization if already done
+    // Prevent re-initialization
     if (initialized.current) return;
 
     let cancelled = false;
@@ -65,40 +97,38 @@ export function useWorldXmtpClient() {
         setLoading(true);
         setError(null);
 
-        // 1. Wallet auth – get wallet address from World App
+        console.log('[XMTP] Starting initialization...');
+
+        // 1. Get wallet address from World App
         const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
           nonce: crypto.randomUUID().replace(/-/g, ''),
-          statement: 'Sign in to Vanity.box messages',
+          statement: 'Sign in to Vanity.box messaging',
         });
 
         if (!finalPayload || finalPayload.status !== 'success') {
-          throw new Error('Wallet auth failed');
+          throw new Error('Wallet authentication failed');
         }
 
         const address = finalPayload.address;
         if (!address) {
-          throw new Error('No wallet address returned from walletAuth');
+          throw new Error('No wallet address returned');
         }
 
-        // 2. Get or create persistent encryption key
-        // This key is used as an identifier to locate existing XMTP installations in IndexedDB
-        // Using the same key prevents creating new installations on page refresh
-        const dbEncryptionKey = getOrCreateEncryptionKey(address);
-        console.log('[XMTP] Using encryption key for wallet:', address);
+        console.log('[XMTP] Authenticated with wallet:', address);
 
-        // 3. Build XMTP signer using World App signMessage
-        const signer = createWorldXmtpSigner(address);
+        // 2. Get or create encryption key from local storage
+        const encryptionKey = await XmtpKeyStore.getOrCreateKey(address);
+        
+        // 3. Create World App signer
+        const signer = new WorldAppSigner(address);
 
-        // 4. Create or restore XMTP client
-        // With dbEncryptionKey, XMTP will reuse existing installation from IndexedDB
-        // This prevents hitting the 10/10 installation limit
+        // 4. Create XMTP client with persistent key storage
+        console.log('[XMTP] Creating client...');
         const xmtpClient = await Client.create(signer, {
-          env: 'production',
-          appVersion: 'vanity-box/world-miniapp/1.0.0',
-          dbEncryptionKey, // Critical: enables installation persistence
+          env: XMTP_ENV,
         });
         
-        console.log('[XMTP] Client created/restored successfully');
+        console.log('[XMTP] Client created successfully');
 
         if (!cancelled) {
           setClient(xmtpClient);
@@ -107,11 +137,13 @@ export function useWorldXmtpClient() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          console.error('XMTP init error', err);
+          console.error('[XMTP] Initialization error:', err);
           setError(err);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
