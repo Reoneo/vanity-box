@@ -1862,8 +1862,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {web3BioProfile && !showMyIDs && (
               <div 
                 className={cn(
-                  "fixed left-0 right-0 flex flex-col z-[9997] px-4",
-                  showSearchBar ? "top-[140px] bottom-[140px]" : "top-[80px] bottom-[140px]"
+                  "fixed left-0 right-0 flex flex-col z-[9997]",
+                  showSearchBar ? "top-[140px] bottom-[140px] px-4 pt-4" : "top-[80px] bottom-[140px] px-4 pt-4"
                 )}
               >
                 {/* Profile Card - scrollable content */}
@@ -1891,7 +1891,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 </div>
 
                 {/* Dock - fixed at bottom with matching gap */}
-                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4">
+                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
                   <Dock
                     items={[
                       {
