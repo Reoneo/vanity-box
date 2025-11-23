@@ -358,7 +358,7 @@ export const ProfileCard = ({
                     <button
                       key={platform}
                       onClick={() => window.open(url, '_blank')}
-                      className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-all group"
+                      className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-colors active:opacity-90 group touch-action-manipulation flex-shrink-0"
                     >
                       {icon ? (
                         <img src={icon} alt={displayLabel} className="w-12 h-12 rounded-xl object-cover" />
@@ -543,7 +543,7 @@ export const ProfileCard = ({
                         {groupedNfts[expandedCollection]?.map((nft: any, index: number) => (
                           <div
                             key={`${nft.contract}-${nft.identifier}-${index}`}
-                            className="group relative overflow-hidden rounded-xl cursor-pointer hover:scale-105 transition-transform duration-300"
+                            className="group relative overflow-hidden rounded-xl cursor-pointer active:opacity-90 transition-opacity flex-shrink-0 touch-action-manipulation"
                             onClick={() => setSelectedNft(nft)}
                           >
                             <div className="aspect-square relative overflow-hidden bg-black/20">
@@ -574,7 +574,7 @@ export const ProfileCard = ({
                         <button
                           key={collection}
                           onClick={() => setExpandedCollection(collection)}
-                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-all duration-300 hover:scale-[1.01] group"
+                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-colors active:opacity-90 group touch-action-manipulation flex-shrink-0"
                         >
                           <div className="flex items-center justify-between">
                             <div className="text-left flex-1 min-w-0 mr-3">
