@@ -217,7 +217,7 @@ export const ProfileCard = ({
 
   return (
     <>
-      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
+      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative z-[10000]">
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="space-y-4 max-h-[80vh] overflow-y-auto">
