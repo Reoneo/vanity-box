@@ -33,8 +33,6 @@ const OTHER_CHAINS = {
   celo: { name: 'Celo', chainId: 42220 },
   gnosis: { name: 'Gnosis', chainId: 100 },
   fantom: { name: 'Fantom', chainId: 250 },
-  blast: { name: 'Blast', chainId: 81457 },
-  moonbeam: { name: 'Moonbeam', chainId: 1284 },
   moonriver: { name: 'Moonriver', chainId: 1285 },
   cronos: { name: 'Cronos', chainId: 25 },
 };
