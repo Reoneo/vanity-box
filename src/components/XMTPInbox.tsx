@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Inbox, Loader2 } from "lucide-react";
+import { AlertCircle, MessageSquare, Send, User, Mail, ChevronRight } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Client } from "@xmtp/browser-sdk";
 import { formatDistanceToNow } from "date-fns";
@@ -12,17 +12,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorldXmtpClient } from "@/hooks/useWorldXmtpClient";
 import { MiniKit } from "@worldcoin/minikit-js";
 
+import type { Dm } from '@xmtp/browser-sdk';
+
 interface Message {
   id: string;
   content: string;
   senderAddress: string;
-  sent: Date;
-}
-
-interface Conversation {
-  peerAddress: string;
-  messages: Message[];
-  lastMessageTime: Date;
+  timestamp: Date;
 }
 
 interface XMTPInboxProps {
@@ -37,524 +33,389 @@ export const XMTPInbox = ({
   isProfileOwner = false 
 }: XMTPInboxProps) => {
   const { client, loading: xmtpLoading, error: xmtpError, walletAddress } = useWorldXmtpClient();
-  const [recipientAddress, setRecipientAddress] = useState("");
-  const [message, setMessage] = useState("");
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [conversations, setConversations] = useState<Dm[]>([]);
+  const [activeConversation, setActiveConversation] = useState<Dm | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
-  const isConnected = !!walletAddress || !!currentUserAddress;
-  const effectiveUserAddress = walletAddress || currentUserAddress;
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversations, activeConversation]);
-
-  const loadConversationMessages = async (conv: any) => {
+  // Load messages for a specific conversation
+  const loadConversationMessages = async (dm: Dm) => {
     try {
-      const msgs = await conv.messages();
-      const peerInboxId = conv.peerInboxId;
-      
-      const formattedMessages: Message[] = msgs.map((m: any) => ({
+      const msgs = await dm.messages();
+      const formatted: Message[] = msgs.map((m) => ({
         id: m.id,
         content: typeof m.content === 'string' ? m.content : '',
-        senderAddress: m.senderInboxId || '',
-        sent: m.sentAt || new Date(),
+        senderAddress: (m as any).senderInboxId || '',
+        timestamp: (m as any).sentAt || new Date(),
       }));
-
-      return {
-        peerAddress: peerInboxId,
-        messages: formattedMessages,
-        lastMessageTime: formattedMessages[formattedMessages.length - 1]?.sent || new Date(),
-      };
+      return formatted;
     } catch (error) {
       console.error("Error loading messages:", error);
-      return {
-        peerAddress: '',
-        messages: [],
-        lastMessageTime: new Date(),
-      };
+      return [];
     }
   };
 
-  // Set up message streaming to listen for new messages
+  // Listen for new messages
   useEffect(() => {
     if (!client || !isProfileOwner) return;
 
-    let streamCleanup: (() => void) | null = null;
-
     const setupMessageStream = async () => {
       try {
-        console.log('[XMTP] Setting up message stream...');
-        
-        // Stream all DM messages
         const stream = await client.conversations.streamAllMessages();
-        
         for await (const message of stream) {
-          const messageContent = typeof message.content === 'string' ? message.content : '';
           const senderInboxId = (message as any).senderInboxId || '';
-          
-          console.log('[XMTP] New message received:', {
-            from: senderInboxId,
-            content: messageContent.substring(0, 50),
-          });
-
-          // Only notify if message is from someone else (check inbox ID)
           if (senderInboxId && senderInboxId !== client.inboxId) {
-            // Send World App notification
-            try {
-              await supabase.functions.invoke('send-world-notification', {
-                body: {
-                  walletAddress: effectiveUserAddress,
-                  senderAddress: senderInboxId,
-                  message: messageContent,
-                },
-              });
-              console.log('[XMTP] Notification sent for new message');
-            } catch (error) {
-              console.error('[XMTP] Failed to send notification:', error);
-            }
-
-            // Refresh conversations to show new message
-            const allConversations = await client.conversations.listDms();
-            const conversationsWithMessages = await Promise.all(
-              allConversations.map(conv => loadConversationMessages(conv))
-            );
-            conversationsWithMessages.sort((a, b) => 
-              b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
-            );
-            setConversations(conversationsWithMessages);
+            // Reload conversations
+            const dms = await client.conversations.listDms();
+            setConversations(dms);
           }
         }
       } catch (error) {
-        console.error('[XMTP] Error setting up message stream:', error);
+        console.error('XMTP stream error:', error);
       }
     };
 
     setupMessageStream();
+  }, [client, isProfileOwner]);
 
-    return () => {
-      if (streamCleanup) {
-        streamCleanup();
-      }
-    };
-  }, [client, isProfileOwner, effectiveUserAddress]);
-
-  // Load conversations when client is ready
+  // Load conversations when client ready (profile owner only)
   useEffect(() => {
     if (!client || !isProfileOwner) return;
 
-    const loadConversations = async () => {
+    const load = async () => {
       try {
-        setLoadingMessages(true);
-        // List only DMs (1:1 conversations)
-        const allConversations = await client.conversations.listDms();
-        
-        // Load messages for each conversation
-        const conversationsWithMessages = await Promise.all(
-          allConversations.map(conv => loadConversationMessages(conv))
-        );
-        
-        // Sort by last message time
-        conversationsWithMessages.sort((a, b) => 
-          b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
-        );
-        
-        setConversations(conversationsWithMessages);
+        const dms = await client.conversations.listDms();
+        setConversations(dms);
       } catch (error) {
         console.error("Error loading conversations:", error);
-      } finally {
-        setLoadingMessages(false);
       }
     };
 
-    loadConversations();
+    load();
   }, [client, isProfileOwner]);
 
-  const sendMessage = async () => {
-    if (!client || !message.trim()) return;
-
-    const targetAddress = recipientAddress || activeConversation || profileAddress;
-    if (!targetAddress) {
-      toast({
-        title: "No recipient",
-        description: "Please select a conversation or enter an address",
-        variant: "destructive",
-      });
+  // Load messages when active conversation changes
+  useEffect(() => {
+    if (!activeConversation) {
+      setMessages([]);
       return;
     }
 
-    try {
-      setLoading(true);
-      
-      const recipientAddress = targetAddress;
+    const load = async () => {
+      const msgs = await loadConversationMessages(activeConversation);
+      setMessages(msgs);
+    };
 
-      // Check if we can message this address
-      const canMessageResult = await client.canMessage([{
-        identifier: recipientAddress,
-        identifierKind: 'Ethereum'
-      }]);
-      
-      if (!canMessageResult[recipientAddress]) {
+    load();
+  }, [activeConversation]);
+
+  // Send message
+  const sendMessage = async () => {
+    if (!client || !messageInput.trim() || sending) return;
+
+    try {
+      setSending(true);
+      let targetDm: Dm | undefined;
+
+      // If profile owner viewing inbox
+      if (isProfileOwner && activeConversation) {
+        targetDm = activeConversation;
+      } else {
+        // Visitor sending to profile owner
+        if (!profileAddress) {
+          toast({
+            title: "Error",
+            description: "Profile address not found",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check if recipient has XMTP
+        const canMessageResult = await client.canMessage([{
+          identifier: profileAddress,
+          identifierKind: 'Ethereum' as const,
+        }]);
+        if (!canMessageResult[profileAddress.toLowerCase()]) {
+          toast({
+            title: "XMTP Identity Not Found",
+            description: "This user hasn't created an XMTP identity yet. They need to open the Messages tab first to enable messaging.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          return;
+        }
+
+        // Find or create DM
+        targetDm = await (async () => {
+          for (const conv of conversations) {
+            const convPeerInboxId = await (typeof conv.peerInboxId === 'function' 
+              ? conv.peerInboxId() 
+              : Promise.resolve(conv.peerInboxId));
+            if (typeof convPeerInboxId === 'string' && convPeerInboxId.toLowerCase() === profileAddress.toLowerCase()) {
+              return conv;
+            }
+          }
+          return undefined;
+        })();
+
+        if (!targetDm) {
+          targetDm = await client.conversations.newDm(profileAddress);
+          setConversations((prev) => [targetDm!, ...prev]);
+        }
+      }
+
+      if (!targetDm) {
         toast({
-          title: "Recipient unavailable",
-          description: "This wallet address hasn't enabled XMTP messaging yet",
+          title: "Error",
+          description: "Could not create conversation",
           variant: "destructive",
         });
         return;
       }
 
-      // Get or create DM conversation
-      const conversation = await client.conversations.newDm(recipientAddress);
-      await conversation.send(message);
+      // Send
+      await targetDm.send(messageInput);
+      setMessageInput("");
+
+      // Reload messages
+      const updatedMessages = await loadConversationMessages(targetDm);
+      setMessages(updatedMessages);
 
       toast({
         title: "Message sent",
-        description: `Your message was delivered`,
+        description: "Your message has been delivered.",
       });
-
-      setMessage("");
-      setRecipientAddress("");
-
-      // Refresh conversations
-      if (isProfileOwner) {
-        setLoadingMessages(true);
-        const allConversations = await client.conversations.listDms();
-        const conversationsWithMessages = await Promise.all(
-          allConversations.map(conv => loadConversationMessages(conv))
-        );
-        conversationsWithMessages.sort((a, b) => 
-          b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
-        );
-        setConversations(conversationsWithMessages);
-        // Get peer inbox ID (might be async)
-        const getPeerInboxId = async () => {
-          const inboxIdProp = (conversation as any).peerInboxId;
-          if (typeof inboxIdProp === 'function') {
-            return await inboxIdProp();
-          }
-          return inboxIdProp;
-        };
-        const peerInboxId = await getPeerInboxId();
-        setActiveConversation(peerInboxId);
-        setLoadingMessages(false);
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
+    } catch (err: any) {
+      console.error("Send error:", err);
       toast({
-        title: "Send failed",
-        description: error instanceof Error ? error.message : "Failed to send message",
+        title: "Failed to send",
+        description: err.message || "An error occurred",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
-  // Loading XMTP
+  // Loading state
   if (xmtpLoading) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Inbox className="w-5 h-5 text-[#D4AF37]" />
-          <h3 className="text-sm font-semibold text-white">Inbox</h3>
+      <div className="flex flex-col items-center justify-center py-16 space-y-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <MessageSquare className="absolute inset-0 m-auto w-6 h-6 text-primary" />
         </div>
-        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
-          <Loader2 className="w-12 h-12 text-[#D4AF37] mx-auto mb-3 animate-spin" />
-          <p className="text-foreground font-medium mb-2">Connecting to XMTP</p>
-          <p className="text-muted-foreground text-sm">
-            Confirm the signature in World App if prompted
+        <div className="text-center space-y-2">
+          <p className="text-base font-medium">Connecting to XMTP</p>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            Please confirm the prompts in World App to enable messaging
           </p>
-        </Card>
+        </div>
       </div>
     );
   }
 
-  // XMTP error
+  // Error state
   if (xmtpError) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Inbox className="w-5 h-5 text-[#D4AF37]" />
-          <h3 className="text-sm font-semibold text-white">Inbox</h3>
+      <div className="flex flex-col items-center justify-center py-16 space-y-4">
+        <div className="p-4 rounded-full bg-destructive/10">
+          <AlertCircle className="w-8 h-8 text-destructive" />
         </div>
-        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
-          <Inbox className="w-12 h-12 text-red-400 mx-auto mb-3" />
-          <p className="text-foreground font-medium mb-2">Failed to connect to XMTP</p>
-          <p className="text-muted-foreground text-sm">
-            {xmtpError.message}
+        <div className="text-center space-y-2 max-w-sm">
+          <p className="text-base font-semibold">Connection Failed</p>
+          <p className="text-sm text-muted-foreground">{xmtpError.message}</p>
+          <p className="text-xs text-muted-foreground/70">
+            Try refreshing the page or check your World App connection
           </p>
-        </Card>
-      </div>
-    );
-  }
-
-  // Not available (not in World App)
-  if (!MiniKit.isInstalled()) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Inbox className="w-5 h-5 text-[#D4AF37]" />
-          <h3 className="text-sm font-semibold text-white">Inbox</h3>
-        </div>
-        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
-          <Inbox className="w-12 h-12 text-[#D4AF37] mx-auto mb-3" />
-          <p className="text-foreground font-medium mb-2">XMTP not available</p>
-          <p className="text-muted-foreground text-sm">
-            Open this app in World App to send and receive messages
-          </p>
-        </Card>
-      </div>
-    );
-  }
-
-  // Profile owner inbox view with conversation history
-  if (isProfileOwner && client) {
-    const activeConv = conversations.find(c => c.peerAddress === activeConversation);
-
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Inbox className="w-5 h-5 text-[#D4AF37]" />
-          <h3 className="text-sm font-semibold text-white">Inbox</h3>
-        </div>
-        
-        <div className="flex gap-3 h-[500px]">
-          {/* Conversations List */}
-          <Card className="w-1/3 p-3 bg-card/50 backdrop-blur-sm border-border/50 overflow-y-auto">
-            <h4 className="font-semibold text-foreground mb-3 text-sm">Conversations</h4>
-            {loadingMessages ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : conversations.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                No conversations yet
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {conversations.map((conv) => (
-                  <button
-                    key={conv.peerAddress}
-                    onClick={() => setActiveConversation(conv.peerAddress)}
-                    className={`w-full p-2 rounded-lg text-left transition-colors ${
-                      activeConversation === conv.peerAddress
-                        ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/50'
-                        : 'bg-background/30 hover:bg-background/50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <Avatar className="w-8 h-8 border border-[#D4AF37]/30">
-                        <AvatarFallback className="bg-[#D4AF37]/10 text-[#D4AF37] text-xs">
-                          {conv.peerAddress.slice(2, 4).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-mono text-foreground truncate">
-                          {conv.peerAddress.slice(0, 6)}...{conv.peerAddress.slice(-4)}
-                        </p>
-                        {conv.messages.length > 0 && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {conv.messages[conv.messages.length - 1].content}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(conv.lastMessageTime, { addSuffix: true })}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          {/* Messages View */}
-          <Card className="flex-1 p-4 bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
-            {activeConv ? (
-              <>
-                {/* Conversation Header */}
-                <div className="pb-3 border-b border-border/50 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="w-10 h-10 border-2 border-[#D4AF37]/30">
-                      <AvatarFallback className="bg-[#D4AF37]/10 text-[#D4AF37]">
-                        {activeConv.peerAddress.slice(2, 4).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-foreground font-mono text-sm">
-                        {activeConv.peerAddress.slice(0, 8)}...{activeConv.peerAddress.slice(-6)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {activeConv.messages.length} messages
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto space-y-3 mb-3">
-                  {activeConv.messages.map((msg) => {
-                    const isOwnMessage = msg.senderAddress.toLowerCase() === effectiveUserAddress?.toLowerCase();
-                    return (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
-                      >
-                        <Avatar className="w-8 h-8 border border-[#D4AF37]/30 flex-shrink-0">
-                          <AvatarFallback className="bg-[#D4AF37]/10 text-[#D4AF37] text-xs">
-                            {msg.senderAddress.slice(2, 4).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className={`flex flex-col max-w-[70%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                          <div
-                            className={`rounded-lg px-3 py-2 ${
-                              isOwnMessage
-                                ? 'bg-[#D4AF37] text-black'
-                                : 'bg-background/80 text-foreground'
-                            }`}
-                          >
-                            <p className="text-sm break-words">{msg.content}</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(msg.sent), { addSuffix: true })}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Message Input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    className="bg-background/50 border-border/50"
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={loading || !message.trim()}
-                    className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-                <Inbox className="w-16 h-16 text-[#D4AF37]/50 mb-4" />
-                <h4 className="font-semibold text-foreground mb-2">Start a Conversation</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Enter a wallet address or ENS/Namestone domain below
-                </p>
-                <div className="w-full max-w-md space-y-3">
-                  <Input
-                    placeholder="0x... or name.eth"
-                    value={recipientAddress}
-                    onChange={(e) => setRecipientAddress(e.target.value)}
-                    className="bg-background/50 border-border/50"
-                  />
-                  <Input
-                    placeholder="Type your message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    className="bg-background/50 border-border/50"
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={loading || !message.trim() || !recipientAddress}
-                    className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                    Send Message
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Card>
         </div>
       </div>
     );
   }
 
-  // Not initialized
+  // Not in World App
   if (!client) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Inbox className="w-5 h-5 text-[#D4AF37]" />
-          <h3 className="text-sm font-semibold text-white">Inbox</h3>
+      <div className="flex flex-col items-center justify-center py-16 space-y-4">
+        <div className="p-4 rounded-full bg-muted">
+          <MessageSquare className="w-8 h-8 text-muted-foreground" />
         </div>
-        <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 text-center">
-          <Inbox className="w-12 h-12 text-[#D4AF37] mx-auto mb-3" />
-          <p className="text-foreground font-medium mb-2">Initializing messaging...</p>
-          <p className="text-muted-foreground text-sm">
-            Please wait while we connect to XMTP
+        <div className="text-center space-y-2 max-w-sm">
+          <p className="text-base font-medium">World App Required</p>
+          <p className="text-sm text-muted-foreground">
+            XMTP messaging is only available when using Vanity.box through World App
           </p>
-        </Card>
+        </div>
       </div>
     );
   }
 
-  // Visitor message view (another wallet connected, not owner)
+  // Main inbox UI
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-center gap-2 mb-3">
-        <Inbox className="w-5 h-5 text-[#D4AF37]" />
-        <h3 className="text-sm font-semibold text-white">Message</h3>
-      </div>
-      
-      <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground text-center mb-3">
-            Send a message to{" "}
-            <span className="font-mono text-foreground">
-              {profileAddress?.slice(0, 6)}...{profileAddress?.slice(-4)}
-            </span>
-          </p>
-          <Input
-            placeholder="Type your message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+    <div className="flex flex-col h-[600px] rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+      {/* Conversation List - Only for profile owner */}
+      {isProfileOwner && (
+        <div className="border-b border-border bg-muted/30">
+          <div className="p-3 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold">Inbox</h3>
+              {conversations.length > 0 && (
+                <span className="ml-auto text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                  {conversations.length}
+                </span>
+              )}
+            </div>
+          </div>
+          <ScrollArea className="h-52">
+            {conversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="p-3 rounded-full bg-muted mb-3">
+                  <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium mb-1">No messages yet</p>
+                <p className="text-xs text-muted-foreground">
+                  Your conversations will appear here
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1 p-2">
+                {conversations.map((dm) => {
+                  const peerInboxIdRaw = dm.peerInboxId;
+                  const displayId = (typeof peerInboxIdRaw === 'string' ? peerInboxIdRaw : dm.id);
+                  
+                  return (
+                    <button
+                      key={dm.id}
+                      onClick={() => setActiveConversation(dm)}
+                      className={cn(
+                        "w-full text-left p-3 rounded-lg transition-all",
+                        activeConversation?.id === dm.id
+                          ? "bg-primary/15 border border-primary/30 shadow-sm"
+                          : "hover:bg-muted/60 border border-transparent"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate mb-0.5">
+                            {typeof displayId === 'string' ? `${displayId.slice(0, 8)}...${displayId.slice(-6)}` : 'Conversation'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Tap to view conversation
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      )}
+
+      {/* Messages Display */}
+      <ScrollArea className="flex-1 p-4 bg-background/50">
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center py-12">
+            <div className="p-4 rounded-full bg-muted/50 mb-4">
+              <Send className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium mb-2">
+              {isProfileOwner 
+                ? "No messages yet" 
+                : "Start a conversation"
               }
-            }}
-            className="bg-background/50 border-border/50"
-          />
+            </p>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              {isProfileOwner 
+                ? "Select a conversation to view messages" 
+                : `Send your first message to ${profileAddress?.slice(0, 6)}...${profileAddress?.slice(-4)}`
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {messages.map((msg) => {
+              const isOwn = msg.senderAddress.toLowerCase() === walletAddress?.toLowerCase();
+              return (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    "flex gap-2",
+                    isOwn ? "justify-end" : "justify-start"
+                  )}
+                >
+                  {!isOwn && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                  )}
+                  <div
+                    className={cn(
+                      "max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm",
+                      isOwn
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-muted text-foreground rounded-bl-sm"
+                    )}
+                  >
+                    <p className="text-sm break-words leading-relaxed">{msg.content}</p>
+                    <p className={cn(
+                      "text-xs mt-1.5 font-medium",
+                      isOwn ? "opacity-80" : "opacity-60"
+                    )}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  {isOwn && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </ScrollArea>
+
+      {/* Message Input */}
+      <div className="p-4 border-t border-border bg-background">
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Input
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && !sending && sendMessage()}
+              placeholder="Type your message..."
+              disabled={sending}
+              className="rounded-full px-4 py-2 h-auto min-h-[44px] resize-none"
+            />
+          </div>
           <Button
             onClick={sendMessage}
-            disabled={loading || !message.trim()}
-            className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+            disabled={!messageInput.trim() || sending}
+            size="icon"
+            className="rounded-full h-11 w-11 flex-shrink-0"
           >
-            <Send className="w-4 h-4 mr-2" />
-            Send Message
+            {sending ? (
+              <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
