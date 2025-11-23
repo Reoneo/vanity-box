@@ -127,8 +127,25 @@ serve(async (req) => {
     
     console.log(`✅ Total NFTs fetched across all chains: ${allNfts.length}`);
 
+    // Deduplicate NFTs and track quantities
+    const nftMap = new Map();
+    allNfts.forEach((nft: any) => {
+      const uniqueKey = `${nft.contract}-${nft.identifier}`;
+      if (nftMap.has(uniqueKey)) {
+        // Increment quantity if we've seen this NFT before
+        const existing = nftMap.get(uniqueKey);
+        existing.quantity = (existing.quantity || 1) + 1;
+      } else {
+        // First time seeing this NFT - initialize with quantity 1
+        nftMap.set(uniqueKey, { ...nft, quantity: 1 });
+      }
+    });
+
+    const deduplicatedNfts = Array.from(nftMap.values());
+    console.log(`🎯 Deduplicated to ${deduplicatedNfts.length} unique NFTs (from ${allNfts.length} total)`);
+
     return new Response(JSON.stringify({
-      nfts: allNfts,
+      nfts: deduplicatedNfts,
       next: nextCursor,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
