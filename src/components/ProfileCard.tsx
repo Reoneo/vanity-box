@@ -533,15 +533,15 @@ export const ProfileCard = ({
                 <div className="flex items-center gap-4 text-muted-foreground text-sm">
                   <div className="flex items-center gap-1">
                     <Heart className="w-4 h-4" />
-                    {latestCast.likes}
+                    {latestCast.reactions?.likes_count || 0}
                   </div>
                   <div className="flex items-center gap-1">
                     <Repeat2 className="w-4 h-4" />
-                    {latestCast.recasts}
+                    {latestCast.reactions?.recasts_count || 0}
                   </div>
                   <div className="flex items-center gap-1">
                     <MessageCircle className="w-4 h-4" />
-                    {latestCast.replies}
+                    {latestCast.replies?.count || 0}
                   </div>
                   <div className="text-xs">
                     {formatDistanceToNow(new Date(latestCast.timestamp), {
