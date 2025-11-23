@@ -1297,12 +1297,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         (typeof address === 'object' && (address as any)?._type === 'undefined') ||
         (typeof address === 'string' && address.trim() === '')) {
       console.warn('Cannot fetch NFTs: No valid wallet address available', { address });
+      setNftLoading(false);
       return;
     }
     
     const addressString = typeof address === 'string' ? address : (address as any)?.value;
     if (!addressString || addressString === 'undefined' || addressString.trim() === '') {
       console.warn('Cannot fetch NFTs: Invalid address format', { address, addressString });
+      setNftLoading(false);
       return;
     }
     
@@ -1311,7 +1313,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     try {
       setNftLoading(true);
       
-      // Final validation before API call
+      // Final validation before API call - if this fails, abort gracefully
       if (!addressString || addressString.trim() === '' || addressString === 'undefined') {
         console.error('Cannot call API: Invalid addressString', addressString);
         setNftLoading(false);
@@ -1331,44 +1333,33 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       
       console.log('Calling get-opensea-nfts with body:', requestBody);
       
-      try {
-        const data = await callEdge("get-opensea-nfts", requestBody);
-        
-        // Sanitize the next cursor from the response
-        const responseNext = data.next;
-        const sanitizedResponseNext = 
-          responseNext && 
-          typeof responseNext === 'object' && 
-          (responseNext as any)?._type === 'undefined'
-            ? undefined
-            : typeof responseNext === 'string' && 
-              responseNext !== 'undefined' && 
-              responseNext.trim() !== ''
-            ? responseNext
-            : undefined;
-        
-        if (sanitizedNext) {
-          setNfts((prev) => [...prev, ...data.nfts]);
-        } else {
-          setNfts(data.nfts || []);
-        }
-        setNftNextCursor(sanitizedResponseNext || null);
-      } catch (apiError: any) {
-        console.error("Error calling get-opensea-nfts API:", apiError);
-        // Check if it's the walletAddress error
-        if (apiError?.message?.includes('walletAddress is required')) {
-          console.error('Invalid wallet address sent to API despite validation', {
-            addressString,
-            requestBody,
-            originalAddress: address
-          });
-        }
-        // Don't throw, just log and set loading to false
-        setNftLoading(false);
-        return;
+      const data = await callEdge("get-opensea-nfts", requestBody);
+      
+      // Sanitize the next cursor from the response
+      const responseNext = data.next;
+      const sanitizedResponseNext = 
+        responseNext && 
+        typeof responseNext === 'object' && 
+        (responseNext as any)?._type === 'undefined'
+          ? undefined
+          : typeof responseNext === 'string' && 
+            responseNext !== 'undefined' && 
+            responseNext.trim() !== ''
+          ? responseNext
+          : undefined;
+      
+      if (sanitizedNext) {
+        setNfts((prev) => [...prev, ...data.nfts]);
+      } else {
+        setNfts(data.nfts || []);
       }
-    } catch (err) {
+      setNftNextCursor(sanitizedResponseNext || null);
+    } catch (err: any) {
       console.error("Error fetching NFTs:", err);
+      // Don't show error toast if address is invalid - this is expected
+      if (!err?.message?.includes('walletAddress is required')) {
+        console.error('Unexpected NFT fetch error:', err);
+      }
     } finally {
       setNftLoading(false);
     }
