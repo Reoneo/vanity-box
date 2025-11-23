@@ -902,6 +902,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 updatedProfile.header = ensTextRecords['header'];
               }
               
+              // Merge core ENS text records (url, email, location, description)
+              if (ensTextRecords['url']) {
+                updatedProfile.url = ensTextRecords['url'];
+                updatedProfile.website = ensTextRecords['url'];
+              }
+              if (ensTextRecords['email']) {
+                updatedProfile.email = ensTextRecords['email'];
+              }
+              if (ensTextRecords['location']) {
+                updatedProfile.location = ensTextRecords['location'];
+              }
+              if (ensTextRecords['description'] && !updatedProfile.description) {
+                updatedProfile.description = ensTextRecords['description'];
+              }
+              
               setWeb3BioProfile(updatedProfile);
             } catch (e) {
               console.warn('Failed to map web3.bio profile to ENS records:', e);
@@ -1364,6 +1379,74 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
                     </div>
                     )}
+
+                    {/* Profile Card with Dock Navigation - moved to top */}
+                    {web3BioProfile && (
+                      <div className="mt-0">
+                        <ProfileCard
+                          activeSection={activeDockSection}
+                          web3BioProfile={web3BioProfile}
+                          currentWalletAddress={web3BioProfile.address}
+                          efpStats={efpStats || undefined}
+                          poaps={poapTokens}
+                          socialIcons={socialIcons}
+                          nfts={nfts}
+                          nftLoading={nftLoading}
+                          nftNextCursor={nftNextCursor}
+                          latestCast={latestCast}
+                          castLoading={castLoading}
+                          firstTransactionDate={firstTransactionDate}
+                          onFollowingClick={handleFollowingClick}
+                          onLoadMoreNfts={handleLoadMoreNfts}
+                        />
+
+                        <Dock
+                          items={[
+                            {
+                              icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                              label: t('profile'),
+                              onClick: () => setActiveDockSection('profile'),
+                              isActive: activeDockSection === 'profile',
+                            },
+                            {
+                              icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
+                              label: t('socials'),
+                              onClick: () => setActiveDockSection('socials'),
+                              isActive: activeDockSection === 'socials',
+                            },
+                            {
+                              icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
+                              label: t('poaps'),
+                              onClick: () => setActiveDockSection('poaps'),
+                              isActive: activeDockSection === 'poaps',
+                            },
+                            {
+                              icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
+                              label: t('nfts'),
+                              onClick: () => {
+                                setActiveDockSection('nfts');
+                                if (nfts.length === 0) {
+                                  fetchNfts();
+                                }
+                              },
+                              isActive: activeDockSection === 'nfts',
+                            },
+                            {
+                              icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
+                              label: t('farcaster'),
+                              onClick: () => {
+                                setActiveDockSection('farcaster');
+                                if (!latestCast) {
+                                  fetchLatestCast();
+                                }
+                              },
+                              isActive: activeDockSection === 'farcaster',
+                            },
+                          ]}
+                        />
+                      </div>
+                    )}
+
                     <WorldIdAnimation />
                   </>
                 ) : (
@@ -1916,73 +1999,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Profile Card with Dock Navigation */}
-      {web3BioProfile && (
-        <div className={showSearchBar ? "mt-2" : "mt-0"}>
-          <ProfileCard
-            activeSection={activeDockSection}
-            web3BioProfile={web3BioProfile}
-            currentWalletAddress={web3BioProfile.address}
-            efpStats={efpStats || undefined}
-            poaps={poapTokens}
-            socialIcons={socialIcons}
-            nfts={nfts}
-            nftLoading={nftLoading}
-            nftNextCursor={nftNextCursor}
-            latestCast={latestCast}
-            castLoading={castLoading}
-            firstTransactionDate={firstTransactionDate}
-            onFollowingClick={handleFollowingClick}
-            onLoadMoreNfts={handleLoadMoreNfts}
-          />
-
-          <Dock
-            items={[
-              {
-                icon: <User className="w-6 h-6 text-[#D4AF37]" />,
-                label: t('profile'),
-                onClick: () => setActiveDockSection('profile'),
-                isActive: activeDockSection === 'profile',
-              },
-              {
-                icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
-                label: t('socials'),
-                onClick: () => setActiveDockSection('socials'),
-                isActive: activeDockSection === 'socials',
-              },
-              {
-                icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
-                label: t('poaps'),
-                onClick: () => setActiveDockSection('poaps'),
-                isActive: activeDockSection === 'poaps',
-              },
-              {
-                icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
-                label: t('nfts'),
-                onClick: () => {
-                  setActiveDockSection('nfts');
-                  if (nfts.length === 0) {
-                    fetchNfts();
-                  }
-                },
-                isActive: activeDockSection === 'nfts',
-              },
-              {
-                icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
-                label: t('farcaster'),
-                onClick: () => {
-                  setActiveDockSection('farcaster');
-                  if (!latestCast) {
-                    fetchLatestCast();
-                  }
-                },
-                isActive: activeDockSection === 'farcaster',
-              },
-            ]}
-          />
         </div>
       )}
     </>
