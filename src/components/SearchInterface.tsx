@@ -1251,9 +1251,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   };
 
   const handleLoadMoreNfts = () => {
-    if (nftNextCursor && !nftLoading) {
-      fetchNfts(nftNextCursor);
+    if (!nftNextCursor || nftLoading) return;
+    
+    // Validate we still have a valid address before loading more
+    const address = web3BioProfile?.address || walletAddress;
+    const addressString = typeof address === 'string' ? address : (address as any)?.value;
+    
+    if (!addressString || 
+        addressString === 'undefined' || 
+        addressString.trim() === '' ||
+        (typeof address === 'object' && (address as any)?._type === 'undefined')) {
+      console.warn('Cannot load more NFTs: No valid address available');
+      return;
     }
+    
+    fetchNfts(nftNextCursor);
   };
 
   const handleMint = (result: ENSResult) => {
