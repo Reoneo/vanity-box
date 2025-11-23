@@ -201,10 +201,10 @@ export const ProfileCard = ({
 
   return (
     <>
-      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative h-full flex flex-col">
+      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
+          <div className="flex-1 overflow-y-auto">
           <div className="space-y-4 pb-24">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
@@ -333,7 +333,7 @@ export const ProfileCard = ({
 
         {/* Socials Section */}
         {activeSection === 'socials' && (
-          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
+          <div className="flex-1 overflow-y-auto">
             <div className="space-y-4 pb-24">
             <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -402,7 +402,7 @@ export const ProfileCard = ({
                   {availableCollections.length > 1 && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-all h-10 w-10 rounded-xl">
+                        <Button variant="outline" size="icon" className="border-border/50 bg-background/60 hover:bg-background/80 hover:border-[#D4AF37]/50 transition-colors h-10 w-10 rounded-xl">
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="4" y1="21" x2="4" y2="14"></line>
                             <line x1="4" y1="10" x2="4" y2="3"></line>
@@ -450,7 +450,7 @@ export const ProfileCard = ({
                       <Badge
                         key={collection}
                         variant="secondary"
-                        className="cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-all font-medium px-3 py-1"
+                        className="cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-colors font-medium px-3 py-1"
                         onClick={() => handleCollectionToggle(collection)}
                       >
                         {formatCollectionName(collection)} ×
@@ -592,7 +592,7 @@ export const ProfileCard = ({
 
         {/* Activity/Transactions Section - Only show if user has transactions */}
         {activeSection === 'activity' && (transactions?.chains?.length > 0 || transactionsLoading) && (
-          <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
+          <div className="flex-1 overflow-y-auto">
             <div className="space-y-4 pb-24">
             <div className="p-6">
             <div className="mb-6">
@@ -914,12 +914,14 @@ export const ProfileCard = ({
 
         {/* XMTP Inbox Section */}
         {activeSection === 'inbox' && (
-          <div className="flex-1 flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 280px)', maxHeight: '600px' }}>
-            <XMTPInbox 
-              profileAddress={currentWalletAddress}
-              currentUserAddress={connectedWalletAddress}
-              isProfileOwner={currentWalletAddress === connectedWalletAddress}
-            />
+          <div className="flex-1 overflow-y-auto">
+            <div className="h-full flex flex-col" style={{ minHeight: '500px' }}>
+              <XMTPInbox 
+                profileAddress={currentWalletAddress}
+                currentUserAddress={connectedWalletAddress}
+                isProfileOwner={currentWalletAddress === connectedWalletAddress}
+              />
+            </div>
           </div>
         )}
       </Card>
