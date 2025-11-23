@@ -13,34 +13,27 @@ const V2_API_BASE = 'https://api.etherscan.io/v2/api';
 
 // Chain configurations with V2 chain IDs
 const CHAINS = {
-  ethereum: {
-    name: 'Ethereum',
-    chainId: 1,
-  },
-  polygon: {
-    name: 'Polygon',
-    chainId: 137,
-  },
-  arbitrum: {
-    name: 'Arbitrum',
-    chainId: 42161,
-  },
-  optimism: {
-    name: 'Optimism',
-    chainId: 10,
-  },
-  base: {
-    name: 'Base',
-    chainId: 8453,
-  },
-  bsc: {
-    name: 'BNB Chain',
-    chainId: 56,
-  },
-  avalanche: {
-    name: 'Avalanche',
-    chainId: 43114,
-  },
+  ethereum: { name: 'Ethereum', chainId: 1 },
+  polygon: { name: 'Polygon', chainId: 137 },
+  arbitrum: { name: 'Arbitrum', chainId: 42161 },
+  optimism: { name: 'Optimism', chainId: 10 },
+  base: { name: 'Base', chainId: 8453 },
+  bsc: { name: 'BNB Chain', chainId: 56 },
+  avalanche: { name: 'Avalanche', chainId: 43114 },
+  worldchain: { name: 'World Chain', chainId: 480 },
+  linea: { name: 'Linea', chainId: 59144 },
+  scroll: { name: 'Scroll', chainId: 534352 },
+  zksync: { name: 'zkSync Era', chainId: 324 },
+  polygonzkevm: { name: 'Polygon zkEVM', chainId: 1101 },
+  mantle: { name: 'Mantle', chainId: 5000 },
+  blast: { name: 'Blast', chainId: 81457 },
+  mode: { name: 'Mode', chainId: 34443 },
+  celo: { name: 'Celo', chainId: 42220 },
+  gnosis: { name: 'Gnosis', chainId: 100 },
+  fantom: { name: 'Fantom', chainId: 250 },
+  moonbeam: { name: 'Moonbeam', chainId: 1284 },
+  moonriver: { name: 'Moonriver', chainId: 1285 },
+  cronos: { name: 'Cronos', chainId: 25 },
 };
 
 serve(async (req) => {
