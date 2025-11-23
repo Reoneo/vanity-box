@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, MessageSquare, Send, User, Mail, ChevronRight } from "lucide-react";
+import { AlertCircle, MessageSquare, Send, User, Mail, ChevronRight, Plus, Search, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,8 @@ export const XMTPInbox = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   // Load messages for a specific conversation
@@ -317,202 +319,251 @@ export const XMTPInbox = ({
 
   // Main inbox UI
   return (
-    <div className="flex flex-col h-full rounded-xl border border-border bg-card shadow-lg overflow-hidden">
-      {/* Conversation List - Only for profile owner */}
-      {isProfileOwner && (
-        <div className="border-b border-border bg-muted/30 flex-shrink-0">
-          <div className="p-3 border-b border-border/50">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold">Inbox</h3>
-              {conversations.length > 0 && (
-                <span className="ml-auto text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                  {conversations.length}
-                </span>
-              )}
+    <div className="flex flex-col h-full relative bg-background" style={{ minHeight: '400px' }}>
+      {/* Search Bar */}
+      {showSearch && (
+        <div className="absolute top-0 left-0 right-0 z-20 p-4 bg-background border-b border-border shadow-lg">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search wallet or ENS domain..."
+                className="pl-10 pr-4"
+                autoFocus
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    try {
+                      const targetAddress = searchQuery.trim();
+                      const canMessageResult = await client?.canMessage([{
+                        identifier: targetAddress,
+                        identifierKind: 'Ethereum' as const,
+                      }]);
+                      
+                      if (canMessageResult && canMessageResult[targetAddress.toLowerCase()]) {
+                        const dm = await client?.conversations.newDm(targetAddress);
+                        if (dm) {
+                          setConversations((prev) => [dm, ...prev]);
+                          setActiveConversation(dm);
+                          setShowSearch(false);
+                          setSearchQuery("");
+                        }
+                      } else {
+                        toast({
+                          title: "Not on XMTP",
+                          description: "This address hasn't joined XMTP yet",
+                          variant: "destructive",
+                        });
+                      }
+                    } catch (error) {
+                      console.error("Error starting conversation:", error);
+                      toast({
+                        title: "Error",
+                        description: "Could not start conversation",
+                        variant: "destructive",
+                      });
+                    }
+                  }
+                }}
+              />
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setShowSearch(false);
+                setSearchQuery("");
+              }}
+            >
+              <X className="w-5 h-5" />
+            </Button>
           </div>
-          <div className="h-52 overflow-auto">
-            {conversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="p-3 rounded-full bg-muted mb-3">
-                  <MessageSquare className="w-6 h-6 text-muted-foreground" />
+        </div>
+      )}
+
+      {/* Conversation List - Only for profile owner */}
+      {isProfileOwner && conversations.length > 0 && !activeConversation && (
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-1 p-2">
+            {conversations.map((dm) => {
+              const peerInboxIdRaw = dm.peerInboxId;
+              const displayId = (typeof peerInboxIdRaw === 'string' ? peerInboxIdRaw : dm.id);
+              
+              return (
+                <button
+                  key={dm.id}
+                  onClick={() => setActiveConversation(dm)}
+                  className="w-full text-left p-3 rounded-lg transition-all hover:bg-muted/60 border border-transparent"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate mb-0.5">
+                        {typeof displayId === 'string' ? `${displayId.slice(0, 8)}...${displayId.slice(-6)}` : 'Conversation'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Tap to view conversation
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Messages Display or Empty State */}
+      {(conversations.length === 0 && isProfileOwner) || (!activeConversation && !isProfileOwner) ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+            <MessageSquare className="w-10 h-10 text-primary" />
+          </div>
+          <h3 className="text-2xl font-bold text-foreground mb-2">Nothing here</h3>
+          <p className="text-base text-muted-foreground">
+            You have no conversations yet. Start one!
+          </p>
+        </div>
+      ) : activeConversation || !isProfileOwner ? (
+        <div className="flex-1 flex flex-col">
+          {/* Message area */}
+          <div className="flex-1 overflow-auto p-4 bg-background/50">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                <div className="p-4 rounded-full bg-muted/50 mb-4">
+                  <Send className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium mb-1">No messages yet</p>
-                <p className="text-xs text-muted-foreground">
-                  Your conversations will appear here
+                <p className="text-sm font-medium mb-2">Start a conversation</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  Send your first message
                 </p>
               </div>
             ) : (
-              <div className="space-y-1 p-2">
-                {conversations.map((dm) => {
-                  const peerInboxIdRaw = dm.peerInboxId;
-                  const displayId = (typeof peerInboxIdRaw === 'string' ? peerInboxIdRaw : dm.id);
-                  
+              <div className="space-y-3">
+                {messages.map((msg) => {
+                  const isOwn = msg.senderAddress.toLowerCase() === walletAddress?.toLowerCase();
                   return (
-                    <button
-                      key={dm.id}
-                      onClick={() => setActiveConversation(dm)}
+                    <div
+                      key={msg.id}
                       className={cn(
-                        "w-full text-left p-3 rounded-lg transition-all",
-                        activeConversation?.id === dm.id
-                          ? "bg-primary/15 border border-primary/30 shadow-sm"
-                          : "hover:bg-muted/60 border border-transparent"
+                        "flex gap-2",
+                        isOwn ? "justify-end" : "justify-start"
                       )}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center flex-shrink-0">
-                          <User className="w-5 h-5 text-primary" />
+                      {!isOwn && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 mt-1">
+                          <User className="w-4 h-4 text-primary" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate mb-0.5">
-                            {typeof displayId === 'string' ? `${displayId.slice(0, 8)}...${displayId.slice(-6)}` : 'Conversation'}
+                      )}
+                      <div
+                        className={cn(
+                          "max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm",
+                          isOwn
+                            ? "bg-primary text-primary-foreground rounded-br-sm"
+                            : "bg-muted text-foreground rounded-bl-sm"
+                        )}
+                      >
+                        <p className="text-sm break-words leading-relaxed">{msg.content}</p>
+                        <div className={cn(
+                          "flex items-center gap-1.5 mt-1.5",
+                          isOwn ? "justify-end" : "justify-start"
+                        )}>
+                          <p className={cn(
+                            "text-xs font-medium",
+                            isOwn ? "opacity-80" : "opacity-60"
+                          )}>
+                            {new Date(msg.timestamp).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            Tap to view conversation
-                          </p>
+                          {isOwn && (
+                            <div className="flex items-center gap-0.5">
+                              {msg.recipientHasXmtp === false ? (
+                                <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 16 16" fill="none">
+                                  <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              ) : msg.status === 'read' ? (
+                                <>
+                                  <svg className="w-3.5 h-3.5 -mr-2" viewBox="0 0 16 16" fill="none">
+                                    <path d="M13.5 4L6 11.5L2.5 8" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                                    <path d="M13.5 4L6 11.5L2.5 8" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-3.5 h-3.5 -mr-2 opacity-70" viewBox="0 0 16 16" fill="none">
+                                    <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 16 16" fill="none">
+                                    <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       </div>
-                    </button>
+                      {isOwn && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 mt-1">
+                          <User className="w-4 h-4 text-primary-foreground" />
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Messages Display */}
-      <div className="flex-1 overflow-auto p-4 bg-background/50">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div className="p-4 rounded-full bg-muted/50 mb-4">
-              <Send className="w-8 h-8 text-muted-foreground" />
+          {/* Message Input */}
+          <div className="border-t border-border bg-card flex-shrink-0 p-3">
+            <div className="flex gap-2">
+              <Input
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                placeholder={
+                  !isProfileOwner && !profileAddress 
+                    ? "Profile address required" 
+                    : "Type a message..."
+                }
+                disabled={sending || (!isProfileOwner && !profileAddress)}
+                className="flex-1"
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={!messageInput.trim() || sending || (!isProfileOwner && !profileAddress)}
+                size="icon"
+                className="h-10 w-10 flex-shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
             </div>
-            <p className="text-sm font-medium mb-2">
-              {isProfileOwner 
-                ? "No messages yet" 
-                : "Start a conversation"
-              }
-            </p>
-            <p className="text-xs text-muted-foreground max-w-xs">
-              {isProfileOwner 
-                ? "Select a conversation to view messages" 
-                : `Send your first message to ${profileAddress?.slice(0, 6)}...${profileAddress?.slice(-4)}`
-              }
-            </p>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((msg) => {
-              const isOwn = msg.senderAddress.toLowerCase() === walletAddress?.toLowerCase();
-              return (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    "flex gap-2",
-                    isOwn ? "justify-end" : "justify-start"
-                  )}
-                >
-                  {!isOwn && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 mt-1">
-                      <User className="w-4 h-4 text-primary" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      "max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm",
-                      isOwn
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-muted text-foreground rounded-bl-sm"
-                    )}
-                  >
-                    <p className="text-sm break-words leading-relaxed">{msg.content}</p>
-                    <div className={cn(
-                      "flex items-center gap-1.5 mt-1.5",
-                      isOwn ? "justify-end" : "justify-start"
-                    )}>
-                      <p className={cn(
-                        "text-xs font-medium",
-                        isOwn ? "opacity-80" : "opacity-60"
-                      )}>
-                        {new Date(msg.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      {isOwn && (
-                        <div className="flex items-center gap-0.5">
-                          {msg.recipientHasXmtp === false ? (
-                            // Single tick for recipient not on XMTP
-                            <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 16 16" fill="none">
-                              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          ) : msg.status === 'read' ? (
-                            // Double blue ticks for read
-                            <>
-                              <svg className="w-3.5 h-3.5 -mr-2" viewBox="0 0 16 16" fill="none">
-                                <path d="M13.5 4L6 11.5L2.5 8" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
-                                <path d="M13.5 4L6 11.5L2.5 8" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            </>
-                          ) : (
-                            // Double grey ticks for delivered (recipient has XMTP)
-                            <>
-                              <svg className="w-3.5 h-3.5 -mr-2 opacity-70" viewBox="0 0 16 16" fill="none">
-                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                              <svg className="w-3.5 h-3.5 opacity-70" viewBox="0 0 16 16" fill="none">
-                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {isOwn && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 mt-1">
-                      <User className="w-4 h-4 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Message Input */}
-      <div className="p-4 border-t border-border bg-background">
-        <div className="flex gap-2 items-end">
-          <div className="flex-1">
-            <Input
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && !sending && sendMessage()}
-              placeholder="Type your message..."
-              disabled={sending}
-              className="rounded-full px-4 py-2 h-auto min-h-[44px] resize-none"
-            />
-          </div>
-          <Button
-            onClick={sendMessage}
-            disabled={!messageInput.trim() || sending}
-            size="icon"
-            className="rounded-full h-11 w-11 flex-shrink-0"
-          >
-            {sending ? (
-              <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
         </div>
-      </div>
+      ) : null}
+
+      {/* Floating Plus Button - Only for profile owner */}
+      {isProfileOwner && (
+        <button
+          onClick={() => setShowSearch(true)}
+          className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center transition-all hover:scale-105 z-10"
+        >
+          <Plus className="w-6 h-6 text-primary-foreground" />
+        </button>
+      )}
     </div>
   );
 };
