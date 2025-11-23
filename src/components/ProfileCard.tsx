@@ -395,14 +395,9 @@ export const ProfileCard = ({
         {/* POAPs Section */}
         {activeSection === 'poaps' && (
           <div className="p-6 pb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
-                <Globe className="w-5 h-5 text-[#D4AF37]" />
-              </div>
-              <h3 className="text-2xl font-bold text-[#D4AF37]">🏅 POAPs</h3>
-            </div>
+            <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">🏅 POAPs</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
-              {!poaps || poaps.length === 0 ? (
+              {poaps.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   No POAPs found
                 </div>
