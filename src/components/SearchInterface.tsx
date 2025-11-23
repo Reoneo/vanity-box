@@ -1898,7 +1898,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
       {/* Profile Card with Dock Navigation */}
       {web3BioProfile && (
-        <>
+        <div className="mt-6">
           <ProfileCard
             activeSection={activeDockSection}
             web3BioProfile={web3BioProfile}
@@ -1959,7 +1959,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               },
             ]}
           />
-        </>
+        </div>
       )}
     </>
   );
