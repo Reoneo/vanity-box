@@ -1136,14 +1136,25 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   // Fetch functions for dock sections
   const fetchNfts = async (next?: string) => {
     const address = web3BioProfile?.address || walletAddress;
-    if (!address || address === 'undefined') {
-      console.warn('Cannot fetch NFTs: No valid wallet address available');
+    
+    // Check for undefined, null, empty string, or MiniKit's undefined object format
+    if (!address || 
+        address === 'undefined' || 
+        (typeof address === 'object' && (address as any)?._type === 'undefined') ||
+        (typeof address === 'string' && address.trim() === '')) {
+      console.warn('Cannot fetch NFTs: No valid wallet address available', { address });
+      return;
+    }
+    
+    const addressString = typeof address === 'string' ? address : (address as any)?.value;
+    if (!addressString || addressString === 'undefined') {
+      console.warn('Cannot fetch NFTs: Invalid address format', { address, addressString });
       return;
     }
     try {
       setNftLoading(true);
       const data = await callEdge("get-opensea-nfts", {
-        walletAddress: address,
+        walletAddress: addressString,
         limit: 20,
         next,
       });
@@ -1165,9 +1176,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     const hasFarcasterData = web3BioProfile?.links?.farcaster?.fid || 
                             web3BioProfile?.links?.farcaster?.handle ||
                             web3BioProfile?.identity;
-    const hasAddress = web3BioProfile?.address || walletAddress;
+    const address = web3BioProfile?.address || walletAddress;
     
-    if (!hasFarcasterData && !hasAddress) {
+    // Validate address format (handle MiniKit's undefined object)
+    const addressString = typeof address === 'string' ? address : (address as any)?.value;
+    const hasValidAddress = addressString && 
+                           addressString !== 'undefined' && 
+                           !(typeof address === 'object' && (address as any)?._type === 'undefined');
+    
+    if (!hasFarcasterData && !hasValidAddress) {
       console.warn('Cannot fetch Farcaster casts: No valid identifier available');
       return;
     }
@@ -1177,7 +1194,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const data = await callEdge("get-farcaster-casts", {
         username: web3BioProfile?.links?.farcaster?.handle || web3BioProfile?.identity,
         fid: web3BioProfile?.links?.farcaster?.fid,
-        walletAddress: web3BioProfile?.address || walletAddress,
+        walletAddress: hasValidAddress ? addressString : undefined,
         limit: 1,
       });
       setLatestCast(data.casts?.[0] || null);
