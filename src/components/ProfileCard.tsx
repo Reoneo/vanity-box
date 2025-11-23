@@ -345,15 +345,19 @@ export const ProfileCard = ({
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
-                .filter(([_, url]) => url)
-                .map(([platform, url]) => {
+                .filter(([_, linkData]) => linkData)
+                .map(([platform, linkData]: [string, any]) => {
                   const icon = socialIcons[platform];
                   const displayLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
+                  const url = typeof linkData === 'string' ? linkData : linkData?.link;
+                  const handle = typeof linkData === 'string' ? extractHandle(platform, linkData) : linkData?.handle;
+                  
+                  if (!url) return null;
                   
                   return (
                     <button
                       key={platform}
-                      onClick={() => window.open(url as string, '_blank')}
+                      onClick={() => window.open(url, '_blank')}
                       className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-all group"
                     >
                       {icon ? (
@@ -368,7 +372,7 @@ export const ProfileCard = ({
                           {displayLabel}
                         </div>
                         <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                          {extractHandle(platform, url as string)}
+                          {handle || extractHandle(platform, url)}
                         </div>
                       </div>
                       <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#D4AF37] transition-colors flex-shrink-0" />
