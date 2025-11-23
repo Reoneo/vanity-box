@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
@@ -65,6 +66,7 @@ export const ProfileCard = ({
   const [selectedNft, setSelectedNft] = useState<any>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
+  const [selectedChain, setSelectedChain] = useState<string>("all");
 
   // Disable body scrolling when profile card is displayed
   useEffect(() => {
@@ -741,41 +743,66 @@ export const ProfileCard = ({
               ) : transactions.chains && transactions.chains.length > 0 ? (
                 <div className="space-y-6">
                   {/* Activity Overview Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
-                      <div className="text-xs text-muted-foreground mb-1">Total Chains</div>
-                      <div className="text-2xl font-bold text-blue-400">{transactions.chains.length}</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Card className="p-3 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+                      <div className="text-xs text-muted-foreground mb-1">Active Chains</div>
+                      <div className="text-xl font-bold text-blue-400">{transactions.chains.length}</div>
                     </Card>
-                    <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+                    <Card className="p-3 bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
                       <div className="text-xs text-muted-foreground mb-1">Total Activity</div>
-                      <div className="text-2xl font-bold text-green-400">
+                      <div className="text-xl font-bold text-green-400">
                         {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)}
                       </div>
                     </Card>
-                    <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                    <Card className="p-3 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
                       <div className="text-xs text-muted-foreground mb-1">Token Transfers</div>
-                      <div className="text-2xl font-bold text-purple-400">
+                      <div className="text-xl font-bold text-purple-400">
                         {transactions.chains.reduce((sum: number, c: any) => sum + (c.tokenTransfers?.length || 0), 0)}
                       </div>
                     </Card>
-                    <Card className="p-4 bg-gradient-to-br from-pink-500/10 to-pink-600/5 border-pink-500/20">
+                    <Card className="p-3 bg-gradient-to-br from-pink-500/10 to-pink-600/5 border-pink-500/20">
                       <div className="text-xs text-muted-foreground mb-1">NFT Transfers</div>
-                      <div className="text-2xl font-bold text-pink-400">
+                      <div className="text-xl font-bold text-pink-400">
                         {transactions.chains.reduce((sum: number, c: any) => sum + (c.nftTransfers?.length || 0), 0)}
                       </div>
                     </Card>
                   </div>
 
+                  {/* Chain Filter */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Filter className="w-4 h-4" />
+                      <span className="font-medium">Filter by Chain:</span>
+                    </div>
+                    <Select value={selectedChain} onValueChange={setSelectedChain}>
+                      <SelectTrigger className="w-[200px] bg-card/50 border-primary/20">
+                        <SelectValue placeholder="All Chains" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Chains ({transactions.chains.length})</SelectItem>
+                        {transactions.chains.map((chain: any) => (
+                          <SelectItem key={chain.chainKey} value={chain.chainKey}>
+                            {chain.chain} ({chain.totalTransactions})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <ActivityGraph 
-                    chains={transactions.chains.map((c: any) => ({
-                      chain: c.chain,
-                      chainKey: c.chainKey,
-                      totalTransactions: c.totalTransactions
-                    }))}
+                    chains={transactions.chains
+                      .filter((c: any) => selectedChain === "all" || c.chainKey === selectedChain)
+                      .map((c: any) => ({
+                        chain: c.chain,
+                        chainKey: c.chainKey,
+                        totalTransactions: c.totalTransactions
+                      }))}
                   />
                   
                   <div className="space-y-4">
-                    {transactions.chains.map((chain: any) => (
+                    {transactions.chains
+                      .filter((chain: any) => selectedChain === "all" || chain.chainKey === selectedChain)
+                      .map((chain: any) => (
                       <Card key={chain.chainKey} className="overflow-hidden bg-card/50 backdrop-blur-sm border-primary/20">
                         {/* Chain Header */}
                         <div className="bg-gradient-to-r from-[#D4AF37]/20 via-[#D4AF37]/10 to-transparent p-4 border-b border-border/50">
@@ -988,7 +1015,7 @@ export const ProfileCard = ({
                                       </a>
                                     </div>
                                   </div>
-                                ))}
+                    ))}
                               </div>
                             </div>
                           )}
