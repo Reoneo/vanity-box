@@ -6,10 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Inbox, Wallet, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Client } from "@xmtp/xmtp-js";
+import { Client, Signer } from "@xmtp/xmtp-js";
 import { ethers } from "ethers";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { MiniKit } from "@worldcoin/minikit-js";
 
 declare global {
   interface Window {
@@ -146,16 +147,55 @@ export const XMTPInbox = ({
   }, [client, isProfileOwner, currentUserAddress]);
 
   const initializeXMTP = async () => {
-    if (!currentUserAddress) return;
+    if (!currentUserAddress) {
+      toast({
+        title: "No wallet connected",
+        description: "Please connect your World App wallet first",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsInitializing(true);
       
-      if (typeof window.ethereum !== 'undefined') {
-        const provider = new ethers.providers.Web3Provider(window.ethereum as any);
-        const signer = provider.getSigner();
-        
-        const xmtpClient = await Client.create(signer, { env: 'production' });
+      // Create a custom signer for World App
+      const createWorldAppSigner = (address: string): Signer => {
+        return {
+          getAddress: async () => address,
+          signMessage: async (message: string | Uint8Array) => {
+            try {
+              console.log('[XMTP] Requesting signature from World App...');
+              
+              // Convert message to string if it's Uint8Array
+              const messageToSign = typeof message === 'string' 
+                ? message 
+                : ethers.utils.toUtf8String(message);
+              
+              // Use MiniKit signMessage command
+              const result = await MiniKit.commandsAsync.signMessage({
+                message: messageToSign
+              });
+              
+              if (result.finalPayload?.status === 'success' && result.finalPayload.signature) {
+                console.log('[XMTP] Signature received from World App');
+                return result.finalPayload.signature;
+              }
+              
+              throw new Error('Failed to sign message with World App');
+            } catch (error) {
+              console.error('[XMTP] Signature error:', error);
+              throw error;
+            }
+          }
+        } as Signer;
+      };
+
+      // Try World App wallet first if connected
+      if (currentUserAddress && MiniKit.isInstalled()) {
+        console.log('[XMTP] Initializing with World App wallet:', currentUserAddress);
+        const worldAppSigner = createWorldAppSigner(currentUserAddress);
+        const xmtpClient = await Client.create(worldAppSigner, { env: 'production' });
         setClient(xmtpClient);
 
         // Load conversations if profile owner
@@ -163,12 +203,39 @@ export const XMTPInbox = ({
           setLoadingMessages(true);
           const allConversations = await xmtpClient.conversations.list();
           
-          // Load messages for each conversation
           const conversationsWithMessages = await Promise.all(
             allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
           );
           
-          // Sort by last message time
+          conversationsWithMessages.sort((a, b) => 
+            b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
+          );
+          
+          setConversations(conversationsWithMessages);
+          setLoadingMessages(false);
+        }
+
+        toast({
+          title: "Connected to XMTP",
+          description: "You can now send and receive messages",
+        });
+      } else if (typeof window.ethereum !== 'undefined') {
+        // Fallback to MetaMask/Web3 wallet
+        console.log('[XMTP] Initializing with Web3 wallet');
+        const provider = new ethers.providers.Web3Provider(window.ethereum as any);
+        const signer = provider.getSigner();
+        
+        const xmtpClient = await Client.create(signer, { env: 'production' });
+        setClient(xmtpClient);
+
+        if (isProfileOwner) {
+          setLoadingMessages(true);
+          const allConversations = await xmtpClient.conversations.list();
+          
+          const conversationsWithMessages = await Promise.all(
+            allConversations.map(conv => loadConversationMessages(conv, conv.peerAddress))
+          );
+          
           conversationsWithMessages.sort((a, b) => 
             b.lastMessageTime.getTime() - a.lastMessageTime.getTime()
           );
@@ -183,8 +250,8 @@ export const XMTPInbox = ({
         });
       } else {
         toast({
-          title: "Wallet not found",
-          description: "Please install MetaMask or another Web3 wallet",
+          title: "Connect your wallet",
+          description: "Please connect your World App or Web3 wallet to use messaging",
           variant: "destructive",
         });
       }
