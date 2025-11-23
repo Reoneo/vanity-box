@@ -741,164 +741,271 @@ export const ProfileCard = ({
                   </div>
                 </div>
               ) : transactions.chains && transactions.chains.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Loading indicator for partial data */}
+                <div className="space-y-6">
+                  {/* Premium Loading State */}
                   {transactions.partial && (
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />
-                      <span className="text-sm text-blue-400">
-                        Loading activity across {Object.keys(transactions).length} chains...
-                      </span>
+                    <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-4 border border-primary/20">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
+                          <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Fetching blockchain data...</p>
+                          <p className="text-xs text-muted-foreground">Scanning across 20+ networks</p>
+                        </div>
+                      </div>
                     </div>
                   )}
                   
-                  {/* Simple summary */}
-                  <div className="flex items-center justify-between p-3 bg-card/30 rounded-lg border border-primary/20">
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Activity found on </span>
-                      <span className="font-bold text-foreground">{transactions.chains.length} chain{transactions.chains.length !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)} total transactions
+                  {/* Elegant Summary Banner */}
+                  <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyMTIsIDE3NSwgNTUsIDAuMSkiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40" />
+                    <div className="relative p-6 flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-luxury flex items-center justify-center shadow-lg shadow-primary/20">
+                            <Activity className="w-6 h-6 text-primary-foreground" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold bg-gradient-to-r from-primary via-primary-luxury to-primary bg-clip-text text-transparent">
+                              {transactions.chains.length}
+                            </p>
+                            <p className="text-sm text-muted-foreground font-medium">Active Networks</p>
+                          </div>
+                        </div>
+                        <div className="h-12 w-px bg-border/50" />
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">
+                            {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-muted-foreground font-medium">Total Activities</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
-                  {/* Chain Activity Cards */}
-                  <div className="space-y-3">
-                    {transactions.chains
-                      .map((chain: any) => {
-                        // Get correct explorer URL based on chain
-                        const getExplorerUrl = (chainKey: string) => {
-                          if (chainKey === 'worldchain') return 'https://worldscan.org';
-                          if (chainKey === 'ethereum') return 'https://etherscan.io';
-                          return `https://${chainKey}.etherscan.io`;
+                  {/* Luxurious Chain Cards */}
+                  <div className="space-y-4">
+                    {transactions.chains.map((chain: any) => {
+                      // Get correct explorer URL and chain icon
+                      const getChainConfig = (chainKey: string) => {
+                        const configs: Record<string, { url: string; currency: string; color: string; icon: string }> = {
+                          worldchain: { 
+                            url: 'https://worldscan.org', 
+                            currency: 'WLD',
+                            color: 'from-purple-500 to-blue-500',
+                            icon: '🌐'
+                          },
+                          ethereum: { 
+                            url: 'https://etherscan.io', 
+                            currency: 'ETH',
+                            color: 'from-blue-500 to-cyan-500',
+                            icon: '💎'
+                          },
+                          base: { 
+                            url: 'https://basescan.org', 
+                            currency: 'ETH',
+                            color: 'from-blue-600 to-indigo-600',
+                            icon: '🔷'
+                          },
+                          optimism: { 
+                            url: 'https://optimistic.etherscan.io', 
+                            currency: 'ETH',
+                            color: 'from-red-500 to-pink-500',
+                            icon: '🔴'
+                          },
+                          arbitrum: { 
+                            url: 'https://arbiscan.io', 
+                            currency: 'ETH',
+                            color: 'from-blue-400 to-sky-400',
+                            icon: '🔵'
+                          },
+                          polygon: { 
+                            url: 'https://polygonscan.com', 
+                            currency: 'MATIC',
+                            color: 'from-purple-600 to-violet-600',
+                            icon: '🟣'
+                          },
                         };
-                        
-                        const explorerBaseUrl = getExplorerUrl(chain.chainKey);
-                        
-                        return (
-                          <Card key={chain.chainKey} className="overflow-hidden bg-card/50 backdrop-blur-sm border-primary/20">
-                            {/* Simplified Chain Header */}
-                            <div className="bg-gradient-to-r from-primary/10 to-transparent p-4">
+                        return configs[chainKey] || { 
+                          url: `https://${chainKey}.etherscan.io`, 
+                          currency: 'ETH',
+                          color: 'from-gray-500 to-slate-500',
+                          icon: '⛓️'
+                        };
+                      };
+                      
+                      const config = getChainConfig(chain.chainKey);
+                      const explorerBaseUrl = config.url;
+                      
+                      return (
+                        <Card 
+                          key={chain.chainKey} 
+                          className="group relative overflow-hidden border-primary/20 bg-gradient-to-br from-card/95 via-card to-card/95 backdrop-blur-xl hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
+                        >
+                          {/* Animated gradient border effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent group-hover:animate-royal-shimmer pointer-events-none" />
+                          
+                          {/* Luxury Chain Header */}
+                          <div className={`relative bg-gradient-to-r ${config.color} p-[1px]`}>
+                            <div className="bg-card/95 backdrop-blur-sm px-5 py-4">
                               <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-bold text-lg text-foreground mb-1">{chain.chain}</h4>
-                                  <div className="flex flex-wrap gap-2 text-xs">
-                                    {chain.balance && chain.balance !== '0' && (
-                                      <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 font-medium">
-                                        {(parseInt(chain.balance) / 1e18).toFixed(4)} {chain.chainKey === 'worldchain' ? 'WLD' : 'ETH'}
-                                      </span>
-                                    )}
-                                    <span className="px-2 py-1 rounded-full bg-primary/20 text-primary font-medium">
-                                      {chain.totalTransactions} activities
-                                    </span>
+                                <div className="flex items-center gap-4">
+                                  <div className="text-3xl">{config.icon}</div>
+                                  <div>
+                                    <h4 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
+                                      {chain.chain}
+                                      {chain.balance && chain.balance !== '0' && (
+                                        <span className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold border border-primary/30">
+                                          {(parseInt(chain.balance) / 1e18).toFixed(4)} {config.currency}
+                                        </span>
+                                      )}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground font-medium">
+                                      {chain.totalTransactions.toLocaleString()} {chain.totalTransactions === 1 ? 'Activity' : 'Activities'}
+                                    </p>
                                   </div>
                                 </div>
-                                <a
-                                  href={`${explorerBaseUrl}/address/${web3BioProfile?.address}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-primary hover:text-primary-luxury hover:bg-primary/10"
+                                  onClick={() => window.open(`${explorerBaseUrl}/address/${web3BioProfile?.address}`, '_blank')}
                                 >
-                                  View on Explorer →
-                                </a>
+                                  <ExternalLink className="w-4 h-4 mr-1" />
+                                  Explorer
+                                </Button>
                               </div>
                             </div>
+                          </div>
                         
-                            {/* Compact Transaction List */}
-                            <div className="p-4 space-y-3">
-                              {/* NFT Transfers - Simplified */}
-                              {chain.nftTransfers && chain.nftTransfers.length > 0 && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-muted-foreground mb-2">
-                                    NFT Transfers ({chain.nftTransfers.length})
-                                  </h5>
-                                  <div className="space-y-2">
-                                    {chain.nftTransfers.slice(0, 2).map((tx: any, idx: number) => (
-                                      <div key={tx.hash + tx.tokenID + idx} className="flex items-center justify-between p-2 bg-muted/30 rounded border border-border/50">
-                                        <div className="flex-1 min-w-0">
-                                          <div className="text-xs font-medium truncate">{tx.tokenName || 'Unknown NFT'}</div>
-                                          <div className="text-xs text-muted-foreground">Token #{tx.tokenID}</div>
-                                        </div>
-                                        <a
-                                          href={`${explorerBaseUrl}/tx/${tx.hash}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-primary hover:text-primary/80 ml-2"
-                                        >
-                                          <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                      </div>
-                                    ))}
+                          {/* Elegant Activity Sections */}
+                          <div className="p-5 space-y-4 bg-gradient-to-b from-transparent to-muted/20">
+                            {/* NFT Transfers */}
+                            {chain.nftTransfers && chain.nftTransfers.length > 0 && (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center">
+                                    <span className="text-sm">🖼️</span>
                                   </div>
+                                  <h5 className="text-sm font-bold text-foreground">NFT Transfers</h5>
+                                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-pink-500/10 text-pink-400 font-semibold">
+                                    {chain.nftTransfers.length}
+                                  </span>
                                 </div>
-                              )}
+                                <div className="grid gap-2">
+                                  {chain.nftTransfers.slice(0, 3).map((tx: any, idx: number) => (
+                                    <div 
+                                      key={tx.hash + tx.tokenID + idx} 
+                                      className="group flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card/80 transition-all duration-200"
+                                    >
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-foreground truncate">{tx.tokenName || 'Unknown NFT'}</p>
+                                        <p className="text-xs text-muted-foreground font-mono">#{tx.tokenID}</p>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
+                                      >
+                                        <ExternalLink className="w-3 h-3 text-primary" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-                              {/* Token Transfers - Simplified */}
-                              {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-muted-foreground mb-2">
-                                    Token Transfers ({chain.tokenTransfers.length})
-                                  </h5>
-                                  <div className="space-y-2">
-                                    {chain.tokenTransfers.slice(0, 2).map((tx: any, idx: number) => (
-                                      <div key={tx.hash + tx.contractAddress + idx} className="flex items-center justify-between p-2 bg-muted/30 rounded border border-border/50">
-                                        <div className="flex-1 min-w-0">
-                                          <div className="text-xs font-medium">
-                                            {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
-                                          </div>
-                                          <div className="text-xs text-muted-foreground">{tx.tokenName}</div>
-                                        </div>
-                                        <a
-                                          href={`${explorerBaseUrl}/tx/${tx.hash}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-primary hover:text-primary/80 ml-2"
-                                        >
-                                          <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                      </div>
-                                    ))}
+                            {/* Token Transfers */}
+                            {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+                                    <span className="text-sm">🪙</span>
                                   </div>
+                                  <h5 className="text-sm font-bold text-foreground">Token Transfers</h5>
+                                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 font-semibold">
+                                    {chain.tokenTransfers.length}
+                                  </span>
                                 </div>
-                              )}
+                                <div className="grid gap-2">
+                                  {chain.tokenTransfers.slice(0, 3).map((tx: any, idx: number) => (
+                                    <div 
+                                      key={tx.hash + tx.contractAddress + idx} 
+                                      className="group flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card/80 transition-all duration-200"
+                                    >
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-foreground">
+                                          {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground truncate">{tx.tokenName}</p>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
+                                      >
+                                        <ExternalLink className="w-3 h-3 text-primary" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-                              {/* Regular Transactions - Simplified */}
-                              {chain.transactions && chain.transactions.length > 0 && (
-                                <div>
-                                  <h5 className="text-xs font-semibold text-muted-foreground mb-2">
-                                    Transactions ({chain.transactions.length})
-                                  </h5>
-                                  <div className="space-y-2">
-                                    {chain.transactions.slice(0, 2).map((tx: any, idx: number) => (
-                                      <div key={tx.hash + idx} className="flex items-center justify-between p-2 bg-muted/30 rounded border border-border/50">
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-xs px-1.5 py-0.5 rounded ${tx.isError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                                              {tx.isError ? '✗' : '✓'}
-                                            </span>
-                                          </div>
-                                          <div className="text-xs text-muted-foreground">
-                                            {(parseInt(tx.value) / 1e18).toFixed(6)} {chain.chainKey === 'worldchain' ? 'WLD' : 'ETH'}
-                                          </div>
-                                        </div>
-                                        <a
-                                          href={`${explorerBaseUrl}/tx/${tx.hash}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-primary hover:text-primary/80 ml-2"
-                                        >
-                                          <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                      </div>
-                                    ))}
+                            {/* Regular Transactions */}
+                            {chain.transactions && chain.transactions.length > 0 && (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
+                                    <span className="text-sm">💸</span>
                                   </div>
+                                  <h5 className="text-sm font-bold text-foreground">Transactions</h5>
+                                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-400 font-semibold">
+                                    {chain.transactions.length}
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                          </Card>
-                        );
-                      })}
+                                <div className="grid gap-2">
+                                  {chain.transactions.slice(0, 3).map((tx: any, idx: number) => (
+                                    <div 
+                                      key={tx.hash + idx} 
+                                      className="group flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-card/80 transition-all duration-200"
+                                    >
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                        tx.isError 
+                                          ? 'bg-red-500/20 text-red-400' 
+                                          : 'bg-green-500/20 text-green-400'
+                                      }`}>
+                                        {tx.isError ? '✗' : '✓'}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-foreground">
+                                          {(parseInt(tx.value) / 1e18).toFixed(6)} {config.currency}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {tx.isError ? 'Failed' : 'Success'}
+                                        </p>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
+                                      >
+                                        <ExternalLink className="w-3 h-3 text-primary" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
