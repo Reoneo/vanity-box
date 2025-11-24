@@ -19,8 +19,9 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [conversation, setConversation] = useState<any>(null);
-  const messageInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleConnect = async () => {
@@ -120,10 +121,10 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
 
   // Auto-focus input when conversation is loaded
   useEffect(() => {
-    if (conversation && messageInputRef.current) {
+    if (conversation && inputRef.current) {
       // Single reliable focus after render completes
       requestAnimationFrame(() => {
-        messageInputRef.current?.focus();
+        inputRef.current?.focus();
       });
     }
   }, [conversation]);
@@ -234,45 +235,46 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex gap-2 pt-2 border-t">
-          <input
-            ref={messageInputRef}
-            type="text"
-            inputMode="text"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck="false"
+        {/* Composer */}
+        <div className="flex gap-2 pt-2 border-t z-10 pointer-events-auto">
+          <textarea
+            ref={inputRef}
+            className="flex-1 resize-none text-xs bg-background border rounded-md px-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            rows={1}
+            placeholder={
+              !client
+                ? 'Connect chat via World App to send messages'
+                : !conversation
+                ? 'Loading conversation…'
+                : 'Type a message…'
+            }
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setMessageText(e.target.value)}
+            onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSendMessage();
+                void handleSendMessage();
               }
             }}
-            placeholder="Type a message..."
-            disabled={isSending}
-            className="flex-1 px-4 py-2.5 text-sm rounded-lg border-2 border-border bg-background focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 transition-all"
-            style={{
-              touchAction: 'manipulation',
-              WebkitUserSelect: 'text',
-              userSelect: 'text',
-              WebkitTapHighlightColor: 'transparent',
-              fontSize: '16px',
-              minHeight: '44px'
-            }}
+            // No disabled prop - always allow typing for mobile keyboard
           />
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={isSending || !messageText.trim()} 
+          <Button
             size="icon"
-            className="h-11 w-11 rounded-lg transition-all hover:scale-105 active:scale-95"
+            className="shrink-0"
+            disabled={
+              !client ||
+              !conversation ||
+              isSending ||
+              isLoadingConversation ||
+              !!loadError ||
+              !messageText.trim()
+            }
+            onClick={handleSendMessage}
           >
             {isSending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="w-4 h-4" />
             )}
           </Button>
         </div>
