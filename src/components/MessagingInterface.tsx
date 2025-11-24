@@ -80,12 +80,15 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     try {
       if (!MiniKit.isInstalled()) {
         toast.error("Please open this app in World App to use messaging");
+        setIsConnecting(false);
         return;
       }
 
       console.log("🔄 Connecting to XMTP via World Chain");
       const { address, signer } = await authenticateWithWorldChain();
+      console.log("✅ Got World Chain credentials, initializing XMTP client");
       await initializeClient(signer, address);
+      console.log("✅ XMTP client initialized");
       toast.success("Connected to XMTP!");
     } catch (error: any) {
       console.error("❌ XMTP connection error:", error);
@@ -408,27 +411,25 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               <XMTPSettings />
               <Button
-              variant="ghost"
-              size="sm"
-              onClick={requestPermission}
-              disabled={isRequesting}
-              className="flex items-center gap-2"
-            >
-              {hasPermission ? (
-                <>
+                variant="ghost"
+                size="icon"
+                onClick={requestPermission}
+                disabled={isRequesting}
+                className="h-8 w-8"
+                title={hasPermission ? "Notifications enabled" : "Notifications disabled"}
+              >
+                {hasPermission ? (
                   <Bell className="h-4 w-4" />
-                  <Badge variant="secondary" className="text-xs">On</Badge>
-                </>
-              ) : (
-                <>
+                ) : (
                   <BellOff className="h-4 w-4" />
-                  <Badge variant="outline" className="text-xs">Off</Badge>
-                </>
-              )}
-            </Button>
+                )}
+              </Button>
+              <Badge variant={hasPermission ? "secondary" : "outline"} className="text-xs px-2">
+                {hasPermission ? "On" : "Off"}
+              </Badge>
             </div>
           </div>
           <div className="flex gap-2">
