@@ -517,6 +517,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <XMTPSettings />
             <Button
               variant="ghost"
               size="icon"
@@ -534,7 +535,6 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             <Badge variant={hasPermission ? "secondary" : "outline"} className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
               {hasPermission ? "On" : "Off"}
             </Badge>
-            <XMTPSettings />
           </div>
           </div>
           <div className="flex gap-1.5 sm:gap-2">
@@ -728,7 +728,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Type a message..."
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage();
@@ -736,7 +736,6 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                   }}
                   disabled={isSending}
                   className="flex-1 text-sm"
-                  autoFocus
                 />
                 <Button 
                   onClick={handleSendMessage} 
