@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Settings, Trash2, AlertTriangle, Info, CheckCircle } from "lucide-react";
+import { Settings, Trash2, AlertTriangle, Info, CheckCircle, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useXmtp } from "@/contexts/XmtpContext";
+import { xmtpConversationManager } from "@/lib/xmtpConversationManager";
 
 export const XMTPSettings = () => {
   const { walletAddress, disconnectClient } = useXmtp();
@@ -81,6 +82,20 @@ export const XMTPSettings = () => {
   const clearAllInstallations = () => {
     if (confirm('This will clear all XMTP installations and disconnect you. You will need to reconnect. Continue?')) {
       clearInstallation();
+    }
+  };
+
+  const clearHiddenConversations = () => {
+    const hiddenCount = xmtpConversationManager.getHiddenConversations().length;
+    if (hiddenCount === 0) {
+      toast.info('No hidden conversations to clear');
+      return;
+    }
+    
+    if (confirm(`Unhide ${hiddenCount} hidden conversation(s)? They will reappear in your conversation list.`)) {
+      xmtpConversationManager.clearHiddenConversations();
+      toast.success('Hidden conversations cleared');
+      setTimeout(() => window.location.reload(), 1000);
     }
   };
 
@@ -166,6 +181,27 @@ export const XMTPSettings = () => {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Hidden Conversations Management */}
+          <div className="border border-border rounded-lg p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <EyeOff className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-medium">Hidden Conversations</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Manage conversations you've hidden by swiping left and deleting.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={clearHiddenConversations}
+              className="w-full"
+            >
+              <EyeOff className="h-4 w-4 mr-2" />
+              Unhide All Conversations ({xmtpConversationManager.getHiddenConversations().length})
+            </Button>
           </div>
 
           {/* Danger Zone */}

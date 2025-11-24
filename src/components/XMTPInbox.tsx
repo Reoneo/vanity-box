@@ -118,13 +118,25 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     };
   }, [conversation]);
 
-  // Focus input when conversation loads
+  // Auto-focus input when conversation is loaded - CRITICAL for mobile typing
   useEffect(() => {
     if (conversation && messageInputRef.current) {
-      setTimeout(() => {
-        messageInputRef.current?.focus();
-        messageInputRef.current?.click();
-      }, 300);
+      // Multiple aggressive focus attempts for mobile reliability
+      const focusInput = () => {
+        if (messageInputRef.current) {
+          messageInputRef.current.focus();
+          messageInputRef.current.click();
+          messageInputRef.current.setSelectionRange(0, 0);
+        }
+      };
+
+      // Immediate focus
+      focusInput();
+      
+      // Delayed focuses to ensure DOM is ready
+      setTimeout(focusInput, 100);
+      setTimeout(focusInput, 300);
+      setTimeout(focusInput, 500);
     }
   }, [conversation]);
 
@@ -132,20 +144,23 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     if (!messageText.trim() || !conversation || isSending) return;
 
     const textToSend = messageText.trim();
+    setMessageText('');
     setIsSending(true);
-    setMessageText(''); // Clear immediately for better UX
-    
+
     try {
-      console.log('📤 Sending message');
       await conversation.send(textToSend);
-      console.log('✅ Message sent successfully');
       
-      // Message will appear via stream
-      messageInputRef.current?.focus();
-    } catch (error: any) {
-      console.error('❌ Failed to send message:', error);
-      toast.error('Failed to send message');
-      setMessageText(textToSend); // Restore message on error
+      // Aggressively focus input for next message - CRITICAL for mobile
+      requestAnimationFrame(() => {
+        if (messageInputRef.current) {
+          messageInputRef.current.focus();
+          messageInputRef.current.click();
+          messageInputRef.current.setSelectionRange(0, 0);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setMessageText(textToSend);
     } finally {
       setIsSending(false);
     }
@@ -240,17 +255,30 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
         <div className="flex gap-2 pt-2 border-t">
           <input
             ref={messageInputRef}
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             placeholder="Type a message..."
-            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
             disabled={isSending}
             className="flex-1 px-4 py-2.5 text-sm rounded-lg border-2 border-border bg-background focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 transition-all"
-            style={{ 
+            style={{
               touchAction: 'manipulation',
               WebkitUserSelect: 'text',
               userSelect: 'text',
-              fontSize: '16px'
+              WebkitTapHighlightColor: 'transparent',
+              fontSize: '16px',
+              minHeight: '44px'
             }}
           />
           <Button 
