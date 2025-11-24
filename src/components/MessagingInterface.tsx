@@ -725,11 +725,11 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                 </div>
               ) : (
                 messages.map((msg, idx) => {
-                  // Compare sender address with our wallet address
+                  // FIXED: Compare senderAddress vs walletAddress for proper alignment
                   const isOurMessage = msg.senderAddress?.toLowerCase() === walletAddress?.toLowerCase();
                   return (
                     <div
-                      key={idx}
+                      key={msg.id || idx}
                       className={`flex ${isOurMessage ? "justify-end" : "justify-start"}`}
                     >
                       <div
@@ -742,9 +742,11 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                         <p className="text-sm break-words">{msg.content}</p>
                         {msg.sentAt && (
                           <p className="text-[10px] sm:text-xs opacity-70 mt-1">
-                            {new Date(msg.sentAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit"
+                            {new Date(msg.sentAt).toLocaleString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              month: 'short',
+                              day: 'numeric'
                             })}
                           </p>
                         )}
