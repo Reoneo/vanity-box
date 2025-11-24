@@ -8,36 +8,33 @@ export interface PushSignerResult {
 }
 
 /**
- * MiniKitSigner - A proper ethers.Signer implementation for Push Protocol
- * Uses World Chain authentication via MiniKit for all signing operations
+ * MiniKitSigner - Clean ethers.Signer implementation for Push Protocol
+ * ❌ Does NOT touch _isSigner property - ethers.Signer handles that
+ * ✅ Uses MiniKit signMessage and signTypedData commands
  */
 class MiniKitSigner extends ethers.Signer {
   private walletAddress: string;
+  // Don't redeclare provider - ethers.Signer already has it
 
-  constructor(address: string) {
+  constructor(address: string, provider?: ethers.providers.Provider) {
     super();
     this.walletAddress = address.toLowerCase();
-    
-    // Make this object extensible for Push SDK to add properties
-    Object.defineProperty(this, '_isSigner', {
-      value: true,
-      writable: false,
-      configurable: true,
-      enumerable: true
-    });
+    if (provider) {
+      Object.defineProperty(this, 'provider', { value: provider, writable: false });
+    }
+    // ❌ NO Object.defineProperty here
+    // ❌ NO _isSigner property declaration
   }
 
-  /**
-   * Required by ethers.Signer - Returns the wallet address
-   */
   async getAddress(): Promise<string> {
     return this.walletAddress;
   }
 
-  /**
-   * Required by ethers.Signer - Signs messages using MiniKit
-   */
   async signMessage(message: string | Uint8Array): Promise<string> {
+    if (!MiniKit.isInstalled()) {
+      throw new Error('MiniKit is not installed – open this in World App.');
+    }
+
     const messageStr = typeof message === 'string' 
       ? message 
       : ethers.utils.hexlify(message);
@@ -46,81 +43,72 @@ class MiniKitSigner extends ethers.Signer {
     console.log('   Message preview:', messageStr.substring(0, 50) + '...');
     
     try {
-      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
-        nonce: messageStr,
-        requestId: `sign-${Date.now()}`,
-        expirationTime: new Date(Date.now() + 5 * 60 * 1000),
-        notBefore: new Date(),
-        statement: 'Sign message for Push Protocol (Step 2 of 2: Encryption Setup)'
+      const { finalPayload } = await MiniKit.commandsAsync.signMessage({
+        message: messageStr
       });
 
-      if (finalPayload.status === 'error') {
-        throw new Error('Signing failed: ' + (finalPayload as any).errorMessage);
-      }
-
-      const signature = (finalPayload as any).signature;
-      if (!signature) {
-        throw new Error('No signature returned from World App');
+      if (finalPayload.status !== 'success') {
+        console.error('MiniKit signMessage failed', finalPayload);
+        throw new Error('MiniKit signMessage failed');
       }
 
       console.log('✅ Message signed successfully');
-      return signature;
+      return finalPayload.signature;
     } catch (error) {
       console.error('❌ MiniKit signing failed:', error);
       throw error;
     }
   }
 
-  /**
-   * Required by ethers.Signer - Not needed for Push Protocol
-   */
   async signTransaction(transaction: ethers.providers.TransactionRequest): Promise<string> {
     throw new Error('Transaction signing not supported in World App Mini App');
   }
 
-  /**
-   * Required by ethers.Signer - Returns self (no provider needed)
-   */
   connect(provider: ethers.providers.Provider): ethers.Signer {
-    return this;
+    return new MiniKitSigner(this.walletAddress, provider);
   }
 
-  /**
-   * Optional: Sign typed data (if needed by Push Protocol)
-   */
   async _signTypedData(
-    domain: ethers.TypedDataDomain,
-    types: Record<string, Array<ethers.TypedDataField>>,
+    domain: any,
+    types: Record<string, Array<any>>,
     value: Record<string, any>
   ): Promise<string> {
+    if (!MiniKit.isInstalled()) {
+      throw new Error('MiniKit is not installed – open this in World App.');
+    }
+
     console.log('📝 Signing typed data via MiniKit');
     
     try {
-      const dataToSign = JSON.stringify({
-        domain,
-        types,
-        value
-      });
-
-      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
-        nonce: dataToSign,
-        requestId: `sign-typed-${Date.now()}`,
-        expirationTime: new Date(Date.now() + 5 * 60 * 1000),
-        notBefore: new Date(),
-        statement: 'Sign typed data for Push Protocol'
-      });
-
-      if (finalPayload.status === 'error') {
-        throw new Error('Signing failed: ' + (finalPayload as any).errorMessage);
+      // Prepare clean types for MiniKit
+      const cleanTypes: any = { ...types };
+      if (!cleanTypes.EIP712Domain) {
+        const eipDomain: { name: string; type: string }[] = [];
+        if (domain.chainId) {
+          eipDomain.push({ name: 'chainId', type: 'uint256' });
+        }
+        if (domain.verifyingContract) {
+          eipDomain.push({ name: 'verifyingContract', type: 'address' });
+        }
+        cleanTypes.EIP712Domain = eipDomain;
       }
 
-      const signature = (finalPayload as any).signature;
-      if (!signature) {
-        throw new Error('No signature returned from World App');
+      const primaryType = Object.keys(cleanTypes).find((k) => k !== 'EIP712Domain') || Object.keys(cleanTypes)[0];
+
+      const { finalPayload } = await MiniKit.commandsAsync.signTypedData({
+        domain: domain as any,
+        types: cleanTypes,
+        primaryType,
+        message: value
+      });
+
+      if (finalPayload.status !== 'success') {
+        console.error('MiniKit signTypedData failed', finalPayload);
+        throw new Error('MiniKit signTypedData failed');
       }
 
       console.log('✅ Typed data signed successfully');
-      return signature;
+      return finalPayload.signature;
     } catch (error) {
       console.error('❌ MiniKit typed data signing failed:', error);
       throw error;
@@ -148,14 +136,14 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
     const nonce = nonceResponse.nonce;
     console.log('✅ Nonce received:', nonce.substring(0, 10) + '...');
 
-    // Step 2: Request wallet authentication from World App
+    // Step 2: Request wallet authentication from World App (Step 1 of 2)
     console.log('🔐 Requesting wallet authentication (Step 1 of 2: Authentication)...');
     const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
       nonce,
-      requestId: `push-auth-${Date.now()}`,
-      expirationTime: new Date(Date.now() + 5 * 60 * 1000),
-      notBefore: new Date(),
-      statement: 'Sign in to Push Protocol Messaging (Step 1 of 2: Authentication)'
+      requestId: 'push-chat',
+      expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      notBefore: new Date(Date.now() - 5 * 60 * 1000),
+      statement: 'Sign in to Vanity.box messaging (Step 1 of 2: World Chain authentication)'
     });
 
     if (finalPayload.status === 'error') {
@@ -163,39 +151,21 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
       throw new Error('Wallet authentication failed');
     }
 
-    console.log('✅ Wallet auth signature received from World App');
-
-    // Step 3: Verify the signature with our backend
-    console.log('🔍 Verifying signature...');
-    const payload = finalPayload as any;
-    const verifyResponse = await callEdge('verify-siwe-message', {
-      message: payload?.message,
-      signature: payload?.signature,
-      nonce
-    });
-
-    if (!verifyResponse?.success) {
-      console.error('❌ Signature verification failed');
-      throw new Error('Signature verification failed');
-    }
-
-    const address = payload?.address;
+    const address = finalPayload.address;
     if (!address) {
       throw new Error('No address returned from authentication');
     }
 
-    console.log('✅ SIWE signature verified for address:', address);
+    console.log('✅ WalletAuth success, address:', address);
 
-    // Step 4: Create proper ethers.Signer instance for Push Protocol
+    // Step 3: Create MiniKitSigner (no provider needed for Push Protocol)
     const signer = new MiniKitSigner(address);
     
-    // Validate signer is properly configured
-    console.log('🔍 Signer validation:', {
+    // Log signer validation (read-only, don't modify _isSigner)
+    console.log('🔍 MiniKitSigner ready:', {
       address: await signer.getAddress(),
       hasSignMessage: typeof signer.signMessage === 'function',
-      hasSignTypedData: typeof signer._signTypedData === 'function',
-      isSigner: signer._isSigner,
-      isExtensible: Object.isExtensible(signer)
+      hasSignTypedData: typeof signer._signTypedData === 'function'
     });
     
     console.log('✅ Push Protocol signer ready');
