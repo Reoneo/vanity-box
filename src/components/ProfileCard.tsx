@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar } from "lucide-react";
-import { XMTPInbox } from "@/components/XMTPInbox";
+import { MessagingInterface } from "@/components/MessagingInterface";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
@@ -43,6 +43,7 @@ interface ProfileCardProps {
   onLoadMoreNfts?: () => void;
   transactions?: any;
   transactionsLoading?: boolean;
+  onCloseInbox?: () => void;
 }
 
 export const ProfileCard = ({
@@ -64,6 +65,7 @@ export const ProfileCard = ({
   onLoadMoreNfts,
   transactions,
   transactionsLoading = false,
+  onCloseInbox,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
@@ -910,16 +912,10 @@ export const ProfileCard = ({
           </div>
         )}
 
-        {/* XMTP Inbox Section */}
+        {/* Messaging Interface Section */}
         {activeSection === 'inbox' && (
-          <div className="flex-1 overflow-y-auto">
-            <div className="h-full flex flex-col" style={{ minHeight: '500px' }}>
-              <XMTPInbox 
-                profileAddress={currentWalletAddress}
-                currentUserAddress={connectedWalletAddress}
-                isProfileOwner={currentWalletAddress === connectedWalletAddress}
-              />
-            </div>
+          <div className="fixed inset-0 z-[200] bg-background">
+            <MessagingInterface onClose={onCloseInbox} />
           </div>
         )}
       </Card>

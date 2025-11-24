@@ -1,0 +1,407 @@
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Search, Send, Loader2, MessageCircle, ArrowLeft, X } from "lucide-react";
+import { toast } from "sonner";
+import { useXmtp } from "@/contexts/XmtpContext";
+import { authenticateWithWorldChain } from "@/lib/worldChainAuth";
+import { MiniKit } from "@worldcoin/minikit-js";
+import { formatDistanceToNow } from "date-fns";
+
+interface Conversation {
+  id: string;
+  peerAddress: string;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  unreadCount?: number;
+}
+
+export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
+  const { client, isInitializing, isConnected, initializeClient, walletAddress } = useXmtp();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Connect to XMTP
+  const handleConnect = async () => {
+    try {
+      if (!MiniKit.isInstalled()) {
+        toast.error("Please open this app in World App to use messaging");
+        return;
+      }
+
+      console.log("🔄 Connecting to XMTP via World Chain");
+      const { address, signer } = await authenticateWithWorldChain();
+      await initializeClient(signer, address);
+      toast.success("Connected to XMTP!");
+    } catch (error: any) {
+      console.error("❌ XMTP connection error:", error);
+      toast.error(error.message || "Failed to connect to XMTP");
+    }
+  };
+
+  // Load conversations after client is connected
+  useEffect(() => {
+    if (!client || !isConnected) return;
+
+    const loadConversations = async () => {
+      setIsLoadingConversations(true);
+      try {
+        console.log("🔄 Loading conversations");
+        const convos = await client.conversations.list();
+        
+        const conversationsData: Conversation[] = await Promise.all(
+          convos.map(async (conv: any) => {
+            const msgs = await conv.messages({ limit: 1 });
+            const lastMsg = msgs[0];
+            
+            return {
+              id: conv.id,
+              peerAddress: conv.peerAddress,
+              lastMessage: lastMsg?.content || "",
+              lastMessageTime: lastMsg?.sentAt ? new Date(lastMsg.sentAt) : undefined,
+              unreadCount: 0
+            };
+          })
+        );
+
+        setConversations(conversationsData.sort((a, b) => 
+          (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0)
+        ));
+        console.log("✅ Loaded conversations:", conversationsData.length);
+      } catch (error) {
+        console.error("❌ Failed to load conversations:", error);
+        toast.error("Failed to load conversations");
+      } finally {
+        setIsLoadingConversations(false);
+      }
+    };
+
+    loadConversations();
+  }, [client, isConnected]);
+
+  // Load messages when conversation is selected
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const loadMessages = async () => {
+      try {
+        console.log("🔄 Loading messages for conversation");
+        const msgs = await selectedConversation.messages();
+        setMessages(msgs);
+      } catch (error) {
+        console.error("❌ Failed to load messages:", error);
+        toast.error("Failed to load messages");
+      }
+    };
+
+    loadMessages();
+  }, [selectedConversation]);
+
+  // Stream new messages for selected conversation
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    let isSubscribed = true;
+
+    const streamMessages = async () => {
+      try {
+        for await (const message of await selectedConversation.streamMessages()) {
+          if (isSubscribed) {
+            setMessages((prev) => [...prev, message]);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Message streaming error:", error);
+      }
+    };
+
+    streamMessages();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [selectedConversation]);
+
+  // Start new conversation
+  const handleStartConversation = async () => {
+    if (!searchQuery.trim() || !client) return;
+
+    try {
+      console.log("🔄 Creating conversation with:", searchQuery);
+      const newConvo = await client.conversations.newDm(searchQuery.toLowerCase());
+      setSelectedConversation(newConvo);
+      
+      // Add to conversations list if not already there
+      const exists = conversations.find((c) => c.peerAddress.toLowerCase() === searchQuery.toLowerCase());
+      if (!exists) {
+        setConversations([
+          {
+            id: newConvo.id,
+            peerAddress: searchQuery.toLowerCase(),
+            lastMessage: "",
+            lastMessageTime: new Date()
+          },
+          ...conversations
+        ]);
+      }
+      
+      setSearchQuery("");
+      toast.success("Conversation started");
+    } catch (error) {
+      console.error("❌ Failed to start conversation:", error);
+      toast.error("Failed to start conversation");
+    }
+  };
+
+  // Send message
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !selectedConversation) return;
+
+    setIsSending(true);
+    try {
+      await selectedConversation.send(messageText);
+      setMessageText("");
+      
+      // Refresh messages to include the sent message
+      const msgs = await selectedConversation.messages();
+      setMessages(msgs);
+      
+      console.log("✅ Message sent");
+    } catch (error) {
+      console.error("❌ Failed to send message:", error);
+      toast.error("Failed to send message");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Not connected view
+  if (!isConnected) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background p-4">
+        <Card className="w-full max-w-md p-8">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <MessageCircle className="w-16 h-16 text-primary" />
+            <h2 className="text-2xl font-semibold">Secure Messaging</h2>
+            <p className="text-muted-foreground">
+              Connect your World Chain wallet to send encrypted messages via XMTP
+            </p>
+            <Button onClick={handleConnect} disabled={isInitializing} size="lg" className="w-full">
+              {isInitializing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                "Connect to XMTP"
+              )}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Main messaging interface
+  return (
+    <div className="flex h-screen bg-background relative">
+      {onClose && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 right-4 z-10"
+          onClick={onClose}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      )}
+      
+      {/* Conversations List */}
+      <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-border flex-col`}>
+        {/* Search Header */}
+        <div className="p-4 border-b border-border space-y-3">
+          <h2 className="text-xl font-semibold">Messages</h2>
+          <div className="flex gap-2">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Enter address or ENS..."
+              onKeyPress={(e) => e.key === "Enter" && handleStartConversation()}
+              className="flex-1"
+            />
+            <Button onClick={handleStartConversation} size="icon" disabled={!searchQuery.trim()}>
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto">
+          {isLoadingConversations ? (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 text-center p-4">
+              <MessageCircle className="h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">No conversations yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Search for an address to start messaging</p>
+            </div>
+          ) : (
+            conversations.map((conv) => (
+              <div
+                key={conv.id}
+                onClick={() => {
+                  const fullConvo = client?.conversations.list().then((convos: any[]) => 
+                    convos.find((c: any) => c.id === conv.id)
+                  );
+                  fullConvo?.then(setSelectedConversation);
+                }}
+                className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${
+                  selectedConversation?.id === conv.id ? "bg-muted" : ""
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-medium text-primary">
+                      {conv.peerAddress.slice(2, 4).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium truncate">
+                        {conv.peerAddress.slice(0, 6)}...{conv.peerAddress.slice(-4)}
+                      </p>
+                      {conv.lastMessageTime && (
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDistanceToNow(conv.lastMessageTime, { addSuffix: true })}
+                        </span>
+                      )}
+                    </div>
+                    {conv.lastMessage && (
+                      <p className="text-sm text-muted-foreground truncate mt-1">
+                        {conv.lastMessage}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Chat Area */}
+      <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
+        {selectedConversation ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-border flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setSelectedConversation(null)}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">
+                  {selectedConversation.peerAddress.slice(2, 4).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">
+                  {selectedConversation.peerAddress.slice(0, 6)}...{selectedConversation.peerAddress.slice(-4)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedConversation.peerAddress}
+                </p>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-sm text-muted-foreground">No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                messages.map((msg, idx) => {
+                  // Compare sender address with our wallet address
+                  const isOurMessage = msg.senderAddress?.toLowerCase() === walletAddress?.toLowerCase();
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex ${isOurMessage ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                          isOurMessage
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        }`}
+                      >
+                        <p className="text-sm break-words">{msg.content}</p>
+                        {msg.sentAt && (
+                          <p className="text-xs opacity-70 mt-1">
+                            {new Date(msg.sentAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-border">
+              <div className="flex gap-2">
+                <Input
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Type a message..."
+                  onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                  disabled={isSending}
+                  className="flex-1"
+                />
+                <Button onClick={handleSendMessage} disabled={isSending || !messageText.trim()} size="icon">
+                  {isSending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg font-medium">Select a conversation</p>
+              <p className="text-sm text-muted-foreground mt-1">Choose a conversation to start messaging</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
