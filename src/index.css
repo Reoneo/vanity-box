@@ -460,3 +460,13 @@ All colors MUST be HSL. */
     transform: rotateY(180deg);
   }
 }
+
+/* CRITICAL FIX: Force Sonner toasts to top of screen to prevent blocking inputs */
+[data-sonner-toaster] {
+  top: 1rem !important;
+  bottom: auto !important;
+}
+
+[data-sonner-toast] {
+  margin-bottom: 0.5rem !important;
+}
