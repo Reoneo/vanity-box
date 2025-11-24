@@ -85,16 +85,6 @@ const Index = () => {
                   },
                   isActive: activeDockSection === 'inbox',
                 },
-                {
-                  icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
-                  label: 'Search',
-                  onClick: () => {
-                    setShowSearchBar(prev => !prev);
-                    window.dispatchEvent(new CustomEvent("toggle-search-bar", { detail: { show: !showSearchBar } }));
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  },
-                  isActive: false,
-                },
               ]}
             />
           </div>
