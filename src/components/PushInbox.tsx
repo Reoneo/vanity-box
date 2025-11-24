@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { CONSTANTS } from '@pushprotocol/restapi';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface PushInboxProps {
   profileAddress: string;
@@ -13,6 +14,7 @@ interface PushInboxProps {
 
 export const PushInbox = ({ profileAddress, currentUserAddress, isProfileOwner }: PushInboxProps) => {
   const { pushUser, isInitializing, isConnected, initializePush, walletAddress } = usePush();
+  const { showMessageNotification } = usePushNotifications();
   const [messages, setMessages] = useState<any[]>([]);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -75,6 +77,14 @@ export const PushInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
               message.to?.find((addr: string) => addr.toLowerCase() === profileAddress.toLowerCase())) {
             setMessages(prev => [...prev, message]);
             setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
+            // Show notification for incoming messages (not our own)
+            const isFromUs = message.fromDID?.toLowerCase().includes(walletAddress?.toLowerCase() || '');
+            if (!isFromUs) {
+              const messageContent = message.messageContent || message.messageObj?.content || 'New message';
+              const senderName = profileAddress.substring(0, 8) + '...';
+              showMessageNotification(senderName, messageContent, profileAddress);
+            }
           }
         });
 

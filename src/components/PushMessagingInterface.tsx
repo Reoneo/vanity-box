@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { usePush } from '@/contexts/PushContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ArrowLeft, Trash2, Search } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Trash2, Search, Bell, BellOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { pushConversationManager } from '@/lib/pushConversationManager';
 import { CONSTANTS } from '@pushprotocol/restapi';
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface Conversation {
   chatId: string;
@@ -21,6 +22,7 @@ interface Conversation {
 
 export const PushMessagingInterface = () => {
   const { pushUser, isInitializing, isConnected, initializePush, walletAddress } = usePush();
+  const { permission, requestPermission, showMessageNotification } = usePushNotifications();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -31,7 +33,13 @@ export const PushMessagingInterface = () => {
   const [newChatAddress, setNewChatAddress] = useState('');
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize notification state
+  useEffect(() => {
+    setNotificationsEnabled(permission.granted);
+  }, [permission.granted]);
 
   // Resolve ENS/World Chain names to addresses
   const resolveAddressOrENS = async (input: string): Promise<string> => {
@@ -182,6 +190,16 @@ export const PushMessagingInterface = () => {
             }
           }
 
+          // Show browser notification for new messages (only if not from us)
+          const isFromUs = message.fromDID?.toLowerCase().includes(walletAddress?.toLowerCase() || '');
+          if (!isFromUs && notificationsEnabled) {
+            const senderAddress = message.from || message.fromDID?.split(':')[1] || 'Unknown';
+            const messageContent = message.messageContent || message.messageObj?.content || 'New message';
+            const senderName = senderAddress.substring(0, 8) + '...';
+            
+            showMessageNotification(senderName, messageContent, senderAddress);
+          }
+
           // Update conversation list
           setConversations(prev => {
             const updated = [...prev];
@@ -304,6 +322,18 @@ export const PushMessagingInterface = () => {
     toast.success('Conversation hidden');
   };
 
+  const toggleNotifications = async () => {
+    if (notificationsEnabled) {
+      setNotificationsEnabled(false);
+      toast.info('Notifications disabled');
+    } else {
+      const granted = await requestPermission();
+      if (granted) {
+        setNotificationsEnabled(true);
+      }
+    }
+  };
+
   if (!isConnected) {
     return (
       <div className="h-screen flex items-center justify-center p-6">
@@ -341,7 +371,21 @@ export const PushMessagingInterface = () => {
       {/* Conversations Sidebar */}
       <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col border-r`}>
         <div className="p-4 border-b space-y-3">
-          <h2 className="text-xl font-bold">Messages</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">Messages</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleNotifications}
+              title={notificationsEnabled ? 'Disable notifications' : 'Enable notifications'}
+            >
+              {notificationsEnabled ? (
+                <Bell className="h-5 w-5 text-primary" />
+              ) : (
+                <BellOff className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
           
           {/* Search */}
           <div className="relative">
