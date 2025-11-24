@@ -20,7 +20,7 @@ export const useXmtpClient = () => {
       
       console.log('✅ XMTP client initialized');
       setClient(newClient);
-      toast.success('Connected to XMTP messaging');
+      // Toast removed - UI will show connection state
       return newClient;
     } catch (error) {
       console.error('❌ Failed to initialize XMTP client:', error);
