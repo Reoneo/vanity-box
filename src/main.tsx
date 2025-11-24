@@ -7,7 +7,9 @@ import { Buffer } from 'buffer';
 // Polyfill Buffer globally for XMTP and other libraries
 if (typeof window !== 'undefined') {
   window.Buffer = Buffer;
+  globalThis.Buffer = Buffer;
   (window as any).global = window;
+  (globalThis as any).global = globalThis;
 }
 
 // Bootstrap MiniKit once on app load with enhanced logging
