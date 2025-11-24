@@ -47,18 +47,30 @@ serve(async (req) => {
 
     // Parse Namestone text records into a usable format
     const textRecords: Record<string, string> = {};
-    if (namestoneData?.textRecords && Array.isArray(namestoneData.textRecords)) {
-      namestoneData.textRecords.forEach((record: any) => {
-        if (record.key && record.value) {
-          textRecords[record.key] = record.value;
-        }
-      });
+    
+    // Namestone returns textRecords as an object, not an array
+    if (namestoneData?.textRecords && typeof namestoneData.textRecords === 'object') {
+      // If it's already an object, use it directly
+      if (!Array.isArray(namestoneData.textRecords)) {
+        Object.entries(namestoneData.textRecords).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            textRecords[key] = String(value);
+          }
+        });
+      } else {
+        // If it's an array (old format), parse it
+        namestoneData.textRecords.forEach((record: any) => {
+          if (record.key && record.value) {
+            textRecords[record.key] = record.value;
+          }
+        });
+      }
     }
 
     console.log('Parsed text records:', textRecords);
 
-    // Resolve ENS address if not available in text records or owner
-    let resolvedAddress = textRecords['eth'] || namestoneData.owner || null;
+    // Resolve ENS address - check eth.addr first (standard), then eth, then owner
+    let resolvedAddress = textRecords['eth.addr'] || textRecords['eth'] || namestoneData.owner || null;
     
     if (!resolvedAddress) {
       console.log('No address found in records, attempting ENS resolution for:', subdomain);
