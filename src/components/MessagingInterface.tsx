@@ -13,6 +13,9 @@ import { formatDistanceToNow } from "date-fns";
 import { useWorldNotifications } from "@/hooks/useWorldNotifications";
 import { soundManager } from "@/utils/soundEffects";
 import { XMTPSettings } from "@/components/XMTPSettings";
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
+import { normalize } from 'viem/ens';
 
 interface Conversation {
   id: string;
@@ -22,6 +25,56 @@ interface Conversation {
   lastMessageTime?: Date;
   unreadCount?: number;
 }
+
+// Helper to resolve ENS names or World Chain names to Ethereum addresses
+const resolveAddressOrENS = async (input: string): Promise<string> => {
+  const trimmed = input.trim().toLowerCase();
+  
+  // If it's already an Ethereum address
+  if (trimmed.startsWith('0x') && trimmed.length === 42) {
+    return trimmed;
+  }
+  
+  // If it's an ENS name (.eth)
+  if (trimmed.endsWith('.eth')) {
+    try {
+      const publicClient = createPublicClient({
+        chain: mainnet,
+        transport: http()
+      });
+      
+      const address = await publicClient.getEnsAddress({
+        name: normalize(trimmed)
+      });
+      
+      if (address) return address;
+      throw new Error(`Could not resolve ENS name: ${trimmed}`);
+    } catch (error) {
+      console.error('ENS resolution failed:', error);
+      throw new Error(`Failed to resolve ENS name: ${trimmed}`);
+    }
+  }
+  
+  // If it's a World Chain name (.world)
+  if (trimmed.endsWith('.world')) {
+    try {
+      const response = await supabase.functions.invoke('get-namestone-records', {
+        body: { name: trimmed }
+      });
+      
+      if (response.data?.records?.['eth.addr']) {
+        return response.data.records['eth.addr'];
+      }
+      throw new Error(`Could not resolve .world name: ${trimmed}`);
+    } catch (error) {
+      console.error('World name resolution failed:', error);
+      throw new Error(`Failed to resolve .world name: ${trimmed}`);
+    }
+  }
+  
+  // Invalid format
+  throw new Error('Please enter a valid Ethereum address, .eth name, or .world name');
+};
 
 // Helper to safely get peer identifier from conversation
 const getPeerIdentifier = async (conv: any, client: any): Promise<string> => {
@@ -61,6 +114,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isResolvingENS, setIsResolvingENS] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
@@ -303,18 +357,38 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   const handleStartConversation = async () => {
     if (!searchQuery.trim() || !client) return;
 
+    setIsResolvingENS(true);
     try {
-      console.log("🔄 Creating conversation with:", searchQuery);
-      const newConvo = await client.conversations.newDm(searchQuery.toLowerCase());
+      console.log("🔄 Resolving address/ENS for:", searchQuery);
+      
+      // Resolve ENS name or validate address
+      const resolvedAddress = await resolveAddressOrENS(searchQuery);
+      console.log("✅ Resolved to address:", resolvedAddress);
+      
+      // Create conversation with resolved address
+      console.log("🔄 Creating conversation with:", resolvedAddress);
+      const newConvo: any = await client.conversations.newDm(resolvedAddress);
+      
+      // Ensure peerAddress is set on the conversation object
+      if (!newConvo.peerAddress && newConvo.peerInboxId) {
+        newConvo.peerAddress = await getPeerIdentifier(newConvo, client);
+      } else if (!newConvo.peerAddress) {
+        newConvo.peerAddress = resolvedAddress;
+      }
+      
       setSelectedConversation(newConvo);
       
       // Add to conversations list if not already there
-      const exists = conversations.find((c) => c.peerAddress?.toLowerCase() === searchQuery.toLowerCase());
+      const exists = conversations.find((c) => 
+        c.peerAddress?.toLowerCase() === resolvedAddress.toLowerCase()
+      );
+      
       if (!exists) {
         setConversations([
           {
             id: newConvo.id,
-            peerAddress: searchQuery.toLowerCase(),
+            peerAddress: resolvedAddress,
+            dmPeerInboxId: newConvo.peerInboxId || newConvo.dmPeerInboxId,
             lastMessage: "",
             lastMessageTime: new Date()
           },
@@ -323,10 +397,12 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       }
       
       setSearchQuery("");
-      toast.success("Conversation started");
-    } catch (error) {
+      toast.success(`Conversation started with ${searchQuery}`);
+    } catch (error: any) {
       console.error("❌ Failed to start conversation:", error);
-      toast.error("Failed to start conversation");
+      toast.error(error.message || "Failed to start conversation");
+    } finally {
+      setIsResolvingENS(false);
     }
   };
 
@@ -439,12 +515,27 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter address or ENS..."
+              placeholder="Enter address, .eth, or .world name..."
               onKeyPress={(e) => e.key === "Enter" && handleStartConversation()}
               className="flex-1"
+              disabled={isResolvingENS}
             />
-            <Button onClick={handleStartConversation} size="icon" disabled={!searchQuery.trim()}>
-              <Search className="h-4 w-4" />
+            <Button 
+              onClick={handleStartConversation} 
+              disabled={isLoadingConversations || isResolvingENS || !searchQuery.trim()}
+              className="min-w-[80px]"
+            >
+              {isResolvingENS ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resolving...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Start
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -474,7 +565,11 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                       // Ensure we have peerAddress for display
                       if (!fullConvo.peerAddress && fullConvo.dmPeerInboxId && client) {
                         fullConvo.peerAddress = await getPeerIdentifier(fullConvo, client);
+                      } else if (!fullConvo.peerAddress && conv.peerAddress) {
+                        fullConvo.peerAddress = conv.peerAddress;
                       }
+                      
+                      console.log('📱 Selected conversation:', fullConvo.id, 'with peer:', fullConvo.peerAddress);
                       setSelectedConversation(fullConvo);
                     }
                   } catch (error) {
@@ -527,11 +622,11 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       </div>
 
       {/* Chat Area */}
-      <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
+      <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-h-0`}>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-border flex items-center gap-3">
+            <div className="p-4 border-b border-border flex items-center gap-3 shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
@@ -561,7 +656,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <p className="text-sm text-muted-foreground">No messages yet. Start the conversation!</p>
@@ -600,17 +695,28 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-border shrink-0 bg-background">
               <div className="flex gap-2">
                 <Input
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Type a message..."
-                  onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   disabled={isSending}
                   className="flex-1"
+                  autoFocus
                 />
-                <Button onClick={handleSendMessage} disabled={isSending || !messageText.trim()} size="icon">
+                <Button 
+                  onClick={handleSendMessage} 
+                  disabled={isSending || !messageText.trim()} 
+                  size="icon"
+                  className="shrink-0"
+                >
                   {isSending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
