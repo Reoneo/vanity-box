@@ -19,7 +19,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [canMessage, setCanMessage] = useState(true);
   const [conversation, setConversation] = useState<any>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -28,6 +28,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     try {
       if (!MiniKit.isInstalled()) {
         console.error('❌ MiniKit not installed');
+        toast.error('Please open in World App');
         return;
       }
 
@@ -37,6 +38,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
       console.log('✅ Connected to XMTP');
     } catch (error: any) {
       console.error('❌ XMTP connection error:', error);
+      toast.error('Failed to connect to messaging');
     }
   };
 
@@ -47,7 +49,24 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     const initConversation = async () => {
       setIsLoadingConversation(true);
       try {
-        console.log('🔄 Finding or creating DM conversation with:', profileAddress);
+        console.log('🔄 Checking if can message:', profileAddress);
+        
+        // Check if the profile address can receive messages
+        const canMsg = await client.canMessage([{
+          identifier: profileAddress.toLowerCase(),
+          identifierKind: 'Ethereum'
+        }]);
+        const canReceive = canMsg[profileAddress.toLowerCase()];
+        
+        if (!canReceive) {
+          console.warn('⚠️ Target address cannot receive XMTP messages');
+          setCanMessage(false);
+          setIsLoadingConversation(false);
+          return;
+        }
+        
+        setCanMessage(true);
+        console.log('✅ Target can receive messages');
         
         // Sync conversations first to get latest state
         await client.conversations.sync();
@@ -58,7 +77,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
           d.peerAddress?.toLowerCase() === profileAddress.toLowerCase()
         );
         
-        // If no DM exists, create one
+        // If no DM exists, create one using the correct SDK v5 API
         if (!dm) {
           console.log('📝 Creating new DM with:', profileAddress);
           dm = await client.conversations.newDm(profileAddress);
@@ -79,6 +98,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       } catch (error: any) {
         console.error('❌ Failed to initialize conversation:', error);
+        toast.error('Failed to load conversation');
       } finally {
         setIsLoadingConversation(false);
       }
@@ -87,7 +107,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     initConversation();
   }, [client, isConnected, profileAddress]);
 
-  // Stream new messages
+  // Stream new messages using correct SDK v5 API
   useEffect(() => {
     if (!conversation) return;
 
@@ -95,9 +115,9 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     const startStreaming = async () => {
       try {
         console.log('👂 Starting to stream messages');
-        const stream = conversation.streamMessages();
         
-        for await (const message of stream) {
+        // Use the correct SDK v5 streaming API
+        for await (const message of await conversation.stream()) {
           if (!isActive) break;
           console.log('📨 New message received:', message.id);
           setMessages(prev => {
@@ -122,7 +142,6 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
   // Auto-focus input when conversation is loaded
   useEffect(() => {
     if (conversation && inputRef.current) {
-      // Single reliable focus after render completes
       requestAnimationFrame(() => {
         inputRef.current?.focus();
       });
@@ -138,11 +157,11 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
 
     try {
       console.log('📤 Sending message:', textToSend);
-      console.log('📤 Conversation:', conversation.id);
       await conversation.send(textToSend);
       console.log('✅ Message sent successfully');
     } catch (error) {
       console.error('❌ Failed to send message:', error);
+      toast.error('Failed to send message');
       setMessageText(textToSend);
     } finally {
       setIsSending(false);
@@ -201,6 +220,20 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     );
   }
 
+  if (!canMessage) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-4 py-8">
+          <MessageCircle className="w-12 h-12 text-muted-foreground" />
+          <h3 className="text-lg font-semibold">Cannot Send Message</h3>
+          <p className="text-sm text-muted-foreground text-center max-w-sm">
+            This user hasn't enabled XMTP messaging yet
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardContent className="flex flex-col gap-4 py-4">
@@ -235,16 +268,14 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Composer */}
-        <div className="flex gap-2 pt-2 border-t z-10 pointer-events-auto">
+        {/* Composer - always enabled for mobile keyboard */}
+        <div className="flex gap-2 pt-2 border-t">
           <textarea
             ref={inputRef}
-            className="flex-1 resize-none text-xs bg-background border rounded-md px-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            rows={1}
+            className="flex-1 resize-none text-sm bg-background border rounded-md px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation"
+            rows={2}
             placeholder={
-              !client
-                ? 'Connect chat via World App to send messages'
-                : !conversation
+              !conversation
                 ? 'Loading conversation…'
                 : 'Type a message…'
             }
@@ -256,17 +287,14 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
                 void handleSendMessage();
               }
             }}
-            // No disabled prop - always allow typing for mobile keyboard
+            style={{ WebkitUserSelect: 'text' }}
           />
           <Button
             size="icon"
             className="shrink-0"
             disabled={
-              !client ||
               !conversation ||
               isSending ||
-              isLoadingConversation ||
-              !!loadError ||
               !messageText.trim()
             }
             onClick={handleSendMessage}
