@@ -146,12 +146,32 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
 
   console.log('🔐 Starting WalletAuth (Push step 1 of 2 – authentication)...');
 
-  // Generate nonce
-  const res = await fetch('https://7531083c-c70e-4d19-bd87-5efe8beff8c5.lovableproject.com/functions/v1/generate-siwe-nonce', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  });
-  const { nonce } = await res.json();
+  // Generate nonce from backend on the SAME origin
+  let nonce: string;
+
+  try {
+    const res = await fetch('/functions/v1/generate-siwe-nonce', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!res.ok) {
+      console.error('Nonce endpoint returned non-200', res.status, res.statusText);
+      throw new Error('Failed to generate nonce from server');
+    }
+
+    const data = await res.json();
+    if (!data?.nonce) {
+      console.error('Nonce response missing nonce field', data);
+      throw new Error('Nonce response invalid');
+    }
+
+    nonce = data.nonce;
+    console.log('✅ Nonce received:', nonce.substring(0, 10) + '...');
+  } catch (e) {
+    console.error('❌ Error fetching nonce:', e);
+    throw new Error('Unable to contact Vanity.box server. Please try again.');
+  }
 
   const walletAuthInput: WalletAuthInput = {
     nonce,
@@ -166,7 +186,7 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
 
   if (finalPayload.status === 'error') {
     console.error('WalletAuth failed', finalPayload);
-    throw new Error('WalletAuth failed');
+    throw new Error('Wallet authentication failed');
   }
 
   const address = finalPayload.address;
