@@ -517,7 +517,6 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <XMTPSettings />
             <Button
               variant="ghost"
               size="icon"
@@ -535,6 +534,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             <Badge variant={hasPermission ? "secondary" : "outline"} className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
               {hasPermission ? "On" : "Off"}
             </Badge>
+            <XMTPSettings />
           </div>
           </div>
           <div className="flex gap-1.5 sm:gap-2">
@@ -725,6 +725,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             <div className="p-3 sm:p-4 border-t border-border shrink-0 bg-background safe-area-inset-bottom">
               <div className="flex gap-1.5 sm:gap-2">
                 <Input
+                  type="text"
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Type a message..."
@@ -736,6 +737,10 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                   }}
                   disabled={isSending}
                   className="flex-1 text-sm"
+                  inputMode="text"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="sentences"
                 />
                 <Button 
                   onClick={handleSendMessage} 
