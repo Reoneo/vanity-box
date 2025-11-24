@@ -355,19 +355,15 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   // Not connected view
   if (!isConnected) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <div className="flex items-start justify-center min-h-screen bg-background p-4 pt-20">
         <Card className="w-full max-w-md p-8">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <MessageCircle className="w-16 h-16 text-primary" />
-            <h2 className="text-2xl font-semibold">Secure Messaging</h2>
-            <p className="text-muted-foreground">
-              Connect your World Chain wallet to send encrypted messages via XMTP
-            </p>
+          <div className="flex flex-col items-center gap-6 text-center">
             <Button 
               onClick={handleConnect} 
               disabled={isConnecting || isInitializing} 
               size="lg" 
-              className="w-full"
+              className="w-full touch-manipulation active:scale-95 transition-transform"
+              style={{ touchAction: 'manipulation' }}
             >
               {(isConnecting || isInitializing) ? (
                 <>
@@ -378,6 +374,13 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                 "Connect to XMTP"
               )}
             </Button>
+            <MessageCircle className="w-16 h-16 text-primary mt-4" />
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold">Secure Messaging</h2>
+              <p className="text-muted-foreground">
+                Connect your World Chain wallet to send encrypted messages via XMTP
+              </p>
+            </div>
           </div>
         </Card>
       </div>
