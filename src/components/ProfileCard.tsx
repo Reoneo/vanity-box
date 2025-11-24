@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 import { siBluesky, siReddit, siWhatsapp, siFacebook, siSnapchat, siGithub, siTelegram, siDiscord } from "simple-icons";
-import { MessagingInterface } from "@/components/MessagingInterface";
+import { PushMessagingInterface } from "@/components/PushMessagingInterface";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
@@ -934,7 +934,7 @@ export const ProfileCard = ({
         {/* Messaging Interface Section */}
         {activeSection === 'inbox' && (
           <div className="fixed inset-0 z-[200] bg-background">
-            <MessagingInterface onClose={onCloseInbox} />
+            <PushMessagingInterface />
           </div>
         )}
       </Card>
