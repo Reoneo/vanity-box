@@ -4,7 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
+import { siBluesky, siReddit, siWhatsapp, siFacebook, siSnapchat, siGithub, siTelegram, siDiscord } from "simple-icons";
 import { MessagingInterface } from "@/components/MessagingInterface";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
@@ -347,12 +348,47 @@ export const ProfileCard = ({
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
                 .filter(([_, linkData]) => linkData)
                 .map(([platform, linkData]: [string, any]) => {
-                  const icon = socialIcons[platform];
                   const displayLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
                   const url = typeof linkData === 'string' ? linkData : linkData?.link;
                   const handle = typeof linkData === 'string' ? extractHandle(platform, linkData) : linkData?.handle;
                   
                   if (!url) return null;
+
+                  // Get icon component based on platform
+                  const getIcon = () => {
+                    const iconClass = "w-5 h-5";
+                    const platformLower = platform.toLowerCase();
+                    
+                    switch (platformLower) {
+                      case 'twitter':
+                      case 'x':
+                        return <Twitter className={iconClass} />;
+                      case 'instagram':
+                        return <Instagram className={iconClass} />;
+                      case 'linkedin':
+                        return <Linkedin className={iconClass} />;
+                      case 'youtube':
+                        return <Youtube className={iconClass} />;
+                      case 'bluesky':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siBluesky.path} /></svg>;
+                      case 'reddit':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siReddit.path} /></svg>;
+                      case 'whatsapp':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siWhatsapp.path} /></svg>;
+                      case 'facebook':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siFacebook.path} /></svg>;
+                      case 'snapchat':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siSnapchat.path} /></svg>;
+                      case 'github':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siGithub.path} /></svg>;
+                      case 'telegram':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siTelegram.path} /></svg>;
+                      case 'discord':
+                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siDiscord.path} /></svg>;
+                      default:
+                        return <Globe className={iconClass} />;
+                    }
+                  };
                   
                   return (
                     <button
@@ -360,13 +396,11 @@ export const ProfileCard = ({
                       onClick={() => window.open(url, '_blank')}
                       className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-colors active:opacity-90 group touch-action-manipulation flex-shrink-0"
                     >
-                      {icon ? (
-                        <img src={icon} alt={displayLabel} className="w-12 h-12 rounded-xl object-cover" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center">
-                          <span className="text-[#D4AF37] text-xl font-bold">{displayLabel[0]}</span>
+                      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 shadow-md">
+                        <div className="text-black dark:text-white">
+                          {getIcon()}
                         </div>
-                      )}
+                      </div>
                       <div className="flex-1 text-left">
                         <div className="font-semibold text-base text-foreground group-hover:text-[#D4AF37] transition-colors">
                           {displayLabel}
