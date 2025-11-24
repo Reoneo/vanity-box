@@ -55,25 +55,31 @@ const resolveAddressOrENS = async (input: string): Promise<string> => {
     }
   }
   
-  // If it's a World Chain name (.world)
-  if (trimmed.endsWith('.world')) {
+  // If it's a World Chain name (.world) or .box domain
+  if (trimmed.endsWith('.world') || trimmed.endsWith('.box')) {
     try {
       const response = await supabase.functions.invoke('get-namestone-records', {
-        body: { name: trimmed }
+        body: { subdomain: trimmed }
       });
       
-      if (response.data?.records?.['eth.addr']) {
-        return response.data.records['eth.addr'];
+      if (response.data?.textRecords?.['eth.addr']) {
+        return response.data.textRecords['eth.addr'];
       }
-      throw new Error(`Could not resolve .world name: ${trimmed}`);
+      
+      // Fallback to owner address if eth.addr not set
+      if (response.data?.owner) {
+        return response.data.owner;
+      }
+      
+      throw new Error(`Could not resolve domain: ${trimmed}`);
     } catch (error) {
-      console.error('World name resolution failed:', error);
-      throw new Error(`Failed to resolve .world name: ${trimmed}`);
+      console.error('Domain resolution failed:', error);
+      throw new Error(`Failed to resolve domain: ${trimmed}`);
     }
   }
   
   // Invalid format
-  throw new Error('Please enter a valid Ethereum address, .eth name, or .world name');
+  throw new Error('Please enter a valid Ethereum address, .eth, .world, or .box name');
 };
 
 // Helper to safely get peer identifier from conversation
@@ -515,7 +521,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter address, .eth, or .world name..."
+              placeholder="Enter address, .eth, .world, or .box..."
               onKeyPress={(e) => e.key === "Enter" && handleStartConversation()}
               className="flex-1"
               disabled={isResolvingENS}
