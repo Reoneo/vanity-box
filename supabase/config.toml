@@ -1,5 +1,8 @@
 project_id = "gdjjboorqviobvvygpca"
 
+[functions.send-world-notification]
+verify_jwt = false
+
 [functions.get-ens-subdomain-profile]
 verify_jwt = false
 

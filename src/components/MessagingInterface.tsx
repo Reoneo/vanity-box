@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Send, Loader2, MessageCircle, ArrowLeft, X } from "lucide-react";
+import { Search, Send, Loader2, MessageCircle, ArrowLeft, X, Bell, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import { useXmtp } from "@/contexts/XmtpContext";
 import { authenticateWithWorldChain } from "@/lib/worldChainAuth";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { formatDistanceToNow } from "date-fns";
+import { useWorldNotifications } from "@/hooks/useWorldNotifications";
 
 interface Conversation {
   id: string;
@@ -19,6 +22,7 @@ interface Conversation {
 
 export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   const { client, isInitializing, isConnected, initializeClient, walletAddress } = useXmtp();
+  const { hasPermission, isRequesting, requestPermission } = useWorldNotifications();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -120,6 +124,24 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
         for await (const message of await selectedConversation.streamMessages()) {
           if (isSubscribed) {
             setMessages((prev) => [...prev, message]);
+            
+            // Send notification for incoming messages (not from us)
+            if (message.senderAddress?.toLowerCase() !== walletAddress?.toLowerCase() && walletAddress) {
+              console.log('📲 New incoming message, sending notification');
+              
+              // Send notification
+              try {
+                await supabase.functions.invoke('send-world-notification', {
+                  body: {
+                    wallet_address: walletAddress,
+                    sender_address: message.senderAddress,
+                    message_preview: message.content.slice(0, 50) + (message.content.length > 50 ? '...' : '')
+                  }
+                });
+              } catch (notifError) {
+                console.error('❌ Failed to send notification:', notifError);
+              }
+            }
           }
         }
       } catch (error) {
@@ -132,7 +154,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     return () => {
       isSubscribed = false;
     };
-  }, [selectedConversation]);
+  }, [selectedConversation, walletAddress]);
 
   // Start new conversation
   const handleStartConversation = async () => {
@@ -232,7 +254,28 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-border flex-col`}>
         {/* Search Header */}
         <div className="p-4 border-b border-border space-y-3">
-          <h2 className="text-xl font-semibold">Messages</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Messages</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={requestPermission}
+              disabled={isRequesting}
+              className="flex items-center gap-2"
+            >
+              {hasPermission ? (
+                <>
+                  <Bell className="h-4 w-4" />
+                  <Badge variant="secondary" className="text-xs">On</Badge>
+                </>
+              ) : (
+                <>
+                  <BellOff className="h-4 w-4" />
+                  <Badge variant="outline" className="text-xs">Off</Badge>
+                </>
+              )}
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Input
               value={searchQuery}
