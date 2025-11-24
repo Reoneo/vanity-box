@@ -12,9 +12,10 @@ export const useWorldNotifications = () => {
       if (!MiniKit.isInstalled()) return;
 
       try {
-        const permissions = await MiniKit.commands.getPermissions();
-        setHasPermission(permissions.includes('notifications'));
-        console.log('📲 Notification permission status:', permissions.includes('notifications'));
+        const response = await MiniKit.commandsAsync.getPermissions();
+        const hasNotificationPerm = (response as any)?.permissions?.notifications === true;
+        setHasPermission(hasNotificationPerm);
+        console.log('📲 Notification permission status:', hasNotificationPerm);
       } catch (error) {
         console.error('❌ Failed to check notification permissions:', error);
       }
@@ -39,11 +40,11 @@ export const useWorldNotifications = () => {
     try {
       console.log('📲 Requesting notification permission...');
       
-      const result = await MiniKit.commands.requestPermission({
-        permissionType: 'notifications'
+      const result = await MiniKit.commandsAsync.requestPermission({
+        permission: 'notifications' as any
       });
 
-      if (result.finalPayload === 'granted') {
+      if ((result as any)?.status === 'success') {
         setHasPermission(true);
         toast.success('Notifications enabled!');
         console.log('✅ Notification permission granted');
