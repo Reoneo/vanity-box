@@ -20,7 +20,7 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
 
   const initializeClient = useCallback(async (signer: any, address: string) => {
     if (client || isInitializing) {
-      console.log('Client already exists or initializing');
+      console.log('⚠️ Client already exists or initializing, skipping');
       return;
     }
 
@@ -28,19 +28,28 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('🔄 Initializing XMTP client for:', address);
       
-      // Simple client creation for production network
+      // Create client for production network
       const newClient = await Client.create(signer, {
         env: 'production'
       });
       
-      console.log('✅ XMTP client initialized successfully');
+      console.log('✅ XMTP client initialized - inbox ID:', newClient.inboxId);
       setClient(newClient);
       setWalletAddress(address);
     } catch (error: any) {
       console.error('❌ Failed to initialize XMTP client:', error);
       setClient(null);
       setWalletAddress(null);
-      toast.error('Failed to connect to XMTP: ' + (error.message || 'Unknown error'));
+      
+      // Provide helpful error messages
+      let errorMsg = 'Failed to connect to XMTP';
+      if (error.message?.includes('installation')) {
+        errorMsg = 'Installation limit reached. Try clearing browser data.';
+      } else if (error.message) {
+        errorMsg += ': ' + error.message;
+      }
+      
+      toast.error(errorMsg);
       throw error;
     } finally {
       setIsInitializing(false);

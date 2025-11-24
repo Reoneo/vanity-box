@@ -46,61 +46,42 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     const initConversation = async () => {
       setIsLoadingConversation(true);
       try {
-        console.log('🔄 Checking if can message:', profileAddress);
+        console.log('🔄 Finding or creating DM conversation with:', profileAddress);
         
-        // Check if address is on XMTP network first
-        const canMessage = await client.canMessage([{
-          identifier: profileAddress.toLowerCase(),
-          identifierKind: 'Ethereum' as const
-        }]);
+        // Sync conversations first to get latest state
+        await client.conversations.sync();
         
-        if (!canMessage || Object.keys(canMessage).length === 0) {
-          toast.error('This user is not on the XMTP network yet');
-          setIsLoadingConversation(false);
-          return;
-        }
+        // Try to get existing DM by peer address
+        let dm = await client.conversations.getDmByInboxId(profileAddress);
         
-        console.log('✅ User is on XMTP, finding conversation');
-        
-        // List all DMs and find the one with this address
-        const allDms = await client.conversations.listDms();
-        let dm = null;
-        
-        for (const conversation of allDms) {
-          // Get members and check if profile address is in there
-          const members = await conversation.members();
-          const hasPeer = members.some((m: any) => 
-            m.addresses?.some((addr: string) => addr.toLowerCase() === profileAddress.toLowerCase())
-          );
-          
-          if (hasPeer) {
-            dm = conversation;
-            console.log('✅ Found existing DM');
-            break;
-          }
-        }
-        
-        // If no existing DM, create one using newDm method
+        // If no DM exists, create one
         if (!dm) {
-          console.log('Creating new DM with:', profileAddress);
+          console.log('📝 Creating new DM with:', profileAddress);
           dm = await client.conversations.newDm(profileAddress);
-          console.log('✅ New DM created:', dm?.id);
+          console.log('✅ New DM created');
+        } else {
+          console.log('✅ Found existing DM');
         }
         
         setConversation(dm);
         
-        // Load existing messages
-        if (dm) {
-          const existingMessages = await dm.messages();
-          setMessages(existingMessages);
-          console.log(`📬 Loaded ${existingMessages.length} messages`);
-          
-          // Scroll to bottom
-          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        }
-      } catch (error) {
+        // Sync and load messages for this conversation
+        await dm.sync();
+        const existingMessages = await dm.messages();
+        setMessages(existingMessages);
+        console.log(`📬 Loaded ${existingMessages.length} messages`);
+        
+        // Scroll to bottom
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      } catch (error: any) {
         console.error('❌ Failed to initialize conversation:', error);
-        toast.error('Failed to load conversation');
+        
+        // Provide helpful error message
+        if (error.message?.includes('not on network')) {
+          toast.error('This user is not on the XMTP network yet');
+        } else {
+          toast.error('Failed to load conversation');
+        }
       } finally {
         setIsLoadingConversation(false);
       }
@@ -113,14 +94,15 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
   useEffect(() => {
     if (!conversation) return;
 
-    let stream: any;
+    let isActive = true;
     const startStreaming = async () => {
       try {
         console.log('👂 Starting to stream messages');
-        stream = await conversation.streamMessages();
+        const stream = await conversation.streamMessages();
         
         for await (const message of stream) {
-          console.log('📨 New message received:', message.id);
+          if (!isActive) break;
+          console.log('📨 New message received');
           setMessages(prev => [...prev, message]);
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         }
@@ -132,9 +114,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     startStreaming();
 
     return () => {
-      if (stream?.return) {
-        stream.return();
-      }
+      isActive = false;
     };
   }, [conversation]);
 
@@ -158,16 +138,16 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     try {
       console.log('📤 Sending message');
       await conversation.send(textToSend);
-      console.log('✅ Message sent');
+      console.log('✅ Message sent successfully');
       
       // Message will appear via stream
-    } catch (error) {
+      messageInputRef.current?.focus();
+    } catch (error: any) {
       console.error('❌ Failed to send message:', error);
       toast.error('Failed to send message');
       setMessageText(textToSend); // Restore message on error
     } finally {
       setIsSending(false);
-      messageInputRef.current?.focus();
     }
   };
 

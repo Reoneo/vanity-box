@@ -398,16 +398,15 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       const resolvedAddress = await resolveAddressOrENS(searchQuery);
       console.log("✅ Resolved to address:", resolvedAddress);
       
-      // Create conversation with resolved address
-      console.log("🔄 Creating conversation with:", resolvedAddress);
+      // Sync conversations first
+      await client.conversations.sync();
+      
+      // Try to get existing DM or create new one
+      console.log("🔄 Creating DM with:", resolvedAddress);
       const newConvo: any = await client.conversations.newDm(resolvedAddress);
       
-      // Ensure peerAddress is set on the conversation object
-      if (!newConvo.peerAddress && newConvo.peerInboxId) {
-        newConvo.peerAddress = await getPeerIdentifier(newConvo, client);
-      } else if (!newConvo.peerAddress) {
-        newConvo.peerAddress = resolvedAddress;
-      }
+      // Set peer address for display
+      newConvo.peerAddress = resolvedAddress;
       
       setSelectedConversation(newConvo);
       
@@ -430,10 +429,17 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       }
       
       setSearchQuery("");
-      // Toast removed to prevent blocking the message input field
     } catch (error: any) {
       console.error("❌ Failed to start conversation:", error);
-      toast.error(error.message || "Failed to start conversation");
+      
+      let errorMsg = 'Failed to start conversation';
+      if (error.message?.includes('not on network')) {
+        errorMsg = 'This user is not on the XMTP network yet';
+      } else if (error.message) {
+        errorMsg += ': ' + error.message;
+      }
+      
+      toast.error(errorMsg);
     } finally {
       setIsResolvingENS(false);
     }
@@ -443,19 +449,21 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedConversation) return;
 
+    const textToSend = messageText.trim();
     setIsSending(true);
+    setMessageText(""); // Clear immediately for better UX
+    
     try {
-      await selectedConversation.send(messageText);
-      setMessageText("");
+      console.log("📤 Sending message");
+      await selectedConversation.send(textToSend);
+      console.log("✅ Message sent successfully");
       
-      // Refresh messages to include the sent message
-      const msgs = await selectedConversation.messages();
-      setMessages(msgs);
-      
-      console.log("✅ Message sent");
-    } catch (error) {
+      // Message will appear via stream
+      messageInputRef.current?.focus();
+    } catch (error: any) {
       console.error("❌ Failed to send message:", error);
       toast.error("Failed to send message");
+      setMessageText(textToSend); // Restore on error
     } finally {
       setIsSending(false);
     }
