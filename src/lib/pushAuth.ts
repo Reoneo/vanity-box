@@ -17,6 +17,14 @@ class MiniKitSigner extends ethers.Signer {
   constructor(address: string) {
     super();
     this.walletAddress = address.toLowerCase();
+    
+    // Make this object extensible for Push SDK to add properties
+    Object.defineProperty(this, '_isSigner', {
+      value: true,
+      writable: false,
+      configurable: true,
+      enumerable: true
+    });
   }
 
   /**
@@ -34,7 +42,8 @@ class MiniKitSigner extends ethers.Signer {
       ? message 
       : ethers.utils.hexlify(message);
     
-    console.log('📝 Signing message via MiniKit:', messageStr.substring(0, 50) + '...');
+    console.log('📝 Signing message via MiniKit (Step 2 of 2: Encryption Setup)');
+    console.log('   Message preview:', messageStr.substring(0, 50) + '...');
     
     try {
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
@@ -42,7 +51,7 @@ class MiniKitSigner extends ethers.Signer {
         requestId: `sign-${Date.now()}`,
         expirationTime: new Date(Date.now() + 5 * 60 * 1000),
         notBefore: new Date(),
-        statement: 'Sign message for Push Protocol'
+        statement: 'Sign message for Push Protocol (Step 2 of 2: Encryption Setup)'
       });
 
       if (finalPayload.status === 'error') {
@@ -140,13 +149,13 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
     console.log('✅ Nonce received:', nonce.substring(0, 10) + '...');
 
     // Step 2: Request wallet authentication from World App
-    console.log('🔐 Requesting wallet authentication...');
+    console.log('🔐 Requesting wallet authentication (Step 1 of 2: Authentication)...');
     const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
       nonce,
       requestId: `push-auth-${Date.now()}`,
       expirationTime: new Date(Date.now() + 5 * 60 * 1000),
       notBefore: new Date(),
-      statement: 'Sign in to Push Protocol Messaging'
+      statement: 'Sign in to Push Protocol Messaging (Step 1 of 2: Authentication)'
     });
 
     if (finalPayload.status === 'error') {
@@ -179,6 +188,16 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
 
     // Step 4: Create proper ethers.Signer instance for Push Protocol
     const signer = new MiniKitSigner(address);
+    
+    // Validate signer is properly configured
+    console.log('🔍 Signer validation:', {
+      address: await signer.getAddress(),
+      hasSignMessage: typeof signer.signMessage === 'function',
+      hasSignTypedData: typeof signer._signTypedData === 'function',
+      isSigner: signer._isSigner,
+      isExtensible: Object.isExtensible(signer)
+    });
+    
     console.log('✅ Push Protocol signer ready');
 
     return {
