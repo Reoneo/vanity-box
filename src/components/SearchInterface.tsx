@@ -887,61 +887,106 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             setWeb3BioProfile(profileData);
             setEnsResults([]);
 
-            // Fetch ENS text records (for .eth inputs OR any input that resolves to a primary ENS name)
+            // Parallel data fetching: ENS records, EFP stats, first transaction
+            const addressOrName = profileData.address || trimmedQuery;
             let ensTextRecords: Record<string, string> = {};
-            try {
-              const publicClient = createPublicClient({
-                chain: mainnet,
-                transport: http(),
-              });
-
-              // Determine ENS name to read text records from
-              let ensNameToQuery: string | null = null;
-
-              if (normalizedQuery.endsWith('.eth')) {
-                // Direct .eth lookup
-                ensNameToQuery = normalize(trimmedQuery);
-              } else if (profileData.address) {
-                // Resolve primary ENS name from the returned address
+            
+            const [ensRecordsResult, efpStatsResult, firstTxResult] = await Promise.all([
+              // 1. Fetch ENS text records
+              (async () => {
                 try {
-                  const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
-                  if (primary) ensNameToQuery = normalize(primary);
-                } catch (_) {
-                  /* ignore ENS name resolution failure */
-                }
-              }
+                  const publicClient = createPublicClient({
+                    chain: mainnet,
+                    transport: http(),
+                  });
 
-              if (ensNameToQuery) {
-                console.log('Fetching ENS text records for:', ensNameToQuery);
-                // All standard ENS text record keys + common social platforms
-                const textRecordKeys = [
-                  'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
-                  'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram', 'com.farcaster',
-                  'org.telegram', 'vnd.twitter', 'vnd.github'
-                ];
-
-                const recordPromises = textRecordKeys.map(async (key) => {
-                  try {
-                    const value = await publicClient.getEnsText({
-                      name: ensNameToQuery!,
-                      key,
-                    });
-                    return { key, value };
-                  } catch {
-                    return { key, value: null };
+                  let ensNameToQuery: string | null = null;
+                  if (normalizedQuery.endsWith('.eth')) {
+                    ensNameToQuery = normalize(trimmedQuery);
+                  } else if (profileData.address) {
+                    try {
+                      const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
+                      if (primary) ensNameToQuery = normalize(primary);
+                    } catch (_) {}
                   }
-                });
 
-                const recordResults = await Promise.all(recordPromises);
-                recordResults.forEach(({ key, value }) => {
-                  if (value) ensTextRecords[key] = value;
-                });
+                  if (ensNameToQuery) {
+                    console.log('⚡ Fetching ENS text records...');
+                    const textRecordKeys = [
+                      'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
+                      'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram', 'com.farcaster',
+                      'org.telegram', 'vnd.twitter', 'vnd.github'
+                    ];
 
-                console.log('✅ Fetched ENS text records:', ensTextRecords);
-              }
-            } catch (e) {
-              console.warn('Failed to fetch ENS text records:', e);
-            }
+                    const recordResults = await Promise.all(
+                      textRecordKeys.map(async (key) => {
+                        try {
+                          const value = await publicClient.getEnsText({ name: ensNameToQuery!, key });
+                          return { key, value };
+                        } catch {
+                          return { key, value: null };
+                        }
+                      })
+                    );
+
+                    const records: Record<string, string> = {};
+                    recordResults.forEach(({ key, value }) => {
+                      if (value) records[key] = value;
+                    });
+                    console.log('✅ ENS text records loaded');
+                    return records;
+                  }
+                  return {};
+                } catch (e) {
+                  console.warn('⚠️ ENS text records failed:', e);
+                  return {};
+                }
+              })(),
+              
+              // 2. Fetch EFP stats
+              (async () => {
+                if (!addressOrName) return null;
+                try {
+                  console.log('⚡ Fetching EFP stats...');
+                  const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
+                  if (efpResponse.ok) {
+                    const efpData = await efpResponse.json();
+                    console.log('✅ EFP stats loaded');
+                    return {
+                      followers_count: parseInt(efpData.followers_count) || 0,
+                      following_count: parseInt(efpData.following_count) || 0,
+                    };
+                  }
+                  return null;
+                } catch (e) {
+                  console.warn('⚠️ EFP stats failed:', e);
+                  return null;
+                }
+              })(),
+              
+              // 3. Fetch first transaction
+              (async () => {
+                if (!profileData.address) return null;
+                try {
+                  console.log('⚡ Fetching first transaction...');
+                  const { data: txData, error: txError } = await supabase.functions.invoke("get-first-transaction", {
+                    body: { address: profileData.address },
+                  });
+                  if (!txError && txData?.date) {
+                    console.log('✅ First transaction loaded');
+                    return txData.date;
+                  }
+                  return null;
+                } catch (e) {
+                  console.warn('⚠️ First transaction failed:', e);
+                  return null;
+                }
+              })(),
+            ]);
+
+            ensTextRecords = ensRecordsResult;
+            if (efpStatsResult) setEfpStats(efpStatsResult);
+            if (firstTxResult) setFirstTransactionDate(firstTxResult);
 
             // Map ENS records into state for compatibility
             const records = {
@@ -1070,81 +1115,46 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               console.warn('Failed to map web3.bio profile to ENS records:', e);
             }
 
-            // Fetch EFP stats and ENS records if we have an address or ENS name
-            if (profileData.address || trimmedQuery.includes(".eth")) {
-              const addressOrName = profileData.address || trimmedQuery;
-
-              // Fetch EFP stats using the ethfollow.xyz API directly
+            // Fetch POAP data
+            if (profileData.address) {
               try {
-                const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
+                setIsLoadingPoaps(true);
+                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+                  body: { walletAddress: profileData.address },
+                });
 
-                if (efpResponse.ok) {
-                  const efpData = await efpResponse.json();
-                  setEfpStats({
-                    followers_count: parseInt(efpData.followers_count) || 0,
-                    following_count: parseInt(efpData.following_count) || 0,
-                  });
-                }
-              } catch (efpError) {
-                console.error("Error fetching EFP stats:", efpError);
-              }
-
-              // Fetch first transaction date using Etherscan
-              if (profileData.address) {
-                try {
-                  const { data: txData, error: txError } = await supabase.functions.invoke("get-first-transaction", {
-                    body: { address: profileData.address },
-                  });
-
-                  if (!txError && txData?.date) {
-                    setFirstTransactionDate(txData.date);
+                if (!poapError && poapData?.success) {
+                  setPoapCount(poapData.count || 0);
+                  
+                  // Fetch and store full POAP tokens
+                  const { data: tokensData } = await supabase
+                    .from('poap_tokens')
+                    .select('*')
+                    .eq('wallet_address', profileData.address.toLowerCase());
+                  
+                  if (tokensData) {
+                    setPoapTokens(tokensData.map((token: any) => ({
+                      eventId: token.event_id,
+                      eventName: token.event_name,
+                      eventDescription: token.event_description,
+                      eventImageUrl: token.event_image_url,
+                      eventStartDate: token.event_start_date,
+                      eventEndDate: token.event_end_date,
+                      eventYear: token.event_year,
+                      tokenId: token.token_id,
+                      owner: token.owner,
+                      chain: token.chain,
+                    })));
                   }
-                } catch (txError) {
-                  console.error("Error fetching first transaction:", txError);
-                }
-              }
-
-              // Fetch POAP data
-              if (profileData.address) {
-                try {
-                  setIsLoadingPoaps(true);
-                  const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                    body: { walletAddress: profileData.address },
-                  });
-
-                  if (!poapError && poapData?.success) {
-                    setPoapCount(poapData.count || 0);
-                    
-                    // Fetch and store full POAP tokens
-                    const { data: tokensData } = await supabase
-                      .from('poap_tokens')
-                      .select('*')
-                      .eq('wallet_address', profileData.address.toLowerCase());
-                    
-                    if (tokensData) {
-                      setPoapTokens(tokensData.map((token: any) => ({
-                        eventId: token.event_id,
-                        eventName: token.event_name,
-                        eventDescription: token.event_description,
-                        eventImageUrl: token.event_image_url,
-                        eventStartDate: token.event_start_date,
-                        eventEndDate: token.event_end_date,
-                        eventYear: token.event_year,
-                        tokenId: token.token_id,
-                        owner: token.owner,
-                        chain: token.chain,
-                      })));
-                    }
-                  } else {
-                    console.error("Error fetching POAP data:", poapError);
-                    setPoapCount(0);
-                  }
-                } catch (poapFetchError) {
-                  console.error("Error fetching POAPs:", poapFetchError);
+                } else {
+                  console.error("Error fetching POAP data:", poapError);
                   setPoapCount(0);
-                } finally {
-                  setIsLoadingPoaps(false);
                 }
+              } catch (poapFetchError) {
+                console.error("Error fetching POAPs:", poapFetchError);
+                setPoapCount(0);
+              } finally {
+                setIsLoadingPoaps(false);
               }
             }
           }
