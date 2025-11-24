@@ -1,30 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-
-interface XmtpContextType {
-  client: any | null;
-  setClient: (client: any | null) => void;
-}
-
-const XmtpContext = createContext<XmtpContextType | undefined>(undefined);
+import { ReactNode } from "react";
 
 interface XmtpProviderWrapperProps {
   children: ReactNode;
 }
 
+// Simplified provider - XMTP client management moved to hook
 export const XmtpProviderWrapper = ({ children }: XmtpProviderWrapperProps) => {
-  const [client, setClient] = useState<any | null>(null);
-
-  return (
-    <XmtpContext.Provider value={{ client, setClient }}>
-      {children}
-    </XmtpContext.Provider>
-  );
-};
-
-export const useXmtpClient = () => {
-  const context = useContext(XmtpContext);
-  if (context === undefined) {
-    throw new Error("useXmtpClient must be used within XmtpProviderWrapper");
-  }
-  return context;
+  return <>{children}</>;
 };

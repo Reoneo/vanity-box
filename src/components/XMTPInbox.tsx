@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { MessageCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface XMTPInboxProps {
@@ -15,26 +15,52 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
 
   const handleInitialize = async () => {
     setIsInitializing(true);
-    toast.info("XMTP messaging is temporarily disabled for troubleshooting");
-    setIsInitializing(false);
+    try {
+      // XMTP integration requires wallet signer which needs to be properly connected
+      toast.info("XMTP messaging requires wallet connection. Please connect your wallet first.");
+    } catch (error) {
+      console.error('XMTP initialization error:', error);
+    } finally {
+      setIsInitializing(false);
+    }
   };
 
   if (!currentUserAddress) {
     return null;
   }
 
+  if (isProfileOwner) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-4 py-8">
+          <MessageCircle className="w-12 h-12 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground text-center max-w-sm">
+            This is your profile. XMTP messaging available soon.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="p-6">
-      <div className="flex flex-col items-center justify-center gap-4 py-8">
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center gap-4 py-8">
         <MessageCircle className="w-12 h-12 text-muted-foreground" />
         <h3 className="text-lg font-semibold">XMTP Messaging</h3>
         <p className="text-sm text-muted-foreground text-center max-w-sm">
-          Temporarily disabled for troubleshooting
+          Decentralized messaging coming soon
         </p>
         <Button onClick={handleInitialize} disabled={isInitializing}>
-          {isInitializing ? "Connecting..." : "Connect to XMTP"}
+          {isInitializing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            "Connect to XMTP"
+          )}
         </Button>
-      </div>
+      </CardContent>
     </Card>
   );
 };
