@@ -424,7 +424,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       }
       
       setSearchQuery("");
-      toast.success(`Conversation started with ${searchQuery}`, { duration: 2000 });
+      // Toast removed to prevent blocking the message input field
     } catch (error: any) {
       console.error("❌ Failed to start conversation:", error);
       toast.error(error.message || "Failed to start conversation");
