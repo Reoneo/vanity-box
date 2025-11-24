@@ -71,6 +71,10 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('❌ Failed to initialize XMTP client:', error);
       
+      // Ensure client state is cleared on error
+      setClient(null);
+      setWalletAddress(null);
+      
       // Handle specific error cases
       if (error.message?.includes('already registered') || error.message?.includes('10/10 installations')) {
         toast.error('XMTP installation limit reached. Please clear browser data or use a different wallet.');
