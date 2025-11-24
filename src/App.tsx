@@ -10,7 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
 import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
-import { XmtpProviderWrapper } from "@/contexts/XmtpProvider";
+import { XmtpProvider } from "@/contexts/XmtpContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -36,7 +36,7 @@ const App = () => {
             <TonConnectProvider>
               <PetraWalletProvider>
                 <FarcasterAuthProvider>
-                  <XmtpProviderWrapper>
+                  <XmtpProvider>
                     <TooltipProvider>
                       <Toaster />
                       <Sonner />
@@ -52,7 +52,7 @@ const App = () => {
                         </Routes>
                       </BrowserRouter>
                     </TooltipProvider>
-                  </XmtpProviderWrapper>
+                  </XmtpProvider>
                 </FarcasterAuthProvider>
               </PetraWalletProvider>
             </TonConnectProvider>

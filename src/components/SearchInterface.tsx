@@ -855,7 +855,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
           if (error) {
             console.error('❌ Error fetching web3.bio profile:', error);
-            toast.error("Failed to fetch profile from Web3.bio");
+            toast.error("Profile lookup failed. Please try again.");
+            setIsLoading(false);
+            return;
           } else if (data && Array.isArray(data) && data.length > 0) {
             // Only process if we got valid data (has results)
             let profileData = data[0];
@@ -1141,6 +1143,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           }
         } catch (error) {
           console.log("web3.bio failed:", error);
+          toast.error("Profile lookup failed. Please try again.");
+          setIsLoading(false);
+          return;
         }
       }
 
