@@ -26,16 +26,16 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
   const handleConnect = async () => {
     try {
       if (!MiniKit.isInstalled()) {
-        toast.error("Please open this app in World App");
+        console.error('❌ MiniKit not installed');
         return;
       }
 
       console.log('🔄 Connecting to XMTP via World Chain');
       const { address, signer } = await authenticateWithWorldChain();
       await initializeClient(signer, address);
+      console.log('✅ Connected to XMTP');
     } catch (error: any) {
       console.error('❌ XMTP connection error:', error);
-      toast.error(error.message || "Failed to connect to XMTP");
     }
   };
 
@@ -51,8 +51,11 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
         // Sync conversations first to get latest state
         await client.conversations.sync();
         
-        // Try to get existing DM by peer address
-        let dm = await client.conversations.getDmByInboxId(profileAddress);
+        // Get all DMs and find one with matching peer address
+        const allDms = await client.conversations.listDms();
+        let dm = allDms.find((d: any) => 
+          d.peerAddress?.toLowerCase() === profileAddress.toLowerCase()
+        );
         
         // If no DM exists, create one
         if (!dm) {
@@ -75,13 +78,6 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       } catch (error: any) {
         console.error('❌ Failed to initialize conversation:', error);
-        
-        // Provide helpful error message
-        if (error.message?.includes('not on network')) {
-          toast.error('This user is not on the XMTP network yet');
-        } else {
-          toast.error('Failed to load conversation');
-        }
       } finally {
         setIsLoadingConversation(false);
       }
@@ -98,12 +94,16 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     const startStreaming = async () => {
       try {
         console.log('👂 Starting to stream messages');
-        const stream = await conversation.streamMessages();
+        const stream = conversation.streamMessages();
         
         for await (const message of stream) {
           if (!isActive) break;
-          console.log('📨 New message received');
-          setMessages(prev => [...prev, message]);
+          console.log('📨 New message received:', message.id);
+          setMessages(prev => {
+            // Prevent duplicates
+            if (prev.find(m => m.id === message.id)) return prev;
+            return [...prev, message];
+          });
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         }
       } catch (error) {
@@ -118,25 +118,13 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     };
   }, [conversation]);
 
-  // Auto-focus input when conversation is loaded - CRITICAL for mobile typing
+  // Auto-focus input when conversation is loaded
   useEffect(() => {
     if (conversation && messageInputRef.current) {
-      // Multiple aggressive focus attempts for mobile reliability
-      const focusInput = () => {
-        if (messageInputRef.current) {
-          messageInputRef.current.focus();
-          messageInputRef.current.click();
-          messageInputRef.current.setSelectionRange(0, 0);
-        }
-      };
-
-      // Immediate focus
-      focusInput();
-      
-      // Delayed focuses to ensure DOM is ready
-      setTimeout(focusInput, 100);
-      setTimeout(focusInput, 300);
-      setTimeout(focusInput, 500);
+      // Single reliable focus after render completes
+      requestAnimationFrame(() => {
+        messageInputRef.current?.focus();
+      });
     }
   }, [conversation]);
 
@@ -148,18 +136,12 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     setIsSending(true);
 
     try {
+      console.log('📤 Sending message:', textToSend);
+      console.log('📤 Conversation:', conversation.id);
       await conversation.send(textToSend);
-      
-      // Aggressively focus input for next message - CRITICAL for mobile
-      requestAnimationFrame(() => {
-        if (messageInputRef.current) {
-          messageInputRef.current.focus();
-          messageInputRef.current.click();
-          messageInputRef.current.setSelectionRange(0, 0);
-        }
-      });
+      console.log('✅ Message sent successfully');
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('❌ Failed to send message:', error);
       setMessageText(textToSend);
     } finally {
       setIsSending(false);
