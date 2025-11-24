@@ -47,12 +47,20 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
       console.log('✅ Authentication successful:', address);
 
       // Initialize Push Protocol user
-      console.log('🔄 Creating Push Protocol user...');
+      console.log('🔄 Creating Push Protocol user (may request encryption setup signature)...');
+      console.log('   This will trigger Step 2 of 2 signature request');
+      
       const user = await PushAPI.initialize(signer as any, {
-        env: CONSTANTS.ENV.PROD
+        env: CONSTANTS.ENV.PROD,
+        account: address, // Explicitly provide account
+        progressHook: (progress: any) => {
+          console.log('📊 Push initialization progress:', progress);
+        }
       });
 
-      console.log('✅ Push Protocol user initialized');
+      console.log('✅ Push Protocol user initialized successfully');
+      console.log('   Address:', address);
+      console.log('   User account:', (user as any).account || address);
       
       setPushUser(user);
       setWalletAddress(address);
@@ -60,8 +68,19 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
       
       toast.success('Connected to Push Protocol');
     } catch (error: any) {
-      console.error('❌ Failed to initialize Push Protocol:', error);
-      toast.error(error?.message || 'Failed to connect to Push Protocol');
+      console.error('❌ Failed to initialize Push Protocol:', {
+        message: error?.message || 'Unknown error',
+        details: error?.info || error?.data || 'No additional details',
+        stack: error?.stack
+      });
+      
+      // Check for specific error types
+      if (error?.message?.includes('read-only')) {
+        console.error('⚠️ Read-only mode error detected - signer validation may have failed');
+        toast.error('Connection failed: Read-only mode. Please try again.');
+      } else {
+        toast.error(error?.message || 'Failed to connect to Push Protocol');
+      }
       
       setPushUser(null);
       setWalletAddress(null);
