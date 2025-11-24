@@ -1277,11 +1277,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setEnsResults(filteredResults);
     console.log("Results set", filteredResults.length);
 
-    // Notify homepage about search results state
-    window.dispatchEvent(new CustomEvent('search-results-changed', { 
-      detail: { hasResults: filteredResults.length > 0 } 
-    }));
-
     if (searchQuery) {
       setIsAvailable(!searchQuery.toLowerCase().includes("taken"));
     }
@@ -1689,10 +1684,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 setSearchQuery("");
                                 setEnsResults([]);
                                 setIsAvailable(null);
-                                // Notify homepage that results are cleared
-                                window.dispatchEvent(new CustomEvent('search-results-changed', { 
-                                  detail: { hasResults: false } 
-                                }));
                                 // Don't clear profile - keep user on current view
                                 // setWeb3BioProfile(null);
                                 // setIsSearchActive(false);
@@ -1847,10 +1838,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 setEnsResults([]);
                                 setIsAvailable(null);
                                 setShowInitialResults(false);
-                                // Notify homepage that results are cleared
-                                window.dispatchEvent(new CustomEvent('search-results-changed', { 
-                                  detail: { hasResults: false } 
-                                }));
                                 // Don't clear profile - keep user on current view
                                 // setWeb3BioProfile(null);
                                 // setIsSearchActive(false);
@@ -1920,12 +1907,69 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
                   <Dock
                     items={[
+                      // Home icon - navigate to vanity.box homepage WITHOUT reload
+                      {
+                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Home',
+                        onClick: () => {
+                          // Clear profile view and return to homepage
+                          setWeb3BioProfile(null);
+                          setEnsRecords(null);
+                          setEfpStats(null);
+                          setHasSearched(false);
+                          setSearchQuery('');
+                          setDisplayQuery('');
+                          setIsSearchActive(false);
+                          setShowMyIDs(false);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        },
+                        isActive: false,
+                      },
                       {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('profile'),
                         onClick: () => setActiveDockSection('profile'),
                         isActive: activeDockSection === 'profile',
                       },
+                      // Only show social links if user has any social links
+                      ...(web3BioProfile?.links && Object.keys(web3BioProfile.links).length > 0 ? [{
+                        icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
+                        label: t('socials'),
+                        onClick: () => setActiveDockSection('socials'),
+                        isActive: activeDockSection === 'socials',
+                      }] : []),
+                      // Only show NFT icon if NFTs are found or still loading
+                      ...((nfts && nfts.length > 0) || nftLoading ? [{
+                        icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
+                        label: t('nfts'),
+                        onClick: () => {
+                          setActiveDockSection('nfts');
+                          const address = web3BioProfile?.address || walletAddress;
+                          
+                          // Comprehensive validation before fetching
+                          const isValidAddress = address && 
+                                                address !== 'undefined' && 
+                                                typeof address === 'string' && 
+                                                address.trim() !== '' &&
+                                                !(typeof address === 'object' && (address as any)?._type === 'undefined');
+                          
+                          console.log('NFT section clicked - validation:', { 
+                            address, 
+                            isValidAddress,
+                            web3BioAddress: web3BioProfile?.address,
+                            walletAddress,
+                            nftsLength: nfts.length 
+                          });
+                          
+                          // Only fetch NFTs if we have a valid wallet address and no NFTs loaded yet
+                          if (isValidAddress && nfts.length === 0) {
+                            fetchNfts();
+                          } else if (!isValidAddress) {
+                            console.warn('Cannot fetch NFTs: Invalid or missing wallet address');
+                          }
+                        },
+                        isActive: activeDockSection === 'nfts',
+                      }] : []),
                       // Inbox - Always show for messaging
                       {
                         icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,

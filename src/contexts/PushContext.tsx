@@ -74,12 +74,13 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
         stack: error?.stack
       });
       
-      const errorMessage = 
-        error?.message || 
-        error?.error || 
-        'Failed to connect to Push Protocol. Please try again.';
-      
-      toast.error(errorMessage);
+      // Check for specific error types
+      if (error?.message?.includes('read-only')) {
+        console.error('⚠️ Read-only mode error detected - signer validation may have failed');
+        toast.error('Connection failed: Read-only mode. Please try again.');
+      } else {
+        toast.error(error?.message || 'Failed to connect to Push Protocol');
+      }
       
       setPushUser(null);
       setWalletAddress(null);
