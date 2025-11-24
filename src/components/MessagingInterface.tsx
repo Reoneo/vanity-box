@@ -470,11 +470,24 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     
     try {
       console.log('📤 Sending message:', textToSend);
-      console.log('📤 Conversation:', selectedConversation.id);
+      console.log('📤 Conversation:', {
+        id: selectedConversation.id,
+        peerAddress: selectedConversation.peerAddress,
+        dmPeerInboxId: selectedConversation.dmPeerInboxId,
+        hasSendMethod: typeof selectedConversation.send === 'function'
+      });
+      
       await selectedConversation.send(textToSend);
       console.log('✅ Message sent successfully');
+      toast.success('Message sent!');
     } catch (error: any) {
       console.error("❌ Failed to send message:", error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        conversationId: selectedConversation?.id
+      });
+      toast.error(`Failed to send: ${error.message || 'Unknown error'}`);
       setMessageText(textToSend);
     } finally {
       setIsSending(false);
