@@ -101,6 +101,54 @@ serve(async (req) => {
         const data = await response.json();
         console.log('✅ Web3.bio profile data received:', JSON.stringify(data).substring(0, 200));
 
+        // For .box domains (ENS names), enrich with actual ENS text records
+        if (handle.toLowerCase().endsWith('.box') || handle.toLowerCase().endsWith('.eth')) {
+          console.log('🔗 Fetching ENS text records for:', handle);
+          try {
+            const publicClient = createPublicClient({
+              chain: mainnet,
+              transport: http()
+            });
+
+            // Fetch common ENS text records
+            const recordKeys = ['avatar', 'description', 'email', 'url', 'com.twitter', 'com.github', 'com.discord', 'org.telegram'];
+            const recordPromises = recordKeys.map(async (key) => {
+              try {
+                const value = await publicClient.getEnsText({
+                  name: normalize(handle),
+                  key
+                });
+                return { key, value };
+              } catch {
+                return { key, value: null };
+              }
+            });
+
+            const records = await Promise.all(recordPromises);
+            const ensRecords: Record<string, string> = {};
+            records.forEach(({ key, value }) => {
+              if (value) ensRecords[key] = value;
+            });
+
+            console.log('✅ Fetched ENS text records:', ensRecords);
+
+            // Merge ENS records into the web3.bio response
+            if (Array.isArray(data) && data.length > 0) {
+              data[0] = {
+                ...data[0],
+                ensRecords,
+                // Override with ENS records if they exist
+                avatar: ensRecords.avatar || data[0].avatar,
+                description: ensRecords.description || data[0].description,
+                email: ensRecords.email || data[0].email,
+              };
+            }
+          } catch (ensRecordError: any) {
+            console.warn('⚠️ Failed to fetch ENS text records:', ensRecordError.message);
+            // Continue without ENS records - web3.bio data is still valid
+          }
+        }
+
         return new Response(JSON.stringify(data), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
