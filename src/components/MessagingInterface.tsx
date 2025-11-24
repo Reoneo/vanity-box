@@ -142,6 +142,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isResolvingENS, setIsResolvingENS] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -423,7 +424,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       }
       
       setSearchQuery("");
-      toast.success(`Conversation started with ${searchQuery}`);
+      toast.success(`Conversation started with ${searchQuery}`, { duration: 2000 });
     } catch (error: any) {
       console.error("❌ Failed to start conversation:", error);
       toast.error(error.message || "Failed to start conversation");
@@ -722,9 +723,10 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             </div>
 
             {/* Message Input */}
-            <div className="p-3 sm:p-4 border-t border-border shrink-0 bg-background safe-area-inset-bottom">
+            <div className="p-3 sm:p-4 border-t border-border shrink-0 bg-background safe-area-inset-bottom relative z-50">
               <div className="flex gap-1.5 sm:gap-2">
                 <Input
+                  ref={messageInputRef}
                   type="text"
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
@@ -735,8 +737,14 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                       handleSendMessage();
                     }
                   }}
+                  onClick={() => {
+                    // Explicitly focus on mobile to trigger keyboard
+                    messageInputRef.current?.focus();
+                  }}
                   disabled={isSending}
-                  className="flex-1 text-sm"
+                  readOnly={false}
+                  className="flex-1 text-sm focus:ring-2 focus:ring-primary/20"
+                  style={{ touchAction: 'manipulation' }}
                   inputMode="text"
                   autoComplete="off"
                   autoCorrect="off"
