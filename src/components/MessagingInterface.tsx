@@ -406,34 +406,34 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
         {/* Search Header */}
         <div className="p-4 border-b border-border space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <h2 className="text-xl font-semibold">Messages</h2>
-              {conversations.some(c => (c.unreadCount || 0) > 0) && (
-                <Badge variant="destructive" className="h-5 min-w-5 px-1.5 flex items-center justify-center">
-                  {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <XMTPSettings />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={requestPermission}
-                disabled={isRequesting}
-                className="h-8 w-8"
-                title={hasPermission ? "Notifications enabled" : "Notifications disabled"}
-              >
-                {hasPermission ? (
-                  <Bell className="h-4 w-4" />
-                ) : (
-                  <BellOff className="h-4 w-4" />
-                )}
-              </Button>
-              <Badge variant={hasPermission ? "secondary" : "outline"} className="text-xs px-2">
-                {hasPermission ? "On" : "Off"}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <h2 className="text-xl font-semibold">Messages</h2>
+            {conversations.some(c => (c.unreadCount || 0) > 0) && (
+              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 flex items-center justify-center">
+                {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
               </Badge>
-            </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={requestPermission}
+              disabled={isRequesting}
+              className="h-9 w-9"
+              title={hasPermission ? "Notifications enabled" : "Notifications disabled"}
+            >
+              {hasPermission ? (
+                <Bell className="h-4 w-4" />
+              ) : (
+                <BellOff className="h-4 w-4" />
+              )}
+            </Button>
+            <Badge variant={hasPermission ? "secondary" : "outline"} className="text-xs px-2 py-0.5">
+              {hasPermission ? "On" : "Off"}
+            </Badge>
+            <XMTPSettings />
+          </div>
           </div>
           <div className="flex gap-2">
             <Input
