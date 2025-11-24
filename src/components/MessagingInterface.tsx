@@ -64,20 +64,38 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       setIsLoadingConversations(true);
       try {
         console.log("🔄 Loading conversations");
+        
+        // Sync conversations from network first
+        await client.conversations.sync();
+        
         const convos = await client.conversations.list();
+        console.log(`📋 Found ${convos.length} conversations`);
         
         const conversationsData: Conversation[] = await Promise.all(
           convos.map(async (conv: any) => {
-            const msgs = await conv.messages({ limit: 1 });
-            const lastMsg = msgs[0];
-            
-            return {
-              id: conv.id,
-              peerAddress: conv.peerAddress,
-              lastMessage: lastMsg?.content || "",
-              lastMessageTime: lastMsg?.sentAt ? new Date(lastMsg.sentAt) : undefined,
-              unreadCount: 0
-            };
+            try {
+              // Sync messages for this conversation
+              await conv.sync();
+              const msgs = await conv.messages({ limit: 1 });
+              const lastMsg = msgs[0];
+              
+              return {
+                id: conv.id,
+                peerAddress: conv.peerAddress,
+                lastMessage: lastMsg?.content || "",
+                lastMessageTime: lastMsg?.sentAt ? new Date(lastMsg.sentAt) : undefined,
+                unreadCount: 0
+              };
+            } catch (convError) {
+              console.warn(`⚠️ Error loading conversation ${conv.id}:`, convError);
+              return {
+                id: conv.id,
+                peerAddress: conv.peerAddress,
+                lastMessage: "",
+                lastMessageTime: undefined,
+                unreadCount: 0
+              };
+            }
           })
         );
 
@@ -85,9 +103,12 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
           (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0)
         ));
         console.log("✅ Loaded conversations:", conversationsData.length);
-      } catch (error) {
+      } catch (error: any) {
         console.error("❌ Failed to load conversations:", error);
-        toast.error("Failed to load conversations");
+        const errorMessage = error.message || "Failed to load conversations";
+        toast.error(errorMessage.includes('already registered') 
+          ? "XMTP installation limit reached. Clear browser data and try again." 
+          : "Failed to load conversations");
       } finally {
         setIsLoadingConversations(false);
       }
@@ -103,7 +124,12 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     const loadMessages = async () => {
       try {
         console.log("🔄 Loading messages for conversation");
+        
+        // Sync messages first to get latest
+        await selectedConversation.sync();
+        
         const msgs = await selectedConversation.messages();
+        console.log(`💬 Loaded ${msgs.length} messages`);
         setMessages(msgs);
       } catch (error) {
         console.error("❌ Failed to load messages:", error);
