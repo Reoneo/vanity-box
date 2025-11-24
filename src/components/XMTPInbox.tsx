@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Loader2, Send } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useXmtp } from "@/contexts/XmtpContext";
 import { authenticateWithWorldChain } from "@/lib/worldChainAuth";
@@ -34,7 +33,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
       // Initialize XMTP client
       await initializeClient(signer, address);
       
-      toast.success("Connected to XMTP!");
+      // Toast removed - connection is obvious from UI state change
     } catch (error: any) {
       console.error('❌ XMTP connection error:', error);
       toast.error(error.message || "Failed to connect to XMTP");
@@ -86,7 +85,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
       const msgs = await conversation.messages();
       setMessages(msgs);
       
-      toast.success('Message sent');
+      // Toast removed - message appearing in chat is enough feedback
     } catch (error) {
       console.error('❌ Failed to send message:', error);
       toast.error('Failed to send message');
@@ -183,18 +182,30 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
         </div>
 
         <div className="flex gap-2 pt-2 border-t">
-          <Input
+          <input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             placeholder="Type a message..."
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
             disabled={isSending}
+            className="flex-1 px-4 py-2.5 text-sm rounded-lg border-2 border-border bg-background focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 transition-all"
+            style={{ 
+              touchAction: 'manipulation',
+              WebkitUserSelect: 'text',
+              userSelect: 'text',
+              fontSize: '16px'
+            }}
           />
-          <Button onClick={handleSendMessage} disabled={isSending || !messageText.trim()} size="icon">
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={isSending || !messageText.trim()} 
+            size="icon"
+            className="h-11 w-11 rounded-lg transition-all hover:scale-105 active:scale-95"
+          >
             {isSending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             )}
           </Button>
         </div>

@@ -67,7 +67,7 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
       console.log('✅ XMTP client initialized');
       setClient(newClient);
       setWalletAddress(address);
-      toast.success('Connected to XMTP messaging');
+      // Toast removed - UI will show connection state
     } catch (error: any) {
       console.error('❌ Failed to initialize XMTP client:', error);
       

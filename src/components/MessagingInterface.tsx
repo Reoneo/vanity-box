@@ -169,7 +169,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       console.log("✅ Got World Chain credentials, initializing XMTP client");
       await initializeClient(signer, address);
       console.log("✅ XMTP client initialized");
-      toast.success("Connected to XMTP!");
+      // Toast removed - connection is obvious from UI state change
     } catch (error: any) {
       console.error("❌ XMTP connection error:", error);
       toast.error(error.message || "Failed to connect to XMTP");
@@ -544,30 +544,38 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             <XMTPSettings />
           </div>
           </div>
-          <div className="flex gap-1.5 sm:gap-2">
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Address, .eth, .world, .box..."
-              onKeyPress={(e) => e.key === "Enter" && handleStartConversation()}
-              className="flex-1 text-sm px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-              disabled={isResolvingENS}
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Address, .eth, .world, .box..."
+                onKeyPress={(e) => e.key === "Enter" && handleStartConversation()}
+                className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 transition-all"
+                disabled={isResolvingENS}
+                style={{ 
+                  WebkitUserSelect: 'text',
+                  userSelect: 'text',
+                  fontSize: '16px' // Prevents zoom on iOS
+                }}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
             <Button 
               onClick={handleStartConversation} 
               disabled={isLoadingConversations || isResolvingENS || !searchQuery.trim()}
-              className="min-w-[70px] sm:min-w-[80px] text-sm"
-              size="sm"
+              className="px-4 shrink-0"
+              size="default"
             >
               {isResolvingENS ? (
                 <>
-                  <Loader2 className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-                  <span className="hidden sm:inline">Resolving...</span>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="hidden sm:inline">Finding...</span>
                 </>
               ) : (
                 <>
-                  <Send className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  Start
+                  <Send className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Start</span>
                 </>
               )}
             </Button>
@@ -660,31 +668,31 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-3 sm:p-4 border-b border-border flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="p-4 border-b border-border flex items-center gap-3 shrink-0 bg-background/50 backdrop-blur-sm">
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="md:hidden h-10 w-10"
                 onClick={() => setSelectedConversation(null)}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-xs sm:text-sm font-medium text-primary">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
+                <span className="text-sm font-bold text-primary">
                   {(selectedConversation.peerAddress?.slice(2, 4)?.toUpperCase() || 
                     selectedConversation.dmPeerInboxId?.slice(0, 2)?.toUpperCase() || 
                     '??')}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm sm:text-base truncate">
+                <p className="font-semibold text-base truncate">
                   {selectedConversation.peerAddress 
                     ? `${selectedConversation.peerAddress.slice(0, 6)}...${selectedConversation.peerAddress.slice(-4)}`
                     : selectedConversation.dmPeerInboxId || 'Unknown'
                   }
                 </p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                  {selectedConversation.peerAddress || selectedConversation.dmPeerInboxId || 'Unknown'}
+                <p className="text-xs text-muted-foreground truncate">
+                  XMTP Encrypted
                 </p>
               </div>
             </div>
@@ -729,47 +737,49 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             </div>
 
             {/* Message Input */}
-            <div className="p-3 sm:p-4 border-t border-border shrink-0 bg-background safe-area-inset-bottom relative z-50">
-              <div className="flex gap-1.5 sm:gap-2">
-                <input
-                  ref={messageInputRef}
-                  type="text"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  placeholder="Type a message..."
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  onClick={() => {
-                    // Explicitly focus on mobile to trigger keyboard
-                    messageInputRef.current?.focus();
-                  }}
-                  disabled={isSending}
-                  readOnly={false}
-                  className="flex-1 text-sm px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
-                  style={{ 
-                    touchAction: 'manipulation',
-                    WebkitUserSelect: 'text',
-                    userSelect: 'text'
-                  }}
-                  inputMode="text"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="sentences"
-                />
+            <div className="p-4 border-t border-border shrink-0 bg-background/80 backdrop-blur-sm safe-area-inset-bottom">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 relative">
+                  <input
+                    ref={messageInputRef}
+                    type="text"
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder="Type a message..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    onFocus={() => {
+                      // Scroll to bottom when input is focused
+                      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    disabled={isSending}
+                    className="w-full px-4 py-3 text-sm rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    style={{ 
+                      touchAction: 'manipulation',
+                      WebkitUserSelect: 'text',
+                      userSelect: 'text',
+                      fontSize: '16px' // Prevents zoom on iOS
+                    }}
+                    inputMode="text"
+                    autoComplete="off"
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
+                  />
+                </div>
                 <Button 
                   onClick={handleSendMessage} 
                   disabled={isSending || !messageText.trim()} 
                   size="icon"
-                  className="shrink-0 h-9 w-9 sm:h-10 sm:w-10"
+                  className="shrink-0 h-12 w-12 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
                 >
                   {isSending ? (
-                    <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <Send className="h-5 w-5" />
                   )}
                 </Button>
               </div>
