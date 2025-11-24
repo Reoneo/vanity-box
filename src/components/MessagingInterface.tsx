@@ -55,8 +55,8 @@ const resolveAddressOrENS = async (input: string): Promise<string> => {
     }
   }
   
-  // If it's a World Chain name (.world) or .box domain
-  if (trimmed.endsWith('.world') || trimmed.endsWith('.box')) {
+  // If it's a World Chain name (.world) or other Namestone domains (excluding .box)
+  if (trimmed.endsWith('.world') || trimmed.endsWith('.cash') || trimmed.endsWith('.apt') || trimmed.endsWith('.ton')) {
     try {
       const response = await supabase.functions.invoke('get-namestone-records', {
         body: { subdomain: trimmed }
@@ -75,6 +75,26 @@ const resolveAddressOrENS = async (input: string): Promise<string> => {
     } catch (error) {
       console.error('Domain resolution failed:', error);
       throw new Error(`Failed to resolve domain: ${trimmed}`);
+    }
+  }
+  
+  // If it's a .box domain, resolve via ENS
+  if (trimmed.endsWith('.box')) {
+    try {
+      const publicClient = createPublicClient({
+        chain: mainnet,
+        transport: http()
+      });
+      
+      const address = await publicClient.getEnsAddress({
+        name: normalize(trimmed)
+      });
+      
+      if (address) return address;
+      throw new Error(`Could not resolve .box domain: ${trimmed}`);
+    } catch (error) {
+      console.error('.box domain resolution failed:', error);
+      throw new Error(`Failed to resolve .box domain: ${trimmed}`);
     }
   }
   

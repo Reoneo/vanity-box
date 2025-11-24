@@ -816,8 +816,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const normalizedQuery = trimmedQuery.toLowerCase();
 
       // Detect if this is a Namestone domain or subdomain
-      // Check for Namestone TLDs (.world, .box, .cash, etc.) OR subdomains (2+ dots)
-      const namesoneTLDs = ['.world', '.box', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+      // Check for Namestone TLDs (.world, .cash, etc.) OR subdomains (2+ dots)
+      const namesoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
       const isNamestoneTLD = namesoneTLDs.some(tld => normalizedQuery.endsWith(tld));
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
       const isNamestoneSubdomain = dotCount >= 2;

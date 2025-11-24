@@ -73,8 +73,8 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
         const fullName = `${domain.name}.${domain.domain}`;
         console.log('[DomainManagementModal] Fetching records for:', fullName);
         
-        // Check if this is a Namestone domain (.world, .box, .cash, etc.)
-        const namesoneTLDs = ['.world', '.box', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+        // Check if this is a Namestone domain (.world, .cash, etc.) - excluding .box which uses web3.bio
+        const namesoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
         const isNamestoneDomain = namesoneTLDs.some(tld => fullName.toLowerCase().endsWith(tld));
         
         let data, error;
