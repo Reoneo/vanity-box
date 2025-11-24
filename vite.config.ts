@@ -13,7 +13,12 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     exclude: ["@xmtp/wasm-bindings", "@xmtp/browser-sdk"],
-    include: ["@xmtp/proto"],
+    include: ["@xmtp/proto", "buffer"],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
   },
   plugins: [
     react(),
@@ -25,6 +30,9 @@ export default defineConfig(({ mode }) => ({
         process: true,
       },
       protocolImports: true,
+      overrides: {
+        fs: 'memfs',
+      },
     }),
     mode === "development" && componentTagger(),
     viteCompression({

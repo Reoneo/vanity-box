@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Client } from "@xmtp/browser-sdk";
 
 interface XmtpContextType {
-  client: Client | null;
-  setClient: (client: Client | null) => void;
+  client: any | null;
+  setClient: (client: any | null) => void;
 }
 
 const XmtpContext = createContext<XmtpContextType | undefined>(undefined);
@@ -13,7 +12,7 @@ interface XmtpProviderWrapperProps {
 }
 
 export const XmtpProviderWrapper = ({ children }: XmtpProviderWrapperProps) => {
-  const [client, setClient] = useState<Client | null>(null);
+  const [client, setClient] = useState<any | null>(null);
 
   return (
     <XmtpContext.Provider value={{ client, setClient }}>

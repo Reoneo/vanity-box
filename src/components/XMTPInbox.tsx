@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Send, MessageCircle, ArrowLeft } from "lucide-react";
 import { MiniKit } from "@worldcoin/minikit-js";
-import { Client } from "@xmtp/browser-sdk";
 import { useXmtpClient } from "@/contexts/XmtpProvider";
 import { toast } from "sonner";
 
@@ -219,6 +218,11 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     try {
       setIsLoading(true);
       console.log("[XMTP] Initializing XMTP client for address:", currentUserAddress);
+
+      // Dynamically import XMTP SDK to ensure Buffer polyfill is ready
+      console.log("[XMTP] Dynamically importing XMTP Browser SDK");
+      const { Client } = await import("@xmtp/browser-sdk");
+      console.log("[XMTP] XMTP Browser SDK loaded successfully");
 
       // Authenticate with World App
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
