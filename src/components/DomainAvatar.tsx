@@ -19,8 +19,18 @@ export const DomainAvatar: React.FC<DomainAvatarProps> = ({ domain }) => {
         setIsLoading(true);
         const fullName = `${domain.name}.${domain.domain}`;
         
-        // Fetch ENS avatar from Web3.bio API
-        const profile = await callEdge<any>('get-web3bio-profile', { handle: fullName });
+        // Check if this is a Namestone domain (.world, .box, .cash, etc.)
+        const namesoneTLDs = ['.world', '.box', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+        const isNamestoneDomain = namesoneTLDs.some(tld => fullName.toLowerCase().endsWith(tld));
+        
+        let profile;
+        if (isNamestoneDomain) {
+          // Use Namestone-aware endpoint for .box, .world, etc.
+          profile = await callEdge<any>('get-ens-subdomain-profile', { subdomain: fullName });
+        } else {
+          // Use Web3.bio for ENS and other domains
+          profile = await callEdge<any>('get-web3bio-profile', { handle: fullName });
+        }
         
         const first = Array.isArray(profile) ? profile[0] : (profile?.identity || profile);
         if (first?.avatar) {

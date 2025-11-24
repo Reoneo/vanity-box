@@ -815,24 +815,29 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
 
-      // Detect if this is a Namestone subdomain (2+ dots = subdomain)
+      // Detect if this is a Namestone domain or subdomain
+      // Check for Namestone TLDs (.world, .box, .cash, etc.) OR subdomains (2+ dots)
+      const namesoneTLDs = ['.world', '.box', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+      const isNamestoneTLD = namesoneTLDs.some(tld => normalizedQuery.endsWith(tld));
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
       const isNamestoneSubdomain = dotCount >= 2;
-      console.log(`🔍 Query has ${dotCount} dots. Is Namestone subdomain:`, isNamestoneSubdomain);
+      const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
+      
+      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}`);
 
       // Use different fetch strategies based on name type
-      if (isNamestoneSubdomain) {
-        // Direct ENS + Namestone lookup for subdomains
-        console.log('🔗 Fetching ENS subdomain profile directly for:', normalizedQuery);
+      if (isNamestoneDomain) {
+        // Direct Namestone lookup for Namestone TLDs and subdomains
+        console.log('🔗 Fetching Namestone domain profile for:', normalizedQuery);
         try {
           const { data, error } = await supabase.functions.invoke('get-ens-subdomain-profile', {
             body: { subdomain: normalizedQuery }
           });
 
           if (error) {
-            console.error('❌ Error fetching ENS subdomain profile:', error);
+            console.error('❌ Error fetching Namestone domain profile:', error);
           } else if (data && !data.error) {
-            console.log('✅ ENS subdomain profile found:', data);
+            console.log('✅ Namestone domain profile found:', data);
             setWeb3BioProfile(data);
             setEnsResults([]);
             
@@ -841,7 +846,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             }
           }
         } catch (error) {
-          console.log('❌ Failed to fetch ENS subdomain profile:', error);
+          console.log('❌ Failed to fetch Namestone domain profile:', error);
         }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
