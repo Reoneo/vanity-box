@@ -156,6 +156,67 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     };
   }, [selectedConversation, walletAddress]);
 
+  // Stream all conversations for unread count updates
+  useEffect(() => {
+    if (!client || !isConnected) return;
+
+    let isSubscribed = true;
+
+    const streamAllMessages = async () => {
+      try {
+        const stream = await client.conversations.streamAllMessages();
+        
+        for await (const message of stream) {
+          if (!isSubscribed) break;
+          
+          // Check if message is a text message and from someone else
+          if (typeof message.content === 'string' && message.senderInboxId !== client.inboxId) {
+            const conversationId = message.conversationId;
+            
+            // Only increment if this conversation isn't currently selected
+            if (!selectedConversation || selectedConversation.id !== conversationId) {
+              setConversations(prev => 
+                prev.map(conv => {
+                  if (conv.id === conversationId) {
+                    return {
+                      ...conv,
+                      unreadCount: (conv.unreadCount || 0) + 1,
+                      lastMessage: typeof message.content === 'string' ? message.content : '',
+                      lastMessageTime: new Date(Number(message.sentAtNs) / 1_000_000)
+                    };
+                  }
+                  return conv;
+                })
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error("❌ All messages streaming error:", error);
+      }
+    };
+
+    streamAllMessages();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [client, isConnected, selectedConversation]);
+
+  // Mark conversation as read when selected
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id === selectedConversation.id) {
+          return { ...conv, unreadCount: 0 };
+        }
+        return conv;
+      })
+    );
+  }, [selectedConversation]);
+
   // Start new conversation
   const handleStartConversation = async () => {
     if (!searchQuery.trim() || !client) return;
@@ -255,7 +316,14 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
         {/* Search Header */}
         <div className="p-4 border-b border-border space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Messages</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold">Messages</h2>
+              {conversations.some(c => (c.unreadCount || 0) > 0) && (
+                <Badge variant="destructive" className="h-5 min-w-5 px-1.5 flex items-center justify-center">
+                  {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
+                </Badge>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
@@ -317,14 +385,21 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
                     <span className="text-sm font-medium text-primary">
                       {conv.peerAddress.slice(2, 4).toUpperCase()}
                     </span>
+                    {(conv.unreadCount || 0) > 0 && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                        <span className="text-xs font-bold text-destructive-foreground">
+                          {conv.unreadCount}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium truncate">
+                      <p className={`text-sm truncate ${(conv.unreadCount || 0) > 0 ? 'font-bold' : 'font-medium'}`}>
                         {conv.peerAddress.slice(0, 6)}...{conv.peerAddress.slice(-4)}
                       </p>
                       {conv.lastMessageTime && (
@@ -334,7 +409,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                       )}
                     </div>
                     {conv.lastMessage && (
-                      <p className="text-sm text-muted-foreground truncate mt-1">
+                      <p className={`text-sm truncate mt-1 ${(conv.unreadCount || 0) > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                         {conv.lastMessage}
                       </p>
                     )}
