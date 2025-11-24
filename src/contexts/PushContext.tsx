@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { PushAPI } from '@pushprotocol/restapi';
+import { PushAPI, CONSTANTS } from '@pushprotocol/restapi';
 import { authenticateWithWorldChain } from '@/lib/pushAuth';
 import { toast } from 'sonner';
 
@@ -48,8 +48,8 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
 
       // Initialize Push Protocol user
       console.log('🔄 Creating Push Protocol user...');
-      const user = await PushAPI.initialize(signer, {
-        env: 'production' as any
+      const user = await PushAPI.initialize(signer as any, {
+        env: CONSTANTS.ENV.PROD
       });
 
       console.log('✅ Push Protocol user initialized');
