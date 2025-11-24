@@ -10,7 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
 import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
-import { XmtpProvider } from "@/contexts/XmtpContext";
+import { PushProvider } from "@/contexts/PushContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -35,11 +35,11 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
             <LanguageProvider>
-              <TonConnectProvider>
-                <PetraWalletProvider>
-                  <FarcasterAuthProvider>
-                    <XmtpProvider>
-                      <TooltipProvider>
+            <TonConnectProvider>
+              <PetraWalletProvider>
+                <FarcasterAuthProvider>
+                  <PushProvider>
+                    <TooltipProvider>
                         <Toaster />
                         <Sonner />
                         <BrowserRouter>
@@ -53,11 +53,11 @@ const App = () => {
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </BrowserRouter>
-                      </TooltipProvider>
-                    </XmtpProvider>
-                  </FarcasterAuthProvider>
-                </PetraWalletProvider>
-              </TonConnectProvider>
+                    </TooltipProvider>
+                  </PushProvider>
+                </FarcasterAuthProvider>
+              </PetraWalletProvider>
+            </TonConnectProvider>
             </LanguageProvider>
           </ThemeProvider>
         </QueryClientProvider>

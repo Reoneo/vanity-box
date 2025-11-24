@@ -103,8 +103,8 @@ import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
-import { XMTPInbox } from "@/components/XMTPInbox";
-import { MessagingInterface } from "@/components/MessagingInterface";
+import { PushInbox } from "@/components/PushInbox";
+import { PushMessagingInterface } from "@/components/PushMessagingInterface";
 
 export interface FilterState {
   protocol: string[];
