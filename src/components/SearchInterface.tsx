@@ -1974,12 +1974,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Search',
                         onClick: () => {
-                          // Clear profile and show search bar
-                          setWeb3BioProfile(null);
-                          setEnsResults([]);
+                          // Keep profile but show search bar above it
                           setShowSearchBar(true);
-                          window.dispatchEvent(new Event('profile-cleared'));
-                          // Scroll to top
+                          setActiveDockSection('profile');
+                          // Scroll to top to see search bar
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         },
                         isActive: false,
