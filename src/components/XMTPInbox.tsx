@@ -14,7 +14,7 @@ interface XMTPInboxProps {
 }
 
 export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }: XMTPInboxProps) => {
-  const { client, isInitializing, isConnected, initializeClient } = useXmtp();
+  const { client, isInitializing, isConnected, initializeClient, walletAddress } = useXmtp();
   const [messages, setMessages] = useState<any[]>([]);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -261,22 +261,36 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
               No messages yet. Start the conversation!
             </p>
           ) : (
-            messages.map((msg, idx) => (
-              <div
-                key={msg.id || idx}
-                className={`flex ${msg.senderInboxId === client?.inboxId ? 'justify-end' : 'justify-start'}`}
-              >
+            messages.map((msg, idx) => {
+              // FIXED: Compare senderAddress vs walletAddress for proper alignment
+              const isOurMessage = msg.senderAddress?.toLowerCase() === walletAddress?.toLowerCase();
+              return (
                 <div
-                  className={`px-4 py-2 rounded-lg max-w-xs ${
-                    msg.senderInboxId === client?.inboxId
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
+                  key={msg.id || idx}
+                  className={`flex ${isOurMessage ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className="text-sm break-words">{msg.content}</p>
+                  <div
+                    className={`px-4 py-2 rounded-lg max-w-xs ${
+                      isOurMessage
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <p className="text-sm break-words">{msg.content}</p>
+                    {msg.sentAt && (
+                      <p className="text-[10px] opacity-70 mt-1">
+                        {new Date(msg.sentAt).toLocaleString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
