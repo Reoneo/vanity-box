@@ -513,37 +513,40 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       {/* Conversations List */}
       <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-border flex-col h-full`}>
         {/* Search Header */}
-        <div className="p-3 sm:p-4 border-b border-border space-y-2 sm:space-y-3 flex-shrink-0">
-          <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <h2 className="text-lg sm:text-xl font-semibold">Messages</h2>
-            {conversations.some(c => (c.unreadCount || 0) > 0) && (
-              <Badge variant="destructive" className="h-4 sm:h-5 min-w-4 sm:min-w-5 px-1 sm:px-1.5 text-[10px] sm:text-xs flex items-center justify-center">
-                {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={requestPermission}
-              disabled={isRequesting}
-              className="h-8 w-8 sm:h-9 sm:w-9"
-              title={hasPermission ? "Notifications enabled" : "Notifications disabled"}
-            >
-              {hasPermission ? (
-                <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              ) : (
-                <BellOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        <div className="p-3 sm:p-4 border-b border-border flex-shrink-0">
+          {/* Title + Buttons Row - stays on one line */}
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-semibold truncate">Messages</h2>
+              {conversations.some(c => (c.unreadCount || 0) > 0) && (
+                <Badge variant="destructive" className="h-4 sm:h-5 min-w-4 sm:min-w-5 px-1 sm:px-1.5 text-[10px] sm:text-xs flex items-center justify-center">
+                  {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
+                </Badge>
               )}
-            </Button>
-            <Badge variant={hasPermission ? "secondary" : "outline"} className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
-              {hasPermission ? "On" : "Off"}
-            </Badge>
-            <XMTPSettings />
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 flex-nowrap">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={requestPermission}
+                disabled={isRequesting}
+                className="h-8 w-8 sm:h-9 sm:w-9"
+                title={hasPermission ? "Notifications enabled" : "Notifications disabled"}
+              >
+                {hasPermission ? (
+                  <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                ) : (
+                  <BellOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+              </Button>
+              <Badge variant={hasPermission ? "secondary" : "outline"} className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 whitespace-nowrap">
+                {hasPermission ? "On" : "Off"}
+              </Badge>
+              <XMTPSettings />
+            </div>
           </div>
-          </div>
+          
+          {/* Search Row - always below the header */}
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input
