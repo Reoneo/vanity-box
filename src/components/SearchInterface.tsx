@@ -1277,6 +1277,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setEnsResults(filteredResults);
     console.log("Results set", filteredResults.length);
 
+    // Notify homepage about search results state
+    window.dispatchEvent(new CustomEvent('search-results-changed', { 
+      detail: { hasResults: filteredResults.length > 0 } 
+    }));
+
     if (searchQuery) {
       setIsAvailable(!searchQuery.toLowerCase().includes("taken"));
     }
@@ -1684,6 +1689,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 setSearchQuery("");
                                 setEnsResults([]);
                                 setIsAvailable(null);
+                                // Notify homepage that results are cleared
+                                window.dispatchEvent(new CustomEvent('search-results-changed', { 
+                                  detail: { hasResults: false } 
+                                }));
                                 // Don't clear profile - keep user on current view
                                 // setWeb3BioProfile(null);
                                 // setIsSearchActive(false);
@@ -1838,6 +1847,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 setEnsResults([]);
                                 setIsAvailable(null);
                                 setShowInitialResults(false);
+                                // Notify homepage that results are cleared
+                                window.dispatchEvent(new CustomEvent('search-results-changed', { 
+                                  detail: { hasResults: false } 
+                                }));
                                 // Don't clear profile - keep user on current view
                                 // setWeb3BioProfile(null);
                                 // setIsSearchActive(false);

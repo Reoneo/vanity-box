@@ -19,6 +19,7 @@ const Index = () => {
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const [activeDockSection, setActiveDockSection] = useState<'profile' | 'inbox'>('profile');
   const [showSearchBar, setShowSearchBar] = useState(true);
+  const [showDock, setShowDock] = useState(true);
 
   // Listen for wallet connection events
   useEffect(() => {
@@ -26,12 +27,19 @@ const Index = () => {
       setUser(event.detail);
     };
 
+    const handleSearchResults = (event: CustomEvent) => {
+      // Hide dock when search results are shown, show when cleared
+      setShowDock(!event.detail.hasResults);
+    };
+
     window.addEventListener('wallet-connected', handleWalletChange as EventListener);
     window.addEventListener('wallet-disconnected', () => setUser(null));
+    window.addEventListener('search-results-changed', handleSearchResults as EventListener);
 
     return () => {
       window.removeEventListener('wallet-connected', handleWalletChange as EventListener);
       window.removeEventListener('wallet-disconnected', () => setUser(null));
+      window.removeEventListener('search-results-changed', handleSearchResults as EventListener);
     };
   }, []);
 
@@ -60,35 +68,37 @@ const Index = () => {
           </article>
         </main>
         
-        {/* Homepage Dock - fixed at bottom */}
-        <div className="fixed bottom-20 left-0 right-0 flex items-center justify-center pb-4 pt-4 z-[9998] pointer-events-none">
-          <div className="pointer-events-auto">
-            <Dock
-              items={[
-                {
-                  icon: <User className="w-6 h-6 text-[#D4AF37]" />,
-                  label: t('profile'),
-                  onClick: () => {
-                    setActiveDockSection('profile');
-                    // Navigate to My IDs
-                    window.dispatchEvent(new CustomEvent("show-my-ids"));
+        {/* Homepage Dock - fixed at bottom, hidden when search results shown */}
+        {showDock && (
+          <div className="fixed bottom-20 left-0 right-0 flex items-center justify-center pb-4 pt-4 z-[9998] pointer-events-none">
+            <div className="pointer-events-auto">
+              <Dock
+                items={[
+                  {
+                    icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                    label: t('profile'),
+                    onClick: () => {
+                      setActiveDockSection('profile');
+                      // Navigate to My IDs
+                      window.dispatchEvent(new CustomEvent("show-my-ids"));
+                    },
+                    isActive: activeDockSection === 'profile',
                   },
-                  isActive: activeDockSection === 'profile',
-                },
-                {
-                  icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,
-                  label: t('inbox'),
-                  onClick: () => {
-                    setActiveDockSection('inbox');
-                    // Navigate to inbox view (Push messaging)
-                    window.location.href = '/inbox';
+                  {
+                    icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,
+                    label: t('inbox'),
+                    onClick: () => {
+                      setActiveDockSection('inbox');
+                      // Navigate to inbox view (Push messaging)
+                      window.location.href = '/inbox';
+                    },
+                    isActive: activeDockSection === 'inbox',
                   },
-                  isActive: activeDockSection === 'inbox',
-                },
-              ]}
-            />
+                ]}
+              />
+            </div>
           </div>
-        </div>
+        )}
         
         <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] safe-area-inset-bottom pointer-events-auto">
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
