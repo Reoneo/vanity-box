@@ -32,6 +32,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
@@ -41,6 +42,13 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
 
   // Connect to XMTP
   const handleConnect = async () => {
+    // Prevent multiple concurrent connection attempts
+    if (isConnecting || isInitializing) {
+      console.log('⚠️ Connection already in progress, ignoring click');
+      return;
+    }
+    
+    setIsConnecting(true);
     try {
       if (!MiniKit.isInstalled()) {
         toast.error("Please open this app in World App to use messaging");
@@ -54,6 +62,8 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     } catch (error: any) {
       console.error("❌ XMTP connection error:", error);
       toast.error(error.message || "Failed to connect to XMTP");
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -315,8 +325,13 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             <p className="text-muted-foreground">
               Connect your World Chain wallet to send encrypted messages via XMTP
             </p>
-            <Button onClick={handleConnect} disabled={isInitializing} size="lg" className="w-full">
-              {isInitializing ? (
+            <Button 
+              onClick={handleConnect} 
+              disabled={isConnecting || isInitializing} 
+              size="lg" 
+              className="w-full"
+            >
+              {(isConnecting || isInitializing) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Connecting...
