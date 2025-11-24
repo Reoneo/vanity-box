@@ -346,7 +346,7 @@ export const ProfileCard = ({
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {web3BioProfile?.links && Object.entries(web3BioProfile.links)
-                .filter(([_, linkData]) => linkData)
+                .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && linkData)
                 .map(([platform, linkData]: [string, any]) => {
                   const displayLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
                   const url = typeof linkData === 'string' ? linkData : linkData?.link;
