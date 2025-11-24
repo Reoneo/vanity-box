@@ -97,6 +97,12 @@ class SoundEffectsManager {
     setTimeout(() => this.playTone(1900, 0.18, 0.6, 'sine'), 300);
     setTimeout(() => this.playTone(2300, 0.25, 0.5, 'sine'), 450);
   }
+
+  playMessage() {
+    // Pleasant notification sound for incoming messages
+    this.playTone(1000, 0.1, 0.5, 'sine');
+    setTimeout(() => this.playTone(1300, 0.15, 0.5, 'sine'), 80);
+  }
 }
 
 export const soundManager = new SoundEffectsManager();

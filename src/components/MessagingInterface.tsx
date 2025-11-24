@@ -11,6 +11,7 @@ import { authenticateWithWorldChain } from "@/lib/worldChainAuth";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { formatDistanceToNow } from "date-fns";
 import { useWorldNotifications } from "@/hooks/useWorldNotifications";
+import { soundManager } from "@/utils/soundEffects";
 
 interface Conversation {
   id: string;
@@ -129,6 +130,9 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             if (message.senderAddress?.toLowerCase() !== walletAddress?.toLowerCase() && walletAddress) {
               console.log('📲 New incoming message, sending notification');
               
+              // Play sound notification
+              soundManager.playMessage();
+              
               // Send notification
               try {
                 await supabase.functions.invoke('send-world-notification', {
@@ -175,6 +179,9 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             
             // Only increment if this conversation isn't currently selected
             if (!selectedConversation || selectedConversation.id !== conversationId) {
+              // Play sound for new message
+              soundManager.playMessage();
+              
               setConversations(prev => 
                 prev.map(conv => {
                   if (conv.id === conversationId) {
