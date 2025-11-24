@@ -30,26 +30,49 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
 
       console.log('🔄 Connecting to XMTP via World Chain');
       const { address, signer } = await authenticateWithWorldChain();
+      
+      // Initialize XMTP client
       await initializeClient(signer, address);
       
-      // Create or get conversation with profile owner
-      if (client) {
-        const conversations = await client.conversations.list();
-        let conv = conversations.find((c: any) => 
-          c.peerAddress?.toLowerCase() === profileAddress.toLowerCase()
-        );
-        
-        setConversation(conv || null);
-        
-        // Load existing messages
-        const msgs = await conv.messages();
-        setMessages(msgs);
-      }
+      toast.success("Connected to XMTP!");
     } catch (error: any) {
       console.error('❌ XMTP connection error:', error);
       toast.error(error.message || "Failed to connect to XMTP");
     }
   };
+
+  // After client is initialized, get or create conversation
+  useEffect(() => {
+    if (!client || !isConnected || !profileAddress) return;
+
+    const initConversation = async () => {
+      try {
+        console.log('🔄 Looking for conversation with:', profileAddress);
+        const conversations = await client.conversations.list();
+        let conv = conversations.find((c: any) => 
+          c.peerAddress?.toLowerCase() === profileAddress.toLowerCase()
+        );
+        
+        if (!conv) {
+          console.log('Creating new conversation with:', profileAddress);
+          conv = await client.conversations.newDm(profileAddress);
+        }
+        
+        setConversation(conv);
+        
+        // Load existing messages
+        if (conv) {
+          const msgs = await conv.messages();
+          setMessages(msgs);
+        }
+      } catch (error) {
+        console.error('❌ Failed to initialize conversation:', error);
+        toast.error('Failed to load conversation');
+      }
+    };
+
+    initConversation();
+  }, [client, isConnected, profileAddress]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !conversation) return;

@@ -1,14 +1,27 @@
 import { MiniKit, MiniAppWalletAuthSuccessPayload } from '@worldcoin/minikit-js';
-import { ethers } from 'ethers';
+import { toBytes } from 'viem';
 import { callEdge } from '@/lib/supaInvoke';
+
+// XMTP Signer types
+type Identifier = {
+  identifier: string;
+  identifierKind: 'Ethereum';
+};
+
+type Signer = {
+  type: 'EOA' | 'SCW';
+  getIdentifier: () => Identifier;
+  signMessage: (message: string) => Promise<Uint8Array>;
+  getChainId?: () => bigint;
+};
 
 export interface WorldChainSigner {
   address: string;
-  signer: ethers.Signer;
+  signer: Signer;
 }
 
 /**
- * Authenticate with World Chain wallet and get ethers.js signer for XMTP
+ * Authenticate with World Chain wallet and get XMTP-compatible signer
  */
 export async function authenticateWithWorldChain(): Promise<WorldChainSigner> {
   console.log('🌍 Starting World Chain authentication for XMTP');
@@ -48,32 +61,31 @@ export async function authenticateWithWorldChain(): Promise<WorldChainSigner> {
 
   console.log('✅ Signature verified');
 
-  // Step 4: Create ethers.js signer for XMTP
-  const provider = new ethers.providers.JsonRpcProvider('https://worldchain-mainnet.g.alchemy.com/public');
-  
-  // Create a custom signer that uses MiniKit for signing
-  const signer = {
-    getAddress: async () => address,
-    signMessage: async (message: string) => {
+  // Step 4: Create XMTP-compatible signer
+  const signer: Signer = {
+    type: 'EOA',
+    getIdentifier: (): Identifier => ({
+      identifier: address.toLowerCase(),
+      identifierKind: 'Ethereum'
+    }),
+    signMessage: async (message: string): Promise<Uint8Array> => {
+      console.log('📝 Signing message for XMTP');
       // Use MiniKit to sign messages
-      const signResult = await MiniKit.commandsAsync.walletAuth({
-        nonce: message,
-        requestId: `sign-${Date.now()}`,
-        expirationTime: new Date(Date.now() + 5 * 60 * 1000),
-        notBefore: new Date(),
-        statement: 'Sign message for XMTP'
+      const signResult = await MiniKit.commandsAsync.signMessage({
+        message
       });
 
       if (signResult.finalPayload.status === 'error') {
         throw new Error('Message signing failed');
       }
 
-      const signSuccessPayload = signResult.finalPayload as MiniAppWalletAuthSuccessPayload;
-      return signSuccessPayload.signature;
-    },
-    connect: (provider: any) => signer,
-    provider
-  } as unknown as ethers.Signer;
+      const hexSignature = signResult.finalPayload.signature;
+      console.log('✅ Message signed');
+      
+      // Convert hex signature to Uint8Array for XMTP
+      return toBytes(hexSignature as `0x${string}`);
+    }
+  };
 
   return { address, signer };
 }

@@ -36,6 +36,7 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('❌ Failed to initialize XMTP client:', error);
       toast.error('Failed to connect to XMTP messaging');
+      throw error; // Rethrow so caller knows it failed
     } finally {
       setIsInitializing(false);
     }
