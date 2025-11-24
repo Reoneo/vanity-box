@@ -71,15 +71,33 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
         setCustomRecords([]);
         
         const fullName = `${domain.name}.${domain.domain}`;
-        console.log('[DomainManagementModal] Fetching ENS records from Web3.bio for:', fullName);
+        console.log('[DomainManagementModal] Fetching records for:', fullName);
         
-        // Fetch ENS records from Web3.bio API
-        const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
-          body: { handle: fullName },
-        });
+        // Check if this is a Namestone domain (.world, .box, .cash, etc.)
+        const namesoneTLDs = ['.world', '.box', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+        const isNamestoneDomain = namesoneTLDs.some(tld => fullName.toLowerCase().endsWith(tld));
+        
+        let data, error;
+        if (isNamestoneDomain) {
+          // Use Namestone-aware endpoint for .box, .world, etc.
+          console.log('[DomainManagementModal] Using Namestone endpoint for:', fullName);
+          const response = await supabase.functions.invoke('get-ens-subdomain-profile', {
+            body: { subdomain: fullName },
+          });
+          data = response.data;
+          error = response.error;
+        } else {
+          // Use Web3.bio for ENS domains
+          console.log('[DomainManagementModal] Using Web3.bio endpoint for:', fullName);
+          const response = await supabase.functions.invoke('get-web3bio-profile', {
+            body: { handle: fullName },
+          });
+          data = response.data;
+          error = response.error;
+        }
 
         if (error) {
-          console.error('[DomainManagementModal] Error fetching Web3.bio profile:', error);
+          console.error('[DomainManagementModal] Error fetching profile:', error);
           // Empty records is a valid state - don't show error
           return;
         }
