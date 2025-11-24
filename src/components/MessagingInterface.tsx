@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,8 @@ import { XMTPSettings } from "@/components/XMTPSettings";
 import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
+import { ConversationListItem } from './ConversationListItem';
+import { xmtpConversationManager } from '@/lib/xmtpConversationManager';
 
 interface Conversation {
   id: string;
@@ -23,6 +25,7 @@ interface Conversation {
   lastMessage?: string;
   lastMessageTime?: Date;
   unreadCount?: number;
+  dmConversation?: any;
 }
 
 // Helper to resolve ENS names or World Chain names to Ethereum addresses
@@ -140,8 +143,15 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isResolvingENS, setIsResolvingENS] = useState(false);
+  const [hiddenConversations, setHiddenConversations] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
+
+  // Load hidden conversations from localStorage
+  useEffect(() => {
+    const hidden = xmtpConversationManager.getHiddenConversations();
+    setHiddenConversations(hidden.map(h => h.topic));
+  }, []);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -210,7 +220,8 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                 dmPeerInboxId: conv.dmPeerInboxId,
                 lastMessage: lastMsg?.content || "",
                 lastMessageTime: lastMsg?.sentAt ? new Date(lastMsg.sentAt) : undefined,
-                unreadCount: 0
+                unreadCount: 0,
+                dmConversation: conv
               };
             } catch (convError) {
               console.warn(`⚠️ Error loading conversation ${conv.id}:`, convError);
@@ -222,16 +233,20 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                 dmPeerInboxId: conv.dmPeerInboxId,
                 lastMessage: "",
                 lastMessageTime: undefined,
-                unreadCount: 0
+                unreadCount: 0,
+                dmConversation: conv
               };
             }
           })
         );
 
-        setConversations(conversationsData.sort((a, b) => 
+        // Filter out hidden conversations
+        const visibleConvos = conversationsData.filter(c => !xmtpConversationManager.isConversationHidden(c.id));
+
+        setConversations(visibleConvos.sort((a, b) => 
           (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0)
         ));
-        console.log("✅ Loaded conversations:", conversationsData.length);
+        console.log(`✅ Loaded conversations: ${visibleConvos.length} visible, ${conversationsData.length - visibleConvos.length} hidden`);
       } catch (error: any) {
         console.error("❌ Failed to load conversations:", error);
         const errorMessage = error.message || "Failed to load conversations";
@@ -244,7 +259,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     };
 
     loadConversations();
-  }, [client, isConnected]);
+  }, [client, isConnected, hiddenConversations]);
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -378,12 +393,20 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       })
     );
 
-    // Auto-focus the message input when conversation is selected (mobile keyboard trigger)
-    setTimeout(() => {
-      messageInputRef.current?.focus();
-      // Force click to ensure mobile keyboard appears
-      messageInputRef.current?.click();
-    }, 300);
+    // Auto-focus the message input - CRITICAL for mobile typing
+    const focusInput = () => {
+      if (messageInputRef.current) {
+        messageInputRef.current.focus();
+        messageInputRef.current.click();
+        messageInputRef.current.setSelectionRange(0, 0);
+      }
+    };
+
+    // Multiple focus attempts for reliability
+    focusInput();
+    setTimeout(focusInput, 100);
+    setTimeout(focusInput, 300);
+    setTimeout(focusInput, 500);
   }, [selectedConversation]);
 
   // Start new conversation
@@ -450,24 +473,42 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     if (!messageText.trim() || !selectedConversation) return;
 
     const textToSend = messageText.trim();
+    setMessageText("");
     setIsSending(true);
-    setMessageText(""); // Clear immediately for better UX
     
     try {
-      console.log("📤 Sending message");
       await selectedConversation.send(textToSend);
-      console.log("✅ Message sent successfully");
       
-      // Message will appear via stream
-      messageInputRef.current?.focus();
+      // Aggressively focus input for next message - CRITICAL for mobile
+      requestAnimationFrame(() => {
+        if (messageInputRef.current) {
+          messageInputRef.current.focus();
+          messageInputRef.current.click();
+          messageInputRef.current.setSelectionRange(0, 0);
+        }
+      });
     } catch (error: any) {
       console.error("❌ Failed to send message:", error);
-      toast.error("Failed to send message");
-      setMessageText(textToSend); // Restore on error
+      setMessageText(textToSend);
     } finally {
       setIsSending(false);
     }
   };
+
+  const handleDeleteConversation = useCallback((conversationId: string, peerAddress: string) => {
+    // Hide the conversation
+    xmtpConversationManager.hideConversation(conversationId, peerAddress);
+    
+    // Update local state
+    setConversations(prev => prev.filter(c => c.id !== conversationId));
+    setHiddenConversations(prev => [...prev, conversationId]);
+    
+    // Clear selection if this conversation was selected
+    if (selectedConversation?.id === conversationId) {
+      setSelectedConversation(null);
+      setMessages([]);
+    }
+  }, [selectedConversation]);
 
   // Not connected view
   if (!isConnected) {
@@ -607,8 +648,16 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             </div>
           ) : (
             conversations.map((conv) => (
-              <div
+              <ConversationListItem
                 key={conv.id}
+                conversation={{
+                  id: conv.id,
+                  peerAddress: conv.peerAddress,
+                  lastMessage: conv.lastMessage,
+                  timestamp: conv.lastMessageTime?.toISOString(),
+                  unreadCount: conv.unreadCount
+                }}
+                isSelected={selectedConversation?.id === conv.id}
                 onClick={async () => {
                   try {
                     const convos = await client?.conversations.list();
@@ -622,53 +671,14 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                         fullConvo.peerAddress = conv.peerAddress;
                       }
                       
-                      console.log('📱 Selected conversation:', fullConvo.id, 'with peer:', fullConvo.peerAddress);
                       setSelectedConversation(fullConvo);
                     }
                   } catch (error) {
                     console.error('Failed to select conversation:', error);
-                    toast.error('Failed to open conversation');
                   }
                 }}
-                className={`p-3 sm:p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors active:bg-muted/60 ${
-                  selectedConversation?.id === conv.id ? "bg-muted" : ""
-                }`}
-              >
-                <div className="flex items-start gap-2 sm:gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
-                    <span className="text-xs sm:text-sm font-medium text-primary">
-                      {conv.peerAddress?.slice(2, 4)?.toUpperCase() || '??'}
-                    </span>
-                    {(conv.unreadCount || 0) > 0 && (
-                      <div className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-destructive rounded-full flex items-center justify-center">
-                        <span className="text-[10px] sm:text-xs font-bold text-destructive-foreground">
-                          {conv.unreadCount}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`text-sm truncate ${(conv.unreadCount || 0) > 0 ? 'font-bold' : 'font-medium'}`}>
-                        {conv.peerAddress 
-                          ? `${conv.peerAddress.slice(0, 6)}...${conv.peerAddress.slice(-4)}`
-                          : conv.dmPeerInboxId || 'Unknown'
-                        }
-                      </p>
-                      {conv.lastMessageTime && (
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDistanceToNow(conv.lastMessageTime, { addSuffix: true })}
-                        </span>
-                      )}
-                    </div>
-                    {conv.lastMessage && (
-                      <p className={`text-sm truncate mt-1 ${(conv.unreadCount || 0) > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                        {conv.lastMessage}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+                onDelete={() => handleDeleteConversation(conv.id, conv.peerAddress)}
+              />
             ))
           )}
         </div>
@@ -773,12 +783,15 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                       touchAction: 'manipulation',
                       WebkitUserSelect: 'text',
                       userSelect: 'text',
-                      fontSize: '16px' // Prevents zoom on iOS
+                      WebkitTapHighlightColor: 'transparent',
+                      fontSize: '16px',
+                      minHeight: '44px'
                     }}
                     inputMode="text"
                     autoComplete="off"
-                    autoCorrect="on"
-                    autoCapitalize="sentences"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
                 <Button 
