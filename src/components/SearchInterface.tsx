@@ -1974,11 +1974,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Search',
                         onClick: () => {
-                          // Keep profile but show search bar above it
-                          setShowSearchBar(true);
+                          // Toggle search bar visibility
+                          setShowSearchBar(prev => !prev);
                           setActiveDockSection('profile');
-                          // Scroll to top to see search bar
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          // Scroll to top when showing search bar
+                          if (!showSearchBar) {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
                         },
                         isActive: false,
                       },

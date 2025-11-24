@@ -457,8 +457,8 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
   // Not connected view
   if (!isConnected) {
     return (
-      <div className="flex items-start justify-center min-h-screen bg-background p-4 pt-20">
-        <Card className="w-full max-w-md p-8">
+      <div className="flex items-center justify-center h-full bg-background p-4">
+        <Card className="w-full max-w-md p-6 sm:p-8">
           <div className="flex flex-col items-center gap-6 text-center">
             <Button 
               onClick={handleConnect} 
@@ -491,12 +491,12 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
 
   // Main messaging interface
   return (
-    <div className="flex h-screen bg-background relative">
+    <div className="flex h-full bg-background relative overflow-hidden">
       {onClose && (
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 z-10"
+          className="absolute top-2 right-2 z-10"
           onClick={onClose}
         >
           <X className="h-5 w-5" />
@@ -504,61 +504,62 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       )}
       
       {/* Conversations List */}
-      <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-border flex-col`}>
+      <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-border flex-col h-full`}>
         {/* Search Header */}
-        <div className="p-4 border-b border-border space-y-3">
+        <div className="p-3 sm:p-4 border-b border-border space-y-2 sm:space-y-3 flex-shrink-0">
           <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <h2 className="text-xl font-semibold">Messages</h2>
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl font-semibold">Messages</h2>
             {conversations.some(c => (c.unreadCount || 0) > 0) && (
-              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 flex items-center justify-center">
+              <Badge variant="destructive" className="h-4 sm:h-5 min-w-4 sm:min-w-5 px-1 sm:px-1.5 text-[10px] sm:text-xs flex items-center justify-center">
                 {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={requestPermission}
               disabled={isRequesting}
-              className="h-9 w-9"
+              className="h-8 w-8 sm:h-9 sm:w-9"
               title={hasPermission ? "Notifications enabled" : "Notifications disabled"}
             >
               {hasPermission ? (
-                <Bell className="h-4 w-4" />
+                <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               ) : (
-                <BellOff className="h-4 w-4" />
+                <BellOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               )}
             </Button>
-            <Badge variant={hasPermission ? "secondary" : "outline"} className="text-xs px-2 py-0.5">
+            <Badge variant={hasPermission ? "secondary" : "outline"} className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
               {hasPermission ? "On" : "Off"}
             </Badge>
             <XMTPSettings />
           </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter address, .eth, .world, or .box..."
+              placeholder="Address, .eth, .world, .box..."
               onKeyPress={(e) => e.key === "Enter" && handleStartConversation()}
-              className="flex-1"
+              className="flex-1 text-sm"
               disabled={isResolvingENS}
             />
             <Button 
               onClick={handleStartConversation} 
               disabled={isLoadingConversations || isResolvingENS || !searchQuery.trim()}
-              className="min-w-[80px]"
+              className="min-w-[70px] sm:min-w-[80px] text-sm"
+              size="sm"
             >
               {isResolvingENS ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resolving...
+                  <Loader2 className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                  <span className="hidden sm:inline">Resolving...</span>
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
+                  <Send className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Start
                 </>
               )}
@@ -567,7 +568,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
         </div>
 
         {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {isLoadingConversations ? (
             <div className="flex items-center justify-center h-32">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -603,18 +604,18 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                     toast.error('Failed to open conversation');
                   }
                 }}
-                className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${
+                className={`p-3 sm:p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors active:bg-muted/60 ${
                   selectedConversation?.id === conv.id ? "bg-muted" : ""
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
-                    <span className="text-sm font-medium text-primary">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
+                    <span className="text-xs sm:text-sm font-medium text-primary">
                       {conv.peerAddress?.slice(2, 4)?.toUpperCase() || '??'}
                     </span>
                     {(conv.unreadCount || 0) > 0 && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
-                        <span className="text-xs font-bold text-destructive-foreground">
+                      <div className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-destructive rounded-full flex items-center justify-center">
+                        <span className="text-[10px] sm:text-xs font-bold text-destructive-foreground">
                           {conv.unreadCount}
                         </span>
                       </div>
@@ -652,7 +653,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-border flex items-center gap-3 shrink-0">
+            <div className="p-3 sm:p-4 border-b border-border flex items-center gap-2 sm:gap-3 shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
@@ -661,28 +662,28 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-sm font-medium text-primary">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-xs sm:text-sm font-medium text-primary">
                   {(selectedConversation.peerAddress?.slice(2, 4)?.toUpperCase() || 
                     selectedConversation.dmPeerInboxId?.slice(0, 2)?.toUpperCase() || 
                     '??')}
                 </span>
               </div>
-              <div className="flex-1">
-                <p className="font-medium">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base truncate">
                   {selectedConversation.peerAddress 
                     ? `${selectedConversation.peerAddress.slice(0, 6)}...${selectedConversation.peerAddress.slice(-4)}`
                     : selectedConversation.dmPeerInboxId || 'Unknown'
                   }
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                   {selectedConversation.peerAddress || selectedConversation.dmPeerInboxId || 'Unknown'}
                 </p>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 min-h-0">
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <p className="text-sm text-muted-foreground">No messages yet. Start the conversation!</p>
@@ -697,7 +698,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                       className={`flex ${isOurMessage ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                        className={`max-w-[75%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-2xl ${
                           isOurMessage
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted"
@@ -705,7 +706,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                       >
                         <p className="text-sm break-words">{msg.content}</p>
                         {msg.sentAt && (
-                          <p className="text-xs opacity-70 mt-1">
+                          <p className="text-[10px] sm:text-xs opacity-70 mt-1">
                             {new Date(msg.sentAt).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit"
@@ -721,8 +722,8 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-border shrink-0 bg-background">
-              <div className="flex gap-2">
+            <div className="p-3 sm:p-4 border-t border-border shrink-0 bg-background safe-area-inset-bottom">
+              <div className="flex gap-1.5 sm:gap-2">
                 <Input
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
@@ -734,19 +735,19 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                     }
                   }}
                   disabled={isSending}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                   autoFocus
                 />
                 <Button 
                   onClick={handleSendMessage} 
                   disabled={isSending || !messageText.trim()} 
                   size="icon"
-                  className="shrink-0"
+                  className="shrink-0 h-9 w-9 sm:h-10 sm:w-10"
                 >
                   {isSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                   ) : (
-                    <Send className="h-4 w-4" />
+                    <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   )}
                 </Button>
               </div>
