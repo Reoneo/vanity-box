@@ -55,6 +55,7 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
         try {
           const keys = {
             dbEncryptionKey: (newClient as any).dbEncryptionKey,
+            timestamp: new Date().toISOString(),
           };
           localStorage.setItem(storageKey, JSON.stringify(keys));
           console.log('💾 Stored XMTP keys for reuse');
