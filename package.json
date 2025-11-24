@@ -51,7 +51,7 @@
     "@tonconnect/ui-react": "^2.3.1",
     "@worldcoin/minikit-js": "^1.9.6",
     "@xmtp/browser-sdk": "^5.1.0",
-    "@xmtp/xmtp-js": "^13.0.4",
+    "@xmtp/react-sdk": "^9.0.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
