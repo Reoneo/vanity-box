@@ -5,6 +5,7 @@ import {
   SignTypedDataInput,
 } from '@worldcoin/minikit-js';
 import { ethers, BigNumber } from 'ethers';
+import { callEdge } from '@/lib/supaInvoke';
 
 const WORLDCHAIN_RPC = 'https://worldchain-mainnet.g.alchemy.com/public';
 
@@ -146,21 +147,12 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
 
   console.log('🔐 Starting WalletAuth (Push step 1 of 2 – authentication)...');
 
-  // Generate nonce from backend on the SAME origin
+  // Generate nonce from backend using callEdge helper
   let nonce: string;
 
   try {
-    const res = await fetch('/functions/v1/generate-siwe-nonce', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!res.ok) {
-      console.error('Nonce endpoint returned non-200', res.status, res.statusText);
-      throw new Error('Failed to generate nonce from server');
-    }
-
-    const data = await res.json();
+    const data = await callEdge<{ nonce: string }>('generate-siwe-nonce', {});
+    
     if (!data?.nonce) {
       console.error('Nonce response missing nonce field', data);
       throw new Error('Nonce response invalid');
@@ -168,7 +160,7 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
 
     nonce = data.nonce;
     console.log('✅ Nonce received:', nonce.substring(0, 10) + '...');
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Error fetching nonce:', e);
     throw new Error('Unable to contact Vanity.box server. Please try again.');
   }
