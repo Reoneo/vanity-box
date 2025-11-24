@@ -17,9 +17,37 @@ import { XMTPSettings } from "@/components/XMTPSettings";
 interface Conversation {
   id: string;
   peerAddress: string;
+  dmPeerInboxId?: string;
   lastMessage?: string;
   lastMessageTime?: Date;
   unreadCount?: number;
+}
+
+// Helper to safely get peer identifier from conversation
+const getPeerIdentifier = async (conv: any, client: any): Promise<string> => {
+  // Check if it's a DM with dmPeerInboxId (XMTP SDK v5+)
+  if (conv.dmPeerInboxId) {
+    try {
+      // Fetch the inbox state to get Ethereum address
+      const inboxStates = await client.inboxStateFromInboxIds([conv.dmPeerInboxId]);
+      if (inboxStates && inboxStates.length > 0) {
+        const addresses = inboxStates[0]?.identifiers
+          ?.filter((i: any) => i.identifierKind === 'Ethereum')
+          ?.map((i: any) => i.identifier);
+        if (addresses && addresses.length > 0) {
+          return addresses[0];
+        }
+      }
+      // Fallback to inbox ID if we can't get the address
+      return conv.dmPeerInboxId;
+    } catch (error) {
+      console.warn('Failed to fetch address for inbox ID:', conv.dmPeerInboxId, error);
+      return conv.dmPeerInboxId;
+    }
+  }
+  
+  // Fallback to peerAddress (old SDK or already has address)
+  return conv.peerAddress || conv.id || 'Unknown';
 }
 
 export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
@@ -90,18 +118,25 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
               const msgs = await conv.messages({ limit: 1 });
               const lastMsg = msgs[0];
               
+              // Safely get peer identifier (supports both old and new SDK)
+              const peerAddress = await getPeerIdentifier(conv, client);
+              
               return {
                 id: conv.id,
-                peerAddress: conv.peerAddress,
+                peerAddress,
+                dmPeerInboxId: conv.dmPeerInboxId,
                 lastMessage: lastMsg?.content || "",
                 lastMessageTime: lastMsg?.sentAt ? new Date(lastMsg.sentAt) : undefined,
                 unreadCount: 0
               };
             } catch (convError) {
               console.warn(`⚠️ Error loading conversation ${conv.id}:`, convError);
+              // Safe fallback with getPeerIdentifier
+              const peerAddress = await getPeerIdentifier(conv, client);
               return {
                 id: conv.id,
-                peerAddress: conv.peerAddress,
+                peerAddress,
+                dmPeerInboxId: conv.dmPeerInboxId,
                 lastMessage: "",
                 lastMessageTime: undefined,
                 unreadCount: 0
@@ -271,7 +306,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       setSelectedConversation(newConvo);
       
       // Add to conversations list if not already there
-      const exists = conversations.find((c) => c.peerAddress.toLowerCase() === searchQuery.toLowerCase());
+      const exists = conversations.find((c) => c.peerAddress?.toLowerCase() === searchQuery.toLowerCase());
       if (!exists) {
         setConversations([
           {
@@ -426,11 +461,22 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             conversations.map((conv) => (
               <div
                 key={conv.id}
-                onClick={() => {
-                  const fullConvo = client?.conversations.list().then((convos: any[]) => 
-                    convos.find((c: any) => c.id === conv.id)
-                  );
-                  fullConvo?.then(setSelectedConversation);
+                onClick={async () => {
+                  try {
+                    const convos = await client?.conversations.list();
+                    const fullConvo: any = convos?.find((c: any) => c.id === conv.id);
+                    
+                    if (fullConvo) {
+                      // Ensure we have peerAddress for display
+                      if (!fullConvo.peerAddress && fullConvo.dmPeerInboxId && client) {
+                        fullConvo.peerAddress = await getPeerIdentifier(fullConvo, client);
+                      }
+                      setSelectedConversation(fullConvo);
+                    }
+                  } catch (error) {
+                    console.error('Failed to select conversation:', error);
+                    toast.error('Failed to open conversation');
+                  }
                 }}
                 className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${
                   selectedConversation?.id === conv.id ? "bg-muted" : ""
@@ -439,7 +485,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
                     <span className="text-sm font-medium text-primary">
-                      {conv.peerAddress.slice(2, 4).toUpperCase()}
+                      {conv.peerAddress?.slice(2, 4)?.toUpperCase() || '??'}
                     </span>
                     {(conv.unreadCount || 0) > 0 && (
                       <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
@@ -452,7 +498,10 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className={`text-sm truncate ${(conv.unreadCount || 0) > 0 ? 'font-bold' : 'font-medium'}`}>
-                        {conv.peerAddress.slice(0, 6)}...{conv.peerAddress.slice(-4)}
+                        {conv.peerAddress 
+                          ? `${conv.peerAddress.slice(0, 6)}...${conv.peerAddress.slice(-4)}`
+                          : conv.dmPeerInboxId || 'Unknown'
+                        }
                       </p>
                       {conv.lastMessageTime && (
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -489,15 +538,20 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
               </Button>
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-sm font-medium text-primary">
-                  {selectedConversation.peerAddress.slice(2, 4).toUpperCase()}
+                  {(selectedConversation.peerAddress?.slice(2, 4)?.toUpperCase() || 
+                    selectedConversation.dmPeerInboxId?.slice(0, 2)?.toUpperCase() || 
+                    '??')}
                 </span>
               </div>
               <div className="flex-1">
                 <p className="font-medium">
-                  {selectedConversation.peerAddress.slice(0, 6)}...{selectedConversation.peerAddress.slice(-4)}
+                  {selectedConversation.peerAddress 
+                    ? `${selectedConversation.peerAddress.slice(0, 6)}...${selectedConversation.peerAddress.slice(-4)}`
+                    : selectedConversation.dmPeerInboxId || 'Unknown'
+                  }
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {selectedConversation.peerAddress}
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedConversation.peerAddress || selectedConversation.dmPeerInboxId || 'Unknown'}
                 </p>
               </div>
             </div>
