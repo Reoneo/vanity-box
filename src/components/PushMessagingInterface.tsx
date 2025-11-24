@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { usePush } from '@/contexts/PushContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ArrowLeft, Trash2, Search, Bell, BellOff } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, Trash2, Search, Bell, BellOff, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { pushConversationManager } from '@/lib/pushConversationManager';
 import { CONSTANTS } from '@pushprotocol/restapi';
@@ -337,14 +337,42 @@ export const PushMessagingInterface = () => {
   if (!isConnected) {
     return (
       <div className="h-screen flex items-center justify-center p-6">
-        <div className="max-w-md w-full space-y-4 text-center">
-          <h2 className="text-2xl font-bold">Push Protocol Messaging</h2>
-          <p className="text-muted-foreground">
-            Connect to Push Protocol to send encrypted messages
-          </p>
+        <div className="max-w-md w-full space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold">Push Protocol Messaging</h2>
+            <p className="text-muted-foreground">
+              Encrypted, decentralized messaging on World Chain
+            </p>
+          </div>
+
+          {/* Two-step signing info */}
+          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              Connection Process
+            </h3>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">1</span>
+                <div>
+                  <p className="font-medium text-foreground">World Chain Authentication</p>
+                  <p className="text-xs">Sign in to verify your World ID</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">2</span>
+                <div>
+                  <p className="font-medium text-foreground">Encryption Setup</p>
+                  <p className="text-xs">Generate your message encryption keys</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <Button 
             onClick={handleConnect} 
             disabled={isInitializing}
+            size="lg"
             className="w-full"
           >
             {isInitializing ? (

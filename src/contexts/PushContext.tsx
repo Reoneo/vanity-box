@@ -42,17 +42,22 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
     console.log('🚀 Initializing Push Protocol...');
 
     try {
+      // Show initial toast
+      toast.loading('Step 1 of 2: Authenticating with World Chain...', { id: 'push-init' });
+      
       // Authenticate with World Chain and get signer
       const { address, signer } = await authenticateWithWorldChain();
       console.log('✅ Authentication successful:', address);
 
+      // Update toast for step 2
+      toast.loading('Step 2 of 2: Setting up encrypted messaging...', { id: 'push-init' });
+      
       // Initialize Push Protocol user
-      console.log('🔄 Creating Push Protocol user (may request encryption setup signature)...');
-      console.log('   This will trigger Step 2 of 2 signature request');
+      console.log('🔄 Creating Push Protocol user (encryption setup)...');
       
       const user = await PushAPI.initialize(signer as any, {
         env: CONSTANTS.ENV.PROD,
-        account: address, // Explicitly provide account
+        account: address,
         progressHook: (progress: any) => {
           console.log('📊 Push initialization progress:', progress);
         }
@@ -66,7 +71,7 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
       setWalletAddress(address);
       setIsConnected(true);
       
-      toast.success('Connected to Push Protocol');
+      toast.success('✅ Connected to Push Protocol', { id: 'push-init' });
     } catch (error: any) {
       console.error('❌ Failed to initialize Push Protocol:', {
         message: error?.message || 'Unknown error',
@@ -77,9 +82,9 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
       // Check for specific error types
       if (error?.message?.includes('read-only')) {
         console.error('⚠️ Read-only mode error detected - signer validation may have failed');
-        toast.error('Connection failed: Read-only mode. Please try again.');
+        toast.error('Connection failed: Read-only mode. Please try again.', { id: 'push-init' });
       } else {
-        toast.error(error?.message || 'Failed to connect to Push Protocol');
+        toast.error(error?.message || 'Failed to connect to Push Protocol', { id: 'push-init' });
       }
       
       setPushUser(null);
