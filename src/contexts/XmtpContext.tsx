@@ -19,72 +19,28 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   const initializeClient = useCallback(async (signer: any, address: string) => {
-    if (client || isInitializing) return;
+    if (client || isInitializing) {
+      console.log('Client already exists or initializing');
+      return;
+    }
 
     setIsInitializing(true);
     try {
-      console.log('🔄 Initializing XMTP client for address:', address);
+      console.log('🔄 Initializing XMTP client for:', address);
       
-      // Check if we have stored encryption key to reuse existing installation
-      const storageKey = `xmtp-keys-${address.toLowerCase()}`;
-      const storedKeys = localStorage.getItem(storageKey);
+      // Simple client creation for production network
+      const newClient = await Client.create(signer, {
+        env: 'production'
+      });
       
-      let newClient: Client;
-      
-      if (storedKeys) {
-        console.log('♻️ Reusing existing XMTP installation');
-        try {
-          const keys = JSON.parse(storedKeys);
-          newClient = await Client.create(signer, {
-            env: 'production',
-            ...keys
-          });
-        } catch (reuseError) {
-          console.warn('⚠️ Failed to reuse keys, creating new installation:', reuseError);
-          localStorage.removeItem(storageKey);
-          newClient = await Client.create(signer, {
-            env: 'production'
-          });
-        }
-      } else {
-        newClient = await Client.create(signer, {
-          env: 'production'
-        });
-        
-        // Store the keys for future reuse
-        try {
-          const keys = {
-            dbEncryptionKey: (newClient as any).dbEncryptionKey,
-            timestamp: new Date().toISOString(),
-          };
-          localStorage.setItem(storageKey, JSON.stringify(keys));
-          console.log('💾 Stored XMTP keys for reuse');
-        } catch (storageError) {
-          console.warn('⚠️ Could not store keys:', storageError);
-        }
-      }
-      
-      console.log('✅ XMTP client initialized');
+      console.log('✅ XMTP client initialized successfully');
       setClient(newClient);
       setWalletAddress(address);
-      // Toast removed - UI will show connection state
     } catch (error: any) {
       console.error('❌ Failed to initialize XMTP client:', error);
-      
-      // Ensure client state is cleared on error
       setClient(null);
       setWalletAddress(null);
-      
-      // Handle specific error cases
-      if (error.message?.includes('already registered') || error.message?.includes('10/10 installations')) {
-        toast.error('XMTP installation limit reached. Please clear browser data or use a different wallet.');
-        // Clear stored keys to allow fresh start
-        const storageKey = `xmtp-keys-${address.toLowerCase()}`;
-        localStorage.removeItem(storageKey);
-      } else {
-        toast.error('Failed to connect to XMTP messaging');
-      }
-      
+      toast.error('Failed to connect to XMTP: ' + (error.message || 'Unknown error'));
       throw error;
     } finally {
       setIsInitializing(false);
@@ -94,7 +50,6 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
   const disconnectClient = useCallback(() => {
     setClient(null);
     setWalletAddress(null);
-    toast.info('Disconnected from XMTP');
   }, []);
 
   return (

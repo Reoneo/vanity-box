@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Loader2, Send } from "lucide-react";
@@ -18,94 +18,158 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
   const [messages, setMessages] = useState<any[]>([]);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const [conversation, setConversation] = useState<any>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleConnect = async () => {
     try {
       if (!MiniKit.isInstalled()) {
-        toast.error("Please open this app in World App to use messaging");
+        toast.error("Please open this app in World App");
         return;
       }
 
       console.log('🔄 Connecting to XMTP via World Chain');
       const { address, signer } = await authenticateWithWorldChain();
-      
-      // Initialize XMTP client
       await initializeClient(signer, address);
-      
-      // Toast removed - connection is obvious from UI state change
     } catch (error: any) {
       console.error('❌ XMTP connection error:', error);
       toast.error(error.message || "Failed to connect to XMTP");
     }
   };
 
-  // After client is initialized, get or create conversation
+  // Initialize conversation once client is ready
   useEffect(() => {
-    if (!client || !isConnected || !profileAddress) return;
+    if (!client || !isConnected || !profileAddress || isLoadingConversation) return;
 
     const initConversation = async () => {
+      setIsLoadingConversation(true);
       try {
-        console.log('🔄 Looking for conversation with:', profileAddress);
-        const conversations = await client.conversations.list();
-        let conv = conversations.find((c: any) => 
-          c.peerAddress?.toLowerCase() === profileAddress.toLowerCase()
-        );
+        console.log('🔄 Checking if can message:', profileAddress);
         
-        if (!conv) {
-          console.log('Creating new conversation with:', profileAddress);
-          conv = await client.conversations.newDm(profileAddress);
+        // Check if address is on XMTP network first
+        const canMessage = await client.canMessage([{
+          identifier: profileAddress.toLowerCase(),
+          identifierKind: 'Ethereum' as const
+        }]);
+        
+        if (!canMessage || Object.keys(canMessage).length === 0) {
+          toast.error('This user is not on the XMTP network yet');
+          setIsLoadingConversation(false);
+          return;
         }
         
-        setConversation(conv);
+        console.log('✅ User is on XMTP, finding conversation');
+        
+        // List all DMs and find the one with this address
+        const allDms = await client.conversations.listDms();
+        let dm = null;
+        
+        for (const conversation of allDms) {
+          // Get members and check if profile address is in there
+          const members = await conversation.members();
+          const hasPeer = members.some((m: any) => 
+            m.addresses?.some((addr: string) => addr.toLowerCase() === profileAddress.toLowerCase())
+          );
+          
+          if (hasPeer) {
+            dm = conversation;
+            console.log('✅ Found existing DM');
+            break;
+          }
+        }
+        
+        // If no existing DM, create one using newDm method
+        if (!dm) {
+          console.log('Creating new DM with:', profileAddress);
+          dm = await client.conversations.newDm(profileAddress);
+          console.log('✅ New DM created:', dm?.id);
+        }
+        
+        setConversation(dm);
         
         // Load existing messages
-        if (conv) {
-          const msgs = await conv.messages();
-          setMessages(msgs);
+        if (dm) {
+          const existingMessages = await dm.messages();
+          setMessages(existingMessages);
+          console.log(`📬 Loaded ${existingMessages.length} messages`);
+          
+          // Scroll to bottom
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         }
       } catch (error) {
         console.error('❌ Failed to initialize conversation:', error);
         toast.error('Failed to load conversation');
+      } finally {
+        setIsLoadingConversation(false);
       }
     };
 
     initConversation();
   }, [client, isConnected, profileAddress]);
 
-  const handleSendMessage = async () => {
-    if (!messageText.trim() || !conversation) return;
-
-    setIsSending(true);
-    try {
-      await conversation.send(messageText);
-      setMessageText('');
-      
-      // Refresh messages
-      const msgs = await conversation.messages();
-      setMessages(msgs);
-      
-      // Toast removed - message appearing in chat is enough feedback
-    } catch (error) {
-      console.error('❌ Failed to send message:', error);
-      toast.error('Failed to send message');
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   // Stream new messages
   useEffect(() => {
     if (!conversation) return;
 
-    const streamMessages = async () => {
-      for await (const message of await conversation.streamMessages()) {
-        setMessages(prev => [...prev, message]);
+    let stream: any;
+    const startStreaming = async () => {
+      try {
+        console.log('👂 Starting to stream messages');
+        stream = await conversation.streamMessages();
+        
+        for await (const message of stream) {
+          console.log('📨 New message received:', message.id);
+          setMessages(prev => [...prev, message]);
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+      } catch (error) {
+        console.error('❌ Error streaming messages:', error);
       }
     };
 
-    streamMessages();
+    startStreaming();
+
+    return () => {
+      if (stream?.return) {
+        stream.return();
+      }
+    };
   }, [conversation]);
+
+  // Focus input when conversation loads
+  useEffect(() => {
+    if (conversation && messageInputRef.current) {
+      setTimeout(() => {
+        messageInputRef.current?.focus();
+        messageInputRef.current?.click();
+      }, 300);
+    }
+  }, [conversation]);
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !conversation || isSending) return;
+
+    const textToSend = messageText.trim();
+    setIsSending(true);
+    setMessageText(''); // Clear immediately for better UX
+    
+    try {
+      console.log('📤 Sending message');
+      await conversation.send(textToSend);
+      console.log('✅ Message sent');
+      
+      // Message will appear via stream
+    } catch (error) {
+      console.error('❌ Failed to send message:', error);
+      toast.error('Failed to send message');
+      setMessageText(textToSend); // Restore message on error
+    } finally {
+      setIsSending(false);
+      messageInputRef.current?.focus();
+    }
+  };
 
   if (!currentUserAddress) {
     return null;
@@ -117,7 +181,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
         <CardContent className="flex flex-col items-center justify-center gap-4 py-8">
           <MessageCircle className="w-12 h-12 text-muted-foreground" />
           <p className="text-sm text-muted-foreground text-center max-w-sm">
-            This is your profile. XMTP inbox coming soon.
+            This is your profile. View your inbox in the messaging tab.
           </p>
         </CardContent>
       </Card>
@@ -148,6 +212,17 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
     );
   }
 
+  if (isLoadingConversation) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-4 py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading conversation...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardContent className="flex flex-col gap-4 py-4">
@@ -164,25 +239,27 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
           ) : (
             messages.map((msg, idx) => (
               <div
-                key={idx}
-                className={`flex ${msg.senderAddress === currentUserAddress ? 'justify-end' : 'justify-start'}`}
+                key={msg.id || idx}
+                className={`flex ${msg.senderInboxId === client?.inboxId ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`px-4 py-2 rounded-lg max-w-xs ${
-                    msg.senderAddress === currentUserAddress
+                    msg.senderInboxId === client?.inboxId
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted'
                   }`}
                 >
-                  <p className="text-sm">{msg.content}</p>
+                  <p className="text-sm break-words">{msg.content}</p>
                 </div>
               </div>
             ))
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="flex gap-2 pt-2 border-t">
           <input
+            ref={messageInputRef}
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             placeholder="Type a message..."
