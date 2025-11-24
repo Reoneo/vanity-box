@@ -59,6 +59,14 @@
 
   <body>
     <div id="root"></div>
+    <script type="module">
+      // Ensure Buffer is available globally before any other modules load
+      import { Buffer } from 'buffer';
+      globalThis.Buffer = Buffer;
+      window.Buffer = Buffer;
+      globalThis.global = globalThis;
+      window.global = window;
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
