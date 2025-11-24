@@ -276,9 +276,7 @@ export const ProfileCard = ({
                       <span className="text-muted-foreground">Followers</span>
                     </button>
                   </>
-                ) : (
-                  <Skeleton className="h-5 w-48" />
-                )}
+                ) : null}
               </div>
 
               {/* Email/Website - Always render with fixed height */}
@@ -323,8 +321,6 @@ export const ProfileCard = ({
                       })}
                     </span>
                   </>
-                ) : web3BioProfile ? (
-                  <Skeleton className="h-5 w-56" />
                 ) : null}
               </div>
             </div>
@@ -834,16 +830,7 @@ export const ProfileCard = ({
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
               {castLoading ? (
-                <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
-                  <div className="flex gap-3">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-1/3" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </div>
-                  </div>
-                </Card>
+                <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : !latestCast ? (
                 <div className="text-center py-8 text-muted-foreground">No Farcaster activity found</div>
               ) : (
