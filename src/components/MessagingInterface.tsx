@@ -292,7 +292,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
 
     const streamMessages = async () => {
       try {
-        for await (const message of await selectedConversation.streamMessages()) {
+        for await (const message of await selectedConversation.stream()) {
           if (isSubscribed) {
             setMessages((prev) => [...prev, message]);
             
@@ -418,7 +418,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       
       // Try to get existing DM or create new one
       console.log("🔄 Creating DM with:", resolvedAddress);
-      const newConvo: any = await client.conversations.newDm(resolvedAddress);
+      const newConvo: any = await client.conversations.newDm(resolvedAddress.toLowerCase());
       
       // Set peer address for display
       newConvo.peerAddress = resolvedAddress;
@@ -763,8 +763,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                       // Scroll to bottom when input is focused
                       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    disabled={isSending}
-                    className="w-full px-4 py-3 text-sm rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="w-full px-4 py-3 text-sm rounded-xl border-2 border-border bg-background focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200"
                     style={{ 
                       touchAction: 'manipulation',
                       WebkitUserSelect: 'text',

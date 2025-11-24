@@ -80,7 +80,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
         // If no DM exists, create one using the correct SDK v5 API
         if (!dm) {
           console.log('📝 Creating new DM with:', profileAddress);
-          dm = await client.conversations.newDm(profileAddress);
+          dm = await client.conversations.newDm(profileAddress.toLowerCase());
           console.log('✅ New DM created');
         } else {
           console.log('✅ Found existing DM');
@@ -287,7 +287,7 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
                 void handleSendMessage();
               }
             }}
-            style={{ WebkitUserSelect: 'text' }}
+            style={{ WebkitUserSelect: 'text', fontSize: '16px' }}
           />
           <Button
             size="icon"
