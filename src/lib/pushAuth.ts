@@ -7,26 +7,27 @@ export interface PushSignerResult {
 }
 
 /**
- * Creates a viem-compatible signer for Push Protocol
+ * Creates an ethers-compatible signer for Push Protocol
  * Uses World Chain authentication via MiniKit
  */
-function createViemSigner(address: string) {
-  const formattedAddress = address.toLowerCase() as `0x${string}`;
-
+function createEthersSigner(address: string) {
   return {
-    // Required by Push Protocol viem signer
-    account: {
-      address: formattedAddress,
-      type: 'local' as const
+    // Required by Push Protocol - ethers.js interface
+    async getAddress(): Promise<string> {
+      return address;
     },
 
     // Sign messages using MiniKit
-    async signMessage({ message }: { message: string }): Promise<`0x${string}`> {
-      console.log('📝 Signing message via MiniKit:', message);
+    async signMessage(message: string | Uint8Array): Promise<string> {
+      const messageStr = typeof message === 'string' 
+        ? message 
+        : new TextDecoder().decode(message);
+      
+      console.log('📝 Signing message via MiniKit:', messageStr.substring(0, 50) + '...');
       
       try {
         const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
-          nonce: message,
+          nonce: messageStr,
           requestId: `sign-msg-${Date.now()}`,
           expirationTime: new Date(Date.now() + 5 * 60 * 1000),
           notBefore: new Date(),
@@ -43,24 +44,22 @@ function createViemSigner(address: string) {
         }
 
         console.log('✅ Message signed successfully');
-        return signature as `0x${string}`;
+        return signature;
       } catch (error) {
         console.error('❌ MiniKit signing failed:', error);
         throw error;
       }
     },
 
-    // Sign typed data using MiniKit
-    async signTypedData({ domain, types, primaryType, message }: any): Promise<`0x${string}`> {
+    // Optional: Sign typed data (if needed by Push Protocol)
+    async _signTypedData(domain: any, types: any, value: any): Promise<string> {
       console.log('📝 Signing typed data via MiniKit');
       
       try {
-        // For typed data, we'll use the JSON stringified version as the nonce
         const dataToSign = JSON.stringify({
           domain,
           types,
-          primaryType,
-          message
+          value
         });
 
         const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
@@ -81,7 +80,7 @@ function createViemSigner(address: string) {
         }
 
         console.log('✅ Typed data signed successfully');
-        return signature as `0x${string}`;
+        return signature;
       } catch (error) {
         console.error('❌ MiniKit typed data signing failed:', error);
         throw error;
@@ -148,8 +147,8 @@ export async function authenticateWithWorldChain(): Promise<PushSignerResult> {
 
     console.log('✅ SIWE signature verified for address:', address);
 
-    // Step 4: Create viem-compatible signer for Push Protocol
-    const signer = createViemSigner(address);
+    // Step 4: Create ethers-compatible signer for Push Protocol
+    const signer = createEthersSigner(address);
     console.log('✅ Push Protocol signer ready');
 
     return {
