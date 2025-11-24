@@ -103,9 +103,7 @@ serve(async (req) => {
 
         // For .box domains (ENS names), enrich with actual ENS text records
         if (handle.toLowerCase().endsWith('.box') || handle.toLowerCase().endsWith('.eth')) {
-          // Use the actual ENS identity from web3.bio response, not the search term
-          const actualIdentity = Array.isArray(data) && data.length > 0 ? data[0].identity : handle;
-          console.log('🔗 Fetching ENS text records for actual identity:', actualIdentity);
+          console.log('🔗 Fetching ENS text records for searched handle:', handle);
           
           try {
             const publicClient = createPublicClient({
@@ -113,12 +111,12 @@ serve(async (req) => {
               transport: http()
             });
 
-            // Fetch common ENS text records using the actual ENS name
+            // Fetch common ENS text records for the searched handle
             const recordKeys = ['avatar', 'description', 'email', 'url', 'com.twitter', 'com.github', 'com.discord', 'org.telegram'];
             const recordPromises = recordKeys.map(async (key) => {
               try {
                 const value = await publicClient.getEnsText({
-                  name: normalize(actualIdentity),
+                  name: normalize(handle),
                   key
                 });
                 return { key, value };
