@@ -19,6 +19,7 @@ import {
   Info,
   Activity,
   Inbox,
+  Home,
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
@@ -1906,6 +1907,24 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
                   <Dock
                     items={[
+                      // Home icon - navigate to vanity.box homepage WITHOUT reload
+                      {
+                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Home',
+                        onClick: () => {
+                          // Clear profile view and return to homepage
+                          setWeb3BioProfile(null);
+                          setEnsRecords(null);
+                          setEfpStats(null);
+                          setHasSearched(false);
+                          setSearchQuery('');
+                          setDisplayQuery('');
+                          setIsSearchActive(false);
+                          setShowMyIDs(false);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        },
+                        isActive: false,
+                      },
                       {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('profile'),
@@ -1970,15 +1989,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           if (!showSearchBar) {
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }
-                        },
-                        isActive: false,
-                      },
-                      // Home icon - navigate to vanity.box homepage
-                      {
-                        icon: <Globe className="w-6 h-6 text-[#D4AF37]" />,
-                        label: 'Home',
-                        onClick: () => {
-                          window.location.href = 'https://vanity.box';
                         },
                         isActive: false,
                       },

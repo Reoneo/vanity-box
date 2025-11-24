@@ -157,11 +157,24 @@ export const XMTPInbox = ({ profileAddress, currentUserAddress, isProfileOwner }
 
     try {
       console.log('📤 Sending message:', textToSend);
+      console.log('📤 Conversation object:', {
+        id: conversation.id,
+        peerAddress: conversation.peerAddress,
+        dmPeerInboxId: conversation.dmPeerInboxId,
+        hasSendMethod: typeof conversation.send === 'function'
+      });
+      
       await conversation.send(textToSend);
       console.log('✅ Message sent successfully');
-    } catch (error) {
+      toast.success('Message sent!');
+    } catch (error: any) {
       console.error('❌ Failed to send message:', error);
-      toast.error('Failed to send message');
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        conversationId: conversation?.id
+      });
+      toast.error(`Failed to send message: ${error.message || 'Unknown error'}`);
       setMessageText(textToSend);
     } finally {
       setIsSending(false);
