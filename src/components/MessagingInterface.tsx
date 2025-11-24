@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Search, Send, Loader2, MessageCircle, ArrowLeft, X, Bell, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import { useXmtp } from "@/contexts/XmtpContext";
@@ -366,7 +365,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     };
   }, [client, isConnected, selectedConversation]);
 
-  // Mark conversation as read when selected
+  // Mark conversation as read when selected and auto-focus input
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -378,6 +377,13 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
         return conv;
       })
     );
+
+    // Auto-focus the message input when conversation is selected (mobile keyboard trigger)
+    setTimeout(() => {
+      messageInputRef.current?.focus();
+      // Force click to ensure mobile keyboard appears
+      messageInputRef.current?.click();
+    }, 300);
   }, [selectedConversation]);
 
   // Start new conversation
@@ -539,12 +545,12 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
           </div>
           </div>
           <div className="flex gap-1.5 sm:gap-2">
-            <Input
+            <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Address, .eth, .world, .box..."
               onKeyPress={(e) => e.key === "Enter" && handleStartConversation()}
-              className="flex-1 text-sm"
+              className="flex-1 text-sm px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
               disabled={isResolvingENS}
             />
             <Button 
@@ -725,7 +731,7 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
             {/* Message Input */}
             <div className="p-3 sm:p-4 border-t border-border shrink-0 bg-background safe-area-inset-bottom relative z-50">
               <div className="flex gap-1.5 sm:gap-2">
-                <Input
+                <input
                   ref={messageInputRef}
                   type="text"
                   value={messageText}
@@ -743,8 +749,12 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
                   }}
                   disabled={isSending}
                   readOnly={false}
-                  className="flex-1 text-sm focus:ring-2 focus:ring-primary/20"
-                  style={{ touchAction: 'manipulation' }}
+                  className="flex-1 text-sm px-3 py-2 rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
+                  style={{ 
+                    touchAction: 'manipulation',
+                    WebkitUserSelect: 'text',
+                    userSelect: 'text'
+                  }}
                   inputMode="text"
                   autoComplete="off"
                   autoCorrect="off"
