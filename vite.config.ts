@@ -14,11 +14,6 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     exclude: ["@xmtp/wasm-bindings", "@xmtp/browser-sdk"],
     include: ["@xmtp/proto", "buffer"],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis'
-      }
-    }
   },
   plugins: [
     react(),

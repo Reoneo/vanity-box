@@ -27,6 +27,14 @@ initMiniKit(APP_ID).then(() => {
   console.warn("[App] MiniKit initialization failed:", e);
 });
 
-createRoot(document.getElementById("root")!).render(
-  <App />
-);
+try {
+  createRoot(document.getElementById("root")!).render(
+    <App />
+  );
+} catch (error) {
+  console.error("[App] Fatal error during render:", error);
+  document.body.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">
+    <h1>App Failed to Load</h1>
+    <pre>${error}</pre>
+  </div>`;
+}
