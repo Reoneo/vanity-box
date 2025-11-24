@@ -393,20 +393,12 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
       })
     );
 
-    // Auto-focus the message input - CRITICAL for mobile typing
-    const focusInput = () => {
-      if (messageInputRef.current) {
-        messageInputRef.current.focus();
-        messageInputRef.current.click();
-        messageInputRef.current.setSelectionRange(0, 0);
-      }
-    };
-
-    // Multiple focus attempts for reliability
-    focusInput();
-    setTimeout(focusInput, 100);
-    setTimeout(focusInput, 300);
-    setTimeout(focusInput, 500);
+    // Auto-focus the message input
+    if (messageInputRef.current) {
+      requestAnimationFrame(() => {
+        messageInputRef.current?.focus();
+      });
+    }
   }, [selectedConversation]);
 
   // Start new conversation
@@ -477,16 +469,10 @@ export const MessagingInterface = ({ onClose }: { onClose?: () => void }) => {
     setIsSending(true);
     
     try {
+      console.log('📤 Sending message:', textToSend);
+      console.log('📤 Conversation:', selectedConversation.id);
       await selectedConversation.send(textToSend);
-      
-      // Aggressively focus input for next message - CRITICAL for mobile
-      requestAnimationFrame(() => {
-        if (messageInputRef.current) {
-          messageInputRef.current.focus();
-          messageInputRef.current.click();
-          messageInputRef.current.setSelectionRange(0, 0);
-        }
-      });
+      console.log('✅ Message sent successfully');
     } catch (error: any) {
       console.error("❌ Failed to send message:", error);
       setMessageText(textToSend);

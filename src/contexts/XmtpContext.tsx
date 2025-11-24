@@ -41,15 +41,11 @@ export const XmtpProvider = ({ children }: { children: ReactNode }) => {
       setClient(null);
       setWalletAddress(null);
       
-      // Provide helpful error messages
-      let errorMsg = 'Failed to connect to XMTP';
+      // Log helpful error messages for debugging
       if (error.message?.includes('installation')) {
-        errorMsg = 'Installation limit reached. Try clearing browser data.';
-      } else if (error.message) {
-        errorMsg += ': ' + error.message;
+        console.error('⚠️ Installation limit reached. User should clear browser data.');
       }
       
-      toast.error(errorMsg);
       throw error;
     } finally {
       setIsInitializing(false);
