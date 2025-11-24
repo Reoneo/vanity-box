@@ -1951,17 +1951,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         },
                         isActive: activeDockSection === 'nfts',
                       }] : []),
-                      {
-                        icon: <Activity className="w-6 h-6 text-[#D4AF37]" />,
-                        label: t('activity'),
-                        onClick: () => {
-                          setActiveDockSection('activity');
-                          if (!transactions) {
-                            fetchTransactions();
-                          }
-                        },
-                        isActive: activeDockSection === 'activity',
-                      },
                       // Inbox - Always show for messaging
                       {
                         icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,
@@ -1981,6 +1970,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           if (!showSearchBar) {
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }
+                        },
+                        isActive: false,
+                      },
+                      // Home icon - navigate to vanity.box homepage
+                      {
+                        icon: <Globe className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Home',
+                        onClick: () => {
+                          window.location.href = 'https://vanity.box';
                         },
                         isActive: false,
                       },
