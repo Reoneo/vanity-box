@@ -155,17 +155,7 @@ export const Header: React.FC = () => {
                 </button>
               )}
               
-              {/* Show search icon only when profile is loaded */}
-              {hasProfile && (
-                <button
-                  type="button"
-                  aria-label="Toggle search"
-                  onClick={toggleSearchBar}
-                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                >
-                  <Search className="w-5 h-5 text-black" />
-                </button>
-              )}
+              {/* Search icon removed - now in dock */}
 
               {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
               {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
@@ -215,17 +205,7 @@ export const Header: React.FC = () => {
                   </button>
                 )}
                 
-                {/* Show search icon only when profile is loaded */}
-                {hasProfile && (
-                  <button
-                    type="button"
-                    aria-label="Toggle search"
-                    onClick={toggleSearchBar}
-                    className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                  >
-                    <Search className="w-5 h-5 text-black" />
-                  </button>
-                )}
+                {/* Search icon removed - now in dock */}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
             {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
@@ -291,17 +271,7 @@ export const Header: React.FC = () => {
               </button>
             )}
             
-            {/* Show search icon only when profile is loaded */}
-            {hasProfile && (
-              <button
-                type="button"
-                aria-label="Toggle search"
-                onClick={toggleSearchBar}
-                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-              >
-                <Search className="w-5 h-5 text-black" />
-              </button>
-            )}
+            {/* Search icon removed - now in dock */}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
             {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (

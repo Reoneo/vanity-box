@@ -103,6 +103,7 @@ import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { XMTPInbox } from "@/components/XMTPInbox";
+import { MessagingInterface } from "@/components/MessagingInterface";
 
 export interface FilterState {
   protocol: string[];
@@ -1892,6 +1893,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onLoadMoreNfts={handleLoadMoreNfts}
                     transactions={transactions}
                     transactionsLoading={transactionsLoading}
+                    onCloseInbox={() => setActiveDockSection('profile')}
                   />
                 </div>
 
@@ -1961,6 +1963,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         label: t('inbox'),
                         onClick: () => setActiveDockSection('inbox'),
                         isActive: activeDockSection === 'inbox',
+                      },
+                      // Search icon on far right
+                      {
+                        icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Search',
+                        onClick: () => {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        },
+                        isActive: false,
                       },
                     ]}
                   />
