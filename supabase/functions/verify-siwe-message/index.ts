@@ -12,7 +12,27 @@ serve(async (req) => {
   }
 
   try {
-    const { message, signature, nonce } = await req.json();
+    // Check if request has proper content type
+    const contentType = req.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      throw new Error('Content-Type must be application/json');
+    }
+
+    // Read body as text first, then parse
+    const body = await req.text();
+    if (!body || body.trim() === '') {
+      throw new Error('Request body is empty');
+    }
+
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(body);
+    } catch (e) {
+      console.error('JSON parse error:', e);
+      throw new Error('Invalid JSON in request body');
+    }
+
+    const { message, signature, nonce } = parsedBody;
     
     console.log('🔐 Verifying SIWE message', { nonce });
 
