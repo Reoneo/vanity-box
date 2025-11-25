@@ -375,7 +375,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     } else if (address && !isValidAddress) {
       console.warn('🔄 Background: Skipping NFT preload - invalid address:', address);
     }
-  }, [web3BioProfile?.address]);
+  }, [web3BioProfile?.address, nfts.length, nftLoading]);
 
   // Preload POAPs in background when profile loads  
   useEffect(() => {
