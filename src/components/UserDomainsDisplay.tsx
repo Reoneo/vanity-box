@@ -256,104 +256,124 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   };
 
   return (
-    <div className="space-y-4 px-4">
-      <button 
-        onClick={handleBackClick}
-        className="flex items-center gap-2 text-foreground hover:text-primary mb-4"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        {t('back')}
-      </button>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t('my_ids')}</h2>
+    <div className="space-y-6 px-4 pb-20">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-3 mb-6">
+        <button 
+          onClick={handleBackClick}
+          className="flex items-center justify-center w-10 h-10 rounded-xl bg-background/50 border border-border/50 hover:border-[#D4AF37]/50 hover:bg-background/80 transition-all duration-200 group"
+          aria-label="Back"
+        >
+          <svg className="w-5 h-5 text-foreground group-hover:text-[#D4AF37] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+          {t('my_ids')}
+        </h1>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+
+      {/* Domain Cards Grid */}
+      <div className="grid grid-cols-1 gap-6">
         {domains.map((domain, index) => (
           <div 
             key={`${domain.name}-${index}`}
-            className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl p-6 relative"
+            className="relative bg-gradient-to-br from-background/95 via-background/90 to-background/95 backdrop-blur-sm border-2 border-border/50 rounded-3xl p-6 transition-all duration-300 hover:border-[#D4AF37]/50 hover:shadow-lg hover:shadow-[#D4AF37]/10"
           >
-            {/* Tx Icon Badge - Top Right */}
+            {/* Transaction Badge - Top Right */}
             {domain.txHash && !domain.txHash.startsWith('free-mint-') && (
               <a
                 href={`https://worldchain-mainnet.explorer.alchemy.com/tx/${domain.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-[#D4AF37]/20 border border-[#D4AF37] hover:bg-[#D4AF37]/30 transition-all duration-200 group"
-                title="View transaction receipt"
+                className="absolute top-6 right-6 w-9 h-9 flex items-center justify-center rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 hover:border-[#D4AF37]/60 transition-all duration-200 group z-10"
+                title="View transaction"
               >
                 <ExternalLink className="w-4 h-4 text-[#D4AF37] group-hover:scale-110 transition-transform" />
               </a>
             )}
 
-            <div className="flex items-start gap-4 mb-6">
-              <DomainAvatar domain={domain} />
+            {/* Domain Header */}
+            <div className="flex items-start gap-5 mb-6">
+              <div className="relative">
+                <DomainAvatar domain={domain} />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#D4AF37] rounded-full border-2 border-background flex items-center justify-center">
+                  <svg className="w-3 h-3 text-black" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
 
-              <div className="flex-1 min-w-0 pr-8">
-                <h3 className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
+              <div className="flex-1 min-w-0 pr-12">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3 break-words leading-tight">
                   {domain.name}.{domain.domain}
-                </h3>
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-400">
-                    {t('registered')}: {domain.created_at ? new Date(domain.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {t('expires')}: {domain.expiry_date ? new Date(domain.expiry_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
-                  </p>
+                </h2>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]"></div>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground/70">Registered:</span> {domain.created_at ? new Date(domain.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground/70">Expires:</span> {domain.expiry_date ? new Date(domain.expiry_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
+              {/* Primary Edit Button */}
               <Button
                 onClick={() => handleManageDomain(domain, 'edit')}
-                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                className="w-full h-12 bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] hover:from-[#F4E4BC] hover:to-[#D4AF37] text-black font-bold text-sm rounded-xl shadow-md shadow-[#D4AF37]/20 transition-all duration-300 hover:shadow-lg hover:shadow-[#D4AF37]/30 hover:scale-[1.02]"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <Pencil className="w-4 h-4 mr-2" />
                 {t('edit')}
               </Button>
 
-              <Button
-                variant="outline"
-                className="w-full border-gray-500 text-gray-400 hover:bg-gray-800"
-                disabled
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                {t('extend')}
-              </Button>
+              {/* Secondary Action Buttons */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <Button
+                  variant="outline"
+                  className="h-11 border-border/60 text-muted-foreground hover:border-[#D4AF37]/30 hover:bg-background/50 rounded-xl transition-all duration-200"
+                  disabled
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span className="text-xs">{t('extend')}</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-11 border-border/60 text-muted-foreground hover:border-[#D4AF37]/30 hover:bg-background/50 rounded-xl transition-all duration-200"
+                  disabled
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                  <span className="text-xs">Primary</span>
+                </Button>
+              </div>
 
               <Button
                 variant="outline"
-                className="w-full border-gray-500 text-gray-400 hover:bg-gray-800"
+                className="w-full h-11 border-border/60 text-muted-foreground hover:border-[#D4AF37]/30 hover:bg-background/50 rounded-xl transition-all duration-200"
                 disabled
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                {t('set_primary_domain')}
+                <Send className="w-4 h-4 mr-2" />
+                <span className="text-sm">{t('transfer')}</span>
               </Button>
 
+              {/* Delete Button */}
               <Button
                 variant="outline"
-                className="w-full border-gray-500 text-gray-400 hover:bg-gray-800"
-                disabled
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                {t('transfer')}
-              </Button>
-
-              <Button
-                variant="destructive"
-                className="w-full"
+                className="w-full h-11 border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/70 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={deletingDomain === `${domain.name}.${domain.domain}`}
                 onClick={() => {
                   setDomainToDelete(domain);
@@ -363,12 +383,12 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 {deletingDomain === `${domain.name}.${domain.domain}` ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {t('deleting')}
+                    <span className="text-sm">{t('deleting')}</span>
                   </>
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {t('delete')}
+                    <span className="text-sm">{t('delete')}</span>
                   </>
                 )}
               </Button>
@@ -377,6 +397,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
         ))}
       </div>
 
+      {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
