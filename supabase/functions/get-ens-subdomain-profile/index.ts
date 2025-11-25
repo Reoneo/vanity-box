@@ -69,8 +69,9 @@ serve(async (req) => {
 
     console.log('Parsed text records:', textRecords);
 
-    // Resolve ENS address - check eth.addr first (standard), then eth, then owner
-    let resolvedAddress = textRecords['eth.addr'] || textRecords['eth'] || namestoneData.owner || null;
+    // Resolve ENS address - check eth.addr first (standard), then eth
+    // Do NOT use namestoneData.owner - that's the NFT owner, not the manager
+    let resolvedAddress = textRecords['eth.addr'] || textRecords['eth'] || null;
     
     if (!resolvedAddress) {
       console.log('No address found in records, attempting ENS resolution for:', subdomain);
