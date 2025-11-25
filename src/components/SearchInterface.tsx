@@ -726,16 +726,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     // Max character limit varies by query type:
     // - Wallet addresses: 42 chars (0x + 40 hex)
+    // - ENS/DNS domains: 63 chars (max ENS label length)
     // - Subdomains with multiple dots: 50 chars
     // - Regular names: 12 chars
     const hasMultipleDots = trimmedQuery.split('.').filter(Boolean).length > 2;
     const isPotentialWallet = trimmedQuery.startsWith('0x') && /^0x[a-fA-F0-9]+$/i.test(trimmedQuery);
+    const isEnsDomain = /\.(eth|box|xyz|io|com|org|net|id|world|apt|ton|hl|chain)$/i.test(trimmedQuery);
 
     let maxLength = 12; // Default for regular names
     if (isPotentialWallet) {
       maxLength = 50; // Allow wallet addresses (42 chars + buffer)
-    } else if (hasMultipleDots) {
-      maxLength = 50; // Allow long subdomains
+    } else if (hasMultipleDots || isEnsDomain) {
+      maxLength = 63; // Max ENS label length per segment
     }
     
     if (trimmedQuery.length > maxLength) {
