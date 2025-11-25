@@ -52,6 +52,37 @@ export const PushProvider: React.FC<PushProviderProps> = ({ children }) => {
       // Update toast for step 2
       toast.loading('Step 2 of 2: Setting up encrypted messaging...', { id: 'push-init' });
       
+      // Test the signer before Push initialization
+      console.log('🧪 Testing signer with sample message...');
+      const { ethers } = await import('ethers');
+      const testMessage = 'Push Protocol Signer Test';
+      
+      try {
+        const testSig = await signer.signMessage(testMessage);
+        console.log('✅ Test signature received:', {
+          length: testSig.length,
+          valid: testSig.length === 132,
+          prefix: testSig.substring(0, 4)
+        });
+
+        // Verify the signature can be recovered
+        const recoveredAddress = ethers.utils.verifyMessage(testMessage, testSig);
+        const isValid = recoveredAddress.toLowerCase() === address.toLowerCase();
+        
+        console.log('✅ Signature verification:', {
+          expected: address.toLowerCase(),
+          recovered: recoveredAddress.toLowerCase(),
+          matches: isValid
+        });
+
+        if (!isValid) {
+          throw new Error('Signature verification failed - address mismatch');
+        }
+      } catch (testError) {
+        console.error('❌ Signer test failed:', testError);
+        throw new Error('Signer validation failed: ' + (testError as Error).message);
+      }
+      
       // Initialize Push Protocol user
       console.log('🔄 Creating Push Protocol user (encryption setup)...');
       
