@@ -142,20 +142,6 @@ export const Header: React.FC = () => {
                   </div>
                 </button>
               </TriggerOrClose>
-              
-              {/* Home Button - Mobile */}
-              {hasProfile && (
-                <button
-                  type="button"
-                  aria-label="Home"
-                  onClick={() => window.location.href = '/'}
-                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                >
-                  <Home className="w-5 h-5 text-black" />
-                </button>
-              )}
-              
-              {/* Search icon removed - now in dock */}
 
               {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
               {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
@@ -192,20 +178,6 @@ export const Header: React.FC = () => {
                     </div>
                   </button>
                 </TriggerOrClose>
-                
-                {/* Home Button - Mobile (disconnected) */}
-                {hasProfile && (
-                  <button
-                    type="button"
-                    aria-label="Home"
-                    onClick={() => window.location.href = '/'}
-                    className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                  >
-                    <Home className="w-5 h-5 text-black" />
-                  </button>
-                )}
-                
-                {/* Search icon removed - now in dock */}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
             {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
@@ -258,20 +230,6 @@ export const Header: React.FC = () => {
                 </div>
               </button>
             </TriggerOrClose>
-            
-            {/* Home Button - Desktop */}
-            {hasProfile && (
-              <button
-                type="button"
-                aria-label="Home"
-                onClick={() => window.location.href = '/'}
-                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-              >
-                <Home className="w-5 h-5 text-black" />
-              </button>
-            )}
-            
-            {/* Search icon removed - now in dock */}
 
             {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
             {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (

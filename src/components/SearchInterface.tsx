@@ -101,6 +101,7 @@ import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
+import { LoadingProgress } from "@/components/LoadingProgress";
 
 export interface FilterState {
   protocol: string[];
@@ -869,16 +870,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             // IMMEDIATE DISPLAY: Show profile right away with basic data
             setWeb3BioProfile(profileData);
             setEnsResults([]);
-            setIsLoading(false); // Stop loading immediately to show profile
 
-            // STAGE 1: Fetch EFP stats and first transaction (critical for profile display)
+            // CRITICAL: Fetch EFP stats, first transaction, AND ENS social links together
             const addressOrName = profileData.address || trimmedQuery;
             Promise.all([
               // Fetch EFP stats
               (async () => {
                 if (!addressOrName) return null;
                 try {
-                  console.log('⚡ Stage 1: Fetching EFP stats...');
+                  console.log('⚡ Fetching EFP stats...');
                   const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
                   if (efpResponse.ok) {
                     const efpData = await efpResponse.json();
@@ -901,7 +901,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               (async () => {
                 if (!profileData.address) return null;
                 try {
-                  console.log('⚡ Stage 1: Fetching first transaction...');
+                  console.log('⚡ Fetching first transaction...');
                   const { data: txData, error: txError } = await supabase.functions.invoke("get-first-transaction", {
                     body: { address: profileData.address },
                   });
@@ -916,178 +916,185 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   return null;
                 }
               })(),
-            ]);
-
-            // STAGE 2: Fetch ENS text records (for social dock) - non-blocking
-            (async () => {
-              try {
-                const publicClient = createPublicClient({
-                  chain: mainnet,
-                  transport: http(),
-                });
-
-                let ensNameToQuery: string | null = null;
-                if (normalizedQuery.endsWith('.eth')) {
-                  ensNameToQuery = normalize(trimmedQuery);
-                } else if (profileData.address) {
-                  try {
-                    const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
-                    if (primary) ensNameToQuery = normalize(primary);
-                  } catch (_) {}
-                }
-
-                if (ensNameToQuery) {
-                  console.log('⚡ Stage 2: Fetching ENS text records for socials...');
-                  const textRecordKeys = [
-                    'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
-                    'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram', 'com.farcaster',
-                    'org.telegram', 'vnd.twitter', 'vnd.github'
-                  ];
-
-                  const recordResults = await Promise.all(
-                    textRecordKeys.map(async (key) => {
-                      try {
-                        const value = await publicClient.getEnsText({ name: ensNameToQuery!, key });
-                        return { key, value };
-                      } catch {
-                        return { key, value: null };
-                      }
-                    })
-                  );
-
-                  const ensTextRecords: Record<string, string> = {};
-                  recordResults.forEach(({ key, value }) => {
-                    if (value) ensTextRecords[key] = value;
-                  });
-                  console.log('✅ ENS text records loaded for socials');
-
-                  // Map ENS records into state
-                  const records = {
-                    avatar: ensTextRecords.avatar || '',
-                    email: ensTextRecords.email || '',
-                    url: ensTextRecords.url || '',
-                    description: ensTextRecords.description || '',
-                    notice: ensTextRecords.notice || '',
-                    keywords: ensTextRecords.keywords || '',
-                    'com.discord': ensTextRecords['com.discord'] || '',
-                    'com.github': ensTextRecords['com.github'] || '',
-                    'com.twitter': ensTextRecords['com.twitter'] || '',
-                    'org.telegram': ensTextRecords['org.telegram'] || '',
-                    'com.farcaster': ensTextRecords['com.farcaster'] || '',
-                  };
-
-                  setEnsRecords({
-                    name: trimmedQuery,
-                    address: profileData?.address,
-                    avatar: records.avatar || profileData?.avatar,
-                    records,
+              
+              // Fetch ENS text records for social links (MOVED HERE from Stage 2)
+              (async () => {
+                try {
+                  const publicClient = createPublicClient({
+                    chain: mainnet,
+                    transport: http(),
                   });
 
-                  // Update profile with ENS social links
-                  const updatedProfile = { ...profileData };
-                  if (!updatedProfile.links) updatedProfile.links = {};
-                  
-                  if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
-                    const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
-                    updatedProfile.links.twitter = {
-                      link: `https://twitter.com/${twitterHandle}`,
-                      handle: twitterHandle
+                  let ensNameToQuery: string | null = null;
+                  if (normalizedQuery.endsWith('.eth')) {
+                    ensNameToQuery = normalize(trimmedQuery);
+                  } else if (profileData.address) {
+                    try {
+                      const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
+                      if (primary) ensNameToQuery = normalize(primary);
+                    } catch (_) {}
+                  }
+
+                  if (ensNameToQuery) {
+                    console.log('⚡ Fetching ENS text records for socials...');
+                    const textRecordKeys = [
+                      'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
+                      'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram', 'com.farcaster',
+                      'org.telegram', 'vnd.twitter', 'vnd.github'
+                    ];
+
+                    const recordResults = await Promise.all(
+                      textRecordKeys.map(async (key) => {
+                        try {
+                          const value = await publicClient.getEnsText({ name: ensNameToQuery!, key });
+                          return { key, value };
+                        } catch {
+                          return { key, value: null };
+                        }
+                      })
+                    );
+
+                    const ensTextRecords: Record<string, string> = {};
+                    recordResults.forEach(({ key, value }) => {
+                      if (value) ensTextRecords[key] = value;
+                    });
+                    console.log('✅ ENS text records loaded for socials');
+
+                    // Map ENS records into state
+                    const records = {
+                      avatar: ensTextRecords.avatar || '',
+                      email: ensTextRecords.email || '',
+                      url: ensTextRecords.url || '',
+                      description: ensTextRecords.description || '',
+                      notice: ensTextRecords.notice || '',
+                      keywords: ensTextRecords.keywords || '',
+                      'com.discord': ensTextRecords['com.discord'] || '',
+                      'com.github': ensTextRecords['com.github'] || '',
+                      'com.twitter': ensTextRecords['com.twitter'] || '',
+                      'org.telegram': ensTextRecords['org.telegram'] || '',
+                      'com.farcaster': ensTextRecords['com.farcaster'] || '',
                     };
+
+                    setEnsRecords({
+                      name: trimmedQuery,
+                      address: profileData?.address,
+                      avatar: records.avatar || profileData?.avatar,
+                      records,
+                    });
+
+                    // Update profile with ENS social links
+                    const updatedProfile = { ...profileData };
+                    if (!updatedProfile.links) updatedProfile.links = {};
+                    
+                    if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
+                      const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
+                      updatedProfile.links.twitter = {
+                        link: `https://twitter.com/${twitterHandle}`,
+                        handle: twitterHandle
+                      };
+                    }
+                    if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
+                      const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
+                      updatedProfile.links.github = {
+                        link: `https://github.com/${githubHandle}`,
+                        handle: githubHandle
+                      };
+                    }
+                    if (ensTextRecords['com.discord']) {
+                      updatedProfile.links.discord = {
+                        link: `https://discord.com/users/${ensTextRecords['com.discord']}`,
+                        handle: ensTextRecords['com.discord']
+                      };
+                    }
+                    if (ensTextRecords['org.telegram']) {
+                      updatedProfile.links.telegram = {
+                        handle: ensTextRecords['org.telegram']
+                      };
+                    }
+                    if (ensTextRecords['com.reddit']) {
+                      updatedProfile.links.reddit = {
+                        link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
+                        handle: ensTextRecords['com.reddit']
+                      };
+                    }
+                    if (ensTextRecords['com.youtube']) {
+                      updatedProfile.links.youtube = {
+                        link: ensTextRecords['com.youtube'].startsWith('http') 
+                          ? ensTextRecords['com.youtube']
+                          : `https://youtube.com/${ensTextRecords['com.youtube']}`,
+                        handle: ensTextRecords['com.youtube']
+                      };
+                    }
+                    if (ensTextRecords['com.facebook']) {
+                      updatedProfile.links.facebook = {
+                        link: ensTextRecords['com.facebook'].startsWith('http')
+                          ? ensTextRecords['com.facebook']
+                          : `https://facebook.com/${ensTextRecords['com.facebook']}`,
+                        handle: ensTextRecords['com.facebook']
+                      };
+                    }
+                    if (ensTextRecords['com.spotify']) {
+                      updatedProfile.links.spotify = {
+                        link: ensTextRecords['com.spotify'],
+                        handle: ensTextRecords['com.spotify']
+                      };
+                    }
+                    if (ensTextRecords['com.linkedin']) {
+                      updatedProfile.links.linkedin = {
+                        link: ensTextRecords['com.linkedin'].startsWith('http')
+                          ? ensTextRecords['com.linkedin']
+                          : `https://linkedin.com/in/${ensTextRecords['com.linkedin']}`,
+                        handle: ensTextRecords['com.linkedin']
+                      };
+                    }
+                    if (ensTextRecords['com.instagram']) {
+                      updatedProfile.links.instagram = {
+                        link: ensTextRecords['com.instagram'].startsWith('http')
+                          ? ensTextRecords['com.instagram']
+                          : `https://instagram.com/${ensTextRecords['com.instagram']}`,
+                        handle: ensTextRecords['com.instagram']
+                      };
+                    }
+                    if (ensTextRecords['com.farcaster']) {
+                      updatedProfile.links.farcaster = {
+                        link: `https://warpcast.com/${ensTextRecords['com.farcaster']}`,
+                        handle: ensTextRecords['com.farcaster']
+                      };
+                    }
+                    
+                    // Update header from ENS text record
+                    if (ensTextRecords['header']) {
+                      updatedProfile.header = ensTextRecords['header'];
+                    }
+                    
+                    // Merge core ENS text records
+                    if (ensTextRecords['url']) {
+                      updatedProfile.url = ensTextRecords['url'];
+                      updatedProfile.website = ensTextRecords['url'];
+                    }
+                    if (ensTextRecords['email']) {
+                      updatedProfile.email = ensTextRecords['email'];
+                    }
+                    if (ensTextRecords['location']) {
+                      updatedProfile.location = ensTextRecords['location'];
+                    }
+                    if (ensTextRecords['description'] && !updatedProfile.description) {
+                      updatedProfile.description = ensTextRecords['description'];
+                    }
+                    
+                    setWeb3BioProfile(updatedProfile);
                   }
-                  if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
-                    const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
-                    updatedProfile.links.github = {
-                      link: `https://github.com/${githubHandle}`,
-                      handle: githubHandle
-                    };
-                  }
-                  if (ensTextRecords['com.discord']) {
-                    updatedProfile.links.discord = {
-                      handle: ensTextRecords['com.discord']
-                    };
-                  }
-                  if (ensTextRecords['org.telegram']) {
-                    updatedProfile.links.telegram = {
-                      handle: ensTextRecords['org.telegram']
-                    };
-                  }
-                  if (ensTextRecords['com.reddit']) {
-                    updatedProfile.links.reddit = {
-                      link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
-                      handle: ensTextRecords['com.reddit']
-                    };
-                  }
-                  if (ensTextRecords['com.youtube']) {
-                    updatedProfile.links.youtube = {
-                      link: ensTextRecords['com.youtube'].startsWith('http') 
-                        ? ensTextRecords['com.youtube']
-                        : `https://youtube.com/${ensTextRecords['com.youtube']}`,
-                      handle: ensTextRecords['com.youtube']
-                    };
-                  }
-                  if (ensTextRecords['com.facebook']) {
-                    updatedProfile.links.facebook = {
-                      link: ensTextRecords['com.facebook'].startsWith('http')
-                        ? ensTextRecords['com.facebook']
-                        : `https://facebook.com/${ensTextRecords['com.facebook']}`,
-                      handle: ensTextRecords['com.facebook']
-                    };
-                  }
-                  if (ensTextRecords['com.spotify']) {
-                    updatedProfile.links.spotify = {
-                      link: ensTextRecords['com.spotify'],
-                      handle: ensTextRecords['com.spotify']
-                    };
-                  }
-                  if (ensTextRecords['com.linkedin']) {
-                    updatedProfile.links.linkedin = {
-                      link: ensTextRecords['com.linkedin'].startsWith('http')
-                        ? ensTextRecords['com.linkedin']
-                        : `https://linkedin.com/in/${ensTextRecords['com.linkedin']}`,
-                      handle: ensTextRecords['com.linkedin']
-                    };
-                  }
-                  if (ensTextRecords['com.instagram']) {
-                    updatedProfile.links.instagram = {
-                      link: ensTextRecords['com.instagram'].startsWith('http')
-                        ? ensTextRecords['com.instagram']
-                        : `https://instagram.com/${ensTextRecords['com.instagram']}`,
-                      handle: ensTextRecords['com.instagram']
-                    };
-                  }
-                  if (ensTextRecords['com.farcaster']) {
-                    updatedProfile.links.farcaster = {
-                      link: `https://warpcast.com/${ensTextRecords['com.farcaster']}`,
-                      handle: ensTextRecords['com.farcaster']
-                    };
-                  }
-                  
-                  // Update header from ENS text record
-                  if (ensTextRecords['header']) {
-                    updatedProfile.header = ensTextRecords['header'];
-                  }
-                  
-                  // Merge core ENS text records
-                  if (ensTextRecords['url']) {
-                    updatedProfile.url = ensTextRecords['url'];
-                    updatedProfile.website = ensTextRecords['url'];
-                  }
-                  if (ensTextRecords['email']) {
-                    updatedProfile.email = ensTextRecords['email'];
-                  }
-                  if (ensTextRecords['location']) {
-                    updatedProfile.location = ensTextRecords['location'];
-                  }
-                  if (ensTextRecords['description'] && !updatedProfile.description) {
-                    updatedProfile.description = ensTextRecords['description'];
-                  }
-                  
-                  setWeb3BioProfile(updatedProfile);
+                  return null;
+                } catch (error) {
+                  console.error('Error fetching ENS records:', error);
+                  return null;
                 }
-              } catch (e) {
-                console.warn('⚠️ Stage 2: ENS text records failed:', e);
-              }
-            })();
+              })(),
+            ]).then(() => {
+              // All critical data loaded - stop loading state
+              setIsLoading(false);
+              console.log('✅ All critical profile data loaded');
+            });
 
             // STAGE 3: Fetch POAP data (low priority) - non-blocking
             if (profileData.address) {
@@ -1531,8 +1538,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               banner={web3BioProfile?.header}
             />
             
+            {/* Loading Progress Bar */}
+            <LoadingProgress isLoading={isLoading} />
+            
             {/* Search bar and header - conditional rendering based on search state */}
-            {!showMyIDs && (
+            {!showMyIDs && !isLoading && (
               <>
                 {!isSearchActive ? (
                   <>
@@ -1865,24 +1875,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
                   <Dock
                     items={[
-                      // Home icon - navigate to vanity.box homepage WITHOUT reload
-                      {
-                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
-                        label: 'Home',
-                        onClick: () => {
-                          // Clear profile view and return to homepage
-                          setWeb3BioProfile(null);
-                          setEnsRecords(null);
-                          setEfpStats(null);
-                          setHasSearched(false);
-                          setSearchQuery('');
-                          setDisplayQuery('');
-                          setIsSearchActive(false);
-                          setShowMyIDs(false);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        },
-                        isActive: false,
-                      },
                       {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('profile'),
@@ -1904,8 +1896,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         onClick: () => setActiveDockSection('socials'),
                         isActive: activeDockSection === 'socials',
                       }] : []),
-                      // Only show NFT icon if NFTs are found or still loading
-                      ...((nfts && nfts.length > 0) || nftLoading ? [{
+                      // Only show NFT icon if NFTs are found (not while loading)
+                      ...(nfts && nfts.length > 0 ? [{
                         icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('nfts'),
                         onClick: () => {
