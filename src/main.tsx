@@ -1,7 +1,19 @@
 import { createRoot } from "react-dom/client";
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
+import { HelmetProvider } from "react-helmet-async";
+import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import App from "./App.tsx";
 import "./index.css";
 import { initMiniKit } from "@/lib/minikit";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import { PetraWalletProvider } from "./contexts/PetraWalletContext";
+import { TonConnectProvider } from "./contexts/TonConnectContext";
+import { CryptoPriceProvider } from "./contexts/CryptoPriceContext";
+
+const queryClient = new QueryClient();
 
 // Bootstrap MiniKit once on app load with enhanced logging
 const APP_ID = 'app_ed7e61cb0c52630464178eed59e3fbdd';
@@ -21,7 +33,26 @@ initMiniKit(APP_ID).then(() => {
 try {
   console.log("[App] Starting React render...");
   createRoot(document.getElementById("root")!).render(
-    <App />
+    <React.StrictMode>
+      <HelmetProvider>
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+              <CryptoPriceProvider>
+                <LanguageProvider>
+                  <TonConnectProvider>
+                    <PetraWalletProvider>
+                      <App />
+                      <Toaster position="top-right" closeButton richColors />
+                    </PetraWalletProvider>
+                  </TonConnectProvider>
+                </LanguageProvider>
+              </CryptoPriceProvider>
+            </ThemeProvider>
+          </QueryClientProvider>
+        </ErrorBoundary>
+      </HelmetProvider>
+    </React.StrictMode>
   );
   console.log("[App] React render initiated successfully");
 } catch (error) {

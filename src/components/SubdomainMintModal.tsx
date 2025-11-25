@@ -5,7 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { fetchCryptoPrices, CryptoPrices } from "@/utils/cryptoPrices";
+import { CryptoPrices } from "@/utils/cryptoPrices";
+import { useCryptoPrices } from "@/contexts/CryptoPriceContext";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
@@ -55,6 +56,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { account, connect, isConnected, isInstalled, signAndSubmitTransaction } = usePetraWallet();
+  const { prices: cryptoPrices, isLoading: isLoadingPrices } = useCryptoPrices();
   
   // Check if this is an Aptos domain
   const isAptosDomain = domain.toLowerCase().endsWith('.apt');
@@ -64,13 +66,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     isAptosDomain ? "APT" : "USDC"
   );
-  const [cryptoPrices, setCryptoPrices] = useState<CryptoPrices>({
-    eth: 2600,
-    wld: 1.85,
-    usdc: 1.0,
-    apt: 8.5, // Add APT price
-  });
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
   const [isMinting, setIsMinting] = useState(false);
   const [networkFeeUSD, setNetworkFeeUSD] = useState(0.15);
   
@@ -206,48 +201,13 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     loadAptosBalance();
   }, [isAptosDomain, isConnected, account?.address]);
 
+  // Set network fee based on domain type
   useEffect(() => {
-    let mounted = true;
-
-    const load = async () => {
-      try {
-        setIsLoadingPrices(true);
-        const prices = await fetchCryptoPrices();
-        if (mounted) setCryptoPrices(prices);
-      } catch (e) {
-        console.error("Price fetch failed:", e);
-      } finally {
-        if (mounted) setIsLoadingPrices(false);
-      }
-    };
-
-    const loadNetworkFee = async () => {
-      try {
-        if (isAptosDomain) {
-          // Aptos has much lower fees
-          if (mounted) setNetworkFeeUSD(0.001);
-        } else {
-          const { calculateNetworkFee } = await import("@/utils/worldChainGas");
-          const fee = await calculateNetworkFee(150000);
-          if (mounted) setNetworkFeeUSD(fee);
-        }
-      } catch (error) {
-        console.error("Failed to fetch network fee:", error);
-        if (mounted) setNetworkFeeUSD(isAptosDomain ? 0.001 : 0.15);
-      }
-    };
-
-    load();
-    loadNetworkFee();
-
-    const priceInterval = setInterval(load, 60_000);
-    const feeInterval = setInterval(loadNetworkFee, 30_000);
-
-    return () => {
-      mounted = false;
-      clearInterval(priceInterval);
-      clearInterval(feeInterval);
-    };
+    if (isAptosDomain) {
+      setNetworkFeeUSD(0.001);
+    } else {
+      setNetworkFeeUSD(0.15);
+    }
   }, [isAptosDomain]);
 
   // ---------- pricing ----------

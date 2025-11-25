@@ -225,46 +225,111 @@ Deno.serve(async (req) => {
       expiryDate: expiryDate.toISOString()
     });
 
-    // Set default redirect using Supabase client (non-blocking)
+    // Set default redirect using Supabase client (BLOCKING with retries)
     console.log('[mint-subdomain] Setting default redirect...');
-    try {
-      const { data: redirectData, error: redirectError } = await supabase.functions.invoke(
-        'set-namestone-redirect',
-        {
-          body: {
-            parentDomain: cleanDomain,
-            subname: subdomainLabel,
-            redirectType: "default",
-          },
+    
+    let redirectSuccess = false;
+    let lastRedirectError = null;
+    const maxRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[mint-subdomain] Redirect attempt ${attempt}/${maxRetries}...`);
+        
+        const { data: redirectData, error: redirectError } = await supabase.functions.invoke(
+          'set-namestone-redirect',
+          {
+            body: {
+              parentDomain: cleanDomain,
+              subname: subdomainLabel,
+              redirectType: "default",
+            },
+          }
+        );
+        
+        if (redirectError) {
+          lastRedirectError = redirectError;
+          console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} FAILED:`, {
+            error: redirectError,
+            domain: `${subdomainLabel}.${cleanDomain}`,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Wait before retry (exponential backoff)
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 2000;
+            console.log(`[mint-subdomain] Waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+          continue;
         }
-      );
-      
-      if (redirectError) {
-        console.error('[mint-subdomain] ❌ Redirect setup FAILED:', {
-          error: redirectError,
-          domain: `${subdomainLabel}.${cleanDomain}`,
-          timestamp: new Date().toISOString()
-        });
-      } else if (redirectData?.error) {
-        console.error('[mint-subdomain] ❌ Redirect setup returned error:', {
-          error: redirectData.error,
-          domain: `${subdomainLabel}.${cleanDomain}`,
-          timestamp: new Date().toISOString()
-        });
-      } else {
+        
+        if (redirectData?.error) {
+          lastRedirectError = redirectData.error;
+          console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} returned error:`, {
+            error: redirectData.error,
+            domain: `${subdomainLabel}.${cleanDomain}`,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Wait before retry
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 2000;
+            console.log(`[mint-subdomain] Waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+          continue;
+        }
+        
+        // Verify we got a CID and contenthash
+        if (!redirectData?.cid || !redirectData?.contenthash) {
+          lastRedirectError = 'Missing CID or contenthash in response';
+          console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} incomplete:`, {
+            data: redirectData,
+            domain: `${subdomainLabel}.${cleanDomain}`,
+            timestamp: new Date().toISOString()
+          });
+          
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 2000;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+          continue;
+        }
+        
+        // Success!
         console.log('[mint-subdomain] ✅ Redirect set successfully:', {
           domain: `${subdomainLabel}.${cleanDomain}`,
-          cid: redirectData?.cid,
-          contenthash: redirectData?.contenthash,
+          cid: redirectData.cid,
+          contenthash: redirectData.contenthash,
+          provider: redirectData.provider,
+          attempt,
           timestamp: new Date().toISOString()
         });
+        
+        redirectSuccess = true;
+        break;
+        
+      } catch (redirectErr: any) {
+        lastRedirectError = redirectErr;
+        console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} exception:`, {
+          error: redirectErr,
+          message: redirectErr?.message,
+          domain: `${subdomainLabel}.${cleanDomain}`,
+          timestamp: new Date().toISOString()
+        });
+        
+        if (attempt < maxRetries) {
+          const waitTime = attempt * 2000;
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
       }
-    } catch (redirectErr) {
-      // Non-blocking - log but don't fail the mint
-      console.error('[mint-subdomain] ❌ Redirect setup exception:', {
-        error: redirectErr,
-        message: redirectErr?.message,
+    }
+    
+    if (!redirectSuccess) {
+      console.error('[mint-subdomain] ⚠️ All redirect attempts failed, but mint succeeded:', {
         domain: `${subdomainLabel}.${cleanDomain}`,
+        lastError: lastRedirectError,
         timestamp: new Date().toISOString()
       });
     }

@@ -100,33 +100,119 @@ Deno.serve(async (req) => {
     console.log(`[mint-apt-subdomain] Transaction hash: ${txHash}`);
     console.log(`[mint-apt-subdomain] Expiry date: ${expiryDate.toISOString()}`);
 
-    // Set default redirect for the APT domain (non-blocking)
+    // Set default redirect for the APT domain (BLOCKING with retries)
     console.log('[mint-apt-subdomain] Setting default redirect...');
-    try {
-      const redirectResult = await fetch(
-        `${Deno.env.get("SUPABASE_URL")}/functions/v1/set-namestone-redirect`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-          },
-          body: JSON.stringify({
-            parentDomain: domain,
-            subname: subdomain,
-            redirectType: "default",
-          }),
+    
+    let redirectSuccess = false;
+    let lastRedirectError = null;
+    const maxRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[mint-apt-subdomain] Redirect attempt ${attempt}/${maxRetries}...`);
+        
+        const redirectResult = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/set-namestone-redirect`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({
+              parentDomain: domain,
+              subname: subdomain,
+              redirectType: "default",
+            }),
+          }
+        );
+        
+        if (!redirectResult.ok) {
+          const errorText = await redirectResult.text();
+          lastRedirectError = errorText;
+          console.error(`[mint-apt-subdomain] ❌ Redirect attempt ${attempt} failed:`, {
+            status: redirectResult.status,
+            error: errorText,
+            domain: `${subdomain}.${domain}`,
+            timestamp: new Date().toISOString()
+          });
+          
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 2000;
+            console.log(`[mint-apt-subdomain] Waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+          continue;
         }
-      );
-      
-      if (!redirectResult.ok) {
-        console.warn('[mint-apt-subdomain] Redirect setup failed:', await redirectResult.text());
-      } else {
+        
         const redirectData = await redirectResult.json();
-        console.log('[mint-apt-subdomain] Redirect set:', redirectData);
+        
+        if (redirectData?.error) {
+          lastRedirectError = redirectData.error;
+          console.error(`[mint-apt-subdomain] ❌ Redirect attempt ${attempt} returned error:`, {
+            error: redirectData.error,
+            domain: `${subdomain}.${domain}`,
+            timestamp: new Date().toISOString()
+          });
+          
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 2000;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+          continue;
+        }
+        
+        // Verify we got a CID and contenthash
+        if (!redirectData?.cid || !redirectData?.contenthash) {
+          lastRedirectError = 'Missing CID or contenthash in response';
+          console.error(`[mint-apt-subdomain] ❌ Redirect attempt ${attempt} incomplete:`, {
+            data: redirectData,
+            domain: `${subdomain}.${domain}`,
+            timestamp: new Date().toISOString()
+          });
+          
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 2000;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+          continue;
+        }
+        
+        // Success!
+        console.log('[mint-apt-subdomain] ✅ Redirect set successfully:', {
+          domain: `${subdomain}.${domain}`,
+          cid: redirectData.cid,
+          contenthash: redirectData.contenthash,
+          provider: redirectData.provider,
+          attempt,
+          timestamp: new Date().toISOString()
+        });
+        
+        redirectSuccess = true;
+        break;
+        
+      } catch (redirectErr: any) {
+        lastRedirectError = redirectErr;
+        console.error(`[mint-apt-subdomain] ❌ Redirect attempt ${attempt} exception:`, {
+          error: redirectErr,
+          message: redirectErr?.message,
+          domain: `${subdomain}.${domain}`,
+          timestamp: new Date().toISOString()
+        });
+        
+        if (attempt < maxRetries) {
+          const waitTime = attempt * 2000;
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
       }
-    } catch (redirectErr) {
-      console.warn('[mint-apt-subdomain] Redirect setup error:', redirectErr);
+    }
+    
+    if (!redirectSuccess) {
+      console.error('[mint-apt-subdomain] ⚠️ All redirect attempts failed, but mint succeeded:', {
+        domain: `${subdomain}.${domain}`,
+        lastError: lastRedirectError,
+        timestamp: new Date().toISOString()
+      });
     }
 
     return new Response(
