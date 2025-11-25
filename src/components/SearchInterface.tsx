@@ -17,8 +17,6 @@ import {
   Share2,
   Check,
   Info,
-  Activity,
-  Inbox,
   Home,
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
@@ -221,11 +219,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showSearchBar, setShowSearchBar] = useState(true);
   
   // Dock panel states
-  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity'>('profile');
+  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster'>('profile');
   const [poapTokens, setPoapTokens] = useState<any[]>([]);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
-  const [transactions, setTransactions] = useState<any>(null);
-  const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [showEFPFollowingModal, setShowEFPFollowingModal] = useState(false);
   const [efpFollowingUsers, setEfpFollowingUsers] = useState<EFPUser[]>([]);
   const [nfts, setNfts] = useState<any[]>([]);
@@ -385,7 +381,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   useEffect(() => {
     if (web3BioProfile?.address && poapTokens.length === 0 && !isLoadingPoaps) {
       console.log('🔄 Background: Ensuring POAPs are loaded...');
-      // POAPs should already be loading from main search, but ensure they're triggered
       const loadPoaps = async () => {
         try {
           setIsLoadingPoaps(true);
@@ -424,22 +419,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
       };
       
-      // Small delay to let other critical data load first
       const timer = setTimeout(loadPoaps, 500);
       return () => clearTimeout(timer);
     }
   }, [web3BioProfile?.address]);
-
-  // DISABLED: Don't preload transactions in background
-  // useEffect(() => {
-  //   if (web3BioProfile?.address && !transactions && !transactionsLoading) {
-  //     console.log('🔄 Background: Preloading wallet transactions...');
-  //     const timer = setTimeout(() => {
-  //       fetchTransactions();
-  //     }, 1500); // Delay slightly after NFTs/POAPs
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [web3BioProfile?.address]);
 
   // Hide search bar when profile is loaded, show when cleared
   useEffect(() => {
@@ -1293,27 +1276,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
 
   // Fetch functions for dock sections
-  const fetchTransactions = async () => {
-    const address = web3BioProfile?.address || walletAddress;
-    if (!address) return;
-
-    setTransactionsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('get-etherscan-transactions', {
-        body: { address },
-      });
-
-      if (error) throw error;
-      setTransactions(data);
-      console.log('✅ Transactions loaded:', data);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast.error('Failed to load transaction data');
-    } finally {
-      setTransactionsLoading(false);
-    }
-  };
-
   const fetchNfts = async (next?: string) => {
     const address = web3BioProfile?.address || walletAddress;
     
@@ -1905,8 +1867,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onFollowingClick={handleFollowingClick}
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}
-                    transactions={transactions}
-                    transactionsLoading={transactionsLoading}
                   />
                 </div>
 

@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 import { siBluesky, siReddit, siWhatsapp, siFacebook, siSnapchat, siGithub, siTelegram, siDiscord } from "simple-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ProfileCardProps {
-  activeSection: 'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity';
+  activeSection: 'profile' | 'socials' | 'nfts' | 'farcaster';
   web3BioProfile?: any;
   currentWalletAddress?: string;
   connectedWalletAddress?: string;
@@ -41,8 +41,6 @@ interface ProfileCardProps {
   onFollowingClick?: () => void;
   onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
-  transactions?: any;
-  transactionsLoading?: boolean;
 }
 
 export const ProfileCard = ({
@@ -62,8 +60,6 @@ export const ProfileCard = ({
   onFollowingClick,
   onFollowersClick,
   onLoadMoreNfts,
-  transactions,
-  transactionsLoading = false,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
@@ -612,210 +608,6 @@ export const ProfileCard = ({
                 </Button>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Activity/Transactions Section - Only show if user has transactions */}
-        {activeSection === 'activity' && (transactions?.chains?.length > 0 || transactionsLoading) && (
-          <div className="flex-1 overflow-y-auto">
-            <div className="space-y-4 pb-24">
-            <div className="p-6">
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-[#D4AF37]">Wallet Activity</h3>
-                {transactions && transactions.totalChains > 0 && (
-                  <Badge variant="secondary" className="bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30">
-                    {transactions.totalChains} {transactions.totalChains === 1 ? 'Chain' : 'Chains'}
-                  </Badge>
-                )}
-              </div>
-
-              {transactions.chains && transactions.chains.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Summary Stats */}
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    {transactions.firstTransactionDate && (
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-card/60 to-card/40 border border-border/40">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#D4AF37]/20 flex items-center justify-center">
-                            <Calendar className="w-5 h-5 text-[#D4AF37]" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-0.5">Date Joined</p>
-                            <p className="text-sm font-bold text-[#D4AF37]">
-                              {new Date(transactions.firstTransactionDate).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                year: 'numeric' 
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="p-4 rounded-xl bg-gradient-to-br from-card/60 to-card/40 border border-border/40">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#D4AF37]/20 flex items-center justify-center">
-                          <Activity className="w-5 h-5 text-[#D4AF37]" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-0.5">Total Activity</p>
-                          <p className="text-sm font-bold text-[#D4AF37]">
-                            {transactions.chains.reduce((sum: number, c: any) => sum + c.totalTransactions, 0)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Chain Cards */}
-                  {transactions.chains.map((chain: any) => {
-                    const config = {
-                      url: 'https://worldscan.org',
-                      currency: 'WLD',
-                    };
-                    
-                    const explorerBaseUrl = config.url;
-                    const balance = chain.balance && chain.balance !== '0' 
-                      ? (parseInt(chain.balance) / 1e18).toFixed(4)
-                      : null;
-                    
-                    return (
-                      <Card 
-                        key={chain.chainKey} 
-                        className="overflow-hidden border border-border/40 bg-card/50"
-                      >
-                        {/* Header */}
-                        <div className="p-4 border-b border-border/30 bg-gradient-to-r from-card/80 to-card/40">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="text-2xl">🌐</div>
-                              <div className="flex-1">
-                                <h4 className="text-base font-bold text-[#D4AF37]">{chain.chain}</h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {balance && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/30">
-                                      {balance} {config.currency}
-                                    </span>
-                                  )}
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground">
-                                    {chain.totalTransactions} {chain.totalTransactions === 1 ? 'tx' : 'txs'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => window.open(`${explorerBaseUrl}/address/${web3BioProfile?.address}`, '_blank')}
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      
-                        {/* Activity Content */}
-                        <div className="p-4 space-y-3">
-                          {/* NFT Transfers */}
-                          {chain.nftTransfers && chain.nftTransfers.length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between pb-2 border-b border-border/30">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm">🖼️</span>
-                                  <h5 className="text-sm font-semibold">NFT Transfers</h5>
-                                </div>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground">
-                                  {chain.nftTransfers.length}
-                                </span>
-                              </div>
-                              {chain.nftTransfers.slice(0, 3).map((tx: any, idx: number) => (
-                                <div 
-                                  key={tx.hash + tx.tokenID + idx} 
-                                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/30 cursor-pointer transition-colors"
-                                  onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{tx.tokenName || 'Unknown NFT'}</p>
-                                    <p className="text-xs text-muted-foreground">#{tx.tokenID}</p>
-                                  </div>
-                                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Token Transfers */}
-                          {chain.tokenTransfers && chain.tokenTransfers.length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between pb-2 border-b border-border/30">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm">🪙</span>
-                                  <h5 className="text-sm font-semibold">Token Transfers</h5>
-                                </div>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground">
-                                  {chain.tokenTransfers.length}
-                                </span>
-                              </div>
-                              {chain.tokenTransfers.slice(0, 3).map((tx: any, idx: number) => (
-                                <div 
-                                  key={tx.hash + tx.contractAddress + idx} 
-                                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/30 cursor-pointer transition-colors"
-                                  onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">
-                                      {(parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(4)} {tx.tokenSymbol}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground truncate">{tx.tokenName}</p>
-                                  </div>
-                                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Regular Transactions */}
-                          {chain.transactions && chain.transactions.length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between pb-2 border-b border-border/30">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm">💸</span>
-                                  <h5 className="text-sm font-semibold">Transactions</h5>
-                                </div>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground">
-                                  {chain.transactions.length}
-                                </span>
-                              </div>
-                              {chain.transactions.slice(0, 3).map((tx: any, idx: number) => (
-                                <div 
-                                  key={tx.hash + idx} 
-                                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/30 cursor-pointer transition-colors"
-                                  onClick={() => window.open(`${explorerBaseUrl}/tx/${tx.hash}`, '_blank')}
-                                >
-                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                                    tx.isError ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-green-500'
-                                  }`}>
-                                    {tx.isError ? '✗' : '✓'}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium">{(parseInt(tx.value) / 1e18).toFixed(6)} {config.currency}</p>
-                                    <p className="text-xs text-muted-foreground">{tx.isError ? 'Failed' : 'Success'}</p>
-                                  </div>
-                                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-            </div>
-            </div>
           </div>
         )}
 
