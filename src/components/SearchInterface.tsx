@@ -1883,21 +1883,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         onClick: () => setActiveDockSection('profile'),
                         isActive: activeDockSection === 'profile',
                       },
-                      // Only show social links if user has ENS social links
-                      ...(ensRecords?.records && (
-                        ensRecords.records['com.twitter'] ||
-                        ensRecords.records['com.github'] ||
-                        ensRecords.records['com.discord'] ||
-                        ensRecords.records['com.instagram'] ||
-                        ensRecords.records['org.telegram'] ||
-                        ensRecords.records['vnd.twitter'] ||
-                        ensRecords.records['vnd.github']
-                      ) ? [{
-                        icon: <Link2 className="w-6 h-6 text-[#D4AF37]" />,
-                        label: t('socials'),
-                        onClick: () => setActiveDockSection('socials'),
-                        isActive: activeDockSection === 'socials',
-                      }] : []),
                       // Only show NFT icon if NFTs are found (not while loading)
                       ...(nfts && nfts.length > 0 ? [{
                         icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
