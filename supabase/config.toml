@@ -69,12 +69,6 @@ verify_jwt = false
 [functions.publish-farcaster-cast]
 verify_jwt = false
 
-[functions.react-to-farcaster-cast]
-verify_jwt = false
-
-[functions.get-etherscan-transactions]
-verify_jwt = false
-
 [functions.send-world-notification]
 verify_jwt = false
 
