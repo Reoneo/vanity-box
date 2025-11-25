@@ -346,25 +346,18 @@ export const PushMessagingInterface = () => {
           </div>
 
           {/* Two-step signing info */}
-          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
-            <h3 className="font-semibold text-sm flex items-center gap-2">
-              <Info className="h-4 w-4" />
-              Connection Process
-            </h3>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">1</span>
-                <div>
-                  <p className="font-medium text-foreground">World Chain Authentication</p>
-                  <p className="text-xs">Sign in to verify your World ID</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">2</span>
-                <div>
-                  <p className="font-medium text-foreground">Encryption Setup</p>
-                  <p className="text-xs">Generate your message encryption keys</p>
-                </div>
+          <div className="border-[#D4AF37] border-2 rounded-lg p-4 bg-background/50">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-[#D4AF37] mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Connection Process</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  You'll be asked to sign twice in World App:
+                </p>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li><strong>World Chain Authentication</strong> - Sign in to verify your World ID</li>
+                  <li><strong>Encryption Setup</strong> - Generate your message encryption keys</li>
+                </ol>
               </div>
             </div>
           </div>

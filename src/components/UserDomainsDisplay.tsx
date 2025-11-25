@@ -256,7 +256,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4">
       <button 
         onClick={handleBackClick}
         className="flex items-center gap-2 text-foreground hover:text-primary mb-4"
@@ -268,25 +268,6 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
       </button>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t('my_ids')}</h2>
-        <Button
-          onClick={handleRepairRedirects}
-          disabled={isRepairing}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          {isRepairing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Regenerating...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4" />
-              Fix Thumbnails
-            </>
-          )}
-        </Button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {domains.map((domain, index) => (
