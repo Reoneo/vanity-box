@@ -103,8 +103,6 @@ import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
-import { PushInbox } from "@/components/PushInbox";
-import { PushMessagingInterface } from "@/components/PushMessagingInterface";
 
 export interface FilterState {
   protocol: string[];
@@ -223,7 +221,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showSearchBar, setShowSearchBar] = useState(true);
   
   // Dock panel states
-  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity' | 'inbox'>('profile');
+  const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity'>('profile');
   const [poapTokens, setPoapTokens] = useState<any[]>([]);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
   const [transactions, setTransactions] = useState<any>(null);
@@ -1909,7 +1907,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onLoadMoreNfts={handleLoadMoreNfts}
                     transactions={transactions}
                     transactionsLoading={transactionsLoading}
-                    onCloseInbox={() => setActiveDockSection('profile')}
                   />
                 </div>
 
@@ -1988,13 +1985,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         },
                         isActive: activeDockSection === 'nfts',
                       }] : []),
-                      // Inbox - Always show for messaging
-                      {
-                        icon: <Inbox className="w-6 h-6 text-[#D4AF37]" />,
-                        label: t('inbox'),
-                        onClick: () => setActiveDockSection('inbox'),
-                        isActive: activeDockSection === 'inbox',
-                      },
                       // Search icon on far right
                       {
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,

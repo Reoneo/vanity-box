@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Activity, Calendar, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
 import { siBluesky, siReddit, siWhatsapp, siFacebook, siSnapchat, siGithub, siTelegram, siDiscord } from "simple-icons";
-import { PushMessagingInterface } from "@/components/PushMessagingInterface";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
@@ -26,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ProfileCardProps {
-  activeSection: 'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity' | 'inbox';
+  activeSection: 'profile' | 'socials' | 'nfts' | 'farcaster' | 'activity';
   web3BioProfile?: any;
   currentWalletAddress?: string;
   connectedWalletAddress?: string;
@@ -44,7 +43,6 @@ interface ProfileCardProps {
   onLoadMoreNfts?: () => void;
   transactions?: any;
   transactionsLoading?: boolean;
-  onCloseInbox?: () => void;
 }
 
 export const ProfileCard = ({
@@ -66,7 +64,6 @@ export const ProfileCard = ({
   onLoadMoreNfts,
   transactions,
   transactionsLoading = false,
-  onCloseInbox,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
@@ -928,13 +925,6 @@ export const ProfileCard = ({
             </div>
             </div>
             </div>
-          </div>
-        )}
-
-        {/* Messaging Interface Section */}
-        {activeSection === 'inbox' && (
-          <div className="fixed inset-0 z-[200] bg-background">
-            <PushMessagingInterface />
           </div>
         )}
       </Card>
