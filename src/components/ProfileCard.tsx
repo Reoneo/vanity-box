@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, Twitter, Instagram, Linkedin, Youtube } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, Twitter, Instagram, Linkedin, Youtube, X } from "lucide-react";
 import { siBluesky, siReddit, siWhatsapp, siFacebook, siSnapchat, siGithub, siTelegram, siDiscord } from "simple-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
@@ -67,6 +67,7 @@ export const ProfileCard = ({
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
   const [selectedChain, setSelectedChain] = useState<string>("all");
+  const [showAllSocials, setShowAllSocials] = useState(false);
 
   // No need to disable body scrolling - parent container handles overflow
 
@@ -307,6 +308,86 @@ export const ProfileCard = ({
                 )}
               </div>
 
+              {/* Social Icons Row - Display under email/website */}
+              {web3BioProfile?.links && (() => {
+                const socialLinks = Object.entries(web3BioProfile.links)
+                  .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData);
+                
+                const getIcon = (platform: string) => {
+                  const iconClass = "w-5 h-5";
+                  const platformLower = platform.toLowerCase();
+                  
+                  switch (platformLower) {
+                    case 'twitter':
+                    case 'x':
+                      return <Twitter className={iconClass} />;
+                    case 'instagram':
+                      return <Instagram className={iconClass} />;
+                    case 'linkedin':
+                      return <Linkedin className={iconClass} />;
+                    case 'youtube':
+                      return <Youtube className={iconClass} />;
+                    case 'bluesky':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siBluesky.path} /></svg>;
+                    case 'reddit':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siReddit.path} /></svg>;
+                    case 'whatsapp':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siWhatsapp.path} /></svg>;
+                    case 'facebook':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siFacebook.path} /></svg>;
+                    case 'snapchat':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siSnapchat.path} /></svg>;
+                    case 'github':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siGithub.path} /></svg>;
+                    case 'telegram':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siTelegram.path} /></svg>;
+                    case 'discord':
+                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siDiscord.path} /></svg>;
+                    default:
+                      return <Globe className={iconClass} />;
+                  }
+                };
+
+                if (socialLinks.length === 0) return null;
+
+                const displayLinks = socialLinks.length > 6 ? socialLinks.slice(0, 5) : socialLinks.slice(0, 6);
+                const remainingCount = socialLinks.length - 5;
+
+                return (
+                  <div className="flex items-center justify-center gap-3 min-h-[40px] flex-wrap">
+                    {displayLinks.map(([platform, linkData]: [string, any]) => {
+                      const url = typeof linkData === 'string' ? linkData : linkData?.link;
+                      if (!url) return null;
+
+                      return (
+                        <button
+                          key={platform}
+                          onClick={() => window.open(url, '_blank')}
+                          className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-md"
+                          title={platform}
+                        >
+                          <div className="text-black dark:text-white">
+                            {getIcon(platform)}
+                          </div>
+                        </button>
+                      );
+                    })}
+                    
+                    {socialLinks.length > 6 && (
+                      <button
+                        onClick={() => setShowAllSocials(true)}
+                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-md"
+                        title={`View all ${socialLinks.length} social links`}
+                      >
+                        <span className="text-black dark:text-white font-semibold text-sm">
+                          +{remainingCount}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* On-chain date - Always render with fixed height */}
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground min-h-[24px]">
                 {firstTransactionDate ? (
@@ -323,6 +404,87 @@ export const ProfileCard = ({
                 ) : null}
               </div>
             </div>
+
+            {/* Expanded Social Icons View - Overlay */}
+            {showAllSocials && web3BioProfile?.links && (
+              <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 animate-fade-in flex items-center justify-center p-6">
+                <div className="w-full max-w-2xl">
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setShowAllSocials(false)}
+                    className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-lg"
+                  >
+                    <X className="w-5 h-5 text-black dark:text-white" />
+                  </button>
+
+                  {/* All Social Icons Grid */}
+                  <div className="space-y-4 animate-scale-in">
+                    <h3 className="text-2xl font-bold text-center text-[#D4AF37] mb-6">Social Links</h3>
+                    
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 max-h-[70vh] overflow-y-auto p-2">
+                      {Object.entries(web3BioProfile.links)
+                        .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
+                        .map(([platform, linkData]: [string, any]) => {
+                          const url = typeof linkData === 'string' ? linkData : linkData?.link;
+                          if (!url) return null;
+
+                          const getIcon = (platform: string) => {
+                            const iconClass = "w-6 h-6";
+                            const platformLower = platform.toLowerCase();
+                            
+                            switch (platformLower) {
+                              case 'twitter':
+                              case 'x':
+                                return <Twitter className={iconClass} />;
+                              case 'instagram':
+                                return <Instagram className={iconClass} />;
+                              case 'linkedin':
+                                return <Linkedin className={iconClass} />;
+                              case 'youtube':
+                                return <Youtube className={iconClass} />;
+                              case 'bluesky':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siBluesky.path} /></svg>;
+                              case 'reddit':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siReddit.path} /></svg>;
+                              case 'whatsapp':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siWhatsapp.path} /></svg>;
+                              case 'facebook':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siFacebook.path} /></svg>;
+                              case 'snapchat':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siSnapchat.path} /></svg>;
+                              case 'github':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siGithub.path} /></svg>;
+                              case 'telegram':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siTelegram.path} /></svg>;
+                              case 'discord':
+                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siDiscord.path} /></svg>;
+                              default:
+                                return <Globe className={iconClass} />;
+                            }
+                          };
+
+                          return (
+                            <button
+                              key={platform}
+                              onClick={() => window.open(url, '_blank')}
+                              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-all hover:scale-105"
+                            >
+                              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-[#D4AF37]/80 shadow-md">
+                                <div className="text-black dark:text-white">
+                                  {getIcon(platform)}
+                                </div>
+                              </div>
+                              <span className="text-xs text-foreground font-medium truncate max-w-full">
+                                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             </div>
           </div>
         )}
