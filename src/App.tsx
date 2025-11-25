@@ -10,7 +10,6 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
 import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
-import { PushProvider } from "@/contexts/PushContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -38,23 +37,21 @@ const App = () => {
             <TonConnectProvider>
               <PetraWalletProvider>
                 <FarcasterAuthProvider>
-                  <PushProvider>
-                    <TooltipProvider>
-                        <Toaster />
-                        <Sonner />
-                        <BrowserRouter>
-                          <Routes>
-                            <Route path="/" element={<Index />} />
-                            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                            <Route path="/terms-of-use" element={<TermsOfUse />} />
-                            {/* User profile routes - must come before catch-all */}
-                            <Route path="/:username" element={<Index />} />
-                            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </BrowserRouter>
-                    </TooltipProvider>
-                  </PushProvider>
+                  <TooltipProvider>
+                      <Toaster />
+                      <Sonner />
+                      <BrowserRouter>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                          <Route path="/terms-of-use" element={<TermsOfUse />} />
+                          {/* User profile routes - must come before catch-all */}
+                          <Route path="/:username" element={<Index />} />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </BrowserRouter>
+                  </TooltipProvider>
                 </FarcasterAuthProvider>
               </PetraWalletProvider>
             </TonConnectProvider>
