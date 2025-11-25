@@ -249,25 +249,31 @@ export const ProfileCard = ({
                 </p>
               )}
 
-              {/* Following/Followers - Always render with fixed height */}
+              {/* Following/Followers - Only show if user has EFP list with counts > 0 */}
               <div className="flex justify-center items-center gap-1.5 text-sm min-h-[24px]">
-                {efpStats ? (
+                {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) ? (
                   <>
-                    <button
-                      onClick={onFollowingClick}
-                      className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
-                    >
-                      <span className="font-semibold text-foreground">{efpStats.following_count}</span>
-                      <span className="text-muted-foreground">Following</span>
-                    </button>
-                    <span className="text-muted-foreground">·</span>
-                    <button
-                      onClick={onFollowersClick}
-                      className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
-                    >
-                      <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
-                      <span className="text-muted-foreground">Followers</span>
-                    </button>
+                    {efpStats.following_count > 0 && (
+                      <>
+                        <button
+                          onClick={onFollowingClick}
+                          className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
+                        >
+                          <span className="font-semibold text-foreground">{efpStats.following_count}</span>
+                          <span className="text-muted-foreground">Following</span>
+                        </button>
+                        {efpStats.followers_count > 0 && <span className="text-muted-foreground">·</span>}
+                      </>
+                    )}
+                    {efpStats.followers_count > 0 && (
+                      <button
+                        onClick={onFollowersClick}
+                        className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
+                      >
+                        <span className="font-semibold text-foreground">{efpStats.followers_count}</span>
+                        <span className="text-muted-foreground">Followers</span>
+                      </button>
+                    )}
                   </>
                 ) : null}
               </div>
