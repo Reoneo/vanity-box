@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
 import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
+import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -33,29 +34,31 @@ const App = () => {
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-            <LanguageProvider>
-            <TonConnectProvider>
-              <PetraWalletProvider>
-                <FarcasterAuthProvider>
-                  <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <BrowserRouter>
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                          <Route path="/terms-of-use" element={<TermsOfUse />} />
-                          {/* User profile routes - must come before catch-all */}
-                          <Route path="/:username" element={<Index />} />
-                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </BrowserRouter>
-                  </TooltipProvider>
-                </FarcasterAuthProvider>
-              </PetraWalletProvider>
-            </TonConnectProvider>
-            </LanguageProvider>
+            <CryptoPriceProvider>
+              <LanguageProvider>
+                <TonConnectProvider>
+                  <PetraWalletProvider>
+                    <FarcasterAuthProvider>
+                      <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <BrowserRouter>
+                          <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                            <Route path="/terms-of-use" element={<TermsOfUse />} />
+                            {/* User profile routes - must come before catch-all */}
+                            <Route path="/:username" element={<Index />} />
+                            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </BrowserRouter>
+                      </TooltipProvider>
+                    </FarcasterAuthProvider>
+                  </PetraWalletProvider>
+                </TonConnectProvider>
+              </LanguageProvider>
+            </CryptoPriceProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </HelmetProvider>
