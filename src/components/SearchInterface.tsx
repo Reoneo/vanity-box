@@ -98,6 +98,7 @@ import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
+import { ProfileSkeleton } from "@/components/ProfileSkeleton";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
@@ -872,7 +873,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             const addressOrName = profileData.address || trimmedQuery;
             let ensTextRecords: Record<string, string> = {};
             
-            const [ensRecordsResult, efpStatsResult, firstTxResult] = await Promise.all([
+            const [ensRecordsResult, efpStatsResult, firstTxResult, poapResult] = await Promise.all([
               // 1. Fetch ENS text records
               (async () => {
                 try {
@@ -963,11 +964,62 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   return null;
                 }
               })(),
+
+              // 4. Fetch POAP data
+              (async () => {
+                if (!profileData.address) return null;
+                try {
+                  console.log('⚡ Fetching POAP data...');
+                  setIsLoadingPoaps(true);
+                  const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+                    body: { walletAddress: profileData.address },
+                  });
+
+                  if (!poapError && poapData?.success) {
+                    // Fetch and store full POAP tokens
+                    const { data: tokensData } = await supabase
+                      .from('poap_tokens')
+                      .select('*')
+                      .eq('wallet_address', profileData.address.toLowerCase());
+                    
+                    console.log('✅ POAP data loaded');
+                    return {
+                      count: poapData.count || 0,
+                      tokens: tokensData || []
+                    };
+                  }
+                  return { count: 0, tokens: [] };
+                } catch (e) {
+                  console.warn('⚠️ POAP data failed:', e);
+                  return { count: 0, tokens: [] };
+                } finally {
+                  setIsLoadingPoaps(false);
+                }
+              })(),
             ]);
 
             ensTextRecords = ensRecordsResult;
             if (efpStatsResult) setEfpStats(efpStatsResult);
             if (firstTxResult) setFirstTransactionDate(firstTxResult);
+            
+            // Set POAP data from parallel fetch
+            if (poapResult) {
+              setPoapCount(poapResult.count);
+              if (poapResult.tokens.length > 0) {
+                setPoapTokens(poapResult.tokens.map((token: any) => ({
+                  eventId: token.event_id,
+                  eventName: token.event_name,
+                  eventDescription: token.event_description,
+                  eventImageUrl: token.event_image_url,
+                  eventStartDate: token.event_start_date,
+                  eventEndDate: token.event_end_date,
+                  eventYear: token.event_year,
+                  tokenId: token.token_id,
+                  owner: token.owner,
+                  chain: token.chain,
+                })));
+              }
+            }
 
             // Map ENS records into state for compatibility
             const records = {
@@ -1094,49 +1146,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               setWeb3BioProfile(updatedProfile);
             } catch (e) {
               console.warn('Failed to map web3.bio profile to ENS records:', e);
-            }
-
-            // Fetch POAP data
-            if (profileData.address) {
-              try {
-                setIsLoadingPoaps(true);
-                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                  body: { walletAddress: profileData.address },
-                });
-
-                if (!poapError && poapData?.success) {
-                  setPoapCount(poapData.count || 0);
-                  
-                  // Fetch and store full POAP tokens
-                  const { data: tokensData } = await supabase
-                    .from('poap_tokens')
-                    .select('*')
-                    .eq('wallet_address', profileData.address.toLowerCase());
-                  
-                  if (tokensData) {
-                    setPoapTokens(tokensData.map((token: any) => ({
-                      eventId: token.event_id,
-                      eventName: token.event_name,
-                      eventDescription: token.event_description,
-                      eventImageUrl: token.event_image_url,
-                      eventStartDate: token.event_start_date,
-                      eventEndDate: token.event_end_date,
-                      eventYear: token.event_year,
-                      tokenId: token.token_id,
-                      owner: token.owner,
-                      chain: token.chain,
-                    })));
-                  }
-                } else {
-                  console.error("Error fetching POAP data:", poapError);
-                  setPoapCount(0);
-                }
-              } catch (poapFetchError) {
-                console.error("Error fetching POAPs:", poapFetchError);
-                setPoapCount(0);
-              } finally {
-                setIsLoadingPoaps(false);
-              }
             }
           }
         } catch (error) {
@@ -1841,8 +1850,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Profile Card with Dock Navigation - dynamic positioning based on search bar */}
-            {web3BioProfile && !showMyIDs && (
+            {isLoading && !web3BioProfile ? (
               <div 
+                className={cn(
+                  "fixed left-0 right-0 flex flex-col z-[9997]",
+                  showSearchBar ? "top-[140px] bottom-[140px] px-4 pt-4" : "top-[80px] bottom-[140px] px-4 pt-4"
+                )}
+              >
+                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+                  <ProfileSkeleton />
+                </div>
+              </div>
+            ) : web3BioProfile && !showMyIDs ? (
+              <div
                 className={cn(
                   "fixed left-0 right-0 flex flex-col z-[9997]",
                   showSearchBar ? "top-[140px] bottom-[140px] px-4 pt-4" : "top-[80px] bottom-[140px] px-4 pt-4"
@@ -1964,7 +1984,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   />
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Loading Indicator */}
             {isLoadingEFP && (
