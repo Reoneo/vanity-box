@@ -98,7 +98,6 @@ import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
-import { ProfileSkeleton } from "@/components/ProfileSkeleton";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
@@ -866,78 +865,30 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             }
             
             console.log('✅ Web3.bio profile data:', profileData);
+            
+            // IMMEDIATE DISPLAY: Show profile right away with basic data
             setWeb3BioProfile(profileData);
             setEnsResults([]);
+            setIsLoading(false); // Stop loading immediately to show profile
 
-            // Parallel data fetching: ENS records, EFP stats, first transaction
+            // STAGE 1: Fetch EFP stats and first transaction (critical for profile display)
             const addressOrName = profileData.address || trimmedQuery;
-            let ensTextRecords: Record<string, string> = {};
-            
-            const [ensRecordsResult, efpStatsResult, firstTxResult, poapResult] = await Promise.all([
-              // 1. Fetch ENS text records
-              (async () => {
-                try {
-                  const publicClient = createPublicClient({
-                    chain: mainnet,
-                    transport: http(),
-                  });
-
-                  let ensNameToQuery: string | null = null;
-                  if (normalizedQuery.endsWith('.eth')) {
-                    ensNameToQuery = normalize(trimmedQuery);
-                  } else if (profileData.address) {
-                    try {
-                      const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
-                      if (primary) ensNameToQuery = normalize(primary);
-                    } catch (_) {}
-                  }
-
-                  if (ensNameToQuery) {
-                    console.log('⚡ Fetching ENS text records...');
-                    const textRecordKeys = [
-                      'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
-                      'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram', 'com.farcaster',
-                      'org.telegram', 'vnd.twitter', 'vnd.github'
-                    ];
-
-                    const recordResults = await Promise.all(
-                      textRecordKeys.map(async (key) => {
-                        try {
-                          const value = await publicClient.getEnsText({ name: ensNameToQuery!, key });
-                          return { key, value };
-                        } catch {
-                          return { key, value: null };
-                        }
-                      })
-                    );
-
-                    const records: Record<string, string> = {};
-                    recordResults.forEach(({ key, value }) => {
-                      if (value) records[key] = value;
-                    });
-                    console.log('✅ ENS text records loaded');
-                    return records;
-                  }
-                  return {};
-                } catch (e) {
-                  console.warn('⚠️ ENS text records failed:', e);
-                  return {};
-                }
-              })(),
-              
-              // 2. Fetch EFP stats
+            Promise.all([
+              // Fetch EFP stats
               (async () => {
                 if (!addressOrName) return null;
                 try {
-                  console.log('⚡ Fetching EFP stats...');
+                  console.log('⚡ Stage 1: Fetching EFP stats...');
                   const efpResponse = await fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`);
                   if (efpResponse.ok) {
                     const efpData = await efpResponse.json();
                     console.log('✅ EFP stats loaded');
-                    return {
+                    const stats = {
                       followers_count: parseInt(efpData.followers_count) || 0,
                       following_count: parseInt(efpData.following_count) || 0,
                     };
+                    setEfpStats(stats);
+                    return stats;
                   }
                   return null;
                 } catch (e) {
@@ -946,16 +897,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 }
               })(),
               
-              // 3. Fetch first transaction
+              // Fetch first transaction
               (async () => {
                 if (!profileData.address) return null;
                 try {
-                  console.log('⚡ Fetching first transaction...');
+                  console.log('⚡ Stage 1: Fetching first transaction...');
                   const { data: txData, error: txError } = await supabase.functions.invoke("get-first-transaction", {
                     body: { address: profileData.address },
                   });
                   if (!txError && txData?.date) {
                     console.log('✅ First transaction loaded');
+                    setFirstTransactionDate(txData.date);
                     return txData.date;
                   }
                   return null;
@@ -964,188 +916,221 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   return null;
                 }
               })(),
+            ]);
 
-              // 4. Fetch POAP data
+            // STAGE 2: Fetch ENS text records (for social dock) - non-blocking
+            (async () => {
+              try {
+                const publicClient = createPublicClient({
+                  chain: mainnet,
+                  transport: http(),
+                });
+
+                let ensNameToQuery: string | null = null;
+                if (normalizedQuery.endsWith('.eth')) {
+                  ensNameToQuery = normalize(trimmedQuery);
+                } else if (profileData.address) {
+                  try {
+                    const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
+                    if (primary) ensNameToQuery = normalize(primary);
+                  } catch (_) {}
+                }
+
+                if (ensNameToQuery) {
+                  console.log('⚡ Stage 2: Fetching ENS text records for socials...');
+                  const textRecordKeys = [
+                    'display', 'description', 'email', 'keywords', 'location', 'name', 'notice', 'phone', 'url', 'avatar', 'header',
+                    'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.youtube', 'com.facebook', 'com.spotify', 'com.linkedin', 'com.instagram', 'com.farcaster',
+                    'org.telegram', 'vnd.twitter', 'vnd.github'
+                  ];
+
+                  const recordResults = await Promise.all(
+                    textRecordKeys.map(async (key) => {
+                      try {
+                        const value = await publicClient.getEnsText({ name: ensNameToQuery!, key });
+                        return { key, value };
+                      } catch {
+                        return { key, value: null };
+                      }
+                    })
+                  );
+
+                  const ensTextRecords: Record<string, string> = {};
+                  recordResults.forEach(({ key, value }) => {
+                    if (value) ensTextRecords[key] = value;
+                  });
+                  console.log('✅ ENS text records loaded for socials');
+
+                  // Map ENS records into state
+                  const records = {
+                    avatar: ensTextRecords.avatar || '',
+                    email: ensTextRecords.email || '',
+                    url: ensTextRecords.url || '',
+                    description: ensTextRecords.description || '',
+                    notice: ensTextRecords.notice || '',
+                    keywords: ensTextRecords.keywords || '',
+                    'com.discord': ensTextRecords['com.discord'] || '',
+                    'com.github': ensTextRecords['com.github'] || '',
+                    'com.twitter': ensTextRecords['com.twitter'] || '',
+                    'org.telegram': ensTextRecords['org.telegram'] || '',
+                    'com.farcaster': ensTextRecords['com.farcaster'] || '',
+                  };
+
+                  setEnsRecords({
+                    name: trimmedQuery,
+                    address: profileData?.address,
+                    avatar: records.avatar || profileData?.avatar,
+                    records,
+                  });
+
+                  // Update profile with ENS social links
+                  const updatedProfile = { ...profileData };
+                  if (!updatedProfile.links) updatedProfile.links = {};
+                  
+                  if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
+                    const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
+                    updatedProfile.links.twitter = {
+                      link: `https://twitter.com/${twitterHandle}`,
+                      handle: twitterHandle
+                    };
+                  }
+                  if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
+                    const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
+                    updatedProfile.links.github = {
+                      link: `https://github.com/${githubHandle}`,
+                      handle: githubHandle
+                    };
+                  }
+                  if (ensTextRecords['com.discord']) {
+                    updatedProfile.links.discord = {
+                      handle: ensTextRecords['com.discord']
+                    };
+                  }
+                  if (ensTextRecords['org.telegram']) {
+                    updatedProfile.links.telegram = {
+                      handle: ensTextRecords['org.telegram']
+                    };
+                  }
+                  if (ensTextRecords['com.reddit']) {
+                    updatedProfile.links.reddit = {
+                      link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
+                      handle: ensTextRecords['com.reddit']
+                    };
+                  }
+                  if (ensTextRecords['com.youtube']) {
+                    updatedProfile.links.youtube = {
+                      link: ensTextRecords['com.youtube'].startsWith('http') 
+                        ? ensTextRecords['com.youtube']
+                        : `https://youtube.com/${ensTextRecords['com.youtube']}`,
+                      handle: ensTextRecords['com.youtube']
+                    };
+                  }
+                  if (ensTextRecords['com.facebook']) {
+                    updatedProfile.links.facebook = {
+                      link: ensTextRecords['com.facebook'].startsWith('http')
+                        ? ensTextRecords['com.facebook']
+                        : `https://facebook.com/${ensTextRecords['com.facebook']}`,
+                      handle: ensTextRecords['com.facebook']
+                    };
+                  }
+                  if (ensTextRecords['com.spotify']) {
+                    updatedProfile.links.spotify = {
+                      link: ensTextRecords['com.spotify'],
+                      handle: ensTextRecords['com.spotify']
+                    };
+                  }
+                  if (ensTextRecords['com.linkedin']) {
+                    updatedProfile.links.linkedin = {
+                      link: ensTextRecords['com.linkedin'].startsWith('http')
+                        ? ensTextRecords['com.linkedin']
+                        : `https://linkedin.com/in/${ensTextRecords['com.linkedin']}`,
+                      handle: ensTextRecords['com.linkedin']
+                    };
+                  }
+                  if (ensTextRecords['com.instagram']) {
+                    updatedProfile.links.instagram = {
+                      link: ensTextRecords['com.instagram'].startsWith('http')
+                        ? ensTextRecords['com.instagram']
+                        : `https://instagram.com/${ensTextRecords['com.instagram']}`,
+                      handle: ensTextRecords['com.instagram']
+                    };
+                  }
+                  if (ensTextRecords['com.farcaster']) {
+                    updatedProfile.links.farcaster = {
+                      link: `https://warpcast.com/${ensTextRecords['com.farcaster']}`,
+                      handle: ensTextRecords['com.farcaster']
+                    };
+                  }
+                  
+                  // Update header from ENS text record
+                  if (ensTextRecords['header']) {
+                    updatedProfile.header = ensTextRecords['header'];
+                  }
+                  
+                  // Merge core ENS text records
+                  if (ensTextRecords['url']) {
+                    updatedProfile.url = ensTextRecords['url'];
+                    updatedProfile.website = ensTextRecords['url'];
+                  }
+                  if (ensTextRecords['email']) {
+                    updatedProfile.email = ensTextRecords['email'];
+                  }
+                  if (ensTextRecords['location']) {
+                    updatedProfile.location = ensTextRecords['location'];
+                  }
+                  if (ensTextRecords['description'] && !updatedProfile.description) {
+                    updatedProfile.description = ensTextRecords['description'];
+                  }
+                  
+                  setWeb3BioProfile(updatedProfile);
+                }
+              } catch (e) {
+                console.warn('⚠️ Stage 2: ENS text records failed:', e);
+              }
+            })();
+
+            // STAGE 3: Fetch POAP data (low priority) - non-blocking
+            if (profileData.address) {
               (async () => {
-                if (!profileData.address) return null;
                 try {
-                  console.log('⚡ Fetching POAP data...');
+                  console.log('⚡ Stage 3: Fetching POAP data...');
                   setIsLoadingPoaps(true);
                   const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
                     body: { walletAddress: profileData.address },
                   });
 
                   if (!poapError && poapData?.success) {
-                    // Fetch and store full POAP tokens
                     const { data: tokensData } = await supabase
                       .from('poap_tokens')
                       .select('*')
                       .eq('wallet_address', profileData.address.toLowerCase());
                     
                     console.log('✅ POAP data loaded');
-                    return {
-                      count: poapData.count || 0,
-                      tokens: tokensData || []
-                    };
+                    setPoapCount(poapData.count || 0);
+                    if (tokensData && tokensData.length > 0) {
+                      setPoapTokens(tokensData.map((token: any) => ({
+                        eventId: token.event_id,
+                        eventName: token.event_name,
+                        eventDescription: token.event_description,
+                        eventImageUrl: token.event_image_url,
+                        eventStartDate: token.event_start_date,
+                        eventEndDate: token.event_end_date,
+                        eventYear: token.event_year,
+                        tokenId: token.token_id,
+                        owner: token.owner,
+                        chain: token.chain,
+                      })));
+                    }
+                  } else {
+                    setPoapCount(0);
                   }
-                  return { count: 0, tokens: [] };
                 } catch (e) {
-                  console.warn('⚠️ POAP data failed:', e);
-                  return { count: 0, tokens: [] };
+                  console.warn('⚠️ Stage 3: POAP data failed:', e);
+                  setPoapCount(0);
                 } finally {
                   setIsLoadingPoaps(false);
                 }
-              })(),
-            ]);
-
-            ensTextRecords = ensRecordsResult;
-            if (efpStatsResult) setEfpStats(efpStatsResult);
-            if (firstTxResult) setFirstTransactionDate(firstTxResult);
-            
-            // Set POAP data from parallel fetch
-            if (poapResult) {
-              setPoapCount(poapResult.count);
-              if (poapResult.tokens.length > 0) {
-                setPoapTokens(poapResult.tokens.map((token: any) => ({
-                  eventId: token.event_id,
-                  eventName: token.event_name,
-                  eventDescription: token.event_description,
-                  eventImageUrl: token.event_image_url,
-                  eventStartDate: token.event_start_date,
-                  eventEndDate: token.event_end_date,
-                  eventYear: token.event_year,
-                  tokenId: token.token_id,
-                  owner: token.owner,
-                  chain: token.chain,
-                })));
-              }
-            }
-
-            // Map ENS records into state for compatibility
-            const records = {
-              avatar: ensTextRecords.avatar || '',
-              email: ensTextRecords.email || '',
-              url: ensTextRecords.url || '',
-              description: ensTextRecords.description || '',
-              notice: ensTextRecords.notice || '',
-              keywords: ensTextRecords.keywords || '',
-              'com.discord': ensTextRecords['com.discord'] || '',
-              'com.github': ensTextRecords['com.github'] || '',
-              'com.twitter': ensTextRecords['com.twitter'] || '',
-              'org.telegram': ensTextRecords['org.telegram'] || '',
-              'com.farcaster': ensTextRecords['com.farcaster'] || '',
-            };
-
-            try {
-              setEnsRecords({
-                name: trimmedQuery,
-                address: profileData?.address,
-                avatar: records.avatar || profileData?.avatar,
-                records,
-              });
-
-              // Update web3BioProfile with ENS social links
-              const updatedProfile = { ...profileData };
-              if (!updatedProfile.links) updatedProfile.links = {};
-              
-              if (ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter']) {
-                const twitterHandle = ensTextRecords['com.twitter'] || ensTextRecords['vnd.twitter'];
-                updatedProfile.links.twitter = {
-                  link: `https://twitter.com/${twitterHandle}`,
-                  handle: twitterHandle
-                };
-              }
-              if (ensTextRecords['com.github'] || ensTextRecords['vnd.github']) {
-                const githubHandle = ensTextRecords['com.github'] || ensTextRecords['vnd.github'];
-                updatedProfile.links.github = {
-                  link: `https://github.com/${githubHandle}`,
-                  handle: githubHandle
-                };
-              }
-              if (ensTextRecords['com.discord']) {
-                updatedProfile.links.discord = {
-                  handle: ensTextRecords['com.discord']
-                };
-              }
-              if (ensTextRecords['org.telegram']) {
-                updatedProfile.links.telegram = {
-                  handle: ensTextRecords['org.telegram']
-                };
-              }
-              if (ensTextRecords['com.reddit']) {
-                updatedProfile.links.reddit = {
-                  link: `https://reddit.com/u/${ensTextRecords['com.reddit']}`,
-                  handle: ensTextRecords['com.reddit']
-                };
-              }
-              if (ensTextRecords['com.youtube']) {
-                updatedProfile.links.youtube = {
-                  link: ensTextRecords['com.youtube'].startsWith('http') 
-                    ? ensTextRecords['com.youtube']
-                    : `https://youtube.com/${ensTextRecords['com.youtube']}`,
-                  handle: ensTextRecords['com.youtube']
-                };
-              }
-              if (ensTextRecords['com.facebook']) {
-                updatedProfile.links.facebook = {
-                  link: ensTextRecords['com.facebook'].startsWith('http')
-                    ? ensTextRecords['com.facebook']
-                    : `https://facebook.com/${ensTextRecords['com.facebook']}`,
-                  handle: ensTextRecords['com.facebook']
-                };
-              }
-              if (ensTextRecords['com.spotify']) {
-                updatedProfile.links.spotify = {
-                  link: ensTextRecords['com.spotify'],
-                  handle: ensTextRecords['com.spotify']
-                };
-              }
-              if (ensTextRecords['com.linkedin']) {
-                updatedProfile.links.linkedin = {
-                  link: ensTextRecords['com.linkedin'].startsWith('http')
-                    ? ensTextRecords['com.linkedin']
-                    : `https://linkedin.com/in/${ensTextRecords['com.linkedin']}`,
-                  handle: ensTextRecords['com.linkedin']
-                };
-              }
-              if (ensTextRecords['com.instagram']) {
-                updatedProfile.links.instagram = {
-                  link: ensTextRecords['com.instagram'].startsWith('http')
-                    ? ensTextRecords['com.instagram']
-                    : `https://instagram.com/${ensTextRecords['com.instagram']}`,
-                  handle: ensTextRecords['com.instagram']
-                };
-              }
-              if (ensTextRecords['com.farcaster']) {
-                updatedProfile.links.farcaster = {
-                  link: `https://warpcast.com/${ensTextRecords['com.farcaster']}`,
-                  handle: ensTextRecords['com.farcaster']
-                };
-              }
-              
-              // Update header from ENS text record if available
-              if (ensTextRecords['header']) {
-                updatedProfile.header = ensTextRecords['header'];
-              }
-              
-              // Merge core ENS text records (url, email, location, description)
-              if (ensTextRecords['url']) {
-                updatedProfile.url = ensTextRecords['url'];
-                updatedProfile.website = ensTextRecords['url'];
-              }
-              if (ensTextRecords['email']) {
-                updatedProfile.email = ensTextRecords['email'];
-              }
-              if (ensTextRecords['location']) {
-                updatedProfile.location = ensTextRecords['location'];
-              }
-              if (ensTextRecords['description'] && !updatedProfile.description) {
-                updatedProfile.description = ensTextRecords['description'];
-              }
-              
-              setWeb3BioProfile(updatedProfile);
-            } catch (e) {
-              console.warn('Failed to map web3.bio profile to ENS records:', e);
+              })();
             }
           }
         } catch (error) {
@@ -1155,9 +1140,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           return;
         }
       }
-
-      setIsLoading(false);
-      return;
     }
 
 
@@ -1850,18 +1832,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Profile Card with Dock Navigation - dynamic positioning based on search bar */}
-            {isLoading && !web3BioProfile ? (
-              <div 
-                className={cn(
-                  "fixed left-0 right-0 flex flex-col z-[9997]",
-                  showSearchBar ? "top-[140px] bottom-[140px] px-4 pt-4" : "top-[80px] bottom-[140px] px-4 pt-4"
-                )}
-              >
-                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
-                  <ProfileSkeleton />
-                </div>
-              </div>
-            ) : web3BioProfile && !showMyIDs ? (
+            {web3BioProfile && !showMyIDs ? (
               <div
                 className={cn(
                   "fixed left-0 right-0 flex flex-col z-[9997]",
