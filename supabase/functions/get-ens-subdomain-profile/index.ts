@@ -76,54 +76,38 @@ serve(async (req) => {
     if (!resolvedAddress) {
       console.log('No address found in records, attempting ENS resolution for:', subdomain);
       
-      // Method 1: Try viem with Cloudflare (with timeout)
-      try {
-        const client = createPublicClient({
-          chain: mainnet,
-          transport: http('https://cloudflare-eth.com'),
-        });
+      // Try multiple RPC endpoints in parallel with reduced timeout
+      const rpcEndpoints = [
+        'https://cloudflare-eth.com',
+        'https://eth.llamarpc.com',
+        'https://rpc.ankr.com/eth'
+      ];
 
+      try {
+        const clients = rpcEndpoints.map(url => 
+          createPublicClient({
+            chain: mainnet,
+            transport: http(url),
+          })
+        );
+
+        // Race all RPC endpoints with 1.5s timeout
         const ensAddress = await Promise.race([
-          client.getEnsAddress({ name: subdomain }),
+          ...clients.map(client => client.getEnsAddress({ name: subdomain })),
           new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout after 3s')), 3000)
+            setTimeout(() => reject(new Error('Timeout after 1.5s')), 1500)
           )
         ]);
 
         if (ensAddress && ensAddress !== '0x0000000000000000000000000000000000000000') {
           resolvedAddress = ensAddress;
-          console.log('✅ Resolved from Cloudflare RPC:', resolvedAddress);
+          console.log('✅ Resolved from parallel RPC:', resolvedAddress);
         }
       } catch (error) {
-        console.log('⚠️ Cloudflare RPC failed:', error.message);
+        console.log('⚠️ All RPC endpoints failed:', error.message);
       }
       
-      // Method 2: Fallback to LlamaRPC if Cloudflare failed
-      if (!resolvedAddress) {
-        try {
-          console.log('Trying fallback RPC endpoint...');
-          const altClient = createPublicClient({
-            chain: mainnet,
-            transport: http('https://eth.llamarpc.com'),
-          });
-
-          const ensAddress = await Promise.race([
-            altClient.getEnsAddress({ name: subdomain }),
-            new Promise<null>((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout after 3s')), 3000)
-            )
-          ]);
-
-          if (ensAddress && ensAddress !== '0x0000000000000000000000000000000000000000') {
-            resolvedAddress = ensAddress;
-            console.log('✅ Resolved from LlamaRPC:', resolvedAddress);
-          }
-        } catch (error) {
-          console.log('⚠️ LlamaRPC failed:', error.message);
-        }
-      }
-      
-      // Method 3: If still no address and this is a subdomain, try parent domain
+      // If still no address and this is a subdomain, try parent domain
       if (!resolvedAddress && subdomain.split('.').length > 2) {
         try {
           const parentDomain = subdomain.split('.').slice(1).join('.');
@@ -137,7 +121,7 @@ serve(async (req) => {
           const parentAddress = await Promise.race([
             parentClient.getEnsAddress({ name: parentDomain }),
             new Promise<null>((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout after 3s')), 3000)
+              setTimeout(() => reject(new Error('Timeout after 1.5s')), 1500)
             )
           ]);
           
