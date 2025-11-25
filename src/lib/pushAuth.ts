@@ -52,8 +52,38 @@ class MiniKitSigner extends ethers.Signer {
         throw new Error('MiniKit signMessage failed');
       }
 
-      console.log('✅ Message signed successfully');
-      return finalPayload.signature;
+      let signature = finalPayload.signature;
+      
+      // Verify and normalize signature format
+      if (!signature.startsWith('0x')) {
+        console.log('⚠️ Adding 0x prefix to signature');
+        signature = '0x' + signature;
+      }
+      
+      // Ensure signature is 65 bytes (130 hex chars + 0x = 132 total)
+      if (signature.length !== 132) {
+        console.error('⚠️ Invalid signature length:', {
+          received: signature.length,
+          expected: 132,
+          signature: signature.substring(0, 20) + '...'
+        });
+        throw new Error(`Invalid signature length: ${signature.length} (expected 132)`);
+      }
+      
+      // Log signature components for debugging
+      const r = signature.substring(0, 66);
+      const s = '0x' + signature.substring(66, 130);
+      const v = signature.substring(130, 132);
+      
+      console.log('✅ Signature format validated:', {
+        length: signature.length,
+        r_length: r.length,
+        s_length: s.length,
+        v: v,
+        v_decimal: parseInt(v, 16)
+      });
+
+      return signature;
     } catch (error) {
       console.error('❌ MiniKit signing failed:', error);
       throw error;
