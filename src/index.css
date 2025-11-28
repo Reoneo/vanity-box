@@ -18,12 +18,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Prevent page scrolling on profile view */
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
-
 /* Allow text selection in input fields */
 input,
 textarea,

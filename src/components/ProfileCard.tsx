@@ -202,10 +202,10 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto">
-          <div className="space-y-4 pb-6">
+          <div className="space-y-4 pb-24">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
-              <div className="w-full h-40 max-h-40 overflow-hidden">
+              <div className="w-full h-40 overflow-hidden">
                 <img
                   src={web3BioProfile?.header || defaultHeader}
                   alt="Header"
@@ -214,13 +214,13 @@ export const ProfileCard = ({
               </div>
 
               <div className="flex justify-center absolute -bottom-20 left-0 right-0">
-                <Avatar className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-background bg-black">
+                <Avatar className="h-40 w-40 border-4 border-background bg-black">
                   <AvatarImage 
                     src={web3BioProfile?.avatar || worldcoinAvatar} 
                     alt={web3BioProfile?.displayName || 'User'}
                     className={!web3BioProfile?.avatar ? "scale-[2]" : ""}
                   />
-                  <AvatarFallback className="text-4xl sm:text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
                     {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
                   </AvatarFallback>
                 </Avatar>
@@ -492,7 +492,7 @@ export const ProfileCard = ({
         {/* Socials Section */}
         {activeSection === 'socials' && (
           <div className="flex-1 overflow-y-auto">
-            <div className="space-y-4 pb-6">
+            <div className="space-y-4 pb-24">
             <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
@@ -782,7 +782,7 @@ export const ProfileCard = ({
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
           <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
-            <div className="space-y-4 pb-6">
+            <div className="space-y-4 pb-24">
             <div className="p-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
