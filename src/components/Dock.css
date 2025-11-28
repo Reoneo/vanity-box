@@ -6,10 +6,7 @@
 }
 
 .dock-panel {
-  position: fixed;
-  bottom: 5rem;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   display: flex;
   align-items: flex-end;
   width: fit-content;
@@ -25,7 +22,6 @@
 
 @media (max-width: 640px) {
   .dock-panel {
-    bottom: 4rem;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
   }
