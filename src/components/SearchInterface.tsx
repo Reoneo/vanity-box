@@ -821,6 +821,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
           if (error) {
             console.error('❌ Error fetching Namestone domain profile:', error);
+            setIsLoading(false);
           } else if (data && !data.error) {
             console.log('✅ Namestone domain profile found:', data);
             setWeb3BioProfile(data);
@@ -829,9 +830,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             if (data.ensRecords) {
               setEnsRecords(data.ensRecords);
             }
+            
+            setIsLoading(false);
+          } else {
+            // No valid profile found
+            setIsLoading(false);
           }
         } catch (error) {
           console.log('❌ Failed to fetch Namestone domain profile:', error);
+          setIsLoading(false);
         }
       } else {
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
