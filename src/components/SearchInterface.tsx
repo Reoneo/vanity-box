@@ -1850,16 +1850,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </>
             )}
 
-            {/* Profile Card with Dock Navigation - dynamic positioning based on search bar */}
+            {/* Profile Card with Dock Navigation - viewport height container */}
             {web3BioProfile && !showMyIDs ? (
               <div
                 className={cn(
-                  "fixed left-0 right-0 flex flex-col z-[9997]",
-                  showSearchBar ? "top-[140px] bottom-[140px] px-4 pt-4" : "top-[80px] bottom-[140px] px-4 pt-4"
+                  "fixed left-0 right-0 flex flex-col overflow-hidden z-[9997]",
+                  showSearchBar ? "top-[140px]" : "top-[80px]"
                 )}
+                style={{ height: showSearchBar ? 'calc(100dvh - 140px)' : 'calc(100dvh - 80px)' }}
               >
-                {/* Profile Card - scrollable content */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+                {/* Profile Card - flex-grow scrollable content */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4" style={{ minHeight: 0 }}>
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={web3BioProfile}
@@ -1880,8 +1881,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   />
                 </div>
 
-                {/* Dock - fixed at bottom with matching gap */}
-                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
+                {/* Dock - shrink-0 at bottom inside container */}
+                <div className="shrink-0 flex items-center justify-center pb-4">
                   <Dock
                     items={[
                       {
