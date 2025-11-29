@@ -868,7 +868,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             toast.error("Profile lookup failed. Please try again.");
             setIsLoading(false);
             return;
-          } else if (data && Array.isArray(data) && data.length > 0) {
+          }
+          
+          // Handle "not found" case gracefully (200 response with notFound flag)
+          if (data?.notFound || !data || (Array.isArray(data) && data.length === 0)) {
+            console.log('ℹ️ Profile not found for:', trimmedQuery);
+            setIsLoading(false);
+            // Don't show error toast - this is a valid "not found" case
+            // The UI will show "No results found" naturally
+            return;
+          }
+          
+          if (Array.isArray(data) && data.length > 0) {
             // Only process if we got valid data (has results)
             let profileData = data[0];
             

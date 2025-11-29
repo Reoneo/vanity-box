@@ -97,10 +97,14 @@ serve(async (req) => {
           const errorText = await response.text();
           console.error('❌ Web3.bio API error:', response.status, errorText);
           
-          // If 404 (not found), don't retry - return immediately
+          // If 404 (not found), don't retry - return 200 with notFound flag
           if (response.status === 404) {
-            return new Response(JSON.stringify({ error: 'Profile not found', notFound: true }), {
-              status: 404,
+            return new Response(JSON.stringify({ 
+              data: null, 
+              notFound: true,
+              message: 'Profile not found' 
+            }), {
+              status: 200,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
           }
