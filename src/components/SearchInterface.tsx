@@ -100,7 +100,7 @@ import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import searchLogo from "@/assets/search-logo.png";
-import { WorldIdAnimation } from "@/components/WorldIdAnimation";
+
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { LoadingProgress } from "@/components/LoadingProgress";
@@ -1724,8 +1724,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </>
                     )}
-
-                    <WorldIdAnimation />
                   </>
                 ) : (
                   <>
