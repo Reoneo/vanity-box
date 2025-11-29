@@ -5,8 +5,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Multiple RPC endpoints for fallback
+const RPC_ENDPOINTS = [
+  'https://rpc.ankr.com/eth',
+  'https://eth.llamarpc.com',
+  'https://cloudflare-eth.com',
+];
+
 // ENS Public Resolver contract address
 const ENS_PUBLIC_RESOLVER = '0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41';
+
+// Timeout wrapper for promises
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) => 
+    setTimeout(() => reject(new Error('Request timeout')), ms)
+  );
+  return Promise.race([promise, timeout]);
+};
+
+// Create provider with fallback RPC endpoints
+async function createProvider(): Promise<ethers.providers.StaticJsonRpcProvider> {
+  console.log('resolve-ens-profile: Attempting to connect to Ethereum...');
+  
+  for (const rpc of RPC_ENDPOINTS) {
+    try {
+      console.log(`resolve-ens-profile: Trying RPC: ${rpc}`);
+      const provider = new ethers.providers.StaticJsonRpcProvider(
+        rpc,
+        { chainId: 1, name: 'mainnet' }
+      );
+      
+      // Test connection with timeout
+      await withTimeout(provider.getBlockNumber(), 5000);
+      console.log(`resolve-ens-profile: Connected successfully to ${rpc}`);
+      return provider;
+    } catch (error) {
+      console.log(`resolve-ens-profile: Failed to connect to ${rpc}:`, error);
+      continue;
+    }
+  }
+  
+  throw new Error('All RPC endpoints failed');
+}
 
 // Text record keys to fetch from ENS
 const ENS_TEXT_KEYS = [
@@ -52,8 +92,8 @@ Deno.serve(async (req) => {
     const trimmedQuery = query.trim().toLowerCase();
     console.log('resolve-ens-profile: Trimmed query:', trimmedQuery);
 
-    // Initialize ethers provider for ENS
-    const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth');
+    // Initialize ethers provider for ENS with fallback
+    const provider = await createProvider();
 
     let ensName: string | null = null;
     let resolvedAddress: string | null = null;
@@ -77,7 +117,7 @@ Deno.serve(async (req) => {
 
       // Get primary ENS name for the address (reverse resolution)
       try {
-        ensName = await provider.lookupAddress(resolvedAddress);
+        ensName = await withTimeout(provider.lookupAddress(resolvedAddress), 10000);
         console.log('resolve-ens-profile: Primary ENS name:', ensName);
       } catch (error) {
         console.log('resolve-ens-profile: No primary ENS name found:', error);
@@ -88,7 +128,7 @@ Deno.serve(async (req) => {
 
       // Resolve ENS name to address
       try {
-        resolvedAddress = await provider.resolveName(ensName);
+        resolvedAddress = await withTimeout(provider.resolveName(ensName), 10000);
         console.log('resolve-ens-profile: Resolved address:', resolvedAddress);
       } catch (error) {
         console.error('resolve-ens-profile: Failed to resolve ENS name:', error);
@@ -107,7 +147,7 @@ Deno.serve(async (req) => {
     // If we have an address but no ENS name, try to get primary name
     if (!ensName && resolvedAddress) {
       try {
-        ensName = await provider.lookupAddress(resolvedAddress);
+        ensName = await withTimeout(provider.lookupAddress(resolvedAddress), 10000);
         console.log('resolve-ens-profile: Got primary ENS name:', ensName);
       } catch (error) {
         console.log('resolve-ens-profile: No primary ENS name available:', error);
@@ -118,9 +158,9 @@ Deno.serve(async (req) => {
     let avatar: string | null = null;
     if (ensName) {
       try {
-        const resolver = await provider.getResolver(ensName);
+        const resolver = await withTimeout(provider.getResolver(ensName), 10000);
         if (resolver) {
-          avatar = await resolver.getText('avatar');
+          avatar = await withTimeout(resolver.getText('avatar'), 5000);
           console.log('resolve-ens-profile: Avatar:', avatar);
         }
       } catch (error) {
@@ -134,13 +174,13 @@ Deno.serve(async (req) => {
       console.log('resolve-ens-profile: Fetching ENS text records for:', ensName);
       
       try {
-        const resolver = await provider.getResolver(ensName);
+        const resolver = await withTimeout(provider.getResolver(ensName), 10000);
         if (resolver) {
           // Fetch all text records
           await Promise.all(
             ENS_TEXT_KEYS.map(async (key) => {
               try {
-                const value = await resolver.getText(key);
+                const value = await withTimeout(resolver.getText(key), 5000);
                 if (value) {
                   ensRecords[key] = value;
                   console.log(`resolve-ens-profile: ${key}:`, value);
