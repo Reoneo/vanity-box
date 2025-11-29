@@ -1552,18 +1552,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             <LoadingProgress isLoading={isLoading} />
             
             {/* Search bar and header - conditional rendering based on search state */}
-            {!showMyIDs && !isLoading && (
+            {!showMyIDs && (
               <>
                 {!isSearchActive ? (
                   <>
                     {/* Before search: Header on top, search below */}
-                    <div className="mt-2">
-
-                      <PersonalizedHeader user={{ walletAddress }} />
-                    </div>
+                    {!isLoading && (
+                      <div className="mt-2">
+                        <PersonalizedHeader user={{ walletAddress }} />
+                      </div>
+                    )}
                     
-                    {showSearchBar && (
-                      <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
+                    <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                           <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
@@ -1693,7 +1693,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </div>
                     </div>
-                    )}
 
                     <WorldIdAnimation />
                   </>
@@ -1715,7 +1714,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
                     )}
                     
-                    {showSearchBar && (
                     <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -1845,7 +1843,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </div>
                     </div>
-                    )}
                   </>
                 )}
               </>
