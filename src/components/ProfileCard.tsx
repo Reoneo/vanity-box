@@ -227,7 +227,7 @@ export const ProfileCard = ({
               </div>
             </div>
 
-            <div className="p-6 pt-24 space-y-2 flex-shrink-0">
+            <div className="p-6 pt-12 space-y-2 flex-shrink-0">
 
               <h2 className="text-3xl font-bold text-center text-foreground">
                 {web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
@@ -301,7 +301,7 @@ export const ProfileCard = ({
                         className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
                       >
                         <Globe className="w-4 h-4" />
-                        {(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}
+                        <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
                       </a>
                     )}
                   </>
