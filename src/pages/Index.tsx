@@ -49,7 +49,7 @@ const Index = () => {
         </div>
         
         {/* Hero Section */}
-        <main className="flex-1 px-4 pt-4 pb-0 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
+        <main className="flex-1 px-4 pt-20 pb-2 relative z-10 flex flex-col items-start justify-start pointer-events-auto">
           <article className="w-full flex flex-col gap-0">
             <SearchInterface />
           </article>

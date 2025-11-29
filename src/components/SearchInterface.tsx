@@ -879,7 +879,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             // IMMEDIATE DISPLAY: Show profile right away with basic data
             setWeb3BioProfile(profileData);
             setEnsResults([]);
-            setIsLoading(false); // ✅ Stop loading immediately after profile displays
 
             // CRITICAL: Fetch EFP stats, first transaction, AND ENS social links together
             const addressOrName = profileData.address || trimmedQuery;
@@ -1552,18 +1551,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             <LoadingProgress isLoading={isLoading} />
             
             {/* Search bar and header - conditional rendering based on search state */}
-            {!showMyIDs && (
+            {!showMyIDs && !isLoading && (
               <>
                 {!isSearchActive ? (
                   <>
                     {/* Before search: Header on top, search below */}
-                    {!isLoading && (
-                      <div className="mt-2">
-                        <PersonalizedHeader user={{ walletAddress }} />
-                      </div>
-                    )}
+                    <div className="mt-2">
+
+                      <PersonalizedHeader user={{ walletAddress }} />
+                    </div>
                     
-                    <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
+                    {showSearchBar && (
+                      <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                           <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
@@ -1693,6 +1692,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </div>
                     </div>
+                    )}
 
                     <WorldIdAnimation />
                   </>
@@ -1714,6 +1714,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
                     )}
                     
+                    {showSearchBar && (
                     <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
                       <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -1843,6 +1844,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         </div>
                       </div>
                     </div>
+                    )}
                   </>
                 )}
               </>
