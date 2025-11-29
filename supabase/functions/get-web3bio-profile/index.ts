@@ -1,16 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createPublicClient, http } from 'npm:viem@2.x';
-import { mainnet } from 'npm:viem@2.x/chains';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Simple normalization function (replaces viem/ens normalize)
-function normalizeEnsName(name: string): string {
-  return name.toLowerCase().trim();
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,40 +26,6 @@ serve(async (req) => {
       throw new Error('WEB3BIO_API_KEY not configured');
     }
 
-    // For .box domains, resolve to address first
-    let lookupHandle = handle;
-    if (handle.toLowerCase().endsWith('.box')) {
-      console.log('🔗 Detected .box domain, resolving to address first...');
-      try {
-        const publicClient = createPublicClient({
-          chain: mainnet,
-          transport: http()
-        });
-        
-        // Add 5-second timeout to ENS resolution
-        const resolveWithTimeout = Promise.race([
-          publicClient.getEnsAddress({
-            name: normalizeEnsName(handle) // Use simple normalization
-          }),
-          new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error('ENS resolution timeout after 5 seconds')), 5000)
-          )
-        ]);
-        
-        const address = await resolveWithTimeout;
-        
-        if (address) {
-          console.log('✅ Resolved .box domain to address:', address);
-          lookupHandle = address;
-        } else {
-          console.warn('⚠️ Could not resolve .box domain, trying original handle');
-        }
-      } catch (ensError: any) {
-        console.warn('⚠️ .box domain resolution failed:', ensError.message);
-        // Continue with original handle if resolution fails
-      }
-    }
-
     // Retry logic with exponential backoff
     const maxRetries = 3;
     const retryDelays = [1000, 2000, 4000]; // 1s, 2s, 4s
@@ -79,8 +38,8 @@ serve(async (req) => {
           await new Promise(resolve => setTimeout(resolve, retryDelays[attempt - 1]));
         }
 
-        // Call web3.bio API with timeout (use resolved address for .box domains)
-        const apiUrl = `https://api.web3.bio/profile/${lookupHandle}`;
+        // Call web3.bio API with timeout
+        const apiUrl = `https://api.web3.bio/profile/${handle}`;
         console.log(`📡 Calling Web3.bio API (attempt ${attempt + 1}):`, apiUrl);
         
         const controller = new AbortController();
