@@ -205,11 +205,11 @@ export const ProfileCard = ({
           <div className="space-y-4 pb-24">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
-              <div className="w-full h-40 overflow-hidden">
+              <div className="w-full h-40 md:h-52 overflow-hidden">
                 <img
                   src={web3BioProfile?.header || defaultHeader}
                   alt="Header"
-                  className="w-full h-full object-cover"
+                  className="block w-full h-full object-cover"
                 />
               </div>
 

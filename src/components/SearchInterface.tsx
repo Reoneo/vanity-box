@@ -1548,7 +1548,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             />
             
             {/* Loading Progress Bar */}
-            <LoadingProgress isLoading={isLoading} />
+            <LoadingProgress isLoading={isLoading && !web3BioProfile} />
             
             {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && !isLoading && (
