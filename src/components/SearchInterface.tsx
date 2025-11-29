@@ -2279,23 +2279,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </div>
             )}
 
-            {/* Wallet Not Connected Message - Show on home screen */}
-            {!web3BioProfile && !showMyIDs && !isLoading && !walletAddress && (
-              <div className="fixed inset-0 flex items-center justify-center z-[9996] pointer-events-none">
-                <div className="text-center px-6 py-8 bg-background/80 backdrop-blur-sm border-2 border-border/50 rounded-2xl max-w-md mx-4 pointer-events-auto">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#D4AF37]/10 flex items-center justify-center">
-                    <User className="w-8 h-8 text-[#D4AF37]" />
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">
-                    {t('connect_wallet') || 'Connect Your Wallet'}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Connect your wallet to view your profile and manage your IDs
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
               <div className="w-full max-w-6xl mx-auto px-4 mt-8 space-y-2 will-change-transform" style={{ transform: 'translateZ(0)' }}>
