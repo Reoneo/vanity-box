@@ -18,6 +18,7 @@ import {
   Check,
   Info,
   Home,
+  Pencil,
 } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
@@ -1907,10 +1908,29 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <Dock
                     items={[
                       {
+                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Home',
+                        onClick: () => {
+                          setWeb3BioProfile(null);
+                          setIsSearchActive(false);
+                          setActiveDockSection('profile');
+                        },
+                        isActive: false,
+                      },
+                      {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('profile'),
                         onClick: () => setActiveDockSection('profile'),
                         isActive: activeDockSection === 'profile',
+                      },
+                      {
+                        icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
+                        label: 'Edit',
+                        onClick: () => {
+                          setShowMyIDs(true);
+                          setActiveDockSection('profile');
+                        },
+                        isActive: false,
                       },
                       // Only show NFT icon if NFTs are found (not while loading)
                       ...(nfts && nfts.length > 0 ? [{
@@ -2176,10 +2196,103 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </div>
             )}
 
-            {/* My ID's Section */}
+            {/* My ID's Section with Dock */}
             {walletAddress && showMyIDs && (
-              <div className="w-full sm:max-w-3xl sm:mx-auto mt-8">
-                <UserDomainsDisplay walletAddress={walletAddress} />
+              <div className="fixed left-0 right-0 flex flex-col z-[9997] top-[80px] bottom-[140px] px-4 pt-4">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+                  <UserDomainsDisplay walletAddress={walletAddress} />
+                </div>
+
+                {/* Dock for My ID's page */}
+                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
+                  <Dock
+                    items={[
+                      {
+                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Home',
+                        onClick: () => {
+                          setShowMyIDs(false);
+                          setWeb3BioProfile(null);
+                          setIsSearchActive(false);
+                          setActiveDockSection('profile');
+                        },
+                        isActive: false,
+                      },
+                      {
+                        icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                        label: t('my_ids'),
+                        onClick: () => {},
+                        isActive: true,
+                      },
+                      {
+                        icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Search',
+                        onClick: () => {
+                          setShowSearchBar(prev => !prev);
+                        },
+                        isActive: showSearchBar,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Home Screen Dock - Show when no profile and not My ID's */}
+            {!web3BioProfile && !showMyIDs && !isLoading && (
+              <div className="fixed bottom-0 left-0 right-0 z-[9997] flex items-center justify-center pb-4">
+                <Dock
+                  items={[
+                    {
+                      icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Profile',
+                      onClick: () => {
+                        if (!walletAddress) {
+                          toast.error('Please connect your wallet first');
+                        }
+                      },
+                      isActive: false,
+                    },
+                    {
+                      icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
+                      label: 'My IDs',
+                      onClick: () => {
+                        if (walletAddress) {
+                          setShowMyIDs(true);
+                          setActiveDockSection('profile');
+                        } else {
+                          toast.error('Please connect your wallet first');
+                        }
+                      },
+                      isActive: false,
+                    },
+                    {
+                      icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Search',
+                      onClick: () => {
+                        setShowSearchBar(prev => !prev);
+                      },
+                      isActive: showSearchBar,
+                    },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Wallet Not Connected Message - Show on home screen */}
+            {!web3BioProfile && !showMyIDs && !isLoading && !walletAddress && (
+              <div className="fixed inset-0 flex items-center justify-center z-[9996] pointer-events-none">
+                <div className="text-center px-6 py-8 bg-background/80 backdrop-blur-sm border-2 border-border/50 rounded-2xl max-w-md mx-4 pointer-events-auto">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#D4AF37]/10 flex items-center justify-center">
+                    <User className="w-8 h-8 text-[#D4AF37]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    {t('connect_wallet') || 'Connect Your Wallet'}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Connect your wallet to view your profile and manage your IDs
+                  </p>
+                </div>
               </div>
             )}
 
