@@ -1,10 +1,12 @@
-import { ENS } from 'https://esm.sh/@ensdomains/ensjs@4.0.3';
 import { ethers } from 'https://esm.sh/ethers@5.7.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// ENS Public Resolver contract address
+const ENS_PUBLIC_RESOLVER = '0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41';
 
 // Text record keys to fetch from ENS
 const ENS_TEXT_KEYS = [
@@ -21,6 +23,11 @@ const ENS_TEXT_KEYS = [
   'org.telegram',
   'com.reddit',
   'com.spotify',
+];
+
+// Resolver ABI for text records
+const RESOLVER_ABI = [
+  'function text(bytes32 node, string key) view returns (string)',
 ];
 
 Deno.serve(async (req) => {
@@ -45,10 +52,8 @@ Deno.serve(async (req) => {
     const trimmedQuery = query.trim().toLowerCase();
     console.log('resolve-ens-profile: Trimmed query:', trimmedQuery);
 
-    // Initialize ENS with ethers provider
+    // Initialize ethers provider for ENS
     const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth');
-    const ens = new ENS();
-    await ens.setProvider(provider);
 
     let ensName: string | null = null;
     let resolvedAddress: string | null = null;
@@ -58,7 +63,17 @@ Deno.serve(async (req) => {
     if (trimmedQuery.startsWith('0x') && trimmedQuery.length === 42) {
       console.log('resolve-ens-profile: Query is a wallet address');
       isQueryAddress = true;
-      resolvedAddress = ethers.utils.getAddress(trimmedQuery); // Checksum address
+      
+      try {
+        resolvedAddress = ethers.utils.getAddress(trimmedQuery); // Checksum address
+        console.log('resolve-ens-profile: Checksummed address:', resolvedAddress);
+      } catch (error) {
+        console.error('resolve-ens-profile: Invalid address format:', error);
+        return new Response(
+          JSON.stringify({ data: null, notFound: true, message: 'Invalid address format' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Get primary ENS name for the address (reverse resolution)
       try {
@@ -99,26 +114,45 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch full ENS profile using ENS.js
-    let profile: any = null;
-    let ensRecords: Record<string, string> = {};
-    
+    // Fetch ENS avatar using built-in ethers method
+    let avatar: string | null = null;
     if (ensName) {
       try {
-        console.log('resolve-ens-profile: Fetching full profile for:', ensName);
-        profile = await ens.name(ensName).getProfile();
-        console.log('resolve-ens-profile: Profile fetched:', profile);
-
-        // Extract text records
-        if (profile?.records?.texts) {
-          profile.records.texts.forEach((record: any) => {
-            if (record.key && record.value) {
-              ensRecords[record.key] = record.value;
-            }
-          });
+        const resolver = await provider.getResolver(ensName);
+        if (resolver) {
+          avatar = await resolver.getText('avatar');
+          console.log('resolve-ens-profile: Avatar:', avatar);
         }
       } catch (error) {
-        console.log('resolve-ens-profile: Error fetching profile:', error);
+        console.log('resolve-ens-profile: No avatar found:', error);
+      }
+    }
+
+    // Fetch ENS text records using resolver
+    const ensRecords: Record<string, string> = {};
+    if (ensName) {
+      console.log('resolve-ens-profile: Fetching ENS text records for:', ensName);
+      
+      try {
+        const resolver = await provider.getResolver(ensName);
+        if (resolver) {
+          // Fetch all text records
+          await Promise.all(
+            ENS_TEXT_KEYS.map(async (key) => {
+              try {
+                const value = await resolver.getText(key);
+                if (value) {
+                  ensRecords[key] = value;
+                  console.log(`resolve-ens-profile: ${key}:`, value);
+                }
+              } catch (error) {
+                // Silently skip missing records
+              }
+            })
+          );
+        }
+      } catch (error) {
+        console.log('resolve-ens-profile: Error fetching text records:', error);
       }
     }
 
@@ -126,8 +160,8 @@ Deno.serve(async (req) => {
     const responseProfile = {
       identity: ensName || resolvedAddress,
       platform: 'ens',
-      displayName: ensRecords.display || profile?.name || ensName || resolvedAddress,
-      avatar: profile?.records?.avatar || ensRecords.avatar || null,
+      displayName: ensRecords.display || ensName || resolvedAddress,
+      avatar: avatar || ensRecords.avatar || null,
       header: ensRecords.header || null,
       description: ensRecords.description || null,
       email: ensRecords.email || null,
@@ -142,7 +176,6 @@ Deno.serve(async (req) => {
         website: ensRecords.url ? { link: ensRecords.url, handle: ensRecords.url } : null,
       },
       ensRecords,
-      rawProfile: profile, // Include full ENS.js profile for debugging
     };
 
     console.log('resolve-ens-profile: Response profile built successfully');
