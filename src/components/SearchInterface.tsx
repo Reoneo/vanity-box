@@ -807,14 +807,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const normalizedQuery = trimmedQuery.toLowerCase();
 
       // Detect if this is a Namestone domain or subdomain
-      // Check for Namestone TLDs (.world, .cash, etc.) OR subdomains (2+ dots)
+      // ENS-compatible TLDs that should use ENS resolution: .eth, .box
+      const ensCompatibleTLDs = ['.eth', '.box'];
+      const isEnsCompatible = ensCompatibleTLDs.some(tld => normalizedQuery.endsWith(tld));
+      
+      // Namestone TLDs (.world, .cash, etc.)
       const namesoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
       const isNamestoneTLD = namesoneTLDs.some(tld => normalizedQuery.endsWith(tld));
+      
+      // Check for subdomains (2+ dots) - but ENS-compatible domains use ENS resolution even with subdomains
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
-      const isNamestoneSubdomain = dotCount >= 2;
+      const isNamestoneSubdomain = dotCount >= 2 && !isEnsCompatible;
       const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
       
-      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}`);
+      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, ENS-compatible: ${isEnsCompatible}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}`);
 
       // Use different fetch strategies based on name type
       if (isNamestoneDomain) {
@@ -847,8 +853,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           setIsLoading(false);
         }
       } else {
-        // Direct ENS resolution for ENS domains and wallet addresses
-        console.log('🔍 Fetching direct ENS profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
+        // Direct ENS resolution for ENS-compatible domains (.eth, .box) and wallet addresses
+        const queryType = isWalletAddress ? 'wallet address (reverse lookup)' : isEnsCompatible ? 'ENS-compatible domain' : 'ENS domain';
+        console.log(`🔍 Fetching ENS profile for ${queryType}:`, isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
           const { data, error } = await supabase.functions.invoke('resolve-ens-profile', {
             body: { query: isWalletAddress ? normalizedAddress : trimmedQuery }

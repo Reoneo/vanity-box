@@ -129,29 +129,66 @@ serve(async (req) => {
     let resolvedAddress: string | null = null;
     let profile: any = null;
 
-    // Determine if query is an address or ENS name
+    // Determine if query is an address or ENS/ENS-compatible domain name
     const isAddress = /^0x[a-fA-F0-9]{40}$/.test(trimmedQuery);
-    console.log('resolve-ens-profile: Query is', isAddress ? 'address' : 'ENS name');
+    const isBoxDomain = /\.box$/i.test(trimmedQuery);
+    const isEnsDomain = /\.eth$/i.test(trimmedQuery);
+    const isEnsCompatible = isEnsDomain || isBoxDomain;
+    
+    console.log('resolve-ens-profile: Query analysis:', { 
+      isAddress, 
+      isBoxDomain, 
+      isEnsDomain, 
+      isEnsCompatible,
+      query: trimmedQuery 
+    });
 
     try {
-    // Strategy 1: Try Web3.bio FIRST (has better ENS avatar + text records)
-    console.log('🌐 Strategy 1: Trying Web3.bio (primary)...');
-    
-    try {
-      const web3bioData = await fetchFromWeb3Bio(trimmedQuery);
+    // Strategy 1: If it's an address, try REVERSE lookup first
+    if (isAddress) {
+      console.log('🔄 Reverse ENS lookup for address:', trimmedQuery);
       
-      if (web3bioData && web3bioData.address) {
-        console.log('✅ Web3.bio resolved profile with full data');
-        profile = web3bioData;
-        resolvedAddress = web3bioData.address;
+      try {
+        const web3bioData = await fetchFromWeb3Bio(trimmedQuery);
+        
+        if (web3bioData && web3bioData.identity) {
+          console.log('✅ Reverse lookup successful:', web3bioData.identity);
+          // For reverse lookups, use the resolved name as the primary identity
+          ensName = web3bioData.identity;
+          profile = web3bioData;
+          resolvedAddress = trimmedQuery; // The input was already the address
+        }
+      } catch (reverseError: any) {
+        console.warn('⚠️ Reverse lookup failed:', reverseError.message);
       }
-    } catch (web3bioError: any) {
-      console.warn('⚠️ Web3.bio failed:', web3bioError.message);
+    }
+    
+    // Strategy 2: For .box and .eth domains (or if reverse lookup succeeded), try Web3.bio
+    if (!profile && (isEnsCompatible || isAddress)) {
+      console.log('🌐 Strategy 2: Trying Web3.bio (primary for ENS-compatible domains)...');
+      
+      try {
+        const web3bioData = await fetchFromWeb3Bio(trimmedQuery);
+        
+        if (web3bioData && web3bioData.address) {
+          console.log('✅ Web3.bio resolved profile with full data');
+          profile = web3bioData;
+          resolvedAddress = web3bioData.address;
+          
+          // For .box domains, mark them as ENS-compatible
+          if (isBoxDomain) {
+            profile.platform = 'ens';
+            profile.isBoxDomain = true;
+          }
+        }
+      } catch (web3bioError: any) {
+        console.warn('⚠️ Web3.bio failed:', web3bioError.message);
+      }
     }
 
-    // Strategy 2: Try The Graph as fallback (for basic address resolution)
-    if (!profile || !resolvedAddress) {
-      console.log('📊 Strategy 2: Trying The Graph ENS Subgraph fallback...');
+    // Strategy 3: Try The Graph as fallback (only for .eth domains)
+    if (!profile && isEnsDomain) {
+      console.log('📊 Strategy 3: Trying The Graph ENS Subgraph fallback (ETH only)...');
       
       try {
         const graphData = await fetchFromGraph(ensName);
