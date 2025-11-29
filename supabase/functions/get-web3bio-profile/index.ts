@@ -47,7 +47,7 @@ serve(async (req) => {
 
         const response = await fetch(apiUrl, {
           headers: {
-            'Authorization': `Bearer ${WEB3BIO_API_KEY}`,
+            'X-API-KEY': `Bearer ${WEB3BIO_API_KEY}`,
             'Content-Type': 'application/json',
           },
           signal: controller.signal,
