@@ -846,10 +846,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         // EXISTING PATH: Web3.bio lookup for regular names and wallet addresses
         console.log('🔍 Fetching web3.bio profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
+          // Set a 15-second safety timeout to force clear loading state
+          const loadingTimeout = setTimeout(() => {
+            console.warn('⚠️ Loading timeout reached after 15 seconds, forcing clear');
+            setIsLoading(false);
+            toast.error("Request timed out. Please try again.");
+          }, 15000);
+          
           // Use edge function to call web3.bio API with proper authentication
           const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
             body: { handle: isWalletAddress ? normalizedAddress : trimmedQuery }
           });
+          
+          // Clear the timeout since request completed
+          clearTimeout(loadingTimeout);
 
           console.log('📥 Web3.bio response:', { data, error });
 
@@ -1150,6 +1160,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 }
               })();
             }
+          } else {
+            // No valid data returned and no error - clear loading state
+            console.log('⚠️ No profile data found');
+            setIsLoading(false);
           }
         } catch (error) {
           console.log("web3.bio failed:", error);
