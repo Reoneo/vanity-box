@@ -16,14 +16,14 @@ export const LoadingProgress = ({ isLoading }: LoadingProgressProps) => {
 
     setProgress(0);
     
-    // Simulate progressive loading with realistic timing
+    // Simulate progressive loading with faster timing
     const intervals = [
-      { time: 100, value: 10 },   // Initial connection
-      { time: 300, value: 25 },   // Fetching profile
-      { time: 600, value: 45 },   // Loading data
-      { time: 1000, value: 65 },  // Processing
-      { time: 1500, value: 85 },  // Almost there
-      { time: 2000, value: 95 },  // Final touches
+      { time: 50, value: 10 },    // Initial connection
+      { time: 150, value: 25 },   // Fetching profile
+      { time: 300, value: 45 },   // Loading data
+      { time: 500, value: 65 },   // Processing
+      { time: 750, value: 85 },   // Almost there
+      { time: 1000, value: 95 },  // Final touches
     ];
 
     const timers = intervals.map(({ time, value }) => 
