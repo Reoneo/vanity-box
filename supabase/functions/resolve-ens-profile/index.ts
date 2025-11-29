@@ -1,6 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import { createPublicClient, http, isAddress, normalize } from 'https://esm.sh/viem@2.37.5';
-import { mainnet } from 'https://esm.sh/viem@2.37.5/chains';
+import { ENS } from 'https://esm.sh/@ensdomains/ensjs@4.0.3';
+import { ethers } from 'https://esm.sh/ethers@5.7.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,25 +45,24 @@ Deno.serve(async (req) => {
     const trimmedQuery = query.trim().toLowerCase();
     console.log('resolve-ens-profile: Trimmed query:', trimmedQuery);
 
-    // Initialize viem public client for ENS resolution
-    const publicClient = createPublicClient({
-      chain: mainnet,
-      transport: http('https://eth.llamarpc.com'),
-    });
+    // Initialize ENS with ethers provider
+    const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth');
+    const ens = new ENS();
+    await ens.setProvider(provider);
 
-    let resolvedAddress: string | null = null;
     let ensName: string | null = null;
+    let resolvedAddress: string | null = null;
     let isQueryAddress = false;
 
     // Determine if query is an address or ENS name
-    if (isAddress(trimmedQuery)) {
+    if (trimmedQuery.startsWith('0x') && trimmedQuery.length === 42) {
       console.log('resolve-ens-profile: Query is a wallet address');
       isQueryAddress = true;
-      resolvedAddress = trimmedQuery;
+      resolvedAddress = ethers.utils.getAddress(trimmedQuery); // Checksum address
 
-      // Get primary ENS name for the address
+      // Get primary ENS name for the address (reverse resolution)
       try {
-        ensName = await publicClient.getEnsName({ address: trimmedQuery as `0x${string}` });
+        ensName = await provider.lookupAddress(resolvedAddress);
         console.log('resolve-ens-profile: Primary ENS name:', ensName);
       } catch (error) {
         console.log('resolve-ens-profile: No primary ENS name found:', error);
@@ -75,7 +73,7 @@ Deno.serve(async (req) => {
 
       // Resolve ENS name to address
       try {
-        resolvedAddress = await publicClient.getEnsAddress({ name: normalize(ensName) });
+        resolvedAddress = await provider.resolveName(ensName);
         console.log('resolve-ens-profile: Resolved address:', resolvedAddress);
       } catch (error) {
         console.error('resolve-ens-profile: Failed to resolve ENS name:', error);
@@ -94,53 +92,42 @@ Deno.serve(async (req) => {
     // If we have an address but no ENS name, try to get primary name
     if (!ensName && resolvedAddress) {
       try {
-        ensName = await publicClient.getEnsName({ address: resolvedAddress as `0x${string}` });
+        ensName = await provider.lookupAddress(resolvedAddress);
         console.log('resolve-ens-profile: Got primary ENS name:', ensName);
       } catch (error) {
         console.log('resolve-ens-profile: No primary ENS name available:', error);
       }
     }
 
-    // Fetch ENS avatar
-    let avatar: string | null = null;
+    // Fetch full ENS profile using ENS.js
+    let profile: any = null;
+    let ensRecords: Record<string, string> = {};
+    
     if (ensName) {
       try {
-        avatar = await publicClient.getEnsAvatar({ name: normalize(ensName) });
-        console.log('resolve-ens-profile: Avatar:', avatar);
+        console.log('resolve-ens-profile: Fetching full profile for:', ensName);
+        profile = await ens.name(ensName).getProfile();
+        console.log('resolve-ens-profile: Profile fetched:', profile);
+
+        // Extract text records
+        if (profile?.records?.texts) {
+          profile.records.texts.forEach((record: any) => {
+            if (record.key && record.value) {
+              ensRecords[record.key] = record.value;
+            }
+          });
+        }
       } catch (error) {
-        console.log('resolve-ens-profile: No avatar found:', error);
+        console.log('resolve-ens-profile: Error fetching profile:', error);
       }
     }
 
-    // Fetch all ENS text records
-    const ensRecords: Record<string, string> = {};
-    if (ensName) {
-      console.log('resolve-ens-profile: Fetching ENS text records for:', ensName);
-      
-      await Promise.all(
-        ENS_TEXT_KEYS.map(async (key) => {
-          try {
-            const value = await publicClient.getEnsText({
-              name: normalize(ensName!),
-              key,
-            });
-            if (value) {
-              ensRecords[key] = value;
-              console.log(`resolve-ens-profile: ${key}:`, value);
-            }
-          } catch (error) {
-            // Silently skip missing records
-          }
-        })
-      );
-    }
-
-    // Build profile object compatible with existing UI
-    const profile = {
+    // Build response object compatible with existing UI
+    const responseProfile = {
       identity: ensName || resolvedAddress,
       platform: 'ens',
-      displayName: ensRecords.display || ensName || resolvedAddress,
-      avatar: avatar || ensRecords.avatar || null,
+      displayName: ensRecords.display || profile?.name || ensName || resolvedAddress,
+      avatar: profile?.records?.avatar || ensRecords.avatar || null,
       header: ensRecords.header || null,
       description: ensRecords.description || null,
       email: ensRecords.email || null,
@@ -155,12 +142,13 @@ Deno.serve(async (req) => {
         website: ensRecords.url ? { link: ensRecords.url, handle: ensRecords.url } : null,
       },
       ensRecords,
+      rawProfile: profile, // Include full ENS.js profile for debugging
     };
 
-    console.log('resolve-ens-profile: Profile built successfully');
+    console.log('resolve-ens-profile: Response profile built successfully');
 
     return new Response(
-      JSON.stringify(profile),
+      JSON.stringify(responseProfile),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
