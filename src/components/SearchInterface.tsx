@@ -2045,6 +2045,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 <Dock
                   items={[
                     {
+                      icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Home',
+                      onClick: () => {
+                        // Reset to initial state
+                        setIsSearchActive(false);
+                        setHasSearched(false);
+                        setShowSearchBar(false);
+                        setWeb3BioProfile(null);
+                        setSearchQuery('');
+                        setEnsResults(getAllResults());
+                      },
+                      isActive: false,
+                    },
+                    {
                       icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Profile',
                       onClick: () => {
@@ -2074,6 +2088,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Search',
                       onClick: () => {
+                        // Reset isSearchActive to show the modal-style search overlay
+                        setIsSearchActive(false);
                         setShowSearchBar(prev => !prev);
                       },
                       isActive: showSearchBar,

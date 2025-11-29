@@ -71,7 +71,7 @@ const RESOLVER_ABI = [
 ];
 
 Deno.serve(async (req) => {
-  console.log('resolve-ens-profile: Function invoked');
+  console.log('resolve-ens-profile: Function invoked, version 3.0');
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -92,8 +92,21 @@ Deno.serve(async (req) => {
     const trimmedQuery = query.trim().toLowerCase();
     console.log('resolve-ens-profile: Trimmed query:', trimmedQuery);
 
-    // Initialize ethers provider for ENS with fallback
-    const provider = await createProvider();
+    // Initialize ethers provider for ENS with fallback and better error handling
+    let provider;
+    try {
+      console.log('resolve-ens-profile: Calling createProvider()...');
+      provider = await createProvider();
+      console.log('resolve-ens-profile: Provider created successfully');
+    } catch (providerError) {
+      console.error('resolve-ens-profile: createProvider() failed:', providerError);
+      // Fallback: create inline provider
+      console.log('resolve-ens-profile: Using fallback inline provider');
+      provider = new ethers.providers.StaticJsonRpcProvider(
+        'https://eth.llamarpc.com',
+        { chainId: 1, name: 'mainnet' }
+      );
+    }
 
     let ensName: string | null = null;
     let resolvedAddress: string | null = null;
