@@ -856,16 +856,47 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
           console.log('📥 Direct ENS response:', { data, error });
 
-          if (error) {
-            console.error('❌ Error fetching ENS profile:', error);
-            toast.error("Profile lookup failed. Please try again.");
-            setIsLoading(false);
-            return;
-          }
-          
-          // Handle "not found" case gracefully
-          if (data?.notFound || !data) {
-            console.log('ℹ️ Profile not found for:', trimmedQuery);
+          // If ENS resolution fails or returns not found, try Web3.bio fallback
+          if (error || data?.notFound || !data) {
+            console.log('⚠️ ENS resolution failed, trying Web3.bio fallback...');
+            
+            try {
+              const { data: web3bioData, error: web3bioError } = await supabase.functions.invoke('get-web3bio-profile', {
+                body: { handle: trimmedQuery }
+              });
+
+              if (!web3bioError && web3bioData && !web3bioData.notFound) {
+                console.log('✅ Web3.bio fallback successful');
+                setWeb3BioProfile(web3bioData);
+                setEnsResults([]);
+                setIsLoading(false);
+                
+                // Fetch additional data for the fallback profile
+                const address = web3bioData.address;
+                if (address) {
+                  fetch(`https://api.ethfollow.xyz/api/v1/users/${address}/stats`)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(data => {
+                      if (data) {
+                        setEfpStats({
+                          followers_count: data.followers_count || 0,
+                          following_count: data.following_count || 0,
+                        });
+                      }
+                    })
+                    .catch(err => console.log('EFP stats fetch failed:', err));
+                }
+                return;
+              }
+            } catch (fallbackError) {
+              console.warn('⚠️ Web3.bio fallback also failed:', fallbackError);
+            }
+
+            // Both failed - show error
+            console.log('ℹ️ Profile not found in ENS or Web3.bio');
+            if (error) {
+              toast.error("Profile lookup failed. Please try again.");
+            }
             setIsLoading(false);
             return;
           }
