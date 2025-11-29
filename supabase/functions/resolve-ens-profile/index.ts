@@ -134,59 +134,56 @@ serve(async (req) => {
     console.log('resolve-ens-profile: Query is', isAddress ? 'address' : 'ENS name');
 
     try {
-      // Strategy 1: Try The Graph ENS Subgraph
-      console.log('📊 Strategy 1: Trying The Graph ENS Subgraph...');
+    // Strategy 1: Try Web3.bio FIRST (has better ENS avatar + text records)
+    console.log('🌐 Strategy 1: Trying Web3.bio (primary)...');
+    
+    try {
+      const web3bioData = await fetchFromWeb3Bio(trimmedQuery);
       
-      const graphData = await fetchFromGraph(ensName);
-      
-      if (graphData?.domains && graphData.domains.length > 0) {
-        const domain = graphData.domains[0];
-        resolvedAddress = domain.resolvedAddress?.id || domain.owner?.id || null;
-        
-        console.log('✅ The Graph resolved:', { ensName, resolvedAddress });
-
-        // Build profile from The Graph data
-        const textRecords: Record<string, string> = {};
-        if (domain.resolver?.texts && Array.isArray(domain.resolver.texts)) {
-          domain.resolver.texts.forEach((text: string) => {
-            textRecords[text] = text; // The Graph only returns keys, not values
-          });
-        }
-
-        profile = {
-          identity: ensName,
-          platform: 'ens',
-          displayName: ensName,
-          address: resolvedAddress,
-          avatar: null,
-          description: null,
-          links: {},
-          ensRecords: textRecords,
-          source: 'the-graph'
-        };
-      } else {
-        console.log('⚠️ No data from The Graph for:', ensName);
+      if (web3bioData && web3bioData.address) {
+        console.log('✅ Web3.bio resolved profile with full data');
+        profile = web3bioData;
+        resolvedAddress = web3bioData.address;
       }
-    } catch (graphError: any) {
-      console.warn('⚠️ The Graph failed:', graphError.message);
+    } catch (web3bioError: any) {
+      console.warn('⚠️ Web3.bio failed:', web3bioError.message);
     }
 
-    // Strategy 2: Try Web3.bio as fallback (it has better ENS text record resolution)
+    // Strategy 2: Try The Graph as fallback (for basic address resolution)
     if (!profile || !resolvedAddress) {
-      console.log('🌐 Strategy 2: Trying Web3.bio fallback...');
+      console.log('📊 Strategy 2: Trying The Graph ENS Subgraph fallback...');
       
       try {
-        const web3bioData = await fetchFromWeb3Bio(trimmedQuery);
+        const graphData = await fetchFromGraph(ensName);
         
-        if (web3bioData) {
-          console.log('✅ Web3.bio resolved profile');
-          profile = web3bioData;
-          resolvedAddress = web3bioData.address || resolvedAddress;
+        if (graphData?.domains && graphData.domains.length > 0) {
+          const domain = graphData.domains[0];
+          resolvedAddress = domain.resolvedAddress?.id || domain.owner?.id || null;
+          
+          console.log('✅ The Graph resolved basic data:', { ensName, resolvedAddress });
+
+          // Build minimal profile from The Graph data
+          profile = {
+            identity: ensName,
+            platform: 'ens',
+            displayName: ensName,
+            address: resolvedAddress,
+            avatar: null,
+            description: null,
+            links: {},
+            ensRecords: {},
+            source: 'the-graph'
+          };
+        } else {
+          console.log('⚠️ No data from The Graph for:', ensName);
         }
-      } catch (web3bioError: any) {
-        console.warn('⚠️ Web3.bio fallback failed:', web3bioError.message);
+      } catch (graphError: any) {
+        console.warn('⚠️ The Graph fallback failed:', graphError.message);
       }
     }
+  } catch (error: any) {
+    console.error('❌ Profile resolution error:', error.message);
+  }
 
     // If still no profile found, return not found
     if (!profile || !resolvedAddress) {
