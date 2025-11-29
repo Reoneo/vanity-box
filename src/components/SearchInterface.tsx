@@ -1571,11 +1571,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <>
                 {!isSearchActive ? (
                   <>
-                    {/* Before search: Header on top, search below */}
-                    <div className="mt-2">
-
-                      <PersonalizedHeader user={{ walletAddress }} />
-                    </div>
+                    {/* Coming Soon Display - Only show when no profile and search bar is closed */}
+                    {!web3BioProfile && !showSearchBar && (
+                      <div className="flex items-center justify-center min-h-[50vh]">
+                        <h1 className="text-6xl font-bold text-[#D4AF37] animate-pulse">
+                          Coming Soon
+                        </h1>
+                      </div>
+                    )}
                     
                     {showSearchBar && (
                       <>
@@ -1588,15 +1591,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         {/* Centered search modal */}
                         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none">
                           <div className="w-full max-w-md pointer-events-auto animate-scale-in">
-                            {/* Logo above search */}
-                            <div className="flex justify-center mb-6">
-                              <img 
-                                src={searchLogo} 
-                                alt="Search" 
-                                className="w-32 h-32 object-contain"
-                              />
-                            </div>
-                            
                             {/* Search bar */}
                             <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
@@ -2263,6 +2257,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       onClick: () => {
                         if (!walletAddress) {
                           toast.error('Please connect your wallet first');
+                        } else {
+                          // Load user's profile when wallet is connected
+                          handleSearch(walletAddress);
                         }
                       },
                       isActive: false,
