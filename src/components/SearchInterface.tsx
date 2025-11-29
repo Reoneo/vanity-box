@@ -98,6 +98,7 @@ import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
+import searchLogo from "@/assets/search-logo.png";
 import { WorldIdAnimation } from "@/components/WorldIdAnimation";
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
@@ -1562,8 +1563,27 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     </div>
                     
                     {showSearchBar && (
-                      <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
-                      <div className="relative">
+                      <>
+                        {/* Dim overlay */}
+                        <div 
+                          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-fade-in"
+                          onClick={() => setShowSearchBar(false)}
+                        />
+                        
+                        {/* Centered search modal */}
+                        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none">
+                          <div className="w-full max-w-md pointer-events-auto animate-scale-in">
+                            {/* Logo above search */}
+                            <div className="flex justify-center mb-6">
+                              <img 
+                                src={searchLogo} 
+                                alt="Search" 
+                                className="w-32 h-32 object-contain"
+                              />
+                            </div>
+                            
+                            {/* Search bar */}
+                            <div className="relative">
                         <div className="absolute left-1 top-1 z-10 flex items-center h-10">
                           <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
                             <DropdownMenuTrigger asChild>
@@ -1690,8 +1710,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             <Search className="w-4 h-4 text-black" />
                           </Button>
                         </div>
-                      </div>
-                    </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
 
                     <WorldIdAnimation />
@@ -1927,15 +1949,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Search',
                         onClick: () => {
-                          // Toggle search bar visibility
+                          // Toggle modal search overlay
                           setShowSearchBar(prev => !prev);
-                          setActiveDockSection('profile');
-                          // Scroll to top when showing search bar
-                          if (!showSearchBar) {
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }
                         },
-                        isActive: false,
+                        isActive: showSearchBar,
                       },
                     ]}
                   />
