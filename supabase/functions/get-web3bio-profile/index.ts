@@ -39,9 +39,17 @@ serve(async (req) => {
           transport: http()
         });
         
-        const address = await publicClient.getEnsAddress({
-          name: normalize(handle)
-        });
+        // Add 5-second timeout to ENS resolution
+        const resolveWithTimeout = Promise.race([
+          publicClient.getEnsAddress({
+            name: normalize(handle)
+          }),
+          new Promise<null>((_, reject) => 
+            setTimeout(() => reject(new Error('ENS resolution timeout after 5 seconds')), 5000)
+          )
+        ]);
+        
+        const address = await resolveWithTimeout;
         
         if (address) {
           console.log('✅ Resolved .box domain to address:', address);
@@ -88,6 +96,14 @@ serve(async (req) => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('❌ Web3.bio API error:', response.status, errorText);
+          
+          // If 404 (not found), don't retry - return immediately
+          if (response.status === 404) {
+            return new Response(JSON.stringify({ error: 'Profile not found', notFound: true }), {
+              status: 404,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
           
           // If 500 error, retry
           if (response.status >= 500 && attempt < maxRetries - 1) {
