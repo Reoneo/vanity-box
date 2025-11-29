@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.verify-siwe-message]
 verify_jwt = false
+
+[functions.resolve-ens-profile]
+verify_jwt = false
