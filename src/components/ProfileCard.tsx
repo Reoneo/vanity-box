@@ -198,14 +198,14 @@ export const ProfileCard = ({
 
   return (
     <>
-      <div className="w-full h-full flex flex-col">
+      <div className="w-full min-h-[calc(100vh-3rem)] flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-y-auto">
-          <div className="pb-24">
+          <div className="flex-1">
+          <div className="pb-0">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
-              <div className="w-full h-48 overflow-hidden">
+              <div className="w-[calc(100%+2rem)] -mx-4 h-[22vh] sm:h-[25vh] min-h-[140px] max-h-[200px] overflow-hidden">
                 <img
                   src={web3BioProfile?.header || defaultHeader}
                   alt="Header"
@@ -213,23 +213,23 @@ export const ProfileCard = ({
                 />
               </div>
 
-              <div className="flex justify-center absolute -bottom-20 left-0 right-0">
-                <Avatar className="h-40 w-40 border-4 border-background bg-black">
+              <div className="flex justify-center absolute -bottom-12 sm:-bottom-14 left-0 right-0">
+                <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background bg-black">
                   <AvatarImage 
                     src={web3BioProfile?.avatar || worldcoinAvatar} 
                     alt={web3BioProfile?.displayName || 'User'}
                     className={!web3BioProfile?.avatar ? "scale-[2]" : ""}
                   />
-                  <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <AvatarFallback className="text-4xl sm:text-5xl bg-[#D4AF37]/10 text-[#D4AF37]">
                     {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
                   </AvatarFallback>
                 </Avatar>
               </div>
             </div>
 
-            <div className="px-6 pt-16 space-y-1 flex-shrink-0">
+            <div className="px-4 sm:px-6 pt-14 sm:pt-16 space-y-1 flex-shrink-0">
 
-              <h2 className="text-3xl font-bold text-center text-foreground">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center text-foreground">
                 {web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
               </h2>
 
@@ -245,7 +245,7 @@ export const ProfileCard = ({
               )}
 
               {web3BioProfile?.description && (
-                <p className="text-center text-muted-foreground max-w-2xl mx-auto text-sm">
+                <p className="text-center text-muted-foreground max-w-2xl mx-auto text-xs sm:text-sm">
                   {web3BioProfile.description}
                 </p>
               )}
@@ -354,7 +354,7 @@ export const ProfileCard = ({
                 const remainingCount = socialLinks.length - 5;
 
                 return (
-                  <div className="flex items-center justify-center gap-3 min-h-[40px] flex-wrap">
+                  <div className="flex items-center justify-center gap-2 sm:gap-3 mt-1 min-h-[40px] flex-wrap">
                     {displayLinks.map(([platform, linkData]: [string, any]) => {
                       const url = typeof linkData === 'string' ? linkData : linkData?.link;
                       if (!url) return null;
@@ -363,7 +363,7 @@ export const ProfileCard = ({
                         <button
                           key={platform}
                           onClick={() => window.open(url, '_blank')}
-                          className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-md"
+                          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-md"
                           title={platform}
                         >
                           <div className="text-black dark:text-white">
