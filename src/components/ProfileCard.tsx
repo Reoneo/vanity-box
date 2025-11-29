@@ -198,7 +198,7 @@ export const ProfileCard = ({
 
   return (
     <>
-      <Card className="w-full max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden relative" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div className="w-full h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto">
@@ -887,7 +887,7 @@ export const ProfileCard = ({
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
       {selectedPoap && (
         <PoapDetailModal
