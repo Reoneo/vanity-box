@@ -1,12 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createPublicClient, http } from 'npm:viem@2.x';
 import { mainnet } from 'npm:viem@2.x/chains';
-import { normalize } from 'npm:viem@2.x/ens';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Simple normalization function (replaces viem/ens normalize)
+function normalizeEnsName(name: string): string {
+  return name.toLowerCase().trim();
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -42,7 +46,7 @@ serve(async (req) => {
         // Add 5-second timeout to ENS resolution
         const resolveWithTimeout = Promise.race([
           publicClient.getEnsAddress({
-            name: normalize(handle)
+            name: normalizeEnsName(handle) // Use simple normalization
           }),
           new Promise<null>((_, reject) => 
             setTimeout(() => reject(new Error('ENS resolution timeout after 5 seconds')), 5000)
