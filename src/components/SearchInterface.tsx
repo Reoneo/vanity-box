@@ -879,6 +879,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             // IMMEDIATE DISPLAY: Show profile right away with basic data
             setWeb3BioProfile(profileData);
             setEnsResults([]);
+            setIsLoading(false); // ✅ Stop loading immediately after profile displays
 
             // CRITICAL: Fetch EFP stats, first transaction, AND ENS social links together
             const addressOrName = profileData.address || trimmedQuery;
