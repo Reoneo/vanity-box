@@ -1542,7 +1542,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     <>
       {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
 
-      <div className="w-full">
+      <div className="w-full h-full">
         {/* Show mint interface when a result is selected */}
         {showMintInterface && selectedResult ? (
           <SubdomainMintModal
@@ -1573,8 +1573,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <>
                     {/* Coming Soon Display - Only show when no profile and search bar is closed */}
                     {!web3BioProfile && !showSearchBar && (
-                      <div className="flex items-center justify-center min-h-[50vh]">
-                        <h1 className="text-6xl font-bold text-[#D4AF37] animate-pulse">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#D4AF37] animate-pulse">
                           Coming Soon
                         </h1>
                       </div>
@@ -2246,7 +2246,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Home Screen Dock - Show when no profile and not My ID's */}
             {!web3BioProfile && !showMyIDs && !isLoading && (
-              <div className="fixed bottom-0 left-0 right-0 z-[9997] flex items-center justify-center pb-4">
+              <div className="absolute bottom-4 left-0 right-0 z-[9997] flex items-center justify-center">
                 <Dock
                   items={[
                     {
