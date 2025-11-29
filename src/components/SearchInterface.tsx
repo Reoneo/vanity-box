@@ -1743,8 +1743,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Home',
                         onClick: () => {
+                          // Clear all profile data when returning home
                           setWeb3BioProfile(null);
+                          setEfpStats(null);
+                          setEnsRecords(null);
                           setIsSearchActive(false);
+                          setHasSearched(false);
+                          setSearchQuery('');
+                          setDisplayQuery('');
+                          setEnsResults([]); // Clear subdomain results
+                          setNfts([]);
+                          setPoapTokens([]);
                           setActiveDockSection('profile');
                         },
                         isActive: false,
@@ -2043,9 +2052,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Home',
                         onClick: () => {
+                          // Clear all data when returning home from My IDs
                           setShowMyIDs(false);
                           setWeb3BioProfile(null);
+                          setEfpStats(null);
+                          setEnsRecords(null);
                           setIsSearchActive(false);
+                          setHasSearched(false);
+                          setSearchQuery('');
+                          setDisplayQuery('');
+                          setEnsResults([]); // Clear subdomain results
+                          setNfts([]);
+                          setPoapTokens([]);
                           setActiveDockSection('profile');
                         },
                         isActive: false,
@@ -2079,13 +2097,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Home',
                       onClick: () => {
-                        // Reset to initial state
+                        // Reset to initial "Coming Soon" state - clear all data
                         setIsSearchActive(false);
                         setHasSearched(false);
                         setShowSearchBar(false);
                         setWeb3BioProfile(null);
+                        setEfpStats(null);
+                        setEnsRecords(null);
                         setSearchQuery('');
-                        setEnsResults(getAllResults());
+                        setDisplayQuery('');
+                        setEnsResults([]); // Clear subdomain results
+                        setNfts([]);
+                        setPoapTokens([]);
+                        setActiveDockSection('profile');
                       },
                       isActive: false,
                     },
