@@ -220,6 +220,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
   const [showInitialResults, setShowInitialResults] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
+  const [hadPreviousProfile, setHadPreviousProfile] = useState(false);
   
   // Dock panel states
   const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster'>('profile');
@@ -431,12 +432,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   useEffect(() => {
     if (web3BioProfile) {
       setShowSearchBar(false);
+      setHadPreviousProfile(true);
       window.dispatchEvent(new Event('profile-loaded'));
-    } else {
+    } else if (hadPreviousProfile) {
+      // Only show search bar after clearing a previously loaded profile
       setShowSearchBar(true);
       window.dispatchEvent(new Event('profile-cleared'));
     }
-  }, [web3BioProfile]);
+    // Do NOT set showSearchBar to true on initial mount
+  }, [web3BioProfile, hadPreviousProfile]);
 
 
   const protocols = ["DNS", "ENS"];
@@ -843,186 +847,121 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           setIsLoading(false);
         }
       } else {
-        // Web3.bio lookup for regular names and wallet addresses
-        console.log('🔍 Fetching web3.bio profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
+        // Direct ENS resolution for ENS domains and wallet addresses
+        console.log('🔍 Fetching direct ENS profile for:', isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
-          const { data, error } = await supabase.functions.invoke('get-web3bio-profile', {
-            body: { handle: isWalletAddress ? normalizedAddress : trimmedQuery }
+          const { data, error } = await supabase.functions.invoke('resolve-ens-profile', {
+            body: { query: isWalletAddress ? normalizedAddress : trimmedQuery }
           });
 
-          console.log('📥 Web3.bio response:', { data, error });
+          console.log('📥 Direct ENS response:', { data, error });
 
           if (error) {
-            console.error('❌ Error fetching web3.bio profile:', error);
+            console.error('❌ Error fetching ENS profile:', error);
             toast.error("Profile lookup failed. Please try again.");
             setIsLoading(false);
             return;
           }
           
           // Handle "not found" case gracefully
-          if (data?.notFound || !data || (Array.isArray(data) && data.length === 0)) {
+          if (data?.notFound || !data) {
             console.log('ℹ️ Profile not found for:', trimmedQuery);
             setIsLoading(false);
             return;
           }
           
-          if (Array.isArray(data) && data.length > 0) {
-            const profileData = data[0];
-            console.log('✅ Web3.bio profile data:', profileData);
-            
-            // Display profile immediately
-            setWeb3BioProfile(profileData);
-            setEnsResults([]);
-
-            // Fetch additional data asynchronously (non-blocking)
-            const addressOrName = profileData.address || trimmedQuery;
-            
-            // Clear loading state immediately - profile is displayed
-            setIsLoading(false);
-            
-            // Fetch EFP stats
-            if (addressOrName) {
-              fetch(`https://api.ethfollow.xyz/api/v1/users/${addressOrName}/stats`)
-                .then(res => res.ok ? res.json() : null)
-                .then(data => {
-                  if (data) {
-                    setEfpStats({
-                      followers_count: parseInt(data.followers_count) || 0,
-                      following_count: parseInt(data.following_count) || 0,
-                    });
-                  }
-                })
-                .catch(e => console.warn('⚠️ EFP stats failed:', e));
-            }
-            
-            // Fetch first transaction
-            if (profileData.address) {
-              supabase.functions.invoke("get-first-transaction", {
-                body: { address: profileData.address },
-              }).then(({ data: txData, error }) => {
-                if (!error && txData?.date) {
-                  setFirstTransactionDate(txData.date);
-                }
-              }).catch(e => console.warn('⚠️ First transaction failed:', e));
-            }
-            
-            // Fetch ENS text records for social links
-            if (normalizedQuery.endsWith('.eth') || profileData.address) {
-              const publicClient = createPublicClient({
-                chain: mainnet,
-                transport: http(),
-              });
-              
-              (async () => {
-                try {
-                  let ensNameToQuery: string | null = null;
-                  if (normalizedQuery.endsWith('.eth')) {
-                    ensNameToQuery = normalize(trimmedQuery);
-                  } else if (profileData.address) {
-                    try {
-                      const primary = await publicClient.getEnsName({ address: profileData.address as `0x${string}` });
-                      if (primary) ensNameToQuery = normalize(primary);
-                    } catch (_) {}
-                  }
-
-                  if (ensNameToQuery) {
-                    const textRecordKeys = [
-                      'display', 'description', 'email', 'location', 'url', 'avatar', 'header',
-                      'com.twitter', 'com.github', 'com.discord', 'com.reddit', 'com.spotify', 'org.telegram'
-                    ];
-
-                    const recordResults = await Promise.all(
-                      textRecordKeys.map(async (key) => {
-                        try {
-                          const value = await publicClient.getEnsText({ name: ensNameToQuery!, key });
-                          return { key, value };
-                        } catch {
-                          return { key, value: null };
-                        }
-                      })
-                    );
-
-                    const ensTextRecords: Record<string, string> = {};
-                    recordResults.forEach(({ key, value }) => {
-                      if (value) ensTextRecords[key] = value;
-                    });
-
-                    setEnsRecords({
-                      name: trimmedQuery,
-                      address: profileData?.address,
-                      avatar: ensTextRecords.avatar || profileData?.avatar,
-                      records: ensTextRecords,
-                    });
-
-                    // Update profile with ENS data
-                    const updatedProfile = { ...profileData };
-                    if (ensTextRecords['header']) updatedProfile.header = ensTextRecords['header'];
-                    if (ensTextRecords['url']) updatedProfile.url = ensTextRecords['url'];
-                    if (ensTextRecords['email']) updatedProfile.email = ensTextRecords['email'];
-                    if (ensTextRecords['location']) updatedProfile.location = ensTextRecords['location'];
-                    if (ensTextRecords['description'] && !updatedProfile.description) {
-                      updatedProfile.description = ensTextRecords['description'];
-                    }
-                    
-                    setWeb3BioProfile(updatedProfile);
-                  }
-                } catch (error) {
-                  console.warn('⚠️ ENS records failed:', error);
-                }
-              })();
-            }
-
-
-            // STAGE 3: Fetch POAP data (low priority) - non-blocking
-            if (profileData.address) {
-              (async () => {
-                try {
-                  console.log('⚡ Stage 3: Fetching POAP data...');
-                  setIsLoadingPoaps(true);
-                  const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                    body: { walletAddress: profileData.address },
+          const profileData = data;
+          console.log('✅ Direct ENS profile data:', profileData);
+          
+          // Set ENS records from profile data
+          if (profileData.ensRecords) {
+            setEnsRecords({
+              name: profileData.identity,
+              address: profileData.address,
+              avatar: profileData.avatar,
+              records: profileData.ensRecords,
+            });
+          }
+          
+          // Display profile immediately
+          setWeb3BioProfile(profileData);
+          setEnsResults([]);
+          setIsLoading(false);
+          
+          // Fetch additional data asynchronously (non-blocking)
+          const address = profileData.address;
+          
+          // Fetch EFP stats
+          if (address) {
+            fetch(`https://api.ethfollow.xyz/api/v1/users/${address}/stats`)
+              .then(res => res.ok ? res.json() : null)
+              .then(data => {
+                if (data) {
+                  setEfpStats({
+                    followers_count: parseInt(data.followers_count) || 0,
+                    following_count: parseInt(data.following_count) || 0,
                   });
-
-                  if (!poapError && poapData?.success) {
-                    const { data: tokensData } = await supabase
-                      .from('poap_tokens')
-                      .select('*')
-                      .eq('wallet_address', profileData.address.toLowerCase());
-                    
-                    console.log('✅ POAP data loaded');
-                    setPoapCount(poapData.count || 0);
-                    if (tokensData && tokensData.length > 0) {
-                      setPoapTokens(tokensData.map((token: any) => ({
-                        eventId: token.event_id,
-                        eventName: token.event_name,
-                        eventDescription: token.event_description,
-                        eventImageUrl: token.event_image_url,
-                        eventStartDate: token.event_start_date,
-                        eventEndDate: token.event_end_date,
-                        eventYear: token.event_year,
-                        tokenId: token.token_id,
-                        owner: token.owner,
-                        chain: token.chain,
-                      })));
-                    }
-                  } else {
-                    setPoapCount(0);
-                  }
-                } catch (e) {
-                  console.warn('⚠️ Stage 3: POAP data failed:', e);
-                  setPoapCount(0);
-                } finally {
-                  setIsLoadingPoaps(false);
                 }
-              })();
-            }
-          } else {
-            // No valid data returned and no error - clear loading state
-            console.log('⚠️ No profile data found');
-            setIsLoading(false);
+              })
+              .catch(e => console.warn('⚠️ EFP stats failed:', e));
+          }
+          
+          // Fetch first transaction
+          if (address) {
+            supabase.functions.invoke("get-first-transaction", {
+              body: { address },
+            }).then(({ data: txData, error }) => {
+              if (!error && txData?.date) {
+                setFirstTransactionDate(txData.date);
+              }
+            }).catch(e => console.warn('⚠️ First transaction failed:', e));
+          }
+          
+          // Fetch POAP data (low priority) - non-blocking
+          if (address) {
+            (async () => {
+              try {
+                console.log('⚡ Fetching POAP data...');
+                setIsLoadingPoaps(true);
+                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+                  body: { walletAddress: address },
+                });
+
+                if (!poapError && poapData?.success) {
+                  const { data: tokensData } = await supabase
+                    .from('poap_tokens')
+                    .select('*')
+                    .eq('wallet_address', address.toLowerCase());
+                  
+                  console.log('✅ POAP data loaded');
+                  setPoapCount(poapData.count || 0);
+                  if (tokensData && tokensData.length > 0) {
+                    setPoapTokens(tokensData.map((token: any) => ({
+                      eventId: token.event_id,
+                      eventName: token.event_name,
+                      eventDescription: token.event_description,
+                      eventImageUrl: token.event_image_url,
+                      eventStartDate: token.event_start_date,
+                      eventEndDate: token.event_end_date,
+                      eventYear: token.event_year,
+                      tokenId: token.token_id,
+                      owner: token.owner,
+                      chain: token.chain,
+                    })));
+                  }
+                } else {
+                  setPoapCount(0);
+                }
+              } catch (e) {
+                console.warn('⚠️ POAP data failed:', e);
+                setPoapCount(0);
+              } finally {
+                setIsLoadingPoaps(false);
+              }
+            })();
           }
         } catch (error) {
-          console.log("web3.bio failed:", error);
+          console.log("ENS profile lookup failed:", error);
           toast.error("Profile lookup failed. Please try again.");
           setIsLoading(false);
           return;
