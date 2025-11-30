@@ -19,9 +19,9 @@ serve(async (req) => {
 
     console.log('Fetching EFP stats for address:', address);
 
-    // Use the correct EFP API endpoint
+    // Use the correct EFP API stats endpoint
     const efpResponse = await fetch(
-      `https://api.ethfollow.xyz/api/v1/users/${address}`,
+      `https://api.ethfollow.xyz/api/v1/users/${address}/stats`,
       {
         headers: {
           'Content-Type': 'application/json',
