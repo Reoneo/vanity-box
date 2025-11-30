@@ -34,7 +34,7 @@ type Web3BioRawProfile = {
   };
 };
 
-// Shape for ProfileCard
+// Shape for ProfileCard (matching get-ens-subdomain-profile format)
 type SimpleProfile = {
   address: string;
   identity: string;
@@ -46,11 +46,7 @@ type SimpleProfile = {
   header: string | null;
   website: string | null;
   url: string | null;
-  links: {
-    key: string;
-    link: string;
-    handle: string;
-  }[];
+  links: Record<string, { link: string; handle: string }>;
   followerCount: number | null;
   followingCount: number | null;
 };
@@ -68,14 +64,14 @@ function pickPrimaryProfile(items: Web3BioRawProfile[]): Web3BioRawProfile | nul
 }
 
 function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
-  const linksArray: SimpleProfile["links"] = [];
+  // Convert links to object format (matching get-ens-subdomain-profile)
+  const linksObject: Record<string, { link: string; handle: string }> = {};
   if (raw.links) {
     for (const [key, value] of Object.entries(raw.links)) {
-      linksArray.push({
-        key,
+      linksObject[key] = {
         link: value.link,
         handle: value.handle,
-      });
+      };
     }
   }
 
@@ -99,7 +95,7 @@ function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
     header: raw.header ?? null,
     website,
     url: website, // alias for ProfileCard
-    links: linksArray,
+    links: linksObject,
     followerCount,
     followingCount,
   };

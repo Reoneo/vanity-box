@@ -205,7 +205,7 @@ export const ProfileCard = ({
           <div className="space-y-4 pb-24">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
-              <div className="w-full h-40 md:h-52 overflow-hidden">
+              <div className="w-full aspect-[3/1] overflow-hidden">
                 <img
                   src={web3BioProfile?.header || defaultHeader}
                   alt="Header"
@@ -213,7 +213,7 @@ export const ProfileCard = ({
                 />
               </div>
 
-              <div className="flex justify-center absolute -bottom-20 left-0 right-0">
+              <div className="flex justify-center absolute -bottom-14 left-0 right-0">
                 <Avatar className="h-40 w-40 border-4 border-background bg-black">
                   <AvatarImage 
                     src={web3BioProfile?.avatar || worldcoinAvatar} 
@@ -227,7 +227,7 @@ export const ProfileCard = ({
               </div>
             </div>
 
-            <div className="p-6 pt-24 space-y-2 flex-shrink-0">
+            <div className="p-6 pt-16 space-y-2 flex-shrink-0">
 
               <h2 className="text-3xl font-bold text-center text-foreground">
                 {web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
