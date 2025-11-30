@@ -1539,7 +1539,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 <div className="pointer-events-auto">
                   <Dock
                     items={[
-                      {
+                      // Only show Home button when viewing a profile (not on home page)
+                      ...(web3BioProfile ? [{
                         icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Home',
                         onClick: () => {
@@ -1557,7 +1558,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setActiveDockSection('profile');
                         },
                         isActive: false,
-                      },
+                      }] : []),
                       {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('profile'),
