@@ -134,7 +134,12 @@ serve(async (req) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
 
-    const url = `https://api.web3.bio/profile/${encodeURIComponent(trimmed)}`;
+    // Detect .box domains and use ENS-specific endpoint
+    const isBoxDomain = trimmed.toLowerCase().endsWith('.box');
+    const endpoint = isBoxDomain 
+      ? `https://api.web3.bio/profile/ens/${encodeURIComponent(trimmed)}`
+      : `https://api.web3.bio/profile/${encodeURIComponent(trimmed)}`;
+    const url = endpoint;
 
     const res = await fetch(url, {
       method: "GET",

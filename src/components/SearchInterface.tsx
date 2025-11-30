@@ -880,6 +880,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             console.log('✅ Web3.bio profile data:', web3BioData.profile);
             console.log('📋 Available platforms:', web3BioData.platforms);
             
+            // Validate that profile has a wallet address
+            if (!web3BioData.profile.address) {
+              console.log('⚠️ Profile found but no wallet address - not displaying');
+              toast.error('Profile found but no wallet address associated');
+              setIsLoading(false);
+              return;
+            }
+            
             // Set profile first so other fetches can use it
             setWeb3BioProfile(web3BioData.profile);
             setEnsResults([]);
