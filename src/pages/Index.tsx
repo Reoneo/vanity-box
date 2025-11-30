@@ -66,6 +66,15 @@ const Index = () => {
             <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal whitespace-nowrap">
               © 2025 vanity.box. All rights reserved.
             </div>
+            
+            {/* Theme Toggle on Right */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-1.5 rounded-full bg-black/20 hover:bg-black/30 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-black" /> : <Moon className="w-4 h-4 text-black" />}
+            </button>
           </div>
         </footer>
       </div>
