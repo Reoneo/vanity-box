@@ -807,18 +807,25 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           }),
         );
 
-        // Auto-set default Vanity redirect
-        try {
-          const redirectResult = await setDefaultVanityRedirect(domain || "", subdomain);
-          if (redirectResult.success) {
-            console.log("Default redirect set:", redirectResult);
-            toast.success(`Redirect set to ${fullEnsName(subdomain, domain || "")} Vanity profile`, {
+        // Only attempt frontend redirect if edge function failed
+        if (!data?.redirectSuccess) {
+          try {
+            const redirectResult = await setDefaultVanityRedirect(domain || "", subdomain);
+            if (redirectResult.success) {
+              console.log("Frontend fallback redirect set:", redirectResult);
+              toast.success(`Redirect set to ${fullEnsName(subdomain, domain || "")} Vanity profile`, {
+                duration: 5000,
+              });
+            }
+          } catch (redirectErr: any) {
+            console.error("Frontend redirect also failed:", redirectErr);
+            toast.info("Minted successfully! You can set redirect in My IDs.", {
               duration: 5000,
             });
           }
-        } catch (redirectErr: any) {
-          console.error("Failed to set redirect:", redirectErr);
-          toast.info("Minted successfully! You can set redirect in My IDs.", {
+        } else {
+          console.log("Edge function already set redirect successfully");
+          toast.success(`Redirect set to ${fullEnsName(subdomain, domain || "")} Vanity profile`, {
             duration: 5000,
           });
         }
