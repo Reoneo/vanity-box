@@ -4,8 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, Twitter, Instagram, Linkedin, Youtube, X } from "lucide-react";
-import { siBluesky, siReddit, siWhatsapp, siFacebook, siSnapchat, siGithub, siTelegram, siDiscord } from "simple-icons";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X } from "lucide-react";
+import { SocialIcon } from "./SocialIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
@@ -313,41 +313,6 @@ export const ProfileCard = ({
                 const socialLinks = Object.entries(web3BioProfile.links)
                   .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData);
                 
-                const getIcon = (platform: string) => {
-                  const iconClass = "w-5 h-5";
-                  const platformLower = platform.toLowerCase();
-                  
-                  switch (platformLower) {
-                    case 'twitter':
-                    case 'x':
-                      return <Twitter className={iconClass} />;
-                    case 'instagram':
-                      return <Instagram className={iconClass} />;
-                    case 'linkedin':
-                      return <Linkedin className={iconClass} />;
-                    case 'youtube':
-                      return <Youtube className={iconClass} />;
-                    case 'bluesky':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siBluesky.path} /></svg>;
-                    case 'reddit':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siReddit.path} /></svg>;
-                    case 'whatsapp':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siWhatsapp.path} /></svg>;
-                    case 'facebook':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siFacebook.path} /></svg>;
-                    case 'snapchat':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siSnapchat.path} /></svg>;
-                    case 'github':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siGithub.path} /></svg>;
-                    case 'telegram':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siTelegram.path} /></svg>;
-                    case 'discord':
-                      return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siDiscord.path} /></svg>;
-                    default:
-                      return <Globe className={iconClass} />;
-                  }
-                };
-
                 if (socialLinks.length === 0) return null;
 
                 const displayLinks = socialLinks.length > 6 ? socialLinks.slice(0, 5) : socialLinks.slice(0, 6);
@@ -360,16 +325,12 @@ export const ProfileCard = ({
                       if (!url) return null;
 
                       return (
-                        <button
+                        <SocialIcon
                           key={platform}
-                          onClick={() => window.open(url, '_blank')}
-                          className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-md"
-                          title={platform}
-                        >
-                          <div className="text-black dark:text-white">
-                            {getIcon(platform)}
-                          </div>
-                        </button>
+                          platform={platform}
+                          url={url}
+                          size="md"
+                        />
                       );
                     })}
                     
@@ -428,56 +389,17 @@ export const ProfileCard = ({
                           const url = typeof linkData === 'string' ? linkData : linkData?.link;
                           if (!url) return null;
 
-                          const getIcon = (platform: string) => {
-                            const iconClass = "w-6 h-6";
-                            const platformLower = platform.toLowerCase();
-                            
-                            switch (platformLower) {
-                              case 'twitter':
-                              case 'x':
-                                return <Twitter className={iconClass} />;
-                              case 'instagram':
-                                return <Instagram className={iconClass} />;
-                              case 'linkedin':
-                                return <Linkedin className={iconClass} />;
-                              case 'youtube':
-                                return <Youtube className={iconClass} />;
-                              case 'bluesky':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siBluesky.path} /></svg>;
-                              case 'reddit':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siReddit.path} /></svg>;
-                              case 'whatsapp':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siWhatsapp.path} /></svg>;
-                              case 'facebook':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siFacebook.path} /></svg>;
-                              case 'snapchat':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siSnapchat.path} /></svg>;
-                              case 'github':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siGithub.path} /></svg>;
-                              case 'telegram':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siTelegram.path} /></svg>;
-                              case 'discord':
-                                return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siDiscord.path} /></svg>;
-                              default:
-                                return <Globe className={iconClass} />;
-                            }
-                          };
-
                           return (
-                            <button
-                              key={platform}
-                              onClick={() => window.open(url, '_blank')}
-                              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-all hover:scale-105"
-                            >
-                              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-[#D4AF37]/80 shadow-md">
-                                <div className="text-black dark:text-white">
-                                  {getIcon(platform)}
-                                </div>
-                              </div>
+                            <div key={platform} className="flex flex-col items-center gap-2">
+                              <SocialIcon
+                                platform={platform}
+                                url={url}
+                                size="lg"
+                              />
                               <span className="text-xs text-foreground font-medium truncate max-w-full">
                                 {platform.charAt(0).toUpperCase() + platform.slice(1)}
                               </span>
-                            </button>
+                            </div>
                           );
                         })}
                     </div>
@@ -510,42 +432,6 @@ export const ProfileCard = ({
                   const handle = typeof linkData === 'string' ? extractHandle(platform, linkData) : linkData?.handle;
                   
                   if (!url) return null;
-
-                  // Get icon component based on platform
-                  const getIcon = () => {
-                    const iconClass = "w-5 h-5";
-                    const platformLower = platform.toLowerCase();
-                    
-                    switch (platformLower) {
-                      case 'twitter':
-                      case 'x':
-                        return <Twitter className={iconClass} />;
-                      case 'instagram':
-                        return <Instagram className={iconClass} />;
-                      case 'linkedin':
-                        return <Linkedin className={iconClass} />;
-                      case 'youtube':
-                        return <Youtube className={iconClass} />;
-                      case 'bluesky':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siBluesky.path} /></svg>;
-                      case 'reddit':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siReddit.path} /></svg>;
-                      case 'whatsapp':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siWhatsapp.path} /></svg>;
-                      case 'facebook':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siFacebook.path} /></svg>;
-                      case 'snapchat':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siSnapchat.path} /></svg>;
-                      case 'github':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siGithub.path} /></svg>;
-                      case 'telegram':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siTelegram.path} /></svg>;
-                      case 'discord':
-                        return <svg className={iconClass} viewBox="0 0 24 24" fill="currentColor"><path d={siDiscord.path} /></svg>;
-                      default:
-                        return <Globe className={iconClass} />;
-                    }
-                  };
                   
                   return (
                     <button
@@ -553,11 +439,12 @@ export const ProfileCard = ({
                       onClick={() => window.open(url, '_blank')}
                       className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-colors active:opacity-90 group touch-action-manipulation flex-shrink-0"
                     >
-                      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 shadow-md">
-                        <div className="text-black dark:text-white">
-                          {getIcon()}
-                        </div>
-                      </div>
+                      <SocialIcon
+                        platform={platform}
+                        url={url}
+                        size="md"
+                        onClick={() => window.open(url, '_blank')}
+                      />
                       <div className="flex-1 text-left">
                         <div className="font-semibold text-base text-foreground group-hover:text-[#D4AF37] transition-colors">
                           {displayLabel}
