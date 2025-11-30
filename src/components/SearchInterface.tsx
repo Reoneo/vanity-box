@@ -1321,14 +1321,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 {/* Modal Search Overlay - works for both homepage and profile views */}
                 {showSearchBar && (
                   <>
-                    {/* Dim overlay */}
+                    {/* Dim overlay - below dock (z-9999) but above content */}
                     <div 
-                      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-fade-in"
+                      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9997] animate-fade-in"
                       onClick={() => setShowSearchBar(false)}
                     />
                     
-                    {/* Centered search modal */}
-                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none">
+                    {/* Centered search modal - just below dock */}
+                    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 pointer-events-none">
                       <div className="w-full max-w-md pointer-events-auto animate-scale-in">
                         {/* Search bar */}
                         <div className="relative">
