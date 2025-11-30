@@ -40,25 +40,6 @@ export const SocialIcon = ({
   };
   
   const { container, icon } = sizeConfig[size];
-
-  // Brand colors for each platform
-  const brandColors: Record<string, { bg: string; iconFilter: string }> = {
-    twitter: { bg: "#000000", iconFilter: "invert(1)" },
-    x: { bg: "#000000", iconFilter: "invert(1)" },
-    instagram: { bg: "#E4405F", iconFilter: "invert(1)" },
-    linkedin: { bg: "#0A66C2", iconFilter: "invert(1)" },
-    youtube: { bg: "#FF0000", iconFilter: "invert(1)" },
-    bluesky: { bg: "#1185FE", iconFilter: "invert(1)" },
-    reddit: { bg: "#FF4500", iconFilter: "invert(1)" },
-    whatsapp: { bg: "#25D366", iconFilter: "invert(1)" },
-    facebook: { bg: "#1877F2", iconFilter: "invert(1)" },
-    snapchat: { bg: "#FFFC00", iconFilter: "invert(0)" }, // Dark icon for yellow
-    github: { bg: "#181717", iconFilter: "invert(1)" },
-    telegram: { bg: "#26A5E4", iconFilter: "invert(1)" },
-    discord: { bg: "#5865F2", iconFilter: "invert(1)" },
-  };
-
-  const colors = brandColors[platformLower] || { bg: "#D4AF37", iconFilter: "none" };
   
   // Get the appropriate icon component
   const getIcon = () => {
@@ -105,10 +86,9 @@ export const SocialIcon = ({
     <button
       onClick={handleClick}
       title={platform}
-      style={{ backgroundColor: colors.bg }}
-      className={`${container} flex items-center justify-center rounded-full shadow-md transition-all hover:scale-110`}
+      className={`${container} flex items-center justify-center rounded-full bg-[#D4AF37]/80 shadow-md transition-all hover:scale-110`}
     >
-      <div style={{ filter: colors.iconFilter }}>
+      <div className="text-black">
         {getIcon()}
       </div>
     </button>

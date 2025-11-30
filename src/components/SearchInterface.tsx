@@ -1332,7 +1332,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <>
                 {/* Black overlay specifically when search is active over profile */}
                 {web3BioProfile && showSearchBar && (
-                  <div className="fixed inset-0 bg-black/90 z-[9996]" />
+                  <div className="fixed inset-0 bg-black/90 z-[9998]" />
                 )}
 
                 {/* Modal Search Overlay - works for both homepage and profile views */}
