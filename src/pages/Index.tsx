@@ -70,10 +70,10 @@ const Index = () => {
             {/* Theme Toggle on Right */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-1.5 rounded-full bg-black/20 hover:bg-black/30 transition-colors"
+              className="hover:opacity-70 transition-opacity"
               aria-label="Toggle theme"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-black" /> : <Moon className="w-4 h-4 text-black" />}
+              {theme === 'dark' ? <Sun className="w-6 h-6 text-black" /> : <Moon className="w-6 h-6 text-black" />}
             </button>
           </div>
         </footer>

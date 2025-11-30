@@ -334,7 +334,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    return j({ ok: true, subdomain: `${subdomainLabel}.${cleanDomain}`, expiryDate: expiryDate.toISOString() });
+    return j({ 
+      ok: true, 
+      subdomain: `${subdomainLabel}.${cleanDomain}`, 
+      expiryDate: expiryDate.toISOString(),
+      redirectSuccess,
+      redirectError: !redirectSuccess ? String(lastRedirectError) : undefined
+    });
   } catch (e: any) {
     console.error("[Mint] Fatal:", e);
     return j({ ok: false, error: String(e?.message || e) }, 500);
