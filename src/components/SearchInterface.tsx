@@ -857,7 +857,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         console.log(`🔍 Using unified Web3.bio profile lookup for ${queryType}:`, isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
           const { data: web3BioData, error: web3BioError } = await supabase.functions.invoke('web3bio-profile', {
-            body: { identity: isWalletAddress ? normalizedAddress : trimmedQuery }
+            body: { identity: isWalletAddress ? normalizedAddress : normalizedQuery }
           });
 
           console.log('📥 Web3.bio response:', { data: web3BioData, error: web3BioError });
