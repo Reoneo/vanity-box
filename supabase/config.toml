@@ -1,5 +1,8 @@
 project_id = "gdjjboorqviobvvygpca"
 
+[functions.web3bio-profile]
+verify_jwt = false
+
 [functions.send-world-notification]
 verify_jwt = false
 

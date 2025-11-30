@@ -806,21 +806,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
 
-      // Detect if this is a Namestone domain or subdomain
-      // ENS-compatible TLDs that should use ENS resolution: .eth
-      const ensCompatibleTLDs = ['.eth'];
-      const isEnsCompatible = ensCompatibleTLDs.some(tld => normalizedQuery.endsWith(tld));
+      // NEW: Web3.bio-compatible identities (ENS, .box, wallet addresses)
+      const web3BioCompatible = ['.eth', '.box'];
+      const isWeb3BioCompatible = web3BioCompatible.some(tld => normalizedQuery.endsWith(tld)) || isWalletAddress;
       
-      // Namestone TLDs (.world, .cash, etc.)
-      const namesoneTLDs = ['.box', '.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
-      const isNamestoneTLD = namesoneTLDs.some(tld => normalizedQuery.endsWith(tld));
+      // Namestone-only TLDs (not indexed by Web3.bio)
+      const namestoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+      const isNamestoneTLD = namestoneTLDs.some(tld => normalizedQuery.endsWith(tld));
       
-      // Check for subdomains (2+ dots) - but ENS-compatible domains use ENS resolution even with subdomains
+      // Check for subdomains (2+ dots) - Web3.bio handles these for .eth and .box
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
-      const isNamestoneSubdomain = dotCount >= 2 && !isEnsCompatible;
+      const isNamestoneSubdomain = dotCount >= 2 && !isWeb3BioCompatible;
       const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
       
-      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, ENS-compatible: ${isEnsCompatible}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}`);
+      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}`);
 
       // Use different fetch strategies based on name type
       if (isNamestoneDomain) {
@@ -853,117 +852,49 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           setIsLoading(false);
         }
       } else {
-        // Direct ENS resolution for ENS-compatible domains (.eth, .box) and wallet addresses
-        const queryType = isWalletAddress ? 'wallet address (reverse lookup)' : isEnsCompatible ? 'ENS-compatible domain' : 'ENS domain';
-        console.log(`🔍 Fetching ENS profile for ${queryType}:`, isWalletAddress ? normalizedAddress : trimmedQuery);
+        // Web3.bio unified lookup for .eth, .box domains and wallet addresses
+        const queryType = isWalletAddress ? 'wallet address (reverse lookup)' : isWeb3BioCompatible ? 'Web3.bio-compatible domain' : 'domain';
+        console.log(`🔍 Using unified Web3.bio profile lookup for ${queryType}:`, isWalletAddress ? normalizedAddress : trimmedQuery);
         try {
-          const { data, error } = await supabase.functions.invoke('resolve-ens-profile', {
-            body: { query: isWalletAddress ? normalizedAddress : trimmedQuery }
+          const { data: web3BioData, error: web3BioError } = await supabase.functions.invoke('web3bio-profile', {
+            body: { identity: isWalletAddress ? normalizedAddress : trimmedQuery }
           });
 
-          console.log('📥 ENS response:', { data, error });
+          console.log('📥 Web3.bio response:', { data: web3BioData, error: web3BioError });
 
-          if (error || data?.notFound || !data) {
-            console.log('ℹ️ Profile not found');
-            if (error) {
-              toast.error("Profile lookup failed. Please try again.");
-            }
+          if (web3BioError) {
+            console.error('❌ Web3.bio unified lookup error:', web3BioError);
+            toast.error("Profile lookup failed. Please try again.");
             setIsLoading(false);
             return;
           }
-          
-          const profileData = data;
-          console.log('✅ Profile data:', profileData);
-          
-          // Set ENS records from profile data
-          if (profileData.ensRecords) {
-            setEnsRecords({
-              name: profileData.identity,
-              address: profileData.address,
-              avatar: profileData.avatar,
-              records: profileData.ensRecords,
-            });
-          }
-          
-          // Display profile immediately
-          setWeb3BioProfile(profileData);
-          setEnsResults([]);
-          setIsLoading(false);
-          
-          // Fetch additional data asynchronously (non-blocking)
-          const address = profileData.address;
-          
-          // Fetch EFP stats
-          if (address) {
-            fetch(`https://api.ethfollow.xyz/api/v1/users/${address}/stats`)
-              .then(res => res.ok ? res.json() : null)
-              .then(data => {
-                if (data) {
-                  setEfpStats({
-                    followers_count: parseInt(data.followers_count) || 0,
-                    following_count: parseInt(data.following_count) || 0,
-                  });
-                }
-              })
-              .catch(e => console.warn('⚠️ EFP stats failed:', e));
-          }
-          
-          // Fetch first transaction
-          if (address) {
-            supabase.functions.invoke("get-first-transaction", {
-              body: { address },
-            }).then(({ data: txData, error }) => {
-              if (!error && txData?.date) {
-                setFirstTransactionDate(txData.date);
-              }
-            }).catch(e => console.warn('⚠️ First transaction failed:', e));
-          }
-          
-          // Fetch POAP data (low priority) - non-blocking
-          if (address) {
-            (async () => {
-              try {
-                console.log('⚡ Fetching POAP data...');
-                setIsLoadingPoaps(true);
-                const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-                  body: { walletAddress: address },
-                });
 
-                if (!poapError && poapData?.success) {
-                  const { data: tokensData } = await supabase
-                    .from('poap_tokens')
-                    .select('*')
-                    .eq('wallet_address', address.toLowerCase());
-                  
-                  console.log('✅ POAP data loaded');
-                  setPoapCount(poapData.count || 0);
-                  if (tokensData && tokensData.length > 0) {
-                    setPoapTokens(tokensData.map((token: any) => ({
-                      eventId: token.event_id,
-                      eventName: token.event_name,
-                      eventDescription: token.event_description,
-                      eventImageUrl: token.event_image_url,
-                      eventStartDate: token.event_start_date,
-                      eventEndDate: token.event_end_date,
-                      eventYear: token.event_year,
-                      tokenId: token.token_id,
-                      owner: token.owner,
-                      chain: token.chain,
-                    })));
-                  }
-                } else {
-                  setPoapCount(0);
-                }
-              } catch (e) {
-                console.warn('⚠️ POAP data failed:', e);
-                setPoapCount(0);
-              } finally {
-                setIsLoadingPoaps(false);
-              }
-            })();
+          if (web3BioData?.notFound) {
+            console.log('⚠️ No profile found on Web3.bio for:', isWalletAddress ? normalizedAddress : trimmedQuery);
+            toast.error('No profile found for this identity');
+            setIsLoading(false);
+            return;
+          }
+
+          if (web3BioData?.profile) {
+            console.log('✅ Web3.bio profile data:', web3BioData.profile);
+            console.log('📋 Available platforms:', web3BioData.platforms);
+            
+            // Set profile first so other fetches can use it
+            setWeb3BioProfile(web3BioData.profile);
+            setEnsResults([]);
+            setIsLoading(false);
+            
+            // Fetch additional data for Dock (non-blocking)
+            if (web3BioData.profile.address) {
+              fetchNfts(web3BioData.profile.address);
+            }
+          } else {
+            console.log('ℹ️ Profile not found');
+            setIsLoading(false);
           }
         } catch (error) {
-          console.log("ENS profile lookup failed:", error);
+          console.log("Web3.bio profile lookup failed:", error);
           toast.error("Profile lookup failed. Please try again.");
           setIsLoading(false);
           return;
