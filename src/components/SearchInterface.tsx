@@ -1504,7 +1504,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </>
             )}
 
-            {/* Profile Card with Dock Navigation - fixed positioning regardless of search bar */}
+            {/* Profile Card - fixed positioning regardless of search bar */}
             {web3BioProfile && !showMyIDs ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-[140px] px-4 pt-4 flex flex-col z-[9997]"
@@ -1530,9 +1530,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onLoadMoreNfts={handleLoadMoreNfts}
                   />
                 </div>
+              </div>
+            ) : null}
 
-                {/* Dock - fixed at bottom with matching gap */}
-                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
+            {/* Profile Dock - separate from profile container for proper z-index stacking */}
+            {web3BioProfile && !showMyIDs && (
+              <div className="fixed bottom-0 left-0 right-0 z-[10000] flex items-center justify-center pb-4 pt-4 pointer-events-none">
+                <div className="pointer-events-auto">
                   <Dock
                     items={[
                       {
@@ -1615,7 +1619,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   />
                 </div>
               </div>
-            ) : null}
+            )}
 
             {/* Loading Indicator */}
             {isLoadingEFP && (
