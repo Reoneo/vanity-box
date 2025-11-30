@@ -1514,7 +1514,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Profile Card - fixed positioning regardless of search bar */}
             {web3BioProfile && !showMyIDs ? (
               <div
-                className="fixed left-0 right-0 top-[80px] bottom-[140px] px-4 pt-4 flex flex-col z-[9997]"
+                className="fixed left-0 right-0 top-[80px] bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
                 {/* Profile Card - scrollable content */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
@@ -1855,15 +1855,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </div>
             )}
 
-            {/* My ID's Section with Dock */}
+            {/* My ID's Section */}
             {walletAddress && showMyIDs && (
-              <div className="fixed left-0 right-0 flex flex-col z-[9997] top-[80px] bottom-[140px] px-4 pt-4">
+              <div className="fixed left-0 right-0 flex flex-col z-[9997] top-[80px] bottom-[140px] px-0 pt-0">
                 <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
                   <UserDomainsDisplay walletAddress={walletAddress} />
                 </div>
+              </div>
+            )}
 
-                {/* Dock for My ID's page */}
-                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 pt-4">
+            {/* My ID's Dock - Outside container with proper z-index */}
+            {walletAddress && showMyIDs && (
+              <div className="fixed bottom-0 left-0 right-0 z-[10000] flex items-center justify-center pb-4 pt-4 pointer-events-none">
+                <div className="pointer-events-auto">
                   <Dock
                     items={[
                       {
@@ -1888,7 +1892,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
-                        label: t('my_ids'),
+                        label: 'Profile',
                         onClick: () => {
                           if (!walletAddress) {
                             toast.error('Please connect your wallet first');
