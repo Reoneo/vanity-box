@@ -842,6 +842,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               setEnsRecords(data.ensRecords);
             }
             
+            // Fetch EFP stats for Namestone profiles
+            if (data.address) {
+              supabase.functions.invoke('get-efp-stats', {
+                body: { address: data.address }
+              }).then(({ data: efpData }) => {
+                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                  console.log('✅ EFP stats loaded for Namestone profile:', efpData);
+                  setEfpStats(efpData);
+                }
+              }).catch(err => console.log('EFP stats fetch failed:', err));
+            }
+            
             setIsLoading(false);
           } else {
             // No valid profile found
