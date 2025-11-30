@@ -928,8 +928,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const checkPromises = allResults.map(async (result) => {
         const domain = result.name.toLowerCase();
         
-        // Skip Vanity.ton checks
-        if (domain === 'vanity.ton') {
+        // Skip ENS domains (.eth, .box) and vanity.ton - they don't use Namestone
+        const ensOrSpecialDomains = ['vanity.ton', 'vanity.eth', 'vape.box', 'smith.box', 'vanity.box'];
+        const isEnsCompatible = domain.endsWith('.eth') || domain.endsWith('.box');
+        
+        if (ensOrSpecialDomains.includes(domain) || isEnsCompatible) {
           return null;
         }
         
