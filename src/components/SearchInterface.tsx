@@ -807,12 +807,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const normalizedQuery = trimmedQuery.toLowerCase();
 
       // Detect if this is a Namestone domain or subdomain
-      // ENS-compatible TLDs that should use ENS resolution: .eth, .box
-      const ensCompatibleTLDs = ['.eth', '.box'];
+      // ENS-compatible TLDs that should use ENS resolution: .eth
+      const ensCompatibleTLDs = ['.eth'];
       const isEnsCompatible = ensCompatibleTLDs.some(tld => normalizedQuery.endsWith(tld));
       
       // Namestone TLDs (.world, .cash, etc.)
-      const namesoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+      const namesoneTLDs = ['.box', '.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
       const isNamestoneTLD = namesoneTLDs.some(tld => normalizedQuery.endsWith(tld));
       
       // Check for subdomains (2+ dots) - but ENS-compatible domains use ENS resolution even with subdomains
