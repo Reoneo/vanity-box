@@ -7,17 +7,6 @@ import {
   Globe,
 } from "lucide-react";
 
-import { 
-  siBluesky, 
-  siReddit, 
-  siWhatsapp, 
-  siFacebook, 
-  siSnapchat, 
-  siGithub,
-  siTelegram,
-  siDiscord
-} from "simple-icons";
-
 interface SocialIconProps {
   platform: string;
   url: string;
@@ -42,12 +31,6 @@ const brandColors: Record<string, string> = {
   discord: "#5865F2",
 };
 
-// Determine if icon should be inverted (white) or not (dark)
-const shouldInvertIcon = (color: string) => {
-  // Snapchat yellow needs dark icon, all others need white
-  return color !== "#FFFC00";
-};
-
 export const SocialIcon = ({ 
   platform, 
   url, 
@@ -56,7 +39,6 @@ export const SocialIcon = ({
 }: SocialIconProps) => {
   const platformLower = platform.toLowerCase();
   const brandColor = brandColors[platformLower] || "#D4AF37";
-  const invert = shouldInvertIcon(brandColor);
   
   // Size configurations
   const sizeConfig = {
@@ -79,22 +61,6 @@ export const SocialIcon = ({
         return <Linkedin className={icon} />;
       case 'youtube':
         return <Youtube className={icon} />;
-      case 'bluesky':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siBluesky.path} /></svg>;
-      case 'reddit':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siReddit.path} /></svg>;
-      case 'whatsapp':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siWhatsapp.path} /></svg>;
-      case 'facebook':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siFacebook.path} /></svg>;
-      case 'snapchat':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siSnapchat.path} /></svg>;
-      case 'github':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siGithub.path} /></svg>;
-      case 'telegram':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siTelegram.path} /></svg>;
-      case 'discord':
-        return <svg className={icon} viewBox="0 0 24 24" fill="currentColor"><path d={siDiscord.path} /></svg>;
       default:
         return <Globe className={icon} />;
     }
@@ -119,7 +85,7 @@ export const SocialIcon = ({
     >
       <div
         style={{
-          filter: invert ? "invert(1)" : "invert(0)",
+          filter: brandColor === "#FFFC00" ? "invert(0)" : "invert(1)",
         }}
       >
         {getIcon()}

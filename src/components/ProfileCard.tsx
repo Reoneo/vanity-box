@@ -366,24 +366,26 @@ export const ProfileCard = ({
               </div>
             </div>
 
-            {/* Expanded Social Icons View - Overlay */}
-            {showAllSocials && web3BioProfile?.links && (
-              <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 animate-fade-in flex items-center justify-center p-6">
-                <div className="w-full max-w-2xl">
+            {/* Flip Card for All Social Links */}
+            {showAllSocials && (
+              <div className="absolute inset-0 bg-background rounded-3xl overflow-hidden animate-fade-in" style={{ backfaceVisibility: 'hidden' }}>
+                <div className="h-full flex flex-col">
                   {/* Close Button */}
-                  <button
-                    onClick={() => setShowAllSocials(false)}
-                    className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-lg"
-                  >
-                    <X className="w-5 h-5 text-black dark:text-white" />
-                  </button>
+                  <div className="flex justify-end p-4">
+                    <button
+                      onClick={() => setShowAllSocials(false)}
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-lg"
+                    >
+                      <X className="w-5 h-5 text-black dark:text-white" />
+                    </button>
+                  </div>
 
                   {/* All Social Icons Grid */}
-                  <div className="space-y-4 animate-scale-in">
+                  <div className="flex-1 overflow-y-auto px-6 pb-6">
                     <h3 className="text-2xl font-bold text-center text-[#D4AF37] mb-6">Social Links</h3>
                     
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 max-h-[70vh] overflow-y-auto p-2">
-                      {Object.entries(web3BioProfile.links)
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                      {web3BioProfile?.links && Object.entries(web3BioProfile.links)
                         .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
                         .map(([platform, linkData]: [string, any]) => {
                           const url = typeof linkData === 'string' ? linkData : linkData?.link;
@@ -396,7 +398,7 @@ export const ProfileCard = ({
                                 url={url}
                                 size="lg"
                               />
-                              <span className="text-xs text-foreground font-medium truncate max-w-full">
+                              <span className="text-xs text-foreground font-medium truncate max-w-full text-center">
                                 {platform.charAt(0).toUpperCase() + platform.slice(1)}
                               </span>
                             </div>
