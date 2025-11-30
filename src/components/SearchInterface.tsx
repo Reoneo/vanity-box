@@ -871,6 +871,34 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
           if (web3BioData?.notFound) {
             console.log('⚠️ No profile found on Web3.bio for:', isWalletAddress ? normalizedAddress : trimmedQuery);
+            
+            // For .box domains, try Namestone as fallback
+            if (normalizedQuery.endsWith('.box')) {
+              console.log('🔄 Trying Namestone fallback for .box domain:', normalizedQuery);
+              try {
+                const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-ens-subdomain-profile', {
+                  body: { subdomain: normalizedQuery }
+                });
+
+                if (!namestoneError && namestoneData && !namestoneData.error) {
+                  console.log('✅ Found .box profile via Namestone:', namestoneData);
+                  setWeb3BioProfile(namestoneData);
+                  setEnsResults([]);
+                  setIsLoading(false);
+                  
+                  // Fetch additional data for Dock (non-blocking)
+                  if (namestoneData.address) {
+                    fetchNfts(namestoneData.address);
+                  }
+                  return;
+                } else {
+                  console.log('❌ Namestone fallback also failed:', namestoneError || namestoneData);
+                }
+              } catch (err) {
+                console.error('❌ Namestone fallback error:', err);
+              }
+            }
+            
             toast.error('No profile found for this identity');
             setIsLoading(false);
             return;
