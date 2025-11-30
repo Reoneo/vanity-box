@@ -373,7 +373,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       console.log('🔄 Background: Preloading OpenSea NFTs for address:', address);
       // Small delay to let initial profile load complete
       const timer = setTimeout(() => {
-        fetchNfts();
+        fetchNfts(undefined);
       }, 1000);
       return () => clearTimeout(timer);
     } else if (address && !isValidAddress) {
@@ -1330,6 +1330,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && !isLoading && (
               <>
+                {/* Black overlay specifically when search is active over profile */}
+                {web3BioProfile && showSearchBar && (
+                  <div className="fixed inset-0 bg-black/90 z-[9996]" />
+                )}
+
                 {/* Modal Search Overlay - works for both homepage and profile views */}
                 {showSearchBar && (
                   <>
