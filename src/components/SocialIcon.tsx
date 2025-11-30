@@ -6,6 +6,16 @@ import {
   Youtube,
   Globe,
 } from "lucide-react";
+import { 
+  SiBluesky, 
+  SiReddit, 
+  SiWhatsapp, 
+  SiFacebook, 
+  SiSnapchat, 
+  SiGithub, 
+  SiTelegram, 
+  SiDiscord 
+} from "react-icons/si";
 
 interface SocialIconProps {
   platform: string;
@@ -14,23 +24,6 @@ interface SocialIconProps {
   onClick?: () => void;
 }
 
-// Official brand colors for each platform
-const brandColors: Record<string, string> = {
-  twitter: "#000000",
-  x: "#000000",
-  instagram: "#E4405F",
-  linkedin: "#0A66C2",
-  youtube: "#FF0000",
-  bluesky: "#1185FE",
-  reddit: "#FF4500",
-  whatsapp: "#25D366",
-  facebook: "#1877F2",
-  snapchat: "#FFFC00",
-  github: "#181717",
-  telegram: "#26A5E4",
-  discord: "#5865F2",
-};
-
 export const SocialIcon = ({ 
   platform, 
   url, 
@@ -38,7 +31,6 @@ export const SocialIcon = ({
   onClick 
 }: SocialIconProps) => {
   const platformLower = platform.toLowerCase();
-  const brandColor = brandColors[platformLower] || "#D4AF37";
   
   // Size configurations
   const sizeConfig = {
@@ -61,6 +53,22 @@ export const SocialIcon = ({
         return <Linkedin className={icon} />;
       case 'youtube':
         return <Youtube className={icon} />;
+      case 'bluesky':
+        return <SiBluesky className={icon} />;
+      case 'reddit':
+        return <SiReddit className={icon} />;
+      case 'whatsapp':
+        return <SiWhatsapp className={icon} />;
+      case 'facebook':
+        return <SiFacebook className={icon} />;
+      case 'snapchat':
+        return <SiSnapchat className={icon} />;
+      case 'github':
+        return <SiGithub className={icon} />;
+      case 'telegram':
+        return <SiTelegram className={icon} />;
+      case 'discord':
+        return <SiDiscord className={icon} />;
       default:
         return <Globe className={icon} />;
     }
@@ -78,16 +86,9 @@ export const SocialIcon = ({
     <button
       onClick={handleClick}
       title={platform}
-      className={`${container} flex items-center justify-center rounded-full shadow-md transition-all hover:scale-110`}
-      style={{
-        backgroundColor: brandColor,
-      }}
+      className={`${container} flex items-center justify-center rounded-full bg-yellow-400/80 shadow-md transition-all hover:scale-110`}
     >
-      <div
-        style={{
-          filter: brandColor === "#FFFC00" ? "invert(0)" : "invert(1)",
-        }}
-      >
+      <div className="text-black dark:text-white">
         {getIcon()}
       </div>
     </button>

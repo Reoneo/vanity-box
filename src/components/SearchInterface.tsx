@@ -1322,10 +1322,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 {showSearchBar && (
                   <>
                     {/* Dim overlay - below dock (z-9999) but above content */}
-                    <div 
-                      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9997] animate-fade-in"
-                      onClick={() => setShowSearchBar(false)}
-                    />
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9997] animate-fade-in"
+          onClick={() => setShowSearchBar(false)}
+        />
                     
                     {/* Centered search modal - just below dock */}
                     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 pointer-events-none">
