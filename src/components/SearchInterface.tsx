@@ -1517,11 +1517,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 className="fixed left-0 right-0 top-[80px] bottom-[140px] px-4 pt-4 flex flex-col z-[9997]"
               >
                 {/* Profile Card - scrollable content */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ minHeight: 0 }}>
-                  {/* Dim overlay when search is active */}
-                  {showSearchBar && (
-                    <div className="absolute inset-0 bg-black/70 z-[5] rounded-lg pointer-events-none" />
-                  )}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={web3BioProfile}
@@ -1893,13 +1889,25 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('my_ids'),
-                        onClick: () => {},
+                        onClick: () => {
+                          if (!walletAddress) {
+                            toast.error('Please connect your wallet first');
+                            return;
+                          }
+                          // Load user's profile and exit My IDs
+                          setShowMyIDs(false);
+                          handleSearch(walletAddress);
+                        },
                         isActive: true,
                       },
                       {
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Search',
                         onClick: () => {
+                          if (!walletAddress) {
+                            toast.error('Please connect your wallet first');
+                            return;
+                          }
                           setShowSearchBar(prev => !prev);
                         },
                         isActive: showSearchBar,
