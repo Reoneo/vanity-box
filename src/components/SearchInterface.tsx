@@ -1342,7 +1342,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <>
                     {/* Dim overlay - below dock (z-9999) but above content */}
         <div 
-          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9997] animate-fade-in"
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9997] animate-fade-in"
           onClick={() => setShowSearchBar(false)}
         />
                     
@@ -1517,7 +1517,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 className="fixed left-0 right-0 top-[80px] bottom-[140px] px-4 pt-4 flex flex-col z-[9997]"
               >
                 {/* Profile Card - scrollable content */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ minHeight: 0 }}>
+                  {/* Dim overlay when search is active */}
+                  {showSearchBar && (
+                    <div className="absolute inset-0 bg-black/70 z-[5] rounded-lg pointer-events-none" />
+                  )}
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={web3BioProfile}
@@ -1569,13 +1573,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       {
                         icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                         label: t('profile'),
-                        onClick: () => setActiveDockSection('profile'),
+                        onClick: () => {
+                          if (!walletAddress) {
+                            toast.error('Please connect your wallet first');
+                            return;
+                          }
+                          setActiveDockSection('profile');
+                        },
                         isActive: activeDockSection === 'profile',
                       },
                       {
                         icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
                         label: 'Edit',
                         onClick: () => {
+                          if (!walletAddress) {
+                            toast.error('Please connect your wallet first');
+                            return;
+                          }
                           setShowMyIDs(true);
                           setActiveDockSection('profile');
                         },
@@ -1901,26 +1915,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div className="absolute bottom-4 left-0 right-0 z-[9997] flex items-center justify-center">
                 <Dock
                   items={[
-                    {
-                      icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
-                      label: 'Home',
-                      onClick: () => {
-                        // Reset to initial "Coming Soon" state - clear all data
-                        setIsSearchActive(false);
-                        setHasSearched(false);
-                        setShowSearchBar(false);
-                        setWeb3BioProfile(null);
-                        setEfpStats(null);
-                        setEnsRecords(null);
-                        setSearchQuery('');
-                        setDisplayQuery('');
-                        setEnsResults([]); // Clear subdomain results
-                        setNfts([]);
-                        setPoapTokens([]);
-                        setActiveDockSection('profile');
-                      },
-                      isActive: false,
-                    },
                     {
                       icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Profile',
