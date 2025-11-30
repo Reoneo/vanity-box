@@ -1120,6 +1120,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       
       console.log('Calling get-opensea-nfts with body:', requestBody);
       
+      // Double-check walletAddress is valid before making the call
+      if (!requestBody.walletAddress || typeof requestBody.walletAddress !== 'string' || requestBody.walletAddress.trim() === '') {
+        console.error('Aborting API call: requestBody.walletAddress is invalid', requestBody.walletAddress);
+        setNftLoading(false);
+        return;
+      }
+      
       const data = await callEdge("get-opensea-nfts", requestBody);
       
       // Sanitize the next cursor from the response
