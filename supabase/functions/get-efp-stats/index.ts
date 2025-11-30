@@ -37,9 +37,9 @@ serve(async (req) => {
       efpData = await efpResponse.json();
       console.log('EFP data fetched successfully:', JSON.stringify(efpData));
       
-      // The EFP API returns follower_count and following_count (singular, not plural)
+      // The EFP API returns followers_count and following_count (plural)
       return new Response(JSON.stringify({
-        followers_count: efpData.follower_count || 0,
+        followers_count: efpData.followers_count || 0,
         following_count: efpData.following_count || 0
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
