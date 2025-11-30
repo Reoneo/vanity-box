@@ -895,6 +895,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             
             // Fetch additional data for Dock (non-blocking)
             if (web3BioData.profile.address) {
+              // Fetch EFP stats
+              supabase.functions.invoke('get-efp-stats', {
+                body: { address: web3BioData.profile.address }
+              }).then(({ data: efpData }) => {
+                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                  console.log('✅ EFP stats loaded:', efpData);
+                  setEfpStats(efpData);
+                }
+              }).catch(err => console.log('EFP stats fetch failed:', err));
+              
               fetchNfts(web3BioData.profile.address);
             }
           } else {
@@ -1319,6 +1329,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       </div>
                     )}
                     
+                    {/* Modal Search Overlay - works for both homepage and profile views */}
                     {showSearchBar && (
                       <>
                         {/* Dim overlay */}
@@ -1481,150 +1492,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         ) : null}
                       </div>
                     )}
-                    
-                    {showSearchBar && (
-                    <div className="w-full max-w-md mx-auto mb-2 relative z-50 transition-all duration-300 mt-2">
-                      <div className="relative">
-                        <div className="absolute left-1 top-1 z-10 flex items-center h-10">
-                          <DropdownMenu open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37] rounded-md flex items-center justify-center"
-                              >
-                                <Filter className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="start"
-                              className="w-72 md:w-80 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-4 z-[60]"
-                            >
-                              <div className="relative">
-                                <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-3xl" />
-                                <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-3xl" />
-
-                                <div className="relative z-10 space-y-4">
-                                  <DropdownMenuLabel className="text-lg font-semibold text-white">Filter</DropdownMenuLabel>
-                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-
-                                  <div className="space-y-3">
-                                    <div className="flex flex-wrap gap-2">
-                                      {clubs.map((club) => (
-                                        <label
-                                          key={club}
-                                          className={cn(
-                                            "px-4 py-2 rounded-full cursor-pointer transition-all duration-300 flex items-center gap-2 text-sm font-medium border-2",
-                                            filters.club.includes(club)
-                                              ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                                              : "bg-gray-800/50 text-gray-300 border-gray-700 hover:border-[#D4AF37]/50 hover:bg-gray-700/50",
-                                          )}
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            handleClubToggle(club);
-                                          }}
-                                        >
-                                          {club}
-                                        </label>
-                                      ))}
-                                    </div>
-                                  </div>
-
-
-                                  <DropdownMenuSeparator className="bg-[#D4AF37]/30" />
-                                  <div className="flex gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={handleClearFilters}
-                                      className="flex-1 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setShowFilterDropdown(false);
-                                        if (searchQuery.trim()) {
-                                          handleSearch();
-                                          setIsSearchActive(true);
-                                          onSearchClick?.();
-                                        }
-                                      }}
-                                      className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black border-[#D4AF37]"
-                                    >
-                                      <Check className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <Input
-                          placeholder={t("Search for a name")}
-                          className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pl-20 pr-20"
-                          value={searchQuery}
-                          onChange={(e) => handleSearchChange(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleSearch();
-                              setIsSearchActive(true);
-                              onSearchClick?.();
-                            }
-                          }}
-                          onFocus={() => {
-                            setShowFilterDropdown(false);
-                          }}
-                        />
-                        <div className="absolute right-1 top-1 z-10 flex items-center gap-1 h-10">
-                          {searchQuery && (
-                            <button
-                              onClick={() => {
-                                setSearchQuery("");
-                                setEnsResults([]);
-                                setIsAvailable(null);
-                                setShowInitialResults(false);
-                                // Don't clear profile - keep user on current view
-                                // setWeb3BioProfile(null);
-                                // setIsSearchActive(false);
-                                // onClearSearch?.();
-                              }}
-                              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                              aria-label="Clear search"
-                            >
-                              <X className="w-4 h-4 text-black dark:text-white" />
-                            </button>
-                          )}
-                          <Button
-                            onClick={() => {
-                              handleSearch();
-                              setIsSearchActive(true);
-                              onSearchClick?.();
-                            }}
-                            size="sm"
-                            className="h-8 px-3 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
-                            disabled={!searchQuery.trim() || isLoading}
-                          >
-                            <Search className="w-4 h-4 text-black" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    )}
-                  </>
+                   </>
                 )}
               </>
             )}
 
-            {/* Profile Card with Dock Navigation - dynamic positioning based on search bar */}
+            {/* Profile Card with Dock Navigation - fixed positioning regardless of search bar */}
             {web3BioProfile && !showMyIDs ? (
               <div
-                className={cn(
-                  "fixed left-0 right-0 flex flex-col z-[9997]",
-                  showSearchBar ? "top-[140px] bottom-[140px] px-4 pt-4" : "top-[80px] bottom-[140px] px-4 pt-4"
-                )}
+                className="fixed left-0 right-0 top-[80px] bottom-[140px] px-4 pt-4 flex flex-col z-[9997]"
               >
                 {/* Profile Card - scrollable content */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
