@@ -383,23 +383,23 @@ export const ProfileCard = ({
 
             {/* Flip Card for All Social Links */}
             {showAllSocials && (
-              <div className="absolute inset-0 bg-background rounded-3xl overflow-hidden animate-fade-in" style={{ backfaceVisibility: 'hidden' }}>
+              <div className="fixed inset-0 bg-background z-[9999] animate-fade-in" style={{ backfaceVisibility: 'hidden' }}>
                 <div className="h-full flex flex-col">
-                  {/* Close Button */}
-                  <div className="flex justify-end p-4">
+                  {/* Sticky Header with title and close button */}
+                  <div className="sticky top-0 flex items-center justify-between px-4 py-4 bg-background border-b border-border/30 z-10">
+                    <div className="w-10" /> {/* Spacer for centering */}
+                    <h3 className="text-xl font-bold text-[#D4AF37]">Social Links</h3>
                     <button
                       onClick={() => setShowAllSocials(false)}
-                      className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-lg"
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all"
                     >
-                      <X className="w-5 h-5 text-black dark:text-white" />
+                      <X className="w-5 h-5 text-[#D4AF37]" />
                     </button>
                   </div>
 
-                  {/* All Social Icons Grid */}
-                  <div className="flex-1 overflow-y-auto px-6 pb-6">
-                    <h3 className="text-2xl font-bold text-center text-[#D4AF37] mb-6">Social Links</h3>
-                    
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                  {/* Social Icons Grid */}
+                  <div className="flex-1 overflow-y-auto px-3 py-4">
+                    <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
                       {web3BioProfile?.links && Object.entries(web3BioProfile.links)
                         .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
                         .map(([platform, linkData]: [string, any]) => {
@@ -407,7 +407,7 @@ export const ProfileCard = ({
                           if (!url) return null;
 
                           return (
-                            <div key={platform} className="flex flex-col items-center gap-2">
+                            <div key={platform} className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/30 transition-colors">
                               <SocialIcon
                                 platform={platform}
                                 url={url}
@@ -425,26 +425,25 @@ export const ProfileCard = ({
               </div>
             )}
 
-            {/* NFTs Overlay - Same style as social links popup */}
+            {/* NFTs Overlay - Full screen with sticky header */}
             {showNftsOverlay && (
-              <div className="absolute inset-0 bg-background rounded-3xl overflow-hidden animate-fade-in z-10" style={{ backfaceVisibility: 'hidden' }}>
+              <div className="fixed inset-0 bg-background z-[9999] animate-fade-in" style={{ backfaceVisibility: 'hidden' }}>
                 <div className="h-full flex flex-col">
-                  {/* Close Button */}
-                  <div className="flex justify-end p-4">
+                  {/* Sticky Header with title and close button */}
+                  <div className="sticky top-0 flex items-center justify-between px-4 py-4 bg-background border-b border-border/30 z-10">
+                    <div className="w-10" /> {/* Spacer for centering */}
+                    <h3 className="text-xl font-bold text-[#D4AF37]">NFTs ({nfts.length})</h3>
                     <button
                       onClick={() => setShowNftsOverlay(false)}
-                      className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-lg"
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all"
                     >
-                      <X className="w-5 h-5 text-black dark:text-white" />
+                      <X className="w-5 h-5 text-[#D4AF37]" />
                     </button>
                   </div>
 
-                  {/* NFTs Grid */}
-                  <div className="flex-1 overflow-y-auto px-6 pb-6">
-                    <h3 className="text-2xl font-bold text-center text-[#D4AF37] mb-6">NFTs ({nfts.length})</h3>
-                    
-                    {/* Collection grouped view */}
-                    <div className="space-y-3">
+                  {/* NFTs Collection List */}
+                  <div className="flex-1 overflow-y-auto px-3 py-3">
+                    <div className="space-y-2 max-w-lg mx-auto">
                       {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                         <button
                           key={collection}
@@ -452,18 +451,18 @@ export const ProfileCard = ({
                             setExpandedCollection(collection);
                             setShowNftsOverlay(false);
                           }}
-                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-colors active:opacity-90 group"
+                          className="w-full p-3 bg-card/40 hover:bg-card/60 border border-border/30 hover:border-[#D4AF37]/40 rounded-xl transition-colors active:opacity-90 group"
                         >
                           <div className="flex items-center justify-between">
                             <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-bold text-foreground text-base group-hover:text-[#D4AF37] transition-colors truncate">
+                              <h4 className="font-semibold text-foreground text-sm group-hover:text-[#D4AF37] transition-colors truncate">
                                 {formatCollectionName(collection)}
                               </h4>
-                              <p className="text-sm text-muted-foreground mt-0.5">
+                              <p className="text-xs text-muted-foreground">
                                 {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
                               </p>
                             </div>
-                            <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 transition-transform flex-shrink-0" />
+                            <ChevronDown className="w-4 h-4 text-[#D4AF37] -rotate-90 flex-shrink-0" />
                           </div>
                         </button>
                       ))}
@@ -471,7 +470,7 @@ export const ProfileCard = ({
                     
                     {/* View on OpenSea button */}
                     {web3BioProfile?.address && (
-                      <div className="mt-6">
+                      <div className="mt-4 max-w-lg mx-auto">
                         <Button
                           asChild
                           className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30"
