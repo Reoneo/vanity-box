@@ -14,7 +14,8 @@ import { ActivityGraph } from "./ActivityGraph";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
-import worldcoinAvatar from '@/assets/worldcoin-default-avatar.svg';
+import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
+import { FileImage } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +69,7 @@ export const ProfileCard = ({
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
+  const [showNftsOverlay, setShowNftsOverlay] = useState(false);
 
   // No need to disable body scrolling - parent container handles overflow
 
@@ -201,7 +203,7 @@ export const ProfileCard = ({
       <div className="w-full h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-hidden">
           <div className="space-y-4 pb-24">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
@@ -216,9 +218,8 @@ export const ProfileCard = ({
               <div className="flex justify-center absolute -bottom-14 left-0 right-0">
                 <Avatar className="h-40 w-40 border-4 border-background bg-black">
                   <AvatarImage 
-                    src={web3BioProfile?.avatar || worldcoinAvatar} 
+                    src={web3BioProfile?.avatar || vanityBoxAvatar} 
                     alt={web3BioProfile?.displayName || 'User'}
-                    className={!web3BioProfile?.avatar ? "scale-[2]" : ""}
                   />
                   <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
                     {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
@@ -302,18 +303,38 @@ export const ProfileCard = ({
                 )}
               </div>
 
-              {/* Social Icons Row - Display under email/website */}
-              {web3BioProfile?.links && (() => {
-                const socialLinks = Object.entries(web3BioProfile.links)
-                  .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData);
+              {/* Social Icons Row - NFT first, then max 3 social links */}
+              {(() => {
+                const socialLinks = web3BioProfile?.links 
+                  ? Object.entries(web3BioProfile.links)
+                      .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
+                  : [];
                 
-                if (socialLinks.length === 0) return null;
+                const hasNfts = nfts && nfts.length > 0;
+                const displayLinks = socialLinks.slice(0, 3);
+                const remainingCount = socialLinks.length - 3;
 
-                const displayLinks = socialLinks.length > 6 ? socialLinks.slice(0, 5) : socialLinks.slice(0, 6);
-                const remainingCount = socialLinks.length - 5;
+                if (!hasNfts && socialLinks.length === 0) return null;
 
                 return (
                   <div className="flex items-center justify-center gap-3 min-h-[40px] flex-wrap">
+                    {/* NFT Button - First with divider */}
+                    {hasNfts && (
+                      <>
+                        <button
+                          onClick={() => setShowNftsOverlay(true)}
+                          className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-110 shadow-md border border-[#D4AF37]/30"
+                          title={`View ${nfts.length} NFTs`}
+                        >
+                          <FileImage className="w-5 h-5 text-[#D4AF37]" />
+                        </button>
+                        {socialLinks.length > 0 && (
+                          <div className="w-px h-6 bg-border/50" />
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Social Links - Max 3 */}
                     {displayLinks.map(([platform, linkData]: [string, any]) => {
                       const url = typeof linkData === 'string' ? linkData : linkData?.link;
                       if (!url) return null;
@@ -328,7 +349,8 @@ export const ProfileCard = ({
                       );
                     })}
                     
-                    {socialLinks.length > 6 && (
+                    {/* Show more button if > 3 social links */}
+                    {socialLinks.length > 3 && (
                       <button
                         onClick={() => setShowAllSocials(true)}
                         className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-md"
@@ -399,6 +421,73 @@ export const ProfileCard = ({
                           );
                         })}
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* NFTs Overlay - Same style as social links popup */}
+            {showNftsOverlay && (
+              <div className="absolute inset-0 bg-background rounded-3xl overflow-hidden animate-fade-in z-10" style={{ backfaceVisibility: 'hidden' }}>
+                <div className="h-full flex flex-col">
+                  {/* Close Button */}
+                  <div className="flex justify-end p-4">
+                    <button
+                      onClick={() => setShowNftsOverlay(false)}
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-lg"
+                    >
+                      <X className="w-5 h-5 text-black dark:text-white" />
+                    </button>
+                  </div>
+
+                  {/* NFTs Grid */}
+                  <div className="flex-1 overflow-y-auto px-6 pb-6">
+                    <h3 className="text-2xl font-bold text-center text-[#D4AF37] mb-6">NFTs ({nfts.length})</h3>
+                    
+                    {/* Collection grouped view */}
+                    <div className="space-y-3">
+                      {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
+                        <button
+                          key={collection}
+                          onClick={() => {
+                            setExpandedCollection(collection);
+                            setShowNftsOverlay(false);
+                          }}
+                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-colors active:opacity-90 group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-bold text-foreground text-base group-hover:text-[#D4AF37] transition-colors truncate">
+                                {formatCollectionName(collection)}
+                              </h4>
+                              <p className="text-sm text-muted-foreground mt-0.5">
+                                {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
+                              </p>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 transition-transform flex-shrink-0" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* View on OpenSea button */}
+                    {web3BioProfile?.address && (
+                      <div className="mt-6">
+                        <Button
+                          asChild
+                          className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30"
+                        >
+                          <a
+                            href={`https://opensea.io/${web3BioProfile.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View On OpenSea
+                          </a>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
