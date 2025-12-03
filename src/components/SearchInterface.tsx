@@ -81,7 +81,7 @@ import whatsappIcon from "@/assets/whatsapp-icon.png";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import { callEdge } from "@/lib/supaInvoke";
-import { User, Link2, Image, FileImage, MessageSquare } from "lucide-react";
+import { User, Link2, Image, MessageSquare } from "lucide-react";
 import ensV2Logo from "@/assets/ens-v2-logo.png";
 import web3BioLogo from "@/assets/web3bio-logo.png";
 import efpLogoFullDark from "@/assets/efp-logo-full-dark.png";
@@ -1516,8 +1516,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
-                {/* Profile Card - scrollable content */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+                {/* Profile Card - no scroll within profile */}
+                <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={web3BioProfile}
@@ -1591,38 +1591,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         },
                         isActive: false,
                       },
-                      // Only show NFT icon if NFTs are found (not while loading)
-                      ...(nfts && nfts.length > 0 ? [{
-                        icon: <FileImage className="w-6 h-6 text-[#D4AF37]" />,
-                        label: t('nfts'),
-                        onClick: () => {
-                          setActiveDockSection('nfts');
-                          const address = web3BioProfile?.address || walletAddress;
-                          
-                          // Comprehensive validation before fetching
-                          const isValidAddress = address && 
-                                                address !== 'undefined' && 
-                                                typeof address === 'string' && 
-                                                address.trim() !== '' &&
-                                                !(typeof address === 'object' && (address as any)?._type === 'undefined');
-                          
-                          console.log('NFT section clicked - validation:', { 
-                            address, 
-                            isValidAddress,
-                            web3BioAddress: web3BioProfile?.address,
-                            walletAddress,
-                            nftsLength: nfts.length 
-                          });
-                          
-                          // Only fetch NFTs if we have a valid wallet address and no NFTs loaded yet
-                          if (isValidAddress && nfts.length === 0) {
-                            fetchNfts();
-                          } else if (!isValidAddress) {
-                            console.warn('Cannot fetch NFTs: Invalid or missing wallet address');
-                          }
-                        },
-                        isActive: activeDockSection === 'nfts',
-                      }] : []),
                       // Search icon on far right
                       {
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
