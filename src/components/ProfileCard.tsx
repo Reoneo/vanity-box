@@ -15,7 +15,6 @@ import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
-import { FileImage } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -323,10 +322,10 @@ export const ProfileCard = ({
                       <>
                         <button
                           onClick={() => setShowNftsOverlay(true)}
-                          className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-110 shadow-md border border-[#D4AF37]/30"
+                          className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
                           title={`View ${nfts.length} NFTs`}
                         >
-                          <FileImage className="w-5 h-5 text-[#D4AF37]" />
+                          <span className="text-[#D4AF37] font-semibold text-sm">NFTs</span>
                         </button>
                         {socialLinks.length > 0 && (
                           <div className="w-px h-6 bg-border/50" />
