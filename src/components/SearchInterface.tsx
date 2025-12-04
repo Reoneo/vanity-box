@@ -1563,6 +1563,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setNfts([]);
                           setPoapTokens([]);
                           setActiveDockSection('profile');
+                          setShowSearchBar(false); // Close search bar when going home
                         },
                         isActive: false,
                       }] : []),
