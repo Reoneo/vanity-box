@@ -1501,7 +1501,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <>
                     {/* Coming Soon Display - Only show when no profile, search bar is closed, and no results */}
                     {!web3BioProfile && !showSearchBar && ensResults.length === 0 && (
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div 
+                        className="fixed left-0 right-0 flex items-center justify-center z-[9996]"
+                        style={{ 
+                          top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
+                          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' 
+                        }}
+                      >
                         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#D4AF37] animate-pulse">
                           Coming Soon
                         </h1>
