@@ -1299,7 +1299,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     <>
       {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
 
-      <div className="w-full h-full">
+      <div className="w-full h-full relative">
         {/* Show mint interface when a result is selected */}
         {showMintInterface && selectedResult ? (
           <>
