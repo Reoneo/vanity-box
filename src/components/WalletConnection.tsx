@@ -496,51 +496,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
-        <DropdownMenuItem 
-          className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-          onClick={() => {
-            window.dispatchEvent(new CustomEvent('show-my-ids'));
-            const backdrop = document.getElementById('wallet-dropdown-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.style.overflow = '';
-          }}
-        >
-          <User className="mr-2 h-4 w-4" />
-          My ID's
-        </DropdownMenuItem>
-        
-        {/* Profile Button */}
-        <DropdownMenuItem 
-          className="text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const backdrop = document.getElementById('wallet-dropdown-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.style.overflow = '';
-            
-            // Dispatch custom event to directly load profile without search
-            if (ensName || displayAddress) {
-              const identifier = ensName || displayAddress;
-              window.dispatchEvent(new CustomEvent('load-direct-profile', { 
-                detail: { identifier, skipSearch: true } 
-              }));
-            }
-          }}
-        >
-          <UserCircle className="mr-2 h-4 w-4" />
-          <div className="flex flex-col">
-            <span className="font-medium">Profile</span>
-            {ensLoading ? (
-              <span className="text-xs text-gray-500 dark:text-gray-400">Loading...</span>
-            ) : (
-              <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[180px]">
-                {ensName || formatAddress(displayAddress)}
-              </span>
-            )}
-          </div>
-        </DropdownMenuItem>
         
         {/* Show balance for Petra wallet */}
         {walletType === 'petra' && (
