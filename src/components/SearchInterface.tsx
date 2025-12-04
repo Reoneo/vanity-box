@@ -221,6 +221,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showInitialResults, setShowInitialResults] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [hadPreviousProfile, setHadPreviousProfile] = useState(false);
+  const [isHomepage, setIsHomepage] = useState(true);
   
   // Dock panel states
   const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster'>('profile');
@@ -457,13 +458,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [username]);
 
-  // Show all subdomains initially when component mounts
+  // Show homepage initially when component mounts
   useEffect(() => {
     if (!hasSearched && !username) {
-      const allResults = getAllResults();
-      setEnsResults(allResults);
+      setIsHomepage(true);
       setHasSearched(true);
-      setDisplayQuery("");
     }
   }, []);
 
@@ -724,6 +723,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     console.log("Search start", { query: trimmedQuery });
     setShowFilterDropdown(false);
+    setIsHomepage(false);
 
     // Prevent searches with spaces
     if (trimmedQuery.includes(" ")) {
@@ -1328,6 +1328,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       setHasSearched(false);
                       setDisplayQuery('');
                       setSearchQuery('');
+                      setIsHomepage(true);
                     },
                     isActive: false,
                   },
@@ -1499,8 +1500,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                 {!isSearchActive ? (
                   <>
-                    {/* Coming Soon Display - Only show when no profile, search bar is closed, and no results */}
-                    {!web3BioProfile && !showSearchBar && ensResults.length === 0 && (
+                    {/* Coming Soon Display - Only show when on homepage */}
+                    {isHomepage && !web3BioProfile && !showSearchBar && (
                       <div 
                         className="fixed left-0 right-0 flex items-center justify-center z-[9996]"
                         style={{ 
@@ -1590,6 +1591,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setNfts([]);
                           setPoapTokens([]);
                           setActiveDockSection('profile');
+                          setIsHomepage(true);
                         },
                         isActive: false,
                       }] : []),
@@ -1883,6 +1885,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setPoapTokens([]);
                           setActiveDockSection('profile');
                           setShowSearchBar(false);
+                          setIsHomepage(true);
                         },
                         isActive: false,
                       },
@@ -1937,6 +1940,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         setHasSearched(false);
                         setDisplayQuery('');
                         setSearchQuery('');
+                        setIsHomepage(true);
                       },
                       isActive: false,
                     },
@@ -2085,7 +2089,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* No Results State */}
             <div className="w-full sm:max-w-3xl sm:mx-auto px-4">
-              {hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
+              {!isHomepage && hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
                 <div className="text-center py-12 animate-in fade-in duration-500">
                   <p className="text-gray-400 text-lg mb-2">{t('no_results_found')}</p>
                   <p className="text-sm text-gray-500">{t('try_different_query')}</p>
