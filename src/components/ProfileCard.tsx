@@ -467,27 +467,30 @@ export const ProfileCard = ({
                 </div>
 
                 {/* NFTs Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
                   {expandedCollection ? (
                     // Expanded collection view
-                    <div className="space-y-4 max-w-lg mx-auto">
-                      <div className="flex items-center gap-3 pb-3 border-b border-[#D4AF37]/30">
-                        <button
-                          onClick={() => setExpandedCollection(null)}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors"
-                        >
-                          <ChevronDown className="w-4 h-4 rotate-90" />
-                          <span className="text-sm font-medium">Back</span>
-                        </button>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-[#D4AF37] text-lg truncate">{formatCollectionName(expandedCollection)}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {groupedNfts[expandedCollection]?.length || 0} items
-                          </p>
+                    <div className="space-y-4 max-w-2xl mx-auto">
+                      {/* Sticky header for expanded collection */}
+                      <div className="sticky top-0 z-10 bg-background dark:bg-black pt-2 pb-3 -mx-4 px-4">
+                        <div className="flex items-center gap-3 pb-3 border-b border-[#D4AF37]/30">
+                          <button
+                            onClick={() => setExpandedCollection(null)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors"
+                          >
+                            <ChevronDown className="w-4 h-4 rotate-90" />
+                            <span className="text-sm font-medium">Back</span>
+                          </button>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-[#D4AF37] text-lg truncate">{formatCollectionName(expandedCollection)}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {groupedNfts[expandedCollection]?.length || 0} items
+                            </p>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
                         {groupedNfts[expandedCollection]?.map((nft, index) => {
                           const animationUrl = nft.animation_url || nft.metadata?.animation_url;
                           const isVideo = animationUrl && (animationUrl.toLowerCase().includes('.mp4') || animationUrl.toLowerCase().includes('.webm') || animationUrl.toLowerCase().includes('video'));

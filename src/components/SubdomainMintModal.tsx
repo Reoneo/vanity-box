@@ -879,8 +879,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="w-full max-w-md mx-auto animate-in slide-in-from-right duration-500 fade-in max-h-[calc(100vh-100px)]">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
+    <div className="w-full max-w-md mx-auto animate-in slide-in-from-right duration-500 fade-in mt-20">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-visible flex flex-col relative">
         {/* Back */}
         <button
           onClick={onClose}
