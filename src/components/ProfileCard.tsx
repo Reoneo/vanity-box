@@ -388,12 +388,14 @@ export const ProfileCard = ({
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
-                    <h3 className="text-lg font-bold text-[#D4AF37] drop-shadow-lg">Social Links</h3>
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-lg font-bold text-black">Social Links</h3>
+                    </div>
                     <button
                       onClick={() => setShowAllSocials(false)}
                       className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-[#D4AF37]" />
+                      <X className="w-4 h-4 text-black" />
                     </button>
                   </div>
                 </div>
@@ -449,7 +451,9 @@ export const ProfileCard = ({
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
-                    <h3 className="text-lg font-bold text-[#D4AF37] drop-shadow-lg">NFTs ({nfts.length})</h3>
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-lg font-bold text-black">NFTs ({nfts.length})</h3>
+                    </div>
                     <button
                       onClick={() => {
                         setShowNftsOverlay(false);
@@ -457,7 +461,7 @@ export const ProfileCard = ({
                       }}
                       className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-[#D4AF37]" />
+                      <X className="w-4 h-4 text-black" />
                     </button>
                   </div>
                 </div>
