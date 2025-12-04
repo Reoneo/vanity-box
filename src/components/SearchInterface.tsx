@@ -1551,10 +1551,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Home',
                         onClick: (e: React.MouseEvent) => {
-                          e.stopPropagation(); // Prevent event bubbling
-                          // Close search bar first to prevent any race conditions
+                          e.stopPropagation();
                           setShowSearchBar(false);
-                          // Then clear all profile data
+                          setHadPreviousProfile(false); // Prevent useEffect from re-enabling search
                           setWeb3BioProfile(null);
                           setEfpStats(null);
                           setEnsRecords(null);
@@ -1896,7 +1895,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Home Screen Dock - Show when no profile and not My ID's */}
             {!web3BioProfile && !showMyIDs && !isLoading && (
-              <div className="absolute bottom-4 left-0 right-0 z-[9997] flex items-center justify-center">
+              <div className="absolute bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
                 <Dock
                   items={[
                     {
