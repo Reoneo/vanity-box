@@ -1856,6 +1856,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setNfts([]);
                           setPoapTokens([]);
                           setActiveDockSection('profile');
+                          setShowSearchBar(false);
                         },
                         isActive: false,
                       },
