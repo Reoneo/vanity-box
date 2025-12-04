@@ -377,7 +377,7 @@ export const ProfileCard = ({
 
             {/* Flip Card for All Social Links */}
             {showAllSocials && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 80px)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
+              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 80px)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 50px)' }}>
                 {/* Header with ENS image banner */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
@@ -438,7 +438,7 @@ export const ProfileCard = ({
 
             {/* NFTs Overlay - Fits within gold borders */}
             {showNftsOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 80px)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
+              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 80px)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 50px)' }}>
                 {/* Header with ENS image banner */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
