@@ -184,14 +184,8 @@ export const ProfileCard = ({
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
       const handle = pathParts[pathParts.length - 1] || urlObj.hostname;
       
-      // Platforms that use @ prefix
-      const atPlatforms = ['twitter', 'x', 'instagram', 'threads', 'bluesky'];
-      
-      if (atPlatforms.includes(platform.toLowerCase())) {
-        return `@${handle}`;
-      }
-      
-      return handle;
+      // Always add @ prefix for social handles
+      return `@${handle}`;
     } catch {
       return url; // Fallback to full URL if parsing fails
     }
@@ -383,30 +377,30 @@ export const ProfileCard = ({
 
             {/* Flip Card for All Social Links */}
             {showAllSocials && (
-              <div className="fixed inset-0 bg-background z-[9999] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden' }}>
+              <div className="fixed top-[75px] bottom-[100px] left-0 right-0 bg-background z-[9999] animate-fade-in flex flex-col rounded-t-2xl" style={{ backfaceVisibility: 'hidden' }}>
                 {/* Header with ENS image banner */}
                 <div 
-                  className="relative w-full h-24 bg-cover bg-center flex-shrink-0"
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 rounded-t-2xl overflow-hidden"
                   style={{ 
                     backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90" />
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3">
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
-                    <h3 className="text-xl font-bold text-[#D4AF37] drop-shadow-lg">Social Links</h3>
+                    <h3 className="text-lg font-bold text-[#D4AF37] drop-shadow-lg">Social Links</h3>
                     <button
                       onClick={() => setShowAllSocials(false)}
-                      className="w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
                     >
-                      <X className="w-5 h-5 text-[#D4AF37]" />
+                      <X className="w-4 h-4 text-[#D4AF37]" />
                     </button>
                   </div>
                 </div>
 
                 {/* Social Icons Grid */}
-                <div className="flex-1 overflow-y-auto px-4 py-6">
-                  <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
+                <div className="flex-1 overflow-y-auto px-4 py-4">
+                  <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
                     {web3BioProfile?.links && Object.entries(web3BioProfile.links)
                       .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
                       .map(([platform, linkData]: [string, any]) => {
@@ -419,16 +413,21 @@ export const ProfileCard = ({
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50"
+                            className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50"
                           >
                             <SocialIcon
                               platform={platform}
                               url={url}
                               size="lg"
                             />
-                            <span className="text-sm text-foreground font-medium truncate max-w-full text-center">
-                              {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                            </span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-sm text-foreground font-medium text-center">
+                                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                              </span>
+                              <span className="text-xs text-muted-foreground truncate max-w-[100px] text-center">
+                                {extractHandle(platform, url)}
+                              </span>
+                            </div>
                           </a>
                         );
                       })}
@@ -437,32 +436,32 @@ export const ProfileCard = ({
               </div>
             )}
 
-            {/* NFTs Overlay - Full screen with header banner */}
+            {/* NFTs Overlay - Fits within gold borders */}
             {showNftsOverlay && (
-              <div className="fixed inset-0 bg-background z-[9999] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden' }}>
+              <div className="fixed top-[75px] bottom-[100px] left-0 right-0 bg-background z-[9999] animate-fade-in flex flex-col rounded-t-2xl" style={{ backfaceVisibility: 'hidden' }}>
                 {/* Header with ENS image banner */}
                 <div 
-                  className="relative w-full h-24 bg-cover bg-center flex-shrink-0"
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 rounded-t-2xl overflow-hidden"
                   style={{ 
                     backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90" />
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3">
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
-                    <h3 className="text-xl font-bold text-[#D4AF37] drop-shadow-lg">NFTs ({nfts.length})</h3>
+                    <h3 className="text-lg font-bold text-[#D4AF37] drop-shadow-lg">NFTs ({nfts.length})</h3>
                     <button
                       onClick={() => setShowNftsOverlay(false)}
-                      className="w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
                     >
-                      <X className="w-5 h-5 text-[#D4AF37]" />
+                      <X className="w-4 h-4 text-[#D4AF37]" />
                     </button>
                   </div>
                 </div>
 
                 {/* NFTs Collection List */}
-                <div className="flex-1 overflow-y-auto px-4 py-4">
-                  <div className="space-y-3 max-w-lg mx-auto">
+                <div className="flex-1 overflow-y-auto px-4 py-3">
+                  <div className="space-y-2 max-w-lg mx-auto">
                     {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                         <button
                           key={collection}
@@ -490,7 +489,7 @@ export const ProfileCard = ({
                       {web3BioProfile?.address && (
                         <Button
                           asChild
-                          className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 mt-4"
+                          className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 mt-3"
                         >
                           <a
                             href={`https://opensea.io/${web3BioProfile.address}`}
