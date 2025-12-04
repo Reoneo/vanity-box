@@ -1479,8 +1479,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                 {!isSearchActive ? (
                   <>
-                    {/* Coming Soon Display - Only show when no profile and search bar is closed */}
-                    {!web3BioProfile && !showSearchBar && (
+                    {/* Coming Soon Display - Only show when no profile, search bar is closed, and no results */}
+                    {!web3BioProfile && !showSearchBar && ensResults.length === 0 && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#D4AF37] animate-pulse">
                           Coming Soon
@@ -1943,14 +1943,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="w-full max-w-6xl mx-auto px-4 pt-6 mt-8 max-h-[calc(100vh-220px)] overflow-y-auto pb-28" style={{ transform: 'translateZ(0)' }}>
-                {/* Results count header - styled like Coming Soon */}
-                <div className="text-center mb-6">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#D4AF37]">
-                    {ensResults.length} ID{ensResults.length !== 1 ? "'s" : ""} Found
-                  </h1>
-                </div>
-                <div className="space-y-2 will-change-transform">
+              <div className="fixed left-0 right-0 top-[80px] bottom-[140px] bg-[#FAF7F2] dark:bg-background overflow-y-auto px-4 pt-6 z-[9997]" style={{ transform: 'translateZ(0)' }}>
+                <div className="max-w-6xl mx-auto pb-28">
+                  {/* Results count header - styled like Coming Soon */}
+                  <div className="text-center mb-6">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#D4AF37]">
+                      {ensResults.length} ID{ensResults.length !== 1 ? "'s" : ""} Found
+                    </h1>
+                  </div>
+                  <div className="space-y-2 will-change-transform">
                 {ensResults.map((result, index) => {
                   const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
                   const isTaken = takenSubdomains.has(result.name.toLowerCase());
@@ -2028,6 +2029,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     </div>
                   );
                 })}
+                  </div>
                 </div>
               </div>
             )}
