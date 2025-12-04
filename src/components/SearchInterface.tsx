@@ -1944,9 +1944,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="w-full max-w-6xl mx-auto px-4 mt-8 max-h-[calc(100vh-220px)] overflow-y-auto pb-28" style={{ transform: 'translateZ(0)' }}>
+              <div className="w-full max-w-6xl mx-auto px-4 pt-6 mt-8 max-h-[calc(100vh-220px)] overflow-y-auto pb-28" style={{ transform: 'translateZ(0)' }}>
                 {/* Results count header */}
-                <div className="text-center mb-4">
+                <div className="text-center mb-6">
                   <h2 className="text-lg font-bold text-foreground">
                     {ensResults.length} ID{ensResults.length !== 1 ? "'s" : ""} Found
                   </h2>
@@ -1977,10 +1977,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         }}
                       />
 
-                      {/* Name & Price - Centered together */}
+                      {/* Name, Description & Price - Centered together */}
                       <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
-                        <div className="font-bold text-foreground text-sm sm:text-base leading-tight text-center">
+                        <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight text-center">
                           {fullName}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5 text-center">
+                          {result.network}
                         </div>
                         <div className="font-bold text-[#D4AF37] text-sm mt-1 text-center">
                           ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
