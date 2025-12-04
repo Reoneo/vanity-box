@@ -1945,11 +1945,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
               <div className="w-full max-w-6xl mx-auto px-4 pt-6 mt-8 max-h-[calc(100vh-220px)] overflow-y-auto pb-28" style={{ transform: 'translateZ(0)' }}>
-                {/* Results count header */}
+                {/* Results count header - styled like Coming Soon */}
                 <div className="text-center mb-6">
-                  <h2 className="text-lg font-bold text-foreground">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#D4AF37]">
                     {ensResults.length} ID{ensResults.length !== 1 ? "'s" : ""} Found
-                  </h2>
+                  </h1>
                 </div>
                 <div className="space-y-2 will-change-transform">
                 {ensResults.map((result, index) => {
