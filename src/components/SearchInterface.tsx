@@ -1988,14 +1988,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
               <div 
-                className="fixed left-0 right-0 bg-[#FAF7F2] dark:bg-background z-[9997] animate-fade-in flex flex-col" 
+                className="fixed left-0 right-0 bg-transparent z-[9997] animate-fade-in flex flex-col" 
                 style={{ 
                   backfaceVisibility: 'hidden', 
                   top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
-                  bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' 
+                  bottom: '0' 
                 }}
               >
-                <div className="flex-1 overflow-y-auto px-4 pt-4 pb-0">
+                <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
                   <div className="max-w-6xl mx-auto">
                   {/* Results count header - styled like Coming Soon */}
                   <div className="text-center mb-6">
