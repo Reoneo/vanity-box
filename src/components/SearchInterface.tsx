@@ -917,7 +917,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 }
               }).catch(err => console.log('EFP stats fetch failed:', err));
               
-              fetchNfts(web3BioData.profile.address);
+              fetchNfts(undefined, web3BioData.profile.address);
             }
           } else {
             console.log('ℹ️ Profile not found');
@@ -1060,8 +1060,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
 
   // Fetch functions for dock sections
-  const fetchNfts = async (next?: string) => {
-    const address = web3BioProfile?.address || walletAddress;
+  const fetchNfts = async (next?: string, addressOverride?: string) => {
+    const address = addressOverride || web3BioProfile?.address || walletAddress;
     
     // Sanitize the next parameter to handle MiniKit undefined objects
     const sanitizedNext = (next && typeof next === 'string' && next !== 'undefined') 
