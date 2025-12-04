@@ -1883,6 +1883,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             toast.error('Please connect your wallet first');
                             return;
                           }
+                          // Exit My IDs to show search on main page
+                          setShowMyIDs(false);
+                          setIsSearchActive(false);
                           setShowSearchBar(prev => !prev);
                         },
                         isActive: showSearchBar,
