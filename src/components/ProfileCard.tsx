@@ -718,23 +718,23 @@ export const ProfileCard = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5 px-1">
                       {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                         <button
                           key={collection}
                           onClick={() => setExpandedCollection(collection)}
-                          className="w-full p-4 bg-gradient-to-r from-card/60 to-card/40 hover:from-card/80 hover:to-card/60 border border-border/40 hover:border-[#D4AF37]/40 rounded-xl transition-colors active:opacity-90 group touch-action-manipulation flex-shrink-0"
+                          className="w-full py-3 px-4 bg-[#D4AF37] dark:bg-card/60 hover:bg-[#C4A030] dark:hover:bg-card/80 border border-[#B8960C] dark:border-border/40 hover:border-[#A88A0A] dark:hover:border-[#D4AF37]/40 rounded-xl transition-all active:scale-[0.98] group touch-action-manipulation flex-shrink-0 shadow-sm"
                         >
                           <div className="flex items-center justify-between">
                             <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-bold text-foreground text-base group-hover:text-[#D4AF37] transition-colors truncate">
+                              <h4 className="font-semibold text-black dark:text-foreground text-[15px] dark:group-hover:text-[#D4AF37] transition-colors truncate">
                                 {formatCollectionName(collection)}
                               </h4>
-                              <p className="text-sm text-muted-foreground mt-0.5">
+                              <p className="text-xs text-black/70 dark:text-[#D4AF37] mt-0.5 font-medium">
                                 {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
                               </p>
                             </div>
-                            <ChevronDown className="w-5 h-5 text-[#D4AF37] -rotate-90 transition-transform flex-shrink-0" />
+                            <ChevronDown className="w-5 h-5 text-black/80 dark:text-[#D4AF37] -rotate-90 transition-transform flex-shrink-0" />
                           </div>
                         </button>
                       ))}
