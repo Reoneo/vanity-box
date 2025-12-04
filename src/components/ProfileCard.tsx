@@ -231,7 +231,7 @@ export const ProfileCard = ({
                 <div className="flex items-center justify-center">
                   <code 
                     onClick={copyAddress}
-                    className="px-3 py-1 bg-muted rounded-md text-sm text-black cursor-pointer hover:bg-muted/80 transition-colors"
+                    className="px-3 py-1 bg-muted rounded-md text-sm text-black dark:text-white cursor-pointer hover:bg-muted/80 transition-colors"
                   >
                     {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
                   </code>
@@ -276,7 +276,7 @@ export const ProfileCard = ({
                         href={`mailto:${web3BioProfile.email}`} 
                         className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
                       >
-                        <Mail className="w-4 h-4 text-black" />
+                        <Mail className="w-4 h-4 text-black dark:text-white" />
                         {web3BioProfile.email}
                       </a>
                     )}
@@ -288,7 +288,7 @@ export const ProfileCard = ({
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
                       >
-                        <Globe className="w-4 h-4 text-black" />
+                        <Globe className="w-4 h-4 text-black dark:text-white" />
                         <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
                       </a>
                     )}
@@ -319,7 +319,7 @@ export const ProfileCard = ({
                           className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
                           title={`View ${nfts.length} NFTs`}
                         >
-                          <span className="text-black font-semibold text-sm">NFTs</span>
+                          <span className="text-black dark:text-white font-semibold text-sm">NFTs</span>
                         </button>
                         {socialLinks.length > 0 && (
                           <div className="w-px h-6 bg-border/50" />
