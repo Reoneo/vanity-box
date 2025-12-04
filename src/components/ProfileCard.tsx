@@ -476,9 +476,21 @@ export const ProfileCard = ({
                               <h4 className="font-medium text-black text-base truncate">
                                 {formatCollectionName(collection)}
                               </h4>
-                              <p className="text-sm text-black/70">
-                                {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">
+                                  {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
+                                </p>
+                                <div className="flex -space-x-2">
+                                  {collectionNfts.slice(0, 3).map((nft, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={nft.image_url || nft.display_image_url}
+                                      alt=""
+                                      className="w-5 h-5 rounded-full border border-black/20 object-cover"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                             <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                           </div>
