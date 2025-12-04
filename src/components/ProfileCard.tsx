@@ -377,10 +377,10 @@ export const ProfileCard = ({
 
             {/* Flip Card for All Social Links */}
             {showAllSocials && (
-              <div className="fixed top-[75px] bottom-[100px] left-0 right-0 bg-black z-[9999] animate-fade-in flex flex-col rounded-t-2xl" style={{ backfaceVisibility: 'hidden' }}>
+              <div className="fixed top-[68px] bottom-[100px] left-0 right-0 bg-black z-[9999] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden' }}>
                 {/* Header with ENS image banner */}
                 <div 
-                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 rounded-t-2xl overflow-hidden"
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
                     backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
                   }}
@@ -438,10 +438,10 @@ export const ProfileCard = ({
 
             {/* NFTs Overlay - Fits within gold borders */}
             {showNftsOverlay && (
-              <div className="fixed top-[75px] bottom-[100px] left-0 right-0 bg-black z-[9999] animate-fade-in flex flex-col rounded-t-2xl" style={{ backfaceVisibility: 'hidden' }}>
+              <div className="fixed top-[68px] bottom-[100px] left-0 right-0 bg-black z-[9999] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden' }}>
                 {/* Header with ENS image banner */}
                 <div 
-                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 rounded-t-2xl overflow-hidden"
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
                     backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
                   }}
