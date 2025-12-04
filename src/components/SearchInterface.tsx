@@ -1313,14 +1313,45 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       <div className="w-full h-full">
         {/* Show mint interface when a result is selected */}
         {showMintInterface && selectedResult ? (
-          <SubdomainMintModal
-            isOpen={true}
-            onClose={handleBackToResults}
-            subdomain={displayQuery ? `${displayQuery}.${selectedResult.name}` : selectedResult.name}
-            price={price}
-            resultAvatar={selectedResult.imageUrl}
-            domain={selectedResult.name.trim().toLowerCase()}
-          />
+          <>
+            <SubdomainMintModal
+              isOpen={true}
+              onClose={handleBackToResults}
+              subdomain={displayQuery ? `${displayQuery}.${selectedResult.name}` : selectedResult.name}
+              price={price}
+              resultAvatar={selectedResult.imageUrl}
+              domain={selectedResult.name.trim().toLowerCase()}
+            />
+            {/* Dock for mint modal */}
+            <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
+              <Dock
+                items={[
+                  {
+                    icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Home',
+                    onClick: () => {
+                      // Clear everything and go home
+                      setShowMintInterface(false);
+                      setSelectedResult(null);
+                      setShowSearchBar(false);
+                      setIsSearchActive(false);
+                      setEnsResults([]);
+                      setHasSearched(false);
+                      setDisplayQuery('');
+                      setSearchQuery('');
+                    },
+                    isActive: false,
+                  },
+                  {
+                    icon: <ArrowLeft className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Back',
+                    onClick: handleBackToResults,
+                    isActive: false,
+                  },
+                ]}
+              />
+            </div>
+          </>
         ) : (
           <>
             <DynamicMetaTags
@@ -1895,11 +1926,25 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </div>
             )}
 
-            {/* Home Screen Dock - Show when no profile and not My ID's */}
-            {!web3BioProfile && !showMyIDs && !isLoading && (
-              <div className="absolute bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
+            {/* Home Screen Dock - Show when no profile and not My ID's (including when results are shown) */}
+            {!web3BioProfile && !showMyIDs && (
+              <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
                 <Dock
                   items={[
+                    {
+                      icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Home',
+                      onClick: () => {
+                        // Clear search results and return to homepage
+                        setShowSearchBar(false);
+                        setIsSearchActive(false);
+                        setEnsResults([]);
+                        setHasSearched(false);
+                        setDisplayQuery('');
+                        setSearchQuery('');
+                      },
+                      isActive: false,
+                    },
                     {
                       icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Profile',
