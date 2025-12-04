@@ -1448,7 +1448,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                               <button
                                 onClick={() => {
                                   setSearchQuery("");
-                                  setEnsResults([]);
                                   setIsAvailable(null);
                                 }}
                                 className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
