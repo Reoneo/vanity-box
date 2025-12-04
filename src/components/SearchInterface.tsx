@@ -1945,6 +1945,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
               <div className="w-full max-w-6xl mx-auto px-4 mt-8 max-h-[calc(100vh-220px)] overflow-y-auto pb-28" style={{ transform: 'translateZ(0)' }}>
+                {/* Results count header */}
+                <div className="text-center mb-4">
+                  <h2 className="text-lg font-bold text-foreground">
+                    {ensResults.length} ID{ensResults.length !== 1 ? "'s" : ""} Found
+                  </h2>
+                </div>
                 <div className="space-y-2 will-change-transform">
                 {ensResults.map((result, index) => {
                   const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
@@ -1955,7 +1961,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                    return (
                     <div
                       key={index}
-                      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-background/40 backdrop-blur-sm border border-border/50 rounded-xl hover:bg-background/60 hover:border-border/70 transition-all duration-200 will-change-transform animate-fade-in"
+                      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-background/40 backdrop-blur-sm border border-black/30 dark:border-[#D4AF37]/50 rounded-xl hover:bg-background/60 hover:border-black/50 dark:hover:border-[#D4AF37]/70 transition-all duration-200 will-change-transform animate-fade-in"
                       style={{ 
                         transform: 'translateZ(0)',
                         animationDelay: `${index * 50}ms`
@@ -1971,13 +1977,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         }}
                       />
 
-                      {/* Name & Price */}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-foreground text-sm sm:text-base leading-tight">
+                      {/* Name & Price - Centered together */}
+                      <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
+                        <div className="font-bold text-foreground text-sm sm:text-base leading-tight text-center">
                           {fullName}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {result.network}
                         </div>
                         <div className="font-bold text-[#D4AF37] text-sm mt-1 text-center">
                           ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
