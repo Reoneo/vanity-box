@@ -1035,19 +1035,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       filteredResults = allResults;
     }
 
-    // Sort results: Selectable items first ("Select"), then coming soon items, then alphabetically
-    filteredResults.sort((a, b) => {
-      const aIsSelectable = (a as any).selectable === true || a.name === "Smith.cash" || a.name === "$mith.eth";
-      const bIsSelectable = (b as any).selectable === true || b.name === "Smith.cash" || b.name === "$mith.eth";
-
-      // If both selectable or both not, sort alphabetically
-      if (aIsSelectable === bIsSelectable) {
-        return a.name.localeCompare(b.name);
-      }
-
-      // Selectable items come first
-      return aIsSelectable ? -1 : 1;
-    });
+    // Sort results alphabetically by name
+    filteredResults.sort((a, b) => a.name.localeCompare(b.name));
 
     setEnsResults(filteredResults);
     console.log("Results set", filteredResults.length);
@@ -1988,8 +1977,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="fixed left-0 right-0 top-[80px] bottom-[140px] bg-[#FAF7F2] dark:bg-background overflow-y-auto px-4 pt-6 z-[9997]" style={{ transform: 'translateZ(0)' }}>
-                <div className="max-w-6xl mx-auto pb-28">
+              <div 
+                className="fixed left-0 right-0 bg-[#FAF7F2] dark:bg-background z-[9997] animate-fade-in flex flex-col" 
+                style={{ 
+                  backfaceVisibility: 'hidden', 
+                  top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
+                  bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' 
+                }}
+              >
+                <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
+                  <div className="max-w-6xl mx-auto">
                   {/* Results count header - styled like Coming Soon */}
                   <div className="text-center mb-6">
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#D4AF37]">
@@ -2077,6 +2074,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </div>
                 </div>
               </div>
+            </div>
             )}
 
             {/* No Results State */}
