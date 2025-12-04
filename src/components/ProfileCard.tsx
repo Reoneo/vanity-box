@@ -469,18 +469,18 @@ export const ProfileCard = ({
                             setExpandedCollection(collection);
                             setShowNftsOverlay(false);
                           }}
-                          className="w-full p-3 bg-neutral-700 dark:bg-card/40 hover:bg-neutral-600 dark:hover:bg-card/60 border border-neutral-600 dark:border-border/30 hover:border-[#D4AF37]/40 rounded-xl transition-colors active:opacity-90 group"
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between h-full">
                             <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-semibold text-foreground text-sm group-hover:text-[#D4AF37] transition-colors truncate">
+                              <h4 className="font-medium text-black text-base truncate">
                                 {formatCollectionName(collection)}
                               </h4>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm text-black/70">
                                 {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
                               </p>
                             </div>
-                            <ChevronDown className="w-4 h-4 text-[#D4AF37] -rotate-90 flex-shrink-0" />
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                           </div>
                         </button>
                       ))}
