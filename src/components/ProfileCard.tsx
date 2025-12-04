@@ -184,8 +184,8 @@ export const ProfileCard = ({
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
       const handle = pathParts[pathParts.length - 1] || urlObj.hostname;
       
-      // Always add @ prefix for social handles
-      return `@${handle}`;
+      // Add @ prefix only if handle doesn't already have one
+      return handle.startsWith('@') ? handle : `@${handle}`;
     } catch {
       return url; // Fallback to full URL if parsing fails
     }
