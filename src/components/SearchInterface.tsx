@@ -1340,14 +1340,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 {/* Modal Search Overlay - works for both homepage and profile views */}
                 {showSearchBar && (
                   <>
-                    {/* Dim overlay - below dock (z-9999) but above content */}
+                    {/* Dim overlay - above profile content */}
         <div 
-          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9997] animate-fade-in"
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9998] animate-fade-in"
           onClick={() => setShowSearchBar(false)}
         />
                     
-                    {/* Centered search modal - just below dock */}
-                    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 pointer-events-none">
+                    {/* Centered search modal - above overlay */}
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
                       <div className="w-full max-w-md pointer-events-auto animate-scale-in">
                         {/* Search bar */}
                         <div className="relative">
@@ -1550,8 +1550,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       ...(web3BioProfile ? [{
                         icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Home',
-                        onClick: () => {
-                          // Clear all profile data when returning home
+                        onClick: (e: React.MouseEvent) => {
+                          e.stopPropagation(); // Prevent event bubbling
+                          // Close search bar first to prevent any race conditions
+                          setShowSearchBar(false);
+                          // Then clear all profile data
                           setWeb3BioProfile(null);
                           setEfpStats(null);
                           setEnsRecords(null);
@@ -1559,11 +1562,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setHasSearched(false);
                           setSearchQuery('');
                           setDisplayQuery('');
-                          setEnsResults([]); // Clear subdomain results
+                          setEnsResults([]);
                           setNfts([]);
                           setPoapTokens([]);
                           setActiveDockSection('profile');
-                          setShowSearchBar(false); // Close search bar when going home
                         },
                         isActive: false,
                       }] : []),
