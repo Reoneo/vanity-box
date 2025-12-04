@@ -1995,7 +1995,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' 
                 }}
               >
-                <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
                   <div className="max-w-6xl mx-auto">
                   {/* Results count header - styled like Coming Soon */}
                   <div className="text-center mb-6">
