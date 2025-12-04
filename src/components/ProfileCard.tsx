@@ -451,7 +451,10 @@ export const ProfileCard = ({
                     <div className="w-10" />
                     <h3 className="text-lg font-bold text-[#D4AF37] drop-shadow-lg">NFTs ({nfts.length})</h3>
                     <button
-                      onClick={() => setShowNftsOverlay(false)}
+                      onClick={() => {
+                        setShowNftsOverlay(false);
+                        setExpandedCollection(null);
+                      }}
                       className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
                     >
                       <X className="w-4 h-4 text-[#D4AF37]" />
@@ -459,16 +462,53 @@ export const ProfileCard = ({
                   </div>
                 </div>
 
-                {/* NFTs Collection List */}
+                {/* NFTs Content */}
                 <div className="flex-1 overflow-y-auto px-4 py-3">
-                  <div className="space-y-2 max-w-lg mx-auto">
-                    {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
+                  {expandedCollection ? (
+                    // Expanded collection view
+                    <div className="space-y-4 max-w-lg mx-auto">
+                      <div className="flex items-center gap-3 pb-3 border-b border-[#D4AF37]/30">
+                        <button
+                          onClick={() => setExpandedCollection(null)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors"
+                        >
+                          <ChevronDown className="w-4 h-4 rotate-90" />
+                          <span className="text-sm font-medium">Back</span>
+                        </button>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-[#D4AF37] text-lg truncate">{formatCollectionName(expandedCollection)}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {groupedNfts[expandedCollection]?.length || 0} items
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {groupedNfts[expandedCollection]?.map((nft, index) => (
+                          <div
+                            key={`${nft.contract}-${nft.identifier}-${index}`}
+                            className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all"
+                            onClick={() => setSelectedNft(nft)}
+                          >
+                            <img 
+                              src={nft.image_url || nft.display_image_url} 
+                              alt={nft.name} 
+                              className="w-full aspect-square object-cover" 
+                            />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                              <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    // Collection list
+                    <div className="space-y-2 max-w-lg mx-auto">
+                      {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
                         <button
                           key={collection}
-                          onClick={() => {
-                            setExpandedCollection(collection);
-                            setShowNftsOverlay(false);
-                          }}
+                          onClick={() => setExpandedCollection(collection)}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
                         >
                           <div className="flex items-center justify-between h-full">
@@ -514,9 +554,10 @@ export const ProfileCard = ({
                         </Button>
                       )}
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
             </div>
           </div>
         )}
