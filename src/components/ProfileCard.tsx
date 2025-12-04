@@ -471,8 +471,8 @@ export const ProfileCard = ({
                   {expandedCollection ? (
                     // Expanded collection view
                     <div className="space-y-4 max-w-2xl mx-auto">
-                      {/* Sticky header for expanded collection */}
-                      <div className="sticky top-0 z-10 bg-background dark:bg-black pt-2 pb-3 -mx-4 px-4">
+                      {/* Sticky header for expanded collection - flush with top */}
+                      <div className="sticky -top-3 z-10 bg-background dark:bg-black -mx-4 px-4 pt-3 pb-3">
                         <div className="flex items-center gap-3 pb-3 border-b border-[#D4AF37]/30">
                           <button
                             onClick={() => setExpandedCollection(null)}
