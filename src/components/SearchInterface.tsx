@@ -1944,7 +1944,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
-              <div className="w-full max-w-6xl mx-auto px-4 mt-8 space-y-2 will-change-transform" style={{ transform: 'translateZ(0)' }}>
+              <div className="w-full max-w-6xl mx-auto px-4 mt-8 max-h-[calc(100vh-220px)] overflow-y-auto pb-28" style={{ transform: 'translateZ(0)' }}>
+                <div className="space-y-2 will-change-transform">
                 {ensResults.map((result, index) => {
                   const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
                   const isTaken = takenSubdomains.has(result.name.toLowerCase());
@@ -2022,6 +2023,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     </div>
                   );
                 })}
+                </div>
               </div>
             )}
 
