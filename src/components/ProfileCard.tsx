@@ -253,15 +253,15 @@ export const ProfileCard = ({
                       className="flex items-center gap-1 hover:opacity-80 transition-colors"
                     >
                       <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
-                      <span className="text-black">Following</span>
+                      <span className="text-black dark:text-white">Following</span>
                     </button>
-                    <span className="text-black">·</span>
+                    <span className="text-black dark:text-white">·</span>
                     <button
                       onClick={onFollowersClick}
                       className="flex items-center gap-1 hover:opacity-80 transition-colors"
                     >
                       <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
-                      <span className="text-black">Followers</span>
+                      <span className="text-black dark:text-white">Followers</span>
                     </button>
                   </>
                 ) : null}
