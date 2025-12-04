@@ -1,10 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ExternalLink, Share2, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { ExternalLink, Share2, Copy, Check, Play, Volume2 } from "lucide-react";
+import { useState, useRef } from "react";
 
 interface NFTDetailModalProps {
   nft: any;
@@ -12,8 +10,23 @@ interface NFTDetailModalProps {
   onClose: () => void;
 }
 
+// Helper to detect media type from URL
+const getMediaType = (url: string | null | undefined): 'video' | 'audio' | 'image' => {
+  if (!url) return 'image';
+  const lower = url.toLowerCase();
+  if (lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov') || lower.includes('.ogv') || lower.includes('video')) {
+    return 'video';
+  }
+  if (lower.includes('.mp3') || lower.includes('.wav') || lower.includes('.ogg') || lower.includes('.m4a') || lower.includes('audio')) {
+    return 'audio';
+  }
+  return 'image';
+};
+
 export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) => {
   const [copied, setCopied] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   if (!nft) return null;
 
@@ -54,25 +67,63 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
     return icons[chain.toLowerCase()] || '🔗';
   };
 
+  // Determine media type and URL
+  const animationUrl = nft.animation_url || nft.metadata?.animation_url;
+  const imageUrl = nft.image_url || nft.display_image_url;
+  const mediaType = getMediaType(animationUrl);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-[#D4AF37]/30 p-0">
-        {/* Full Width Image */}
+        {/* Full Width Media */}
         <div className="relative w-full aspect-square overflow-hidden bg-black/20">
-          {nft.image_url ? (
+          {mediaType === 'video' && animationUrl ? (
+            <video
+              ref={videoRef}
+              src={animationUrl}
+              poster={imageUrl}
+              controls
+              autoPlay
+              loop
+              playsInline
+              className="w-full h-full object-contain"
+            />
+          ) : mediaType === 'audio' && animationUrl ? (
+            <div className="relative w-full h-full">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={nft.name || 'NFT'}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5">
+                  <Volume2 className="w-24 h-24 text-[#D4AF37]/50" />
+                </div>
+              )}
+              <audio
+                ref={audioRef}
+                src={animationUrl}
+                controls
+                autoPlay
+                loop
+                className="absolute bottom-4 left-4 right-4"
+              />
+            </div>
+          ) : imageUrl ? (
             <img
-              src={nft.image_url}
+              src={imageUrl}
               alt={nft.name || 'NFT'}
               className="w-full h-full object-contain"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              No Image Available
+              No Media Available
             </div>
           )}
           
           {/* Title Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6 pointer-events-none">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
               {nft.name || `NFT #${nft.identifier}`}
             </h2>
@@ -87,11 +138,21 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
                   x{nft.quantity} Owned
                 </Badge>
               )}
+              {mediaType === 'video' && (
+                <Badge className="bg-purple-600 text-white border-0">
+                  <Play className="w-3 h-3 mr-1" /> Video
+                </Badge>
+              )}
+              {mediaType === 'audio' && (
+                <Badge className="bg-blue-600 text-white border-0">
+                  <Volume2 className="w-3 h-3 mr-1" /> Audio
+                </Badge>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Action Buttons - Mobile Optimized */}
+        {/* Action Buttons */}
         <div className="p-4 sm:p-6 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             {nft.opensea_url && (

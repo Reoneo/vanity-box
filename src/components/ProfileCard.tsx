@@ -484,22 +484,56 @@ export const ProfileCard = ({
                       </div>
                       
                       <div className="grid grid-cols-2 gap-3">
-                        {groupedNfts[expandedCollection]?.map((nft, index) => (
-                          <div
-                            key={`${nft.contract}-${nft.identifier}-${index}`}
-                            className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all"
-                            onClick={() => setSelectedNft(nft)}
-                          >
-                            <img 
-                              src={nft.image_url || nft.display_image_url} 
-                              alt={nft.name} 
-                              className="w-full aspect-square object-cover" 
-                            />
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                              <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                        {groupedNfts[expandedCollection]?.map((nft, index) => {
+                          const animationUrl = nft.animation_url || nft.metadata?.animation_url;
+                          const isVideo = animationUrl && (animationUrl.toLowerCase().includes('.mp4') || animationUrl.toLowerCase().includes('.webm') || animationUrl.toLowerCase().includes('video'));
+                          const isAudio = animationUrl && (animationUrl.toLowerCase().includes('.mp3') || animationUrl.toLowerCase().includes('.wav') || animationUrl.toLowerCase().includes('audio'));
+                          
+                          return (
+                            <div
+                              key={`${nft.contract}-${nft.identifier}-${index}`}
+                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all"
+                              onClick={() => setSelectedNft(nft)}
+                            >
+                              {isVideo ? (
+                                <video 
+                                  src={animationUrl}
+                                  poster={nft.image_url || nft.display_image_url}
+                                  muted
+                                  loop
+                                  playsInline
+                                  onMouseEnter={(e) => e.currentTarget.play()}
+                                  onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                                  className="w-full aspect-square object-cover"
+                                />
+                              ) : (
+                                <img 
+                                  src={nft.image_url || nft.display_image_url} 
+                                  alt={nft.name} 
+                                  className="w-full aspect-square object-cover" 
+                                />
+                              )}
+                              
+                              {/* Quantity badge */}
+                              {nft.quantity && nft.quantity > 1 && (
+                                <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                  x{nft.quantity}
+                                </div>
+                              )}
+                              
+                              {/* Media type indicator */}
+                              {(isVideo || isAudio) && (
+                                <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  {isVideo ? '▶' : '♪'}
+                                </div>
+                              )}
+                              
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
