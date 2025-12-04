@@ -231,7 +231,7 @@ export const ProfileCard = ({
                 <div className="flex items-center justify-center">
                   <code 
                     onClick={copyAddress}
-                    className="px-3 py-1 bg-muted rounded-md text-sm text-[#D4AF37] cursor-pointer hover:bg-muted/80 transition-colors"
+                    className="px-3 py-1 bg-muted rounded-md text-sm text-black cursor-pointer hover:bg-muted/80 transition-colors"
                   >
                     {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
                   </code>
@@ -239,7 +239,7 @@ export const ProfileCard = ({
               )}
 
               {web3BioProfile?.description && (
-                <p className="text-center text-muted-foreground max-w-2xl mx-auto text-sm">
+                <p className="text-center text-black max-w-2xl mx-auto text-sm">
                   {web3BioProfile.description}
                 </p>
               )}
@@ -250,18 +250,18 @@ export const ProfileCard = ({
                   <>
                     <button
                       onClick={onFollowingClick}
-                      className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
+                      className="flex items-center gap-1 hover:opacity-80 transition-colors"
                     >
-                      <span className="font-semibold text-foreground">{efpStats.following_count || 0}</span>
-                      <span className="text-muted-foreground">Following</span>
+                      <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
+                      <span className="text-black">Following</span>
                     </button>
-                    <span className="text-muted-foreground">·</span>
+                    <span className="text-black">·</span>
                     <button
                       onClick={onFollowersClick}
-                      className="flex items-center gap-1 hover:text-[#D4AF37] transition-colors"
+                      className="flex items-center gap-1 hover:opacity-80 transition-colors"
                     >
-                      <span className="font-semibold text-foreground">{efpStats.followers_count || 0}</span>
-                      <span className="text-muted-foreground">Followers</span>
+                      <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
+                      <span className="text-black">Followers</span>
                     </button>
                   </>
                 ) : null}
@@ -274,9 +274,9 @@ export const ProfileCard = ({
                     {web3BioProfile?.email && (
                       <a 
                         href={`mailto:${web3BioProfile.email}`} 
-                        className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                        className="flex items-center gap-2 text-sm text-black hover:underline"
                       >
-                        <Mail className="w-4 h-4" />
+                        <Mail className="w-4 h-4 text-black" />
                         {web3BioProfile.email}
                       </a>
                     )}
@@ -286,9 +286,9 @@ export const ProfileCard = ({
                         href={web3BioProfile.website || web3BioProfile.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                        className="flex items-center gap-2 text-sm text-black hover:underline"
                       >
-                        <Globe className="w-4 h-4" />
+                        <Globe className="w-4 h-4 text-black" />
                         <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
                       </a>
                     )}
@@ -319,7 +319,7 @@ export const ProfileCard = ({
                           className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
                           title={`View ${nfts.length} NFTs`}
                         >
-                          <span className="text-[#D4AF37] font-semibold text-sm">NFTs</span>
+                          <span className="text-black font-semibold text-sm">NFTs</span>
                         </button>
                         {socialLinks.length > 0 && (
                           <div className="w-px h-6 bg-border/50" />
