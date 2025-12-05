@@ -55,7 +55,7 @@ const Index = () => {
           </article>
         </main>
         
-        <footer className="flex-shrink-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] pointer-events-auto">
+        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] pointer-events-auto">
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">
