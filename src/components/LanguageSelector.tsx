@@ -9,7 +9,7 @@ export const LanguageSelector: React.FC = () => {
   const [open, setOpen] = useState(false);
 
   const languages: { code: Language; name: string; icon: string }[] = [
-    { code: 'en', name: 'English', icon: 'https://flagcdn.com/w80/us.png' },
+    { code: 'en', name: 'English', icon: 'https://flagcdn.com/w80/gb.png' },
     { code: 'ca', name: 'Català', icon: 'https://flagcdn.com/w80/ad.png' },
     { code: 'zh-CN', name: '简体中文', icon: 'https://flagcdn.com/w80/cn.png' },
     { code: 'fr', name: 'Français', icon: 'https://flagcdn.com/w80/fr.png' },
