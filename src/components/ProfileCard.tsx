@@ -452,7 +452,7 @@ export const ProfileCard = ({
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-lg font-bold text-black">NFTs ({nfts.length})</h3>
+                      <h3 className="text-lg font-bold text-black dark:text-white">NFTs ({nfts.length})</h3>
                     </div>
                     <button
                       onClick={() => {
@@ -461,7 +461,7 @@ export const ProfileCard = ({
                       }}
                       className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black" />
+                      <X className="w-4 h-4 text-black dark:text-white" />
                     </button>
                   </div>
                 </div>
