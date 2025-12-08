@@ -1986,9 +1986,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Results container - Row-based layout with 60fps optimization */}
-            {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && (
+            {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && !showSearchBar && (
               <div 
-                className="fixed left-0 right-0 bg-transparent z-[9997] animate-fade-in flex flex-col" 
+                className="fixed left-0 right-0 bg-background z-[9997] animate-fade-in flex flex-col" 
                 style={{ 
                   backfaceVisibility: 'hidden', 
                   top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
