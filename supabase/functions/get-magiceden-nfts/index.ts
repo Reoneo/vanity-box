@@ -33,15 +33,63 @@ serve(async (req) => {
 
     console.log(`Fetching World Chain NFTs for wallet: ${walletAddress}`);
 
-    // Magic Eden API endpoint for World Chain NFTs
-    // World Chain uses chain identifier "worldchain" or chain ID 480
+    // Note: Magic Eden EVM API currently only supports ethereum and polygon chains
+    // World Chain (chain ID 480) is not yet supported by Magic Eden
+    // We'll attempt to fetch but expect it may not work until Magic Eden adds World Chain support
+    
     const allNfts: any[] = [];
     let continuation: string | null = null;
     const MAX_PAGES = 5;
     let pageCount = 0;
 
+    // Try different possible chain identifiers for World Chain
+    const possibleChainIds = ['world-chain', 'worldchain', '480'];
+    let successfulChain: string | null = null;
+
+    for (const chainId of possibleChainIds) {
+      try {
+        const url = new URL(`https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/v7`);
+        url.searchParams.set('limit', '1'); // Test with 1 item first
+
+        console.log(`Testing Magic Eden chain: ${chainId}`);
+
+        const testResponse = await fetch(url.toString(), {
+          headers: {
+            'Authorization': `Bearer ${MAGIC_EDEN_API_KEY}`,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (testResponse.ok) {
+          successfulChain = chainId;
+          console.log(`Found working chain identifier: ${chainId}`);
+          break;
+        } else {
+          console.log(`Chain ${chainId} returned status ${testResponse.status}`);
+        }
+      } catch (err) {
+        console.log(`Chain ${chainId} failed: ${err.message}`);
+      }
+    }
+
+    if (!successfulChain) {
+      console.log('World Chain is not yet supported by Magic Eden EVM API');
+      console.log('Magic Eden currently only supports: ethereum, polygon');
+      
+      // Return empty array gracefully - World Chain NFTs not yet available via Magic Eden
+      return new Response(
+        JSON.stringify({ 
+          nfts: [], 
+          total: 0, 
+          message: 'World Chain NFTs are not yet available. Magic Eden EVM API currently supports Ethereum and Polygon only.' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If we found a working chain, fetch NFTs
     do {
-      const url = new URL(`https://api-mainnet.magiceden.dev/v3/rtp/worldchain/users/${walletAddress}/tokens/v7`);
+      const url = new URL(`https://api-mainnet.magiceden.dev/v3/rtp/${successfulChain}/users/${walletAddress}/tokens/v7`);
       url.searchParams.set('limit', String(Math.min(limit, 100)));
       if (continuation) {
         url.searchParams.set('continuation', continuation);
