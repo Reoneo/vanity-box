@@ -69,6 +69,37 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
+  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden'>('main');
+  const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
+  const [magicEdenLoading, setMagicEdenLoading] = useState(false);
+
+  // Fetch Magic Eden NFTs when Magic Eden category is selected
+  useEffect(() => {
+    if (nftCategory === 'magiceden' && currentWalletAddress && magicEdenNfts.length === 0 && !magicEdenLoading) {
+      const fetchMagicEdenNfts = async () => {
+        setMagicEdenLoading(true);
+        try {
+          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-magiceden-nfts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+          });
+          const data = await response.json();
+          if (data.nfts) {
+            setMagicEdenNfts(data.nfts);
+          }
+        } catch (error) {
+          console.error('Error fetching Magic Eden NFTs:', error);
+        } finally {
+          setMagicEdenLoading(false);
+        }
+      };
+      fetchMagicEdenNfts();
+    }
+  }, [nftCategory, currentWalletAddress, magicEdenNfts.length, magicEdenLoading]);
 
   // No need to disable body scrolling - parent container handles overflow
 
@@ -89,23 +120,11 @@ export const ProfileCard = ({
     });
   }, [nfts, selectedCollections]);
 
-  // Group NFTs by collection, including POAPs as a collection
-  const groupedNfts = useMemo(() => {
+  // Group OpenSea NFTs by collection (excluding POAPs)
+  const openSeaGroupedNfts = useMemo(() => {
     const groups: Record<string, any[]> = {};
     
-    // Add POAPs as a collection if there are any
-    if (poaps && poaps.length > 0) {
-      groups['POAPs'] = poaps.map(poap => ({
-        ...poap,
-        collection: 'POAPs',
-        name: poap.eventName,
-        image_url: poap.eventImageUrl,
-        identifier: poap.tokenId,
-        isPoap: true,
-      }));
-    }
-    
-    // Add regular NFTs
+    // Add regular NFTs (OpenSea only)
     filteredNfts.forEach(nft => {
       const collection = nft.collection || 'Unknown Collection';
       if (!groups[collection]) {
@@ -119,6 +138,36 @@ export const ProfileCard = ({
       Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
     );
   }, [filteredNfts]);
+
+  // Group Magic Eden NFTs by collection
+  const magicEdenGroupedNfts = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    
+    magicEdenNfts.forEach(nft => {
+      const collection = nft.collection || 'World Chain Collection';
+      if (!groups[collection]) {
+        groups[collection] = [];
+      }
+      groups[collection].push(nft);
+    });
+
+    // Sort collections by NFT count
+    return Object.fromEntries(
+      Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
+    );
+  }, [magicEdenNfts]);
+
+  // Format POAPs for display
+  const formattedPoaps = useMemo(() => {
+    return poaps.map(poap => ({
+      ...poap,
+      collection: 'POAPs',
+      name: poap.eventName,
+      image_url: poap.eventImageUrl,
+      identifier: poap.tokenId,
+      isPoap: true,
+    }));
+  }, [poaps]);
 
   const handleCollectionToggle = (collection: string) => {
     setSelectedCollections(prev => 
@@ -452,12 +501,20 @@ export const ProfileCard = ({
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-lg font-bold text-black dark:text-white">NFTs ({nfts.length})</h3>
+                      <h3 className="text-lg font-bold text-black dark:text-white">
+                        {nftCategory === 'main' ? 'NFTs' : nftCategory === 'poaps' ? 'POAPs' : nftCategory === 'opensea' ? 'OpenSea' : 'Magic Eden'}
+                      </h3>
                     </div>
                     <button
                       onClick={() => {
-                        setShowNftsOverlay(false);
-                        setExpandedCollection(null);
+                        if (nftCategory !== 'main' && !expandedCollection) {
+                          setNftCategory('main');
+                        } else if (expandedCollection) {
+                          setExpandedCollection(null);
+                        } else {
+                          setShowNftsOverlay(false);
+                          setNftCategory('main');
+                        }
                       }}
                       className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
                     >
@@ -468,133 +525,215 @@ export const ProfileCard = ({
 
                 {/* NFTs Content */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
-                  {expandedCollection ? (
-                    // Expanded collection view
+                  {nftCategory === 'main' ? (
+                    // Main category selection
+                    <div className="space-y-2 max-w-lg mx-auto">
+                      {/* POAPs Button */}
+                      <button
+                        onClick={() => setNftCategory('poaps')}
+                        className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                      >
+                        <div className="flex items-center justify-between h-full">
+                          <div className="text-left flex-1 min-w-0 mr-3">
+                            <h4 className="font-medium text-black text-base">POAPs</h4>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-black/70">{poaps.length} {poaps.length === 1 ? 'item' : 'items'}</p>
+                              <div className="flex -space-x-2">
+                                {poaps.slice(0, 3).map((poap, idx) => (
+                                  <img key={idx} src={poap.eventImageUrl} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                        </div>
+                      </button>
+
+                      {/* OpenSea Button */}
+                      <button
+                        onClick={() => setNftCategory('opensea')}
+                        className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                      >
+                        <div className="flex items-center justify-between h-full">
+                          <div className="text-left flex-1 min-w-0 mr-3">
+                            <h4 className="font-medium text-black text-base">OpenSea</h4>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-black/70">{nfts.length} {nfts.length === 1 ? 'item' : 'items'}</p>
+                              <div className="flex -space-x-2">
+                                {nfts.slice(0, 3).map((nft, idx) => (
+                                  <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                        </div>
+                      </button>
+
+                      {/* Magic Eden Button */}
+                      <button
+                        onClick={() => setNftCategory('magiceden')}
+                        className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                      >
+                        <div className="flex items-center justify-between h-full">
+                          <div className="text-left flex-1 min-w-0 mr-3">
+                            <h4 className="font-medium text-black text-base">Magic Eden</h4>
+                            <p className="text-sm text-black/70">World Chain NFTs</p>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                        </div>
+                      </button>
+                    </div>
+                  ) : nftCategory === 'poaps' ? (
+                    // POAPs grid
                     <div className="space-y-4 max-w-2xl mx-auto">
-                      {/* Sticky header for expanded collection - flush with top */}
-                      <div className="sticky -top-3 z-10 bg-background dark:bg-black -mx-4 px-4 pt-3 pb-3">
-                        <div className="flex items-center gap-3 pb-3 border-b border-[#D4AF37]/30">
-                          <button
-                            onClick={() => setExpandedCollection(null)}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors"
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                        {formattedPoaps.map((poap, index) => (
+                          <div
+                            key={`poap-${poap.identifier}-${index}`}
+                            className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all"
+                            onClick={() => setSelectedPoap(poap)}
                           >
-                            <ChevronDown className="w-4 h-4 rotate-90" />
-                            <span className="text-sm font-medium">Back</span>
-                          </button>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-[#D4AF37] text-lg truncate">{formatCollectionName(expandedCollection)}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {groupedNfts[expandedCollection]?.length || 0} items
-                            </p>
+                            <img src={poap.image_url} alt={poap.name} className="w-full aspect-square object-cover" />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                              <p className="text-white text-xs font-medium truncate">{poap.name}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : nftCategory === 'opensea' ? (
+                    // OpenSea collections
+                    expandedCollection ? (
+                      <div className="space-y-4 max-w-2xl mx-auto">
+                        <div className="sticky -top-3 z-10 bg-background dark:bg-black -mx-4 px-4 pt-3 pb-3">
+                          <div className="flex items-center gap-3 pb-3 border-b border-[#D4AF37]/30">
+                            <button onClick={() => setExpandedCollection(null)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
+                              <ChevronDown className="w-4 h-4 rotate-90" />
+                              <span className="text-sm font-medium">Back</span>
+                            </button>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-[#D4AF37] text-lg truncate">{formatCollectionName(expandedCollection)}</h4>
+                              <p className="text-sm text-muted-foreground">{openSeaGroupedNfts[expandedCollection]?.length || 0} items</p>
+                            </div>
                           </div>
                         </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                          {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => {
+                            const animationUrl = nft.animation_url || nft.metadata?.animation_url;
+                            const isVideo = animationUrl && (animationUrl.toLowerCase().includes('.mp4') || animationUrl.toLowerCase().includes('.webm') || animationUrl.toLowerCase().includes('video'));
+                            const isAudio = animationUrl && (animationUrl.toLowerCase().includes('.mp3') || animationUrl.toLowerCase().includes('.wav') || animationUrl.toLowerCase().includes('audio'));
+                            return (
+                              <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                {isVideo ? (
+                                  <video src={animationUrl} poster={nft.image_url || nft.display_image_url} muted loop playsInline onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} className="w-full aspect-square object-cover" />
+                                ) : (
+                                  <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                )}
+                                {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
+                                {(isVideo || isAudio) && <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">{isVideo ? '▶' : '♪'}</div>}
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                  <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                        {groupedNfts[expandedCollection]?.map((nft, index) => {
-                          const animationUrl = nft.animation_url || nft.metadata?.animation_url;
-                          const isVideo = animationUrl && (animationUrl.toLowerCase().includes('.mp4') || animationUrl.toLowerCase().includes('.webm') || animationUrl.toLowerCase().includes('video'));
-                          const isAudio = animationUrl && (animationUrl.toLowerCase().includes('.mp3') || animationUrl.toLowerCase().includes('.wav') || animationUrl.toLowerCase().includes('audio'));
-                          
-                          return (
-                            <div
-                              key={`${nft.contract}-${nft.identifier}-${index}`}
-                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all"
-                              onClick={() => setSelectedNft(nft)}
-                            >
-                              {isVideo ? (
-                                <video 
-                                  src={animationUrl}
-                                  poster={nft.image_url || nft.display_image_url}
-                                  muted
-                                  loop
-                                  playsInline
-                                  onMouseEnter={(e) => e.currentTarget.play()}
-                                  onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                                  className="w-full aspect-square object-cover"
-                                />
-                              ) : (
-                                <img 
-                                  src={nft.image_url || nft.display_image_url} 
-                                  alt={nft.name} 
-                                  className="w-full aspect-square object-cover" 
-                                />
-                              )}
-                              
-                              {/* Quantity badge */}
-                              {nft.quantity && nft.quantity > 1 && (
-                                <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                                  x{nft.quantity}
+                    ) : (
+                      <div className="space-y-2 max-w-lg mx-auto">
+                        {Object.entries(openSeaGroupedNfts).map(([collection, collectionNfts]: [string, any[]]) => (
+                          <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation">
+                            <div className="flex items-center justify-between h-full">
+                              <div className="text-left flex-1 min-w-0 mr-3">
+                                <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
+                                  <div className="flex -space-x-2">
+                                    {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
+                                      <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                    ))}
+                                  </div>
                                 </div>
-                              )}
-                              
-                              {/* Media type indicator */}
-                              {(isVideo || isAudio) && (
-                                <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  {isVideo ? '▶' : '♪'}
-                                </div>
-                              )}
-                              
+                              </div>
+                              <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                            </div>
+                          </button>
+                        ))}
+                        {web3BioProfile?.address && (
+                          <Button asChild className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 mt-3">
+                            <a href={`https://opensea.io/${web3BioProfile.address}`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />View On OpenSea
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    // Magic Eden collections
+                    magicEdenLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+                      </div>
+                    ) : expandedCollection ? (
+                      <div className="space-y-4 max-w-2xl mx-auto">
+                        <div className="sticky -top-3 z-10 bg-background dark:bg-black -mx-4 px-4 pt-3 pb-3">
+                          <div className="flex items-center gap-3 pb-3 border-b border-[#D4AF37]/30">
+                            <button onClick={() => setExpandedCollection(null)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
+                              <ChevronDown className="w-4 h-4 rotate-90" />
+                              <span className="text-sm font-medium">Back</span>
+                            </button>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-[#D4AF37] text-lg truncate">{formatCollectionName(expandedCollection)}</h4>
+                              <p className="text-sm text-muted-foreground">{magicEdenGroupedNfts[expandedCollection]?.length || 0} items</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                          {magicEdenGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                            <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                              <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                              {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
                               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                                 <p className="text-white text-xs font-medium truncate">{nft.name}</p>
                               </div>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    // Collection list
-                    <div className="space-y-2 max-w-lg mx-auto">
-                      {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
-                        <button
-                          key={collection}
-                          onClick={() => setExpandedCollection(collection)}
-                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                        >
-                          <div className="flex items-center justify-between h-full">
-                            <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-black text-base truncate">
-                                {formatCollectionName(collection)}
-                              </h4>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-black/70">
-                                  {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
-                                </p>
-                                <div className="flex -space-x-2">
-                                  {collectionNfts.slice(0, 3).map((nft, idx) => (
-                                    <img
-                                      key={idx}
-                                      src={nft.image_url || nft.display_image_url}
-                                      alt=""
-                                      className="w-5 h-5 rounded-full border border-black/20 object-cover"
-                                    />
-                                  ))}
+                    ) : magicEdenNfts.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>No World Chain NFTs found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-w-lg mx-auto">
+                        {Object.entries(magicEdenGroupedNfts).map(([collection, collectionNfts]: [string, any[]]) => (
+                          <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation">
+                            <div className="flex items-center justify-between h-full">
+                              <div className="text-left flex-1 min-w-0 mr-3">
+                                <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
+                                  <div className="flex -space-x-2">
+                                    {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
+                                      <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
+                              <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                             </div>
-                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                          </div>
-                        </button>
-                      ))}
-                      
-                      {/* View on OpenSea button */}
-                      {web3BioProfile?.address && (
-                        <Button
-                          asChild
-                          className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 mt-3"
-                        >
-                          <a
-                            href={`https://opensea.io/${web3BioProfile.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            View On OpenSea
-                          </a>
-                        </Button>
-                      )}
-                    </div>
+                          </button>
+                        ))}
+                        {web3BioProfile?.address && (
+                          <Button asChild className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 mt-3">
+                            <a href={`https://magiceden.io/portfolio/${web3BioProfile.address}?chain=worldchain`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />View On Magic Eden
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
               </div>
@@ -777,13 +916,13 @@ export const ProfileCard = ({
                         <div className="flex-1">
                           <h4 className="font-bold text-foreground text-lg">{formatCollectionName(expandedCollection)}</h4>
                           <p className="text-xs text-muted-foreground">
-                            {groupedNfts[expandedCollection]?.length || 0} items
+                            {openSeaGroupedNfts[expandedCollection]?.length || 0} items
                           </p>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {groupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                        {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
                           <div
                             key={`${nft.contract}-${nft.identifier}-${index}`}
                             className="group relative overflow-hidden rounded-xl cursor-pointer active:opacity-90 transition-opacity flex-shrink-0 touch-action-manipulation"
@@ -813,7 +952,7 @@ export const ProfileCard = ({
                     </div>
                   ) : (
                     <div className="space-y-3 px-2">
-                      {Object.entries(groupedNfts).map(([collection, collectionNfts]) => (
+                      {Object.entries(openSeaGroupedNfts).map(([collection, collectionNfts]: [string, any[]]) => (
                         <button
                           key={collection}
                           onClick={() => setExpandedCollection(collection)}

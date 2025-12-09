@@ -72,9 +72,6 @@ verify_jwt = false
 [functions.publish-farcaster-cast]
 verify_jwt = false
 
-[functions.send-world-notification]
-verify_jwt = false
-
 [functions.generate-siwe-nonce]
 verify_jwt = false
 
@@ -82,4 +79,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.resolve-ens-profile]
+verify_jwt = false
+
+[functions.get-magiceden-nfts]
 verify_jwt = false
