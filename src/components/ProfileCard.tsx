@@ -316,34 +316,32 @@ export const ProfileCard = ({
                 ) : null}
               </div>
 
-              {/* Email/Website - Always render with fixed height */}
-              <div className="flex items-center justify-center gap-4 flex-wrap min-h-[24px]">
-                {web3BioProfile && (
-                  <>
-                    {web3BioProfile?.email && (
-                      <a 
-                        href={`mailto:${web3BioProfile.email}`} 
-                        className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
-                      >
-                        <Mail className="w-4 h-4 text-black dark:text-white" />
-                        {web3BioProfile.email}
-                      </a>
-                    )}
-                    
-                    {(web3BioProfile?.website || web3BioProfile?.url) && (
-                      <a
-                        href={web3BioProfile.website || web3BioProfile.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
-                      >
-                        <Globe className="w-4 h-4 text-black dark:text-white" />
-                        <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
-                      </a>
-                    )}
-                  </>
-                )}
-              </div>
+              {/* Email/Website - Only show if user has email or website */}
+              {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                  {web3BioProfile?.email && (
+                    <a 
+                      href={`mailto:${web3BioProfile.email}`} 
+                      className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                    >
+                      <Mail className="w-4 h-4 text-black dark:text-white" />
+                      {web3BioProfile.email}
+                    </a>
+                  )}
+                  
+                  {(web3BioProfile?.website || web3BioProfile?.url) && (
+                    <a
+                      href={web3BioProfile.website || web3BioProfile.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                    >
+                      <Globe className="w-4 h-4 text-black dark:text-white" />
+                      <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                  )}
+                </div>
+              )}
 
               {/* Social Icons Row - NFT first, then max 3 social links */}
               {(() => {
