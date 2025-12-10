@@ -1929,7 +1929,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
                 <Dock
                   items={[
-                    {
+                    // Only show Home button when NOT on homepage
+                    ...(!isHomepage ? [{
                       icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Home',
                       onClick: () => {
@@ -1943,7 +1944,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         setIsHomepage(true);
                       },
                       isActive: false,
-                    },
+                    }] : []),
                     {
                       icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Profile',
