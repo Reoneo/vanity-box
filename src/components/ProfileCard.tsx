@@ -69,9 +69,13 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
-  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden'>('main');
+  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'hyperliquid'>('main');
   const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
   const [magicEdenLoading, setMagicEdenLoading] = useState(false);
+  const [hlNfts, setHlNfts] = useState<any[]>([]);
+  const [hlTokens, setHlTokens] = useState<any[]>([]);
+  const [hlLoading, setHlLoading] = useState(false);
+  const [showTokensOverlay, setShowTokensOverlay] = useState(false);
 
   // Fetch Magic Eden NFTs when Magic Eden category is selected
   useEffect(() => {
@@ -88,6 +92,7 @@ export const ProfileCard = ({
             body: JSON.stringify({ walletAddress: currentWalletAddress }),
           });
           const data = await response.json();
+          console.log('Magic Eden response:', data);
           if (data.nfts) {
             setMagicEdenNfts(data.nfts);
           }
@@ -100,6 +105,47 @@ export const ProfileCard = ({
       fetchMagicEdenNfts();
     }
   }, [nftCategory, currentWalletAddress, magicEdenNfts.length, magicEdenLoading]);
+
+  // Fetch Hyperliquid NFTs/tokens when category is selected or from profile data
+  useEffect(() => {
+    // If profile has hlNfts/hlTokens from .hl domain resolution, use those
+    if (web3BioProfile?.hlNfts?.length > 0) {
+      setHlNfts(web3BioProfile.hlNfts);
+    }
+    if (web3BioProfile?.hlTokens?.length > 0) {
+      setHlTokens(web3BioProfile.hlTokens);
+    }
+  }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
+
+  useEffect(() => {
+    if (nftCategory === 'hyperliquid' && currentWalletAddress && hlNfts.length === 0 && !hlLoading && !web3BioProfile?.hlNfts?.length) {
+      const fetchHlTokens = async () => {
+        setHlLoading(true);
+        try {
+          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-hl-tokens', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+          });
+          const data = await response.json();
+          if (data.nfts) {
+            setHlNfts(data.nfts);
+          }
+          if (data.tokens) {
+            setHlTokens(data.tokens);
+          }
+        } catch (error) {
+          console.error('Error fetching Hyperliquid tokens:', error);
+        } finally {
+          setHlLoading(false);
+        }
+      };
+      fetchHlTokens();
+    }
+  }, [nftCategory, currentWalletAddress, hlNfts.length, hlLoading, web3BioProfile?.hlNfts?.length]);
 
   // No need to disable body scrolling - parent container handles overflow
 
@@ -272,9 +318,17 @@ export const ProfileCard = ({
 
             <div className="p-6 pt-16 space-y-2 flex-shrink-0">
 
+              {/* Show .hl domain if searched via HLN, otherwise show displayName */}
               <h2 className="text-3xl font-bold text-center text-foreground">
-                {web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
+                {web3BioProfile?.hlDomain || web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
               </h2>
+              
+              {/* Show primary ENS name below if different from .hl domain */}
+              {web3BioProfile?.hlDomain && web3BioProfile?.displayName && web3BioProfile.hlDomain !== web3BioProfile.displayName && (
+                <p className="text-center text-sm text-muted-foreground">
+                  Primary: {web3BioProfile.displayName}
+                </p>
+              )}
 
               {currentWalletAddress && (
                 <div className="flex items-center justify-center">
@@ -500,7 +554,7 @@ export const ProfileCard = ({
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
                       <h3 className="text-lg font-bold text-black dark:text-white">
-                        {nftCategory === 'main' ? 'NFTs' : nftCategory === 'poaps' ? 'POAPs' : nftCategory === 'opensea' ? 'OpenSea' : 'Magic Eden'}
+                        {nftCategory === 'main' ? 'NFTs' : nftCategory === 'poaps' ? 'POAPs' : nftCategory === 'opensea' ? 'OpenSea' : nftCategory === 'magiceden' ? 'Magic Eden' : 'Hyperliquid'}
                       </h3>
                     </div>
                     <button
@@ -576,11 +630,45 @@ export const ProfileCard = ({
                         <div className="flex items-center justify-between h-full">
                           <div className="text-left flex-1 min-w-0 mr-3">
                             <h4 className="font-medium text-black text-base">Magic Eden</h4>
-                            <p className="text-sm text-black/70">World Chain NFTs</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-black/70">Multi-chain NFTs</p>
+                              {magicEdenNfts.length > 0 && (
+                                <div className="flex -space-x-2">
+                                  {magicEdenNfts.slice(0, 3).map((nft, idx) => (
+                                    <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
                           <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                         </div>
                       </button>
+
+                      {/* Hyperliquid Button - Only show if .hl domain or has HL NFTs */}
+                      {(web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('hyperliquid')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-black text-base">Hyperliquid</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">{hlNfts.length} {hlNfts.length === 1 ? 'item' : 'items'}</p>
+                                {hlNfts.length > 0 && (
+                                  <div className="flex -space-x-2">
+                                    {hlNfts.slice(0, 3).map((nft, idx) => (
+                                      <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
                     </div>
                   ) : nftCategory === 'poaps' ? (
                     // POAPs grid
@@ -667,7 +755,7 @@ export const ProfileCard = ({
                         )}
                       </div>
                     )
-                  ) : (
+                  ) : nftCategory === 'magiceden' ? (
                     // Magic Eden collections
                     magicEdenLoading ? (
                       <div className="flex items-center justify-center py-12">
@@ -701,7 +789,7 @@ export const ProfileCard = ({
                       </div>
                     ) : magicEdenNfts.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground">
-                        <p>No World Chain NFTs found</p>
+                        <p>No Magic Eden NFTs found</p>
                       </div>
                     ) : (
                       <div className="space-y-2 max-w-lg mx-auto">
@@ -732,7 +820,32 @@ export const ProfileCard = ({
                         )}
                       </div>
                     )
-                  )}
+                  ) : nftCategory === 'hyperliquid' ? (
+                    // Hyperliquid NFTs
+                    hlLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+                      </div>
+                    ) : hlNfts.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>No Hyperliquid NFTs found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-w-2xl mx-auto">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                          {hlNfts.map((nft: any, index: number) => (
+                            <div key={`hl-${nft.identifier || nft.contract}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                              <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                              {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ) : null}
                 </div>
               </div>
             )}

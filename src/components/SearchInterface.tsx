@@ -810,6 +810,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const web3BioCompatible = ['.eth', '.box'];
       const isWeb3BioCompatible = web3BioCompatible.some(tld => normalizedQuery.endsWith(tld)) || isWalletAddress;
       
+      // Check for .hl (Hyperliquid) domain
+      const isHlDomain = normalizedQuery.endsWith('.hl');
+      
       // Namestone-only TLDs (not indexed by Web3.bio)
       const namestoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
       const isNamestoneTLD = namestoneTLDs.some(tld => normalizedQuery.endsWith(tld));
@@ -819,10 +822,87 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const isNamestoneSubdomain = dotCount >= 2 && !isWeb3BioCompatible;
       const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
       
-      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}`);
+      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}, Is HL: ${isHlDomain}`);
 
       // Use different fetch strategies based on name type
-      if (isNamestoneDomain) {
+      if (isHlDomain) {
+        // HLN (Hyperliquid Names) domain lookup
+        console.log('🔗 Fetching .hl domain profile for:', normalizedQuery);
+        try {
+          const { data, error } = await supabase.functions.invoke('resolve-hl-domain', {
+            body: { domain: normalizedQuery }
+          });
+
+          if (error) {
+            console.error('❌ Error fetching .hl domain profile:', error);
+            toast.error('Failed to resolve .hl domain');
+            setIsLoading(false);
+            return;
+          }
+          
+          if (data?.notFound || !data?.address) {
+            console.log('⚠️ .hl domain not found:', normalizedQuery);
+            toast.error('Domain not found');
+            setIsLoading(false);
+            return;
+          }
+
+          console.log('✅ .hl domain resolved:', data);
+          
+          // Now fetch the full profile via Web3.bio using the resolved wallet address
+          const { data: web3BioData, error: web3BioError } = await supabase.functions.invoke('web3bio-profile', {
+            body: { identity: data.address }
+          });
+
+          if (web3BioError || web3BioData?.notFound) {
+            // If Web3.bio fails, create a minimal profile from HLN data
+            const hlProfile = {
+              displayName: data.domain,
+              address: data.address,
+              avatar: data.avatar || null,
+              description: null,
+              platform: 'hyperliquid',
+              identity: data.domain,
+              hlDomain: data.domain, // Store original .hl domain
+              hlNfts: data.nfts || [],
+              hlTokens: data.tokens || [],
+            };
+            setWeb3BioProfile(hlProfile);
+            setEnsResults([]);
+            setIsLoading(false);
+          } else if (web3BioData?.profile) {
+            // Merge Web3.bio profile with HLN data, preserving the .hl domain display
+            const mergedProfile = {
+              ...web3BioData.profile,
+              hlDomain: data.domain, // Store original .hl domain to display
+              hlNfts: data.nfts || [],
+              hlTokens: data.tokens || [],
+            };
+            setWeb3BioProfile(mergedProfile);
+            setEnsResults([]);
+            setIsLoading(false);
+            
+            // Fetch EFP stats for the resolved address
+            if (data.address) {
+              supabase.functions.invoke('get-efp-stats', {
+                body: { address: data.address }
+              }).then(({ data: efpData }) => {
+                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                  console.log('✅ EFP stats loaded for .hl profile:', efpData);
+                  setEfpStats(efpData);
+                }
+              }).catch(err => console.log('EFP stats fetch failed:', err));
+              
+              // Fetch NFTs
+              fetchNfts(data.address);
+            }
+          }
+        } catch (error) {
+          console.log('❌ Failed to fetch .hl domain profile:', error);
+          toast.error('Failed to resolve .hl domain');
+          setIsLoading(false);
+        }
+      } else if (isNamestoneDomain) {
         // Direct Namestone lookup for Namestone TLDs and subdomains
         console.log('🔗 Fetching Namestone domain profile for:', normalizedQuery);
         try {

@@ -83,3 +83,9 @@ verify_jwt = false
 
 [functions.get-magiceden-nfts]
 verify_jwt = false
+
+[functions.resolve-hl-domain]
+verify_jwt = false
+
+[functions.get-hl-tokens]
+verify_jwt = false
