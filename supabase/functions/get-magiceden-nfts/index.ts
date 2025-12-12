@@ -5,11 +5,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Only Ethereum and Polygon are officially supported by Magic Eden EVM API
-const SUPPORTED_CHAINS = ['ethereum', 'polygon'];
+// All supported Magic Eden EVM chains
+const SUPPORTED_CHAINS = [
+  'ethereum',
+  'polygon', 
+  'base',
+  'arbitrum',
+  'bsc',
+  'avalanche',
+  'apechain',
+  'sei',
+  'monad',
+  'berachain',
+];
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -37,28 +47,27 @@ serve(async (req) => {
     console.log(`Fetching NFTs from Magic Eden for wallet: ${walletAddress}`);
 
     const allNfts: any[] = [];
-    const MAX_PAGES_PER_CHAIN = 3;
+    const MAX_PAGES_PER_CHAIN = 5;
+    const chainResults: { [key: string]: number } = {};
 
-    // Try different API versions
-    const API_VERSIONS = ['v6', 'v7'];
-
-    // Fetch NFTs from supported chains (ethereum, polygon)
-    for (const chainId of SUPPORTED_CHAINS) {
+    // Fetch NFTs from all supported chains in parallel
+    const chainPromises = SUPPORTED_CHAINS.map(async (chainId) => {
+      const chainNfts: any[] = [];
       let continuation: string | null = null;
       let pageCount = 0;
-      let success = false;
 
-      console.log(`Fetching from chain: ${chainId}`);
-
-      // Try v6 endpoint first, then v7
-      for (const version of API_VERSIONS) {
-        if (success) break;
-        
-        try {
-          const url = new URL(`https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/${version}`);
+      try {
+        do {
+          const url = new URL(`https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/v7`);
           url.searchParams.set('limit', String(Math.min(limit, 100)));
+          url.searchParams.set('includeAttributes', 'true');
+          url.searchParams.set('includeLastSale', 'true');
+          
+          if (continuation) {
+            url.searchParams.set('continuation', continuation);
+          }
 
-          console.log(`Trying ${version}: ${url.toString()}`);
+          console.log(`[${chainId}] Fetching page ${pageCount + 1}: ${url.toString()}`);
 
           const response = await fetch(url.toString(), {
             headers: {
@@ -67,99 +76,79 @@ serve(async (req) => {
             },
           });
 
-          console.log(`Chain ${chainId} ${version} returned status ${response.status}`);
-
           if (!response.ok) {
             const errorText = await response.text();
-            console.log(`Chain ${chainId} ${version} error: ${errorText}`);
-            continue;
+            console.log(`[${chainId}] API error ${response.status}: ${errorText.substring(0, 200)}`);
+            break;
           }
 
-          success = true;
           const data = await response.json();
-          console.log(`Chain ${chainId} ${version} returned ${data.tokens?.length || 0} NFTs`);
+          const tokens = data.tokens || [];
+          
+          console.log(`[${chainId}] Page ${pageCount + 1}: Found ${tokens.length} NFTs`);
 
-          if (data.tokens && data.tokens.length > 0) {
-            const transformedNfts = data.tokens.map((token: any) => ({
-              identifier: token.token?.tokenId || token.tokenId,
-              collection: token.token?.collection?.name || token.collection?.name || `${chainId.charAt(0).toUpperCase() + chainId.slice(1)} Collection`,
-              contract: token.token?.contract || token.contract,
-              token_standard: token.token?.kind || 'erc721',
-              name: token.token?.name || `#${token.token?.tokenId || token.tokenId}`,
-              description: token.token?.description,
-              image_url: token.token?.image || token.token?.imageLarge || token.token?.imageSmall,
-              display_image_url: token.token?.image || token.token?.imageLarge || token.token?.imageSmall,
-              animation_url: token.token?.media,
-              metadata_url: token.token?.tokenUri,
-              opensea_url: null,
-              chain: chainId,
-              rarity_score: token.token?.rarityRank || 0,
-              rarity_rank: token.token?.rarityRank,
-              floor_price: token.token?.collection?.floorAskPrice?.amount?.decimal,
-              quantity: token.ownership?.tokenCount || 1,
-            }));
-
-            allNfts.push(...transformedNfts);
-          }
-
-          // Handle pagination
-          continuation = data.continuation || null;
-          while (continuation && pageCount < MAX_PAGES_PER_CHAIN) {
-            pageCount++;
-            const pageUrl = new URL(`https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/${version}`);
-            pageUrl.searchParams.set('limit', String(Math.min(limit, 100)));
-            pageUrl.searchParams.set('continuation', continuation);
-
-            const pageResponse = await fetch(pageUrl.toString(), {
-              headers: {
-                'Authorization': `Bearer ${MAGIC_EDEN_API_KEY}`,
-                'Accept': 'application/json',
-              },
-            });
-
-            if (!pageResponse.ok) break;
-
-            const pageData = await pageResponse.json();
-            if (pageData.tokens && pageData.tokens.length > 0) {
-              const transformedNfts = pageData.tokens.map((token: any) => ({
-                identifier: token.token?.tokenId || token.tokenId,
-                collection: token.token?.collection?.name || token.collection?.name || `${chainId.charAt(0).toUpperCase() + chainId.slice(1)} Collection`,
-                contract: token.token?.contract || token.contract,
-                token_standard: token.token?.kind || 'erc721',
-                name: token.token?.name || `#${token.token?.tokenId || token.tokenId}`,
-                description: token.token?.description,
-                image_url: token.token?.image || token.token?.imageLarge || token.token?.imageSmall,
-                display_image_url: token.token?.image || token.token?.imageLarge || token.token?.imageSmall,
-                animation_url: token.token?.media,
-                metadata_url: token.token?.tokenUri,
+          if (tokens.length > 0) {
+            const transformedNfts = tokens.map((item: any) => {
+              const token = item.token || item;
+              return {
+                identifier: token.tokenId || item.tokenId,
+                collection: token.collection?.name || item.collection?.name || `${chainId.charAt(0).toUpperCase() + chainId.slice(1)} Collection`,
+                contract: token.contract || item.contract,
+                token_standard: token.kind || 'erc721',
+                name: token.name || `#${token.tokenId || item.tokenId}`,
+                description: token.description,
+                image_url: token.image || token.imageLarge || token.imageSmall,
+                display_image_url: token.image || token.imageLarge || token.imageSmall,
+                animation_url: token.media,
+                metadata_url: token.tokenUri,
                 opensea_url: null,
                 chain: chainId,
-                rarity_score: token.token?.rarityRank || 0,
-                rarity_rank: token.token?.rarityRank,
-                floor_price: token.token?.collection?.floorAskPrice?.amount?.decimal,
-                quantity: token.ownership?.tokenCount || 1,
-              }));
+                rarity_score: token.rarityRank || 0,
+                rarity_rank: token.rarityRank,
+                floor_price: token.collection?.floorAskPrice?.amount?.decimal,
+                quantity: item.ownership?.tokenCount || 1,
+              };
+            });
 
-              allNfts.push(...transformedNfts);
-            }
-            continuation = pageData.continuation || null;
+            chainNfts.push(...transformedNfts);
           }
-        } catch (err) {
-          console.log(`Chain ${chainId} ${version} failed: ${err.message}`);
-        }
+
+          continuation = data.continuation || null;
+          pageCount++;
+        } while (continuation && pageCount < MAX_PAGES_PER_CHAIN);
+
+        chainResults[chainId] = chainNfts.length;
+        return chainNfts;
+      } catch (err) {
+        console.error(`[${chainId}] Chain error:`, err.message);
+        chainResults[chainId] = 0;
+        return [];
       }
+    });
+
+    // Wait for all chain requests to complete
+    const results = await Promise.all(chainPromises);
+    
+    // Flatten results
+    for (const chainNfts of results) {
+      allNfts.push(...chainNfts);
     }
 
+    console.log('Chain results:', JSON.stringify(chainResults));
     console.log(`Total Magic Eden NFTs fetched: ${allNfts.length}`);
 
     return new Response(
-      JSON.stringify({ nfts: allNfts, total: allNfts.length }),
+      JSON.stringify({ 
+        nfts: allNfts, 
+        total: allNfts.length,
+        chainResults,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in get-magiceden-nfts:', error);
     return new Response(
-      JSON.stringify({ error: error.message, nfts: [] }),
+      JSON.stringify({ error: error.message, nfts: [], chainResults: {} }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
