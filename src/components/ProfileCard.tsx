@@ -75,6 +75,9 @@ export const ProfileCard = ({
   const [hlNfts, setHlNfts] = useState<any[]>([]);
   const [hlTokens, setHlTokens] = useState<any[]>([]);
   const [hlLoading, setHlLoading] = useState(false);
+  const [portfolioTokens, setPortfolioTokens] = useState<any[]>([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
+  const [portfolioTotalValue, setPortfolioTotalValue] = useState<number>(0);
   const [showTokensOverlay, setShowTokensOverlay] = useState(false);
 
   // Fetch Magic Eden NFTs when Magic Eden category is selected
@@ -146,6 +149,38 @@ export const ProfileCard = ({
       fetchHlTokens();
     }
   }, [nftCategory, currentWalletAddress, hlNfts.length, hlLoading, web3BioProfile?.hlNfts?.length]);
+
+  // Fetch portfolio tokens via Zerion when tokens overlay is shown
+  useEffect(() => {
+    if (showTokensOverlay && currentWalletAddress && portfolioTokens.length === 0 && !portfolioLoading) {
+      const fetchPortfolio = async () => {
+        setPortfolioLoading(true);
+        try {
+          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+          });
+          const data = await response.json();
+          console.log('Portfolio response:', data);
+          if (data.tokens) {
+            setPortfolioTokens(data.tokens);
+          }
+          if (data.totalValue) {
+            setPortfolioTotalValue(data.totalValue);
+          }
+        } catch (error) {
+          console.error('Error fetching portfolio:', error);
+        } finally {
+          setPortfolioLoading(false);
+        }
+      };
+      fetchPortfolio();
+    }
+  }, [showTokensOverlay, currentWalletAddress, portfolioTokens.length, portfolioLoading]);
 
   // No need to disable body scrolling - parent container handles overflow
 
@@ -412,20 +447,28 @@ export const ProfileCard = ({
 
                 return (
                   <div className="flex items-center justify-center gap-3 min-h-[40px] flex-wrap">
-                    {/* NFT Button - First with divider */}
+                    {/* NFT Button */}
                     {hasNfts && (
-                      <>
-                        <button
-                          onClick={() => setShowNftsOverlay(true)}
-                          className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
-                          title={`View ${nfts.length} NFTs`}
-                        >
-                          <span className="text-black dark:text-white font-semibold text-sm">NFTs</span>
-                        </button>
-                        {socialLinks.length > 0 && (
-                          <div className="w-px h-6 bg-border/50" />
-                        )}
-                      </>
+                      <button
+                        onClick={() => setShowNftsOverlay(true)}
+                        className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
+                        title={`View ${nfts.length} NFTs`}
+                      >
+                        <span className="text-black dark:text-white font-semibold text-sm">NFTs</span>
+                      </button>
+                    )}
+
+                    {/* Tokens Button */}
+                    <button
+                      onClick={() => setShowTokensOverlay(true)}
+                      className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
+                      title="View wallet tokens"
+                    >
+                      <span className="text-black dark:text-white font-semibold text-sm">Tokens</span>
+                    </button>
+                    
+                    {socialLinks.length > 0 && (
+                      <div className="w-px h-6 bg-border/50" />
                     )}
                     
                     {/* Social Links - Max 3 */}
@@ -846,6 +889,87 @@ export const ProfileCard = ({
                       </div>
                     )
                   ) : null}
+                </div>
+              </div>
+            )}
+
+            {/* Tokens Overlay */}
+            {showTokensOverlay && (
+              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 50px)' }}>
+                {/* Header with ENS image banner */}
+                <div 
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+                  style={{ 
+                    backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+                    <div className="w-10" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-lg font-bold text-black dark:text-white">Tokens</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowTokensOverlay(false)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
+                    >
+                      <X className="w-4 h-4 text-black dark:text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tokens Content */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                  {portfolioLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+                    </div>
+                  ) : portfolioTokens.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p className="text-lg">No tokens found</p>
+                      <p className="text-sm mt-2">This wallet doesn't have any tokens with value</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-w-lg mx-auto">
+                      {/* Portfolio Total Value */}
+                      {portfolioTotalValue > 0 && (
+                        <div className="text-center mb-4 p-4 rounded-2xl bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/20">
+                          <p className="text-sm text-muted-foreground">Total Value</p>
+                          <p className="text-2xl font-bold text-[#D4AF37]">${portfolioTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                      )}
+                      
+                      {/* Token List */}
+                      {portfolioTokens.map((token: any, index: number) => (
+                        <div 
+                          key={token.id || `token-${index}`}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
+                        >
+                          {token.icon ? (
+                            <img src={token.icon} alt={token.symbol} className="w-10 h-10 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] font-bold">
+                              {token.symbol?.slice(0, 2) || '?'}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-foreground truncate">{token.name}</span>
+                              <span className="text-sm font-semibold text-foreground">${token.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                              <span>{token.quantity?.toLocaleString(undefined, { maximumFractionDigits: 4 })} {token.symbol}</span>
+                              {token.priceChange24h !== 0 && (
+                                <span className={token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}>
+                                  {token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h * 100).toFixed(2)}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
