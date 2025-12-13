@@ -466,36 +466,15 @@ export const ProfileCard = ({
                     >
                       <span className="text-black dark:text-white font-semibold text-sm">Tokens</span>
                     </button>
-                    
-                    {socialLinks.length > 0 && (
-                      <div className="w-px h-6 bg-border/50" />
-                    )}
-                    
-                    {/* Social Links - Max 3 */}
-                    {displayLinks.map(([platform, linkData]: [string, any]) => {
-                      const url = typeof linkData === 'string' ? linkData : linkData?.link;
-                      if (!url) return null;
 
-                      return (
-                        <SocialIcon
-                          key={platform}
-                          platform={platform}
-                          url={url}
-                          size="md"
-                        />
-                      );
-                    })}
-                    
-                    {/* Show more button if > 3 social links */}
-                    {socialLinks.length > 3 && (
+                    {/* Social Button */}
+                    {socialLinks.length > 0 && (
                       <button
                         onClick={() => setShowAllSocials(true)}
-                        className="w-10 h-10 flex items-center justify-center rounded-full bg-[#D4AF37]/80 hover:bg-[#D4AF37] transition-all hover:scale-110 shadow-md"
-                        title={`View all ${socialLinks.length} social links`}
+                        className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
+                        title={`View ${socialLinks.length} social links`}
                       >
-                        <span className="text-black dark:text-white font-semibold text-sm">
-                          +{remainingCount}
-                        </span>
+                        <span className="text-black dark:text-white font-semibold text-sm">Social</span>
                       </button>
                     )}
                   </div>

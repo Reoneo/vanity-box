@@ -113,15 +113,62 @@ serve(async (req) => {
       console.log('Owned names fetch error:', namesError.message);
     }
 
+    // Step 4: Try to get avatar/metadata for the domain
+    let avatar = null;
+    try {
+      // Try to get text records which may include avatar
+      const textRecordsUrl = `${HLN_API_BASE}/resolve/text_records/${encodeURIComponent(domain)}`;
+      console.log(`Fetching text records: ${textRecordsUrl}`);
+      
+      const textResponse = await fetch(textRecordsUrl, {
+        headers: {
+          'x-api-key': HLN_API_KEY,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (textResponse.ok) {
+        const textData = await textResponse.json();
+        console.log('Text records response:', JSON.stringify(textData));
+        // Look for avatar in various possible locations
+        avatar = textData.avatar || textData.records?.avatar || textData.text?.avatar || null;
+      }
+    } catch (avatarError) {
+      console.log('Avatar fetch error:', avatarError.message);
+    }
+
+    // Step 5: Also try profile endpoint if avatar not found
+    if (!avatar) {
+      try {
+        const profileUrl = `${HLN_API_BASE}/resolve/profile/${encodeURIComponent(domain)}`;
+        console.log(`Fetching profile: ${profileUrl}`);
+        
+        const profileResponse = await fetch(profileUrl, {
+          headers: {
+            'x-api-key': HLN_API_KEY,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          console.log('Profile response:', JSON.stringify(profileData));
+          avatar = profileData.avatar || profileData.image || profileData.picture || null;
+        }
+      } catch (profileError) {
+        console.log('Profile fetch error:', profileError.message);
+      }
+    }
+
     const result = {
       domain,
       address: walletAddress,
       primaryName: typeof primaryName === 'string' ? primaryName : domain,
       ownedNames: Array.isArray(ownedNames) ? ownedNames : [],
-      avatar: null,
+      avatar,
     };
 
-    console.log(`Successfully resolved ${domain} to ${walletAddress}`);
+    console.log(`Successfully resolved ${domain} to ${walletAddress}, avatar: ${avatar || 'none'}`);
 
     return new Response(
       JSON.stringify(result),
