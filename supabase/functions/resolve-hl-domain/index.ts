@@ -5,7 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const HLN_API_BASE = 'https://api.hlnames.xyz/api';
+// HLN REST API - Use the canonical production URL
+const HLN_API_BASE = 'https://hlnames-rest-api.onrender.com/api';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -39,7 +40,7 @@ serve(async (req) => {
     
     const resolveResponse = await fetch(resolveUrl, {
       headers: {
-        'Authorization': `Bearer ${HLN_API_KEY}`,
+        'x-api-key': HLN_API_KEY,
         'Accept': 'application/json',
       },
     });
@@ -68,81 +69,56 @@ serve(async (req) => {
 
     console.log(`Resolved to wallet: ${walletAddress}`);
 
-    // Step 2: Get profile data for the wallet address
-    let profileData = null;
+    // Step 2: Get primary name for the wallet address
+    let primaryName = domain;
     try {
-      const profileUrl = `${HLN_API_BASE}/resolve/profile/${walletAddress}`;
-      console.log(`Fetching profile: ${profileUrl}`);
+      const primaryUrl = `${HLN_API_BASE}/resolve/primary_name/${walletAddress}`;
+      console.log(`Fetching primary name: ${primaryUrl}`);
       
-      const profileResponse = await fetch(profileUrl, {
+      const primaryResponse = await fetch(primaryUrl, {
         headers: {
-          'Authorization': `Bearer ${HLN_API_KEY}`,
+          'x-api-key': HLN_API_KEY,
           'Accept': 'application/json',
         },
       });
 
-      if (profileResponse.ok) {
-        profileData = await profileResponse.json();
-        console.log('Profile response:', JSON.stringify(profileData));
-      } else {
-        console.log(`Profile fetch failed: ${profileResponse.status}`);
+      if (primaryResponse.ok) {
+        const primaryData = await primaryResponse.json();
+        console.log('Primary name response:', JSON.stringify(primaryData));
+        primaryName = primaryData.name || primaryData.primary_name || primaryData || domain;
       }
-    } catch (profileError) {
-      console.log('Profile fetch error:', profileError.message);
+    } catch (primaryError) {
+      console.log('Primary name fetch error:', primaryError.message);
     }
 
-    // Step 3: Get NFTs for the wallet
-    let nfts = [];
+    // Step 3: Get all names owned by wallet
+    let ownedNames: string[] = [];
     try {
-      const nftsUrl = `${HLN_API_BASE}/nfts/${walletAddress}`;
-      console.log(`Fetching NFTs: ${nftsUrl}`);
+      const namesUrl = `${HLN_API_BASE}/utils/names_owner/${walletAddress}`;
+      console.log(`Fetching owned names: ${namesUrl}`);
       
-      const nftsResponse = await fetch(nftsUrl, {
+      const namesResponse = await fetch(namesUrl, {
         headers: {
-          'Authorization': `Bearer ${HLN_API_KEY}`,
+          'x-api-key': HLN_API_KEY,
           'Accept': 'application/json',
         },
       });
 
-      if (nftsResponse.ok) {
-        const nftsData = await nftsResponse.json();
-        nfts = nftsData.nfts || nftsData.items || nftsData || [];
-        console.log(`Found ${Array.isArray(nfts) ? nfts.length : 0} NFTs`);
+      if (namesResponse.ok) {
+        const namesData = await namesResponse.json();
+        console.log('Owned names response:', JSON.stringify(namesData));
+        ownedNames = namesData.names || namesData || [];
       }
-    } catch (nftError) {
-      console.log('NFT fetch error:', nftError.message);
-    }
-
-    // Step 4: Get tokens for the wallet
-    let tokens = [];
-    try {
-      const tokensUrl = `${HLN_API_BASE}/tokens/${walletAddress}`;
-      console.log(`Fetching tokens: ${tokensUrl}`);
-      
-      const tokensResponse = await fetch(tokensUrl, {
-        headers: {
-          'Authorization': `Bearer ${HLN_API_KEY}`,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (tokensResponse.ok) {
-        const tokensData = await tokensResponse.json();
-        tokens = tokensData.tokens || tokensData.items || tokensData || [];
-        console.log(`Found ${Array.isArray(tokens) ? tokens.length : 0} tokens`);
-      }
-    } catch (tokenError) {
-      console.log('Token fetch error:', tokenError.message);
+    } catch (namesError) {
+      console.log('Owned names fetch error:', namesError.message);
     }
 
     const result = {
       domain,
       address: walletAddress,
-      profile: profileData,
-      primaryName: profileData?.primaryName || profileData?.name || domain,
-      avatar: profileData?.avatar || profileData?.image || null,
-      nfts: Array.isArray(nfts) ? nfts : [],
-      tokens: Array.isArray(tokens) ? tokens : [],
+      primaryName: typeof primaryName === 'string' ? primaryName : domain,
+      ownedNames: Array.isArray(ownedNames) ? ownedNames : [],
+      avatar: null,
     };
 
     console.log(`Successfully resolved ${domain} to ${walletAddress}`);

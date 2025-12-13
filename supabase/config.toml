@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.get-hl-tokens]
 verify_jwt = false
+
+[functions.get-wallet-portfolio]
+verify_jwt = false
