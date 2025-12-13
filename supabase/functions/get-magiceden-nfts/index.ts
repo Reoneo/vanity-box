@@ -5,20 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// All supported Magic Eden EVM chains
-const SUPPORTED_CHAINS = [
-  'ethereum',
-  'polygon', 
-  'base',
-  'arbitrum',
-  'bsc',
-  'avalanche',
-  'apechain',
-  'sei',
-  'monad',
-  'berachain',
-];
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -47,50 +33,82 @@ serve(async (req) => {
     console.log(`Fetching NFTs from Magic Eden for wallet: ${walletAddress}`);
 
     const allNfts: any[] = [];
-    const MAX_PAGES_PER_CHAIN = 5;
-    const chainResults: { [key: string]: number } = {};
 
-    // Fetch NFTs from all supported chains in parallel
-    const chainPromises = SUPPORTED_CHAINS.map(async (chainId) => {
-      const chainNfts: any[] = [];
-      let continuation: string | null = null;
-      let pageCount = 0;
+    // For Bitcoin Ordinals - use the ordinals endpoint
+    // Check if wallet is a Bitcoin address (starts with bc1 or similar)
+    const isBitcoinWallet = walletAddress.startsWith('bc1') || 
+                            walletAddress.startsWith('1') || 
+                            walletAddress.startsWith('3');
 
+    if (isBitcoinWallet) {
+      // Bitcoin Ordinals endpoint
       try {
-        do {
-          const url = new URL(`https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/v7`);
-          url.searchParams.set('limit', String(Math.min(limit, 100)));
-          url.searchParams.set('includeAttributes', 'true');
-          url.searchParams.set('includeLastSale', 'true');
-          
-          if (continuation) {
-            url.searchParams.set('continuation', continuation);
-          }
+        const btcUrl = `https://api-mainnet.magiceden.dev/v2/ord/btc/tokens?ownerAddress=${walletAddress}&limit=${Math.min(limit, 100)}`;
+        console.log(`Fetching Bitcoin Ordinals: ${btcUrl}`);
 
-          console.log(`[${chainId}] Fetching page ${pageCount + 1}: ${url.toString()}`);
+        const btcResponse = await fetch(btcUrl, {
+          headers: {
+            'Authorization': `Bearer ${MAGIC_EDEN_API_KEY}`,
+            'Accept': 'application/json',
+          },
+        });
 
-          const response = await fetch(url.toString(), {
+        if (btcResponse.ok) {
+          const btcData = await btcResponse.json();
+          const tokens = btcData.tokens || btcData || [];
+          console.log(`Found ${tokens.length} Bitcoin Ordinals`);
+
+          tokens.forEach((token: any) => {
+            allNfts.push({
+              identifier: token.id || token.inscriptionId,
+              collection: token.collection?.name || token.collectionSymbol || 'Bitcoin Ordinals',
+              contract: null,
+              token_standard: 'ordinals',
+              name: token.meta?.name || token.name || `Ordinal #${token.inscriptionNumber || token.id}`,
+              description: token.meta?.description,
+              image_url: token.contentURI || token.meta?.image || token.content?.url,
+              display_image_url: token.contentPreviewURI || token.contentURI || token.meta?.image,
+              animation_url: token.content?.animationUrl,
+              metadata_url: null,
+              chain: 'bitcoin',
+              rarity_score: token.rarity?.score || 0,
+              rarity_rank: token.rarity?.rank,
+              floor_price: token.floorPrice,
+              quantity: 1,
+              inscriptionNumber: token.inscriptionNumber,
+            });
+          });
+        } else {
+          const errorText = await btcResponse.text();
+          console.log(`Bitcoin Ordinals fetch failed: ${btcResponse.status} - ${errorText.slice(0, 200)}`);
+        }
+      } catch (btcError) {
+        console.error('Bitcoin Ordinals error:', btcError.message);
+      }
+    } else {
+      // EVM chains - fetch sequentially with delay to avoid rate limits
+      const EVM_CHAINS = ['ethereum', 'polygon', 'base', 'arbitrum'];
+      
+      for (const chainId of EVM_CHAINS) {
+        try {
+          const url = `https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/v7?limit=${Math.min(limit, 100)}&includeAttributes=true`;
+          console.log(`[${chainId}] Fetching: ${url}`);
+
+          const response = await fetch(url, {
             headers: {
               'Authorization': `Bearer ${MAGIC_EDEN_API_KEY}`,
               'Accept': 'application/json',
             },
           });
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.log(`[${chainId}] API error ${response.status}: ${errorText.substring(0, 200)}`);
-            break;
-          }
+          if (response.ok) {
+            const data = await response.json();
+            const tokens = data.tokens || [];
+            console.log(`[${chainId}] Found ${tokens.length} NFTs`);
 
-          const data = await response.json();
-          const tokens = data.tokens || [];
-          
-          console.log(`[${chainId}] Page ${pageCount + 1}: Found ${tokens.length} NFTs`);
-
-          if (tokens.length > 0) {
-            const transformedNfts = tokens.map((item: any) => {
+            tokens.forEach((item: any) => {
               const token = item.token || item;
-              return {
+              allNfts.push({
                 identifier: token.tokenId || item.tokenId,
                 collection: token.collection?.name || item.collection?.name || `${chainId.charAt(0).toUpperCase() + chainId.slice(1)} Collection`,
                 contract: token.contract || item.contract,
@@ -101,54 +119,40 @@ serve(async (req) => {
                 display_image_url: token.image || token.imageLarge || token.imageSmall,
                 animation_url: token.media,
                 metadata_url: token.tokenUri,
-                opensea_url: null,
                 chain: chainId,
                 rarity_score: token.rarityRank || 0,
                 rarity_rank: token.rarityRank,
                 floor_price: token.collection?.floorAskPrice?.amount?.decimal,
                 quantity: item.ownership?.tokenCount || 1,
-              };
+              });
             });
-
-            chainNfts.push(...transformedNfts);
+          } else {
+            const errorText = await response.text();
+            console.log(`[${chainId}] API error ${response.status}: ${errorText.slice(0, 200)}`);
           }
 
-          continuation = data.continuation || null;
-          pageCount++;
-        } while (continuation && pageCount < MAX_PAGES_PER_CHAIN);
-
-        chainResults[chainId] = chainNfts.length;
-        return chainNfts;
-      } catch (err) {
-        console.error(`[${chainId}] Chain error:`, err.message);
-        chainResults[chainId] = 0;
-        return [];
+          // Add delay between requests to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 250));
+        } catch (chainError) {
+          console.error(`[${chainId}] Error:`, chainError.message);
+        }
       }
-    });
-
-    // Wait for all chain requests to complete
-    const results = await Promise.all(chainPromises);
-    
-    // Flatten results
-    for (const chainNfts of results) {
-      allNfts.push(...chainNfts);
     }
 
-    console.log('Chain results:', JSON.stringify(chainResults));
     console.log(`Total Magic Eden NFTs fetched: ${allNfts.length}`);
 
     return new Response(
       JSON.stringify({ 
         nfts: allNfts, 
         total: allNfts.length,
-        chainResults,
+        walletType: isBitcoinWallet ? 'bitcoin' : 'evm',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in get-magiceden-nfts:', error);
     return new Response(
-      JSON.stringify({ error: error.message, nfts: [], chainResults: {} }),
+      JSON.stringify({ error: error.message, nfts: [] }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

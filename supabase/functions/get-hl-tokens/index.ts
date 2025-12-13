@@ -5,7 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const HLN_API_BASE = 'https://api.hlnames.xyz/api';
+// HLN REST API base URL
+const HLN_API_BASE = 'https://hlnames-rest-api.onrender.com/api';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -31,88 +32,159 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching HLN tokens for wallet: ${walletAddress}`);
+    console.log(`Fetching HLN data for wallet: ${walletAddress}`);
 
-    // Fetch NFTs
+    // Try multiple endpoints to find NFTs and tokens
     let nfts: any[] = [];
-    try {
-      const nftsUrl = `${HLN_API_BASE}/nfts/${walletAddress}`;
-      console.log(`Fetching NFTs: ${nftsUrl}`);
-      
-      const nftsResponse = await fetch(nftsUrl, {
-        headers: {
-          'Authorization': `Bearer ${HLN_API_KEY}`,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (nftsResponse.ok) {
-        const nftsData = await nftsResponse.json();
-        const rawNfts = nftsData.nfts || nftsData.items || nftsData || [];
-        
-        // Transform NFTs to match OpenSea format
-        nfts = (Array.isArray(rawNfts) ? rawNfts : []).map((nft: any) => ({
-          identifier: nft.tokenId || nft.id || nft.identifier,
-          collection: nft.collection?.name || nft.collectionName || 'Hyperliquid Collection',
-          contract: nft.contract || nft.contractAddress,
-          token_standard: nft.tokenStandard || 'erc721',
-          name: nft.name || nft.title || `#${nft.tokenId || nft.id}`,
-          description: nft.description,
-          image_url: nft.image || nft.imageUrl || nft.image_url,
-          display_image_url: nft.image || nft.imageUrl || nft.image_url,
-          animation_url: nft.animation_url || nft.animationUrl,
-          metadata_url: nft.tokenUri || nft.metadata_url,
-          chain: 'hyperliquid',
-          rarity_score: nft.rarityScore || 0,
-          rarity_rank: nft.rarityRank,
-          floor_price: nft.floorPrice,
-          quantity: nft.quantity || 1,
-        }));
-        
-        console.log(`Found ${nfts.length} NFTs`);
-      } else {
-        console.log(`NFT fetch failed: ${nftsResponse.status}`);
-      }
-    } catch (nftError) {
-      console.log('NFT fetch error:', nftError.message);
-    }
-
-    // Fetch tokens (fungible)
     let tokens: any[] = [];
+
+    // Endpoint 1: Try wallet assets endpoint
     try {
-      const tokensUrl = `${HLN_API_BASE}/tokens/${walletAddress}`;
-      console.log(`Fetching tokens: ${tokensUrl}`);
+      const assetsUrl = `${HLN_API_BASE}/wallet/assets/${walletAddress}`;
+      console.log(`Fetching assets: ${assetsUrl}`);
       
-      const tokensResponse = await fetch(tokensUrl, {
+      const assetsResponse = await fetch(assetsUrl, {
         headers: {
-          'Authorization': `Bearer ${HLN_API_KEY}`,
+          'x-api-key': HLN_API_KEY,
           'Accept': 'application/json',
         },
       });
 
-      if (tokensResponse.ok) {
-        const tokensData = await tokensResponse.json();
-        const rawTokens = tokensData.tokens || tokensData.items || tokensData || [];
+      if (assetsResponse.ok) {
+        const assetsData = await assetsResponse.json();
+        console.log('Assets response:', JSON.stringify(assetsData).slice(0, 500));
         
-        tokens = (Array.isArray(rawTokens) ? rawTokens : []).map((token: any) => ({
-          symbol: token.symbol || token.ticker,
-          name: token.name || token.symbol,
-          balance: token.balance || token.amount,
-          decimals: token.decimals || 18,
-          contract: token.contract || token.contractAddress,
-          logo: token.logo || token.image || token.logoUrl,
-          price: token.price || token.usdPrice,
-          value: token.value || token.usdValue,
-          chain: 'hyperliquid',
-        }));
+        if (assetsData.nfts) {
+          nfts = assetsData.nfts.map((nft: any) => ({
+            identifier: nft.tokenId || nft.id || nft.identifier,
+            collection: nft.collection?.name || nft.collectionName || 'Hyperliquid Collection',
+            contract: nft.contract || nft.contractAddress,
+            token_standard: nft.tokenStandard || 'erc721',
+            name: nft.name || nft.title || `#${nft.tokenId || nft.id}`,
+            description: nft.description,
+            image_url: nft.image || nft.imageUrl || nft.image_url,
+            display_image_url: nft.image || nft.imageUrl || nft.image_url,
+            animation_url: nft.animation_url || nft.animationUrl,
+            metadata_url: nft.tokenUri || nft.metadata_url,
+            chain: 'hyperliquid',
+            rarity_score: nft.rarityScore || 0,
+            rarity_rank: nft.rarityRank,
+            floor_price: nft.floorPrice,
+            quantity: nft.quantity || 1,
+          }));
+        }
         
-        console.log(`Found ${tokens.length} tokens`);
+        if (assetsData.tokens) {
+          tokens = assetsData.tokens.map((token: any) => ({
+            symbol: token.symbol || token.ticker,
+            name: token.name || token.symbol,
+            balance: token.balance || token.amount,
+            decimals: token.decimals || 18,
+            contract: token.contract || token.contractAddress,
+            logo: token.logo || token.image || token.logoUrl,
+            price: token.price || token.usdPrice,
+            value: token.value || token.usdValue,
+            chain: 'hyperliquid',
+          }));
+        }
       } else {
-        console.log(`Token fetch failed: ${tokensResponse.status}`);
+        console.log(`Assets fetch failed: ${assetsResponse.status}`);
       }
-    } catch (tokenError) {
-      console.log('Token fetch error:', tokenError.message);
+    } catch (assetsError) {
+      console.log('Assets fetch error:', assetsError.message);
     }
+
+    // Endpoint 2: Try user/portfolio endpoint
+    if (nfts.length === 0 && tokens.length === 0) {
+      try {
+        const portfolioUrl = `${HLN_API_BASE}/user/portfolio/${walletAddress}`;
+        console.log(`Fetching portfolio: ${portfolioUrl}`);
+        
+        const portfolioResponse = await fetch(portfolioUrl, {
+          headers: {
+            'x-api-key': HLN_API_KEY,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (portfolioResponse.ok) {
+          const portfolioData = await portfolioResponse.json();
+          console.log('Portfolio response:', JSON.stringify(portfolioData).slice(0, 500));
+          
+          const rawNfts = portfolioData.nfts || portfolioData.collectibles || [];
+          const rawTokens = portfolioData.tokens || portfolioData.balances || [];
+          
+          nfts = (Array.isArray(rawNfts) ? rawNfts : []).map((nft: any) => ({
+            identifier: nft.tokenId || nft.id,
+            collection: nft.collection?.name || nft.collectionName || 'Hyperliquid Collection',
+            contract: nft.contract,
+            token_standard: 'erc721',
+            name: nft.name || `#${nft.tokenId || nft.id}`,
+            description: nft.description,
+            image_url: nft.image || nft.imageUrl,
+            display_image_url: nft.image || nft.imageUrl,
+            chain: 'hyperliquid',
+            quantity: 1,
+          }));
+          
+          tokens = (Array.isArray(rawTokens) ? rawTokens : []).map((token: any) => ({
+            symbol: token.symbol,
+            name: token.name || token.symbol,
+            balance: token.balance,
+            decimals: token.decimals || 18,
+            contract: token.contract,
+            logo: token.logo || token.image,
+            price: token.price,
+            value: token.value,
+            chain: 'hyperliquid',
+          }));
+        } else {
+          console.log(`Portfolio fetch failed: ${portfolioResponse.status}`);
+        }
+      } catch (portfolioError) {
+        console.log('Portfolio fetch error:', portfolioError.message);
+      }
+    }
+
+    // Endpoint 3: Try the names owned by wallet as NFTs (HLN names are NFTs)
+    if (nfts.length === 0) {
+      try {
+        const namesUrl = `${HLN_API_BASE}/utils/names_owner/${walletAddress}`;
+        console.log(`Fetching owned names as NFTs: ${namesUrl}`);
+        
+        const namesResponse = await fetch(namesUrl, {
+          headers: {
+            'x-api-key': HLN_API_KEY,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (namesResponse.ok) {
+          const namesData = await namesResponse.json();
+          console.log('Names response:', JSON.stringify(namesData));
+          
+          const ownedNames = namesData.names || namesData || [];
+          if (Array.isArray(ownedNames) && ownedNames.length > 0) {
+            nfts = ownedNames.map((name: string, index: number) => ({
+              identifier: `hln-${index}`,
+              collection: 'HLN Names',
+              contract: null,
+              token_standard: 'erc721',
+              name: name,
+              description: `Hyperliquid Name: ${name}`,
+              image_url: null,
+              display_image_url: null,
+              chain: 'hyperliquid',
+              quantity: 1,
+            }));
+          }
+        }
+      } catch (namesError) {
+        console.log('Names fetch error:', namesError.message);
+      }
+    }
+
+    console.log(`Found ${nfts.length} NFTs and ${tokens.length} tokens`);
 
     return new Response(
       JSON.stringify({ 

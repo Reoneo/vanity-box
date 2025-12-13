@@ -30,6 +30,10 @@ serve(async (req) => {
     }
 
     console.log(`Fetching portfolio for wallet: ${walletAddress}`);
+    console.log(`API Key prefix: ${ZERION_API_KEY.slice(0, 10)}...`);
+
+    // Zerion uses Basic auth with API key as username, empty password
+    const authHeader = `Basic ${btoa(ZERION_API_KEY + ':')}`;
 
     // Fetch portfolio from Zerion
     const portfolioUrl = `https://api.zerion.io/v1/wallets/${walletAddress}/portfolio?currency=usd`;
@@ -37,7 +41,7 @@ serve(async (req) => {
     
     const portfolioResponse = await fetch(portfolioUrl, {
       headers: {
-        'Authorization': `Basic ${btoa(ZERION_API_KEY + ':')}`,
+        'Authorization': authHeader,
         'Accept': 'application/json',
       },
     });
@@ -45,9 +49,16 @@ serve(async (req) => {
     if (!portfolioResponse.ok) {
       const errorText = await portfolioResponse.text();
       console.error(`Zerion portfolio error: ${portfolioResponse.status} - ${errorText}`);
+      
+      // Return empty result instead of error so UI doesn't break
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch portfolio', details: errorText }),
-        { status: portfolioResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          tokens: [], 
+          totalValue: 0, 
+          error: 'API key may need activation. Check Zerion developer portal.',
+          details: errorText.slice(0, 200)
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -60,7 +71,7 @@ serve(async (req) => {
     
     const positionsResponse = await fetch(positionsUrl, {
       headers: {
-        'Authorization': `Basic ${btoa(ZERION_API_KEY + ':')}`,
+        'Authorization': authHeader,
         'Accept': 'application/json',
       },
     });
@@ -103,7 +114,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in get-wallet-portfolio:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, tokens: [], totalValue: 0 }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
