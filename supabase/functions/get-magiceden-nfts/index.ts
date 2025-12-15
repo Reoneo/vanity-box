@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { walletAddress, limit = 100 } = await req.json();
+    const { walletAddress, limit = 50 } = await req.json();
 
     if (!walletAddress) {
       console.error('Missing wallet address');
@@ -22,19 +22,27 @@ serve(async (req) => {
     }
 
     const MAGIC_EDEN_API_KEY = Deno.env.get('MAGIC_EDEN_API_KEY');
-    console.log(`Fetching NFTs from Magic Eden for wallet: ${walletAddress}`);
+    console.log(`Fetching EVM NFTs from Magic Eden for wallet: ${walletAddress}`);
     console.log(`API Key configured: ${!!MAGIC_EDEN_API_KEY}`);
 
     const allNfts: any[] = [];
 
-    // Magic Eden EVM chains to query
-    // Using the v3/rtp endpoint: https://api-mainnet.magiceden.dev/v3/rtp/{chain}
-    const EVM_CHAINS = ['ethereum', 'polygon'];
+    // Magic Eden EVM API v3 - supported chains
+    const EVM_CHAINS = [
+      'ethereum',
+      'polygon', 
+      'base',
+      'arbitrum',
+      'optimism',
+      'bsc',
+      'avalanche'
+    ];
     
     for (const chainId of EVM_CHAINS) {
       try {
-        // Magic Eden EVM API endpoint for user tokens
-        const url = `https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/v7?limit=${Math.min(limit, 100)}&includeAttributes=true`;
+        // Magic Eden EVM API v3 endpoint for user tokens
+        // Docs: https://docs.magiceden.io/reference/get_v3-rtp-chain-users-user-tokens-v7
+        const url = `https://api-mainnet.magiceden.dev/v3/rtp/${chainId}/users/${walletAddress}/tokens/v7?limit=${Math.min(limit, 100)}&includeAttributes=true&includeLastSale=true`;
         console.log(`[${chainId}] Fetching: ${url}`);
 
         const headers: Record<string, string> = {
@@ -57,7 +65,7 @@ serve(async (req) => {
             const token = item.token || item;
             allNfts.push({
               identifier: token.tokenId || item.tokenId,
-              collection: token.collection?.name || item.collection?.name || `${chainId.charAt(0).toUpperCase() + chainId.slice(1)} Collection`,
+              collection: token.collection?.name || item.collection?.name || `${chainId.charAt(0).toUpperCase() + chainId.slice(1)} NFT`,
               contract: token.contract || item.contract,
               token_standard: token.kind || 'erc721',
               name: token.name || `#${token.tokenId || item.tokenId}`,
@@ -71,6 +79,10 @@ serve(async (req) => {
               rarity_rank: token.rarityRank,
               floor_price: token.collection?.floorAskPrice?.amount?.decimal,
               quantity: item.ownership?.tokenCount || 1,
+              lastSale: item.ownership?.acquiredAt ? {
+                price: token.lastSale?.price?.amount?.decimal,
+                currency: token.lastSale?.price?.currency?.symbol,
+              } : null,
             });
           });
         } else {
@@ -78,14 +90,14 @@ serve(async (req) => {
           console.log(`[${chainId}] API error ${response.status}: ${errorText.slice(0, 200)}`);
         }
 
-        // Small delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 150));
       } catch (chainError) {
         console.error(`[${chainId}] Error:`, chainError.message);
       }
     }
 
-    console.log(`Total Magic Eden NFTs fetched: ${allNfts.length}`);
+    console.log(`Total Magic Eden EVM NFTs fetched: ${allNfts.length}`);
 
     return new Response(
       JSON.stringify({ 

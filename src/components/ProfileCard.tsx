@@ -415,16 +415,18 @@ export const ProfileCard = ({
                 const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0;
                 const hasTokens = portfolioTokens.length > 0;
                 const hasSocials = socialLinks.length > 0;
+                const hasTransactions = transactions.length > 0;
 
                 // Build buttons array for alphabetical sorting
                 const buttons: { name: string; onClick: () => void; disabled?: boolean }[] = [];
                 
-                // Activity button (always show, disabled for now)
-                buttons.push({ 
-                  name: 'Activity', 
-                  onClick: () => setShowActivityOverlay(true),
-                  disabled: true
-                });
+                // Activity button - show if transactions exist
+                if (hasTransactions) {
+                  buttons.push({ 
+                    name: 'Activity', 
+                    onClick: () => setShowActivityOverlay(true),
+                  });
+                }
                 
                 // NFTs button
                 if (hasNfts) {
@@ -564,7 +566,7 @@ export const ProfileCard = ({
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
                       <h3 className="text-lg font-bold text-black dark:text-white">
-                        {nftCategory === 'main' ? 'NFTs' : nftCategory === 'poaps' ? 'POAPs' : nftCategory === 'opensea' ? 'OpenSea' : nftCategory === 'magiceden' ? 'Magic Eden' : 'Hyperliquid'}
+                        {nftCategory === 'main' ? 'NFTs' : nftCategory === 'poaps' ? 'POAPs' : nftCategory === 'opensea' ? 'OpenSea' : nftCategory === 'magiceden' ? 'EVM' : 'Hyperliquid'}
                       </h3>
                     </div>
                     <button
@@ -632,16 +634,16 @@ export const ProfileCard = ({
                         </div>
                       </button>
 
-                      {/* Magic Eden Button */}
+                      {/* Magic Eden (EVM) Button */}
                       <button
                         onClick={() => setNftCategory('magiceden')}
                         className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
                       >
                         <div className="flex items-center justify-between h-full">
                           <div className="text-left flex-1 min-w-0 mr-3">
-                            <h4 className="font-medium text-black text-base">Magic Eden</h4>
+                            <h4 className="font-medium text-black text-base">EVM</h4>
                             <div className="flex items-center gap-2">
-                              <p className="text-sm text-black/70">Multi-chain NFTs</p>
+                              <p className="text-sm text-black/70">{magicEdenNfts.length} {magicEdenNfts.length === 1 ? 'item' : 'items'}</p>
                               {magicEdenNfts.length > 0 && (
                                 <div className="flex -space-x-2">
                                   {magicEdenNfts.slice(0, 3).map((nft, idx) => (
