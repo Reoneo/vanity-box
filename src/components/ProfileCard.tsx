@@ -79,14 +79,20 @@ export const ProfileCard = ({
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [portfolioTotalValue, setPortfolioTotalValue] = useState<number>(0);
   const [showTokensOverlay, setShowTokensOverlay] = useState(false);
+  const [showActivityOverlay, setShowActivityOverlay] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Fetch Magic Eden NFTs when Magic Eden category is selected
+  // Fetch all data on profile load for button visibility
   useEffect(() => {
-    if (nftCategory === 'magiceden' && currentWalletAddress && magicEdenNfts.length === 0 && !magicEdenLoading) {
-      const fetchMagicEdenNfts = async () => {
-        setMagicEdenLoading(true);
+    if (currentWalletAddress && !dataLoaded) {
+      const fetchAllData = async () => {
+        setDataLoaded(true);
+        
+        // Fetch tokens
         try {
-          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-magiceden-nfts', {
+          const tokenRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -94,38 +100,42 @@ export const ProfileCard = ({
             },
             body: JSON.stringify({ walletAddress: currentWalletAddress }),
           });
-          const data = await response.json();
-          console.log('Magic Eden response:', data);
-          if (data.nfts) {
-            setMagicEdenNfts(data.nfts);
-          }
-        } catch (error) {
-          console.error('Error fetching Magic Eden NFTs:', error);
-        } finally {
-          setMagicEdenLoading(false);
-        }
-      };
-      fetchMagicEdenNfts();
-    }
-  }, [nftCategory, currentWalletAddress, magicEdenNfts.length, magicEdenLoading]);
+          const tokenData = await tokenRes.json();
+          if (tokenData.tokens) setPortfolioTokens(tokenData.tokens);
+          if (tokenData.totalValue) setPortfolioTotalValue(tokenData.totalValue);
+        } catch (e) { console.error('Token fetch error:', e); }
 
-  // Fetch Hyperliquid NFTs/tokens when category is selected or from profile data
+        // Fetch Magic Eden NFTs
+        try {
+          const meRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-magiceden-nfts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+          });
+          const meData = await meRes.json();
+          if (meData.nfts) setMagicEdenNfts(meData.nfts);
+        } catch (e) { console.error('Magic Eden fetch error:', e); }
+      };
+      fetchAllData();
+    }
+  }, [currentWalletAddress, dataLoaded]);
+
+  // Fetch Hyperliquid NFTs/tokens from profile data
   useEffect(() => {
-    // If profile has hlNfts/hlTokens from .hl domain resolution, use those
-    if (web3BioProfile?.hlNfts?.length > 0) {
-      setHlNfts(web3BioProfile.hlNfts);
-    }
-    if (web3BioProfile?.hlTokens?.length > 0) {
-      setHlTokens(web3BioProfile.hlTokens);
-    }
+    if (web3BioProfile?.hlNfts?.length > 0) setHlNfts(web3BioProfile.hlNfts);
+    if (web3BioProfile?.hlTokens?.length > 0) setHlTokens(web3BioProfile.hlTokens);
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
+  // Fetch transactions when activity overlay is shown
   useEffect(() => {
-    if (nftCategory === 'hyperliquid' && currentWalletAddress && hlNfts.length === 0 && !hlLoading && !web3BioProfile?.hlNfts?.length) {
-      const fetchHlTokens = async () => {
-        setHlLoading(true);
+    if (showActivityOverlay && currentWalletAddress && transactions.length === 0 && !transactionsLoading) {
+      const fetchTransactions = async () => {
+        setTransactionsLoading(true);
         try {
-          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-hl-tokens', {
+          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -134,53 +144,16 @@ export const ProfileCard = ({
             body: JSON.stringify({ walletAddress: currentWalletAddress }),
           });
           const data = await response.json();
-          if (data.nfts) {
-            setHlNfts(data.nfts);
-          }
-          if (data.tokens) {
-            setHlTokens(data.tokens);
-          }
+          if (data.transactions) setTransactions(data.transactions);
         } catch (error) {
-          console.error('Error fetching Hyperliquid tokens:', error);
+          console.error('Error fetching transactions:', error);
         } finally {
-          setHlLoading(false);
+          setTransactionsLoading(false);
         }
       };
-      fetchHlTokens();
+      fetchTransactions();
     }
-  }, [nftCategory, currentWalletAddress, hlNfts.length, hlLoading, web3BioProfile?.hlNfts?.length]);
-
-  // Fetch portfolio tokens via Zerion when tokens overlay is shown
-  useEffect(() => {
-    if (showTokensOverlay && currentWalletAddress && portfolioTokens.length === 0 && !portfolioLoading) {
-      const fetchPortfolio = async () => {
-        setPortfolioLoading(true);
-        try {
-          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
-          });
-          const data = await response.json();
-          console.log('Portfolio response:', data);
-          if (data.tokens) {
-            setPortfolioTokens(data.tokens);
-          }
-          if (data.totalValue) {
-            setPortfolioTotalValue(data.totalValue);
-          }
-        } catch (error) {
-          console.error('Error fetching portfolio:', error);
-        } finally {
-          setPortfolioLoading(false);
-        }
-      };
-      fetchPortfolio();
-    }
-  }, [showTokensOverlay, currentWalletAddress, portfolioTokens.length, portfolioLoading]);
+  }, [showActivityOverlay, currentWalletAddress, transactions.length, transactionsLoading]);
 
   // No need to disable body scrolling - parent container handles overflow
 
@@ -432,51 +405,66 @@ export const ProfileCard = ({
                 </div>
               )}
 
-              {/* Social Icons Row - NFT first, then max 3 social links */}
+              {/* Profile Action Buttons - Alphabetical order, show only if data exists */}
               {(() => {
                 const socialLinks = web3BioProfile?.links 
                   ? Object.entries(web3BioProfile.links)
                       .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
                   : [];
                 
-                const hasNfts = nfts && nfts.length > 0;
-                const displayLinks = socialLinks.slice(0, 3);
-                const remainingCount = socialLinks.length - 3;
+                const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0;
+                const hasTokens = portfolioTokens.length > 0;
+                const hasSocials = socialLinks.length > 0;
 
-                if (!hasNfts && socialLinks.length === 0) return null;
+                // Build buttons array for alphabetical sorting
+                const buttons: { name: string; onClick: () => void; disabled?: boolean }[] = [];
+                
+                // Activity button (always show, disabled for now)
+                buttons.push({ 
+                  name: 'Activity', 
+                  onClick: () => setShowActivityOverlay(true),
+                  disabled: true
+                });
+                
+                // NFTs button
+                if (hasNfts) {
+                  buttons.push({ name: 'NFTs', onClick: () => setShowNftsOverlay(true) });
+                }
+                
+                // Social button
+                if (hasSocials) {
+                  buttons.push({ name: 'Social', onClick: () => setShowAllSocials(true) });
+                }
+                
+                // Tokens button
+                if (hasTokens) {
+                  buttons.push({ name: 'Tokens', onClick: () => setShowTokensOverlay(true) });
+                }
+
+                // Sort alphabetically
+                buttons.sort((a, b) => a.name.localeCompare(b.name));
+
+                if (buttons.length === 0) return null;
 
                 return (
-                  <div className="flex items-center justify-center gap-3 min-h-[40px] flex-wrap">
-                    {/* NFT Button */}
-                    {hasNfts && (
+                  <div className="flex items-center justify-center gap-2 min-h-[40px] flex-wrap">
+                    {buttons.map((btn) => (
                       <button
-                        onClick={() => setShowNftsOverlay(true)}
-                        className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
-                        title={`View ${nfts.length} NFTs`}
+                        key={btn.name}
+                        onClick={btn.onClick}
+                        disabled={btn.disabled}
+                        className={`h-10 px-4 flex items-center justify-center rounded-full transition-all shadow-md border ${
+                          btn.disabled 
+                            ? 'bg-muted/30 border-muted/30 cursor-not-allowed opacity-50' 
+                            : 'bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 hover:scale-105 border-[#D4AF37]/30'
+                        }`}
+                        title={btn.disabled ? 'Coming soon' : `View ${btn.name}`}
                       >
-                        <span className="text-black dark:text-white font-semibold text-sm">NFTs</span>
+                        <span className={`font-semibold text-sm ${btn.disabled ? 'text-muted-foreground' : 'text-black dark:text-white'}`}>
+                          {btn.name}
+                        </span>
                       </button>
-                    )}
-
-                    {/* Tokens Button */}
-                    <button
-                      onClick={() => setShowTokensOverlay(true)}
-                      className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
-                      title="View wallet tokens"
-                    >
-                      <span className="text-black dark:text-white font-semibold text-sm">Tokens</span>
-                    </button>
-
-                    {/* Social Button */}
-                    {socialLinks.length > 0 && (
-                      <button
-                        onClick={() => setShowAllSocials(true)}
-                        className="h-10 px-4 flex items-center justify-center rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 transition-all hover:scale-105 shadow-md border border-[#D4AF37]/30"
-                        title={`View ${socialLinks.length} social links`}
-                      >
-                        <span className="text-black dark:text-white font-semibold text-sm">Social</span>
-                      </button>
-                    )}
+                    ))}
                   </div>
                 );
               })()}
@@ -943,6 +931,70 @@ export const ProfileCard = ({
                                   {token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h * 100).toFixed(2)}%
                                 </span>
                               )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Activity Overlay */}
+            {showActivityOverlay && (
+              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 50px)' }}>
+                {/* Header */}
+                <div 
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+                  style={{ backgroundImage: `url(${web3BioProfile?.header || defaultHeader})` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+                    <div className="w-10" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-lg font-bold text-black dark:text-white">Activity</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowActivityOverlay(false)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
+                    >
+                      <X className="w-4 h-4 text-black dark:text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Activity Content */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                  {transactionsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+                    </div>
+                  ) : transactions.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p className="text-lg">No transactions found</p>
+                      <p className="text-sm mt-2">Transaction history coming soon</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-w-lg mx-auto">
+                      {transactions.map((tx: any, index: number) => (
+                        <div 
+                          key={tx.id || `tx-${index}`}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'receive' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                            <span className="text-lg">{tx.type === 'receive' ? '↓' : '↑'}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-foreground truncate capitalize">{tx.type || 'Transaction'}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {tx.minedAt ? formatDistanceToNow(new Date(tx.minedAt), { addSuffix: true }) : ''}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                              <span className="truncate">{tx.hash?.slice(0, 10)}...</span>
+                              <span className="text-xs uppercase">{tx.chain}</span>
                             </div>
                           </div>
                         </div>

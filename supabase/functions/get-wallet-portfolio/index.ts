@@ -24,49 +24,18 @@ serve(async (req) => {
     if (!ZERION_API_KEY) {
       console.error('ZERION_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'Zerion API key not configured' }),
+        JSON.stringify({ error: 'Zerion API key not configured', tokens: [], totalValue: 0 }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log(`Fetching portfolio for wallet: ${walletAddress}`);
-    console.log(`API Key prefix: ${ZERION_API_KEY.slice(0, 10)}...`);
 
     // Zerion uses Basic auth with API key as username, empty password
     const authHeader = `Basic ${btoa(ZERION_API_KEY + ':')}`;
 
-    // Fetch portfolio from Zerion
-    const portfolioUrl = `https://api.zerion.io/v1/wallets/${walletAddress}/portfolio?currency=usd`;
-    console.log(`Calling: ${portfolioUrl}`);
-    
-    const portfolioResponse = await fetch(portfolioUrl, {
-      headers: {
-        'Authorization': authHeader,
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!portfolioResponse.ok) {
-      const errorText = await portfolioResponse.text();
-      console.error(`Zerion portfolio error: ${portfolioResponse.status} - ${errorText}`);
-      
-      // Return empty result instead of error so UI doesn't break
-      return new Response(
-        JSON.stringify({ 
-          tokens: [], 
-          totalValue: 0, 
-          error: 'API key may need activation. Check Zerion developer portal.',
-          details: errorText.slice(0, 200)
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const portfolioData = await portfolioResponse.json();
-    console.log('Portfolio response:', JSON.stringify(portfolioData).slice(0, 500));
-
-    // Also fetch positions (tokens)
-    const positionsUrl = `https://api.zerion.io/v1/wallets/${walletAddress}/positions?filter[positions]=only_simple&currency=usd&sort=value`;
+    // Fetch positions (fungible tokens) - this is the main endpoint for wallet tokens
+    const positionsUrl = `https://api.zerion.io/v1/wallets/${walletAddress}/positions/?filter[positions]=only_simple&currency=usd&sort=value`;
     console.log(`Fetching positions: ${positionsUrl}`);
     
     const positionsResponse = await fetch(positionsUrl, {
@@ -76,39 +45,51 @@ serve(async (req) => {
       },
     });
 
-    let tokens: any[] = [];
-    if (positionsResponse.ok) {
-      const positionsData = await positionsResponse.json();
-      console.log(`Found ${positionsData.data?.length || 0} positions`);
+    if (!positionsResponse.ok) {
+      const errorText = await positionsResponse.text();
+      console.error(`Zerion positions error: ${positionsResponse.status} - ${errorText}`);
       
-      tokens = (positionsData.data || []).map((position: any) => {
-        const attributes = position.attributes;
-        const fungibleInfo = attributes?.fungible_info;
-        
-        return {
-          id: position.id,
-          name: fungibleInfo?.name || 'Unknown Token',
-          symbol: fungibleInfo?.symbol || '???',
-          icon: fungibleInfo?.icon?.url || null,
-          quantity: attributes?.quantity?.float || 0,
-          value: attributes?.value || 0,
-          price: attributes?.price || 0,
-          chain: attributes?.position_type === 'wallet' ? (position.relationships?.chain?.data?.id || 'unknown') : null,
-          priceChange24h: attributes?.changes?.percent_1d || 0,
-        };
-      }).filter((token: any) => token.value > 0.01); // Filter out dust
+      return new Response(
+        JSON.stringify({ 
+          tokens: [], 
+          totalValue: 0, 
+          error: 'API error - check API key',
+          details: errorText.slice(0, 200)
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const result = {
-      portfolio: portfolioData.data?.attributes || {},
-      tokens,
-      totalValue: portfolioData.data?.attributes?.total?.positions || 0,
-    };
+    const positionsData = await positionsResponse.json();
+    console.log(`Found ${positionsData.data?.length || 0} positions`);
+    
+    const tokens = (positionsData.data || []).map((position: any) => {
+      const attributes = position.attributes;
+      const fungibleInfo = attributes?.fungible_info;
+      
+      return {
+        id: position.id,
+        name: fungibleInfo?.name || 'Unknown Token',
+        symbol: fungibleInfo?.symbol || '???',
+        icon: fungibleInfo?.icon?.url || null,
+        quantity: attributes?.quantity?.float || 0,
+        value: attributes?.value || 0,
+        price: attributes?.price || 0,
+        chain: position.relationships?.chain?.data?.id || 'unknown',
+        priceChange24h: attributes?.changes?.percent_1d || 0,
+      };
+    }).filter((token: any) => token.value > 0.01); // Filter out dust
 
-    console.log(`Successfully fetched portfolio with ${tokens.length} tokens`);
+    // Calculate total value
+    const totalValue = tokens.reduce((sum: number, token: any) => sum + (token.value || 0), 0);
+
+    console.log(`Successfully fetched ${tokens.length} tokens with total value: $${totalValue.toFixed(2)}`);
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({ 
+        tokens,
+        totalValue,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
