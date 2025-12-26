@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,14 +16,23 @@ serve(async (req) => {
 
     if (!walletAddress) {
       return new Response(
-        JSON.stringify({ error: 'walletAddress is required' }),
+        JSON.stringify({ error: 'walletAddress is required', transactions: [] }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get and trim the API key to remove any whitespace/hidden chars
+    // Validate EVM address format
+    if (!/^0x[a-fA-F0-9]{40}$/i.test(walletAddress)) {
+      console.log(`Invalid EVM address format: ${walletAddress}`);
+      return new Response(
+        JSON.stringify({ error: 'Invalid EVM address format', transactions: [] }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get and clean the API key
     const rawKey = Deno.env.get('ZERION_API_KEY') || '';
-    const ZERION_API_KEY = rawKey.trim();
+    const ZERION_API_KEY = rawKey.trim().replace(/[\r\n\t]/g, '');
     
     if (!ZERION_API_KEY) {
       console.error('ZERION_API_KEY not configured');
@@ -32,20 +42,17 @@ serve(async (req) => {
       );
     }
 
-    // Debug: Log API key info to diagnose auth issues
-    console.log(`Zerion API key length: ${ZERION_API_KEY.length}, first 8 chars: ${ZERION_API_KEY.substring(0, 8)}...`);
     console.log(`Fetching transactions for wallet: ${walletAddress}`);
 
-    // Zerion API uses Basic auth: API_KEY as username, empty password
+    // Use Deno's base64 encoder for reliability
     const credentials = `${ZERION_API_KEY}:`;
-    const base64Credentials = btoa(credentials);
+    const encoder = new TextEncoder();
+    const credentialsBytes = encoder.encode(credentials);
+    const base64Credentials = base64Encode(credentialsBytes);
     const authHeader = `Basic ${base64Credentials}`;
-
-    console.log(`Auth header format: Basic ${base64Credentials.substring(0, 12)}...`);
 
     // Fetch transactions from Zerion
     const transactionsUrl = `https://api.zerion.io/v1/wallets/${walletAddress}/transactions/?currency=usd&page[size]=${limit}&filter[trash]=only_non_trash`;
-    console.log(`Fetching transactions from: ${transactionsUrl}`);
     
     const response = await fetch(transactionsUrl, {
       headers: {
@@ -60,20 +67,10 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`Zerion transactions error: ${response.status} - ${errorText}`);
       
-      // Enhanced 401 debugging
-      if (response.status === 401) {
-        console.error('=== 401 Unauthorized Debug Info ===');
-        console.error(`API key length: ${ZERION_API_KEY.length}`);
-        console.error(`API key starts with: ${ZERION_API_KEY.substring(0, 10)}`);
-        console.error(`API key ends with: ${ZERION_API_KEY.substring(ZERION_API_KEY.length - 4)}`);
-        console.error('Possible causes: key not activated, expired, or wrong format');
-      }
-      
       return new Response(
         JSON.stringify({ 
           transactions: [], 
           error: `Zerion API error: ${response.status}`,
-          details: errorText.slice(0, 200)
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -99,7 +96,7 @@ serve(async (req) => {
           symbol: attributes?.fee?.fungible_info?.symbol,
         },
         transfers: transfers.map((transfer: any) => ({
-          type: transfer.direction, // 'in' or 'out'
+          type: transfer.direction,
           value: transfer.value,
           quantity: transfer.quantity?.float,
           symbol: transfer.fungible_info?.symbol,
@@ -110,13 +107,10 @@ serve(async (req) => {
       };
     });
 
-    console.log(`Successfully fetched ${transactions.length} transactions`);
+    console.log(`Returning ${transactions.length} transactions`);
 
     return new Response(
-      JSON.stringify({ 
-        transactions,
-        total: transactions.length,
-      }),
+      JSON.stringify({ transactions, total: transactions.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
