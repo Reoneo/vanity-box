@@ -1638,6 +1638,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     latestCast={latestCast}
                     castLoading={castLoading}
                     firstTransactionDate={firstTransactionDate}
+                    searchedIdentity={displayQuery}
                     onFollowingClick={handleFollowingClick}
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}

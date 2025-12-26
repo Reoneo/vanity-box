@@ -38,6 +38,7 @@ interface ProfileCardProps {
   latestCast?: FarcasterCast | null;
   castLoading?: boolean;
   firstTransactionDate?: string | null;
+  searchedIdentity?: string;
   onFollowingClick?: () => void;
   onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
@@ -57,6 +58,7 @@ export const ProfileCard = ({
   latestCast = null,
   castLoading = false,
   firstTransactionDate = null,
+  searchedIdentity,
   onFollowingClick,
   onFollowersClick,
   onLoadMoreNfts,
@@ -328,13 +330,14 @@ export const ProfileCard = ({
 
             <div className="p-6 pt-16 space-y-2 flex-shrink-0">
 
-              {/* Show .hl domain if searched via HLN, otherwise show displayName */}
+              {/* Show searched identity first, then fallback to .hl domain or displayName */}
               <h2 className="text-3xl font-bold text-center text-foreground">
-                {web3BioProfile?.hlDomain || web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
+                {searchedIdentity || web3BioProfile?.hlDomain || web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
               </h2>
               
-              {/* Show primary ENS name below if different from .hl domain */}
-              {web3BioProfile?.hlDomain && web3BioProfile?.displayName && web3BioProfile.hlDomain !== web3BioProfile.displayName && (
+              {/* Show primary ENS name below if different from searched identity or .hl domain */}
+              {(searchedIdentity || web3BioProfile?.hlDomain) && web3BioProfile?.displayName && 
+               (searchedIdentity || web3BioProfile.hlDomain) !== web3BioProfile.displayName && (
                 <p className="text-center text-sm text-muted-foreground">
                   Primary: {web3BioProfile.displayName}
                 </p>
@@ -357,28 +360,26 @@ export const ProfileCard = ({
                 </p>
               )}
 
-              {/* Following/Followers - Always show both if EFP stats exist */}
-              <div className="flex justify-center items-center gap-1.5 text-sm min-h-[24px]">
-                {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) ? (
-                  <>
-                    <button
-                      onClick={onFollowingClick}
-                      className="flex items-center gap-1 hover:opacity-80 transition-colors"
-                    >
-                      <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
-                      <span className="text-black dark:text-white">Following</span>
-                    </button>
-                    <span className="text-black dark:text-white">·</span>
-                    <button
-                      onClick={onFollowersClick}
-                      className="flex items-center gap-1 hover:opacity-80 transition-colors"
-                    >
-                      <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
-                      <span className="text-black dark:text-white">Followers</span>
-                    </button>
-                  </>
-                ) : null}
-              </div>
+              {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
+              {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
+                <div className="flex justify-center items-center gap-1.5 text-sm">
+                  <button
+                    onClick={onFollowingClick}
+                    className="flex items-center gap-1 hover:opacity-80 transition-colors"
+                  >
+                    <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
+                    <span className="text-black dark:text-white">Following</span>
+                  </button>
+                  <span className="text-black dark:text-white">·</span>
+                  <button
+                    onClick={onFollowersClick}
+                    className="flex items-center gap-1 hover:opacity-80 transition-colors"
+                  >
+                    <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
+                    <span className="text-black dark:text-white">Followers</span>
+                  </button>
+                </div>
+              )}
 
               {/* Email/Website - Only show if user has email or website */}
               {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
