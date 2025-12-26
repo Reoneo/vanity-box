@@ -83,6 +83,8 @@ export const ProfileCard = ({
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [tokensFetched, setTokensFetched] = useState(false);
+  const [transactionsFetched, setTransactionsFetched] = useState(false);
 
   // Fetch all data on profile load for button visibility
   useEffect(() => {
@@ -101,9 +103,33 @@ export const ProfileCard = ({
             body: JSON.stringify({ walletAddress: currentWalletAddress }),
           });
           const tokenData = await tokenRes.json();
+          console.log('Portfolio API response:', tokenData);
           if (tokenData.tokens) setPortfolioTokens(tokenData.tokens);
           if (tokenData.totalValue) setPortfolioTotalValue(tokenData.totalValue);
-        } catch (e) { console.error('Token fetch error:', e); }
+        } catch (e) { 
+          console.error('Token fetch error:', e); 
+        } finally {
+          setTokensFetched(true);
+        }
+
+        // Fetch transactions for Activity button
+        try {
+          const txRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+          });
+          const txData = await txRes.json();
+          console.log('Transactions API response:', txData);
+          if (txData.transactions) setTransactions(txData.transactions);
+        } catch (e) { 
+          console.error('Transactions fetch error:', e); 
+        } finally {
+          setTransactionsFetched(true);
+        }
 
         // Fetch Magic Eden NFTs
         try {
@@ -129,31 +155,7 @@ export const ProfileCard = ({
     if (web3BioProfile?.hlTokens?.length > 0) setHlTokens(web3BioProfile.hlTokens);
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
-  // Fetch transactions when activity overlay is shown
-  useEffect(() => {
-    if (showActivityOverlay && currentWalletAddress && transactions.length === 0 && !transactionsLoading) {
-      const fetchTransactions = async () => {
-        setTransactionsLoading(true);
-        try {
-          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
-          });
-          const data = await response.json();
-          if (data.transactions) setTransactions(data.transactions);
-        } catch (error) {
-          console.error('Error fetching transactions:', error);
-        } finally {
-          setTransactionsLoading(false);
-        }
-      };
-      fetchTransactions();
-    }
-  }, [showActivityOverlay, currentWalletAddress, transactions.length, transactionsLoading]);
+  // Transactions are now fetched on profile load - no need for overlay-triggered fetch
 
   // No need to disable body scrolling - parent container handles overflow
 
