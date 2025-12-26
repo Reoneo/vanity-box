@@ -307,7 +307,7 @@ export const ProfileCard = ({
           <div className="space-y-4 pb-24">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
-              <div className="w-full aspect-[3/1] overflow-hidden">
+              <div className="w-full aspect-[3/1] lg:aspect-[6/1] overflow-hidden">
                 <img
                   src={web3BioProfile?.header || defaultHeader}
                   alt="Header"
@@ -335,13 +335,6 @@ export const ProfileCard = ({
                 {searchedIdentity || web3BioProfile?.hlDomain || web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
               </h2>
               
-              {/* Show primary ENS name below if different from searched identity or .hl domain */}
-              {(searchedIdentity || web3BioProfile?.hlDomain) && web3BioProfile?.displayName && 
-               (searchedIdentity || web3BioProfile.hlDomain) !== web3BioProfile.displayName && (
-                <p className="text-center text-sm text-muted-foreground">
-                  Primary: {web3BioProfile.displayName}
-                </p>
-              )}
 
               {currentWalletAddress && (
                 <div className="flex items-center justify-center">
