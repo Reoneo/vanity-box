@@ -681,17 +681,14 @@ export const ProfileCard = ({
                   ) : nftCategory === 'poaps' ? (
                     // POAPs grid
                     <div className="space-y-4 max-w-2xl mx-auto">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                      <div className="grid grid-cols-3 md:grid-cols-4 gap-4 justify-items-center">
                         {formattedPoaps.map((poap, index) => (
                           <div
                             key={`poap-${poap.identifier}-${index}`}
-                            className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all"
+                            className="group cursor-pointer transition-transform hover:scale-105"
                             onClick={() => setSelectedPoap(poap)}
                           >
-                            <img src={poap.image_url} alt={poap.name} className="w-full aspect-square object-cover" />
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                              <p className="text-white text-xs font-medium truncate">{poap.name}</p>
-                            </div>
+                            <img src={poap.image_url} alt={poap.name} className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover" />
                           </div>
                         ))}
                       </div>
