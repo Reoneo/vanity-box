@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, BadgeCheck } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X } from "lucide-react";
 import { SocialIcon } from "./SocialIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
@@ -39,7 +39,6 @@ interface ProfileCardProps {
   castLoading?: boolean;
   firstTransactionDate?: string | null;
   searchedIdentity?: string;
-  isWorldIdVerified?: boolean;
   onFollowingClick?: () => void;
   onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
@@ -60,7 +59,6 @@ export const ProfileCard = ({
   castLoading = false,
   firstTransactionDate = null,
   searchedIdentity,
-  isWorldIdVerified = false,
   onFollowingClick,
   onFollowersClick,
   onLoadMoreNfts,
@@ -318,22 +316,15 @@ export const ProfileCard = ({
               </div>
 
               <div className="flex justify-center absolute -bottom-14 left-0 right-0">
-                <div className="relative">
-                  <Avatar className="h-40 w-40 border-4 border-background bg-black">
-                    <AvatarImage 
-                      src={web3BioProfile?.avatar || vanityBoxAvatar} 
-                      alt={web3BioProfile?.displayName || 'User'}
-                    />
-                    <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
-                      {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isWorldIdVerified && (
-                    <div className="absolute -bottom-1 -right-1 bg-[#D4AF37] rounded-full p-1 border-2 border-background shadow-lg" title="World ID Verified">
-                      <BadgeCheck className="w-5 h-5 text-black" />
-                    </div>
-                  )}
-                </div>
+                <Avatar className="h-40 w-40 border-4 border-background bg-black">
+                  <AvatarImage 
+                    src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                    alt={web3BioProfile?.displayName || 'User'}
+                  />
+                  <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
+                    {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
               </div>
             </div>
 
