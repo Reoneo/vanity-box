@@ -27,8 +27,15 @@ serve(async (req) => {
       throw new Error('Missing subdomain parameter');
     }
 
+    // Strip .limo suffix if present (ENS gateway suffix)
+    let cleanSubdomain = subdomain;
+    if (cleanSubdomain.endsWith('.limo')) {
+      cleanSubdomain = cleanSubdomain.slice(0, -5);
+      console.log('📝 Stripped .limo suffix, clean subdomain:', cleanSubdomain);
+    }
+    
     // Extract subdomain label and domain
-    const parts = subdomain.split('.');
+    const parts = cleanSubdomain.split('.');
     const subdomainLabel = parts[0];
     const domain = providedDomain || parts.slice(1).join('.') || 'smith.cash';
 
@@ -117,7 +124,7 @@ serve(async (req) => {
         
         if (supabaseUrl && supabaseKey) {
           const supabase = createClient(supabaseUrl, supabaseKey);
-          const fullName = subdomain.toLowerCase();
+          const fullName = cleanSubdomain.toLowerCase();
           
           const { data: mintedData, error: mintedError } = await supabase
             .from('minted_domains')
