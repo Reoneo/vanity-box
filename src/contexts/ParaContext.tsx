@@ -69,6 +69,7 @@ interface ParaWalletProviderProps {
 }
 
 const PARA_API_KEY = import.meta.env.VITE_PARA_API_KEY || '';
+const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 
 export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children }) => {
   // If no API key, just render children with a placeholder context
@@ -104,6 +105,7 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
           "WALLET_CONNECT" as TExternalWallet,
           "COINBASE" as TExternalWallet,
         ],
+        walletConnect: WALLETCONNECT_PROJECT_ID ? { projectId: WALLETCONNECT_PROJECT_ID } : undefined,
         evmConnector: {
           config: {
             chains: [mainnet, polygon, arbitrum, optimism, base],
@@ -119,7 +121,7 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
         oAuthMethods: [],
         disableEmailLogin: true,
         disablePhoneLogin: true,
-        authLayout: ["EXTERNAL:WALLET" as any],
+        authLayout: ["EXTERNAL:FULL" as any],
         recoverySecretStepEnabled: false,
         onRampTestMode: false,
       }}
