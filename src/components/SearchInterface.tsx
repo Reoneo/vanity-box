@@ -2165,8 +2165,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                       </Button>
 
                                       {/* Coming Soon Badge */}
-                                      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-[#D4AF37] text-xs sm:text-sm font-semibold tracking-wide">
-                                        Soon
+                                      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-[#D4AF37] text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
+                                        Coming Soon
                                       </div>
                                     </div>
                                   </div>
