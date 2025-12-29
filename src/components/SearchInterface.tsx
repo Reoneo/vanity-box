@@ -831,16 +831,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
 
-      // NEW: Web3.bio-compatible identities (ENS, .box, wallet addresses)
-      const web3BioCompatible = ['.eth', '.box'];
+      // NEW: Web3.bio-compatible identities (ENS, .box, .world.id, wallet addresses)
+      const web3BioCompatible = ['.eth', '.box', '.world.id'];
       const isWeb3BioCompatible = web3BioCompatible.some(tld => normalizedQuery.endsWith(tld)) || isWalletAddress;
       
       // Check for .hl (Hyperliquid) domain
       const isHlDomain = normalizedQuery.endsWith('.hl');
       
       // Namestone-only TLDs (not indexed by Web3.bio)
+      // Note: .world.id is excluded from .world matching since it's a Web3.bio-compatible ENS domain
       const namestoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
-      const isNamestoneTLD = namestoneTLDs.some(tld => normalizedQuery.endsWith(tld));
+      const isNamestoneTLD = namestoneTLDs.some(tld => normalizedQuery.endsWith(tld)) && !normalizedQuery.endsWith('.world.id');
       
       // Check for subdomains (2+ dots)
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
