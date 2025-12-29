@@ -439,6 +439,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
+  // Check if Para is configured
+  const isParaConfigured = Boolean(import.meta.env.VITE_PARA_API_KEY);
+
   // Not connected - show connect button
   if (!user && !petraConnected && !paraWallet.isConnected) {
     return (
@@ -448,6 +451,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           console.log('🔍 Checking environment...');
           console.log('  - isTelegramWebView():', isTelegramWebView());
           console.log('  - isWorldAppEnvironment():', inWorldApp);
+          console.log('  - Para configured:', isParaConfigured);
           
           if (isTelegramWebView()) {
             console.log('✅ Detected Telegram WebView - connecting TON wallet');
@@ -455,9 +459,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           } else if (inWorldApp) {
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
-          } else {
+          } else if (isParaConfigured) {
             console.log('✅ Web browser - opening Para wallet modal');
             openParaModal();
+          } else {
+            console.warn('⚠️ Para API key not configured');
+            toast.error('Wallet connection not configured. Please contact support.');
           }
         }}
         disabled={isLoading}
