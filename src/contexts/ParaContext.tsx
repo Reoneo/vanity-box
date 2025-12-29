@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import { ParaProvider as ParaSDKProvider, useModal, OAuthMethod, AuthLayout } from "@getpara/react-sdk";
+import { ParaProvider as ParaSDKProvider, useModal, AuthLayout, type TExternalWallet } from "@getpara/react-sdk";
 import "@getpara/react-sdk/styles.css";
 
 interface ParaWalletState {
@@ -91,31 +91,31 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
     <ParaSDKProvider
       paraClientConfig={{
         apiKey: PARA_API_KEY,
-        env: "PROD" as any,
+        env: "BETA" as any,
       }}
       config={{
         appName: 'Vanity.box',
       }}
+      externalWalletConfig={{
+        wallets: [
+          "METAMASK" as TExternalWallet,
+          "RAINBOW" as TExternalWallet,
+          "WALLET_CONNECT" as TExternalWallet,
+          "COINBASE" as TExternalWallet,
+        ],
+      }}
       paraModalConfig={{
         logo: "/vanity-box-logo.png",
         theme: {
-          foregroundColor: "#FFFFFF",
-          backgroundColor: "#000000",
-          accentColor: "#7C3AED",
-          darkForegroundColor: "#FFFFFF",
-          darkBackgroundColor: "#1A1A1A",
-          darkAccentColor: "#7C3AED",
-          mode: "dark",
-          borderRadius: "md",
-          font: "Inter"
+          borderRadius: "xl",
+          font: "Rubik"
         },
-        oAuthMethods: [
-          OAuthMethod.GOOGLE,
-          OAuthMethod.TWITTER,
-          OAuthMethod.DISCORD,
-          OAuthMethod.APPLE
-        ],
-        authLayout: [AuthLayout.EXTERNAL_FULL, AuthLayout.AUTH_FULL],
+        oAuthMethods: [],
+        disableEmailLogin: true,
+        disablePhoneLogin: true,
+        authLayout: [AuthLayout.EXTERNAL_FULL],
+        recoverySecretStepEnabled: true,
+        onRampTestMode: true,
       }}
     >
       <ParaWalletStateManager>
