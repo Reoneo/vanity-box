@@ -2086,29 +2086,30 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     );
                     return (
                       <>
-                        {/* Enhanced Header with gradient and glow */}
-                        <div className="text-center mb-8 relative">
+                        {/* Enhanced Header with black text and gold accents - more spacing from navbar */}
+                        <div className="text-center mb-10 mt-4 relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/10 to-transparent blur-3xl -z-10" />
                           <div className="inline-block">
-                            <span className="block text-xs sm:text-sm uppercase tracking-[0.3em] text-[#D4AF37]/70 font-medium mb-2">
+                            <span className="block text-xs sm:text-sm uppercase tracking-[0.3em] text-[#B8860B] font-semibold mb-3">
                               Available Domains
                             </span>
-                            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent drop-shadow-sm">
-                              {comingSoonResults.length} ID{comingSoonResults.length !== 1 ? "'s" : ""} Found
+                            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black dark:text-white">
+                              {comingSoonResults.length} <span className="text-[#D4AF37]">ID{comingSoonResults.length !== 1 ? "'s" : ""}</span> Found
                             </h1>
-                            <div className="mt-3 h-1 w-24 mx-auto bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
+                            <div className="mt-4 h-1 w-32 mx-auto bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
                           </div>
                         </div>
                         
-                        {/* Enhanced Result Cards */}
-                        <div className="space-y-3 will-change-transform">
+                        {/* Enhanced Result Cards - Stacked layout for long names */}
+                        <div className="space-y-4 will-change-transform">
                           {comingSoonResults.map((result, index) => {
                             const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
+                            const isLongName = fullName.length > 16;
                             
                             return (
                               <div
                                 key={index}
-                                className="group relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 bg-gradient-to-br from-background via-background to-background/80 backdrop-blur-md border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-2xl shadow-sm hover:shadow-lg hover:shadow-[#D4AF37]/10 hover:border-[#D4AF37]/60 transition-all duration-300 will-change-transform animate-fade-in overflow-hidden"
+                                className="group relative bg-gradient-to-br from-background via-background to-background/80 backdrop-blur-md border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-2xl shadow-sm hover:shadow-lg hover:shadow-[#D4AF37]/10 hover:border-[#D4AF37]/60 transition-all duration-300 will-change-transform animate-fade-in overflow-hidden"
                                 style={{ 
                                   transform: 'translateZ(0)',
                                   animationDelay: `${index * 60}ms`
@@ -2117,53 +2118,73 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 {/* Subtle gradient overlay on hover */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 
-                                {/* Avatar with enhanced ring */}
-                                <div className="relative flex-shrink-0">
-                                  <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#B8860B] rounded-full blur-sm opacity-50" />
-                                  <img
-                                    src={result.imageUrl || smithCashAvatar}
-                                    alt={fullName}
-                                    className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
-                                    onError={(e) => {
-                                      e.currentTarget.src = smithCashAvatar;
-                                    }}
-                                  />
-                                </div>
+                                {/* Card content - responsive layout */}
+                                <div className={`relative z-10 p-4 sm:p-5 ${isLongName ? 'flex flex-col gap-3' : 'flex items-center gap-4 sm:gap-5'}`}>
+                                  
+                                  {/* Top row with avatar and actions (for long names) or inline layout */}
+                                  <div className={`flex items-center ${isLongName ? 'justify-between w-full' : 'gap-4 sm:gap-5'}`}>
+                                    {/* Avatar with enhanced ring */}
+                                    <div className="relative flex-shrink-0">
+                                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#B8860B] rounded-full blur-sm opacity-50" />
+                                      <img
+                                        src={result.imageUrl || smithCashAvatar}
+                                        alt={fullName}
+                                        className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
+                                        onError={(e) => {
+                                          e.currentTarget.src = smithCashAvatar;
+                                        }}
+                                      />
+                                    </div>
 
-                                {/* Name, Description & Price - Centered together */}
-                                <div className="flex-1 min-w-0 flex flex-col items-center justify-center relative z-10">
-                                  <div className="font-bold text-foreground text-base sm:text-lg leading-tight text-center tracking-wide">
-                                    {fullName}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground/70 mt-1 text-center font-medium uppercase tracking-wider">
-                                    {result.network}
-                                  </div>
-                                  <div className="font-bold text-[#D4AF37] text-base sm:text-lg mt-1.5 text-center">
-                                    ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
-                                  </div>
-                                </div>
+                                    {/* Name, Network & Price - Center section (only for non-long names) */}
+                                    {!isLongName && (
+                                      <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
+                                        <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight text-center">
+                                          <span className="text-[#D4AF37]">{displayQuery}</span>
+                                          <span>.{result.name}</span>
+                                        </div>
+                                        <div className="font-bold text-[#D4AF37] text-sm sm:text-base mt-1 text-center">
+                                          ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
+                                        </div>
+                                      </div>
+                                    )}
 
-                                {/* Actions Group */}
-                                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 relative z-10">
+                                    {/* Actions Group */}
+                                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                                      {/* Info Icon */}
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10 transition-all duration-300"
+                                        onClick={() => {
+                                          setDetailViewResult(result);
+                                          setShowDetailView(true);
+                                        }}
+                                      >
+                                        <Info className="h-4 w-4 text-[#D4AF37]" />
+                                      </Button>
 
-                                  {/* Info Icon with better hover */}
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-10 w-10 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10 transition-all duration-300"
-                                    onClick={() => {
-                                      setDetailViewResult(result);
-                                      setShowDetailView(true);
-                                    }}
-                                  >
-                                    <Info className="h-4 w-4 text-[#D4AF37]" />
-                                  </Button>
-
-                                  {/* Coming Soon Badge - Elegant pill style */}
-                                  <div className="px-4 py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-[#D4AF37] text-sm font-semibold tracking-wide shadow-inner">
-                                    <span className="hidden sm:inline">Coming Soon</span>
-                                    <span className="sm:hidden">Soon</span>
+                                      {/* Coming Soon Badge */}
+                                      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-[#D4AF37] text-xs sm:text-sm font-semibold tracking-wide">
+                                        Soon
+                                      </div>
+                                    </div>
                                   </div>
+
+                                  {/* Bottom row with name and price (only for long names) */}
+                                  {isLongName && (
+                                    <div className="flex items-center justify-between w-full pl-1">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight truncate">
+                                          <span className="text-[#D4AF37]">{displayQuery}</span>
+                                          <span>.{result.name}</span>
+                                        </div>
+                                      </div>
+                                      <div className="font-bold text-[#D4AF37] text-sm sm:text-base ml-3 flex-shrink-0">
+                                        ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
