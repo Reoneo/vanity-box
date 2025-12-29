@@ -730,6 +730,28 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return;
     }
 
+    // Special test mode: show all domains for subdomain minting
+    if (trimmedQuery.toLowerCase() === "test321") {
+      console.log("🔧 Test mode activated: showing all domains for subdomain minting");
+      setDisplayQuery(trimmedQuery);
+      setIsLoading(true);
+      setHasSearched(true);
+      setIsSearchActive(true);
+      setShowInitialResults(true);
+      setWeb3BioProfile(null);
+      setEfpStats(null);
+      setEnsRecords(null);
+      setTakenSubdomains(new Set());
+      (window as any).__checkFailedDomains = new Set();
+      
+      // Get all results and show them all
+      const allResults = getAllResults();
+      allResults.sort((a, b) => a.name.localeCompare(b.name));
+      setEnsResults(allResults);
+      setIsLoading(false);
+      return;
+    }
+
     // Max character limit varies by query type:
     // - Wallet addresses: 42 chars (0x + 40 hex)
     // - ENS/DNS domains: 63 chars (max ENS label length)
