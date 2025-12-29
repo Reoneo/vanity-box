@@ -2077,7 +2077,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   bottom: '0' 
                 }}
               >
-                <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 pt-4 pb-40">
                   <div className="max-w-6xl mx-auto">
                   {/* Results count header - styled like Coming Soon */}
                   {(() => {
