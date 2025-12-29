@@ -437,7 +437,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
-            console.log('✅ Desktop browser - opening Para wallet modal');
+            console.log('✅ Web browser - opening Para wallet modal');
             openParaModal();
           }
         }}

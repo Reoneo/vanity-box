@@ -117,9 +117,6 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
         ],
         authLayout: [AuthLayout.EXTERNAL_FULL, AuthLayout.AUTH_FULL],
       }}
-      externalWalletConfig={{
-        connectionOnly: true,
-      }}
     >
       <ParaWalletStateManager>
         {children}
