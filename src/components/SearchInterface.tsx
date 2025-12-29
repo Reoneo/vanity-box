@@ -2086,73 +2086,84 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     );
                     return (
                       <>
-                        <div className="text-center mb-6">
-                          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#D4AF37]">
-                            {comingSoonResults.length} ID{comingSoonResults.length !== 1 ? "'s" : ""} Found
-                          </h1>
+                        {/* Enhanced Header with gradient and glow */}
+                        <div className="text-center mb-8 relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/10 to-transparent blur-3xl -z-10" />
+                          <div className="inline-block">
+                            <span className="block text-xs sm:text-sm uppercase tracking-[0.3em] text-[#D4AF37]/70 font-medium mb-2">
+                              Available Domains
+                            </span>
+                            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] bg-clip-text text-transparent drop-shadow-sm">
+                              {comingSoonResults.length} ID{comingSoonResults.length !== 1 ? "'s" : ""} Found
+                            </h1>
+                            <div className="mt-3 h-1 w-24 mx-auto bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
+                          </div>
                         </div>
-                        <div className="space-y-2 will-change-transform">
+                        
+                        {/* Enhanced Result Cards */}
+                        <div className="space-y-3 will-change-transform">
                           {comingSoonResults.map((result, index) => {
                             const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
                             
                             return (
                               <div
                                 key={index}
-                                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-background/40 backdrop-blur-sm border border-black/30 dark:border-[#D4AF37]/50 rounded-xl hover:bg-background/60 hover:border-black/50 dark:hover:border-[#D4AF37]/70 transition-all duration-200 will-change-transform animate-fade-in"
+                                className="group relative flex items-center gap-4 sm:gap-5 p-4 sm:p-5 bg-gradient-to-br from-background via-background to-background/80 backdrop-blur-md border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-2xl shadow-sm hover:shadow-lg hover:shadow-[#D4AF37]/10 hover:border-[#D4AF37]/60 transition-all duration-300 will-change-transform animate-fade-in overflow-hidden"
                                 style={{ 
                                   transform: 'translateZ(0)',
-                                  animationDelay: `${index * 50}ms`
+                                  animationDelay: `${index * 60}ms`
                                 }}
                               >
-                                {/* Avatar */}
-                                <img
-                                  src={result.imageUrl || smithCashAvatar}
-                                  alt={fullName}
-                                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-border/30 flex-shrink-0"
-                                  onError={(e) => {
-                                    e.currentTarget.src = smithCashAvatar;
-                                  }}
-                                />
+                                {/* Subtle gradient overlay on hover */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                
+                                {/* Avatar with enhanced ring */}
+                                <div className="relative flex-shrink-0">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#B8860B] rounded-full blur-sm opacity-50" />
+                                  <img
+                                    src={result.imageUrl || smithCashAvatar}
+                                    alt={fullName}
+                                    className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
+                                    onError={(e) => {
+                                      e.currentTarget.src = smithCashAvatar;
+                                    }}
+                                  />
+                                </div>
 
                                 {/* Name, Description & Price - Centered together */}
-                                <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
-                                  <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight text-center">
+                                <div className="flex-1 min-w-0 flex flex-col items-center justify-center relative z-10">
+                                  <div className="font-bold text-foreground text-base sm:text-lg leading-tight text-center tracking-wide">
                                     {fullName}
                                   </div>
-                                  <div className="text-xs text-muted-foreground mt-0.5 text-center">
+                                  <div className="text-xs text-muted-foreground/70 mt-1 text-center font-medium uppercase tracking-wider">
                                     {result.network}
                                   </div>
-                                  <div className="font-bold text-[#D4AF37] text-sm mt-1 text-center">
+                                  <div className="font-bold text-[#D4AF37] text-base sm:text-lg mt-1.5 text-center">
                                     ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                                   </div>
                                 </div>
 
                                 {/* Actions Group */}
-                                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 relative z-10">
 
-                                  {/* Info Icon */}
+                                  {/* Info Icon with better hover */}
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 hover:bg-primary/10"
+                                    className="h-10 w-10 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10 transition-all duration-300"
                                     onClick={() => {
                                       setDetailViewResult(result);
                                       setShowDetailView(true);
                                     }}
                                   >
-                                    <Info className="h-4 w-4" />
+                                    <Info className="h-4 w-4 text-[#D4AF37]" />
                                   </Button>
 
-                                  {/* Coming Soon Button */}
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="font-semibold whitespace-nowrap"
-                                    disabled={true}
-                                  >
+                                  {/* Coming Soon Badge - Elegant pill style */}
+                                  <div className="px-4 py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-[#D4AF37] text-sm font-semibold tracking-wide shadow-inner">
                                     <span className="hidden sm:inline">Coming Soon</span>
                                     <span className="sm:hidden">Soon</span>
-                                  </Button>
+                                  </div>
                                 </div>
                               </div>
                             );
