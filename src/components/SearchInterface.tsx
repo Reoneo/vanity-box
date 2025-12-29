@@ -726,6 +726,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     console.log("Search start", { query: trimmedQuery });
     setShowFilterDropdown(false);
+    setShowSearchBar(false); // Close search overlay immediately when search begins
     setIsHomepage(false);
 
     // Prevent searches with spaces
