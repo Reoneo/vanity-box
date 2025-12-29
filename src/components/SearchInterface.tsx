@@ -2082,7 +2082,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   {/* Results count header - styled like Coming Soon */}
                   {(() => {
                     const comingSoonResults = ensResults.filter(result => 
-                      result.enabled === false || result.name.toLowerCase() === 'vanity.apt'
+                      result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt'
                     );
                     return (
                       <>
