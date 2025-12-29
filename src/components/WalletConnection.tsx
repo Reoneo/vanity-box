@@ -16,11 +16,13 @@ import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
 import tonLogo from '@/assets/ton-logo.png';
 import petraIcon from '@/assets/petra-icon.png';
+import ethLogo from '@/assets/eth-logo.png';
 import { isTelegramWebView, getTelegramUser } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
+import { useParaWallet } from '@/contexts/ParaContext';
 
 interface User {
   walletAddress?: string;
@@ -37,7 +39,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
-  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | null>(null);
+  const { wallet: paraWallet, setWallet: setParaWallet, disconnect: disconnectPara, openParaModal } = useParaWallet();
+  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'para' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
@@ -296,7 +299,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       disconnectPetra();
       setWalletType(null);
       setEnsName(null);
-    setEnsName(null);
+    } else if (walletType === 'para') {
+      disconnectPara();
+      setWalletType(null);
+      setEnsName(null);
     } else if (walletType === 'worldchain') {
       setUser(null);
       setWalletType(null);
@@ -416,14 +422,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   // Not connected - show connect button
-  if (!user && !petraConnected) {
+  if (!user && !petraConnected && !paraWallet.isConnected) {
     return (
       <Button
         onClick={() => {
-          // Check for Telegram FIRST (highest priority for mini apps)
           console.log('🔍 Checking environment...');
-          console.log('  - window.Telegram:', !!(window as any).Telegram);
-          console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
           console.log('  - isTelegramWebView():', isTelegramWebView());
           console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
           
@@ -434,9 +437,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
-            console.log('✅ Desktop browser - redirecting to World App ecosystem');
-            // Redirect to World App instead of connecting Petra
-            window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+            console.log('✅ Desktop browser - opening Para wallet modal');
+            openParaModal();
           }
         }}
         disabled={isLoading}
@@ -459,11 +461,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Get display info based on wallet type
   const displayAddress = walletType === 'petra' && petraAccount 
     ? petraAccount.address 
+    : walletType === 'para' && paraWallet.address
+    ? paraWallet.address
     : user?.walletAddress || '';
   const displayUsername = walletType === 'petra' 
     ? formatAddress(petraAccount?.address || '')
+    : walletType === 'para'
+    ? ensName || formatAddress(paraWallet.address || '')
     : user?.username || formatAddress(user?.walletAddress || '');
-  const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
+  const walletIcon = walletType === 'petra' ? petraIcon : walletType === 'para' ? ethLogo : wldLogo;
 
   return (
     <DropdownMenu onOpenChange={(open) => {
