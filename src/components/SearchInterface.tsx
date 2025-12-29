@@ -1608,6 +1608,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 handleSearch();
                                 setIsSearchActive(true);
                                 onSearchClick?.();
+                                setShowSearchBar(false);
                               }
                             }}
                             onFocus={() => {
