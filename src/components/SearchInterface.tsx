@@ -2080,90 +2080,87 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
                   <div className="max-w-6xl mx-auto">
                   {/* Results count header - styled like Coming Soon */}
-                  <div className="text-center mb-6">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#D4AF37]">
-                      {ensResults.length} ID{ensResults.length !== 1 ? "'s" : ""} Found
-                    </h1>
-                  </div>
-                  <div className="space-y-2 will-change-transform">
-                {ensResults.map((result, index) => {
-                  const isCheckFailed = (window as any).__checkFailedDomains?.has(result.name.toLowerCase());
-                  const isTaken = takenSubdomains.has(result.name.toLowerCase());
-                  const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt';
-                  const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
-                  
-                   return (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-background/40 backdrop-blur-sm border border-black/30 dark:border-[#D4AF37]/50 rounded-xl hover:bg-background/60 hover:border-black/50 dark:hover:border-[#D4AF37]/70 transition-all duration-200 will-change-transform animate-fade-in"
-                      style={{ 
-                        transform: 'translateZ(0)',
-                        animationDelay: `${index * 50}ms`
-                      }}
-                    >
-                      {/* Avatar */}
-                      <img
-                        src={result.imageUrl || smithCashAvatar}
-                        alt={fullName}
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-border/30 flex-shrink-0"
-                        onError={(e) => {
-                          e.currentTarget.src = smithCashAvatar;
-                        }}
-                      />
-
-                      {/* Name, Description & Price - Centered together */}
-                      <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
-                        <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight text-center">
-                          {fullName}
+                  {(() => {
+                    const comingSoonResults = ensResults.filter(result => 
+                      result.enabled === false || result.name.toLowerCase() === 'vanity.apt'
+                    );
+                    return (
+                      <>
+                        <div className="text-center mb-6">
+                          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#D4AF37]">
+                            {comingSoonResults.length} ID{comingSoonResults.length !== 1 ? "'s" : ""} Found
+                          </h1>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5 text-center">
-                          {result.network}
+                        <div className="space-y-2 will-change-transform">
+                          {comingSoonResults.map((result, index) => {
+                            const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
+                            
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-background/40 backdrop-blur-sm border border-black/30 dark:border-[#D4AF37]/50 rounded-xl hover:bg-background/60 hover:border-black/50 dark:hover:border-[#D4AF37]/70 transition-all duration-200 will-change-transform animate-fade-in"
+                                style={{ 
+                                  transform: 'translateZ(0)',
+                                  animationDelay: `${index * 50}ms`
+                                }}
+                              >
+                                {/* Avatar */}
+                                <img
+                                  src={result.imageUrl || smithCashAvatar}
+                                  alt={fullName}
+                                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-border/30 flex-shrink-0"
+                                  onError={(e) => {
+                                    e.currentTarget.src = smithCashAvatar;
+                                  }}
+                                />
+
+                                {/* Name, Description & Price - Centered together */}
+                                <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
+                                  <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight text-center">
+                                    {fullName}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-0.5 text-center">
+                                    {result.network}
+                                  </div>
+                                  <div className="font-bold text-[#D4AF37] text-sm mt-1 text-center">
+                                    ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
+                                  </div>
+                                </div>
+
+                                {/* Actions Group */}
+                                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+
+                                  {/* Info Icon */}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 hover:bg-primary/10"
+                                    onClick={() => {
+                                      setDetailViewResult(result);
+                                      setShowDetailView(true);
+                                    }}
+                                  >
+                                    <Info className="h-4 w-4" />
+                                  </Button>
+
+                                  {/* Coming Soon Button */}
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="font-semibold whitespace-nowrap"
+                                    disabled={true}
+                                  >
+                                    <span className="hidden sm:inline">Coming Soon</span>
+                                    <span className="sm:hidden">Soon</span>
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="font-bold text-[#D4AF37] text-sm mt-1 text-center">
-                          ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
-                        </div>
-                      </div>
-
-                      {/* Actions Group */}
-                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-
-                        {/* Info Icon */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 hover:bg-primary/10"
-                          onClick={() => {
-                            setDetailViewResult(result);
-                            setShowDetailView(true);
-                          }}
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-
-                        {/* Mint/Coming Soon Button */}
-                        <Button
-                          variant={isComingSoon || isTaken ? "secondary" : "default"}
-                          size="sm"
-                          className="font-semibold whitespace-nowrap"
-                          disabled={isComingSoon || isTaken}
-                          onClick={() => {
-                            if (!isComingSoon && !isTaken) {
-                              handleMint(result);
-                            }
-                          }}
-                        >
-                          <span className="hidden sm:inline">
-                            {isTaken ? t('taken') : isComingSoon ? t('coming_soon') : t('mint_now')}
-                          </span>
-                          <span className="sm:hidden">
-                            {isTaken ? t('taken') : isComingSoon ? t('soon') : t('mint')}
-                          </span>
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-                  </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
