@@ -2086,8 +2086,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     );
                     return (
                       <>
-                        {/* Enhanced Header with black text and gold accents - more spacing from navbar */}
-                        <div className="text-center mb-10 mt-4 relative">
+                        {/* Enhanced Header with black text and gold accents - even spacing */}
+                        <div className="text-center mb-6 mt-2 relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/10 to-transparent blur-3xl -z-10" />
                           <div className="inline-block">
                             <span className="block text-xs sm:text-sm uppercase tracking-[0.3em] text-[#B8860B] font-semibold mb-3">
