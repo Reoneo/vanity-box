@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -104,8 +105,41 @@ serve(async (req) => {
     
     // Extract owner/address from the main record
     // Namestone API returns the wallet address in the 'address' field
-    const owner = records.address || records.owner || records.eth_address || null;
-    console.log('👤 Owner address:', owner);
+    let owner = records.address || records.owner || records.eth_address || null;
+    
+    // FALLBACK: If no owner found in Namestone, check minted_domains table
+    if (!owner || owner === '') {
+      console.log('⚠️ No address in Namestone response, checking minted_domains table...');
+      
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          const fullName = subdomain.toLowerCase();
+          
+          const { data: mintedData, error: mintedError } = await supabase
+            .from('minted_domains')
+            .select('wallet_address')
+            .eq('full_name', fullName)
+            .maybeSingle();
+          
+          if (mintedError) {
+            console.warn('⚠️ Error fetching from minted_domains:', mintedError.message);
+          } else if (mintedData?.wallet_address) {
+            owner = mintedData.wallet_address;
+            console.log('✅ Got owner from minted_domains:', owner);
+          } else {
+            console.log('ℹ️ No matching record in minted_domains for:', fullName);
+          }
+        }
+      } catch (dbError) {
+        console.warn('⚠️ Database fallback failed:', dbError);
+      }
+    }
+    
+    console.log('👤 Final owner address:', owner);
     console.log('📊 Full record structure:', JSON.stringify(records, null, 2));
 
     return new Response(

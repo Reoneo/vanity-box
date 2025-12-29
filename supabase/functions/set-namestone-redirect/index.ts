@@ -206,30 +206,81 @@ async function pinRedirectHtml(html: string, web3StorageToken?: string, pinataJw
   throw new Error(`All IPFS providers failed. ${errors.join(", ")}`);
 }
 
-// Set contenthash via Namestone API
+// Fetch existing name data from Namestone to preserve address
+async function fetchExistingNameData(apiKey: string, parentDomain: string, subname: string): Promise<{ address: string; textRecords: Record<string, string> }> {
+  try {
+    const payload = {
+      domain: parentDomain,
+      name: subname,
+    };
+    
+    console.log("Fetching existing name data:", payload);
+    
+    const res = await fetch('https://namestone.com/api/public_v1/get-names', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const record = data[0];
+        console.log("✅ Found existing name data:", { address: record.address, hasTextRecords: !!record.text_records });
+        return {
+          address: record.address || '',
+          textRecords: record.text_records || {},
+        };
+      }
+    }
+  } catch (e) {
+    console.warn("⚠️ Could not fetch existing name data:", e);
+  }
+  
+  return { address: '', textRecords: {} };
+}
+
+// Set contenthash via Namestone API (preserving existing address)
 async function setContenthashViaNamestone(params: {
   apiKey: string;
   parentDomain: string;
   subname: string;
   ipfsCid: string;
   urlTextRecord?: string;
+  walletAddress?: string; // Optional: explicitly set address
 }): Promise<any> {
-  const { apiKey, parentDomain, subname, ipfsCid, urlTextRecord } = params;
+  const { apiKey, parentDomain, subname, ipfsCid, urlTextRecord, walletAddress } = params;
 
+  // STEP 1: Fetch existing name data to preserve the address
+  const existingData = await fetchExistingNameData(apiKey, parentDomain, subname);
+  
+  // Use provided wallet address, or existing address, or empty string
+  const addressToUse = walletAddress || existingData.address || '';
+  console.log("📝 Using address for update:", addressToUse || "(none)");
+
+  // STEP 2: Build payload with address preserved
   const payload: any = {
     name: subname,
+    address: addressToUse, // CRITICAL: Preserve the address!
     contenthash: `ipfs://${ipfsCid}`,
   };
 
+  // Merge existing text records with new ones
+  const mergedTextRecords = { ...existingData.textRecords };
   if (urlTextRecord) {
-    payload.text_records = { 
-      url: urlTextRecord, 
-      redirect: urlTextRecord 
-    };
+    mergedTextRecords.url = urlTextRecord;
+    mergedTextRecords.redirect = urlTextRecord;
+  }
+  
+  if (Object.keys(mergedTextRecords).length > 0) {
+    payload.text_records = mergedTextRecords;
   }
 
   const url = `https://namestone.com/api/public_v1/set-names`;
-  console.log("Calling Namestone API:", { url, domain: parentDomain, payload });
+  console.log("Calling Namestone API:", { url, domain: parentDomain, payload: { ...payload, address: addressToUse ? `${addressToUse.slice(0,10)}...` : '(none)' } });
 
   const res = await fetch(url, {
     method: "POST",
