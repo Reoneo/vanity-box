@@ -2147,11 +2147,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                           setShowDetailView(true);
                                         }}
                                       >
-                                        <Info className="h-4 w-4 text-[#D4AF37]" />
+                                        <Info className="h-4 w-4 text-black dark:text-white" />
                                       </Button>
 
                                       {/* Coming Soon Badge */}
-                                      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-[#D4AF37] text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
+                                      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
                                         Coming Soon
                                       </div>
                                     </div>
@@ -2163,7 +2163,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                       <span className="text-[#D4AF37]">{displayQuery}</span>
                                       <span>.{result.name}</span>
                                     </div>
-                                    <div className="font-bold text-[#D4AF37] text-sm sm:text-base flex-shrink-0">
+                                    <div className="font-bold text-black dark:text-white text-sm sm:text-base flex-shrink-0">
                                       ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                                     </div>
                                   </div>
