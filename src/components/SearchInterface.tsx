@@ -2100,11 +2100,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           </div>
                         </div>
                         
-                        {/* Enhanced Result Cards - Stacked layout for long names */}
+                        {/* Enhanced Result Cards - Consistent stacked layout */}
                         <div className="space-y-4 will-change-transform">
                           {comingSoonResults.map((result, index) => {
                             const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
-                            const isLongName = fullName.length > 16;
                             
                             return (
                               <div
@@ -2118,36 +2117,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                 {/* Subtle gradient overlay on hover */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 
-                                {/* Card content - responsive layout */}
-                                <div className={`relative z-10 p-4 sm:p-5 ${isLongName ? 'flex flex-col gap-3' : 'flex items-center gap-4 sm:gap-5'}`}>
+                                {/* Card content - stacked layout */}
+                                <div className="relative z-10 p-4 sm:p-5 flex flex-col gap-3">
                                   
-                                  {/* Top row with avatar and actions (for long names) or inline layout */}
-                                  <div className={`flex items-center ${isLongName ? 'justify-between w-full' : 'gap-4 sm:gap-5'}`}>
+                                  {/* Top row: Avatar on left, actions on right */}
+                                  <div className="flex items-center justify-between w-full">
                                     {/* Avatar with enhanced ring */}
                                     <div className="relative flex-shrink-0">
                                       <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#B8860B] rounded-full blur-sm opacity-50" />
                                       <img
                                         src={result.imageUrl || smithCashAvatar}
                                         alt={fullName}
-                                        className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
+                                        className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
                                         onError={(e) => {
                                           e.currentTarget.src = smithCashAvatar;
                                         }}
                                       />
                                     </div>
-
-                                    {/* Name, Network & Price - Center section (only for non-long names) */}
-                                    {!isLongName && (
-                                      <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
-                                        <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight text-center">
-                                          <span className="text-[#D4AF37]">{displayQuery}</span>
-                                          <span>.{result.name}</span>
-                                        </div>
-                                        <div className="font-bold text-[#D4AF37] text-sm sm:text-base mt-1 text-center">
-                                          ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
-                                        </div>
-                                      </div>
-                                    )}
 
                                     {/* Actions Group */}
                                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
@@ -2171,20 +2157,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                     </div>
                                   </div>
 
-                                  {/* Bottom row with name and price (only for long names) */}
-                                  {isLongName && (
-                                    <div className="flex items-center justify-between w-full pl-1">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight truncate">
-                                          <span className="text-[#D4AF37]">{displayQuery}</span>
-                                          <span>.{result.name}</span>
-                                        </div>
-                                      </div>
-                                      <div className="font-bold text-[#D4AF37] text-sm sm:text-base ml-3 flex-shrink-0">
-                                        ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
-                                      </div>
+                                  {/* Bottom row: Name on left, price on right */}
+                                  <div className="flex items-center justify-between w-full">
+                                    <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight">
+                                      <span className="text-[#D4AF37]">{displayQuery}</span>
+                                      <span>.{result.name}</span>
                                     </div>
-                                  )}
+                                    <div className="font-bold text-[#D4AF37] text-sm sm:text-base flex-shrink-0">
+                                      ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             );
