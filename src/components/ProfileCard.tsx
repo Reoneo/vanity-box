@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
+import { useDisplayName } from "@/hooks/useDisplayName";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,6 +88,29 @@ export const ProfileCard = ({
   const [dataLoaded, setDataLoaded] = useState(false);
   const [tokensFetched, setTokensFetched] = useState(false);
   const [transactionsFetched, setTransactionsFetched] = useState(false);
+
+  // Resolve ENS name for wallet address searches
+  const { displayName: resolvedEnsName } = useDisplayName(
+    currentWalletAddress as `0x${string}` | undefined
+  );
+
+  // Get the best display name to show
+  const getDisplayName = () => {
+    // If searchedIdentity contains a dot, it's a domain name - use it directly
+    if (searchedIdentity && searchedIdentity.includes('.')) {
+      return searchedIdentity;
+    }
+    
+    // If we have a resolved ENS name from the hook, use it
+    if (resolvedEnsName) {
+      return resolvedEnsName;
+    }
+    
+    // Fallback chain
+    return web3BioProfile?.hlDomain || 
+           web3BioProfile?.displayName || 
+           (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown');
+  };
 
   // Fetch all data on profile load for button visibility
   useEffect(() => {
@@ -330,9 +354,9 @@ export const ProfileCard = ({
 
             <div className="p-6 pt-16 space-y-2 flex-shrink-0">
 
-              {/* Show searched identity first, then fallback to .hl domain or displayName */}
+              {/* Show resolved ENS name or searched identity */}
               <h2 className="text-3xl font-bold text-center text-foreground">
-                {searchedIdentity || web3BioProfile?.hlDomain || web3BioProfile?.displayName || (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown')}
+                {getDisplayName()}
               </h2>
               
 
