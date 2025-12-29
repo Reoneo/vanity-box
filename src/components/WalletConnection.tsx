@@ -40,7 +40,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
-  const { wallet: paraWallet, setWallet: setParaWallet, disconnect: disconnectPara, openParaModal } = useParaWallet();
+  const { wallet: paraWallet, setWallet: setParaWallet, disconnect: disconnectPara, openParaModal, isConfigured: isParaConfigured, isLoading: isParaLoading } = useParaWallet();
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'para' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
@@ -439,9 +439,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
-  // Check if Para is configured
-  const isParaConfigured = Boolean(import.meta.env.VITE_PARA_API_KEY);
-
   // Not connected - show connect button
   if (!user && !petraConnected && !paraWallet.isConnected) {
     return (
@@ -452,6 +449,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           console.log('  - isTelegramWebView():', isTelegramWebView());
           console.log('  - isWorldAppEnvironment():', inWorldApp);
           console.log('  - Para configured:', isParaConfigured);
+          console.log('  - Para loading:', isParaLoading);
           
           if (isTelegramWebView()) {
             console.log('✅ Detected Telegram WebView - connecting TON wallet');
@@ -459,6 +457,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           } else if (inWorldApp) {
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
+          } else if (isParaLoading) {
+            console.log('⏳ Para still loading...');
+            toast.info('Loading wallet connection...');
           } else if (isParaConfigured) {
             console.log('✅ Web browser - opening Para wallet modal');
             openParaModal();
