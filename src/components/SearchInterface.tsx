@@ -1754,7 +1754,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             toast.error('Please connect your wallet first');
                             return;
                           }
-                          setActiveDockSection('profile');
+                          // Load the connected user's own profile
+                          const searchIdentifier = connectedUsername || walletAddress;
+                          if (searchIdentifier) {
+                            handleSearch(searchIdentifier);
+                          }
                         },
                         isActive: activeDockSection === 'profile',
                       },
