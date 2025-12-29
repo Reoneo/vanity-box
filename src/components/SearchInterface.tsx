@@ -1639,6 +1639,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     castLoading={castLoading}
                     firstTransactionDate={firstTransactionDate}
                     searchedIdentity={displayQuery}
+                    isWorldIdVerified={displayQuery?.toLowerCase().endsWith('.world.id') || false}
                     onFollowingClick={handleFollowingClick}
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}
@@ -1691,10 +1692,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       {
                         icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
                         label: 'Edit',
-                        onClick: () => {
+                        onClick: async () => {
                           if (!walletAddress) {
                             toast.error('Please connect your wallet first');
                             return;
+                          }
+                          // Check if user has any domains before showing My IDs
+                          try {
+                            const { data } = await supabase.functions.invoke("get-user-domains", {
+                              body: { walletAddress },
+                            });
+                            if (!data?.domains?.length) {
+                              toast.info('No IDs found. Register a subdomain first!');
+                              return;
+                            }
+                          } catch (e) {
+                            console.error('Error checking domains:', e);
                           }
                           setShowMyIDs(true);
                           setActiveDockSection('profile');
@@ -2029,12 +2042,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     {
                       icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Profile',
-                      onClick: () => {
+                      onClick: async () => {
                         if (!walletAddress) {
                           toast.error('Please connect your wallet first');
                         } else {
-                          // Load user's profile when wallet is connected
-                          handleSearch(walletAddress);
+                          // Try to use world.id name instead of wallet address
+                          const cachedWorldId = sessionStorage.getItem(`worldid_domain_${walletAddress.toLowerCase()}`);
+                          const minikitUsername = MiniKit.user?.username;
+                          const worldIdName = cachedWorldId || (minikitUsername ? `${minikitUsername}.world.id` : null);
+                          
+                          if (worldIdName) {
+                            handleSearch(worldIdName);
+                          } else {
+                            handleSearch(walletAddress);
+                          }
                         }
                       },
                       isActive: false,
@@ -2042,13 +2063,25 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     {
                       icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
                       label: 'My IDs',
-                      onClick: () => {
-                        if (walletAddress) {
-                          setShowMyIDs(true);
-                          setActiveDockSection('profile');
-                        } else {
+                      onClick: async () => {
+                        if (!walletAddress) {
                           toast.error('Please connect your wallet first');
+                          return;
                         }
+                        // Check if user has any domains before showing My IDs
+                        try {
+                          const { data } = await supabase.functions.invoke("get-user-domains", {
+                            body: { walletAddress },
+                          });
+                          if (!data?.domains?.length) {
+                            toast.info('No IDs found. Register a subdomain first!');
+                            return;
+                          }
+                        } catch (e) {
+                          console.error('Error checking domains:', e);
+                        }
+                        setShowMyIDs(true);
+                        setActiveDockSection('profile');
                       },
                       isActive: false,
                     },
