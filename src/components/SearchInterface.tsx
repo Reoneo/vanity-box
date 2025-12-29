@@ -2103,9 +2103,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <div className="max-w-6xl mx-auto">
                   {/* Results count header - styled like Coming Soon */}
                   {(() => {
-                    const comingSoonResults = ensResults.filter(result => 
-                      result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt'
-                    );
+                    // Check if test mode is active (search query is "test321")
+                    const isTestMode = displayQuery.toLowerCase() === "test321";
+                    
+                    // In test mode, show all domains; otherwise only show coming soon (disabled) domains
+                    const displayResults = isTestMode 
+                      ? ensResults 
+                      : ensResults.filter(result => 
+                          result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt'
+                        );
+                    
                     return (
                       <>
                         {/* Enhanced Header with black text and gold accents - even spacing */}
@@ -2113,10 +2120,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/10 to-transparent blur-3xl -z-10" />
                           <div className="inline-block">
                             <span className="block text-xs sm:text-sm uppercase tracking-[0.3em] text-[#B8860B] font-semibold mb-3">
-                              Available Domains
+                              {isTestMode ? "All Domains (Test Mode)" : "Available Domains"}
                             </span>
                             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black dark:text-white">
-                              {comingSoonResults.length} <span className="text-[#D4AF37]">ID{comingSoonResults.length !== 1 ? "'s" : ""}</span> Found
+                              {displayResults.length} <span className="text-[#D4AF37]">ID{displayResults.length !== 1 ? "'s" : ""}</span> Found
                             </h1>
                             <div className="mt-4 h-1 w-32 mx-auto bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
                           </div>
@@ -2124,7 +2131,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         
                         {/* Enhanced Result Cards - Consistent stacked layout */}
                         <div className="space-y-4 will-change-transform">
-                          {comingSoonResults.map((result, index) => {
+                          {displayResults.map((result, index) => {
+                            const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt';
                             const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
                             
                             return (
@@ -2172,10 +2180,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                         <Info className="h-4 w-4 text-black dark:text-white" />
                                       </Button>
 
-                                      {/* Coming Soon Badge */}
-                                      <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
-                                        Coming Soon
-                                      </div>
+                                      {/* Coming Soon Badge OR Mint Now Button */}
+                                      {isComingSoon ? (
+                                        <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
+                                          Coming Soon
+                                        </div>
+                                      ) : (
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8860B] hover:from-[#B8860B] hover:to-[#D4AF37] text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap border-0"
+                                          onClick={() => handleMint(result)}
+                                        >
+                                          Mint Now
+                                        </Button>
+                                      )}
                                     </div>
                                   </div>
 
