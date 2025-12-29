@@ -192,6 +192,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
+  const [walletEnsName, setWalletEnsName] = useState<string | undefined>(undefined);
   const [showMyIDs, setShowMyIDs] = useState(false);
   const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
   const [efpStats, setEfpStats] = useState<EFPStats | null>(null);
@@ -260,6 +261,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Listen for wallet connection events
     const handleWalletChange = (event: CustomEvent) => {
       setWalletAddress(event.detail?.walletAddress);
+      if (event.detail?.username) {
+        setWalletEnsName(event.detail.username);
+      }
     };
 
     const handleShowMyIDs = () => {
@@ -277,6 +281,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     window.addEventListener("wallet-connected", handleWalletChange as EventListener);
     window.addEventListener("wallet-disconnected", () => {
       setWalletAddress(undefined);
+      setWalletEnsName(undefined);
       setShowMyIDs(false);
     });
     window.addEventListener("show-my-ids", handleShowMyIDs);
@@ -2033,8 +2038,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         if (!walletAddress) {
                           toast.error('Please connect your wallet first');
                         } else {
-                          // Load user's profile when wallet is connected
-                          handleSearch(walletAddress);
+                          // Use ENS name if available, otherwise fallback to wallet address
+                          const searchIdentity = walletEnsName || walletAddress;
+                          handleSearch(searchIdentity);
                         }
                       },
                       isActive: false,
