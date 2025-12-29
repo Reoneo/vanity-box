@@ -845,11 +845,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Check for subdomains (2+ dots)
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
       const isSubdomain = dotCount >= 2; // e.g., test321.spyda.eth has 2 dots
-      const isEthSubdomain = isSubdomain && normalizedQuery.endsWith('.eth'); // L2 subdomains need Namestone fallback
+      // L2 subdomains need Namestone fallback (.eth and .world.id are ENS-compatible but on L2)
+      const isEthSubdomain = isSubdomain && normalizedQuery.endsWith('.eth');
+      const isWorldIdSubdomain = isSubdomain && normalizedQuery.endsWith('.world.id');
+      const isL2EnsSubdomain = isEthSubdomain || isWorldIdSubdomain;
       const isNamestoneSubdomain = isSubdomain && !isWeb3BioCompatible;
       const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
       
-      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Is ETH Subdomain: ${isEthSubdomain}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}, Is HL: ${isHlDomain}`);
+      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Is L2 ENS Subdomain: ${isL2EnsSubdomain}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}, Is HL: ${isHlDomain}`);
 
       // Use different fetch strategies based on name type
       if (isHlDomain) {
@@ -991,8 +994,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           if (web3BioData?.notFound) {
             console.log('⚠️ No profile found on Web3.bio for:', isWalletAddress ? normalizedAddress : trimmedQuery);
             
-            // FALLBACK: For .eth subdomains (L2 Worldchain), try Namestone lookup
-            if (isEthSubdomain) {
+            // FALLBACK: For L2 ENS subdomains (.eth, .world.id), try Namestone lookup
+            if (isL2EnsSubdomain) {
               console.log('🔄 Web3.bio returned 404, falling back to Namestone for L2 subdomain:', normalizedQuery);
               
               const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-ens-subdomain-profile', {
