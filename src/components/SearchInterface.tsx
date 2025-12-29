@@ -839,12 +839,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const namestoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
       const isNamestoneTLD = namestoneTLDs.some(tld => normalizedQuery.endsWith(tld));
       
-      // Check for subdomains (2+ dots) - Web3.bio handles these for .eth and .box
+      // Check for subdomains (2+ dots)
       const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
-      const isNamestoneSubdomain = dotCount >= 2 && !isWeb3BioCompatible;
+      const isSubdomain = dotCount >= 2; // e.g., test321.spyda.eth has 2 dots
+      const isEthSubdomain = isSubdomain && normalizedQuery.endsWith('.eth'); // L2 subdomains need Namestone fallback
+      const isNamestoneSubdomain = isSubdomain && !isWeb3BioCompatible;
       const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
       
-      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}, Is HL: ${isHlDomain}`);
+      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Is ETH Subdomain: ${isEthSubdomain}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}, Is HL: ${isHlDomain}`);
 
       // Use different fetch strategies based on name type
       if (isHlDomain) {
@@ -985,6 +987,45 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
           if (web3BioData?.notFound) {
             console.log('⚠️ No profile found on Web3.bio for:', isWalletAddress ? normalizedAddress : trimmedQuery);
+            
+            // FALLBACK: For .eth subdomains (L2 Worldchain), try Namestone lookup
+            if (isEthSubdomain) {
+              console.log('🔄 Web3.bio returned 404, falling back to Namestone for L2 subdomain:', normalizedQuery);
+              
+              const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-ens-subdomain-profile', {
+                body: { subdomain: normalizedQuery }
+              });
+              
+              if (!namestoneError && namestoneData && namestoneData.address) {
+                console.log('✅ Namestone fallback succeeded:', namestoneData);
+                setWeb3BioProfile(namestoneData);
+                setEnsResults([]);
+                
+                if (namestoneData.ensRecords) {
+                  setEnsRecords(namestoneData.ensRecords);
+                }
+                
+                // Fetch EFP stats and NFTs for the resolved address
+                if (namestoneData.address) {
+                  supabase.functions.invoke('get-efp-stats', {
+                    body: { address: namestoneData.address }
+                  }).then(({ data: efpData }) => {
+                    if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                      console.log('✅ EFP stats loaded for Namestone fallback:', efpData);
+                      setEfpStats(efpData);
+                    }
+                  }).catch(err => console.log('EFP stats fetch failed:', err));
+                  
+                  fetchNfts(namestoneData.address);
+                }
+                
+                setIsLoading(false);
+                return;
+              } else {
+                console.log('❌ Namestone fallback also failed:', namestoneError);
+              }
+            }
+            
             toast.error('No profile found for this identity');
             setIsLoading(false);
             return;
