@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
+import { isWorldAppEnvironment } from '@/lib/minikit';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -76,23 +77,41 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   }, [petraConnected, petraAccount, petraNetwork]);
 
+  // Recognize Para wallet connection
+  useEffect(() => {
+    if (paraWallet.isConnected && paraWallet.address && walletType !== 'para') {
+      setWalletType('para');
+      // Fetch ENS for Para wallet
+      fetchEnsName(paraWallet.address);
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('wallet-connected', { 
+        detail: { walletType: 'para', walletAddress: paraWallet.address } 
+      }));
+      console.log('✅ Para wallet connected:', paraWallet.address);
+    }
+  }, [paraWallet.isConnected, paraWallet.address, walletType]);
+
   useEffect(() => {
     // Check environment on mount
+    const inWorldApp = isWorldAppEnvironment();
     console.log('🌍 Environment check on mount:');
     console.log('  - Telegram WebView:', isTelegramWebView());
-    console.log('  - World App:', MiniKit.isInstalled());
+    console.log('  - World App (robust check):', inWorldApp);
     console.log('  - User Agent:', navigator.userAgent.substring(0, 150));
 
     // Listen for wallet connection trigger from search
     const handleTriggerConnect = () => {
-      if (!user && !petraConnected) {
+      if (!user && !petraConnected && !paraWallet.isConnected) {
         // Prioritize Telegram if in Telegram environment
         if (isTelegramWebView()) {
           console.log('🔄 Trigger: Connecting via Telegram');
           handleTelegramConnect();
-        } else {
+        } else if (inWorldApp) {
           console.log('🔄 Trigger: Connecting via World App');
           handleConnect();
+        } else {
+          console.log('🔄 Trigger: Opening Para modal');
+          openParaModal();
         }
       }
     };
@@ -101,7 +120,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return () => {
       window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
     };
-  }, [user, petraConnected, petraAccount]);
+  }, [user, petraConnected, petraAccount, paraWallet.isConnected]);
 
   // Remove auto-connect - users must manually connect
 
@@ -171,10 +190,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       return;
     }
 
-    // Check if running in World App
-    if (!MiniKit.isInstalled()) {
-      console.log('Not in World App - redirecting to World App ecosystem page');
-      window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+    // Only proceed if actually in World App
+    if (!isWorldAppEnvironment()) {
+      console.log('Not in World App - this should not be called from browser');
       return;
     }
 
@@ -426,14 +444,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return (
       <Button
         onClick={() => {
+          const inWorldApp = isWorldAppEnvironment();
           console.log('🔍 Checking environment...');
           console.log('  - isTelegramWebView():', isTelegramWebView());
-          console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
+          console.log('  - isWorldAppEnvironment():', inWorldApp);
           
           if (isTelegramWebView()) {
             console.log('✅ Detected Telegram WebView - connecting TON wallet');
             handleTelegramConnect();
-          } else if (MiniKit.isInstalled()) {
+          } else if (inWorldApp) {
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {

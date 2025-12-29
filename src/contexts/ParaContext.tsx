@@ -119,9 +119,9 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
         oAuthMethods: [],
         disableEmailLogin: true,
         disablePhoneLogin: true,
-        authLayout: [AuthLayout.EXTERNAL_FULL],
-        recoverySecretStepEnabled: true,
-        onRampTestMode: true,
+        authLayout: ["EXTERNAL:WALLET" as any],
+        recoverySecretStepEnabled: false,
+        onRampTestMode: false,
       }}
     >
       <ParaWalletStateManager>
