@@ -36,7 +36,12 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['graz'],
+      external: [
+        'graz',
+        '@solana/wallet-adapter-react',
+        '@solana/wallet-adapter-base',
+        '@solana/web3.js',
+      ],
     },
   },
 }));
