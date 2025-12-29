@@ -130,6 +130,9 @@ serve(async (req) => {
             .from('minted_domains')
             .select('wallet_address')
             .eq('full_name', fullName)
+            .eq('is_expired', false)
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
           
           if (mintedError) {
