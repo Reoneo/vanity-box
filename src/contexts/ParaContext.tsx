@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { ParaProvider as ParaSDKProvider, useModal, AuthLayout, type TExternalWallet } from "@getpara/react-sdk";
+import { mainnet, polygon, arbitrum, optimism, base } from "wagmi/chains";
 import "@getpara/react-sdk/styles.css";
 
 interface ParaWalletState {
@@ -103,6 +104,11 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
           "WALLET_CONNECT" as TExternalWallet,
           "COINBASE" as TExternalWallet,
         ],
+        evmConnector: {
+          config: {
+            chains: [mainnet, polygon, arbitrum, optimism, base],
+          },
+        },
       }}
       paraModalConfig={{
         logo: "/vanity-box-logo.png",
