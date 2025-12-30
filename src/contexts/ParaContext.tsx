@@ -282,35 +282,31 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
     );
   }
 
-  // Determine wallet list based on environment and WalletConnect availability
-  const getWalletList = (): TExternalWallet[] => {
-    const wallets: TExternalWallet[] = [];
-    
-    // Only add WalletConnect if we have a valid projectId
-    if (config.walletConnectProjectId && config.walletConnectProjectId.length >= 32) {
-      wallets.push("WALLETCONNECT" as TExternalWallet);
-    } else {
-      console.warn('WalletConnect projectId missing or invalid - WalletConnect option hidden');
-    }
-    
-    // Add other wallets
-    wallets.push(
-      "COINBASE" as TExternalWallet,
-      "METAMASK" as TExternalWallet,
-      "RAINBOW" as TExternalWallet,
-    );
-    
-    return wallets;
-  };
-
-  // Build WalletConnect config only if projectId is valid
-  const walletConnectConfig = config.walletConnectProjectId && config.walletConnectProjectId.length >= 32
+  // Build WalletConnect config - only if projectId is valid
+  const hasValidWcProjectId = config.walletConnectProjectId && config.walletConnectProjectId.length >= 32;
+  
+  const walletConnectConfig = hasValidWcProjectId
     ? { projectId: config.walletConnectProjectId }
     : undefined;
 
   if (!walletConnectConfig) {
     console.warn('⚠️ WalletConnect disabled - missing or invalid projectId');
   }
+
+  // Wallet list: WalletConnect shows all wallets via QR modal, others are direct connections
+  const getWalletList = (): TExternalWallet[] => {
+    // WalletConnect is preferred - it shows a modal with ALL wallet options
+    // Users can select any compatible wallet from the WalletConnect modal
+    if (hasValidWcProjectId) {
+      return ["WALLETCONNECT" as TExternalWallet];
+    }
+    // Fallback to individual wallets if WalletConnect is not configured
+    return [
+      "METAMASK" as TExternalWallet,
+      "COINBASE" as TExternalWallet,
+      "RAINBOW" as TExternalWallet,
+    ];
+  };
 
   return (
     <ParaSDKProvider
