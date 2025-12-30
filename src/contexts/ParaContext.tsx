@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import { ParaProvider as ParaSDKProvider, useModal, type TExternalWallet } from "@getpara/react-sdk";
+import { ParaProvider as ParaSDKProvider, useModal, useAccount, useWalletState, type TExternalWallet } from "@getpara/react-sdk";
 import { mainnet, polygon, arbitrum, optimism, base } from "wagmi/chains";
 import "@getpara/react-sdk/styles.css";
 import { callEdge } from '@/lib/supaInvoke';
@@ -19,6 +19,7 @@ interface ParaContextType {
   isModalOpen: boolean;
   isConfigured: boolean;
   isLoading: boolean;
+  switchNetwork: (chainId: number) => Promise<void>;
 }
 
 const ParaContext = createContext<ParaContextType | undefined>(undefined);
@@ -30,53 +31,6 @@ export const useParaWallet = () => {
   }
   return context;
 };
-
-// Internal component that uses Para hooks (must be inside ParaSDKProvider)
-const ParaWalletStateManager: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { isOpen, openModal, closeModal } = useModal();
-  const [wallet, setWallet] = useState<ParaWalletState>({
-    address: null,
-    isConnected: false,
-    chainId: null,
-  });
-
-  const disconnect = useCallback(() => {
-    setWallet({
-      address: null,
-      isConnected: false,
-      chainId: null,
-    });
-    localStorage.removeItem('para_wallet_session');
-  }, []);
-
-  const handleOpenModal = useCallback(() => {
-    openModal();
-  }, [openModal]);
-
-  return (
-    <ParaContext.Provider value={{ 
-      wallet, 
-      setWallet, 
-      disconnect, 
-      openParaModal: handleOpenModal,
-      closeParaModal: closeModal,
-      isModalOpen: isOpen,
-      isConfigured: true,
-      isLoading: false
-    }}>
-      {children}
-    </ParaContext.Provider>
-  );
-};
-
-interface ParaWalletProviderProps {
-  children: ReactNode;
-}
-
-interface ParaConfig {
-  apiKey: string;
-  walletConnectProjectId: string;
-}
 
 // World Chain definition
 const worldChain = {
@@ -91,6 +45,156 @@ const worldChain = {
     default: { name: 'World Chain Explorer', url: 'https://worldchain-mainnet.explorer.alchemy.com' },
   },
 } as const;
+
+// Supported chains configuration
+const SUPPORTED_CHAINS = [
+  { id: 480, name: 'World Chain', rpc: 'https://worldchain-mainnet.g.alchemy.com/public' },
+  { id: 1, name: 'Ethereum', rpc: 'https://eth.llamarpc.com' },
+  { id: 8453, name: 'Base', rpc: 'https://mainnet.base.org' },
+  { id: 137, name: 'Polygon', rpc: 'https://polygon-rpc.com' },
+  { id: 42161, name: 'Arbitrum', rpc: 'https://arb1.arbitrum.io/rpc' },
+  { id: 10, name: 'Optimism', rpc: 'https://mainnet.optimism.io' },
+];
+
+// Internal component that uses Para hooks (must be inside ParaSDKProvider)
+const ParaWalletStateManager: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { isOpen, openModal, closeModal } = useModal();
+  const account = useAccount();
+  const { selectedWallet } = useWalletState();
+  
+  const [wallet, setWalletState] = useState<ParaWalletState>({
+    address: null,
+    isConnected: false,
+    chainId: null,
+  });
+
+  // Sync Para SDK state to our wallet state
+  useEffect(() => {
+    const evmAccount = account?.external?.evm;
+    const isEvmConnected = evmAccount?.isConnected && evmAccount?.address;
+    
+    if (isEvmConnected && evmAccount?.address) {
+      const newAddress = evmAccount.address as string;
+      const newChainId = evmAccount.chainId ?? null;
+      
+      // Only update if changed
+      if (!wallet.isConnected || wallet.address !== newAddress || wallet.chainId !== newChainId) {
+        console.log('🔗 Para EVM wallet connected:', newAddress, 'on chain:', newChainId);
+        setWalletState({
+          address: newAddress,
+          isConnected: true,
+          chainId: typeof newChainId === 'number' ? newChainId : null,
+        });
+        
+        // Dispatch wallet-connected event for other components
+        window.dispatchEvent(new CustomEvent('wallet-connected', { 
+          detail: { walletType: 'para', walletAddress: newAddress, chainId: newChainId } 
+        }));
+      }
+    } else if (wallet.isConnected && !isEvmConnected) {
+      // Disconnected
+      console.log('🔌 Para wallet disconnected');
+      setWalletState({
+        address: null,
+        isConnected: false,
+        chainId: null,
+      });
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+    }
+  }, [account?.external?.evm?.isConnected, account?.external?.evm?.address, account?.external?.evm?.chainId, wallet.isConnected, wallet.address, wallet.chainId]);
+
+  const setWallet = useCallback((newWallet: ParaWalletState) => {
+    setWalletState(newWallet);
+  }, []);
+
+  const disconnect = useCallback(() => {
+    setWalletState({
+      address: null,
+      isConnected: false,
+      chainId: null,
+    });
+    localStorage.removeItem('para_wallet_session');
+    window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+  }, []);
+
+  const handleOpenModal = useCallback(() => {
+    openModal();
+  }, [openModal]);
+
+  // Network switching function
+  const switchNetwork = useCallback(async (chainId: number) => {
+    const chain = SUPPORTED_CHAINS.find(c => c.id === chainId);
+    if (!chain) {
+      throw new Error(`Chain ${chainId} not supported`);
+    }
+
+    // Get the provider from window.ethereum (injected by external wallet)
+    const provider = (window as any).ethereum;
+    if (!provider) {
+      throw new Error('No wallet provider found');
+    }
+
+    const chainIdHex = `0x${chainId.toString(16)}`;
+
+    try {
+      // Try to switch to the chain
+      await provider.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: chainIdHex }],
+      });
+      
+      // Update local state
+      setWalletState(prev => ({ ...prev, chainId }));
+      console.log(`✅ Switched to ${chain.name}`);
+    } catch (switchError: any) {
+      // If chain doesn't exist, add it
+      if (switchError.code === 4902) {
+        try {
+          await provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: chainIdHex,
+              chainName: chain.name,
+              rpcUrls: [chain.rpc],
+              nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            }],
+          });
+          setWalletState(prev => ({ ...prev, chainId }));
+        } catch (addError) {
+          console.error('Failed to add chain:', addError);
+          throw addError;
+        }
+      } else {
+        throw switchError;
+      }
+    }
+  }, []);
+
+  return (
+    <ParaContext.Provider value={{ 
+      wallet, 
+      setWallet, 
+      disconnect, 
+      openParaModal: handleOpenModal,
+      closeParaModal: closeModal,
+      isModalOpen: isOpen,
+      isConfigured: true,
+      isLoading: false,
+      switchNetwork,
+    }}>
+      {children}
+    </ParaContext.Provider>
+  );
+};
+
+interface ParaWalletProviderProps {
+  children: ReactNode;
+}
+
+interface ParaConfig {
+  apiKey: string;
+  walletConnectProjectId: string;
+}
 
 export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children }) => {
   const [config, setConfig] = useState<ParaConfig | null>(null);
@@ -120,19 +224,23 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
     fetchConfig();
   }, []);
 
+  // Placeholder context for loading/error states
+  const placeholderContext: ParaContextType = {
+    wallet: { address: null, isConnected: false, chainId: null },
+    setWallet: () => {},
+    disconnect: () => {},
+    openParaModal: () => console.log(isLoading ? 'Para loading...' : 'Para not configured'),
+    closeParaModal: () => {},
+    isModalOpen: false,
+    isConfigured: false,
+    isLoading,
+    switchNetwork: async () => {},
+  };
+
   // Loading state
   if (isLoading) {
     return (
-      <ParaContext.Provider value={{
-        wallet: { address: null, isConnected: false, chainId: null },
-        setWallet: () => {},
-        disconnect: () => {},
-        openParaModal: () => console.log('Para loading...'),
-        closeParaModal: () => {},
-        isModalOpen: false,
-        isConfigured: false,
-        isLoading: true
-      }}>
+      <ParaContext.Provider value={placeholderContext}>
         {children}
       </ParaContext.Provider>
     );
@@ -142,16 +250,7 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
   if (error || !config) {
     console.warn('Para not configured:', error);
     return (
-      <ParaContext.Provider value={{
-        wallet: { address: null, isConnected: false, chainId: null },
-        setWallet: () => {},
-        disconnect: () => {},
-        openParaModal: () => console.warn('Para API key not configured'),
-        closeParaModal: () => {},
-        isModalOpen: false,
-        isConfigured: false,
-        isLoading: false
-      }}>
+      <ParaContext.Provider value={placeholderContext}>
         {children}
       </ParaContext.Provider>
     );
@@ -170,9 +269,8 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
         wallets: [
           "METAMASK" as TExternalWallet,
           "RAINBOW" as TExternalWallet,
-          "WALLET_CONNECT" as TExternalWallet,
           "COINBASE" as TExternalWallet,
-          "PHANTOM" as TExternalWallet,
+          "WALLET_CONNECT" as TExternalWallet,
         ],
         walletConnect: config.walletConnectProjectId ? { projectId: config.walletConnectProjectId } : undefined,
         evmConnector: {
