@@ -2184,8 +2184,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           </div>
                         </div>
                         
-                        {/* Enhanced Result Cards - Consistent stacked layout */}
-                        <div className="space-y-4 will-change-transform">
+                        {/* Enhanced Result Cards - 2-column grid layout */}
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4 will-change-transform">
                           {displayResults.map((result, index) => {
                             const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt';
                             const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
@@ -2193,75 +2193,67 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             return (
                               <div
                                 key={index}
-                                className="group relative bg-gradient-to-br from-background via-background to-background/80 backdrop-blur-md border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-2xl shadow-sm hover:shadow-lg hover:shadow-[#D4AF37]/10 hover:border-[#D4AF37]/60 transition-all duration-300 will-change-transform animate-fade-in overflow-hidden"
-                                style={{ 
-                                  transform: 'translateZ(0)',
-                                  animationDelay: `${index * 60}ms`
-                                }}
+                                className="group relative bg-gradient-to-br from-background via-background to-background/80 border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-xl shadow-sm hover:shadow-md hover:border-[#D4AF37]/60 transition-all duration-200 overflow-hidden"
                               >
-                                {/* Subtle gradient overlay on hover */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                
-                                {/* Card content - stacked layout */}
-                                <div className="relative z-10 p-4 sm:p-5 flex flex-col gap-3">
+                                {/* Card content - compact vertical layout */}
+                                <div className="relative z-10 p-3 sm:p-4 flex flex-col items-center gap-2">
                                   
-                                  {/* Top row: Avatar on left, actions on right */}
-                                  <div className="flex items-center justify-between w-full">
-                                    {/* Avatar with enhanced ring */}
-                                    <div className="relative flex-shrink-0">
-                                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#B8860B] rounded-full blur-sm opacity-50" />
-                                      <img
-                                        src={result.imageUrl || smithCashAvatar}
-                                        alt={fullName}
-                                        className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
-                                        onError={(e) => {
-                                          e.currentTarget.src = smithCashAvatar;
-                                        }}
-                                      />
-                                    </div>
-
-                                    {/* Actions Group */}
-                                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                                      {/* Info Icon */}
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10 transition-all duration-300"
-                                        onClick={() => {
-                                          setDetailViewResult(result);
-                                          setShowDetailView(true);
-                                        }}
-                                      >
-                                        <Info className="h-4 w-4 text-black dark:text-white" />
-                                      </Button>
-
-                                      {/* Coming Soon Badge OR Mint Now Button */}
-                                      {isComingSoon ? (
-                                        <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
-                                          Coming Soon
-                                        </div>
-                                      ) : (
-                                        <Button
-                                          variant="default"
-                                          size="sm"
-                                          className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8860B] hover:from-[#B8860B] hover:to-[#D4AF37] text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap border-0"
-                                          onClick={() => handleMint(result)}
-                                        >
-                                          Mint Now
-                                        </Button>
-                                      )}
-                                    </div>
+                                  {/* Avatar */}
+                                  <div className="relative flex-shrink-0">
+                                    <img
+                                      src={result.imageUrl || smithCashAvatar}
+                                      alt={fullName}
+                                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-[#D4AF37]/50"
+                                      onError={(e) => {
+                                        e.currentTarget.src = smithCashAvatar;
+                                      }}
+                                    />
                                   </div>
 
-                                  {/* Bottom row: Name on left, price on right */}
-                                  <div className="flex items-center justify-between w-full">
-                                    <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight">
+                                  {/* Name and price */}
+                                  <div className="text-center w-full">
+                                    <div className="font-bold text-black dark:text-white text-xs sm:text-sm leading-tight truncate">
                                       <span className="text-[#D4AF37]">{displayQuery}</span>
                                       <span>.{result.name}</span>
                                     </div>
-                                    <div className="font-bold text-black dark:text-white text-sm sm:text-base flex-shrink-0">
-                                      ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
-                                    </div>
+                                    {/* Only show price for non-coming-soon domains */}
+                                    {!isComingSoon && (
+                                      <div className="text-[#D4AF37] text-xs sm:text-sm font-semibold mt-0.5">
+                                        ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Actions row - info icon and button */}
+                                  <div className="flex items-center justify-center gap-2 w-full mt-1">
+                                    {/* Info Icon */}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10"
+                                      onClick={() => {
+                                        setDetailViewResult(result);
+                                        setShowDetailView(true);
+                                      }}
+                                    >
+                                      <Info className="h-3 w-3 sm:h-4 sm:w-4 text-black dark:text-white" />
+                                    </Button>
+
+                                    {/* Coming Soon Badge OR Mint Now Button */}
+                                    {isComingSoon ? (
+                                      <div className="px-2 sm:px-3 py-1 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-[10px] sm:text-xs font-semibold whitespace-nowrap">
+                                        Coming Soon
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="px-2 sm:px-3 py-1 h-7 sm:h-8 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8860B] hover:from-[#B8860B] hover:to-[#D4AF37] text-white text-[10px] sm:text-xs font-semibold whitespace-nowrap border-0"
+                                        onClick={() => handleMint(result)}
+                                      >
+                                        Mint Now
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
                               </div>
