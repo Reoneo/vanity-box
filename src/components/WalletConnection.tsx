@@ -23,7 +23,6 @@ import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
 import { useParaWallet } from '@/contexts/ParaContext';
-import StarBorder from '@/components/StarBorder';
 
 interface User {
   walletAddress?: string;
@@ -487,54 +486,46 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Not connected - show connect button
   if (!user && !petraConnected && !paraWallet.isConnected) {
     return (
-      <StarBorder
-        as="div"
-        color="white"
-        speed="5s"
-        thickness={1}
-        className={className}
+      <Button
+        onClick={() => {
+          const inWorldApp = isWorldAppEnvironment();
+          console.log('🔍 Checking environment...');
+          console.log('  - isTelegramWebView():', isTelegramWebView());
+          console.log('  - isWorldAppEnvironment():', inWorldApp);
+          console.log('  - Para configured:', isParaConfigured);
+          console.log('  - Para loading:', isParaLoading);
+          
+          if (isTelegramWebView()) {
+            console.log('✅ Detected Telegram WebView - connecting TON wallet');
+            handleTelegramConnect();
+          } else if (inWorldApp) {
+            console.log('✅ Detected World App - connecting World ID');
+            handleConnect();
+          } else if (isParaLoading) {
+            console.log('⏳ Para still loading...');
+            toast.info('Loading wallet connection...');
+          } else if (isParaConfigured) {
+            console.log('✅ Web browser - opening Para wallet modal');
+            handleParaConnect();
+          } else {
+            console.warn('⚠️ Para API key not configured');
+            toast.error('Wallet connection not configured. Please contact support.');
+          }
+        }}
+        disabled={isLoading}
+        variant="outline"
+        size="sm"
+        className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
       >
-        <Button
-          onClick={() => {
-            const inWorldApp = isWorldAppEnvironment();
-            console.log('🔍 Checking environment...');
-            console.log('  - isTelegramWebView():', isTelegramWebView());
-            console.log('  - isWorldAppEnvironment():', inWorldApp);
-            console.log('  - Para configured:', isParaConfigured);
-            console.log('  - Para loading:', isParaLoading);
-            
-            if (isTelegramWebView()) {
-              console.log('✅ Detected Telegram WebView - connecting TON wallet');
-              handleTelegramConnect();
-            } else if (inWorldApp) {
-              console.log('✅ Detected World App - connecting World ID');
-              handleConnect();
-            } else if (isParaLoading) {
-              console.log('⏳ Para still loading...');
-              toast.info('Loading wallet connection...');
-            } else if (isParaConfigured) {
-              console.log('✅ Web browser - opening Para wallet modal');
-              handleParaConnect();
-            } else {
-              console.warn('⚠️ Para API key not configured');
-              toast.error('Wallet connection not configured. Please contact support.');
-            }
-          }}
-          disabled={isLoading}
-          variant="outline"
-          size="sm"
-          className="h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold rounded-full"
-        >
-          {isLoading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-              {t('connecting')}
-            </>
-          ) : (
-            t('Connect')
-          )}
-        </Button>
-      </StarBorder>
+        {isLoading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            {t('connecting')}
+          </>
+        ) : (
+          t('Connect')
+        )}
+      </Button>
     );
   }
 
