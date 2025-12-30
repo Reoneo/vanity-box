@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
+import { NetworkSelector } from './NetworkSelector';
 import { SpotifyPauseButton } from './SpotifyPauseButton';
 import vanityLogo from '../assets/vanity-logo.png';
 import vanityContactIcon from '../assets/vanity-contact-icon.png';
@@ -266,8 +267,9 @@ export const Header: React.FC = () => {
           </div>
 
           
-          {/* Wallet Connection - Right Side */}
-          <div className="flex items-center">
+          {/* Network Selector + Wallet Connection - Right Side */}
+          <div className="flex items-center gap-2">
+            <NetworkSelector />
             <WalletConnection />
           </div>
         </div>
