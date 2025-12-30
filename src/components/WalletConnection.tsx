@@ -10,14 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Wallet, LogOut, ChevronDown, Globe } from 'lucide-react';
+import { Wallet, LogOut, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
@@ -106,18 +99,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Recognize Para wallet connection - now driven by Para SDK state
   useEffect(() => {
     if (paraWallet.isConnected && paraWallet.address) {
+      // Always clear ENS when address changes and refetch
       if (walletType !== 'para') {
         setWalletType('para');
-        // Fetch ENS for Para wallet
-        fetchEnsName(paraWallet.address);
-        console.log('✅ Para wallet connected, fetching ENS for:', paraWallet.address);
       }
+      // Clear any cached ENS and fetch fresh for the new address
+      setEnsName(null);
+      fetchEnsName(paraWallet.address);
+      console.log('✅ Para wallet connected, fetching ENS for:', paraWallet.address);
     } else if (walletType === 'para' && !paraWallet.isConnected) {
       // Para disconnected
       setWalletType(null);
       setEnsName(null);
     }
-  }, [paraWallet.isConnected, paraWallet.address, walletType]);
+  }, [paraWallet.isConnected, paraWallet.address]);
 
   useEffect(() => {
     // Check environment on mount
@@ -592,33 +587,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
         
-        {/* Network switcher for Para EVM wallets */}
-        {walletType === 'para' && (
+        {/* Wallet address display for Para wallets */}
+        {walletType === 'para' && paraWallet.address && (
           <>
             <div className="px-3 py-3">
-              <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
-                <Globe className="w-4 h-4" />
-                Network
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Connected Address</div>
+              <div className="text-sm font-mono text-gray-700 dark:text-gray-300 truncate">
+                {paraWallet.address}
               </div>
-              <Select
-                value={paraWallet.chainId?.toString() || '480'}
-                onValueChange={handleNetworkSwitch}
-                disabled={networkSwitching}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select network" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVM_CHAINS.map(chain => (
-                    <SelectItem key={chain.id} value={chain.id.toString()}>
-                      {chain.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {networkSwitching && (
-                <div className="text-xs text-gray-500 mt-1">Switching network...</div>
-              )}
             </div>
             <DropdownMenuSeparator />
           </>
