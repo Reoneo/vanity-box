@@ -23,12 +23,21 @@ serve(async (req) => {
       );
     }
 
-    console.log("Returning Para config (API key present:", !!paraApiKey, ", WC project ID present:", !!walletConnectProjectId, ")");
+    // Validate WalletConnect project ID (should be 32 hex chars)
+    const isValidWcProjectId = walletConnectProjectId && /^[a-f0-9]{32}$/i.test(walletConnectProjectId);
+    
+    if (!walletConnectProjectId) {
+      console.warn("VITE_WALLETCONNECT_PROJECT_ID not configured - WalletConnect will be disabled");
+    } else if (!isValidWcProjectId) {
+      console.warn("VITE_WALLETCONNECT_PROJECT_ID appears invalid (expected 32 hex chars), got:", walletConnectProjectId.length, "chars");
+    }
+
+    console.log("Returning Para config (API key present:", !!paraApiKey, ", WC project ID valid:", isValidWcProjectId, ")");
 
     return new Response(
       JSON.stringify({
         apiKey: paraApiKey,
-        walletConnectProjectId: walletConnectProjectId || "",
+        walletConnectProjectId: isValidWcProjectId ? walletConnectProjectId : "",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
