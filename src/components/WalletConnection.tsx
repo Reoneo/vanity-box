@@ -206,13 +206,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
-  // Handle Para connection with Brave browser warning
+  // Handle Para connection - opens Para modal directly
   const handleParaConnect = () => {
-    if (isBraveBrowser() && isMobileDevice()) {
-      toast.warning('Brave Wallet is not supported on mobile. Please use WalletConnect or Coinbase Wallet.', {
-        duration: 5000,
-      });
-    }
     openParaModal();
   };
 
