@@ -320,19 +320,27 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
     console.warn('⚠️ WalletConnect disabled - missing or invalid projectId');
   }
 
-  // Wallet list: WalletConnect shows all wallets via QR modal, others are direct connections
+  // Full wallet list with all popular options
   const getWalletList = (): TExternalWallet[] => {
-    // WalletConnect is preferred - it shows a modal with ALL wallet options
-    // Users can select any compatible wallet from the WalletConnect modal
-    if (hasValidWcProjectId) {
-      return ["WALLETCONNECT" as TExternalWallet];
-    }
-    // Fallback to individual wallets if WalletConnect is not configured
     return [
-      "METAMASK" as TExternalWallet,
-      "COINBASE" as TExternalWallet,
-      "RAINBOW" as TExternalWallet,
-    ];
+      "METAMASK",
+      "RAINBOW", 
+      "WALLETCONNECT",
+      "COINBASE",
+      "PHANTOM",
+      "ZERION",
+      "SAFE",
+      "RABBY",
+      "OKX",
+      "HAHA",
+      "BACKPACK",
+      "VALORA",
+      "GLOW",
+      "SOLFLARE",
+      "KEPLR",
+      "LEAP",
+      "COSMOSTATION",
+    ] as TExternalWallet[];
   };
 
   return (
@@ -340,9 +348,6 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
       paraClientConfig={{
         apiKey: config.apiKey,
         env: "BETA" as any,
-      }}
-      config={{
-        appName: 'Vanity.box',
       }}
       externalWalletConfig={{
         wallets: getWalletList(),
@@ -352,19 +357,23 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
             chains: [worldChain, mainnet, base, polygon, arbitrum, optimism],
           },
         },
+      } as any}
+      config={{
+        appName: 'Vanity.box',
       }}
       paraModalConfig={{
         logo: "/vanity-box-logo.png",
         theme: {
           borderRadius: "xl",
-          font: "Rubik"
+          font: "Inter"
         },
-        oAuthMethods: [],
+        oAuthMethods: ["GOOGLE", "APPLE"] as any[],
         disableEmailLogin: true,
         disablePhoneLogin: true,
-        authLayout: ["EXTERNAL:FULL" as any],
-        recoverySecretStepEnabled: false,
-        onRampTestMode: false,
+        authLayout: ["EXTERNAL:FULL", "AUTH:FULL"] as any[],
+        recoverySecretStepEnabled: true,
+        hideWallets: false,
+        onRampTestMode: true,
       } as any}
     >
       <ParaWalletStateManager>
