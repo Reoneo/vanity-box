@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { ParaProvider as ParaSDKProvider, useModal, useAccount, useWalletState, useLogout, type TExternalWallet } from "@getpara/react-sdk";
-import { mainnet, polygon, arbitrum, optimism, base } from "wagmi/chains";
+import { mainnet, polygon, arbitrum, optimism, base, type Chain } from "wagmi/chains";
 import "@getpara/react-sdk/styles.css";
 import { callEdge } from '@/lib/supaInvoke';
+import { toast } from 'sonner';
 
 interface ParaWalletState {
   address: string | null;
@@ -32,19 +33,18 @@ export const useParaWallet = () => {
   return context;
 };
 
-// World Chain definition
-const worldChain = {
+// World Chain definition as proper wagmi chain
+const worldChain: Chain = {
   id: 480,
   name: 'World Chain',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
     default: { http: ['https://worldchain-mainnet.g.alchemy.com/public'] },
-    public: { http: ['https://worldchain-mainnet.g.alchemy.com/public'] },
   },
   blockExplorers: {
     default: { name: 'World Chain Explorer', url: 'https://worldchain-mainnet.explorer.alchemy.com' },
   },
-} as const;
+};
 
 // Supported chains configuration
 const SUPPORTED_CHAINS = [
@@ -282,17 +282,35 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
     );
   }
 
-  // Determine wallet list based on environment
-  // Brave mobile doesn't support Brave Wallet well, so exclude it
+  // Determine wallet list based on environment and WalletConnect availability
   const getWalletList = (): TExternalWallet[] => {
-    const baseWallets: TExternalWallet[] = [
-      "WALLETCONNECT" as TExternalWallet,
+    const wallets: TExternalWallet[] = [];
+    
+    // Only add WalletConnect if we have a valid projectId
+    if (config.walletConnectProjectId && config.walletConnectProjectId.length >= 32) {
+      wallets.push("WALLETCONNECT" as TExternalWallet);
+    } else {
+      console.warn('WalletConnect projectId missing or invalid - WalletConnect option hidden');
+    }
+    
+    // Add other wallets
+    wallets.push(
       "COINBASE" as TExternalWallet,
       "METAMASK" as TExternalWallet,
       "RAINBOW" as TExternalWallet,
-    ];
-    return baseWallets;
+    );
+    
+    return wallets;
   };
+
+  // Build WalletConnect config only if projectId is valid
+  const walletConnectConfig = config.walletConnectProjectId && config.walletConnectProjectId.length >= 32
+    ? { projectId: config.walletConnectProjectId }
+    : undefined;
+
+  if (!walletConnectConfig) {
+    console.warn('⚠️ WalletConnect disabled - missing or invalid projectId');
+  }
 
   return (
     <ParaSDKProvider
@@ -305,10 +323,10 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
       }}
       externalWalletConfig={{
         wallets: getWalletList(),
-        walletConnect: config.walletConnectProjectId ? { projectId: config.walletConnectProjectId } : undefined,
+        walletConnect: walletConnectConfig,
         evmConnector: {
           config: {
-            chains: [mainnet, polygon, arbitrum, optimism, base, worldChain],
+            chains: [worldChain, mainnet, base, polygon, arbitrum, optimism],
           },
         },
       }}
