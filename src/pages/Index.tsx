@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { SearchInterface } from '@/components/SearchInterface';
 import { PersonalizedHeader } from '@/components/PersonalizedHeader';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { NetworkSelector } from '@/components/NetworkSelector';
 import SplashCursor from '@/components/SplashCursor';
 import { Sun, Moon } from 'lucide-react';
 import patternTiles from '@/assets/pattern-tiles.jpeg';
@@ -67,14 +68,17 @@ const Index = () => {
               © 2025 vanity.box. All rights reserved.
             </div>
             
-            {/* Theme Toggle on Right */}
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="hover:opacity-70 transition-opacity"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun className="w-6 h-6 text-black" /> : <Moon className="w-6 h-6 text-black" />}
-            </button>
+            {/* Network Selector + Theme Toggle on Right */}
+            <div className="flex items-center gap-2">
+              <NetworkSelector />
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="hover:opacity-70 transition-opacity"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun className="w-6 h-6 text-black" /> : <Moon className="w-6 h-6 text-black" />}
+              </button>
+            </div>
           </div>
         </footer>
       </div>
