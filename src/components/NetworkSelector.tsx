@@ -85,11 +85,11 @@ export const NetworkSelector: React.FC<NetworkSelectorProps> = ({ className }) =
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={isSwitching}
           className={cn(
-            "h-10 px-3 bg-[#1a1a1a] text-white border border-[#333] hover:bg-[#252525] hover:border-[#444] transition-all duration-200 font-medium flex items-center gap-2",
+            "h-7 px-1.5 sm:px-2 bg-transparent hover:bg-black/10 border-none transition-all duration-200 font-medium flex items-center gap-1.5",
             className
           )}
         >
@@ -104,8 +104,8 @@ export const NetworkSelector: React.FC<NetworkSelectorProps> = ({ className }) =
               }
             }}
           />
-          <span className="hidden sm:inline text-sm">{currentChain.name}</span>
-          <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+          <span className="hidden sm:inline text-xs text-black">{currentChain.name}</span>
+          <ChevronDown className="w-3 h-3 text-black opacity-60 hidden sm:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 

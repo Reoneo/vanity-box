@@ -79,6 +79,33 @@ const ParaWalletStateManager: React.FC<{ children: ReactNode }> = ({ children })
     chainId: null,
   });
 
+  // Hide Brave browser warning in Para modal - Brave works perfectly fine
+  useEffect(() => {
+    const hideBraveWarning = () => {
+      const braveWarnings = document.querySelectorAll('p, span, div');
+      braveWarnings.forEach((el) => {
+        if (el.textContent?.includes("Brave Wallet") && el.textContent?.includes("mobile")) {
+          // Find parent container and hide it
+          const container = el.closest('div[class]');
+          if (container && container.parentElement) {
+            (container.parentElement as HTMLElement).style.display = 'none';
+          }
+        }
+      });
+    };
+
+    // Run when modal opens and observe for changes
+    if (isOpen) {
+      const timer = setTimeout(hideBraveWarning, 100);
+      const observer = new MutationObserver(hideBraveWarning);
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => {
+        clearTimeout(timer);
+        observer.disconnect();
+      };
+    }
+  }, [isOpen]);
+
   // Sync Para SDK state to our wallet state
   useEffect(() => {
     const evmAccount = account?.external?.evm;
@@ -338,7 +365,7 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
         authLayout: ["EXTERNAL:FULL" as any],
         recoverySecretStepEnabled: false,
         onRampTestMode: false,
-      }}
+      } as any}
     >
       <ParaWalletStateManager>
         {children}
