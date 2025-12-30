@@ -343,13 +343,13 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
     if (walletType === 'petra') {
       disconnectPetra();
       setWalletType(null);
       setEnsName(null);
     } else if (walletType === 'para') {
-      disconnectPara();
+      await disconnectPara();
       setWalletType(null);
       setEnsName(null);
     } else if (walletType === 'worldchain') {
@@ -555,6 +555,27 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     ? EVM_CHAINS.find(c => c.id === paraWallet.chainId)?.name || `Chain ${paraWallet.chainId}`
     : null;
 
+  // For Para wallets: clicking the button opens Para modal directly (for disconnect/manage)
+  if (walletType === 'para' && paraWallet.isConnected) {
+    return (
+      <Button
+        onClick={() => {
+          console.log('🔄 Opening Para modal for wallet management...');
+          openParaModal();
+        }}
+        variant="outline"
+        size="sm"
+        className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-black hover:border-black hover:text-white transition-all duration-300 font-semibold flex items-center gap-2", className)}
+      >
+        <span className="font-bold text-white truncate max-w-48">
+          {displayUsername}
+        </span>
+        <ChevronDown className="w-4 h-4" />
+      </Button>
+    );
+  }
+
+  // For non-Para wallets (Petra, World App): use dropdown menu
   return (
     <DropdownMenu onOpenChange={(open) => {
       if (open) {
@@ -586,19 +607,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
-        
-        {/* Wallet address display for Para wallets */}
-        {walletType === 'para' && paraWallet.address && (
-          <>
-            <div className="px-3 py-3">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Connected Address</div>
-              <div className="text-sm font-mono text-gray-700 dark:text-gray-300 truncate">
-                {paraWallet.address}
-              </div>
-            </div>
-            <DropdownMenuSeparator />
-          </>
-        )}
         
         {/* Show balance for Petra wallet */}
         {walletType === 'petra' && (

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import { ParaProvider as ParaSDKProvider, useModal, useAccount, useWalletState, type TExternalWallet } from "@getpara/react-sdk";
+import { ParaProvider as ParaSDKProvider, useModal, useAccount, useWalletState, useLogout, type TExternalWallet } from "@getpara/react-sdk";
 import { mainnet, polygon, arbitrum, optimism, base } from "wagmi/chains";
 import "@getpara/react-sdk/styles.css";
 import { callEdge } from '@/lib/supaInvoke';
@@ -13,7 +13,7 @@ interface ParaWalletState {
 interface ParaContextType {
   wallet: ParaWalletState;
   setWallet: (wallet: ParaWalletState) => void;
-  disconnect: () => void;
+  disconnect: () => Promise<void>;
   openParaModal: () => void;
   closeParaModal: () => void;
   isModalOpen: boolean;
@@ -56,11 +56,22 @@ const SUPPORTED_CHAINS = [
   { id: 10, name: 'Optimism', rpc: 'https://mainnet.optimism.io' },
 ];
 
+// Detect if on mobile device
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+// Detect if running in Brave browser
+const isBraveBrowser = (): boolean => {
+  return !!(navigator as any).brave;
+};
+
 // Internal component that uses Para hooks (must be inside ParaSDKProvider)
 const ParaWalletStateManager: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { isOpen, openModal, closeModal } = useModal();
   const account = useAccount();
   const { selectedWallet } = useWalletState();
+  const { logoutAsync, isPending: isLogoutPending } = useLogout();
   
   const [wallet, setWalletState] = useState<ParaWalletState>({
     address: null,
@@ -107,15 +118,30 @@ const ParaWalletStateManager: React.FC<{ children: ReactNode }> = ({ children })
     setWalletState(newWallet);
   }, []);
 
-  const disconnect = useCallback(() => {
-    setWalletState({
-      address: null,
-      isConnected: false,
-      chainId: null,
-    });
-    localStorage.removeItem('para_wallet_session');
-    window.dispatchEvent(new CustomEvent('wallet-disconnected'));
-  }, []);
+  // Use Para SDK's logout hook for proper disconnect
+  const disconnect = useCallback(async () => {
+    try {
+      console.log('🔌 Disconnecting Para wallet via SDK...');
+      await logoutAsync();
+      setWalletState({
+        address: null,
+        isConnected: false,
+        chainId: null,
+      });
+      localStorage.removeItem('para_wallet_session');
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+      console.log('✅ Para wallet disconnected successfully');
+    } catch (error) {
+      console.error('Failed to disconnect Para wallet:', error);
+      // Still clear local state even if SDK logout fails
+      setWalletState({
+        address: null,
+        isConnected: false,
+        chainId: null,
+      });
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+    }
+  }, [logoutAsync]);
 
   const handleOpenModal = useCallback(() => {
     openModal();
@@ -228,7 +254,7 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
   const placeholderContext: ParaContextType = {
     wallet: { address: null, isConnected: false, chainId: null },
     setWallet: () => {},
-    disconnect: () => {},
+    disconnect: async () => {},
     openParaModal: () => console.log(isLoading ? 'Para loading...' : 'Para not configured'),
     closeParaModal: () => {},
     isModalOpen: false,
@@ -256,6 +282,18 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
     );
   }
 
+  // Determine wallet list based on environment
+  // Brave mobile doesn't support Brave Wallet well, so exclude it
+  const getWalletList = (): TExternalWallet[] => {
+    const baseWallets: TExternalWallet[] = [
+      "WALLETCONNECT" as TExternalWallet,
+      "COINBASE" as TExternalWallet,
+      "METAMASK" as TExternalWallet,
+      "RAINBOW" as TExternalWallet,
+    ];
+    return baseWallets;
+  };
+
   return (
     <ParaSDKProvider
       paraClientConfig={{
@@ -266,12 +304,7 @@ export const ParaWalletProvider: React.FC<ParaWalletProviderProps> = ({ children
         appName: 'Vanity.box',
       }}
       externalWalletConfig={{
-        wallets: [
-          "METAMASK" as TExternalWallet,
-          "RAINBOW" as TExternalWallet,
-          "COINBASE" as TExternalWallet,
-          "WALLET_CONNECT" as TExternalWallet,
-        ],
+        wallets: getWalletList(),
         walletConnect: config.walletConnectProjectId ? { projectId: config.walletConnectProjectId } : undefined,
         evmConnector: {
           config: {
