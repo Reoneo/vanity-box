@@ -6,45 +6,18 @@ let isReady = false;
 let installedAppId: string | null = null;
 
 /**
- * Check if we're actually running inside the World App environment
- * This is the source of truth - prevents false positives in regular browsers
- */
-export function isWorldAppEnvironment(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  // Check for World App bridge object
-  const hasWorldApp = typeof (window as any).WorldApp !== 'undefined';
-  
-  // Check user agent for World App
-  const ua = navigator.userAgent || '';
-  const hasWorldAppUA = ua.includes('World App') || ua.includes('WorldApp');
-  
-  return hasWorldApp || hasWorldAppUA;
-}
-
-/**
- * Initialize MiniKit once on app load - ONLY if inside World App
+ * Initialize MiniKit once on app load with retry logic
  */
 export function initMiniKit(appId: string): Promise<void> {
   if (initPromise) return initPromise;
   
   initPromise = (async () => {
-    const inWorldApp = isWorldAppEnvironment();
-    
     console.log("[MiniKit] Starting initialization...", {
       appId,
-      inWorldApp,
       hasWorldApp: typeof (window as any).WorldApp !== "undefined",
       userAgent: navigator.userAgent.includes("World App") || navigator.userAgent.includes("WorldApp"),
       timestamp: new Date().toISOString()
     });
-    
-    // Only install MiniKit if actually in World App
-    if (!inWorldApp) {
-      console.log("[MiniKit] Not in World App environment - skipping installation");
-      isReady = false;
-      return;
-    }
     
     try {
       installedAppId = appId;
@@ -54,7 +27,7 @@ export function initMiniKit(appId: string): Promise<void> {
       const status = getMiniKitStatus();
       console.log("[MiniKit] Initialized successfully", status);
     } catch (e) {
-      console.warn("[MiniKit] Installation failed:", e);
+      console.warn("[MiniKit] Installation failed (may not be in World App):", e);
       isReady = false;
       
       // Retry after 1 second
