@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ParaProvider, useModal, useWalletState, type TExternalWallet } from '@getpara/react-sdk';
-import "@getpara/react-sdk/styles.css";
 import { toast } from "sonner";
 
 // Types for Para wallet state
@@ -18,24 +16,25 @@ interface ParaContextType {
   closeParaModal: () => void;
   switchNetwork: (chainId: number) => Promise<void>;
   isModalOpen: boolean;
+  isReady: boolean;
 }
 
-const ParaContext = createContext<ParaContextType | undefined>(undefined);
-
-export const useParaWallet = () => {
-  const context = useContext(ParaContext);
-  if (!context) {
-    throw new Error('useParaWallet must be used within a ParaWalletProvider');
-  }
-  return context;
+// Default context value that works without Para SDK
+const defaultContextValue: ParaContextType = {
+  wallet: { isConnected: false, address: null, chainId: null, networkName: null },
+  disconnect: async () => {},
+  openParaModal: () => {},
+  closeParaModal: () => {},
+  switchNetwork: async () => {},
+  isModalOpen: false,
+  isReady: false,
 };
 
-// Memoized wallet list - defined outside component
-const WALLET_LIST: TExternalWallet[] = [
-  "METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM",
-  "ZERION", "SAFE", "RABBY", "OKX", "HAHA", "BACKPACK",
-  "VALORA", "GLOW", "SOLFLARE", "KEPLR", "LEAP", "COSMOSTATION"
-];
+const ParaContext = createContext<ParaContextType>(defaultContextValue);
+
+export const useParaWallet = () => {
+  return useContext(ParaContext);
+};
 
 const getNetworkName = (chainId: number | null): string | null => {
   if (!chainId) return null;
@@ -48,6 +47,15 @@ const getNetworkName = (chainId: number | null): string | null => {
 
 const formatAddress = (address: string): string => `${address.slice(0, 6)}...${address.slice(-4)}`;
 
+interface ParaConfig { apiKey: string; walletConnectProjectId: string; }
+
+// Lazy-loaded Para SDK components
+let ParaProvider: any = null;
+let useModal: any = null;
+let useWalletState: any = null;
+let WALLET_LIST: string[] = [];
+
+// Inner component that uses Para SDK hooks - only renders when SDK is loaded
 function ParaWalletStateManager({ children }: { children: React.ReactNode }) {
   const { selectedWallet } = useWalletState();
   const { openModal, closeModal, isOpen } = useModal();
@@ -64,8 +72,8 @@ function ParaWalletStateManager({ children }: { children: React.ReactNode }) {
     if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
 
     updateTimeoutRef.current = setTimeout(() => {
-      const isConnected = !!selectedWallet.address;
-      const newAddress = selectedWallet.address || null;
+      const isConnected = !!selectedWallet?.address;
+      const newAddress = selectedWallet?.address || null;
 
       if (isConnected && !previousConnectedRef.current && newAddress) {
         toast.success('Wallet connected!', { description: `Connected to ${formatAddress(newAddress)}` });
@@ -78,7 +86,7 @@ function ParaWalletStateManager({ children }: { children: React.ReactNode }) {
     }, 50);
 
     return () => { if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current); };
-  }, [selectedWallet.address, selectedWallet.id]);
+  }, [selectedWallet?.address, selectedWallet?.id]);
 
   // Clear session on page unload
   useEffect(() => {
@@ -126,17 +134,42 @@ function ParaWalletStateManager({ children }: { children: React.ReactNode }) {
     openParaModal: () => openModal({}),
     closeParaModal: closeModal,
     switchNetwork, isModalOpen: isOpen,
+    isReady: true,
   }), [wallet, disconnect, openModal, closeModal, switchNetwork, isOpen]);
 
   return <ParaContext.Provider value={contextValue}>{children}</ParaContext.Provider>;
 }
 
-interface ParaConfig { apiKey: string; walletConnectProjectId: string; }
-
 export function ParaWalletProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = useState<ParaConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
+  // Load Para SDK dynamically
+  useEffect(() => {
+    const loadSDK = async () => {
+      try {
+        const sdk = await import('@getpara/react-sdk');
+        await import('@getpara/react-sdk/styles.css');
+        
+        ParaProvider = sdk.ParaProvider;
+        useModal = sdk.useModal;
+        useWalletState = sdk.useWalletState;
+        WALLET_LIST = [
+          "METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM",
+          "ZERION", "SAFE", "RABBY", "OKX", "HAHA", "BACKPACK",
+          "VALORA", "GLOW", "SOLFLARE", "KEPLR", "LEAP", "COSMOSTATION"
+        ];
+        setSdkLoaded(true);
+      } catch (err) {
+        console.error('Failed to load Para SDK:', err);
+        setLoadError(true);
+      }
+    };
+    loadSDK();
+  }, []);
+
+  // Fetch config
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -153,21 +186,28 @@ export function ParaWalletProvider({ children }: { children: React.ReactNode }) 
         console.log('✅ Para config loaded successfully');
       } catch (err) {
         console.error('Failed to load Para config:', err);
-      } finally {
-        setLoading(false);
+        setLoadError(true);
       }
     };
     fetchConfig();
   }, []);
 
-  if (loading || !config) return <>{children}</>;
+  // Not ready yet - render children with default context
+  if (!sdkLoaded || !config || loadError) {
+    return (
+      <ParaContext.Provider value={defaultContextValue}>
+        {children}
+      </ParaContext.Provider>
+    );
+  }
 
+  // SDK and config loaded - render with Para provider
   return (
     <ParaProvider
       paraClientConfig={{ apiKey: config.apiKey, env: "BETA" as any }}
       config={{ appName: "Vanity", disableAutoSessionKeepAlive: true }}
       externalWalletConfig={{
-        wallets: WALLET_LIST,
+        wallets: WALLET_LIST as any,
         walletConnect: { projectId: config.walletConnectProjectId },
       }}
       paraModalConfig={{
