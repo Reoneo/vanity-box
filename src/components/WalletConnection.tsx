@@ -59,7 +59,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
-  const { wallet: paraWallet, setWallet: setParaWallet, disconnect: disconnectPara, openParaModal, isConfigured: isParaConfigured, isLoading: isParaLoading, switchNetwork } = useParaWallet();
+  const { wallet: paraWallet, disconnect: disconnectPara, openParaModal, switchNetwork } = useParaWallet();
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'para' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
@@ -489,27 +489,13 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       <Button
         onClick={() => {
           const inWorldApp = isWorldAppEnvironment();
-          console.log('🔍 Checking environment...');
-          console.log('  - isTelegramWebView():', isTelegramWebView());
-          console.log('  - isWorldAppEnvironment():', inWorldApp);
-          console.log('  - Para configured:', isParaConfigured);
-          console.log('  - Para loading:', isParaLoading);
           
           if (isTelegramWebView()) {
-            console.log('✅ Detected Telegram WebView - connecting TON wallet');
             handleTelegramConnect();
           } else if (inWorldApp) {
-            console.log('✅ Detected World App - connecting World ID');
             handleConnect();
-          } else if (isParaLoading) {
-            console.log('⏳ Para still loading...');
-            toast.info('Loading wallet connection...');
-          } else if (isParaConfigured) {
-            console.log('✅ Web browser - opening Para wallet modal');
-            handleParaConnect();
           } else {
-            console.warn('⚠️ Para API key not configured');
-            toast.error('Wallet connection not configured. Please contact support.');
+            handleParaConnect();
           }
         }}
         disabled={isLoading}
