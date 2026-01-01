@@ -16,6 +16,7 @@ import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import { useDisplayName } from "@/hooks/useDisplayName";
+import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1261,6 +1262,13 @@ export const ProfileCard = ({
                 </>
               )}
             </div>
+
+            {/* World Chain NFTs Section */}
+            {web3BioProfile?.address && !expandedCollection && (
+              <div className="p-4 border-t border-border/30">
+                <WorldchainNFTSection walletAddress={web3BioProfile.address} />
+              </div>
+            )}
 
             {web3BioProfile?.address && !expandedCollection && nfts.length > 0 && (
               <div className="p-4 border-t border-border/30">
