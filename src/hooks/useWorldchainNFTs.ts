@@ -141,8 +141,8 @@ export const useWorldchainNFTs = (walletAddress?: string) => {
     setError(null);
 
     try {
-      const url = `https://world-mainnet.g.alchemy.com/nft/v3/${ALCHEMY_API_KEY}/getNFTsForOwner?owner=${address}&withMetadata=true`;
-      console.log('[useWorldchainNFTs] Fetching NFTs for:', address);
+      const url = `https://worldchain-mainnet.g.alchemy.com/nft/v3/${ALCHEMY_API_KEY}/getNFTsForOwner?owner=${address}&withMetadata=true`;
+      console.log('[useWorldchainNFTs] Fetching NFTs for:', address, 'URL:', url);
 
       const response = await fetch(url);
       
