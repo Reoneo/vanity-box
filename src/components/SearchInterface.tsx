@@ -2253,14 +2253,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                                     </div>
                                   </div>
 
-                                  {/* Bottom row: Name on left, price on right */}
-                                  <div className="flex items-center justify-between w-full">
+                                  {/* Bottom row: Name */}
+                                  <div className="flex items-center w-full">
                                     <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight">
                                       <span className="text-[#D4AF37]">{displayQuery}</span>
                                       <span>.{result.name}</span>
-                                    </div>
-                                    <div className="font-bold text-black dark:text-white text-sm sm:text-base flex-shrink-0">
-                                      ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
                                     </div>
                                   </div>
                                 </div>
