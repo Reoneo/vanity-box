@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useWorldchainNFTs, NFTCollection, getNFTThumbnail } from '@/hooks/useWorldchainNFTs';
+import { useWorldchainNFTs, NFTCollectionGroup, getNFTThumbnail } from '@/hooks/useWorldchainNFTs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw, Image, Grid3X3 } from 'lucide-react';
@@ -11,7 +11,7 @@ interface WorldchainNFTSectionProps {
 
 export const WorldchainNFTSection: React.FC<WorldchainNFTSectionProps> = ({ walletAddress }) => {
   const { collections, isLoading, error, refetch } = useWorldchainNFTs(walletAddress);
-  const [selectedCollection, setSelectedCollection] = useState<NFTCollection | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<NFTCollectionGroup | null>(null);
 
   if (!walletAddress) {
     return null;
