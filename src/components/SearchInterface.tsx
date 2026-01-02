@@ -996,6 +996,38 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           if (web3BioData?.notFound) {
             console.log('⚠️ No profile found on Web3.bio for:', isWalletAddress ? normalizedAddress : trimmedQuery);
             
+            // FALLBACK: For raw wallet addresses, create a minimal profile
+            if (isWalletAddress && normalizedAddress) {
+              console.log('🔄 Creating minimal profile for wallet address:', normalizedAddress);
+              
+              const minimalWalletProfile = {
+                displayName: null,
+                address: normalizedAddress,
+                avatar: null,
+                description: null,
+                platform: 'ethereum',
+                identity: normalizedAddress,
+                links: {},
+              };
+              
+              setWeb3BioProfile(minimalWalletProfile);
+              setEnsResults([]);
+              
+              // Fetch EFP stats for the wallet
+              supabase.functions.invoke('get-efp-stats', {
+                body: { address: normalizedAddress }
+              }).then(({ data: efpData }) => {
+                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                  console.log('✅ EFP stats loaded for wallet:', efpData);
+                  setEfpStats(efpData);
+                }
+              }).catch(err => console.log('EFP stats fetch failed:', err));
+              
+              fetchNfts(normalizedAddress);
+              setIsLoading(false);
+              return;
+            }
+            
             // FALLBACK: For L2 ENS subdomains (.eth, .world.id), try Namestone lookup
             if (isL2EnsSubdomain) {
               console.log('🔄 Web3.bio returned 404, falling back to Namestone for L2 subdomain:', normalizedQuery);
