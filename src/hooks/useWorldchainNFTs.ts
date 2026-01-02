@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_KEY || 'xS-IOsOoHPRcPLfUNNNCZB8fUQ8rg2g7';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Alchemy v3 API response types for World Chain
@@ -155,12 +155,6 @@ export const useWorldchainNFTs = (walletAddress?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchNFTs = useCallback(async (address: string, skipCache = false) => {
-    if (!ALCHEMY_API_KEY) {
-      console.warn('[useWorldchainNFTs] No API key configured');
-      setError('Alchemy API key not configured');
-      return;
-    }
-
     // Check cache first
     if (!skipCache) {
       const cached = getFromCache(address);
@@ -176,27 +170,22 @@ export const useWorldchainNFTs = (walletAddress?: string) => {
     setError(null);
 
     try {
-      // Alchemy v3 API for World Chain Mainnet
-      const url = `https://worldchain-mainnet.g.alchemy.com/nft/v3/${ALCHEMY_API_KEY}/getNFTsForOwner?owner=${address}&withMetadata=true&pageSize=100`;
-      console.log('[useWorldchainNFTs] Fetching NFTs for:', address);
+      console.log('[useWorldchainNFTs] Fetching World Chain NFTs for:', address);
 
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[useWorldchainNFTs] API error response:', errorText);
-        throw new Error(`Alchemy API error: ${response.status}`);
+      const { data, error: fnError } = await supabase.functions.invoke('get-worldchain-nfts', {
+        body: { walletAddress: address, pageSize: 100 },
+      });
+
+      if (fnError) {
+        console.error('[useWorldchainNFTs] Edge function error:', fnError);
+        throw new Error('Failed to fetch World Chain NFTs');
       }
 
-      const data = await response.json();
-      console.log('[useWorldchainNFTs] Raw response:', data);
-      
-      // Alchemy v3 returns ownedNfts array
-      const ownedNfts: WorldchainNFT[] = data.ownedNfts || [];
-      
+      const ownedNfts: WorldchainNFT[] = (data?.ownedNfts as WorldchainNFT[]) || [];
+
       // Filter out spam NFTs
-      const validNfts = ownedNfts.filter(nft => !nft.contract?.isSpam);
-      
+      const validNfts = ownedNfts.filter((nft) => !nft.contract?.isSpam);
+
       console.log('[useWorldchainNFTs] Found', validNfts.length, 'valid NFTs');
 
       setToCache(address, validNfts);
