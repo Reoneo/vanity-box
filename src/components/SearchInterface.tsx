@@ -324,6 +324,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setNftNextCursor(null);
       setLatestCast(null);
       setPoapTokens([]);
+      // Reset detail view to fix glitch when loading new profile
+      setShowDetailView(false);
+      setDetailViewResult(null);
     }
   }, [web3BioProfile]);
 
@@ -728,6 +731,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setShowFilterDropdown(false);
     setShowSearchBar(false); // Close search overlay immediately when search begins
     setIsHomepage(false);
+    // Reset detail view state to fix glitch
+    setShowDetailView(false);
+    setDetailViewResult(null);
 
     // Prevent searches with spaces
     if (trimmedQuery.includes(" ")) {
@@ -988,6 +994,44 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
           if (web3BioError) {
             console.error('❌ Web3.bio unified lookup error:', web3BioError);
+            
+            // FALLBACK: For L2 ENS subdomains (.eth, .world.id), try Namestone on error/timeout
+            if (isL2EnsSubdomain) {
+              console.log('🔄 Web3.bio error, falling back to Namestone for L2 subdomain:', normalizedQuery);
+              
+              try {
+                const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-ens-subdomain-profile', {
+                  body: { subdomain: normalizedQuery }
+                });
+                
+                if (!namestoneError && namestoneData && namestoneData.address) {
+                  console.log('✅ Namestone fallback succeeded on error:', namestoneData);
+                  setWeb3BioProfile(namestoneData);
+                  setEnsResults([]);
+                  
+                  if (namestoneData.ensRecords) {
+                    setEnsRecords(namestoneData.ensRecords);
+                  }
+                  
+                  // Fetch EFP stats
+                  if (namestoneData.address) {
+                    supabase.functions.invoke('get-efp-stats', {
+                      body: { address: namestoneData.address }
+                    }).then(({ data: efpData }) => {
+                      if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                        setEfpStats(efpData);
+                      }
+                    }).catch(err => console.log('EFP stats fetch failed:', err));
+                  }
+                  
+                  setIsLoading(false);
+                  return;
+                }
+              } catch (fallbackErr) {
+                console.error('❌ Namestone fallback also failed:', fallbackErr);
+              }
+            }
+            
             toast.error("Profile lookup failed. Please try again.");
             setIsLoading(false);
             return;
@@ -1777,6 +1821,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setPoapTokens([]);
                           setActiveDockSection('profile');
                           setIsHomepage(true);
+                          // Reset detail view state to fix glitch
+                          setShowDetailView(false);
+                          setDetailViewResult(null);
                         },
                         isActive: false,
                       }] : []),
@@ -1796,19 +1843,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         },
                         isActive: activeDockSection === 'profile',
                       },
-                      {
+                      // Only show Edit pencil when viewing own profile
+                      ...(walletAddress && web3BioProfile?.address && 
+                         walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase() ? [{
                         icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
                         label: 'Edit',
                         onClick: () => {
-                          if (!walletAddress) {
-                            toast.error('Please connect your wallet first');
-                            return;
-                          }
                           setShowMyIDs(true);
                           setActiveDockSection('profile');
                         },
                         isActive: false,
-                      },
+                      }] : []),
                       // Search icon on far right
                       {
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
@@ -2131,6 +2176,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         setDisplayQuery('');
                         setSearchQuery('');
                         setIsHomepage(true);
+                        // Reset detail view state to fix glitch
+                        setShowDetailView(false);
+                        setDetailViewResult(null);
                       },
                       isActive: false,
                     }] : []),
@@ -2144,19 +2192,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           // Use ENS name if available, otherwise fall back to wallet address
                           const searchIdentifier = connectedUsername || walletAddress;
                           handleSearch(searchIdentifier);
-                        }
-                      },
-                      isActive: false,
-                    },
-                    {
-                      icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
-                      label: 'My IDs',
-                      onClick: () => {
-                        if (walletAddress) {
-                          setShowMyIDs(true);
-                          setActiveDockSection('profile');
-                        } else {
-                          toast.error('Please connect your wallet first');
                         }
                       },
                       isActive: false,
