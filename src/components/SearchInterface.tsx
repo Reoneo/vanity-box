@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   X,
@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -174,6 +174,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
+  const location = useLocation();
+  const searchIdRef = useRef(0); // Prevent stale searches
   const [searchQuery, setSearchQuery] = useState("");
 
   // Function to remove underscores from input
@@ -329,6 +331,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setDetailViewResult(null);
     }
   }, [web3BioProfile]);
+
+  // Auto-close detail view on route/location changes
+  useEffect(() => {
+    setShowDetailView(false);
+    setDetailViewResult(null);
+  }, [location.pathname]);
 
   // Preload EFP lists in background when profile loads
   useEffect(() => {
@@ -833,328 +841,144 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       }
     }
 
-    // If query contains a dot OR is a wallet address, try fetching profile
+    // If query contains a dot OR is a wallet address, try fetching profile using unified resolver
     if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
-      // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
-
-      // NEW: Web3.bio-compatible identities (ENS, .box, .world.id, wallet addresses)
-      const web3BioCompatible = ['.eth', '.box', '.world.id'];
-      const isWeb3BioCompatible = web3BioCompatible.some(tld => normalizedQuery.endsWith(tld)) || isWalletAddress;
+      const currentSearchId = ++searchIdRef.current;
       
-      // Check for .hl (Hyperliquid) domain
-      const isHlDomain = normalizedQuery.endsWith('.hl');
+      console.log(`🔍 Using resolve-profile for: ${isWalletAddress ? normalizedAddress : normalizedQuery}`);
       
-      // Namestone-only TLDs (not indexed by Web3.bio)
-      // Note: .world.id is excluded from .world matching since it's a Web3.bio-compatible ENS domain
-      const namestoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
-      const isNamestoneTLD = namestoneTLDs.some(tld => normalizedQuery.endsWith(tld)) && !normalizedQuery.endsWith('.world.id');
-      
-      // Check for subdomains (2+ dots)
-      const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
-      const isSubdomain = dotCount >= 2; // e.g., test321.spyda.eth has 2 dots
-      // L2 subdomains need Namestone fallback (.eth and .world.id are ENS-compatible but on L2)
-      const isEthSubdomain = isSubdomain && normalizedQuery.endsWith('.eth');
-      const isWorldIdSubdomain = isSubdomain && normalizedQuery.endsWith('.world.id');
-      const isL2EnsSubdomain = isEthSubdomain || isWorldIdSubdomain;
-      const isNamestoneSubdomain = isSubdomain && !isWeb3BioCompatible;
-      const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
-      
-      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Is L2 ENS Subdomain: ${isL2EnsSubdomain}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}, Is HL: ${isHlDomain}`);
-
-      // Use different fetch strategies based on name type
-      if (isHlDomain) {
-        // HLN (Hyperliquid Names) domain lookup
-        console.log('🔗 Fetching .hl domain profile for:', normalizedQuery);
-        try {
-          const { data, error } = await supabase.functions.invoke('resolve-hl-domain', {
-            body: { domain: normalizedQuery }
-          });
-
-          if (error) {
-            console.error('❌ Error fetching .hl domain profile:', error);
-            toast.error('Failed to resolve .hl domain');
-            setIsLoading(false);
-            return;
-          }
-          
-          if (data?.notFound || !data?.address) {
-            console.log('⚠️ .hl domain not found:', normalizedQuery);
-            toast.error('Domain not found');
-            setIsLoading(false);
-            return;
-          }
-
-          console.log('✅ .hl domain resolved:', data);
-          
-          // Now fetch the full profile via Web3.bio using the resolved wallet address
-          const { data: web3BioData, error: web3BioError } = await supabase.functions.invoke('web3bio-profile', {
-            body: { identity: data.address }
-          });
-
-          if (web3BioError || web3BioData?.notFound) {
-            // If Web3.bio fails, create a minimal profile from HLN data
-            const hlProfile = {
-              displayName: data.domain,
-              address: data.address,
-              avatar: data.avatar || null,
-              description: null,
-              platform: 'hyperliquid',
-              identity: data.domain,
-              hlDomain: data.domain, // Store original .hl domain
-              hlNfts: data.nfts || [],
-              hlTokens: data.tokens || [],
-            };
-            setWeb3BioProfile(hlProfile);
-            setEnsResults([]);
-            setIsLoading(false);
-          } else if (web3BioData?.profile) {
-            // Merge Web3.bio profile with HLN data, preserving the .hl domain display
-            const mergedProfile = {
-              ...web3BioData.profile,
-              hlDomain: data.domain, // Store original .hl domain to display
-              hlNfts: data.nfts || [],
-              hlTokens: data.tokens || [],
-            };
-            setWeb3BioProfile(mergedProfile);
-            setEnsResults([]);
-            setIsLoading(false);
-            
-            // Fetch EFP stats for the resolved address
-            if (data.address) {
-              supabase.functions.invoke('get-efp-stats', {
-                body: { address: data.address }
-              }).then(({ data: efpData }) => {
-                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-                  console.log('✅ EFP stats loaded for .hl profile:', efpData);
-                  setEfpStats(efpData);
-                }
-              }).catch(err => console.log('EFP stats fetch failed:', err));
-              
-              // Fetch NFTs
-              fetchNfts(data.address);
-            }
-          }
-        } catch (error) {
-          console.log('❌ Failed to fetch .hl domain profile:', error);
-          toast.error('Failed to resolve .hl domain');
-          setIsLoading(false);
-        }
-      } else if (isNamestoneDomain) {
-        // Direct Namestone lookup for Namestone TLDs and subdomains
-        console.log('🔗 Fetching Namestone domain profile for:', normalizedQuery);
-        try {
-          const { data, error } = await supabase.functions.invoke('get-ens-subdomain-profile', {
-            body: { subdomain: normalizedQuery }
-          });
-
-          if (error) {
-            console.error('❌ Error fetching Namestone domain profile:', error);
-            setIsLoading(false);
-          } else if (data && !data.error) {
-            console.log('✅ Namestone domain profile found:', data);
-            setWeb3BioProfile(data);
-            setEnsResults([]);
-            
-            if (data.ensRecords) {
-              setEnsRecords(data.ensRecords);
-            }
-            
-            // Fetch EFP stats for Namestone profiles
-            if (data.address) {
-              supabase.functions.invoke('get-efp-stats', {
-                body: { address: data.address }
-              }).then(({ data: efpData }) => {
-                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-                  console.log('✅ EFP stats loaded for Namestone profile:', efpData);
-                  setEfpStats(efpData);
-                }
-              }).catch(err => console.log('EFP stats fetch failed:', err));
-            }
-            
-            setIsLoading(false);
-          } else {
-            // No valid profile found
-            setIsLoading(false);
-          }
-        } catch (error) {
-          console.log('❌ Failed to fetch Namestone domain profile:', error);
-          setIsLoading(false);
-        }
-      } else {
-        // Web3.bio unified lookup for .eth, .box domains and wallet addresses
-        const queryType = isWalletAddress ? 'wallet address (reverse lookup)' : isWeb3BioCompatible ? 'Web3.bio-compatible domain' : 'domain';
-        console.log(`🔍 Using unified Web3.bio profile lookup for ${queryType}:`, isWalletAddress ? normalizedAddress : trimmedQuery);
-        try {
-          const { data: web3BioData, error: web3BioError } = await supabase.functions.invoke('web3bio-profile', {
-            body: { identity: isWalletAddress ? normalizedAddress : normalizedQuery }
-          });
-
-          console.log('📥 Web3.bio response:', { data: web3BioData, error: web3BioError });
-
-          if (web3BioError) {
-            console.error('❌ Web3.bio unified lookup error:', web3BioError);
-            
-            // FALLBACK: For L2 ENS subdomains (.eth, .world.id), try Namestone on error/timeout
-            if (isL2EnsSubdomain) {
-              console.log('🔄 Web3.bio error, falling back to Namestone for L2 subdomain:', normalizedQuery);
-              
-              try {
-                const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-ens-subdomain-profile', {
-                  body: { subdomain: normalizedQuery }
-                });
-                
-                if (!namestoneError && namestoneData && namestoneData.address) {
-                  console.log('✅ Namestone fallback succeeded on error:', namestoneData);
-                  setWeb3BioProfile(namestoneData);
-                  setEnsResults([]);
-                  
-                  if (namestoneData.ensRecords) {
-                    setEnsRecords(namestoneData.ensRecords);
-                  }
-                  
-                  // Fetch EFP stats
-                  if (namestoneData.address) {
-                    supabase.functions.invoke('get-efp-stats', {
-                      body: { address: namestoneData.address }
-                    }).then(({ data: efpData }) => {
-                      if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-                        setEfpStats(efpData);
-                      }
-                    }).catch(err => console.log('EFP stats fetch failed:', err));
-                  }
-                  
-                  setIsLoading(false);
-                  return;
-                }
-              } catch (fallbackErr) {
-                console.error('❌ Namestone fallback also failed:', fallbackErr);
-              }
-            }
-            
-            toast.error("Profile lookup failed. Please try again.");
-            setIsLoading(false);
-            return;
-          }
-
-          if (web3BioData?.notFound) {
-            console.log('⚠️ No profile found on Web3.bio for:', isWalletAddress ? normalizedAddress : trimmedQuery);
-            
-            // FALLBACK: For raw wallet addresses, create a minimal profile
-            if (isWalletAddress && normalizedAddress) {
-              console.log('🔄 Creating minimal profile for wallet address:', normalizedAddress);
-              
-              const minimalWalletProfile = {
-                displayName: null,
-                address: normalizedAddress,
-                avatar: null,
-                description: null,
-                platform: 'ethereum',
-                identity: normalizedAddress,
-                links: {},
-              };
-              
-              setWeb3BioProfile(minimalWalletProfile);
-              setEnsResults([]);
-              
-              // Fetch EFP stats for the wallet
-              supabase.functions.invoke('get-efp-stats', {
-                body: { address: normalizedAddress }
-              }).then(({ data: efpData }) => {
-                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-                  console.log('✅ EFP stats loaded for wallet:', efpData);
-                  setEfpStats(efpData);
-                }
-              }).catch(err => console.log('EFP stats fetch failed:', err));
-              
-              fetchNfts(normalizedAddress);
-              setIsLoading(false);
-              return;
-            }
-            
-            // FALLBACK: For L2 ENS subdomains (.eth, .world.id), try Namestone lookup
-            if (isL2EnsSubdomain) {
-              console.log('🔄 Web3.bio returned 404, falling back to Namestone for L2 subdomain:', normalizedQuery);
-              
-              const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-ens-subdomain-profile', {
-                body: { subdomain: normalizedQuery }
-              });
-              
-              if (!namestoneError && namestoneData && namestoneData.address) {
-                console.log('✅ Namestone fallback succeeded:', namestoneData);
-                setWeb3BioProfile(namestoneData);
-                setEnsResults([]);
-                
-                if (namestoneData.ensRecords) {
-                  setEnsRecords(namestoneData.ensRecords);
-                }
-                
-                // Fetch EFP stats and NFTs for the resolved address
-                if (namestoneData.address) {
-                  supabase.functions.invoke('get-efp-stats', {
-                    body: { address: namestoneData.address }
-                  }).then(({ data: efpData }) => {
-                    if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-                      console.log('✅ EFP stats loaded for Namestone fallback:', efpData);
-                      setEfpStats(efpData);
-                    }
-                  }).catch(err => console.log('EFP stats fetch failed:', err));
-                  
-                  fetchNfts(namestoneData.address);
-                }
-                
-                setIsLoading(false);
-                return;
-              } else {
-                console.log('❌ Namestone fallback also failed:', namestoneError);
-              }
-            }
-            
-            toast.error('No profile found for this identity');
-            setIsLoading(false);
-            return;
-          }
-
-          if (web3BioData?.profile) {
-            console.log('✅ Web3.bio profile data:', web3BioData.profile);
-            console.log('📋 Available platforms:', web3BioData.platforms);
-            
-            // Validate that profile has a wallet address
-            if (!web3BioData.profile.address) {
-              console.log('⚠️ Profile found but no wallet address - not displaying');
-              toast.error('Profile found but no wallet address associated');
-              setIsLoading(false);
-              return;
-            }
-            
-            // Set profile first so other fetches can use it
-            setWeb3BioProfile(web3BioData.profile);
-            setEnsResults([]);
-            setIsLoading(false);
-            
-            // Fetch additional data for Dock (non-blocking)
-            if (web3BioData.profile.address) {
-              // Fetch EFP stats
-              supabase.functions.invoke('get-efp-stats', {
-                body: { address: web3BioData.profile.address }
-              }).then(({ data: efpData }) => {
-                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-                  console.log('✅ EFP stats loaded:', efpData);
-                  setEfpStats(efpData);
-                }
-              }).catch(err => console.log('EFP stats fetch failed:', err));
-              
-              fetchNfts(web3BioData.profile.address);
-            }
-          } else {
-            console.log('ℹ️ Profile not found');
-            setIsLoading(false);
-          }
-        } catch (error) {
-          console.log("Web3.bio profile lookup failed:", error);
-          toast.error("Profile lookup failed. Please try again.");
-          setIsLoading(false);
+      try {
+        // Use the unified resolve-profile edge function with client-side timeout
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Profile lookup timed out')), 20000)
+        );
+        
+        const resolverPromise = supabase.functions.invoke('resolve-profile', {
+          body: { identity: isWalletAddress ? normalizedAddress : normalizedQuery }
+        });
+        
+        const { data: resolverData, error: resolverError } = await Promise.race([
+          resolverPromise,
+          timeoutPromise.then(() => { throw new Error('timeout'); })
+        ]) as { data: any; error: any };
+        
+        // Check if this search is still current
+        if (searchIdRef.current !== currentSearchId) {
+          console.log('🚫 Search result discarded - newer search started');
           return;
+        }
+        
+        console.log('📥 resolve-profile response:', { 
+          ok: resolverData?.ok, 
+          source: resolverData?.source, 
+          error: resolverError,
+          debug: resolverData?.debug 
+        });
+        
+        if (resolverError) {
+          console.error('❌ resolve-profile error:', resolverError);
+          toast.error("Profile lookup failed. Please try again.");
+          return;
+        }
+        
+        if (!resolverData?.ok || !resolverData?.profile) {
+          console.log('⚠️ No profile found:', resolverData?.notFound ? 'not found' : 'unknown error');
+          
+          // For wallet addresses, create minimal profile even if resolver fails
+          if (isWalletAddress && normalizedAddress) {
+            console.log('🔄 Creating minimal profile for wallet address:', normalizedAddress);
+            const minimalProfile = {
+              displayName: null,
+              address: normalizedAddress,
+              avatar: null,
+              description: null,
+              platform: 'ethereum',
+              identity: normalizedAddress,
+              links: {},
+            };
+            setWeb3BioProfile(minimalProfile);
+            setEnsResults([]);
+            
+            // Fetch EFP stats and NFTs
+            supabase.functions.invoke('get-efp-stats', {
+              body: { address: normalizedAddress }
+            }).then(({ data: efpData }) => {
+              if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                setEfpStats(efpData);
+              }
+            }).catch(() => {});
+            
+            fetchNfts(normalizedAddress);
+          } else if (!resolverData?.notFound) {
+            toast.error("Profile lookup failed. Please try again.");
+          }
+          return;
+        }
+        
+        // Profile found - set it
+        const profile = resolverData.profile;
+        console.log('✅ Profile loaded:', { 
+          source: resolverData.source, 
+          identity: profile.identity,
+          address: profile.address 
+        });
+        
+        setWeb3BioProfile(profile);
+        setEnsResults([]);
+        
+        if (profile.ensRecords) {
+          setEnsRecords(profile.ensRecords);
+        }
+        
+        // Fetch additional data for Dock (non-blocking)
+        if (profile.address) {
+          // Fetch EFP stats
+          supabase.functions.invoke('get-efp-stats', {
+            body: { address: profile.address }
+          }).then(({ data: efpData }) => {
+            if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+              console.log('✅ EFP stats loaded:', efpData);
+              setEfpStats(efpData);
+            }
+          }).catch(err => console.log('EFP stats fetch failed:', err));
+          
+          // Fetch NFTs
+          fetchNfts(profile.address);
+        }
+      } catch (error: any) {
+        // Check if this search is still current
+        if (searchIdRef.current !== currentSearchId) {
+          console.log('🚫 Error discarded - newer search started');
+          return;
+        }
+        
+        console.log("❌ Profile lookup failed:", error?.message || error);
+        
+        // For wallet addresses, create minimal profile on timeout/error
+        if (isWalletAddress && normalizedAddress) {
+          console.log('🔄 Timeout/error fallback: Creating minimal profile for wallet');
+          const minimalProfile = {
+            displayName: null,
+            address: normalizedAddress,
+            avatar: null,
+            description: null,
+            platform: 'ethereum',
+            identity: normalizedAddress,
+            links: {},
+          };
+          setWeb3BioProfile(minimalProfile);
+          setEnsResults([]);
+          fetchNfts(normalizedAddress);
+        } else {
+          toast.error("Profile lookup timed out. Please try again.");
+        }
+        return;
+      } finally {
+        // Always set loading to false when profile resolution completes or fails
+        if (searchIdRef.current === currentSearchId) {
+          // Profile resolution done - continue to subdomain checks if needed
+          // setIsLoading will be set to false after subdomain checks complete
         }
       }
     }
