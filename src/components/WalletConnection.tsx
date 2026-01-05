@@ -15,14 +15,17 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
 import tonLogo from '@/assets/ton-logo.png';
+import ethLogo from '@/assets/eth-logo-dark.png';
 import petraIcon from '@/assets/petra-icon.png';
 import { isTelegramWebView, getTelegramUser } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { useAccount, useDisconnect } from 'wagmi';
 
-interface User {
+interface WalletUser {
   walletAddress?: string;
   username?: string;
 }
@@ -33,17 +36,22 @@ interface WalletConnectionProps {
 
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
   const { t } = useLanguage();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<WalletUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
-  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | null>(null);
+  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'walletconnect' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensLoading, setEnsLoading] = useState(false);
+  
+  // Web3Modal / WalletConnect hooks
+  const { open: openWeb3Modal } = useWeb3Modal();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -72,6 +80,35 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       }
     }
   }, [petraConnected, petraAccount, petraNetwork]);
+
+  // Handle WalletConnect / Web3Modal connection state changes
+  useEffect(() => {
+    if (wagmiConnected && wagmiAddress && !user && !petraConnected) {
+      console.log('✅ WalletConnect connected:', wagmiAddress);
+      const userData = {
+        walletAddress: wagmiAddress,
+        username: formatAddress(wagmiAddress)
+      };
+      setUser(userData);
+      setWalletType('walletconnect');
+      
+      // Fetch ENS name for connected wallet
+      fetchEnsName(wagmiAddress);
+      
+      // Dispatch event for Index component
+      window.dispatchEvent(new CustomEvent('wallet-connected', { 
+        detail: { ...userData, walletType: 'walletconnect' } 
+      }));
+      
+      toast.success('Wallet connected!');
+    } else if (!wagmiConnected && walletType === 'walletconnect') {
+      // WalletConnect disconnected
+      setUser(null);
+      setWalletType(null);
+      setEnsName(null);
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+    }
+  }, [wagmiConnected, wagmiAddress]);
 
   useEffect(() => {
     // Check environment on mount
@@ -296,10 +333,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       disconnectPetra();
       setWalletType(null);
       setEnsName(null);
-    setEnsName(null);
+    } else if (walletType === 'walletconnect') {
+      wagmiDisconnect();
+      setUser(null);
+      setWalletType(null);
+      setEnsName(null);
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     } else if (walletType === 'worldchain') {
       setUser(null);
       setWalletType(null);
+      setEnsName(null);
       sessionStorage.setItem('skipAutoAuth', '1');
       window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     }
@@ -416,7 +459,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   // Not connected - show connect button
-  if (!user && !petraConnected) {
+  if (!user && !petraConnected && !wagmiConnected) {
     return (
       <Button
         onClick={() => {
@@ -434,9 +477,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
-            console.log('✅ Desktop browser - redirecting to World App ecosystem');
-            // Redirect to World App instead of connecting Petra
-            window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+            // Desktop/mobile browser - open Web3Modal for WalletConnect
+            console.log('✅ Browser detected - opening Web3Modal for wallet connection');
+            openWeb3Modal();
           }
         }}
         disabled={isLoading}
@@ -459,11 +502,21 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Get display info based on wallet type
   const displayAddress = walletType === 'petra' && petraAccount 
     ? petraAccount.address 
+    : walletType === 'walletconnect' && wagmiAddress
+    ? wagmiAddress
     : user?.walletAddress || '';
-  const displayUsername = walletType === 'petra' 
+  const displayUsername = ensName 
+    ? ensName 
+    : walletType === 'petra' 
     ? formatAddress(petraAccount?.address || '')
+    : walletType === 'walletconnect' && wagmiAddress
+    ? formatAddress(wagmiAddress)
     : user?.username || formatAddress(user?.walletAddress || '');
-  const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
+  const walletIcon = walletType === 'petra' 
+    ? petraIcon 
+    : walletType === 'walletconnect' 
+    ? ethLogo 
+    : wldLogo;
 
   return (
     <DropdownMenu onOpenChange={(open) => {
