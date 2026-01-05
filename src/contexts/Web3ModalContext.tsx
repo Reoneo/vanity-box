@@ -1,9 +1,22 @@
 import { ReactNode } from 'react';
 import { createWeb3Modal } from '@web3modal/wagmi/react';
 import { http, createConfig, WagmiProvider } from 'wagmi';
-import { mainnet, worldchain } from 'wagmi/chains';
+import { mainnet } from 'wagmi/chains';
 import { walletConnect, injected, coinbaseWallet } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Define worldchain manually to ensure compatibility
+const worldchain = {
+  id: 480,
+  name: 'World Chain',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://worldchain-mainnet.g.alchemy.com/public'] },
+  },
+  blockExplorers: {
+    default: { name: 'World Chain Explorer', url: 'https://worldscan.org' },
+  },
+} as const;
 
 // Get WalletConnect project ID from environment
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
@@ -19,7 +32,7 @@ const metadata = {
   icons: ['https://vanity.box/vanity-box-logo.png']
 };
 
-// Define supported chains - mainnet and worldchain
+// Define supported chains
 const chains = [mainnet, worldchain] as const;
 
 // Create wagmi config with connectors
@@ -27,7 +40,7 @@ const config = createConfig({
   chains,
   transports: {
     [mainnet.id]: http(),
-    [worldchain.id]: http(),
+    [worldchain.id]: http('https://worldchain-mainnet.g.alchemy.com/public'),
   },
   connectors: [
     walletConnect({ projectId, metadata, showQrModal: false }),
