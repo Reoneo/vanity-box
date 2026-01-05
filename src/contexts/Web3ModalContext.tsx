@@ -5,7 +5,7 @@ import { mainnet } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // --- Define World Chain manually (wagmi "Chain" compatible) ---
-const worldchain = {
+export const worldchain = {
   id: 480,
   name: "World Chain",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
@@ -18,15 +18,14 @@ const worldchain = {
 } as const;
 
 // --- WalletConnect Project ID (REQUIRED) ---
-// IMPORTANT: If this is empty, Web3Modal hooks will throw.
-// We fail fast so you see the real problem immediately.
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string;
+export const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string;
+
 if (!projectId) {
   throw new Error("Missing VITE_WALLETCONNECT_PROJECT_ID. Add it to your .env (and redeploy) to use Web3Modal.");
 }
 
 // --- App metadata for WalletConnect ---
-const metadata = {
+export const metadata = {
   name: "Vanity.box",
   description: "Your Web3 Identity Hub - Manage ENS, World ID, and blockchain domains",
   url: "https://vanity.box",
@@ -34,14 +33,19 @@ const metadata = {
 };
 
 // --- Supported chains ---
-const chains = [mainnet, worldchain] as const;
+export const chains = [mainnet, worldchain] as const;
 
 // --- Wagmi config (wagmi v2) ---
-const wagmiConfig = defaultWagmiConfig({
+// Use defaultWagmiConfig (recommended by Web3Modal) and specify transports.
+export const wagmiConfig = defaultWagmiConfig({
   chains,
   projectId,
   metadata,
   ssr: false,
+  transports: {
+    [mainnet.id]: undefined, // uses Web3Modal/WC defaults
+    [worldchain.id]: worldchain.rpcUrls.default.http[0],
+  },
 });
 
 // --- Web3Modal must be created ONCE at module load (before hooks are used) ---
@@ -71,5 +75,3 @@ export const Web3ModalProvider = ({ children }: Web3ModalProviderProps) => {
     </WagmiProvider>
   );
 };
-
-export { wagmiConfig };
