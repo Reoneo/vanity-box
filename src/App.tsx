@@ -13,8 +13,8 @@ import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { ParaWalletContextProvider } from "@/contexts/ParaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ParaProvider, Environment, OAuthMethod } from "@getpara/react-sdk";
-import "@getpara/react-sdk/styles.css";
+import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
+import "@getpara/react-sdk-lite/styles.css";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -74,16 +74,14 @@ const App = () => {
                 apiKey: PARA_API_KEY,
               }}
               externalWalletConfig={{
-                wallets: [
-                  "METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE",
-                  "PHANTOM", "ZERION", "RABBY"
-                ] as any,
+                // EVM-only external wallets
+                wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "ZERION", "RABBY"] as any,
                 walletConnect: { projectId: WALLETCONNECT_PROJECT_ID },
               }}
               paraModalConfig={{
                 logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
                 theme: { font: "Inter", borderRadius: "xl" },
-                oAuthMethods: [OAuthMethod.GOOGLE, OAuthMethod.APPLE],
+                oAuthMethods: ["GOOGLE", "APPLE"] as any,
                 disableEmailLogin: true,
                 disablePhoneLogin: true,
                 authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
