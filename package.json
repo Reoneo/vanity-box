@@ -83,6 +83,7 @@
     "viem": "^2.37.5",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-node-polyfills": "^0.24.0",
+    "wagmi": "^3.2.0",
     "web3.storage": "^4.5.5",
     "zod": "^3.25.76"
   },
