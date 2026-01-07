@@ -73,19 +73,33 @@ const App = () => {
                 env: Environment.BETA,
                 apiKey: PARA_API_KEY,
               }}
-              externalWalletConfig={{
-                // EVM-only external wallets
-                wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "ZERION", "RABBY"] as any,
-                walletConnect: { projectId: WALLETCONNECT_PROJECT_ID },
-              }}
+              externalWalletConfig={
+                {
+                  appName: "Vanity.box",
+                  // EVM-only external wallets
+                  wallets: [
+                    "METAMASK",
+                    "RAINBOW",
+                    "WALLETCONNECT",
+                    "COINBASE",
+                    "ZERION",
+                    "OKX",
+                    "SAFE",
+                    "RABBY",
+                  ],
+                  walletConnect: { projectId: WALLETCONNECT_PROJECT_ID },
+                } as any
+              }
               paraModalConfig={{
-                logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
+                logo:
+                  "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
                 theme: { font: "Inter", borderRadius: "xl" },
                 oAuthMethods: ["GOOGLE", "APPLE"] as any,
                 disableEmailLogin: true,
                 disablePhoneLogin: true,
                 authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
                 recoverySecretStepEnabled: true,
+                hideWallets: true,
                 onRampTestMode: true,
               }}
               config={{ appName: "Vanity.box" }}

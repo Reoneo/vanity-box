@@ -462,7 +462,21 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             handleConnect();
           } else {
             console.log('✅ Desktop browser - opening Para modal');
-            // Open Para modal for web browser users
+
+            // If Para isn't configured, fail loudly instead of "nothing happens"
+            const paraApiKey = import.meta.env.VITE_PARA_API_KEY as string | undefined;
+            if (!paraApiKey) {
+              toast.error('Para is not configured (missing VITE_PARA_API_KEY).');
+              return;
+            }
+
+            // WalletConnect is optional, but required if we include it in the wallet list
+            const wcProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string | undefined;
+            if (!wcProjectId) {
+              toast.error('WalletConnect is not configured (missing VITE_WALLETCONNECT_PROJECT_ID).');
+              // Still try opening the modal for injected wallets (MetaMask/Coinbase/etc.)
+            }
+
             openParaModal();
           }
         }}
