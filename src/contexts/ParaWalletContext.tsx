@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
-import { useAccount, useModal, useWallet } from '@getpara/react-sdk';
+import { useAccount, useModal, useWallet } from '@getpara/react-sdk-lite';
 
 interface ParaWalletContextType {
   isConnected: boolean;
