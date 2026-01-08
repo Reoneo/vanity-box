@@ -16,6 +16,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
 import "@getpara/react-sdk-lite/styles.css";
 import { useParaConfig } from "@/hooks/useParaConfig";
+
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -23,7 +24,6 @@ import TermsOfUse from "./pages/TermsOfUse";
 
 const queryClient = new QueryClient();
 
-// Inner app content - reused in both Para and non-Para modes
 const AppContent = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <CryptoPriceProvider>
@@ -52,14 +52,18 @@ const AppContent = () => (
   </ThemeProvider>
 );
 
-// Para-wrapped app content
+/**
+ * If you don't provide environment explicitly (legacy keys),
+ * Para tries to infer it from the API key prefix and can throw.
+ * We'll prefer server-provided env if available, otherwise use a heuristic.
+ */
 const inferParaEnvironment = (apiKey: string): Environment => {
   const key = apiKey.trim().toLowerCase();
 
-  // Heuristic: many providers encode environment in the key prefix.
   if (key.startsWith("prod") || key.startsWith("pk_live") || key.startsWith("live") || key.includes("prod")) {
     return Environment.PROD;
   }
+
   if (key.startsWith("beta") || key.startsWith("pk_test") || key.startsWith("test") || key.includes("beta")) {
     return Environment.BETA;
   }
@@ -67,36 +71,42 @@ const inferParaEnvironment = (apiKey: string): Environment => {
   return Environment.BETA;
 };
 
+const normalizeEnvironment = (env: any, apiKey: string): Environment => {
+  // Supports: "BETA" / "PROD", lowercase, or Environment enum values
+  if (env === Environment.PROD || env === "PROD" || env === "prod") return Environment.PROD;
+  if (env === Environment.BETA || env === "BETA" || env === "beta") return Environment.BETA;
+  return inferParaEnvironment(apiKey);
+};
+
 const ParaWrappedContent = ({
   paraApiKey,
   walletConnectProjectId,
+  environment,
 }: {
   paraApiKey: string;
   walletConnectProjectId: string;
+  environment?: any;
 }) => {
-  const trimmedKey = paraApiKey.trim();
-  const env = inferParaEnvironment(trimmedKey);
+  const trimmedKey = (paraApiKey || "").trim();
+  const wcProjectId = (walletConnectProjectId || "").trim();
+
+  // CRITICAL: never mount Para with an empty key (can crash the app)
+  if (!trimmedKey) return <AppContent />;
+
+  const envResolved = normalizeEnvironment(environment, trimmedKey);
 
   return (
     <ParaProvider
       paraClientConfig={{
-        env,
+        // ✅ IMPORTANT: Para expects `environment`, not `env`
+        environment: envResolved,
         apiKey: trimmedKey,
       }}
       externalWalletConfig={
         {
           appName: "Vanity.box",
-          wallets: [
-            "METAMASK",
-            "RAINBOW",
-            "WALLETCONNECT",
-            "COINBASE",
-            "ZERION",
-            "OKX",
-            "SAFE",
-            "RABBY",
-          ],
-          walletConnect: { projectId: walletConnectProjectId.trim() },
+          wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "ZERION", "OKX", "SAFE", "RABBY"],
+          walletConnect: { projectId: wcProjectId },
         } as any
       }
       paraModalConfig={{
@@ -119,34 +129,37 @@ const ParaWrappedContent = ({
   );
 };
 
-// Main app with Para config loading
 const AppWithPara = () => {
   const { config, isLoading, error } = useParaConfig();
 
   useEffect(() => {
-    document.body.style.overscrollBehavior = 'none';
+    document.body.style.overscrollBehavior = "none";
     return () => {
-      document.body.style.overscrollBehavior = 'auto';
+      document.body.style.overscrollBehavior = "auto";
     };
   }, []);
 
-  // While loading Para config, show app without Para (prevents flash)
-  if (isLoading) {
+  // While loading config: show app without Para to avoid crash/blank screen
+  if (isLoading) return <AppContent />;
+
+  // If config failed: show app without Para
+  if (error) {
+    console.warn("Para not configured:", error);
     return <AppContent />;
   }
 
-  // If Para config loaded successfully, wrap with Para
+  // If config ok: wrap with Para
   if (config?.paraApiKey) {
     return (
       <ParaWrappedContent
         paraApiKey={config.paraApiKey}
-        walletConnectProjectId={config.walletConnectProjectId}
+        walletConnectProjectId={config.walletConnectProjectId || ""}
+        // supports either `environment` or `env` from the edge function
+        environment={config.environment ?? (config as any).env}
       />
     );
   }
 
-  // Fallback: no Para config, show app without Para
-  console.warn('Para not configured:', error);
   return <AppContent />;
 };
 
