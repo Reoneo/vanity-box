@@ -15,16 +15,13 @@ import { ParaWalletContextProvider } from "@/contexts/ParaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
 import "@getpara/react-sdk-lite/styles.css";
+import { useParaConfig } from "@/hooks/useParaConfig";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 
 const queryClient = new QueryClient();
-
-// Para configuration - using publishable API key
-const PARA_API_KEY = import.meta.env.VITE_PARA_API_KEY || "";
-const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "";
 
 // Inner app content - reused in both Para and non-Para modes
 const AppContent = () => (
@@ -55,7 +52,52 @@ const AppContent = () => (
   </ThemeProvider>
 );
 
-const App = () => {
+// Para-wrapped app content
+const ParaWrappedContent = ({ paraApiKey, walletConnectProjectId }: { paraApiKey: string; walletConnectProjectId: string }) => (
+  <ParaProvider
+    paraClientConfig={{
+      env: Environment.BETA,
+      apiKey: paraApiKey,
+    }}
+    externalWalletConfig={
+      {
+        appName: "Vanity.box",
+        wallets: [
+          "METAMASK",
+          "RAINBOW",
+          "WALLETCONNECT",
+          "COINBASE",
+          "ZERION",
+          "OKX",
+          "SAFE",
+          "RABBY",
+        ],
+        walletConnect: { projectId: walletConnectProjectId },
+      } as any
+    }
+    paraModalConfig={{
+      logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
+      theme: { font: "Inter", borderRadius: "xl" },
+      oAuthMethods: ["GOOGLE", "APPLE"] as any,
+      disableEmailLogin: true,
+      disablePhoneLogin: true,
+      authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
+      recoverySecretStepEnabled: true,
+      hideWallets: true,
+      onRampTestMode: true,
+    }}
+    config={{ appName: "Vanity.box" }}
+  >
+    <ParaWalletContextProvider>
+      <AppContent />
+    </ParaWalletContextProvider>
+  </ParaProvider>
+);
+
+// Main app with Para config loading
+const AppWithPara = () => {
+  const { config, isLoading, error } = useParaConfig();
+
   useEffect(() => {
     document.body.style.overscrollBehavior = 'none';
     return () => {
@@ -63,54 +105,32 @@ const App = () => {
     };
   }, []);
 
+  // While loading Para config, show app without Para (prevents flash)
+  if (isLoading) {
+    return <AppContent />;
+  }
+
+  // If Para config loaded successfully, wrap with Para
+  if (config?.paraApiKey) {
+    return (
+      <ParaWrappedContent
+        paraApiKey={config.paraApiKey}
+        walletConnectProjectId={config.walletConnectProjectId}
+      />
+    );
+  }
+
+  // Fallback: no Para config, show app without Para
+  console.warn('Para not configured:', error);
+  return <AppContent />;
+};
+
+const App = () => {
   return (
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          {PARA_API_KEY ? (
-            <ParaProvider
-              paraClientConfig={{
-                env: Environment.BETA,
-                apiKey: PARA_API_KEY,
-              }}
-              externalWalletConfig={
-                {
-                  appName: "Vanity.box",
-                  // EVM-only external wallets
-                  wallets: [
-                    "METAMASK",
-                    "RAINBOW",
-                    "WALLETCONNECT",
-                    "COINBASE",
-                    "ZERION",
-                    "OKX",
-                    "SAFE",
-                    "RABBY",
-                  ],
-                  walletConnect: { projectId: WALLETCONNECT_PROJECT_ID },
-                } as any
-              }
-              paraModalConfig={{
-                logo:
-                  "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
-                theme: { font: "Inter", borderRadius: "xl" },
-                oAuthMethods: ["GOOGLE", "APPLE"] as any,
-                disableEmailLogin: true,
-                disablePhoneLogin: true,
-                authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
-                recoverySecretStepEnabled: true,
-                hideWallets: true,
-                onRampTestMode: true,
-              }}
-              config={{ appName: "Vanity.box" }}
-            >
-              <ParaWalletContextProvider>
-                <AppContent />
-              </ParaWalletContextProvider>
-            </ParaProvider>
-          ) : (
-            <AppContent />
-          )}
+          <AppWithPara />
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>
