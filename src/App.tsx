@@ -13,7 +13,7 @@ import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { ParaWalletContextProvider } from "@/contexts/ParaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
+import { ParaProvider } from "@getpara/react-sdk-lite";
 import "@getpara/react-sdk-lite/styles.css";
 import { useParaConfig } from "@/hooks/useParaConfig";
 
@@ -52,29 +52,30 @@ const AppContent = () => (
   </ThemeProvider>
 );
 
+type ParaEnvString = "BETA" | "PROD";
+
 /**
- * Force an env even if the key is legacy (no prefix).
- * This prevents the SDK from trying (and failing) to parse a prefix.
+ * Use string env because some SDK builds still try to parse API key prefix
+ * unless env is a valid string.
  */
-const inferParaEnv = (apiKey: string): Environment => {
+const inferParaEnvString = (apiKey: string): ParaEnvString => {
   const key = apiKey.trim().toLowerCase();
 
   if (key.startsWith("prod") || key.startsWith("pk_live") || key.startsWith("live") || key.includes("prod")) {
-    return Environment.PROD;
-  }
-  if (key.startsWith("beta") || key.startsWith("pk_test") || key.startsWith("test") || key.includes("beta")) {
-    return Environment.BETA;
+    return "PROD";
   }
 
-  // Default safe option
-  return Environment.BETA;
+  if (key.startsWith("beta") || key.startsWith("pk_test") || key.startsWith("test") || key.includes("beta")) {
+    return "BETA";
+  }
+
+  return "BETA";
 };
 
-const normalizeEnv = (env: any, apiKey: string): Environment => {
-  // Supports: "BETA" / "PROD", lowercase, or Environment enum values
-  if (env === Environment.PROD || env === "PROD" || env === "prod") return Environment.PROD;
-  if (env === Environment.BETA || env === "BETA" || env === "beta") return Environment.BETA;
-  return inferParaEnv(apiKey);
+const normalizeEnvString = (env: any, apiKey: string): ParaEnvString => {
+  if (env === "PROD" || env === "prod") return "PROD";
+  if (env === "BETA" || env === "beta") return "BETA";
+  return inferParaEnvString(apiKey);
 };
 
 const ParaWrappedContent = ({
@@ -89,17 +90,16 @@ const ParaWrappedContent = ({
   const trimmedKey = (paraApiKey || "").trim();
   const wcProjectId = (walletConnectProjectId || "").trim();
 
-  // CRITICAL: never mount Para with an empty key (prevents blank-screen crash)
+  // CRITICAL: never mount Para with empty key (prevents blank-screen crash)
   if (!trimmedKey) return <AppContent />;
 
-  const resolvedEnv = normalizeEnv(env, trimmedKey);
+  const resolvedEnv: ParaEnvString = normalizeEnvString(env, trimmedKey);
 
   return (
     <ParaProvider
       paraClientConfig={{
-        // ✅ Your SDK expects `env` (not `environment`)
-        env: resolvedEnv,
         apiKey: trimmedKey,
+        env: resolvedEnv, // ✅ MUST be "BETA" | "PROD" string
       }}
       externalWalletConfig={
         {

@@ -5,7 +5,7 @@ export interface ParaConfig {
   paraApiKey: string;
   walletConnectProjectId: string;
 
-  // Your edge function may return env later; we tolerate it now.
+  // Optional: if your Edge Function returns env later
   env?: "BETA" | "PROD" | string;
 }
 
@@ -44,7 +44,7 @@ export const useParaConfig = (): UseParaConfigReturn => {
 
         const paraApiKey = (data?.paraApiKey || "").trim();
         const walletConnectProjectId = (data?.walletConnectProjectId || "").trim();
-        const env = data?.env; // optional
+        const env = data?.env;
 
         if (!paraApiKey) {
           if (!cancelled) setError("Para API key not configured");
