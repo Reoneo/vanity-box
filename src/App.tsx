@@ -53,53 +53,52 @@ const AppContent = () => (
 );
 
 /**
- * If you don't provide environment explicitly (legacy keys),
- * Para tries to infer it from the API key prefix and can throw.
- * We'll prefer server-provided env if available, otherwise use a heuristic.
+ * Force an env even if the key is legacy (no prefix).
+ * This prevents the SDK from trying (and failing) to parse a prefix.
  */
-const inferParaEnvironment = (apiKey: string): Environment => {
+const inferParaEnv = (apiKey: string): Environment => {
   const key = apiKey.trim().toLowerCase();
 
   if (key.startsWith("prod") || key.startsWith("pk_live") || key.startsWith("live") || key.includes("prod")) {
     return Environment.PROD;
   }
-
   if (key.startsWith("beta") || key.startsWith("pk_test") || key.startsWith("test") || key.includes("beta")) {
     return Environment.BETA;
   }
 
+  // Default safe option
   return Environment.BETA;
 };
 
-const normalizeEnvironment = (env: any, apiKey: string): Environment => {
+const normalizeEnv = (env: any, apiKey: string): Environment => {
   // Supports: "BETA" / "PROD", lowercase, or Environment enum values
   if (env === Environment.PROD || env === "PROD" || env === "prod") return Environment.PROD;
   if (env === Environment.BETA || env === "BETA" || env === "beta") return Environment.BETA;
-  return inferParaEnvironment(apiKey);
+  return inferParaEnv(apiKey);
 };
 
 const ParaWrappedContent = ({
   paraApiKey,
   walletConnectProjectId,
-  environment,
+  env,
 }: {
   paraApiKey: string;
   walletConnectProjectId: string;
-  environment?: any;
+  env?: any;
 }) => {
   const trimmedKey = (paraApiKey || "").trim();
   const wcProjectId = (walletConnectProjectId || "").trim();
 
-  // CRITICAL: never mount Para with an empty key (can crash the app)
+  // CRITICAL: never mount Para with an empty key (prevents blank-screen crash)
   if (!trimmedKey) return <AppContent />;
 
-  const envResolved = normalizeEnvironment(environment, trimmedKey);
+  const resolvedEnv = normalizeEnv(env, trimmedKey);
 
   return (
     <ParaProvider
       paraClientConfig={{
-        // ✅ IMPORTANT: Para expects `environment`, not `env`
-        environment: envResolved,
+        // ✅ Your SDK expects `env` (not `environment`)
+        env: resolvedEnv,
         apiKey: trimmedKey,
       }}
       externalWalletConfig={
@@ -139,7 +138,7 @@ const AppWithPara = () => {
     };
   }, []);
 
-  // While loading config: show app without Para to avoid crash/blank screen
+  // While loading config: show app without Para
   if (isLoading) return <AppContent />;
 
   // If config failed: show app without Para
@@ -154,8 +153,7 @@ const AppWithPara = () => {
       <ParaWrappedContent
         paraApiKey={config.paraApiKey}
         walletConnectProjectId={config.walletConnectProjectId || ""}
-        // supports either `environment` or `env` from the edge function
-        environment={config.environment ?? (config as any).env}
+        env={config.env}
       />
     );
   }
