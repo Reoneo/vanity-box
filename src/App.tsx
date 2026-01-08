@@ -53,46 +53,71 @@ const AppContent = () => (
 );
 
 // Para-wrapped app content
-const ParaWrappedContent = ({ paraApiKey, walletConnectProjectId }: { paraApiKey: string; walletConnectProjectId: string }) => (
-  <ParaProvider
-    paraClientConfig={{
-      env: Environment.BETA,
-      apiKey: paraApiKey,
-    }}
-    externalWalletConfig={
-      {
-        appName: "Vanity.box",
-        wallets: [
-          "METAMASK",
-          "RAINBOW",
-          "WALLETCONNECT",
-          "COINBASE",
-          "ZERION",
-          "OKX",
-          "SAFE",
-          "RABBY",
-        ],
-        walletConnect: { projectId: walletConnectProjectId },
-      } as any
-    }
-    paraModalConfig={{
-      logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
-      theme: { font: "Inter", borderRadius: "xl" },
-      oAuthMethods: ["GOOGLE", "APPLE"] as any,
-      disableEmailLogin: true,
-      disablePhoneLogin: true,
-      authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
-      recoverySecretStepEnabled: true,
-      hideWallets: true,
-      onRampTestMode: true,
-    }}
-    config={{ appName: "Vanity.box" }}
-  >
-    <ParaWalletContextProvider>
-      <AppContent />
-    </ParaWalletContextProvider>
-  </ParaProvider>
-);
+const inferParaEnvironment = (apiKey: string): Environment => {
+  const key = apiKey.trim().toLowerCase();
+
+  // Heuristic: many providers encode environment in the key prefix.
+  if (key.startsWith("prod") || key.startsWith("pk_live") || key.startsWith("live") || key.includes("prod")) {
+    return Environment.PROD;
+  }
+  if (key.startsWith("beta") || key.startsWith("pk_test") || key.startsWith("test") || key.includes("beta")) {
+    return Environment.BETA;
+  }
+
+  return Environment.BETA;
+};
+
+const ParaWrappedContent = ({
+  paraApiKey,
+  walletConnectProjectId,
+}: {
+  paraApiKey: string;
+  walletConnectProjectId: string;
+}) => {
+  const trimmedKey = paraApiKey.trim();
+  const env = inferParaEnvironment(trimmedKey);
+
+  return (
+    <ParaProvider
+      paraClientConfig={{
+        env,
+        apiKey: trimmedKey,
+      }}
+      externalWalletConfig={
+        {
+          appName: "Vanity.box",
+          wallets: [
+            "METAMASK",
+            "RAINBOW",
+            "WALLETCONNECT",
+            "COINBASE",
+            "ZERION",
+            "OKX",
+            "SAFE",
+            "RABBY",
+          ],
+          walletConnect: { projectId: walletConnectProjectId.trim() },
+        } as any
+      }
+      paraModalConfig={{
+        logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
+        theme: { font: "Inter", borderRadius: "xl" },
+        oAuthMethods: ["GOOGLE", "APPLE"] as any,
+        disableEmailLogin: true,
+        disablePhoneLogin: true,
+        authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
+        recoverySecretStepEnabled: true,
+        hideWallets: true,
+        onRampTestMode: true,
+      }}
+      config={{ appName: "Vanity.box" }}
+    >
+      <ParaWalletContextProvider>
+        <AppContent />
+      </ParaWalletContextProvider>
+    </ParaProvider>
+  );
+};
 
 // Main app with Para config loading
 const AppWithPara = () => {
