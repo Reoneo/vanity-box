@@ -21,7 +21,6 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
-import { useParaWallet } from '@/contexts/ParaWalletContext';
 
 interface User {
   walletAddress?: string;
@@ -38,8 +37,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
-  const { isConnected: paraConnected, walletAddress: paraWalletAddress, openModal: openParaModal } = useParaWallet();
-  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'para' | null>(null);
+  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
@@ -55,21 +53,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return value.toFixed(decimals);
   };
 
-
-  useEffect(() => {
-    // Check Para wallet connection
-    if (paraConnected && paraWalletAddress) {
-      setWalletType('para');
-      setUser({
-        walletAddress: paraWalletAddress,
-        username: formatAddress(paraWalletAddress)
-      });
-      window.dispatchEvent(new CustomEvent('wallet-connected', { 
-        detail: { walletType: 'para', walletAddress: paraWalletAddress } 
-      }));
-      fetchEnsName(paraWalletAddress);
-    }
-  }, [paraConnected, paraWalletAddress]);
 
   useEffect(() => {
     // Check Petra wallet connection and network changes
@@ -99,17 +82,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
     // Listen for wallet connection trigger from search
     const handleTriggerConnect = () => {
-      if (!user && !petraConnected && !paraConnected) {
+      if (!user && !petraConnected) {
         // Prioritize Telegram if in Telegram environment
         if (isTelegramWebView()) {
           console.log('🔄 Trigger: Connecting via Telegram');
           handleTelegramConnect();
-        } else if (MiniKit.isInstalled()) {
+        } else {
           console.log('🔄 Trigger: Connecting via World App');
           handleConnect();
-        } else {
-          console.log('🔄 Trigger: Opening Para modal');
-          openParaModal();
         }
       }
     };
@@ -118,7 +98,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return () => {
       window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
     };
-  }, [user, petraConnected, paraConnected, openParaModal]);
+  }, [user, petraConnected, petraAccount]);
 
   // Remove auto-connect - users must manually connect
 
@@ -316,17 +296,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       disconnectPetra();
       setWalletType(null);
       setEnsName(null);
-    } else if (walletType === 'para') {
-      // Para disconnection is handled by the Para SDK through the modal
-      // Just reset local state
-      setUser(null);
-      setWalletType(null);
-      setEnsName(null);
-      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+    setEnsName(null);
     } else if (walletType === 'worldchain') {
       setUser(null);
       setWalletType(null);
-      setEnsName(null);
       sessionStorage.setItem('skipAutoAuth', '1');
       window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     }
@@ -443,7 +416,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   // Not connected - show connect button
-  if (!user && !petraConnected && !paraConnected) {
+  if (!user && !petraConnected) {
     return (
       <Button
         onClick={() => {
@@ -461,9 +434,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
-            console.log('✅ Desktop browser - opening Para modal');
-            // Open Para modal for web browser users
-            openParaModal();
+            console.log('✅ Desktop browser - redirecting to World App ecosystem');
+            // Redirect to World App instead of connecting Petra
+            window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
           }
         }}
         disabled={isLoading}
@@ -486,13 +459,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Get display info based on wallet type
   const displayAddress = walletType === 'petra' && petraAccount 
     ? petraAccount.address 
-    : walletType === 'para' && paraWalletAddress
-    ? paraWalletAddress
     : user?.walletAddress || '';
   const displayUsername = walletType === 'petra' 
     ? formatAddress(petraAccount?.address || '')
-    : walletType === 'para' && paraWalletAddress
-    ? ensName || formatAddress(paraWalletAddress)
     : user?.username || formatAddress(user?.walletAddress || '');
   const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
 
