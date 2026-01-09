@@ -1,63 +1,95 @@
-import React, { createContext, useContext, useMemo } from 'react';
-import { useAccount, useModal, useWallet } from '@getpara/react-sdk-lite';
+import React, { createContext, useCallback, useContext, useMemo } from "react";
+import { useAccount } from "wagmi";
 
-interface ParaWalletContextType {
+type ParaWalletContextValue = {
+  isReady: boolean;
   isConnected: boolean;
   walletAddress: string | null;
-  openModal: () => void;
-  closeModal: () => void;
-  isModalOpen: boolean;
-}
+  openModal: () => Promise<void>;
+};
 
-const ParaWalletContext = createContext<ParaWalletContextType>({
+const ParaWalletContext = createContext<ParaWalletContextValue>({
+  isReady: false,
   isConnected: false,
   walletAddress: null,
-  openModal: () => {},
-  closeModal: () => {},
-  isModalOpen: false,
+  openModal: async () => {
+    console.warn("[Para] ParaWalletContext not ready yet (default no-op).");
+  },
 });
 
-export const useParaWallet = () => useContext(ParaWalletContext);
+function tryOpenParaModal(): boolean {
+  const w = window as any;
 
-interface ParaWalletProviderProps {
-  children: React.ReactNode;
+  // Common global shapes across Para builds
+  const candidates: Array<(() => any) | undefined> = [
+    w?.Para?.open,
+    w?.Para?.openModal,
+    w?.Para?.connect,
+    w?.para?.open,
+    w?.para?.openModal,
+    w?.para?.connect,
+    w?.getPara?.open,
+    w?.getPara?.openModal,
+    w?.getPara?.connect,
+  ];
+
+  for (const fn of candidates) {
+    if (typeof fn === "function") {
+      try {
+        fn();
+        return true;
+      } catch (e) {
+        console.warn("[Para] Found modal opener but it threw:", e);
+      }
+    }
+  }
+
+  return false;
 }
 
-export const ParaWalletContextProvider: React.FC<ParaWalletProviderProps> = ({ children }) => {
-  const { isConnected, embedded, external } = useAccount();
-  const { openModal, closeModal, isOpen } = useModal();
-  const walletQuery = useWallet();
+export const ParaWalletContextProvider = ({ children }: { children: React.ReactNode }) => {
+  // wagmi account state (EVM only)
+  const { address, isConnected } = useAccount();
 
-  // Get the wallet address - prefer embedded wallet, then external EVM
-  const walletAddress = useMemo(() => {
-    // Check embedded wallet first
-    if (embedded?.wallets && embedded.wallets.length > 0) {
-      const evmWallet = Object.values(embedded.wallets).find((w: any) => w.type === 'EVM');
-      if (evmWallet) return (evmWallet as any).address || null;
-      return (embedded.wallets[0] as any).address || null;
-    }
-    // Check query data
-    if (walletQuery.data?.address) {
-      return walletQuery.data.address;
-    }
-    // Check external EVM wallet
-    if (external?.evm?.address) {
-      return external.evm.address as string;
-    }
-    return null;
-  }, [embedded, walletQuery.data, external]);
+  const openModal = useCallback(async () => {
+    // Only meant for web browsers; your WalletConnection already routes WorldApp/Telegram away.
+    try {
+      // 1) Try global modal openers (fast path)
+      const opened = tryOpenParaModal();
+      if (opened) return;
 
-  const value = useMemo(() => ({
-    isConnected,
-    walletAddress,
-    openModal: () => openModal(),
-    closeModal,
-    isModalOpen: isOpen,
-  }), [isConnected, walletAddress, openModal, closeModal, isOpen]);
+      // 2) If nothing exists, log what we can see so you can debug instantly
+      const w = window as any;
+      console.warn("[Para] No Para modal open method found on window.", {
+        hasPara: !!w?.Para,
+        haspara: !!w?.para,
+        hasgetPara: !!w?.getPara,
+        ParaKeys: w?.Para ? Object.keys(w.Para) : null,
+        paraKeys: w?.para ? Object.keys(w.para) : null,
+        getParaKeys: w?.getPara ? Object.keys(w.getPara) : null,
+      });
 
-  return (
-    <ParaWalletContext.Provider value={value}>
-      {children}
-    </ParaWalletContext.Provider>
+      alert(
+        "Para is not exposing a modal open method in this build. Open the console and paste the [Para] log output here and I’ll wire it to the exact API your build provides.",
+      );
+    } catch (e) {
+      console.error("[Para] openModal failed:", e);
+      alert("Failed to open Para modal. Check console logs.");
+    }
+  }, []);
+
+  const value = useMemo<ParaWalletContextValue>(
+    () => ({
+      // If wagmi is mounted, we consider Para-wallet layer “ready” to attempt EVM connect
+      isReady: true,
+      isConnected: !!isConnected && !!address,
+      walletAddress: address ?? null,
+      openModal,
+    }),
+    [isConnected, address, openModal],
   );
+
+  return <ParaWalletContext.Provider value={value}>{children}</ParaWalletContext.Provider>;
 };
+
+export const useParaWallet = () => useContext(ParaWalletContext);
