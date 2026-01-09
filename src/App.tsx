@@ -19,11 +19,9 @@ import "@getpara/react-sdk-lite/styles.css";
 
 import { useParaConfig } from "@/hooks/useParaConfig";
 
-// ✅ IMPORTANT: use wagmi chains for wagmi config
+// wagmi v2
+import { WagmiProvider, createConfig, http } from "wagmi";
 import { mainnet, sepolia } from "wagmi/chains";
-
-// ✅ wagmi storage helper (prevents context mismatch/null)
-import { createStorage } from "wagmi";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -31,6 +29,15 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 
 const queryClient = new QueryClient();
+
+const wagmiConfig = createConfig({
+  chains: [mainnet, sepolia],
+  transports: {
+    [mainnet.id]: http(),
+    [sepolia.id]: http(),
+  },
+  ssr: false,
+});
 
 const AppContent = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
@@ -60,13 +67,9 @@ const AppContent = () => (
   </ThemeProvider>
 );
 
-/**
- * Infer Para env from key prefix (fallback).
- * If you always use beta_* / prod_* keys you can keep this.
- */
 const inferParaEnvironment = (apiKey: string): Environment => {
   const key = apiKey.trim().toLowerCase();
-  if (key.startsWith("prod") || key.startsWith("pk_live") || key.startsWith("live") || key.includes("prod")) {
+  if (key.startsWith("prod") || key.includes("prod") || key.startsWith("live") || key.startsWith("pk_live")) {
     return Environment.PROD;
   }
   return Environment.BETA;
@@ -87,10 +90,9 @@ const ParaWrappedContent = ({
   walletConnectProjectId: string;
   env?: any;
 }) => {
-  const trimmedKey = (paraApiKey || "").trim();
-  const wcProjectId = (walletConnectProjectId || "").trim();
+  const trimmedKey = String(paraApiKey ?? "").trim();
+  const wcProjectId = String(walletConnectProjectId ?? "").trim();
 
-  // Never mount Para with an empty key
   if (!trimmedKey) return <AppContent />;
 
   const resolvedEnv = normalizeEnvironment(env, trimmedKey);
@@ -106,20 +108,6 @@ const ParaWrappedContent = ({
           appName: "Vanity.box",
           wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE"],
           walletConnect: { projectId: wcProjectId },
-
-          /**
-           * ✅ IMPORTANT: this must be wagmi config, not viem config.
-           * Passing viem chains/transports here can lead to wagmi context being null,
-           * causing useAccount() to crash.
-           */
-          evmConnector: {
-            config: {
-              chains: [mainnet, sepolia],
-              storage: createStorage({
-                storage: window.localStorage,
-              }),
-            },
-          },
         } as any
       }
       paraModalConfig={
@@ -140,9 +128,7 @@ const ParaWrappedContent = ({
         disableAutoSessionKeepAlive: true,
       }}
     >
-      <ParaWalletContextProvider>
-        <AppContent />
-      </ParaWalletContextProvider>
+      <AppContent />
     </ParaProvider>
   );
 };
@@ -157,22 +143,20 @@ const AppWithPara = () => {
     };
   }, []);
 
-  // While loading config: show app without Para
+  // While loading: still render app (ParaWalletContextProvider + WagmiProvider already exist)
   if (isLoading) return <AppContent />;
 
-  // If config failed: show app without Para
   if (error) {
     console.warn("Para not configured:", error);
     return <AppContent />;
   }
 
-  // If config ok: wrap with Para
   if (config?.paraApiKey) {
     return (
       <ParaWrappedContent
         paraApiKey={config.paraApiKey}
         walletConnectProjectId={config.walletConnectProjectId || ""}
-        env={config.env}
+        env={config.env ?? (config as any).environment}
       />
     );
   }
@@ -184,9 +168,13 @@ const App = () => {
   return (
     <ErrorBoundary>
       <HelmetProvider>
-        {/* ✅ Only one QueryClientProvider in the whole app */}
         <QueryClientProvider client={queryClient}>
-          <AppWithPara />
+          <WagmiProvider config={wagmiConfig}>
+            {/* ✅ Always mounted: your WalletConnection can always call openParaModal() */}
+            <ParaWalletContextProvider>
+              <AppWithPara />
+            </ParaWalletContextProvider>
+          </WagmiProvider>
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>
