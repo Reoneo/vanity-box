@@ -5,50 +5,51 @@ import { componentTagger } from "lovable-tagger";
 import viteCompression from "vite-plugin-compression";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
   },
+
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+
+    // Required for wagmi / wallet libs
     nodePolyfills({
-      include: ['buffer'],
+      include: ["buffer"],
       globals: {
         Buffer: true,
       },
     }),
+
+    // Compression
     viteCompression({
-      algorithm: 'gzip',
-      ext: '.gz',
+      algorithm: "gzip",
+      ext: ".gz",
     }),
     viteCompression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
+      algorithm: "brotliCompress",
+      ext: ".br",
     }),
   ].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
 
-      // ---- EVM-only build shims ----
-      // Para's ecosystem packages can pull in Solana/Cosmos peer deps even when unused.
-      // We alias them to lightweight stubs so Rollup doesn't try to bundle those chains.
-      "graz": path.resolve(__dirname, "./src/shims/graz.ts"),
-      "@getpara/cosmos-wallet-connectors": path.resolve(
-        __dirname,
-        "./src/shims/getpara-cosmos-wallet-connectors.ts"
-      ),
-      "@getpara/graz-connector": path.resolve(
-        __dirname,
-        "./src/shims/getpara-graz-connector.ts"
-      ),
-      "@getpara/solana-wallet-connectors": path.resolve(
-        __dirname,
-        "./src/shims/getpara-solana-wallet-connectors.ts"
-      ),
+      // 🚫 Explicitly block non-EVM chains (Ethereum-only build)
+      "@getpara/cosmos-wallet-connectors": false,
+      "@getpara/solana-wallet-connectors": false,
+      "@getpara/graz-connector": false,
+      graz: false,
     },
+
+    // 🔑 CRITICAL: force ONE wagmi / viem instance
+    dedupe: ["react", "react-dom", "wagmi", "@wagmi/core", "@wagmi/connectors", "viem"],
+  },
+
+  optimizeDeps: {
+    include: ["wagmi", "@wagmi/core", "@wagmi/connectors", "viem"],
   },
 }));
