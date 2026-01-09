@@ -96,11 +96,5 @@ verify_jwt = false
 [functions.get-wallet-transactions]
 verify_jwt = false
 
-[functions.resolve-profile]
-verify_jwt = false
-
-[functions.get-wallet-portfolio]
-verify_jwt = false
-
-[functions.get-wallet-transactions]
+[functions.get-para-config]
 verify_jwt = false

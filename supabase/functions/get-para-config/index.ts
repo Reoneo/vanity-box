@@ -5,16 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-/**
- * Infer environment from API key prefix
- * Para keys typically start with "beta_" or "prod_"
- */
-function inferEnvFromApiKey(apiKey: string): "BETA" | "PROD" {
-  const key = apiKey.trim().toLowerCase();
-  if (key.startsWith("prod")) return "PROD";
-  return "BETA";
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -22,27 +12,32 @@ serve(async (req) => {
   }
 
   try {
-    // PARA_API_KEY = public/client key for frontend SDK
-    // PARA_SECRET_KEY = server-only key (NOT returned to frontend)
     const paraApiKey = Deno.env.get("PARA_API_KEY");
-    const walletConnectProjectId = Deno.env.get("VITE_WALLETCONNECT_PROJECT_ID") || Deno.env.get("WALLETCONNECT_PROJECT_ID");
+    const walletConnectProjectId = Deno.env.get("VITE_WALLETCONNECT_PROJECT_ID");
 
     if (!paraApiKey) {
-      console.error("PARA_API_KEY not found in secrets");
+      console.error("PARA_API_KEY not configured");
       return new Response(
-        JSON.stringify({ error: "Para API key not configured in secrets" }),
+        JSON.stringify({ error: "Para API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const env = inferEnvFromApiKey(paraApiKey);
-    console.log(`Para config: env=${env}, key prefix=${paraApiKey.substring(0, 10)}...`);
+    // Validate WalletConnect project ID (should be 32 hex chars)
+    const isValidWcProjectId = walletConnectProjectId && /^[a-f0-9]{32}$/i.test(walletConnectProjectId);
+    
+    if (!walletConnectProjectId) {
+      console.warn("VITE_WALLETCONNECT_PROJECT_ID not configured - WalletConnect will be disabled");
+    } else if (!isValidWcProjectId) {
+      console.warn("VITE_WALLETCONNECT_PROJECT_ID appears invalid (expected 32 hex chars), got:", walletConnectProjectId.length, "chars");
+    }
+
+    console.log("Returning Para config (API key present:", !!paraApiKey, ", WC project ID valid:", isValidWcProjectId, ")");
 
     return new Response(
       JSON.stringify({
-        paraApiKey,
-        walletConnectProjectId: walletConnectProjectId || "",
-        env,
+        apiKey: paraApiKey,
+        walletConnectProjectId: isValidWcProjectId ? walletConnectProjectId : "",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

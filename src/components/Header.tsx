@@ -267,7 +267,7 @@ export const Header: React.FC = () => {
 
           
           {/* Wallet Connection - Right Side */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <WalletConnection />
           </div>
         </div>

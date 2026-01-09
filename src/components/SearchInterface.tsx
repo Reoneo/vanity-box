@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   X,
@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -174,8 +174,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const { username } = useParams();
-  const location = useLocation();
-  const searchIdRef = useRef(0); // Prevent stale searches
   const [searchQuery, setSearchQuery] = useState("");
 
   // Function to remove underscores from input
@@ -326,17 +324,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setNftNextCursor(null);
       setLatestCast(null);
       setPoapTokens([]);
-      // Reset detail view to fix glitch when loading new profile
-      setShowDetailView(false);
-      setDetailViewResult(null);
     }
   }, [web3BioProfile]);
-
-  // Auto-close detail view on route/location changes
-  useEffect(() => {
-    setShowDetailView(false);
-    setDetailViewResult(null);
-  }, [location.pathname]);
 
   // Preload EFP lists in background when profile loads
   useEffect(() => {
@@ -739,9 +728,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setShowFilterDropdown(false);
     setShowSearchBar(false); // Close search overlay immediately when search begins
     setIsHomepage(false);
-    // Reset detail view state to fix glitch
-    setShowDetailView(false);
-    setDetailViewResult(null);
 
     // Prevent searches with spaces
     if (trimmedQuery.includes(" ")) {
@@ -841,144 +827,258 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       }
     }
 
-    // If query contains a dot OR is a wallet address, try fetching profile using unified resolver
+    // If query contains a dot OR is a wallet address, try fetching profile
     if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
+      // Normalize for matching (users may type with caps)
       const normalizedQuery = trimmedQuery.toLowerCase();
-      const currentSearchId = ++searchIdRef.current;
+
+      // NEW: Web3.bio-compatible identities (ENS, .box, .world.id, wallet addresses)
+      const web3BioCompatible = ['.eth', '.box', '.world.id'];
+      const isWeb3BioCompatible = web3BioCompatible.some(tld => normalizedQuery.endsWith(tld)) || isWalletAddress;
       
-      console.log(`🔍 Using resolve-profile for: ${isWalletAddress ? normalizedAddress : normalizedQuery}`);
+      // Check for .hl (Hyperliquid) domain
+      const isHlDomain = normalizedQuery.endsWith('.hl');
       
-      try {
-        // Use the unified resolve-profile edge function with client-side timeout
-        const timeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Profile lookup timed out')), 20000)
-        );
-        
-        const resolverPromise = supabase.functions.invoke('resolve-profile', {
-          body: { identity: isWalletAddress ? normalizedAddress : normalizedQuery }
-        });
-        
-        const { data: resolverData, error: resolverError } = await Promise.race([
-          resolverPromise,
-          timeoutPromise.then(() => { throw new Error('timeout'); })
-        ]) as { data: any; error: any };
-        
-        // Check if this search is still current
-        if (searchIdRef.current !== currentSearchId) {
-          console.log('🚫 Search result discarded - newer search started');
-          return;
-        }
-        
-        console.log('📥 resolve-profile response:', { 
-          ok: resolverData?.ok, 
-          source: resolverData?.source, 
-          error: resolverError,
-          debug: resolverData?.debug 
-        });
-        
-        if (resolverError) {
-          console.error('❌ resolve-profile error:', resolverError);
-          toast.error("Profile lookup failed. Please try again.");
-          return;
-        }
-        
-        if (!resolverData?.ok || !resolverData?.profile) {
-          console.log('⚠️ No profile found:', resolverData?.notFound ? 'not found' : 'unknown error');
+      // Namestone-only TLDs (not indexed by Web3.bio)
+      // Note: .world.id is excluded from .world matching since it's a Web3.bio-compatible ENS domain
+      const namestoneTLDs = ['.world', '.cash', '.apt', '.ton', '.flirtad', '.mexipay', '.guavapay', '.termux', '.spyda', '.mith', '.30315', '.teamxrp'];
+      const isNamestoneTLD = namestoneTLDs.some(tld => normalizedQuery.endsWith(tld)) && !normalizedQuery.endsWith('.world.id');
+      
+      // Check for subdomains (2+ dots)
+      const dotCount = normalizedQuery.split('.').filter(Boolean).length - 1;
+      const isSubdomain = dotCount >= 2; // e.g., test321.spyda.eth has 2 dots
+      // L2 subdomains need Namestone fallback (.eth and .world.id are ENS-compatible but on L2)
+      const isEthSubdomain = isSubdomain && normalizedQuery.endsWith('.eth');
+      const isWorldIdSubdomain = isSubdomain && normalizedQuery.endsWith('.world.id');
+      const isL2EnsSubdomain = isEthSubdomain || isWorldIdSubdomain;
+      const isNamestoneSubdomain = isSubdomain && !isWeb3BioCompatible;
+      const isNamestoneDomain = isNamestoneTLD || isNamestoneSubdomain;
+      
+      console.log(`🔍 Query: ${normalizedQuery}, Dots: ${dotCount}, Web3.bio-compatible: ${isWeb3BioCompatible}, Is L2 ENS Subdomain: ${isL2EnsSubdomain}, Namestone TLD: ${isNamestoneTLD}, Is Namestone: ${isNamestoneDomain}, Is HL: ${isHlDomain}`);
+
+      // Use different fetch strategies based on name type
+      if (isHlDomain) {
+        // HLN (Hyperliquid Names) domain lookup
+        console.log('🔗 Fetching .hl domain profile for:', normalizedQuery);
+        try {
+          const { data, error } = await supabase.functions.invoke('resolve-hl-domain', {
+            body: { domain: normalizedQuery }
+          });
+
+          if (error) {
+            console.error('❌ Error fetching .hl domain profile:', error);
+            toast.error('Failed to resolve .hl domain');
+            setIsLoading(false);
+            return;
+          }
           
-          // For wallet addresses, create minimal profile even if resolver fails
-          if (isWalletAddress && normalizedAddress) {
-            console.log('🔄 Creating minimal profile for wallet address:', normalizedAddress);
-            const minimalProfile = {
-              displayName: null,
-              address: normalizedAddress,
-              avatar: null,
+          if (data?.notFound || !data?.address) {
+            console.log('⚠️ .hl domain not found:', normalizedQuery);
+            toast.error('Domain not found');
+            setIsLoading(false);
+            return;
+          }
+
+          console.log('✅ .hl domain resolved:', data);
+          
+          // Now fetch the full profile via Web3.bio using the resolved wallet address
+          const { data: web3BioData, error: web3BioError } = await supabase.functions.invoke('web3bio-profile', {
+            body: { identity: data.address }
+          });
+
+          if (web3BioError || web3BioData?.notFound) {
+            // If Web3.bio fails, create a minimal profile from HLN data
+            const hlProfile = {
+              displayName: data.domain,
+              address: data.address,
+              avatar: data.avatar || null,
               description: null,
-              platform: 'ethereum',
-              identity: normalizedAddress,
-              links: {},
+              platform: 'hyperliquid',
+              identity: data.domain,
+              hlDomain: data.domain, // Store original .hl domain
+              hlNfts: data.nfts || [],
+              hlTokens: data.tokens || [],
             };
-            setWeb3BioProfile(minimalProfile);
+            setWeb3BioProfile(hlProfile);
+            setEnsResults([]);
+            setIsLoading(false);
+          } else if (web3BioData?.profile) {
+            // Merge Web3.bio profile with HLN data, preserving the .hl domain display
+            const mergedProfile = {
+              ...web3BioData.profile,
+              hlDomain: data.domain, // Store original .hl domain to display
+              hlNfts: data.nfts || [],
+              hlTokens: data.tokens || [],
+            };
+            setWeb3BioProfile(mergedProfile);
+            setEnsResults([]);
+            setIsLoading(false);
+            
+            // Fetch EFP stats for the resolved address
+            if (data.address) {
+              supabase.functions.invoke('get-efp-stats', {
+                body: { address: data.address }
+              }).then(({ data: efpData }) => {
+                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                  console.log('✅ EFP stats loaded for .hl profile:', efpData);
+                  setEfpStats(efpData);
+                }
+              }).catch(err => console.log('EFP stats fetch failed:', err));
+              
+              // Fetch NFTs
+              fetchNfts(data.address);
+            }
+          }
+        } catch (error) {
+          console.log('❌ Failed to fetch .hl domain profile:', error);
+          toast.error('Failed to resolve .hl domain');
+          setIsLoading(false);
+        }
+      } else if (isNamestoneDomain) {
+        // Direct Namestone lookup for Namestone TLDs and subdomains
+        console.log('🔗 Fetching Namestone domain profile for:', normalizedQuery);
+        try {
+          const { data, error } = await supabase.functions.invoke('get-ens-subdomain-profile', {
+            body: { subdomain: normalizedQuery }
+          });
+
+          if (error) {
+            console.error('❌ Error fetching Namestone domain profile:', error);
+            setIsLoading(false);
+          } else if (data && !data.error) {
+            console.log('✅ Namestone domain profile found:', data);
+            setWeb3BioProfile(data);
             setEnsResults([]);
             
-            // Fetch EFP stats and NFTs
-            supabase.functions.invoke('get-efp-stats', {
-              body: { address: normalizedAddress }
-            }).then(({ data: efpData }) => {
-              if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-                setEfpStats(efpData);
-              }
-            }).catch(() => {});
-            
-            fetchNfts(normalizedAddress);
-          } else if (!resolverData?.notFound) {
-            toast.error("Profile lookup failed. Please try again.");
-          }
-          return;
-        }
-        
-        // Profile found - set it
-        const profile = resolverData.profile;
-        console.log('✅ Profile loaded:', { 
-          source: resolverData.source, 
-          identity: profile.identity,
-          address: profile.address 
-        });
-        
-        setWeb3BioProfile(profile);
-        setEnsResults([]);
-        
-        if (profile.ensRecords) {
-          setEnsRecords(profile.ensRecords);
-        }
-        
-        // Fetch additional data for Dock (non-blocking)
-        if (profile.address) {
-          // Fetch EFP stats
-          supabase.functions.invoke('get-efp-stats', {
-            body: { address: profile.address }
-          }).then(({ data: efpData }) => {
-            if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
-              console.log('✅ EFP stats loaded:', efpData);
-              setEfpStats(efpData);
+            if (data.ensRecords) {
+              setEnsRecords(data.ensRecords);
             }
-          }).catch(err => console.log('EFP stats fetch failed:', err));
-          
-          // Fetch NFTs
-          fetchNfts(profile.address);
+            
+            // Fetch EFP stats for Namestone profiles
+            if (data.address) {
+              supabase.functions.invoke('get-efp-stats', {
+                body: { address: data.address }
+              }).then(({ data: efpData }) => {
+                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                  console.log('✅ EFP stats loaded for Namestone profile:', efpData);
+                  setEfpStats(efpData);
+                }
+              }).catch(err => console.log('EFP stats fetch failed:', err));
+            }
+            
+            setIsLoading(false);
+          } else {
+            // No valid profile found
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.log('❌ Failed to fetch Namestone domain profile:', error);
+          setIsLoading(false);
         }
-      } catch (error: any) {
-        // Check if this search is still current
-        if (searchIdRef.current !== currentSearchId) {
-          console.log('🚫 Error discarded - newer search started');
+      } else {
+        // Web3.bio unified lookup for .eth, .box domains and wallet addresses
+        const queryType = isWalletAddress ? 'wallet address (reverse lookup)' : isWeb3BioCompatible ? 'Web3.bio-compatible domain' : 'domain';
+        console.log(`🔍 Using unified Web3.bio profile lookup for ${queryType}:`, isWalletAddress ? normalizedAddress : trimmedQuery);
+        try {
+          const { data: web3BioData, error: web3BioError } = await supabase.functions.invoke('web3bio-profile', {
+            body: { identity: isWalletAddress ? normalizedAddress : normalizedQuery }
+          });
+
+          console.log('📥 Web3.bio response:', { data: web3BioData, error: web3BioError });
+
+          if (web3BioError) {
+            console.error('❌ Web3.bio unified lookup error:', web3BioError);
+            toast.error("Profile lookup failed. Please try again.");
+            setIsLoading(false);
+            return;
+          }
+
+          if (web3BioData?.notFound) {
+            console.log('⚠️ No profile found on Web3.bio for:', isWalletAddress ? normalizedAddress : trimmedQuery);
+            
+            // FALLBACK: For L2 ENS subdomains (.eth, .world.id), try Namestone lookup
+            if (isL2EnsSubdomain) {
+              console.log('🔄 Web3.bio returned 404, falling back to Namestone for L2 subdomain:', normalizedQuery);
+              
+              const { data: namestoneData, error: namestoneError } = await supabase.functions.invoke('get-ens-subdomain-profile', {
+                body: { subdomain: normalizedQuery }
+              });
+              
+              if (!namestoneError && namestoneData && namestoneData.address) {
+                console.log('✅ Namestone fallback succeeded:', namestoneData);
+                setWeb3BioProfile(namestoneData);
+                setEnsResults([]);
+                
+                if (namestoneData.ensRecords) {
+                  setEnsRecords(namestoneData.ensRecords);
+                }
+                
+                // Fetch EFP stats and NFTs for the resolved address
+                if (namestoneData.address) {
+                  supabase.functions.invoke('get-efp-stats', {
+                    body: { address: namestoneData.address }
+                  }).then(({ data: efpData }) => {
+                    if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                      console.log('✅ EFP stats loaded for Namestone fallback:', efpData);
+                      setEfpStats(efpData);
+                    }
+                  }).catch(err => console.log('EFP stats fetch failed:', err));
+                  
+                  fetchNfts(namestoneData.address);
+                }
+                
+                setIsLoading(false);
+                return;
+              } else {
+                console.log('❌ Namestone fallback also failed:', namestoneError);
+              }
+            }
+            
+            toast.error('No profile found for this identity');
+            setIsLoading(false);
+            return;
+          }
+
+          if (web3BioData?.profile) {
+            console.log('✅ Web3.bio profile data:', web3BioData.profile);
+            console.log('📋 Available platforms:', web3BioData.platforms);
+            
+            // Validate that profile has a wallet address
+            if (!web3BioData.profile.address) {
+              console.log('⚠️ Profile found but no wallet address - not displaying');
+              toast.error('Profile found but no wallet address associated');
+              setIsLoading(false);
+              return;
+            }
+            
+            // Set profile first so other fetches can use it
+            setWeb3BioProfile(web3BioData.profile);
+            setEnsResults([]);
+            setIsLoading(false);
+            
+            // Fetch additional data for Dock (non-blocking)
+            if (web3BioData.profile.address) {
+              // Fetch EFP stats
+              supabase.functions.invoke('get-efp-stats', {
+                body: { address: web3BioData.profile.address }
+              }).then(({ data: efpData }) => {
+                if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                  console.log('✅ EFP stats loaded:', efpData);
+                  setEfpStats(efpData);
+                }
+              }).catch(err => console.log('EFP stats fetch failed:', err));
+              
+              fetchNfts(web3BioData.profile.address);
+            }
+          } else {
+            console.log('ℹ️ Profile not found');
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.log("Web3.bio profile lookup failed:", error);
+          toast.error("Profile lookup failed. Please try again.");
+          setIsLoading(false);
           return;
-        }
-        
-        console.log("❌ Profile lookup failed:", error?.message || error);
-        
-        // For wallet addresses, create minimal profile on timeout/error
-        if (isWalletAddress && normalizedAddress) {
-          console.log('🔄 Timeout/error fallback: Creating minimal profile for wallet');
-          const minimalProfile = {
-            displayName: null,
-            address: normalizedAddress,
-            avatar: null,
-            description: null,
-            platform: 'ethereum',
-            identity: normalizedAddress,
-            links: {},
-          };
-          setWeb3BioProfile(minimalProfile);
-          setEnsResults([]);
-          fetchNfts(normalizedAddress);
-        } else {
-          toast.error("Profile lookup timed out. Please try again.");
-        }
-        return;
-      } finally {
-        // Always set loading to false when profile resolution completes or fails
-        if (searchIdRef.current === currentSearchId) {
-          // Profile resolution done - continue to subdomain checks if needed
-          // setIsLoading will be set to false after subdomain checks complete
         }
       }
     }
@@ -1645,9 +1745,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setPoapTokens([]);
                           setActiveDockSection('profile');
                           setIsHomepage(true);
-                          // Reset detail view state to fix glitch
-                          setShowDetailView(false);
-                          setDetailViewResult(null);
                         },
                         isActive: false,
                       }] : []),
@@ -1667,17 +1764,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         },
                         isActive: activeDockSection === 'profile',
                       },
-                      // Only show Edit pencil when viewing own profile
-                      ...(walletAddress && web3BioProfile?.address && 
-                         walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase() ? [{
+                      {
                         icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
                         label: 'Edit',
                         onClick: () => {
+                          if (!walletAddress) {
+                            toast.error('Please connect your wallet first');
+                            return;
+                          }
                           setShowMyIDs(true);
                           setActiveDockSection('profile');
                         },
                         isActive: false,
-                      }] : []),
+                      },
                       // Search icon on far right
                       {
                         icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
@@ -2000,9 +2099,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         setDisplayQuery('');
                         setSearchQuery('');
                         setIsHomepage(true);
-                        // Reset detail view state to fix glitch
-                        setShowDetailView(false);
-                        setDetailViewResult(null);
                       },
                       isActive: false,
                     }] : []),
@@ -2016,6 +2112,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           // Use ENS name if available, otherwise fall back to wallet address
                           const searchIdentifier = connectedUsername || walletAddress;
                           handleSearch(searchIdentifier);
+                        }
+                      },
+                      isActive: false,
+                    },
+                    {
+                      icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
+                      label: 'My IDs',
+                      onClick: () => {
+                        if (walletAddress) {
+                          setShowMyIDs(true);
+                          setActiveDockSection('profile');
+                        } else {
+                          toast.error('Please connect your wallet first');
                         }
                       },
                       isActive: false,
@@ -2075,8 +2184,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           </div>
                         </div>
                         
-                        {/* Enhanced Result Cards - Consistent stacked layout */}
-                        <div className="space-y-4 will-change-transform">
+                        {/* Enhanced Result Cards - 2-column grid layout */}
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4 will-change-transform">
                           {displayResults.map((result, index) => {
                             const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt';
                             const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
@@ -2084,72 +2193,67 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             return (
                               <div
                                 key={index}
-                                className="group relative bg-gradient-to-br from-background via-background to-background/80 backdrop-blur-md border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-2xl shadow-sm hover:shadow-lg hover:shadow-[#D4AF37]/10 hover:border-[#D4AF37]/60 transition-all duration-300 will-change-transform animate-fade-in overflow-hidden"
-                                style={{ 
-                                  transform: 'translateZ(0)',
-                                  animationDelay: `${index * 60}ms`
-                                }}
+                                className="group relative bg-gradient-to-br from-background via-background to-background/80 border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-xl shadow-sm hover:shadow-md hover:border-[#D4AF37]/60 transition-all duration-200 overflow-hidden"
                               >
-                                {/* Subtle gradient overlay on hover */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                
-                                {/* Card content - stacked layout */}
-                                <div className="relative z-10 p-4 sm:p-5 flex flex-col gap-3">
+                                {/* Card content - compact vertical layout */}
+                                <div className="relative z-10 p-3 sm:p-4 flex flex-col items-center gap-2">
                                   
-                                  {/* Top row: Avatar on left, actions on right */}
-                                  <div className="flex items-center justify-between w-full">
-                                    {/* Avatar with enhanced ring */}
-                                    <div className="relative flex-shrink-0">
-                                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#B8860B] rounded-full blur-sm opacity-50" />
-                                      <img
-                                        src={result.imageUrl || smithCashAvatar}
-                                        alt={fullName}
-                                        className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
-                                        onError={(e) => {
-                                          e.currentTarget.src = smithCashAvatar;
-                                        }}
-                                      />
-                                    </div>
-
-                                    {/* Actions Group */}
-                                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                                      {/* Info Icon */}
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10 transition-all duration-300"
-                                        onClick={() => {
-                                          setDetailViewResult(result);
-                                          setShowDetailView(true);
-                                        }}
-                                      >
-                                        <Info className="h-4 w-4 text-black dark:text-white" />
-                                      </Button>
-
-                                      {/* Coming Soon Badge OR Mint Now Button */}
-                                      {isComingSoon ? (
-                                        <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
-                                          Coming Soon
-                                        </div>
-                                      ) : (
-                                        <Button
-                                          variant="default"
-                                          size="sm"
-                                          className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8860B] hover:from-[#B8860B] hover:to-[#D4AF37] text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap border-0"
-                                          onClick={() => handleMint(result)}
-                                        >
-                                          Mint Now
-                                        </Button>
-                                      )}
-                                    </div>
+                                  {/* Avatar */}
+                                  <div className="relative flex-shrink-0">
+                                    <img
+                                      src={result.imageUrl || smithCashAvatar}
+                                      alt={fullName}
+                                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-[#D4AF37]/50"
+                                      onError={(e) => {
+                                        e.currentTarget.src = smithCashAvatar;
+                                      }}
+                                    />
                                   </div>
 
-                                  {/* Bottom row: Name */}
-                                  <div className="flex items-center w-full">
-                                    <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight">
+                                  {/* Name and price */}
+                                  <div className="text-center w-full">
+                                    <div className="font-bold text-black dark:text-white text-xs sm:text-sm leading-tight truncate">
                                       <span className="text-[#D4AF37]">{displayQuery}</span>
                                       <span>.{result.name}</span>
                                     </div>
+                                    {/* Only show price for non-coming-soon domains */}
+                                    {!isComingSoon && (
+                                      <div className="text-[#D4AF37] text-xs sm:text-sm font-semibold mt-0.5">
+                                        ${displayQuery ? getSubdomainPrice(displayQuery).toFixed(2) : '1.00'}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Actions row - info icon and button */}
+                                  <div className="flex items-center justify-center gap-2 w-full mt-1">
+                                    {/* Info Icon */}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 sm:h-8 sm:w-8 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10"
+                                      onClick={() => {
+                                        setDetailViewResult(result);
+                                        setShowDetailView(true);
+                                      }}
+                                    >
+                                      <Info className="h-3 w-3 sm:h-4 sm:w-4 text-black dark:text-white" />
+                                    </Button>
+
+                                    {/* Coming Soon Badge OR Mint Now Button */}
+                                    {isComingSoon ? (
+                                      <div className="px-2 sm:px-3 py-1 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-[10px] sm:text-xs font-semibold whitespace-nowrap">
+                                        Coming Soon
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="px-2 sm:px-3 py-1 h-7 sm:h-8 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8860B] hover:from-[#B8860B] hover:to-[#D4AF37] text-white text-[10px] sm:text-xs font-semibold whitespace-nowrap border-0"
+                                        onClick={() => handleMint(result)}
+                                      >
+                                        Mint Now
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
                               </div>
