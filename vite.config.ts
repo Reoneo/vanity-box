@@ -14,38 +14,31 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-
-    // Required for wagmi / wallet libs
     nodePolyfills({
       include: ["buffer"],
-      globals: {
-        Buffer: true,
-      },
+      globals: { Buffer: true },
     }),
-
-    // Compression
-    viteCompression({
-      algorithm: "gzip",
-      ext: ".gz",
-    }),
-    viteCompression({
-      algorithm: "brotliCompress",
-      ext: ".br",
-    }),
+    viteCompression({ algorithm: "gzip", ext: ".gz" }),
+    viteCompression({ algorithm: "brotliCompress", ext: ".br" }),
   ].filter(Boolean),
 
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
 
-      // 🚫 Explicitly block non-EVM chains (Ethereum-only build)
-      "@getpara/cosmos-wallet-connectors": false,
-      "@getpara/solana-wallet-connectors": false,
-      "@getpara/graz-connector": false,
-      graz: false,
+      // 🔒 Ethereum-only build shims (NOT usage)
+      graz: path.resolve(__dirname, "./src/shims/empty.ts"),
+      "@getpara/cosmos-wallet-connectors": path.resolve(__dirname, "./src/shims/empty.ts"),
+      "@getpara/graz-connector": path.resolve(__dirname, "./src/shims/empty.ts"),
+      "@getpara/solana-wallet-connectors": path.resolve(__dirname, "./src/shims/empty.ts"),
+
+      // 🔒 Force single wagmi / viem instance
+      wagmi: path.resolve(__dirname, "./node_modules/wagmi"),
+      "@wagmi/core": path.resolve(__dirname, "./node_modules/@wagmi/core"),
+      "@wagmi/connectors": path.resolve(__dirname, "./node_modules/@wagmi/connectors"),
+      viem: path.resolve(__dirname, "./node_modules/viem"),
     },
 
-    // 🔑 CRITICAL: force ONE wagmi / viem instance
     dedupe: ["react", "react-dom", "wagmi", "@wagmi/core", "@wagmi/connectors", "viem"],
   },
 
