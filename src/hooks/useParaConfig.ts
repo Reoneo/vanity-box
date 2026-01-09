@@ -5,8 +5,9 @@ export interface ParaConfig {
   paraApiKey: string;
   walletConnectProjectId: string;
 
-  // Optional: if your Edge Function returns env later
+  // Optional: your Edge Function may return one of these
   env?: "BETA" | "PROD" | string;
+  environment?: "BETA" | "PROD" | string;
 }
 
 interface UseParaConfigReturn {
@@ -17,7 +18,7 @@ interface UseParaConfigReturn {
 
 export const useParaConfig = (): UseParaConfigReturn => {
   const [config, setConfig] = useState<ParaConfig | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,20 +32,22 @@ export const useParaConfig = (): UseParaConfigReturn => {
         const { data, error: fnError } = await supabase.functions.invoke("get-para-config");
 
         if (fnError) {
-          console.error("Failed to fetch Para config:", fnError);
+          console.error("[Para] Failed to fetch config:", fnError);
           if (!cancelled) setError("Failed to load wallet configuration");
           return;
         }
 
         if (data?.error) {
-          console.error("Para config error:", data.error);
-          if (!cancelled) setError(data.error);
+          console.error("[Para] Config returned error:", data.error);
+          if (!cancelled) setError(String(data.error));
           return;
         }
 
-        const paraApiKey = (data?.paraApiKey || "").trim();
-        const walletConnectProjectId = (data?.walletConnectProjectId || "").trim();
-        const env = data?.env;
+        const paraApiKey = String(data?.paraApiKey ?? "").trim();
+        const walletConnectProjectId = String(data?.walletConnectProjectId ?? "").trim();
+
+        // Support either env field name if you later change your edge function
+        const env = (data?.env ?? data?.environment) as ParaConfig["env"];
 
         if (!paraApiKey) {
           if (!cancelled) setError("Para API key not configured");
@@ -56,10 +59,11 @@ export const useParaConfig = (): UseParaConfigReturn => {
             paraApiKey,
             walletConnectProjectId,
             env,
+            environment: data?.environment,
           });
         }
       } catch (err) {
-        console.error("Error fetching Para config:", err);
+        console.error("[Para] Error fetching config:", err);
         if (!cancelled) setError("Failed to load wallet configuration");
       } finally {
         if (!cancelled) setIsLoading(false);
