@@ -70,7 +70,7 @@ export const ParaWalletContextProvider = ({ children }: { children: React.ReactN
       });
 
       alert(
-        "Para is not exposing a modal open method in this build. Open the console and paste the [Para] log output here and I’ll wire it to the exact API your build provides.",
+        "Para is not exposing a modal open method in this build. Open the console and paste the [Para] log output here and I’ll wire it to the exact API your build provides."
       );
     } catch (e) {
       console.error("[Para] openModal failed:", e);
@@ -86,7 +86,7 @@ export const ParaWalletContextProvider = ({ children }: { children: React.ReactN
       walletAddress: address ?? null,
       openModal,
     }),
-    [isConnected, address, openModal],
+    [isConnected, address, openModal]
   );
 
   return <ParaWalletContext.Provider value={value}>{children}</ParaWalletContext.Provider>;
