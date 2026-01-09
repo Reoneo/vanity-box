@@ -16,8 +16,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
 import "@getpara/react-sdk-lite/styles.css";
 import { useParaConfig } from "@/hooks/useParaConfig";
-import { http } from "viem";
-import { mainnet, sepolia, worldchain } from "viem/chains";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -89,47 +87,32 @@ const ParaWrappedContent = ({
   const resolvedEnv = normalizeEnvironment(env, trimmedKey);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ParaProvider
-        paraClientConfig={{
-          env: resolvedEnv,
-          apiKey: trimmedKey,
-        }}
-        externalWalletConfig={{
-          wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM", "ZERION", "OKX", "SAFE", "RABBY"],
-          walletConnect: { projectId: wcProjectId },
-          evmConnector: {
-            config: {
-              chains: [mainnet, sepolia, worldchain] as const,
-              transports: {
-                [mainnet.id]: http(),
-                [sepolia.id]: http(),
-                [worldchain.id]: http(),
-              },
-            },
-          },
-        } as any}
-        paraModalConfig={{
-          logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
-          theme: { font: "Inter", borderRadius: "xl" },
-          oAuthMethods: ["GOOGLE", "APPLE"],
-          disableEmailLogin: true,
-          disablePhoneLogin: true,
-          authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
-          recoverySecretStepEnabled: true,
-          hideWallets: true,
-          onRampTestMode: true,
-        } as any}
-        config={{ 
-          appName: "Vanity.box",
-          disableAutoSessionKeepAlive: true, // Prevent race condition during init
-        }}
-      >
-        <ParaWalletContextProvider>
-          <AppContent />
-        </ParaWalletContextProvider>
-      </ParaProvider>
-    </QueryClientProvider>
+    <ParaProvider
+      paraClientConfig={{
+        env: resolvedEnv,
+        apiKey: trimmedKey,
+      }}
+      externalWalletConfig={{
+        wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE"],
+        walletConnect: { projectId: wcProjectId },
+      }}
+      paraModalConfig={{
+        logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
+        theme: { font: "Inter", borderRadius: "xl" },
+        oAuthMethods: ["GOOGLE", "APPLE"],
+        disableEmailLogin: true,
+        disablePhoneLogin: true,
+        authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
+        recoverySecretStepEnabled: true,
+        hideWallets: true,
+        onRampTestMode: true,
+      } as any}
+      config={{ appName: "Vanity.box" } as any}
+    >
+      <ParaWalletContextProvider>
+        <AppContent />
+      </ParaWalletContextProvider>
+    </ParaProvider>
   );
 };
 
