@@ -5,44 +5,50 @@ import { componentTagger } from "lovable-tagger";
 import viteCompression from "vite-plugin-compression";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
+// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
   },
-
   plugins: [
     react(),
     mode === "development" && componentTagger(),
     nodePolyfills({
-      include: ["buffer"],
-      globals: { Buffer: true },
+      include: ['buffer'],
+      globals: {
+        Buffer: true,
+      },
     }),
-    viteCompression({ algorithm: "gzip", ext: ".gz" }),
-    viteCompression({ algorithm: "brotliCompress", ext: ".br" }),
+    viteCompression({
+      algorithm: 'gzip',
+      ext: '.gz',
+    }),
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+    }),
   ].filter(Boolean),
-
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
 
-      // 🔒 Ethereum-only build shims (NOT usage)
-      graz: path.resolve(__dirname, "./src/shims/empty.ts"),
-      "@getpara/cosmos-wallet-connectors": path.resolve(__dirname, "./src/shims/empty.ts"),
-      "@getpara/graz-connector": path.resolve(__dirname, "./src/shims/empty.ts"),
-      "@getpara/solana-wallet-connectors": path.resolve(__dirname, "./src/shims/empty.ts"),
-
-      // 🔒 Force single wagmi / viem instance
-      wagmi: path.resolve(__dirname, "./node_modules/wagmi"),
-      "@wagmi/core": path.resolve(__dirname, "./node_modules/@wagmi/core"),
-      "@wagmi/connectors": path.resolve(__dirname, "./node_modules/@wagmi/connectors"),
-      viem: path.resolve(__dirname, "./node_modules/viem"),
+      // ---- EVM-only build shims ----
+      // Para's ecosystem packages can pull in Solana/Cosmos peer deps even when unused.
+      // We alias them to lightweight stubs so Rollup doesn't try to bundle those chains.
+      "graz": path.resolve(__dirname, "./src/shims/graz.ts"),
+      "@getpara/cosmos-wallet-connectors": path.resolve(
+        __dirname,
+        "./src/shims/getpara-cosmos-wallet-connectors.ts"
+      ),
+      "@getpara/graz-connector": path.resolve(
+        __dirname,
+        "./src/shims/getpara-graz-connector.ts"
+      ),
+      "@getpara/solana-wallet-connectors": path.resolve(
+        __dirname,
+        "./src/shims/getpara-solana-wallet-connectors.ts"
+      ),
     },
-
-    dedupe: ["react", "react-dom", "wagmi", "@wagmi/core", "@wagmi/connectors", "viem"],
-  },
-
-  optimizeDeps: {
-    include: ["wagmi", "@wagmi/core", "@wagmi/connectors", "viem"],
   },
 }));

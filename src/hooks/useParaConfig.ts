@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ParaConfig {
   paraApiKey: string;
   walletConnectProjectId: string;
+
+  // Optional: if your Edge Function returns env later
   env?: "BETA" | "PROD" | string;
-  environment?: "BETA" | "PROD" | string;
 }
 
 interface UseParaConfigReturn {
@@ -30,20 +31,20 @@ export const useParaConfig = (): UseParaConfigReturn => {
         const { data, error: fnError } = await supabase.functions.invoke("get-para-config");
 
         if (fnError) {
-          console.error("[Para] Failed to fetch config:", fnError);
+          console.error("Failed to fetch Para config:", fnError);
           if (!cancelled) setError("Failed to load wallet configuration");
           return;
         }
 
         if (data?.error) {
-          console.error("[Para] Config error:", data.error);
-          if (!cancelled) setError(String(data.error));
+          console.error("Para config error:", data.error);
+          if (!cancelled) setError(data.error);
           return;
         }
 
-        const paraApiKey = String(data?.paraApiKey ?? "").trim();
-        const walletConnectProjectId = String(data?.walletConnectProjectId ?? "").trim();
-        const env = data?.env ?? data?.environment;
+        const paraApiKey = (data?.paraApiKey || "").trim();
+        const walletConnectProjectId = (data?.walletConnectProjectId || "").trim();
+        const env = data?.env;
 
         if (!paraApiKey) {
           if (!cancelled) setError("Para API key not configured");
@@ -55,11 +56,10 @@ export const useParaConfig = (): UseParaConfigReturn => {
             paraApiKey,
             walletConnectProjectId,
             env,
-            environment: data?.environment,
           });
         }
       } catch (err) {
-        console.error("[Para] Error fetching config:", err);
+        console.error("Error fetching Para config:", err);
         if (!cancelled) setError("Failed to load wallet configuration");
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -67,6 +67,7 @@ export const useParaConfig = (): UseParaConfigReturn => {
     };
 
     fetchConfig();
+
     return () => {
       cancelled = true;
     };
