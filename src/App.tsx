@@ -16,6 +16,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
 import "@getpara/react-sdk-lite/styles.css";
 import { useParaConfig } from "@/hooks/useParaConfig";
+import { http } from "viem";
+import { mainnet, sepolia, worldchain } from "viem/chains";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -94,8 +96,18 @@ const ParaWrappedContent = ({
           apiKey: trimmedKey,
         }}
         externalWalletConfig={{
-          wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM", "ZERION", "OKX", "HAHA", "SAFE", "RABBY"],
+          wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM", "ZERION", "OKX", "SAFE", "RABBY"],
           walletConnect: { projectId: wcProjectId },
+          evmConnector: {
+            config: {
+              chains: [mainnet, sepolia, worldchain] as const,
+              transports: {
+                [mainnet.id]: http(),
+                [sepolia.id]: http(),
+                [worldchain.id]: http(),
+              },
+            },
+          },
         } as any}
         paraModalConfig={{
           logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
@@ -108,7 +120,10 @@ const ParaWrappedContent = ({
           hideWallets: true,
           onRampTestMode: true,
         } as any}
-        config={{ appName: "Vanity.box" }}
+        config={{ 
+          appName: "Vanity.box",
+          disableAutoSessionKeepAlive: true, // Prevent race condition during init
+        }}
       >
         <ParaWalletContextProvider>
           <AppContent />
