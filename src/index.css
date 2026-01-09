@@ -218,10 +218,10 @@ All colors MUST be HSL. */
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background: hsl(var(--gradient-secondary));
-    /* Simplified background for better performance */
-    transform: translateZ(0);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    background-image: 
+      radial-gradient(circle at 20% 80%, hsl(43 96% 56% / 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(280 100% 80% / 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsl(43 96% 56% / 0.02) 0%, transparent 30%);
   }
 
   /* Ultra-luxury animations */
@@ -306,35 +306,32 @@ All colors MUST be HSL. */
     }
   }
 
-  /* Luxury Pattern Animations - Performance Optimized */
+  /* Luxury Pattern Animations - Enhanced */
   .ethereum-logo {
-    will-change: transform;
-    transform: translateZ(0);
+    transform-style: preserve-3d;
+    animation: royal-float 15s infinite ease-in-out;
+    filter: drop-shadow(0 10px 30px hsl(43 96% 56% / 0.3));
   }
 
   .ethereum-float {
-    will-change: transform;
-    transform: translateZ(0);
+    animation: royal-float 12s ease-in-out infinite;
   }
 
   .lv-flower {
-    will-change: transform;
-    transform: translateZ(0);
+    transform-style: preserve-3d;
+    animation: diamond-shimmer 8s infinite ease-in-out, royal-float 20s infinite ease-in-out;
   }
 
   .lv-float {
-    will-change: transform;
-    transform: translateZ(0);
+    animation: royal-float 18s ease-in-out infinite reverse;
   }
 
   .gold-dot {
-    will-change: transform;
-    transform: translateZ(0);
+    animation: golden-pulse 6s ease-in-out infinite;
   }
 
   .dot-float {
-    will-change: transform;
-    transform: translateZ(0);
+    animation: royal-float 10s ease-in-out infinite;
   }
 
   .luxury-pattern {
@@ -346,36 +343,30 @@ All colors MUST be HSL. */
     background-size: 120px 120px, 80px 80px, 40px 40px, 40px 40px;
   }
 
-  /* Ultra-luxury utility classes - Performance Optimized */
+  /* Ultra-luxury utility classes */
   .animate-luxury-glow {
-    will-change: box-shadow;
-    transform: translateZ(0);
+    animation: luxury-glow 4s ease-in-out infinite;
   }
 
   .animate-royal-float {
-    will-change: transform;
-    transform: translateZ(0);
+    animation: royal-float 8s ease-in-out infinite;
   }
 
   .animate-diamond-shimmer {
-    will-change: background-position;
-    transform: translateZ(0);
+    animation: diamond-shimmer 3s ease-in-out infinite;
   }
 
   .animate-golden-pulse {
-    will-change: box-shadow;
-    transform: translateZ(0);
+    animation: golden-pulse 3s ease-in-out infinite;
   }
 
   .animate-luxury-border {
-    will-change: border-color, box-shadow;
-    transform: translateZ(0);
+    animation: luxury-border 4s ease-in-out infinite;
   }
 
   .animate-royal-shimmer {
     position: relative;
     overflow: hidden;
-    transform: translateZ(0);
   }
 
   .animate-royal-shimmer::before {
@@ -385,7 +376,8 @@ All colors MUST be HSL. */
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, transparent, hsl(43 96% 56% / 0.1), transparent);
+    background: linear-gradient(90deg, transparent, hsl(43 96% 56% / 0.3), transparent);
+    animation: royal-shimmer 3s ease-in-out infinite;
   }
 
   /* Opt-in transitions for colors and opacity only */

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
-import { isWorldAppEnvironment } from '@/lib/minikit';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -10,19 +9,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Wallet, LogOut, ChevronDown } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Wallet, LogOut, User, ChevronDown, UserCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
 import tonLogo from '@/assets/ton-logo.png';
 import petraIcon from '@/assets/petra-icon.png';
-import ethLogo from '@/assets/eth-logo.png';
 import { isTelegramWebView, getTelegramUser } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { connectTonWallet as tonConnectWallet } from '@/lib/tonConnect';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
-import { useParaWallet } from '@/contexts/ParaContext';
+import { useParaWallet } from '@/contexts/ParaWalletContext';
 
 interface User {
   walletAddress?: string;
@@ -33,33 +32,13 @@ interface WalletConnectionProps {
   className?: string;
 }
 
-// Supported EVM chains for network switching
-const EVM_CHAINS = [
-  { id: 480, name: 'World Chain' },
-  { id: 1, name: 'Ethereum' },
-  { id: 8453, name: 'Base' },
-  { id: 137, name: 'Polygon' },
-  { id: 42161, name: 'Arbitrum' },
-  { id: 10, name: 'Optimism' },
-];
-
-// Detect if running in Brave browser
-const isBraveBrowser = (): boolean => {
-  return !!(navigator as any).brave;
-};
-
-// Detect if on mobile device
-const isMobileDevice = (): boolean => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
   const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, connect: connectPetra, disconnect: disconnectPetra } = usePetraWallet();
-  const { wallet: paraWallet, disconnect: disconnectPara, openParaModal, switchNetwork } = useParaWallet();
+  const { isConnected: paraConnected, walletAddress: paraWalletAddress, openModal: openParaModal } = useParaWallet();
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'para' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
@@ -67,7 +46,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensLoading, setEnsLoading] = useState(false);
-  const [networkSwitching, setNetworkSwitching] = useState(false);
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -76,6 +54,22 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     if (value < threshold) return `<${threshold.toFixed(decimals)}`;
     return value.toFixed(decimals);
   };
+
+
+  useEffect(() => {
+    // Check Para wallet connection
+    if (paraConnected && paraWalletAddress) {
+      setWalletType('para');
+      setUser({
+        walletAddress: paraWalletAddress,
+        username: formatAddress(paraWalletAddress)
+      });
+      window.dispatchEvent(new CustomEvent('wallet-connected', { 
+        detail: { walletType: 'para', walletAddress: paraWalletAddress } 
+      }));
+      fetchEnsName(paraWalletAddress);
+    }
+  }, [paraConnected, paraWalletAddress]);
 
   useEffect(() => {
     // Check Petra wallet connection and network changes
@@ -96,46 +90,26 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   }, [petraConnected, petraAccount, petraNetwork]);
 
-  // Recognize Para wallet connection - now driven by Para SDK state
-  useEffect(() => {
-    if (paraWallet.isConnected && paraWallet.address) {
-      // Always clear ENS when address changes and refetch
-      if (walletType !== 'para') {
-        setWalletType('para');
-      }
-      // Clear any cached ENS and fetch fresh for the new address
-      setEnsName(null);
-      fetchEnsName(paraWallet.address);
-      console.log('✅ Para wallet connected, fetching ENS for:', paraWallet.address);
-    } else if (walletType === 'para' && !paraWallet.isConnected) {
-      // Para disconnected
-      setWalletType(null);
-      setEnsName(null);
-    }
-  }, [paraWallet.isConnected, paraWallet.address]);
-
   useEffect(() => {
     // Check environment on mount
-    const inWorldApp = isWorldAppEnvironment();
     console.log('🌍 Environment check on mount:');
     console.log('  - Telegram WebView:', isTelegramWebView());
-    console.log('  - World App (robust check):', inWorldApp);
-    console.log('  - Brave browser:', isBraveBrowser());
-    console.log('  - Mobile device:', isMobileDevice());
+    console.log('  - World App:', MiniKit.isInstalled());
+    console.log('  - User Agent:', navigator.userAgent.substring(0, 150));
 
     // Listen for wallet connection trigger from search
     const handleTriggerConnect = () => {
-      if (!user && !petraConnected && !paraWallet.isConnected) {
+      if (!user && !petraConnected && !paraConnected) {
         // Prioritize Telegram if in Telegram environment
         if (isTelegramWebView()) {
           console.log('🔄 Trigger: Connecting via Telegram');
           handleTelegramConnect();
-        } else if (inWorldApp) {
+        } else if (MiniKit.isInstalled()) {
           console.log('🔄 Trigger: Connecting via World App');
           handleConnect();
         } else {
           console.log('🔄 Trigger: Opening Para modal');
-          handleParaConnect();
+          openParaModal();
         }
       }
     };
@@ -144,7 +118,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return () => {
       window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
     };
-  }, [user, petraConnected, petraAccount, paraWallet.isConnected]);
+  }, [user, petraConnected, paraConnected, openParaModal]);
+
+  // Remove auto-connect - users must manually connect
 
   // Fetch Aptos balance with network awareness
   const fetchAptosBalance = async () => {
@@ -206,20 +182,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
-  // Handle Para connection - opens Para modal directly
-  const handleParaConnect = () => {
-    openParaModal();
-  };
-
   const handleConnect = async () => {
     // If Petra is already connected, just return
     if (petraConnected) {
       return;
     }
 
-    // Only proceed if actually in World App
-    if (!isWorldAppEnvironment()) {
-      console.log('Not in World App - this should not be called from browser');
+    // Check if running in World App
+    if (!MiniKit.isInstalled()) {
+      console.log('Not in World App - redirecting to World App ecosystem page');
+      window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
       return;
     }
 
@@ -302,6 +274,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         }
 
         // Use connectWallet() for Telegram mini apps instead of openModal()
+        // This triggers the native Telegram wallet picker
         const walletInfo = await tonConnectUI.connectWallet();
         
         if (tonConnectUI.wallet) {
@@ -338,18 +311,22 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
-  const handleDisconnect = async () => {
+  const handleDisconnect = () => {
     if (walletType === 'petra') {
       disconnectPetra();
       setWalletType(null);
       setEnsName(null);
     } else if (walletType === 'para') {
-      await disconnectPara();
+      // Para disconnection is handled by the Para SDK through the modal
+      // Just reset local state
+      setUser(null);
       setWalletType(null);
       setEnsName(null);
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     } else if (walletType === 'worldchain') {
       setUser(null);
       setWalletType(null);
+      setEnsName(null);
       sessionStorage.setItem('skipAutoAuth', '1');
       window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     }
@@ -358,28 +335,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     const backdrop = document.getElementById('wallet-dropdown-backdrop');
     if (backdrop) backdrop.remove();
     document.body.style.overflow = '';
-  };
-
-  // Handle network switching for Para EVM wallets
-  const handleNetworkSwitch = async (chainIdStr: string) => {
-    const chainId = parseInt(chainIdStr, 10);
-    if (isNaN(chainId)) return;
-    
-    setNetworkSwitching(true);
-    try {
-      await switchNetwork(chainId);
-      const chain = EVM_CHAINS.find(c => c.id === chainId);
-      toast.success(`Switched to ${chain?.name || 'network'}`);
-    } catch (error: any) {
-      console.error('Network switch failed:', error);
-      if (error.code === 4001) {
-        toast.error('Network switch cancelled');
-      } else {
-        toast.error(`Failed to switch network: ${error.message || 'Unknown error'}`);
-      }
-    } finally {
-      setNetworkSwitching(false);
-    }
   };
 
   const generateNonce = (): string => {
@@ -405,6 +360,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
     // Primary: ask World App via MiniKit
     try {
+      // 1) Explicit fetch using MiniKit.getUserByAddress if available
       const mkAny = MiniKit as any;
       if (mkAny?.getUserByAddress) {
         console.log('🌍 Using MiniKit.getUserByAddress...');
@@ -416,6 +372,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           return mkDomain;
         }
       }
+      // 2) Try MiniKit.user if populated after auth
       const inlineUsername = (MiniKit as any)?.user?.username;
       const inlineDomain = normalize(inlineUsername);
       if (inlineDomain) {
@@ -431,8 +388,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     try {
       console.log('🌐 Fetching from World Bridge API...');
       const worldBridgeResp = await fetch(`https://usernames.worldcoin.org/v1/addresses/${address.toLowerCase()}`);
+      // usernames service: also try legacy bridge endpoint as fallback
       if (worldBridgeResp.ok) {
         const data = await worldBridgeResp.json();
+        // Common shapes: { username: 'reon.0000' } or { handle: 'reon.0000' }
         const bridgeDomain = normalize(data?.username || data?.handle || data?.name);
         if (bridgeDomain) {
           sessionStorage.setItem(cacheKey, bridgeDomain);
@@ -461,7 +420,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       console.error('❌ Legacy World Bridge lookup failed:', e);
     }
 
-    // Retry MiniKit inline user after small delay
+    // Retry MiniKit inline user after small delay (in case auth just populated it)
     try {
       console.log('⏳ Retrying MiniKit.user after delay...');
       await new Promise((r) => setTimeout(r, 1200));
@@ -484,18 +443,27 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   // Not connected - show connect button
-  if (!user && !petraConnected && !paraWallet.isConnected) {
+  if (!user && !petraConnected && !paraConnected) {
     return (
       <Button
         onClick={() => {
-          const inWorldApp = isWorldAppEnvironment();
+          // Check for Telegram FIRST (highest priority for mini apps)
+          console.log('🔍 Checking environment...');
+          console.log('  - window.Telegram:', !!(window as any).Telegram);
+          console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
+          console.log('  - isTelegramWebView():', isTelegramWebView());
+          console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
           
           if (isTelegramWebView()) {
+            console.log('✅ Detected Telegram WebView - connecting TON wallet');
             handleTelegramConnect();
-          } else if (inWorldApp) {
+          } else if (MiniKit.isInstalled()) {
+            console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
-            handleParaConnect();
+            console.log('✅ Desktop browser - opening Para modal');
+            // Open Para modal for web browser users
+            openParaModal();
           }
         }}
         disabled={isLoading}
@@ -518,45 +486,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Get display info based on wallet type
   const displayAddress = walletType === 'petra' && petraAccount 
     ? petraAccount.address 
-    : walletType === 'para' && paraWallet.address
-    ? paraWallet.address
+    : walletType === 'para' && paraWalletAddress
+    ? paraWalletAddress
     : user?.walletAddress || '';
-  
-  // Show ENS if available, otherwise show shortened address
   const displayUsername = walletType === 'petra' 
     ? formatAddress(petraAccount?.address || '')
-    : walletType === 'para'
-    ? (ensLoading ? formatAddress(paraWallet.address || '') : (ensName || formatAddress(paraWallet.address || '')))
+    : walletType === 'para' && paraWalletAddress
+    ? ensName || formatAddress(paraWalletAddress)
     : user?.username || formatAddress(user?.walletAddress || '');
-  
-  const walletIcon = walletType === 'petra' ? petraIcon : walletType === 'para' ? ethLogo : wldLogo;
+  const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
 
-  // Get current chain name for Para wallets
-  const currentChainName = walletType === 'para' && paraWallet.chainId 
-    ? EVM_CHAINS.find(c => c.id === paraWallet.chainId)?.name || `Chain ${paraWallet.chainId}`
-    : null;
-
-  // For Para wallets: clicking the button opens Para modal directly (for disconnect/manage)
-  if (walletType === 'para' && paraWallet.isConnected) {
-    return (
-      <Button
-        onClick={() => {
-          console.log('🔄 Opening Para modal for wallet management...');
-          openParaModal();
-        }}
-        variant="outline"
-        size="sm"
-        className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-black hover:border-black hover:text-white transition-all duration-300 font-semibold flex items-center gap-2", className)}
-      >
-        <span className="font-bold text-white truncate max-w-48">
-          {displayUsername}
-        </span>
-        <ChevronDown className="w-4 h-4" />
-      </Button>
-    );
-  }
-
-  // For non-Para wallets (Petra, World App): use dropdown menu
   return (
     <DropdownMenu onOpenChange={(open) => {
       if (open) {
@@ -587,12 +526,13 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
+      <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
         
         {/* Show balance for Petra wallet */}
         {walletType === 'petra' && (
           <>
-            <div className="px-3 py-3 text-sm">
+            <DropdownMenuSeparator />
+            <div className="px-2 py-3 text-sm">
               <div className="text-gray-500 dark:text-gray-400 mb-2">Wallet Balance</div>
               {balanceLoading ? (
                 <div className="flex items-center gap-2">
@@ -612,10 +552,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
                 </div>
               )}
             </div>
-            <DropdownMenuSeparator />
           </>
         )}
         
+        <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
           onClick={handleDisconnect}

@@ -16,6 +16,8 @@ import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import { useDisplayName } from "@/hooks/useDisplayName";
+import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
+import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +74,7 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
-  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'hyperliquid'>('main');
+  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid'>('main');
   const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
   const [magicEdenLoading, setMagicEdenLoading] = useState(false);
   const [hlNfts, setHlNfts] = useState<any[]>([]);
@@ -92,6 +94,13 @@ export const ProfileCard = ({
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
     currentWalletAddress as `0x${string}` | undefined
+  );
+
+  const { collections: worldchainCollections, isLoading: worldchainNftsLoading } = useWorldchainNFTs(currentWalletAddress);
+
+  const worldchainNftCount = useMemo(
+    () => worldchainCollections.reduce((sum, c) => sum + (c.nftCount || 0), 0),
+    [worldchainCollections]
   );
 
   // Get the best display name to show
@@ -432,7 +441,8 @@ export const ProfileCard = ({
                       .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
                   : [];
                 
-                const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0;
+                const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
+                const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts;
                 const hasTokens = portfolioTokens.length > 0;
                 const hasSocials = socialLinks.length > 0;
                 const hasTransactions = transactions.length > 0;
@@ -586,7 +596,17 @@ export const ProfileCard = ({
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
                       <h3 className="text-lg font-bold text-black dark:text-white">
-                        {nftCategory === 'main' ? 'NFTs' : nftCategory === 'poaps' ? 'POAPs' : nftCategory === 'opensea' ? 'OpenSea' : nftCategory === 'magiceden' ? 'EVM' : 'Hyperliquid'}
+                        {nftCategory === 'main'
+                          ? 'NFTs'
+                          : nftCategory === 'poaps'
+                            ? 'POAPs'
+                            : nftCategory === 'opensea'
+                              ? 'OpenSea'
+                              : nftCategory === 'magiceden'
+                                ? 'EVM'
+                                : nftCategory === 'worldchain'
+                                  ? 'World Chain'
+                                  : 'Hyperliquid'}
                       </h3>
                     </div>
                     <button
@@ -676,6 +696,38 @@ export const ProfileCard = ({
                           <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                         </div>
                       </button>
+
+                      {/* World Chain Button */}
+                      {(worldchainNftsLoading || worldchainNftCount > 0) && (
+                        <button
+                          onClick={() => setNftCategory('worldchain')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-black text-base">World Chain</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">
+                                  {worldchainNftsLoading ? 'Loading…' : `${worldchainNftCount} ${worldchainNftCount === 1 ? 'item' : 'items'}`}
+                                </p>
+                                {!worldchainNftsLoading && worldchainCollections.length > 0 && (
+                                  <div className="flex -space-x-2">
+                                    {worldchainCollections.slice(0, 3).map((c, idx) => (
+                                      <img
+                                        key={idx}
+                                        src={c.coverImage}
+                                        alt=""
+                                        className="w-5 h-5 rounded-full border border-black/20 object-cover"
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
 
                       {/* Hyperliquid Button - Only show if .hl domain or has HL NFTs */}
                       {(web3BioProfile?.hlDomain || hlNfts.length > 0) && (
@@ -849,6 +901,10 @@ export const ProfileCard = ({
                         )}
                       </div>
                     )
+                  ) : nftCategory === 'worldchain' ? (
+                    <div className="max-w-3xl mx-auto pt-2">
+                      <WorldchainNFTSection walletAddress={web3BioProfile?.address} />
+                    </div>
                   ) : nftCategory === 'hyperliquid' ? (
                     // Hyperliquid NFTs
                     hlLoading ? (
@@ -1086,8 +1142,8 @@ export const ProfileCard = ({
           </div>
         )}
 
-        {/* NFTs Section - Only show if user has NFTs or POAPs */}
-        {activeSection === 'nfts' && (nfts.length > 0 || poaps.length > 0 || nftLoading) && (
+        {/* NFTs Section - Only show if user has NFTs or POAPs (including World Chain) */}
+        {activeSection === 'nfts' && (nfts.length > 0 || poaps.length > 0 || worldchainNftCount > 0 || nftLoading || worldchainNftsLoading) && (
           <div className="flex flex-col h-full">
             <div className="flex-shrink-0 p-4 border-b border-border/30">
               <div className="flex items-center justify-between gap-3">
@@ -1261,6 +1317,13 @@ export const ProfileCard = ({
                 </>
               )}
             </div>
+
+            {/* World Chain NFTs Section */}
+            {web3BioProfile?.address && !expandedCollection && (
+              <div className="p-4 border-t border-border/30">
+                <WorldchainNFTSection walletAddress={web3BioProfile.address} />
+              </div>
+            )}
 
             {web3BioProfile?.address && !expandedCollection && nfts.length > 0 && (
               <div className="p-4 border-t border-border/30">

@@ -34,20 +34,4 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    rollupOptions: {
-      external: [
-        // Cosmos connector dependencies
-        'graz',
-        '@cosmjs/stargate',
-        '@cosmjs/proto-signing',
-        '@cosmjs/amino',
-        // Solana connector dependencies
-        '@solana/wallet-adapter-react',
-        '@solana/wallet-adapter-base',
-        '@solana/web3.js',
-        '@solana-mobile/wallet-adapter-mobile',
-      ],
-    },
-  },
 }));

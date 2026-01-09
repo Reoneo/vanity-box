@@ -128,7 +128,7 @@ serve(async (req) => {
     console.log(`🔍 Web3.bio unified lookup for: ${trimmed}`);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
+    const timeout = setTimeout(() => controller.abort(), 15000); // Reduced timeout for faster fallback
 
     // Detect .box domains and use ENS-specific endpoint
     const isBoxDomain = trimmed.toLowerCase().endsWith('.box');
