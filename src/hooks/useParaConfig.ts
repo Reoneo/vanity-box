@@ -4,8 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ParaConfig {
   paraApiKey: string;
   walletConnectProjectId: string;
-
-  // Optional: your Edge Function may return one of these
   env?: "BETA" | "PROD" | string;
   environment?: "BETA" | "PROD" | string;
 }
@@ -18,7 +16,7 @@ interface UseParaConfigReturn {
 
 export const useParaConfig = (): UseParaConfigReturn => {
   const [config, setConfig] = useState<ParaConfig | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,16 +36,14 @@ export const useParaConfig = (): UseParaConfigReturn => {
         }
 
         if (data?.error) {
-          console.error("[Para] Config returned error:", data.error);
+          console.error("[Para] Config error:", data.error);
           if (!cancelled) setError(String(data.error));
           return;
         }
 
         const paraApiKey = String(data?.paraApiKey ?? "").trim();
         const walletConnectProjectId = String(data?.walletConnectProjectId ?? "").trim();
-
-        // Support either env field name if you later change your edge function
-        const env = (data?.env ?? data?.environment) as ParaConfig["env"];
+        const env = data?.env ?? data?.environment;
 
         if (!paraApiKey) {
           if (!cancelled) setError("Para API key not configured");
@@ -71,7 +67,6 @@ export const useParaConfig = (): UseParaConfigReturn => {
     };
 
     fetchConfig();
-
     return () => {
       cancelled = true;
     };
