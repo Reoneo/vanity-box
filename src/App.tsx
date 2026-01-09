@@ -13,9 +13,17 @@ import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { ParaWalletContextProvider } from "@/contexts/ParaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+
 import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
 import "@getpara/react-sdk-lite/styles.css";
+
 import { useParaConfig } from "@/hooks/useParaConfig";
+
+// ✅ IMPORTANT: use wagmi chains for wagmi config
+import { mainnet, sepolia } from "wagmi/chains";
+
+// ✅ wagmi storage helper (prevents context mismatch/null)
+import { createStorage } from "wagmi";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -53,7 +61,8 @@ const AppContent = () => (
 );
 
 /**
- * Infer the Para environment from the API key prefix
+ * Infer Para env from key prefix (fallback).
+ * If you always use beta_* / prod_* keys you can keep this.
  */
 const inferParaEnvironment = (apiKey: string): Environment => {
   const key = apiKey.trim().toLowerCase();
@@ -81,7 +90,7 @@ const ParaWrappedContent = ({
   const trimmedKey = (paraApiKey || "").trim();
   const wcProjectId = (walletConnectProjectId || "").trim();
 
-  // CRITICAL: never mount Para with empty key (prevents blank-screen crash)
+  // Never mount Para with an empty key
   if (!trimmedKey) return <AppContent />;
 
   const resolvedEnv = normalizeEnvironment(env, trimmedKey);
@@ -92,22 +101,44 @@ const ParaWrappedContent = ({
         env: resolvedEnv,
         apiKey: trimmedKey,
       }}
-      externalWalletConfig={{
-        wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE"],
-        walletConnect: { projectId: wcProjectId },
+      externalWalletConfig={
+        {
+          appName: "Vanity.box",
+          wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE"],
+          walletConnect: { projectId: wcProjectId },
+
+          /**
+           * ✅ IMPORTANT: this must be wagmi config, not viem config.
+           * Passing viem chains/transports here can lead to wagmi context being null,
+           * causing useAccount() to crash.
+           */
+          evmConnector: {
+            config: {
+              chains: [mainnet, sepolia],
+              storage: createStorage({
+                storage: window.localStorage,
+              }),
+            },
+          },
+        } as any
+      }
+      paraModalConfig={
+        {
+          logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
+          theme: { font: "Inter", borderRadius: "xl" },
+          oAuthMethods: ["GOOGLE", "APPLE"],
+          disableEmailLogin: true,
+          disablePhoneLogin: true,
+          authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
+          recoverySecretStepEnabled: true,
+          hideWallets: true,
+          onRampTestMode: true,
+        } as any
+      }
+      config={{
+        appName: "Vanity.box",
+        disableAutoSessionKeepAlive: true,
       }}
-      paraModalConfig={{
-        logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
-        theme: { font: "Inter", borderRadius: "xl" },
-        oAuthMethods: ["GOOGLE", "APPLE"],
-        disableEmailLogin: true,
-        disablePhoneLogin: true,
-        authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
-        recoverySecretStepEnabled: true,
-        hideWallets: true,
-        onRampTestMode: true,
-      } as any}
-      config={{ appName: "Vanity.box" } as any}
     >
       <ParaWalletContextProvider>
         <AppContent />
@@ -153,6 +184,7 @@ const App = () => {
   return (
     <ErrorBoundary>
       <HelmetProvider>
+        {/* ✅ Only one QueryClientProvider in the whole app */}
         <QueryClientProvider client={queryClient}>
           <AppWithPara />
         </QueryClientProvider>
