@@ -13,7 +13,7 @@ import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { ParaWalletContextProvider } from "@/contexts/ParaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ParaProvider } from "@getpara/react-sdk-lite";
+import { ParaProvider, Environment } from "@getpara/react-sdk-lite";
 import "@getpara/react-sdk-lite/styles.css";
 import { useParaConfig } from "@/hooks/useParaConfig";
 
@@ -52,30 +52,21 @@ const AppContent = () => (
   </ThemeProvider>
 );
 
-type ParaEnvString = "BETA" | "PROD";
-
 /**
- * Use string env because some SDK builds still try to parse API key prefix
- * unless env is a valid string.
+ * Infer the Para environment from the API key prefix
  */
-const inferParaEnvString = (apiKey: string): ParaEnvString => {
+const inferParaEnvironment = (apiKey: string): Environment => {
   const key = apiKey.trim().toLowerCase();
-
   if (key.startsWith("prod") || key.startsWith("pk_live") || key.startsWith("live") || key.includes("prod")) {
-    return "PROD";
+    return Environment.PROD;
   }
-
-  if (key.startsWith("beta") || key.startsWith("pk_test") || key.startsWith("test") || key.includes("beta")) {
-    return "BETA";
-  }
-
-  return "BETA";
+  return Environment.BETA;
 };
 
-const normalizeEnvString = (env: any, apiKey: string): ParaEnvString => {
-  if (env === "PROD" || env === "prod") return "PROD";
-  if (env === "BETA" || env === "beta") return "BETA";
-  return inferParaEnvString(apiKey);
+const normalizeEnvironment = (env: any, apiKey: string): Environment => {
+  if (env === Environment.PROD || env === "PROD" || env === "prod") return Environment.PROD;
+  if (env === Environment.BETA || env === "BETA" || env === "beta") return Environment.BETA;
+  return inferParaEnvironment(apiKey);
 };
 
 const ParaWrappedContent = ({
@@ -93,7 +84,7 @@ const ParaWrappedContent = ({
   // CRITICAL: never mount Para with empty key (prevents blank-screen crash)
   if (!trimmedKey) return <AppContent />;
 
-  const resolvedEnv: ParaEnvString = normalizeEnvString(env, trimmedKey);
+  const resolvedEnv = normalizeEnvironment(env, trimmedKey);
 
   return (
     <ParaProvider
