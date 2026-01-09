@@ -87,32 +87,34 @@ const ParaWrappedContent = ({
   const resolvedEnv = normalizeEnvironment(env, trimmedKey);
 
   return (
-    <ParaProvider
-      paraClientConfig={{
-        env: resolvedEnv,
-        apiKey: trimmedKey,
-      }}
-      externalWalletConfig={{
-        wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM", "ZERION", "OKX", "HAHA", "SAFE", "RABBY"],
-        walletConnect: { projectId: wcProjectId },
-      } as any}
-      paraModalConfig={{
-        logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
-        theme: { font: "Inter", borderRadius: "xl" },
-        oAuthMethods: ["GOOGLE", "APPLE"],
-        disableEmailLogin: true,
-        disablePhoneLogin: true,
-        authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
-        recoverySecretStepEnabled: true,
-        hideWallets: true,
-        onRampTestMode: true,
-      } as any}
-      config={{ appName: "Vanity.box" }}
-    >
-      <ParaWalletContextProvider>
-        <AppContent />
-      </ParaWalletContextProvider>
-    </ParaProvider>
+    <QueryClientProvider client={queryClient}>
+      <ParaProvider
+        paraClientConfig={{
+          env: resolvedEnv,
+          apiKey: trimmedKey,
+        }}
+        externalWalletConfig={{
+          wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM", "ZERION", "OKX", "HAHA", "SAFE", "RABBY"],
+          walletConnect: { projectId: wcProjectId },
+        } as any}
+        paraModalConfig={{
+          logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
+          theme: { font: "Inter", borderRadius: "xl" },
+          oAuthMethods: ["GOOGLE", "APPLE"],
+          disableEmailLogin: true,
+          disablePhoneLogin: true,
+          authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
+          recoverySecretStepEnabled: true,
+          hideWallets: true,
+          onRampTestMode: true,
+        } as any}
+        config={{ appName: "Vanity.box" }}
+      >
+        <ParaWalletContextProvider>
+          <AppContent />
+        </ParaWalletContextProvider>
+      </ParaProvider>
+    </QueryClientProvider>
   );
 };
 
