@@ -89,27 +89,24 @@ const ParaWrappedContent = ({
   return (
     <ParaProvider
       paraClientConfig={{
+        env: resolvedEnv,
         apiKey: trimmedKey,
-        env: resolvedEnv, // ✅ MUST be "BETA" | "PROD" string
       }}
-      externalWalletConfig={
-        {
-          appName: "Vanity.box",
-          wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "ZERION", "OKX", "SAFE", "RABBY"],
-          walletConnect: { projectId: wcProjectId },
-        } as any
-      }
+      externalWalletConfig={{
+        wallets: ["METAMASK", "RAINBOW", "WALLETCONNECT", "COINBASE", "PHANTOM", "ZERION", "OKX", "HAHA", "SAFE", "RABBY"],
+        walletConnect: { projectId: wcProjectId },
+      } as any}
       paraModalConfig={{
         logo: "https://metadata.ens.domains/mainnet/avatar/odiin.eth?timestamp=1767661826173",
         theme: { font: "Inter", borderRadius: "xl" },
-        oAuthMethods: ["GOOGLE", "APPLE"] as any,
+        oAuthMethods: ["GOOGLE", "APPLE"],
         disableEmailLogin: true,
         disablePhoneLogin: true,
         authLayout: ["EXTERNAL:FULL", "AUTH:FULL"],
         recoverySecretStepEnabled: true,
         hideWallets: true,
         onRampTestMode: true,
-      }}
+      } as any}
       config={{ appName: "Vanity.box" }}
     >
       <ParaWalletContextProvider>
