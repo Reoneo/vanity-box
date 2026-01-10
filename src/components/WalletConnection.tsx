@@ -19,7 +19,6 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
 import { useParaWallet } from '@/contexts/ParaWalletContext';
-import { ParaOnDemandProvider } from '@/components/para/ParaOnDemandProvider';
 
 interface User {
   walletAddress?: string;
@@ -30,33 +29,21 @@ interface WalletConnectionProps {
   className?: string;
 }
 
-// Inner component that handles Para modal once Para is mounted
-const ParaModalTrigger: React.FC<{ onConnected: (address: string) => void }> = ({ onConnected }) => {
-  const { openModal, isConnected, walletAddress } = useParaWallet();
-
-  useEffect(() => {
-    // Open modal as soon as this component mounts (Para is ready)
-    console.log('[ParaModalTrigger] Mounted, opening modal...');
-    openModal();
-  }, [openModal]);
-
-  useEffect(() => {
-    if (isConnected && walletAddress) {
-      console.log('[ParaModalTrigger] Connected with address:', walletAddress);
-      onConnected(walletAddress);
-    }
-  }, [isConnected, walletAddress, onConnected]);
-
-  return null;
-};
-
 export const WalletConnection: React.FC<WalletConnectionProps> = ({ className }) => {
   const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, disconnect: disconnectPetra } = usePetraWallet();
-  const { isConnected: paraConnected, walletAddress: paraWalletAddress } = useParaWallet();
+  const { 
+    isConnected: paraConnected, 
+    walletAddress: paraWalletAddress, 
+    openModal: openParaModal,
+    enablePara,
+    paraEnabled,
+    isParaReady,
+    setPendingOpenModal
+  } = useParaWallet();
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'para' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
@@ -64,10 +51,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensLoading, setEnsLoading] = useState(false);
-  
-  // Para on-demand mounting state
-  const [paraEnabled, setParaEnabled] = useState(false);
-  const [pendingParaConnect, setPendingParaConnect] = useState(false);
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -77,35 +60,31 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return value.toFixed(decimals);
   };
 
-  // Handle Para connection success
-  const handleParaConnected = useCallback((address: string) => {
-    console.log('[WalletConnection] Para connected with address:', address);
-    setWalletType('para');
-    setUser({
-      walletAddress: address,
-      username: formatAddress(address)
-    });
-    setPendingParaConnect(false);
-    window.dispatchEvent(new CustomEvent('wallet-connected', { 
-      detail: { walletType: 'para', walletAddress: address } 
-    }));
-    fetchEnsName(address);
-  }, []);
-
+  // When Para becomes ready and we're waiting, open the modal
   useEffect(() => {
-    // Check Para wallet connection from context
-    if (paraConnected && paraWalletAddress && !pendingParaConnect) {
+    if (isParaReady && isLoading && paraEnabled) {
+      console.log('[WalletConnection] Para is ready, opening modal...');
+      setIsLoading(false);
+      openParaModal();
+    }
+  }, [isParaReady, isLoading, paraEnabled, openParaModal]);
+
+  // Handle Para connection
+  useEffect(() => {
+    if (paraConnected && paraWalletAddress) {
+      console.log('[WalletConnection] Para connected:', paraWalletAddress);
       setWalletType('para');
       setUser({
         walletAddress: paraWalletAddress,
         username: formatAddress(paraWalletAddress)
       });
+      setIsLoading(false);
       window.dispatchEvent(new CustomEvent('wallet-connected', { 
         detail: { walletType: 'para', walletAddress: paraWalletAddress } 
       }));
       fetchEnsName(paraWalletAddress);
     }
-  }, [paraConnected, paraWalletAddress, pendingParaConnect]);
+  }, [paraConnected, paraWalletAddress]);
 
   useEffect(() => {
     // Check Petra wallet connection and network changes
@@ -138,7 +117,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           console.log('🔄 Trigger: Connecting via World App');
           handleConnect();
         } else {
-          console.log('🔄 Trigger: Enabling Para for connection');
+          console.log('🔄 Trigger: Opening Para modal');
           handleParaConnect();
         }
       }
@@ -209,16 +188,20 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
 
   // Handle Para wallet connection - enables Para on demand
   const handleParaConnect = () => {
-    console.log('[WalletConnection] Enabling Para for wallet connection...');
+    console.log('[WalletConnection] Initiating Para connection...');
     setIsLoading(true);
-    setParaEnabled(true);
-    setPendingParaConnect(true);
-  };
-
-  // Called when Para is ready
-  const handleParaReady = () => {
-    console.log('[WalletConnection] Para is ready');
-    setIsLoading(false);
+    
+    if (paraEnabled && isParaReady) {
+      // Para already ready, just open modal
+      console.log('[WalletConnection] Para already ready, opening modal directly');
+      openParaModal();
+      setIsLoading(false);
+    } else {
+      // Enable Para and set pending modal
+      console.log('[WalletConnection] Enabling Para and setting pending modal...');
+      enablePara();
+      setPendingOpenModal(true);
+    }
   };
 
   const handleConnect = async () => {
@@ -347,7 +330,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       setUser(null);
       setWalletType(null);
       setEnsName(null);
-      setParaEnabled(false);
       window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     } else if (walletType === 'worldchain') {
       setUser(null);
@@ -458,26 +440,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
-  // Render Para on-demand provider wrapper
-  const renderContent = (content: React.ReactNode) => {
-    if (paraEnabled) {
-      return (
-        <ParaOnDemandProvider 
-          enabled={true} 
-          onReady={handleParaReady}
-          onDisable={() => setParaEnabled(false)}
-        >
-          {pendingParaConnect && <ParaModalTrigger onConnected={handleParaConnected} />}
-          {content}
-        </ParaOnDemandProvider>
-      );
-    }
-    return content;
-  };
-
   // Not connected - show connect button
   if (!user && !petraConnected && !paraConnected) {
-    return renderContent(
+    return (
       <Button
         onClick={() => {
           console.log('🔍 Checking environment...');
@@ -493,7 +458,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             console.log('✅ Detected World App - connecting World ID');
             handleConnect();
           } else {
-            console.log('✅ Desktop browser - enabling Para for connection');
+            console.log('✅ Desktop browser - initiating Para connection');
             handleParaConnect();
           }
         }}
@@ -527,7 +492,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     : user?.username || formatAddress(user?.walletAddress || '');
   const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
 
-  return renderContent(
+  return (
     <DropdownMenu onOpenChange={(open) => {
       if (open) {
         if (walletType === 'petra') {

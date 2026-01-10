@@ -1,43 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ParaProvider, Environment } from '@getpara/react-sdk-lite';
 import '@getpara/react-sdk-lite/styles.css';
-import { ParaWalletInnerProvider } from '@/contexts/ParaWalletContext';
+import { ParaConnectionBridge, useParaWallet } from '@/contexts/ParaWalletContext';
 import { useParaConfig } from '@/hooks/useParaConfig';
 
-interface ParaOnDemandProviderProps {
+interface ParaOnDemandWrapperProps {
   children: React.ReactNode;
-  enabled: boolean;
-  onReady?: () => void;
-  onDisable?: () => void;
+  onConnectionChange?: (isConnected: boolean, address: string | null) => void;
 }
 
 /**
- * Mounts ParaProvider only when `enabled` is true.
- * This ensures Para hooks are never called without a provider.
+ * Wrapper that mounts ParaProvider only when paraEnabled is true in context.
+ * Place this high in your component tree (e.g., in App.tsx).
  */
-export const ParaOnDemandProvider: React.FC<ParaOnDemandProviderProps> = ({
+export const ParaOnDemandWrapper: React.FC<ParaOnDemandWrapperProps> = ({ 
   children,
-  enabled,
-  onReady,
-  onDisable,
+  onConnectionChange 
 }) => {
+  const { paraEnabled } = useParaWallet();
   const { config, isLoading, error } = useParaConfig();
-  const [isReady, setIsReady] = useState(false);
 
-  useEffect(() => {
-    if (enabled && config?.paraApiKey && !isLoading) {
-      console.log('[ParaOnDemand] Para is now enabled and configured');
-      setIsReady(true);
-      // Small delay to ensure provider is mounted before calling onReady
-      const timer = setTimeout(() => {
-        onReady?.();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [enabled, config, isLoading, onReady]);
-
-  // If not enabled, just render children without Para
-  if (!enabled) {
+  // Not enabled - just render children
+  if (!paraEnabled) {
     return <>{children}</>;
   }
 
@@ -49,7 +33,7 @@ export const ParaOnDemandProvider: React.FC<ParaOnDemandProviderProps> = ({
 
   // Config error or missing API key
   if (error || !config?.paraApiKey) {
-    console.warn('[ParaOnDemand] Para config error or missing:', error);
+    console.warn('[ParaOnDemand] Para config error:', error || 'Missing API key');
     return <>{children}</>;
   }
 
@@ -66,7 +50,7 @@ export const ParaOnDemandProvider: React.FC<ParaOnDemandProviderProps> = ({
               config.env === 'BETA' ? Environment.BETA : 
               inferEnvironment(config.paraApiKey);
 
-  console.log('[ParaOnDemand] Mounting ParaProvider with env:', env);
+  console.log('[ParaOnDemand] Mounting ParaProvider with env:', env, 'key prefix:', config.paraApiKey.substring(0, 10));
 
   return (
     <ParaProvider
@@ -75,6 +59,7 @@ export const ParaOnDemandProvider: React.FC<ParaOnDemandProviderProps> = ({
         apiKey: config.paraApiKey,
       }}
       externalWalletConfig={{
+        appName: 'Vanity.box',
         wallets: ['METAMASK', 'WALLETCONNECT', 'COINBASE', 'RAINBOW'],
         walletConnect: { projectId: config.walletConnectProjectId || '' },
       } as any}
@@ -87,9 +72,12 @@ export const ParaOnDemandProvider: React.FC<ParaOnDemandProviderProps> = ({
       } as any}
       config={{ appName: 'Vanity.box' } as any}
     >
-      <ParaWalletInnerProvider onDisconnect={onDisable}>
+      <ParaConnectionBridge onConnectionChange={onConnectionChange}>
         {children}
-      </ParaWalletInnerProvider>
+      </ParaConnectionBridge>
     </ParaProvider>
   );
 };
+
+// Keep backward compatible export
+export const ParaOnDemandProvider = ParaOnDemandWrapper;
