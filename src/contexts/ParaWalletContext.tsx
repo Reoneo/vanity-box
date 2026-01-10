@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react';
-import { useAccount, useModal, useWallet } from '@getpara/react-sdk-lite';
+import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
 
 interface ParaWalletContextType {
   isConnected: boolean;
@@ -7,15 +6,24 @@ interface ParaWalletContextType {
   openModal: () => void;
   closeModal: () => void;
   isModalOpen: boolean;
+  // New: control whether Para is enabled/mounted
+  paraEnabled: boolean;
+  enablePara: () => void;
+  disablePara: () => void;
 }
 
-const ParaWalletContext = createContext<ParaWalletContextType>({
+const defaultContext: ParaWalletContextType = {
   isConnected: false,
   walletAddress: null,
   openModal: () => {},
   closeModal: () => {},
   isModalOpen: false,
-});
+  paraEnabled: false,
+  enablePara: () => {},
+  disablePara: () => {},
+};
+
+const ParaWalletContext = createContext<ParaWalletContextType>(defaultContext);
 
 export const useParaWallet = () => useContext(ParaWalletContext);
 
@@ -23,7 +31,57 @@ interface ParaWalletProviderProps {
   children: React.ReactNode;
 }
 
+/**
+ * Safe ParaWalletContextProvider that works WITHOUT ParaProvider mounted.
+ * Para hooks are only called inside ParaWalletContextInner which is rendered
+ * conditionally after Para is enabled and mounted.
+ */
 export const ParaWalletContextProvider: React.FC<ParaWalletProviderProps> = ({ children }) => {
+  const [paraEnabled, setParaEnabled] = useState(false);
+
+  const enablePara = useCallback(() => {
+    console.log('[ParaWallet] Enabling Para...');
+    setParaEnabled(true);
+  }, []);
+
+  const disablePara = useCallback(() => {
+    console.log('[ParaWallet] Disabling Para...');
+    setParaEnabled(false);
+  }, []);
+
+  // When Para is NOT enabled, provide safe defaults
+  const value = useMemo(() => ({
+    isConnected: false,
+    walletAddress: null,
+    openModal: () => {
+      console.warn('[ParaWallet] Cannot open modal - Para not enabled. Call enablePara() first.');
+    },
+    closeModal: () => {},
+    isModalOpen: false,
+    paraEnabled,
+    enablePara,
+    disablePara,
+  }), [paraEnabled, enablePara, disablePara]);
+
+  return (
+    <ParaWalletContext.Provider value={value}>
+      {children}
+    </ParaWalletContext.Provider>
+  );
+};
+
+/**
+ * Inner component that uses Para hooks - ONLY render this inside ParaProvider!
+ */
+interface ParaWalletInnerProviderProps {
+  children: React.ReactNode;
+  onDisconnect?: () => void;
+}
+
+export const ParaWalletInnerProvider: React.FC<ParaWalletInnerProviderProps> = ({ children, onDisconnect }) => {
+  // These hooks are safe here because this component is only rendered inside ParaProvider
+  const { useAccount, useModal, useWallet } = require('@getpara/react-sdk-lite');
+  
   const { isConnected, embedded, external } = useAccount();
   const { openModal, closeModal, isOpen } = useModal();
   const walletQuery = useWallet();
@@ -53,7 +111,10 @@ export const ParaWalletContextProvider: React.FC<ParaWalletProviderProps> = ({ c
     openModal: () => openModal(),
     closeModal,
     isModalOpen: isOpen,
-  }), [isConnected, walletAddress, openModal, closeModal, isOpen]);
+    paraEnabled: true,
+    enablePara: () => {},
+    disablePara: onDisconnect || (() => {}),
+  }), [isConnected, walletAddress, openModal, closeModal, isOpen, onDisconnect]);
 
   return (
     <ParaWalletContext.Provider value={value}>
