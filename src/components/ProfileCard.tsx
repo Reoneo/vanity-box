@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Activity, Image, Users, Coins, Sparkles } from "lucide-react";
 import { SocialIcon } from "./SocialIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
@@ -20,6 +20,7 @@ import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { TalentProtocolCard } from "./TalentProtocolCard";
 import { TalentProtocolModal } from "./TalentProtocolModal";
+import { MagicBentoGrid } from "./MagicBentoGrid";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -464,7 +465,7 @@ export const ProfileCard = ({
                 </div>
               )}
 
-              {/* Profile Action Buttons - Alphabetical order, show only if data exists */}
+              {/* Profile Action Bento Cards */}
               {(() => {
                 const socialLinks = web3BioProfile?.links 
                   ? Object.entries(web3BioProfile.links)
@@ -477,57 +478,69 @@ export const ProfileCard = ({
                 const hasSocials = socialLinks.length > 0;
                 const hasTransactions = transactions.length > 0;
 
-                // Build buttons array for alphabetical sorting
-                const buttons: { name: string; onClick: () => void; disabled?: boolean }[] = [];
+                // Build cards array
+                const cards: { icon: React.ReactNode; title: string; onClick: () => void }[] = [];
                 
-                // Activity button - show if transactions exist
+                // Activity card
                 if (hasTransactions) {
-                  buttons.push({ 
-                    name: 'Activity', 
+                  cards.push({ 
+                    icon: <Activity className="w-6 h-6 text-[#D4AF37]" />,
+                    title: 'Activity', 
                     onClick: () => setShowActivityOverlay(true),
                   });
                 }
                 
-                // NFTs button
+                // NFTs card
                 if (hasNfts) {
-                  buttons.push({ name: 'NFTs', onClick: () => setShowNftsOverlay(true) });
+                  cards.push({ 
+                    icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
+                    title: 'NFTs', 
+                    onClick: () => setShowNftsOverlay(true) 
+                  });
                 }
                 
-                // Social button
+                // Social card
                 if (hasSocials) {
-                  buttons.push({ name: 'Social', onClick: () => setShowAllSocials(true) });
+                  cards.push({ 
+                    icon: <Users className="w-6 h-6 text-[#D4AF37]" />,
+                    title: 'Social', 
+                    onClick: () => setShowAllSocials(true) 
+                  });
                 }
                 
-                // Tokens button
+                // Talent card
+                if (hasTalentData || talentLoading) {
+                  cards.push({ 
+                    icon: <Sparkles className="w-6 h-6 text-[#D4AF37]" />,
+                    title: 'Talent', 
+                    onClick: () => setShowTalentModal(true) 
+                  });
+                }
+                
+                // Tokens card
                 if (hasTokens) {
-                  buttons.push({ name: 'Tokens', onClick: () => setShowTokensOverlay(true) });
+                  cards.push({ 
+                    icon: <Coins className="w-6 h-6 text-[#D4AF37]" />,
+                    title: 'Tokens', 
+                    onClick: () => setShowTokensOverlay(true) 
+                  });
                 }
 
                 // Sort alphabetically
-                buttons.sort((a, b) => a.name.localeCompare(b.name));
+                cards.sort((a, b) => a.title.localeCompare(b.title));
 
-                if (buttons.length === 0) return null;
+                if (cards.length === 0) return null;
 
                 return (
-                  <div className="flex items-center justify-center gap-2 min-h-[40px] flex-wrap">
-                    {buttons.map((btn) => (
-                      <button
-                        key={btn.name}
-                        onClick={btn.onClick}
-                        disabled={btn.disabled}
-                        className={`h-10 px-4 flex items-center justify-center rounded-full transition-all shadow-md border ${
-                          btn.disabled 
-                            ? 'bg-muted/30 border-muted/30 cursor-not-allowed opacity-50' 
-                            : 'bg-[#D4AF37]/20 hover:bg-[#D4AF37]/40 hover:scale-105 border-[#D4AF37]/30'
-                        }`}
-                        title={btn.disabled ? 'Coming soon' : `View ${btn.name}`}
-                      >
-                        <span className={`font-semibold text-sm ${btn.disabled ? 'text-muted-foreground' : 'text-black dark:text-white'}`}>
-                          {btn.name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                  <MagicBentoGrid
+                    cards={cards}
+                    enableStars={true}
+                    enableSpotlight={true}
+                    enableBorderGlow={true}
+                    enableTilt={true}
+                    clickEffect={true}
+                    glowColor="212, 175, 55"
+                  />
                 );
               })()}
 
