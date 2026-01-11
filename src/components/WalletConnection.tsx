@@ -18,7 +18,8 @@ import { isTelegramWebView } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
-import { useWalletConnect } from '@/contexts/WalletConnectContext';
+import { useConnectModal, useAccountModal } from '@rainbow-me/rainbowkit';
+import { useAccount, useDisconnect } from 'wagmi';
 
 interface User {
   walletAddress?: string;
@@ -35,13 +36,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [isLoading, setIsLoading] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, disconnect: disconnectPetra } = usePetraWallet();
-  const { 
-    isConnected: walletConnectConnected, 
-    address: walletConnectAddress, 
-    openModal: openWalletConnectModal,
-    disconnect: disconnectWalletConnect,
-    isReady: walletConnectReady
-  } = useWalletConnect();
+  
+  // RainbowKit hooks for wallet connection
+  const { openConnectModal } = useConnectModal();
+  const { address: walletConnectAddress, isConnected: walletConnectConnected } = useAccount();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'walletconnect' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
@@ -172,28 +172,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
-  // Handle WalletConnect modal open
+  // Handle WalletConnect modal open - RainbowKit handles ready state
   const handleWalletConnectOpen = () => {
-    console.log('[WalletConnection] Opening WalletConnect modal...');
-    if (walletConnectReady) {
-      openWalletConnectModal();
+    console.log('[WalletConnection] Opening RainbowKit modal...');
+    if (openConnectModal) {
+      openConnectModal();
     } else {
-      console.log('[WalletConnection] WalletConnect not ready yet, waiting...');
-      setIsLoading(true);
-      // Wait for it to be ready
-      const checkReady = setInterval(() => {
-        if (walletConnectReady) {
-          clearInterval(checkReady);
-          setIsLoading(false);
-          openWalletConnectModal();
-        }
-      }, 100);
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        clearInterval(checkReady);
-        setIsLoading(false);
-        toast.error('WalletConnect is taking too long to initialize. Please try again.');
-      }, 5000);
+      console.warn('[WalletConnection] Connect modal not available');
+      toast.error('Wallet connection is initializing. Please try again.');
     }
   };
 
@@ -320,7 +306,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       setWalletType(null);
       setEnsName(null);
     } else if (walletType === 'walletconnect') {
-      disconnectWalletConnect();
+      wagmiDisconnect();
       setUser(null);
       setWalletType(null);
       setEnsName(null);
