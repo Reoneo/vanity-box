@@ -337,7 +337,7 @@ export const ProfileCard = ({
       <div className="w-full h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
           <div className="space-y-4 pb-24">
               {/* Header and Avatar - Always visible */}
               <div className="relative flex-shrink-0">
