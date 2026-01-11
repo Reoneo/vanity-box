@@ -388,7 +388,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       console.log('🔄 Background: Preloading OpenSea NFTs for address:', address);
       // Small delay to let initial profile load complete
       const timer = setTimeout(() => {
-        fetchNfts(undefined);
+        fetchNfts(address, undefined);
       }, 1000);
       return () => clearTimeout(timer);
     } else if (address && !isValidAddress) {
@@ -909,7 +909,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               }
             }).catch(() => {});
             
-            fetchNfts(normalizedAddress);
+            fetchNfts(normalizedAddress, undefined);
           } else if (!resolverData?.notFound) {
             toast.error("Profile lookup failed. Please try again.");
           }
@@ -944,7 +944,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           }).catch(err => console.log('EFP stats fetch failed:', err));
           
           // Fetch NFTs
-          fetchNfts(profile.address);
+          fetchNfts(profile.address, undefined);
         }
       } catch (error: any) {
         // Check if this search is still current
@@ -969,7 +969,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           };
           setWeb3BioProfile(minimalProfile);
           setEnsResults([]);
-          fetchNfts(normalizedAddress);
+          fetchNfts(normalizedAddress, undefined);
         } else {
           toast.error("Profile lookup timed out. Please try again.");
         }
@@ -1100,8 +1100,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
 
   // Fetch functions for dock sections
-  const fetchNfts = async (next?: string) => {
-    const address = web3BioProfile?.address || walletAddress;
+  const fetchNfts = async (addressOverride?: string, next?: string) => {
+    const address = addressOverride || web3BioProfile?.address || walletAddress;
     
     // Sanitize the next parameter to handle MiniKit undefined objects
     const sanitizedNext = (next && typeof next === 'string' && next !== 'undefined') 
@@ -1112,6 +1112,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     
     console.log('fetchNfts called with:', { 
       address, 
+      addressOverride,
       web3BioProfile: web3BioProfile?.address, 
       walletAddress, 
       next,
@@ -1182,7 +1183,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           ? responseNext
           : undefined;
       
-      if (sanitizedNext) {
+      if (next) {
         setNfts((prev) => [...prev, ...data.nfts]);
       } else {
         setNfts(data.nfts || []);
@@ -1316,7 +1317,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return;
     }
     
-    fetchNfts(nftNextCursor);
+    fetchNfts(addressString, nftNextCursor);
   };
 
   const handleMint = (result: ENSResult) => {
