@@ -1,6 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Deployment timestamp for cache-busting: 2025-01-11T23:15:00Z
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -15,65 +14,107 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
-    console.log('[mint-subdomain] Request method:', req.method);
-    console.log('[mint-subdomain] Request headers:', Object.fromEntries(req.headers.entries()));
+    console.log('[mint-subdomain] Request received');
     
     const rawBody = await req.text();
-    console.log('[mint-subdomain] Raw request body:', rawBody);
     
     if (!rawBody || rawBody.trim() === '') {
-      console.error('[mint-subdomain] Empty request body received');
-      return j({ ok: false, error: "Empty request body" }, 400);
+      return j({ ok: false, error: "Invalid request" }, 400);
     }
 
     let body;
     try {
       body = JSON.parse(rawBody);
     } catch (parseError) {
-      console.error('[mint-subdomain] JSON parse error:', parseError);
-      return j({ ok: false, error: "Invalid JSON in request body" }, 400);
+      return j({ ok: false, error: "Invalid request format" }, 400);
     }
-    const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, txHash } = body;
+    
+    const { subdomain, walletAddress, domain, registrationMonths, paymentMethod, paymentAmount, networkFee, paymentReference } = body;
 
-    console.log('[mint-subdomain] Request received:', { 
+    console.log('[mint-subdomain] Request details:', { 
       subdomain, 
       domain, 
       walletAddress, 
       registrationMonths, 
       paymentMethod,
       paymentAmount,
-      txHash,
+      paymentReference,
       timestamp: new Date().toISOString()
     });
 
+    // Validate required fields
     if (!subdomain || !walletAddress || !domain) {
-      console.error("[Mint] Missing required fields:", { subdomain, walletAddress, domain });
       return j({ ok: false, error: "Missing required fields" }, 400);
     }
 
-    // Parse subdomain label and domain safely - PRESERVE $ in domain names
-    const subdomainLabel = String(subdomain).split(".")[0].trim().toLowerCase();
-    const cleanDomain = String(domain).trim().toLowerCase(); // DO NOT strip $ - it's part of the domain name!
+    // Validate wallet address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return j({ ok: false, error: "Invalid wallet address format" }, 400);
+    }
 
-    console.log(`[Mint] Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
+    // Parse subdomain label and domain safely
+    const subdomainLabel = String(subdomain).split(".")[0].trim().toLowerCase();
+    const cleanDomain = String(domain).trim().toLowerCase();
+
+    console.log(`[mint-subdomain] Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
 
     // Validate subdomain label format (ENS-safe)
     if (!/^[a-z0-9-]{1,63}$/.test(subdomainLabel)) {
-      console.error("[Mint] Invalid subdomain label format:", subdomainLabel);
       return j({ ok: false, error: "Invalid subdomain format. Use only lowercase letters, numbers, and hyphens." }, 400);
     }
 
     if (!cleanDomain || cleanDomain.length === 0) {
-      console.error("[Mint] Domain is empty after processing");
       return j({ ok: false, error: "Invalid domain format" }, 400);
     }
 
-    // Fetch domain config and API key from database
+    // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log(`[Mint] Fetching domain config for: ${cleanDomain}`);
+    // SECURITY: For paid mints, verify payment was completed
+    let verifiedTxHash: string | null = null;
+    
+    if (paymentAmount && paymentAmount > 0 && paymentMethod !== 'FREE') {
+      if (!paymentReference) {
+        return j({ ok: false, error: "Payment reference required for paid mints" }, 400);
+      }
+
+      // Check payment reference exists and is verified
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('payment_references')
+        .select('*')
+        .eq('reference', paymentReference)
+        .single();
+
+      if (paymentError || !paymentData) {
+        console.error('[mint-subdomain] Payment reference not found:', paymentReference);
+        return j({ ok: false, error: "Invalid payment reference" }, 400);
+      }
+
+      // Verify payment status
+      if (paymentData.status !== 'verified') {
+        console.error('[mint-subdomain] Payment not verified:', paymentData.status);
+        return j({ ok: false, error: "Payment has not been verified" }, 400);
+      }
+
+      // Verify payment is for this subdomain and wallet
+      if (paymentData.subdomain !== subdomainLabel || 
+          paymentData.domain !== cleanDomain ||
+          paymentData.wallet_address.toLowerCase() !== walletAddress.toLowerCase()) {
+        console.error('[mint-subdomain] Payment mismatch:', {
+          expected: { subdomain: subdomainLabel, domain: cleanDomain, wallet: walletAddress.toLowerCase() },
+          actual: { subdomain: paymentData.subdomain, domain: paymentData.domain, wallet: paymentData.wallet_address }
+        });
+        return j({ ok: false, error: "Payment does not match this subdomain" }, 400);
+      }
+
+      verifiedTxHash = paymentData.tx_hash;
+      console.log('[mint-subdomain] Payment verified:', { reference: paymentReference, txHash: verifiedTxHash });
+    }
+
+    // Fetch domain config and API key from database
+    console.log(`[mint-subdomain] Fetching domain config for: ${cleanDomain}`);
     
     const { data: domainConfig, error: configError } = await supabase
       .from("domain_configs")
@@ -83,8 +124,8 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (configError) {
-      console.error("[Mint] Error fetching domain config:", configError);
-      return j({ ok: false, error: `Database error: ${configError.message}` }, 500);
+      console.error("[mint-subdomain] Error fetching domain config:", configError.message);
+      return j({ ok: false, error: "Unable to process request. Please try again." }, 500);
     }
 
     let namestoneApiKey: string | undefined;
@@ -102,11 +143,11 @@ Deno.serve(async (req) => {
     }
 
     if (!namestoneApiKey) {
-      console.error(`[Mint] No API key found for domain: ${cleanDomain}`);
-      return j({ ok: false, error: `Domain ${cleanDomain} is not configured. Please contact support.` }, 500);
+      console.error(`[mint-subdomain] No API key found for domain: ${cleanDomain}`);
+      return j({ ok: false, error: `Domain ${cleanDomain} is not available. Please contact support.` }, 500);
     }
 
-    console.log(`[Mint] API key resolved for ${cleanDomain}`);
+    console.log(`[mint-subdomain] API key resolved for ${cleanDomain}`);
 
     // Calculate dates
     const now = new Date();
@@ -115,7 +156,7 @@ Deno.serve(async (req) => {
     const gracePeriodEnd = new Date(expiryDate);
     gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 90);
 
-    // Call Namestone set-names API (official endpoint)
+    // Call Namestone set-names API
     const namestonePayload = {
       domain: cleanDomain,
       names: [
@@ -131,12 +172,7 @@ Deno.serve(async (req) => {
       ],
     };
 
-    console.log('[mint-subdomain] Calling Namestone API:', {
-      endpoint: 'set-names',
-      subdomain: subdomainLabel,
-      domain: cleanDomain,
-      walletAddress
-    });
+    console.log('[mint-subdomain] Calling Namestone API');
     const namestoneRes = await fetch("https://namestone.com/api/public_v1/set-names", {
       method: "POST",
       headers: {
@@ -146,30 +182,31 @@ Deno.serve(async (req) => {
       body: JSON.stringify(namestonePayload),
     });
 
-    console.log(`[Namestone] Response status: ${namestoneRes.status}`);
+    console.log(`[mint-subdomain] Namestone response: ${namestoneRes.status}`);
 
     if (!namestoneRes.ok) {
       const errorText = await namestoneRes.text();
-      console.error(`[Namestone] Error: ${namestoneRes.status} - ${errorText}`);
+      console.error(`[mint-subdomain] Namestone error: ${namestoneRes.status}`);
       
-      // Provide clearer error for 401 (authorization issues)
       if (namestoneRes.status === 401) {
         return j({ 
           ok: false, 
-          error: `API key not authorized for domain "${cleanDomain}". Please verify domain configuration.` 
+          error: `Domain "${cleanDomain}" is not properly configured. Please contact support.` 
         }, 500);
       }
       
-      return j({ ok: false, error: `Namestone API error: ${errorText}` }, 500);
+      return j({ ok: false, error: "Failed to register subdomain. Please try again." }, 500);
     }
 
     const namestoneData = await namestoneRes.json();
-    console.log('[mint-subdomain] Namestone API success:', namestoneData);
+    console.log('[mint-subdomain] Namestone API success');
 
+    // Record in minted_domains
     console.log('[mint-subdomain] Recording mint in database');
     
-    // Check for existing orphaned records (in DB but not in Namestone)
     const fullName = `${subdomainLabel}.${cleanDomain}`;
+    
+    // Check for existing record and clean up if needed
     const { data: existingRecord } = await supabase
       .from("minted_domains")
       .select("*")
@@ -178,19 +215,15 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existingRecord) {
-      console.log('[mint-subdomain] Found existing record, cleaning up orphaned entry');
-      const { error: deleteError } = await supabase
+      console.log('[mint-subdomain] Cleaning up existing record');
+      await supabase
         .from("minted_domains")
         .delete()
         .eq("full_name", fullName)
         .eq("wallet_address", walletAddress.toLowerCase());
-
-      if (deleteError) {
-        console.error('[mint-subdomain] Error cleaning up orphaned record:', deleteError);
-      }
     }
     
-    // Record in minted_domains
+    // Insert new record
     const { error: dbError } = await supabase.from("minted_domains").insert({
       full_name: fullName,
       subdomain: subdomainLabel,
@@ -203,29 +236,25 @@ Deno.serve(async (req) => {
       payment_method: paymentMethod,
       payment_amount: paymentAmount,
       network_fee: networkFee,
-      tx_hash: txHash || `free-mint-${Date.now()}`,
+      tx_hash: verifiedTxHash || `free-mint-${Date.now()}`,
     });
 
     if (dbError) {
-      console.error("[DB] Error:", dbError);
+      console.error("[mint-subdomain] DB Error:", dbError.message);
       
-      // Provide helpful error message for duplicate key errors
       if (dbError.code === '23505') {
         return j({ 
           ok: false, 
-          error: `This domain "${fullName}" is already registered to this wallet. If you deleted it from Namestone but still see this error, please try again in a moment.` 
+          error: `Domain "${fullName}" is already registered. Please try again in a moment.` 
         }, 409);
       }
       
-      return j({ ok: false, error: `Database error: ${dbError.message}` }, 500);
+      return j({ ok: false, error: "Failed to record domain registration. Please contact support." }, 500);
     }
 
-    console.log('[mint-subdomain] Mint completed successfully:', {
-      fullName: `${subdomainLabel}.${cleanDomain}`,
-      expiryDate: expiryDate.toISOString()
-    });
+    console.log('[mint-subdomain] Mint completed successfully:', fullName);
 
-    // Set default redirect using Supabase client (BLOCKING with retries)
+    // Set default redirect
     console.log('[mint-subdomain] Setting default redirect...');
     
     let redirectSuccess = false;
@@ -234,7 +263,7 @@ Deno.serve(async (req) => {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[mint-subdomain] Redirect attempt ${attempt}/${maxRetries}...`);
+        console.log(`[mint-subdomain] Redirect attempt ${attempt}/${maxRetries}`);
         
         const { data: redirectData, error: redirectError } = await supabase.functions.invoke(
           'set-namestone-redirect',
@@ -247,102 +276,42 @@ Deno.serve(async (req) => {
           }
         );
         
-        if (redirectError) {
-          lastRedirectError = redirectError;
-          console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} FAILED:`, {
-            error: redirectError,
-            domain: `${subdomainLabel}.${cleanDomain}`,
-            timestamp: new Date().toISOString()
-          });
+        if (redirectError || redirectData?.error || !redirectData?.cid || !redirectData?.contenthash) {
+          lastRedirectError = redirectError || redirectData?.error || 'Missing CID or contenthash';
+          console.error(`[mint-subdomain] Redirect attempt ${attempt} failed`);
           
-          // Wait before retry (exponential backoff)
           if (attempt < maxRetries) {
-            const waitTime = attempt * 2000;
-            console.log(`[mint-subdomain] Waiting ${waitTime}ms before retry...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
           }
           continue;
         }
         
-        if (redirectData?.error) {
-          lastRedirectError = redirectData.error;
-          console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} returned error:`, {
-            error: redirectData.error,
-            domain: `${subdomainLabel}.${cleanDomain}`,
-            timestamp: new Date().toISOString()
-          });
-          
-          // Wait before retry
-          if (attempt < maxRetries) {
-            const waitTime = attempt * 2000;
-            console.log(`[mint-subdomain] Waiting ${waitTime}ms before retry...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
-          continue;
-        }
-        
-        // Verify we got a CID and contenthash
-        if (!redirectData?.cid || !redirectData?.contenthash) {
-          lastRedirectError = 'Missing CID or contenthash in response';
-          console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} incomplete:`, {
-            data: redirectData,
-            domain: `${subdomainLabel}.${cleanDomain}`,
-            timestamp: new Date().toISOString()
-          });
-          
-          if (attempt < maxRetries) {
-            const waitTime = attempt * 2000;
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
-          continue;
-        }
-        
-        // Success!
-        console.log('[mint-subdomain] ✅ Redirect set successfully:', {
-          domain: `${subdomainLabel}.${cleanDomain}`,
-          cid: redirectData.cid,
-          contenthash: redirectData.contenthash,
-          provider: redirectData.provider,
-          attempt,
-          timestamp: new Date().toISOString()
-        });
-        
+        console.log('[mint-subdomain] ✅ Redirect set successfully');
         redirectSuccess = true;
         break;
         
       } catch (redirectErr: any) {
         lastRedirectError = redirectErr;
-        console.error(`[mint-subdomain] ❌ Redirect attempt ${attempt} exception:`, {
-          error: redirectErr,
-          message: redirectErr?.message,
-          domain: `${subdomainLabel}.${cleanDomain}`,
-          timestamp: new Date().toISOString()
-        });
+        console.error(`[mint-subdomain] Redirect attempt ${attempt} exception`);
         
         if (attempt < maxRetries) {
-          const waitTime = attempt * 2000;
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
         }
       }
     }
     
     if (!redirectSuccess) {
-      console.error('[mint-subdomain] ⚠️ All redirect attempts failed, but mint succeeded:', {
-        domain: `${subdomainLabel}.${cleanDomain}`,
-        lastError: lastRedirectError,
-        timestamp: new Date().toISOString()
-      });
+      console.error('[mint-subdomain] ⚠️ All redirect attempts failed');
     }
 
     return j({ 
       ok: true, 
-      subdomain: `${subdomainLabel}.${cleanDomain}`, 
+      subdomain: fullName, 
       expiryDate: expiryDate.toISOString(),
-      redirectSuccess,
-      redirectError: !redirectSuccess ? String(lastRedirectError) : undefined
+      redirectSuccess
     });
   } catch (e: any) {
-    console.error("[Mint] Fatal:", e);
-    return j({ ok: false, error: String(e?.message || e) }, 500);
+    console.error("[mint-subdomain] Fatal error:", e.message);
+    return j({ ok: false, error: "An error occurred. Please try again." }, 500);
   }
 });
