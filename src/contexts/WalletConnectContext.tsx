@@ -3,14 +3,8 @@ import {
   getDefaultConfig, 
   RainbowKitProvider,
   lightTheme,
-  connectorsForWallets,
+  useConnectModal,
 } from '@rainbow-me/rainbowkit';
-import { 
-  rainbowWallet,
-  walletConnectWallet,
-  coinbaseWallet,
-  metaMaskWallet,
-} from '@rainbow-me/rainbowkit/wallets';
 import { WagmiProvider, useAccount, useDisconnect } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -104,23 +98,9 @@ function WalletContextInner({ children }: { children: ReactNode }) {
   );
 }
 
-// Component to capture modal opener
-function ModalOpenerCapture() {
-  // Dynamic import to get the hook
-  const [, setReady] = useState(false);
-  
-  useEffect(() => {
-    import('@rainbow-me/rainbowkit').then(({ useConnectModal }) => {
-      // We can't call hooks here, but we set up the reference via ModalOpenerInner
-      setReady(true);
-    });
-  }, []);
-  
-  return <ModalOpenerInner />;
-}
-
+// Component to capture modal opener - uses ES6 imported hook
 function ModalOpenerInner() {
-  const { openConnectModal } = require('@rainbow-me/rainbowkit').useConnectModal();
+  const { openConnectModal } = useConnectModal();
   
   useEffect(() => {
     openConnectModalFn = openConnectModal || null;
@@ -215,7 +195,7 @@ export function WalletConnectProvider({ children }: { children: ReactNode }) {
           modalSize="compact"
           showRecentTransactions={false}
         >
-          <ModalOpenerCapture />
+          <ModalOpenerInner />
           <WalletContextInner>
             {children}
           </WalletContextInner>
