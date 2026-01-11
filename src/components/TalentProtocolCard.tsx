@@ -22,9 +22,14 @@ export const TalentProtocolCard = ({ wallet, ens, talentId }: TalentProtocolCard
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('[TalentCard] Render with props:', { wallet, ens, talentId });
+
   useEffect(() => {
     const fetchScores = async () => {
+      console.log('[TalentCard] fetchScores called, identifiers:', { wallet, ens, talentId });
+      
       if (!wallet && !ens && !talentId) {
+        console.log('[TalentCard] No identifiers provided, skipping fetch');
         setLoading(false);
         return;
       }
@@ -33,6 +38,7 @@ export const TalentProtocolCard = ({ wallet, ens, talentId }: TalentProtocolCard
       setError(null);
 
       try {
+        console.log('[TalentCard] Fetching Talent Protocol data...');
         const response = await fetch(
           'https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol',
           {
@@ -48,12 +54,18 @@ export const TalentProtocolCard = ({ wallet, ens, talentId }: TalentProtocolCard
         );
 
         const data = await response.json();
+        console.log('[TalentCard] Response received:', data);
         
         if (data.noData || data.error) {
+          console.log('[TalentCard] No data or error:', data.error || 'noData flag set');
           setHasData(false);
         } else if (data.scores) {
+          console.log('[TalentCard] Scores found:', data.scores);
           setScores(data.scores);
           setHasData(data.scores.builder !== null || data.scores.creator !== null);
+        } else {
+          console.log('[TalentCard] No scores in response');
+          setHasData(false);
         }
       } catch (err) {
         console.error('[TalentCard] Error fetching scores:', err);
@@ -67,8 +79,15 @@ export const TalentProtocolCard = ({ wallet, ens, talentId }: TalentProtocolCard
     fetchScores();
   }, [wallet, ens, talentId]);
 
-  // Don't render if no data
+  // Don't render if no identifiers provided at all
+  if (!wallet && !ens && !talentId) {
+    console.log('[TalentCard] No identifiers, not rendering');
+    return null;
+  }
+
+  // Don't render if finished loading and no data found
   if (!loading && !hasData) {
+    console.log('[TalentCard] No data found, not rendering');
     return null;
   }
 
