@@ -18,6 +18,7 @@ import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
+import { TalentProtocolCard } from "./TalentProtocolCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -515,6 +516,14 @@ export const ProfileCard = ({
                     </span>
                   </>
                 ) : null}
+              </div>
+
+              {/* Talent Protocol Card */}
+              <div className="px-4">
+                <TalentProtocolCard
+                  wallet={currentWalletAddress}
+                  ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                />
               </div>
             </div>
 

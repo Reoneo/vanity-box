@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.get-walletconnect-config]
 verify_jwt = false
+
+[functions.get-talent-protocol]
+verify_jwt = false
