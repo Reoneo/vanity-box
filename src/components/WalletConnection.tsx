@@ -535,27 +535,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           </>
         )}
 
-        {/* Show network switch for WalletConnect */}
-        {walletType === 'walletconnect' && openChainModal && (
-          <>
-            <DropdownMenuItem 
-              className="cursor-pointer"
-              onClick={() => openChainModal()}
-            >
-              <Globe className="mr-2 h-4 w-4" />
-              Switch Network
-            </DropdownMenuItem>
-          </>
-        )}
-        
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
-          onClick={handleDisconnect}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          {t('disconnect')}
-        </DropdownMenuItem>
+        <div className="p-2">
+          <Button
+            variant="destructive"
+            className="w-full justify-center gap-2 h-9"
+            onClick={handleDisconnect}
+          >
+            <LogOut className="h-4 w-4" />
+            {t('disconnect')}
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
