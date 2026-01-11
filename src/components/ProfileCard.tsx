@@ -18,6 +18,7 @@ import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
+import { TalentProtocolCard } from "./TalentProtocolCard";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import {
   DropdownMenu,
@@ -501,11 +502,6 @@ export const ProfileCard = ({
                 if (hasTokens) {
                   buttons.push({ name: 'Tokens', onClick: () => setShowTokensOverlay(true) });
                 }
-                
-                // Talent button - show if talent data exists or still loading
-                if (hasTalentData || talentLoading) {
-                  buttons.push({ name: 'Talent', onClick: () => setShowTalentModal(true) });
-                }
 
                 // Sort alphabetically
                 buttons.sort((a, b) => a.name.localeCompare(b.name));
@@ -551,6 +547,13 @@ export const ProfileCard = ({
                 ) : null}
               </div>
 
+              {/* Talent Protocol Card - displayed directly on profile */}
+              <div className="px-4">
+                <TalentProtocolCard
+                  wallet={currentWalletAddress}
+                  ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                />
+              </div>
             </div>
 
             {/* Flip Card for All Social Links */}
