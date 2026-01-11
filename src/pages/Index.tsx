@@ -12,22 +12,20 @@ import { cn } from "@/lib/utils";
 // Lazy load heavy animation component
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
 
-// Detect if device is low-powered (mobile or low memory)
-const isLowPowerDevice = typeof navigator !== 'undefined' && (
-  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-  (navigator as any).deviceMemory < 4
-);
+// Detect if device is mobile - disable SplashCursor entirely on mobile for performance
+const isMobileDevice = typeof navigator !== 'undefined' && 
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 const Index = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
 
-  // Adaptive quality settings based on device capability - reduced by half for performance
+  // Desktop-only splash settings - reduced for performance
   const splashSettings = useMemo(() => ({
-    DYE_RESOLUTION: isLowPowerDevice ? 256 : 540,
-    SIM_RESOLUTION: isLowPowerDevice ? 32 : 64,
-    PRESSURE_ITERATIONS: isLowPowerDevice ? 5 : 10,
+    DYE_RESOLUTION: 360,
+    SIM_RESOLUTION: 48,
+    PRESSURE_ITERATIONS: 10,
   }), []);
 
   // Listen for wallet connection events
@@ -47,14 +45,26 @@ const Index = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col relative overflow-hidden">
-      <Suspense fallback={null}>
-        <SplashCursor 
-          enabled={true}
-          DYE_RESOLUTION={splashSettings.DYE_RESOLUTION}
-          SIM_RESOLUTION={splashSettings.SIM_RESOLUTION}
-          PRESSURE_ITERATIONS={splashSettings.PRESSURE_ITERATIONS}
-        />
-      </Suspense>
+      {/* SplashCursor only on desktop - mobile gets lightweight CSS animation */}
+      {!isMobileDevice ? (
+        <Suspense fallback={null}>
+          <SplashCursor 
+            enabled={true}
+            DYE_RESOLUTION={splashSettings.DYE_RESOLUTION}
+            SIM_RESOLUTION={splashSettings.SIM_RESOLUTION}
+            PRESSURE_ITERATIONS={splashSettings.PRESSURE_ITERATIONS}
+          />
+        </Suspense>
+      ) : (
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+          <div 
+            className="absolute inset-0 bg-gradient-to-br from-red-900/30 via-background to-orange-900/20"
+            style={{ 
+              animation: 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            }} 
+          />
+        </div>
+      )}
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
 
