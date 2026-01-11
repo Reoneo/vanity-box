@@ -4,8 +4,9 @@ import {
   RainbowKitProvider,
   lightTheme,
   useConnectModal,
+  useChainModal,
 } from '@rainbow-me/rainbowkit';
-import { WagmiProvider, useAccount, useDisconnect } from 'wagmi';
+import { WagmiProvider, useAccount, useDisconnect, useChainId } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createContext, useContext, ReactNode, useEffect, useState, useCallback, useMemo, useRef } from 'react';
@@ -40,7 +41,9 @@ const queryClient = new QueryClient({
 interface WalletContextType {
   isConnected: boolean;
   address: string | null;
+  chainId: number | null;
   openModal: () => void;
+  openChainModal: () => void;
   disconnect: () => void;
   isReady: boolean;
 }
@@ -48,19 +51,23 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType>({
   isConnected: false,
   address: null,
+  chainId: null,
   openModal: () => {},
+  openChainModal: () => {},
   disconnect: () => {},
   isReady: false,
 });
 
 export const useWalletConnect = () => useContext(WalletContext);
 
-// Store modal opener function reference
+// Store modal opener function references
 let openConnectModalFn: (() => void) | null = null;
+let openChainModalFn: (() => void) | null = null;
 
 // Inner component that uses wagmi hooks
 function WalletContextInner({ children }: { children: ReactNode }) {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const prevConnectedRef = useRef(false);
 
@@ -88,13 +95,21 @@ function WalletContextInner({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const openChainModal = useCallback(() => {
+    if (openChainModalFn) {
+      openChainModalFn();
+    }
+  }, []);
+
   const contextValue = useMemo(() => ({
     isConnected,
     address: address || null,
+    chainId: chainId || null,
     openModal,
+    openChainModal,
     disconnect,
     isReady: true,
-  }), [isConnected, address, openModal, disconnect]);
+  }), [isConnected, address, chainId, openModal, openChainModal, disconnect]);
 
   return (
     <WalletContext.Provider value={contextValue}>
@@ -103,16 +118,19 @@ function WalletContextInner({ children }: { children: ReactNode }) {
   );
 }
 
-// Component to capture modal opener - uses ES6 imported hook
+// Component to capture modal openers - uses ES6 imported hooks
 function ModalOpenerInner() {
   const { openConnectModal } = useConnectModal();
+  const { openChainModal } = useChainModal();
   
   useEffect(() => {
     openConnectModalFn = openConnectModal || null;
+    openChainModalFn = openChainModal || null;
     return () => {
       openConnectModalFn = null;
+      openChainModalFn = null;
     };
-  }, [openConnectModal]);
+  }, [openConnectModal, openChainModal]);
   
   return null;
 }
@@ -172,11 +190,13 @@ export function WalletConnectProvider({ children }: { children: ReactNode }) {
       <WalletContext.Provider value={{
         isConnected: false,
         address: null,
+        chainId: null,
         openModal: () => {
           if (!isLoading) {
             console.log('[RainbowKit] Config not available');
           }
         },
+        openChainModal: () => {},
         disconnect: () => {},
         isReady: false,
       }}>

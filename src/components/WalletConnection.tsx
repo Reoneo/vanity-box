@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
@@ -40,7 +40,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const { 
     isConnected: walletConnectConnected, 
     address: walletConnectAddress, 
+    chainId: walletConnectChainId,
     openModal: openConnectModal,
+    openChainModal,
     disconnect: wagmiDisconnect,
     isReady: walletConnectReady
   } = useWalletConnect();
@@ -530,6 +532,19 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
                 </div>
               )}
             </div>
+          </>
+        )}
+
+        {/* Show network switch for WalletConnect */}
+        {walletType === 'walletconnect' && openChainModal && (
+          <>
+            <DropdownMenuItem 
+              className="cursor-pointer"
+              onClick={() => openChainModal()}
+            >
+              <Globe className="mr-2 h-4 w-4" />
+              Switch Network
+            </DropdownMenuItem>
           </>
         )}
         
