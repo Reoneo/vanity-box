@@ -1,9 +1,6 @@
-import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { createAppKit, useAppKit, useAppKitAccount, useDisconnect } from '@reown/appkit/react';
-import { WagmiProvider, type Config } from 'wagmi';
-import { mainnet, worldchain } from '@reown/appkit/networks';
+import { createContext, useContext, ReactNode, useEffect, useState, useCallback, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
+import { WagmiProvider, type Config } from 'wagmi';
 import { callEdge } from '@/lib/supaInvoke';
 
 // Context for wallet state
@@ -33,38 +30,134 @@ const metadata = {
   icons: ['https://vanity.box/vanity-box-logo.png']
 };
 
-const networks = [mainnet, worldchain] as const;
-const queryClient = new QueryClient();
+// Singleton state for AppKit - prevents re-initialization
+let appKitInstance: any = null;
+let wagmiAdapterInstance: any = null;
+let initializationPromise: Promise<void> | null = null;
 
-// Inner component that uses AppKit hooks
-function WalletContextInner({ children }: { children: ReactNode }) {
-  const { open } = useAppKit();
-  const { address, isConnected } = useAppKitAccount();
-  const { disconnect: appKitDisconnect } = useDisconnect();
-  
-  const openModal = () => {
-    console.log('[WalletConnect] Opening modal...');
-    open();
-  };
-  
-  const disconnect = () => {
-    console.log('[WalletConnect] Disconnecting...');
-    appKitDisconnect();
-  };
-  
+// Singleton query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Load AppKit only when needed
+async function loadAppKit(projectId: string): Promise<{ adapter: any; appKit: any }> {
+  if (appKitInstance && wagmiAdapterInstance) {
+    return { adapter: wagmiAdapterInstance, appKit: appKitInstance };
+  }
+
+  if (initializationPromise) {
+    await initializationPromise;
+    return { adapter: wagmiAdapterInstance, appKit: appKitInstance };
+  }
+
+  initializationPromise = (async () => {
+    console.log('[WalletConnect] Loading AppKit modules...');
+    
+    const [{ WagmiAdapter }, { createAppKit }, { mainnet, worldchain }] = await Promise.all([
+      import('@reown/appkit-adapter-wagmi'),
+      import('@reown/appkit/react'),
+      import('@reown/appkit/networks'),
+    ]);
+
+    wagmiAdapterInstance = new WagmiAdapter({
+      networks: [mainnet, worldchain],
+      projectId,
+      ssr: false,
+    });
+
+    appKitInstance = createAppKit({
+      adapters: [wagmiAdapterInstance],
+      networks: [mainnet, worldchain],
+      projectId,
+      metadata,
+      features: {
+        analytics: false, // Disable for performance
+      },
+      themeMode: 'light',
+    });
+
+    console.log('[WalletConnect] AppKit initialized');
+  })();
+
+  await initializationPromise;
+  return { adapter: wagmiAdapterInstance, appKit: appKitInstance };
+}
+
+// Inner component that uses AppKit hooks - only mounted after WagmiProvider is set up
+function AppKitHooksConsumer({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<{ isConnected: boolean; address: string | null }>({
+    isConnected: false,
+    address: null,
+  });
+  const [hooks, setHooks] = useState<{
+    useAppKit: any;
+    useAppKitAccount: any;
+    useDisconnect: any;
+  } | null>(null);
+
+  // Load hooks dynamically
   useEffect(() => {
-    if (isConnected && address) {
-      console.log('[WalletConnect] Connected:', address);
-      window.dispatchEvent(new CustomEvent('wallet-connected', { 
-        detail: { walletType: 'walletconnect', walletAddress: address } 
-      }));
+    import('@reown/appkit/react').then(({ useAppKit, useAppKitAccount }) => {
+      import('wagmi').then(({ useDisconnect }) => {
+        setHooks({ useAppKit, useAppKitAccount, useDisconnect });
+      });
+    });
+  }, []);
+
+  // Subscribe to account changes
+  useEffect(() => {
+    if (!appKitInstance) return;
+
+    const unsubscribe = appKitInstance.subscribeAccount?.((account: any) => {
+      const isConnected = !!account?.isConnected;
+      const address = account?.address || null;
+      
+      setState(prev => {
+        if (prev.isConnected !== isConnected || prev.address !== address) {
+          if (isConnected && address) {
+            window.dispatchEvent(new CustomEvent('wallet-connected', {
+              detail: { walletType: 'walletconnect', walletAddress: address }
+            }));
+          }
+          return { isConnected, address };
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  const openModal = useCallback(async () => {
+    console.log('[WalletConnect] Opening modal...');
+    if (appKitInstance?.open) {
+      await appKitInstance.open();
     }
-  }, [isConnected, address]);
-  
+  }, []);
+
+  const disconnect = useCallback(async () => {
+    console.log('[WalletConnect] Disconnecting...');
+    if (appKitInstance?.disconnect) {
+      await appKitInstance.disconnect();
+    }
+    setState({ isConnected: false, address: null });
+    window.dispatchEvent(new CustomEvent('wallet-disconnected', {}));
+  }, []);
+
   return (
     <WalletContext.Provider value={{
-      isConnected,
-      address: address || null,
+      isConnected: state.isConnected,
+      address: state.address,
       openModal,
       disconnect,
       isReady: true,
@@ -74,108 +167,99 @@ function WalletContextInner({ children }: { children: ReactNode }) {
   );
 }
 
-// Main provider that fetches config and initializes AppKit
+// Main provider with deferred loading
 export function WalletConnectProvider({ children }: { children: ReactNode }) {
-  const [wagmiAdapter, setWagmiAdapter] = useState<WagmiAdapter | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [wagmiConfig, setWagmiConfig] = useState<Config | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const initRef = useRef(false);
 
+  // Fetch project ID lazily
   useEffect(() => {
     let mounted = true;
 
-    const initAppKit = async () => {
+    async function fetchConfig() {
+      if (!mounted) return;
       try {
-        // Fetch WalletConnect project ID from Supabase
         const config = await callEdge<{ projectId: string }>('get-walletconnect-config', {});
-        
-        if (!mounted) return;
-        
-        if (!config?.projectId) {
-          console.error('[WalletConnect] No project ID found');
-          setError('WalletConnect project ID not configured');
-          return;
-        }
-
-        console.log('[WalletConnect] Initializing with project ID:', config.projectId.substring(0, 10) + '...');
-
-        // Create wagmi adapter
-        const adapter = new WagmiAdapter({
-          networks: [mainnet, worldchain],
-          projectId: config.projectId,
-          ssr: false,
-        });
-
-        // Initialize AppKit
-        createAppKit({
-          adapters: [adapter],
-          networks: [mainnet, worldchain],
-          projectId: config.projectId,
-          metadata,
-          features: {
-            analytics: true,
-          },
-          themeMode: 'light',
-        });
-
-        if (mounted) {
-          setWagmiAdapter(adapter);
-          setIsInitialized(true);
-          console.log('[WalletConnect] Initialized successfully');
+        if (mounted && config?.projectId) {
+          setProjectId(config.projectId);
+          console.log('[WalletConnect] Project ID fetched');
         }
       } catch (err) {
-        console.error('[WalletConnect] Initialization error:', err);
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to initialize WalletConnect');
-        }
+        console.warn('[WalletConnect] Config fetch failed:', err);
+        if (mounted) setError('Configuration unavailable');
       }
-    };
+    }
 
-    initAppKit();
+    // Defer fetch to not block initial render
+    const timeoutId = setTimeout(() => fetchConfig(), 100);
 
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
     };
   }, []);
 
-  // Show loading state or error
-  if (error) {
-    console.warn('[WalletConnect] Error state:', error);
-    // Still render children but without wallet functionality
+  // Initialize AppKit when user opens modal (deferred)
+  const initializeAppKit = useCallback(async () => {
+    if (!projectId || wagmiConfig || initRef.current) return false;
+    initRef.current = true;
+    
+    try {
+      const { adapter } = await loadAppKit(projectId);
+      setWagmiConfig(adapter.wagmiConfig as Config);
+      return true;
+    } catch (err) {
+      console.error('[WalletConnect] Init failed:', err);
+      setError('Failed to initialize');
+      initRef.current = false;
+      return false;
+    }
+  }, [projectId, wagmiConfig]);
+
+  // Deferred open modal - initializes on first click
+  const openModalDeferred = useCallback(async () => {
+    if (!wagmiConfig && projectId) {
+      const success = await initializeAppKit();
+      if (success) {
+        // Wait for next frame to ensure React has re-rendered
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            appKitInstance?.open?.();
+          }, 50);
+        });
+      }
+    } else if (appKitInstance?.open) {
+      appKitInstance.open();
+    }
+  }, [wagmiConfig, projectId, initializeAppKit]);
+
+  // If AppKit is fully loaded, use the complete provider stack
+  if (wagmiConfig) {
     return (
-      <WalletContext.Provider value={{
-        isConnected: false,
-        address: null,
-        openModal: () => console.warn('WalletConnect not available:', error),
-        disconnect: () => {},
-        isReady: false,
-      }}>
-        {children}
-      </WalletContext.Provider>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <AppKitHooksConsumer>
+            {children}
+          </AppKitHooksConsumer>
+        </QueryClientProvider>
+      </WagmiProvider>
     );
   }
 
-  if (!isInitialized || !wagmiAdapter) {
-    // Still render children while loading
-    return (
-      <WalletContext.Provider value={{
-        isConnected: false,
-        address: null,
-        openModal: () => console.log('WalletConnect initializing...'),
-        disconnect: () => {},
-        isReady: false,
-      }}>
-        {children}
-      </WalletContext.Provider>
-    );
-  }
-
+  // Before AppKit is loaded - lightweight wrapper with deferred functionality
   return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig as Config}>
+    <WalletContext.Provider value={{
+      isConnected: false,
+      address: null,
+      openModal: openModalDeferred,
+      disconnect: () => {},
+      isReady: !!projectId && !error,
+    }}>
       <QueryClientProvider client={queryClient}>
-        <WalletContextInner>
-          {children}
-        </WalletContextInner>
+        {children}
       </QueryClientProvider>
-    </WagmiProvider>
+    </WalletContext.Provider>
   );
 }
