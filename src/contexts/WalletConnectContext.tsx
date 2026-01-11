@@ -8,7 +8,7 @@ import {
 import { WagmiProvider, useAccount, useDisconnect } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createContext, useContext, ReactNode, useEffect, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { http, type Chain } from 'viem';
 import { callEdge } from '@/lib/supaInvoke';
 
@@ -62,10 +62,15 @@ let openConnectModalFn: (() => void) | null = null;
 function WalletContextInner({ children }: { children: ReactNode }) {
   const { address, isConnected } = useAccount();
   const { disconnect: wagmiDisconnect } = useDisconnect();
+  const prevConnectedRef = useRef(false);
 
-  // Dispatch event on connection change
+  // Edge-triggered: only dispatch on transition from disconnected -> connected
   useEffect(() => {
-    if (isConnected && address) {
+    const wasConnected = prevConnectedRef.current;
+    prevConnectedRef.current = isConnected;
+    
+    // Only fire event on transition, not on every render
+    if (isConnected && address && !wasConnected) {
       window.dispatchEvent(new CustomEvent('wallet-connected', {
         detail: { walletType: 'walletconnect', walletAddress: address }
       }));
