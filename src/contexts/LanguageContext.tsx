@@ -81,6 +81,9 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       network_fee: 'Network Fee',
       ids_found: "ID's Found",
       found: 'Found',
+      connect_wallet: 'Connect Wallet',
+      approve_in_wallet: 'Approve in your wallet',
+      confirm_in_wallet: 'Confirm transaction in wallet',
     },
     ca: {
       inbox: 'Safata d\'entrada',
@@ -145,6 +148,9 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       check_world_app: 'Revisar World App per completar',
       verifying_wait: 'Això pot trigar uns segons...',
       almost_done: 'Gairebé fet!',
+      connect_wallet: 'Connectar cartera',
+      approve_in_wallet: 'Aprovar a la cartera',
+      confirm_in_wallet: 'Confirmar transacció a la cartera',
     },
     de: {
       inbox: 'Posteingang',

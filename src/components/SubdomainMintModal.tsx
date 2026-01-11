@@ -16,6 +16,9 @@ import { fullEnsName } from "@/lib/ensRedirect/profile";
 import { ensureReady, safePay, sendHaptic, getMiniKitStatus } from "@/lib/minikit";
 import { usePetraWallet } from "@/hooks/use-petra-wallet";
 import { isTelegramWebView } from "@/lib/telegram";
+import { useWalletConnect } from "@/contexts/WalletConnectContext";
+import { useSendTransaction, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther, parseUnits, erc20Abi } from "viem";
 
 import usdcLogo from "@/assets/usdc-logo.png";
 import ensLogoBlue from "@/assets/ens-logo-blue.png";
@@ -45,6 +48,34 @@ type PaymentFlowStep =
   | "verifying_payment"
   | "minting";
 
+// USDC contract addresses per chain
+const USDC_ADDRESSES: Record<number, `0x${string}`> = {
+  1: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',     // Ethereum Mainnet
+  137: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',   // Polygon
+  42161: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // Arbitrum
+  10: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',    // Optimism
+  8453: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',  // Base
+  56: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',    // BSC (18 decimals)
+  43114: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', // Avalanche
+  480: '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1',   // World Chain
+};
+
+// USDC decimals per chain (most are 6, BSC is 18)
+const USDC_DECIMALS: Record<number, number> = {
+  1: 6, 137: 6, 42161: 6, 10: 6, 8453: 6, 56: 18, 43114: 6, 480: 6,
+};
+
+const PAYMENT_RECEIVER = '0x71ab0b01e3ff45551e25b208e2a90298f73f7040' as `0x${string}`;
+
+// Chain name helper
+const getChainName = (id: number | null): string => {
+  const names: Record<number, string> = {
+    1: 'Ethereum', 137: 'Polygon', 42161: 'Arbitrum', 10: 'Optimism',
+    8453: 'Base', 56: 'BSC', 43114: 'Avalanche', 480: 'World Chain',
+  };
+  return names[id || 0] || 'Unknown';
+};
+
 export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   isOpen,
   onClose,
@@ -55,8 +86,15 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { account, connect, isConnected, isInstalled, signAndSubmitTransaction } = usePetraWallet();
+  const { account, connect, isConnected: isPetraConnected, isInstalled, signAndSubmitTransaction } = usePetraWallet();
   const { prices: cryptoPrices, isLoading: isLoadingPrices } = useCryptoPrices();
+  
+  // EVM wallet connection via RainbowKit/wagmi
+  const { isConnected: isEvmWalletConnected, address: evmAddress, chainId, openModal: openWalletModal } = useWalletConnect();
+  
+  // Wagmi hooks for browser wallet transactions
+  const { sendTransactionAsync, isPending: isSendingEth } = useSendTransaction();
+  const { writeContractAsync, isPending: isWritingContract } = useWriteContract();
   
   // Check if this is an Aptos domain
   const isAptosDomain = domain.toLowerCase().endsWith('.apt');
@@ -176,7 +214,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
   // Load Aptos wallet balance when connected
   useEffect(() => {
     const loadAptosBalance = async () => {
-      if (!isAptosDomain || !isConnected || !account?.address) {
+      if (!isAptosDomain || !isPetraConnected || !account?.address) {
         return;
       }
 
@@ -199,7 +237,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     };
 
     loadAptosBalance();
-  }, [isAptosDomain, isConnected, account?.address]);
+  }, [isAptosDomain, isPetraConnected, account?.address]);
 
   // Set network fee based on domain type
   useEffect(() => {
@@ -303,8 +341,16 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
     // Route to appropriate minting flow
     if (isAptosDomain) {
       await handleAptosMint();
-    } else {
+    } else if (isEvmWalletConnected && evmAddress) {
+      // Browser wallet connected - use wagmi for EVM payment
+      await handleBrowserWalletMint();
+    } else if (miniKitStatus === "ready") {
+      // In World App - use MiniKit
       await handleWorldChainMint();
+    } else {
+      // No wallet connected - prompt to connect
+      toast.info("Please connect a wallet to continue");
+      openWalletModal();
     }
   };
 
@@ -320,7 +366,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       }
 
       // Connect to Petra wallet if not connected
-      if (!isConnected) {
+      if (!isPetraConnected) {
         toast.info("Please connect your Petra wallet...");
         await connect();
       }
@@ -459,6 +505,153 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       await sendHaptic("error");
     } finally {
       setIsMinting(false);
+    }
+  };
+
+  // Browser wallet payment handler (MetaMask, Rainbow, etc.)
+  const handleBrowserWalletMint = async () => {
+    setIsMinting(true);
+    setPaymentFlowStep("preparing_payment");
+    
+    console.log("[BrowserWallet] Starting mint flow", { 
+      subdomain, 
+      paymentMethod, 
+      amount: convertedPrice,
+      chainId,
+      evmAddress,
+      isFree,
+    });
+    
+    try {
+      if (!evmAddress || !chainId) {
+        toast.error("Please connect your wallet first");
+        openWalletModal();
+        return;
+      }
+      
+      // Check if USDC is supported on this chain
+      const usdcAddress = USDC_ADDRESSES[chainId];
+      
+      if (paymentMethod === "USDC" && !usdcAddress) {
+        toast.error(`USDC is not supported on ${getChainName(chainId)}. Please switch to a supported network or use ETH.`);
+        return;
+      }
+      
+      let txHash: string;
+      
+      if (isFree) {
+        // Skip payment for free mints
+        txHash = "free-mint-" + Date.now();
+        toast.success("Free mint - processing...");
+      } else if (paymentMethod === "ETH") {
+        // Native ETH transfer
+        setPaymentFlowStep("processing_payment");
+        toast.info("Please confirm the ETH transaction in your wallet...", { duration: 30000 });
+        
+        // Convert USD amount to ETH (convertedPrice is already in ETH from rate calculation)
+        const hash = await sendTransactionAsync({
+          to: PAYMENT_RECEIVER,
+          value: parseEther(convertedPrice.toFixed(18)),
+        });
+        
+        txHash = hash;
+        toast.success("ETH payment confirmed!");
+        
+      } else if (paymentMethod === "USDC") {
+        // ERC20 USDC transfer
+        setPaymentFlowStep("processing_payment");
+        toast.info("Please confirm the USDC transfer in your wallet...", { duration: 30000 });
+        
+        const decimals = USDC_DECIMALS[chainId] || 6;
+        const amount = parseUnits(convertedPrice.toFixed(decimals), decimals);
+        
+        const hash = await writeContractAsync({
+          address: usdcAddress!,
+          abi: erc20Abi,
+          functionName: 'transfer',
+          args: [PAYMENT_RECEIVER, amount],
+        } as any); // Type assertion needed for wagmi v2 with dynamic chain
+        
+        txHash = hash;
+        toast.success("USDC payment confirmed!");
+      } else {
+        throw new Error("Unsupported payment method for browser wallet");
+      }
+      
+      console.log("[BrowserWallet] Transaction hash:", txHash);
+      
+      // Call the mint edge function
+      setPaymentFlowStep("minting");
+      const mintingToast = toast.info("Minting your subdomain...");
+      
+      const data = await callEdge<any>("mint-subdomain", {
+        subdomain,
+        walletAddress: evmAddress,
+        txHash,
+        domain,
+        registrationMonths: registrationYears * 12,
+        paymentMethod,
+        paymentAmount: convertedPrice,
+        networkFee: effectiveNetworkFee,
+        chainId,
+      });
+      
+      toast.dismiss(mintingToast);
+      
+      if (data?.ok) {
+        toast.success("Subdomain minted successfully! 🎉");
+        await sendHaptic("success");
+        
+        // Persist txHash
+        const txMap = JSON.parse(localStorage.getItem("txMap") || "{}");
+        txMap[subdomain.toLowerCase()] = txHash;
+        localStorage.setItem("txMap", JSON.stringify(txMap));
+        
+        window.dispatchEvent(
+          new CustomEvent("domains-updated", {
+            detail: { subdomain, txHash },
+          }),
+        );
+        
+        // Set default redirect
+        if (!data?.redirectSuccess) {
+          try {
+            const redirectResult = await setDefaultVanityRedirect(domain || "", subdomain);
+            if (redirectResult.success) {
+              console.log("Redirect set:", redirectResult);
+              toast.success(`Redirect set to ${fullEnsName(subdomain, domain || "")} Vanity profile`, { duration: 5000 });
+            }
+          } catch (redirectErr: any) {
+            console.error("Redirect failed:", redirectErr);
+            toast.info("Minted successfully! You can set redirect in My IDs.", { duration: 5000 });
+          }
+        } else {
+          toast.success(`Redirect set to ${fullEnsName(subdomain, domain || "")} Vanity profile`, { duration: 5000 });
+        }
+        
+        onClose();
+        
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("show-my-ids"));
+        }, 500);
+      } else {
+        throw new Error(data?.error || "Mint failed");
+      }
+      
+    } catch (error: any) {
+      console.error("[BrowserWallet] Payment error:", error);
+      
+      if (error.message?.includes("rejected") || error.message?.includes("denied") || error.message?.includes("User rejected")) {
+        toast.error("Transaction rejected. Please try again when ready.");
+      } else if (error.message?.includes("insufficient")) {
+        toast.error("Insufficient balance for this transaction.");
+      } else {
+        toast.error(error.message || "Payment failed. Please try again.");
+      }
+      await sendHaptic("error");
+    } finally {
+      setIsMinting(false);
+      setPaymentFlowStep("idle");
     }
   };
 
@@ -996,7 +1189,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               </>
             </div>
             {isLoadingPrices && <div className="text-xs text-gray-500">{t('updating_prices')}</div>}
-            {isAptosDomain && isConnected && (
+            {isAptosDomain && isPetraConnected && (
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
                 {isLoadingBalance ? (
                   <div>{t('loading_balance')}</div>
@@ -1033,7 +1226,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {t("network_fee")} ({isAptosDomain ? "Aptos" : "World Chain"})
+                  {t("network_fee")} ({isAptosDomain ? "Aptos" : isEvmWalletConnected ? getChainName(chainId) : "World Chain"})
                 </span>
                 <span className="font-medium text-[#D4AF37]">
                   {effectiveNetworkFee === 0 ? (
@@ -1073,19 +1266,21 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
               onClick={handleMintNow}
               disabled={
                 isMinting || 
-                (isAptosDomain ? (!isInstalled || !isConnected) : (miniKitStatus === "unavailable" || miniKitStatus === "checking"))
+                (isAptosDomain 
+                  ? (!isInstalled || !isPetraConnected) 
+                  : (!isEvmWalletConnected && miniKitStatus !== "ready"))
               }
               className="w-full mt-3 bg-gradient-to-r from-[#D4AF37] to-[#F2D574] hover:from-[#C9A532] hover:to-[#E8C760] text-black font-bold text-lg h-14 rounded-full shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isMinting 
                 ? t('processing')
                 : isAptosDomain
-                  ? (!isInstalled ? t('install_petra_wallet') : !isConnected ? t('connect_petra_wallet') : t('mint_now'))
-                  : miniKitStatus === "unavailable" 
-                    ? t('open_in_world_app')
-                    : miniKitStatus === "checking"
-                      ? t('checking_world_app')
-                      : t('mint_now')}
+                  ? (!isInstalled ? t('install_petra_wallet') : !isPetraConnected ? t('connect_petra_wallet') : t('mint_now'))
+                  : isEvmWalletConnected
+                    ? t('mint_now')
+                    : miniKitStatus === "ready"
+                      ? t('mint_now')
+                      : t('connect_wallet')}
             </Button>
           </div>
         </div>
@@ -1106,8 +1301,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
                     {paymentFlowStep === "minting" && t('minting_subdomain')}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                    {paymentFlowStep === "connecting_wallet" && t('approve_in_world_app')}
-                    {paymentFlowStep === "processing_payment" && t('check_world_app')}
+                    {paymentFlowStep === "connecting_wallet" && (isEvmWalletConnected ? t('approve_in_wallet') : t('approve_in_world_app'))}
+                    {paymentFlowStep === "processing_payment" && (isEvmWalletConnected ? t('confirm_in_wallet') : t('check_world_app'))}
                     {paymentFlowStep === "verifying_payment" && t('verifying_wait')}
                     {paymentFlowStep === "minting" && t('almost_done')}
                   </p>
