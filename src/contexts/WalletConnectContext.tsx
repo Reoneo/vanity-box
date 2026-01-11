@@ -7,7 +7,7 @@ import {
   useChainModal,
 } from '@rainbow-me/rainbowkit';
 import { WagmiProvider, useAccount, useDisconnect, useChainId } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
+import { mainnet, polygon, arbitrum, optimism, base, bsc, avalanche } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createContext, useContext, ReactNode, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { http, type Chain } from 'viem';
@@ -157,10 +157,16 @@ export function WalletConnectProvider({ children }: { children: ReactNode }) {
         const wagmiConfig = getDefaultConfig({
           appName: 'Vanity.box',
           projectId: data.projectId,
-          chains: [mainnet, worldchain],
+          chains: [mainnet, worldchain, polygon, arbitrum, optimism, base, bsc, avalanche],
           transports: {
             [mainnet.id]: http(),
             [worldchain.id]: http('https://worldchain-mainnet.g.alchemy.com/public'),
+            [polygon.id]: http(),
+            [arbitrum.id]: http(),
+            [optimism.id]: http(),
+            [base.id]: http(),
+            [bsc.id]: http(),
+            [avalanche.id]: http(),
           },
         });
         

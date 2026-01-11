@@ -4,10 +4,11 @@ import { Header } from "@/components/Header";
 import { SearchInterface } from "@/components/SearchInterface";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Globe } from "lucide-react";
 import patternTiles from "@/assets/pattern-tiles.jpeg";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { useWalletConnect } from "@/contexts/WalletConnectContext";
 
 // Lazy load heavy animation component
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
@@ -20,6 +21,7 @@ const Index = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
+  const { isConnected: walletConnected, openChainModal } = useWalletConnect();
 
   // Desktop-only splash settings - reduced for performance
   const splashSettings = useMemo(() => ({
@@ -44,8 +46,8 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* SplashCursor only on desktop - mobile gets lightweight CSS animation */}
+    <div className="h-screen bg-white dark:bg-black flex flex-col relative overflow-hidden">
+      {/* SplashCursor only on desktop - mobile gets solid background */}
       {!isMobileDevice ? (
         <Suspense fallback={null}>
           <SplashCursor 
@@ -57,12 +59,7 @@ const Index = () => {
         </Suspense>
       ) : (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          <div 
-            className="absolute inset-0 bg-gradient-to-br from-red-900/30 via-background to-orange-900/20"
-            style={{ 
-              animation: 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            }} 
-          />
+          <div className="absolute inset-0 bg-white dark:bg-black" />
         </div>
       )}
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
@@ -98,14 +95,28 @@ const Index = () => {
               © 2026 vanity.box. All rights reserved.
             </div>
 
-            {/* Theme Toggle on Right */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="hover:opacity-70 transition-opacity"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? <Sun className="w-6 h-6 text-black" /> : <Moon className="w-6 h-6 text-black" />}
-            </button>
+            {/* Network Switch and Theme Toggle on Right */}
+            <div className="flex items-center gap-3">
+              {/* Network Switch - only show when wallet is connected */}
+              {walletConnected && (
+                <button
+                  onClick={openChainModal}
+                  className="hover:opacity-70 transition-opacity"
+                  aria-label="Switch Network"
+                >
+                  <Globe className="w-5 h-5 text-black" />
+                </button>
+              )}
+              
+              {/* Theme Toggle */}
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="hover:opacity-70 transition-opacity"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? <Sun className="w-6 h-6 text-black" /> : <Moon className="w-6 h-6 text-black" />}
+              </button>
+            </div>
           </div>
         </footer>
       </div>

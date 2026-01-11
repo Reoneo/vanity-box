@@ -236,12 +236,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
           rate: 1, // $ → USDC (1:1)
         },
         {
-          id: "WLD" as PaymentMethod,
-          name: "WLD",
-          icon: theme === "dark" ? wldLogoDark : wldLogoLight,
-          rate: 1 / cryptoPrices.wld, // $ → WLD
-        },
-        {
           id: "ETH" as PaymentMethod,
           name: "ETH",
           icon: theme === "dark" ? ethLogoDark : ethLogoLight,
@@ -354,8 +348,8 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
       // Aptos USDC contract address (mainnet)
       const USDC_ADDRESS = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC";
       
-      // Payment receiver address (replace with your actual receiver address)
-      const RECEIVER_ADDRESS = "0x742d35cc6634c0532925a3b844bc9e7de5c05b0f0000000000000000000000001"; // TODO: Replace with actual receiver
+      // Payment receiver address
+      const RECEIVER_ADDRESS = "0x71ab0b01e3ff45551e25b208e2a90298f73f7040";
       
       toast.info(`Preparing ${tokenSymbol} payment of ${paymentAmountCrypto.toFixed(isUSDC ? 2 : 4)} ${tokenSymbol}...`);
       
@@ -639,11 +633,6 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
             tokenSymbol = Tokens.USDC;
             // USDC has 6 decimals - convert and round to ensure whole number
             const rawAmount = tokenToDecimals(convertedPrice, Tokens.USDC);
-            tokenAmount = Math.floor(rawAmount).toString();
-          } else if (paymentMethod === "WLD") {
-            tokenSymbol = Tokens.WLD;
-            // WLD has 18 decimals - convert and round to ensure whole number
-            const rawAmount = tokenToDecimals(convertedPrice, Tokens.WLD);
             tokenAmount = Math.floor(rawAmount).toString();
           } else if (paymentMethod === "ETH") {
             // ETH payments - calculate token amount manually (18 decimals)
