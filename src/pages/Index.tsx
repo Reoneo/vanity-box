@@ -4,11 +4,12 @@ import { Header } from "@/components/Header";
 import { SearchInterface } from "@/components/SearchInterface";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { Sun, Moon, Globe } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import patternTiles from "@/assets/pattern-tiles.jpeg";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useWalletConnect } from "@/contexts/WalletConnectContext";
+import { NetworkIcon } from "@/components/NetworkIcon";
 
 // Lazy load heavy animation component
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
@@ -104,7 +105,7 @@ const Index = () => {
                   className="hover:opacity-70 transition-opacity"
                   aria-label="Switch Network"
                 >
-                  <Globe className="w-5 h-5 text-black" />
+                  <NetworkIcon size={20} />
                 </button>
               )}
               
