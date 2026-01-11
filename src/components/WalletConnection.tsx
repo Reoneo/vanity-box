@@ -18,8 +18,7 @@ import { isTelegramWebView } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
-import { useConnectModal, useAccountModal } from '@rainbow-me/rainbowkit';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useWalletConnect } from '@/contexts/WalletConnectContext';
 
 interface User {
   walletAddress?: string;
@@ -37,10 +36,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [tonConnectUI] = useTonConnectUI();
   const { account: petraAccount, network: petraNetwork, isConnected: petraConnected, disconnect: disconnectPetra } = usePetraWallet();
   
-  // RainbowKit hooks for wallet connection
-  const { openConnectModal } = useConnectModal();
-  const { address: walletConnectAddress, isConnected: walletConnectConnected } = useAccount();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
+  // Use our context wrapper for RainbowKit - handles loading state safely
+  const { 
+    isConnected: walletConnectConnected, 
+    address: walletConnectAddress, 
+    openModal: openConnectModal,
+    disconnect: wagmiDisconnect,
+    isReady: walletConnectReady
+  } = useWalletConnect();
   
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'walletconnect' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
@@ -172,13 +175,13 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
-  // Handle WalletConnect modal open - RainbowKit handles ready state
+  // Handle WalletConnect modal open - uses context wrapper
   const handleWalletConnectOpen = () => {
     console.log('[WalletConnection] Opening RainbowKit modal...');
-    if (openConnectModal) {
+    if (walletConnectReady && openConnectModal) {
       openConnectModal();
     } else {
-      console.warn('[WalletConnection] Connect modal not available');
+      console.warn('[WalletConnection] Connect modal not ready yet');
       toast.error('Wallet connection is initializing. Please try again.');
     }
   };
