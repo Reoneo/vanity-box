@@ -25,7 +25,7 @@ const Index = () => {
 
   // Adaptive quality settings based on device capability
   const splashSettings = useMemo(() => ({
-    DYE_RESOLUTION: isLowPowerDevice ? 512 : 1440,
+    DYE_RESOLUTION: isLowPowerDevice ? 512 : 1080,
     SIM_RESOLUTION: isLowPowerDevice ? 64 : 128,
     PRESSURE_ITERATIONS: isLowPowerDevice ? 10 : 20,
   }), []);
