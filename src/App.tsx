@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,8 +11,7 @@ import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
 import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
-import { ParaWalletContextProvider } from "@/contexts/ParaWalletContext";
-import { ParaOnDemandWrapper } from "@/components/para/ParaOnDemandProvider";
+import { WalletConnectProvider } from "@/contexts/WalletConnectContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import Index from "./pages/Index";
@@ -42,15 +41,6 @@ const AppContent = () => {
     };
   }, []);
 
-  const handleParaConnectionChange = useCallback((isConnected: boolean, address: string | null) => {
-    console.log('[App] Para connection changed:', { isConnected, address });
-    if (isConnected && address) {
-      window.dispatchEvent(new CustomEvent('wallet-connected', { 
-        detail: { walletType: 'para', walletAddress: address } 
-      }));
-    }
-  }, []);
-
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <CryptoPriceProvider>
@@ -58,15 +48,13 @@ const AppContent = () => {
           <TonConnectProvider>
             <PetraWalletProvider>
               <FarcasterAuthProvider>
-                <ParaWalletContextProvider>
-                  <ParaOnDemandWrapper onConnectionChange={handleParaConnectionChange}>
-                    <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <AppRoutes />
-                    </TooltipProvider>
-                  </ParaOnDemandWrapper>
-                </ParaWalletContextProvider>
+                <WalletConnectProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <AppRoutes />
+                  </TooltipProvider>
+                </WalletConnectProvider>
               </FarcasterAuthProvider>
             </PetraWalletProvider>
           </TonConnectProvider>
