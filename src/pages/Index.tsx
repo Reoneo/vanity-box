@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { SearchInterface } from "@/components/SearchInterface";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import SplashCursor from "@/components/SplashCursor";
 import { Sun, Moon } from "lucide-react";
 import patternTiles from "@/assets/pattern-tiles.jpeg";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
+// Lazy load heavy animation component
+const SplashCursor = lazy(() => import("@/components/SplashCursor"));
+
+// Detect if device is low-powered (mobile or low memory)
+const isLowPowerDevice = typeof navigator !== 'undefined' && (
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (navigator as any).deviceMemory < 4
+);
+
 const Index = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
+
+  // Adaptive quality settings based on device capability
+  const splashSettings = useMemo(() => ({
+    DYE_RESOLUTION: isLowPowerDevice ? 512 : 1440,
+    SIM_RESOLUTION: isLowPowerDevice ? 64 : 128,
+    PRESSURE_ITERATIONS: isLowPowerDevice ? 10 : 20,
+  }), []);
 
   // Listen for wallet connection events
   useEffect(() => {
@@ -32,8 +47,14 @@ const Index = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col relative overflow-hidden">
-      <SplashCursor enabled={true} />
-
+      <Suspense fallback={null}>
+        <SplashCursor 
+          enabled={true}
+          DYE_RESOLUTION={splashSettings.DYE_RESOLUTION}
+          SIM_RESOLUTION={splashSettings.SIM_RESOLUTION}
+          PRESSURE_ITERATIONS={splashSettings.PRESSURE_ITERATIONS}
+        />
+      </Suspense>
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
 

@@ -1,5 +1,10 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+// Check for reduced motion preference
+const prefersReducedMotion = typeof window !== 'undefined' 
+  ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
+  : false;
 
 function SplashCursor({
   SIM_RESOLUTION = 128,
@@ -19,6 +24,13 @@ function SplashCursor({
   enabled = true
 }) {
   const canvasRef = useRef(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const isPausedRef = useRef(false);
+  
+  // Respect prefers-reduced-motion
+  if (prefersReducedMotion) {
+    return null;
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -681,13 +693,19 @@ function SplashCursor({
     let colorUpdateTimer = 0.0;
 
     function updateFrame() {
+      // Skip frame if paused (tab hidden)
+      if (isPausedRef.current) {
+        animationFrameRef.current = requestAnimationFrame(updateFrame);
+        return;
+      }
+      
       const dt = calcDeltaTime();
       if (resizeCanvas()) initFramebuffers();
       updateColors(dt);
       applyInputs();
       step(dt);
       render(null);
-      requestAnimationFrame(updateFrame);
+      animationFrameRef.current = requestAnimationFrame(updateFrame);
     }
 
     function calcDeltaTime() {
@@ -1043,7 +1061,26 @@ function SplashCursor({
       }
     });
 
+    // Visibility change handler - pause when tab is hidden
+    function handleVisibilityChange() {
+      isPausedRef.current = document.hidden;
+      if (!document.hidden) {
+        // Reset time tracking to avoid large dt jump
+        lastUpdateTime = Date.now();
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     updateFrame();
+    
+    // Cleanup on unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     SIM_RESOLUTION,
