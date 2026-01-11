@@ -18,7 +18,7 @@ import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
-import { TalentProtocolCard } from "./TalentProtocolCard";
+import { TalentProtocolModal } from "./TalentProtocolModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +91,9 @@ export const ProfileCard = ({
   const [dataLoaded, setDataLoaded] = useState(false);
   const [tokensFetched, setTokensFetched] = useState(false);
   const [transactionsFetched, setTransactionsFetched] = useState(false);
+  const [showTalentModal, setShowTalentModal] = useState(false);
+  const [hasTalentData, setHasTalentData] = useState(false);
+  const [talentLoading, setTalentLoading] = useState(false);
 
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -180,10 +183,35 @@ export const ProfileCard = ({
           const meData = await meRes.json();
           if (meData.nfts) setMagicEdenNfts(meData.nfts);
         } catch (e) { console.error('Magic Eden fetch error:', e); }
+
+        // Fetch Talent Protocol data
+        setTalentLoading(true);
+        try {
+          const talentRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ 
+              wallet: currentWalletAddress,
+              ens: searchedIdentity?.includes('.') ? searchedIdentity : undefined 
+            }),
+          });
+          const talentData = await talentRes.json();
+          console.log('Talent Protocol response:', talentData);
+          if (!talentData.noData && !talentData.error && talentData.scores) {
+            setHasTalentData(talentData.scores.builder !== null || talentData.scores.creator !== null);
+          }
+        } catch (e) { 
+          console.error('Talent Protocol fetch error:', e); 
+        } finally {
+          setTalentLoading(false);
+        }
       };
       fetchAllData();
     }
-  }, [currentWalletAddress, dataLoaded]);
+  }, [currentWalletAddress, dataLoaded, searchedIdentity]);
 
   // Fetch Hyperliquid NFTs/tokens from profile data
   useEffect(() => {
@@ -473,6 +501,11 @@ export const ProfileCard = ({
                 if (hasTokens) {
                   buttons.push({ name: 'Tokens', onClick: () => setShowTokensOverlay(true) });
                 }
+                
+                // Talent button - show if talent data exists or still loading
+                if (hasTalentData || talentLoading) {
+                  buttons.push({ name: 'Talent', onClick: () => setShowTalentModal(true) });
+                }
 
                 // Sort alphabetically
                 buttons.sort((a, b) => a.name.localeCompare(b.name));
@@ -518,13 +551,6 @@ export const ProfileCard = ({
                 ) : null}
               </div>
 
-              {/* Talent Protocol Card */}
-              <div className="px-4">
-                <TalentProtocolCard
-                  wallet={currentWalletAddress}
-                  ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-                />
-              </div>
             </div>
 
             {/* Flip Card for All Social Links */}
@@ -1479,6 +1505,14 @@ export const ProfileCard = ({
           onClose={() => setSelectedNft(null)}
         />
       )}
+
+      {/* Talent Protocol Modal */}
+      <TalentProtocolModal
+        open={showTalentModal}
+        onOpenChange={setShowTalentModal}
+        wallet={currentWalletAddress}
+        ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+      />
     </>
   );
 };
