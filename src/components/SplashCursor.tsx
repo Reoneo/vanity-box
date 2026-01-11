@@ -7,13 +7,13 @@ const prefersReducedMotion = typeof window !== 'undefined'
   : false;
 
 function SplashCursor({
-  SIM_RESOLUTION = 64,
-  DYE_RESOLUTION = 540,
+  SIM_RESOLUTION = 48,
+  DYE_RESOLUTION = 360,
   CAPTURE_RESOLUTION = 512,
   DENSITY_DISSIPATION = 3.5,
   VELOCITY_DISSIPATION = 2,
   PRESSURE = 0.1,
-  PRESSURE_ITERATIONS = 20,
+  PRESSURE_ITERATIONS = 10,
   CURL = 3,
   SPLAT_RADIUS = 0.2,
   SPLAT_FORCE = 6000,
@@ -21,7 +21,8 @@ function SplashCursor({
   COLOR_UPDATE_SPEED = 10,
   BACK_COLOR = { r: 0.5, g: 0, b: 0 },
   TRANSPARENT = true,
-  enabled = true
+  enabled = true,
+  targetFPS = 30  // Frame rate limiter for performance
 }) {
   const canvasRef = useRef(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -691,13 +692,22 @@ function SplashCursor({
     initFramebuffers();
     let lastUpdateTime = Date.now();
     let colorUpdateTimer = 0.0;
+    let lastFrameTime = 0;
+    const frameInterval = 1000 / targetFPS; // Target frame interval in ms
 
-    function updateFrame() {
+    function updateFrame(currentTime?: number) {
       // Skip frame if paused (tab hidden)
       if (isPausedRef.current) {
         animationFrameRef.current = requestAnimationFrame(updateFrame);
         return;
       }
+      
+      // Frame rate limiting - skip if not enough time has passed
+      if (currentTime && currentTime - lastFrameTime < frameInterval) {
+        animationFrameRef.current = requestAnimationFrame(updateFrame);
+        return;
+      }
+      lastFrameTime = currentTime || performance.now();
       
       const dt = calcDeltaTime();
       if (resizeCanvas()) initFramebuffers();
