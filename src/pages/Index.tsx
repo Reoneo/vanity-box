@@ -23,11 +23,11 @@ const Index = () => {
   const location = useLocation();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
 
-  // Adaptive quality settings based on device capability
+  // Adaptive quality settings based on device capability - reduced by half for performance
   const splashSettings = useMemo(() => ({
-    DYE_RESOLUTION: isLowPowerDevice ? 512 : 1080,
-    SIM_RESOLUTION: isLowPowerDevice ? 64 : 128,
-    PRESSURE_ITERATIONS: isLowPowerDevice ? 10 : 20,
+    DYE_RESOLUTION: isLowPowerDevice ? 256 : 540,
+    SIM_RESOLUTION: isLowPowerDevice ? 32 : 64,
+    PRESSURE_ITERATIONS: isLowPowerDevice ? 5 : 10,
   }), []);
 
   // Listen for wallet connection events

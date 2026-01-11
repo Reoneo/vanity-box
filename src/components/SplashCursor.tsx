@@ -7,8 +7,8 @@ const prefersReducedMotion = typeof window !== 'undefined'
   : false;
 
 function SplashCursor({
-  SIM_RESOLUTION = 128,
-  DYE_RESOLUTION = 1080,
+  SIM_RESOLUTION = 64,
+  DYE_RESOLUTION = 540,
   CAPTURE_RESOLUTION = 512,
   DENSITY_DISSIPATION = 3.5,
   VELOCITY_DISSIPATION = 2,
