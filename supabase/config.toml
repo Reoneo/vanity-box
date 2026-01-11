@@ -99,8 +99,5 @@ verify_jwt = false
 [functions.resolve-profile]
 verify_jwt = false
 
-[functions.get-wallet-portfolio]
-verify_jwt = false
-
-[functions.get-wallet-transactions]
+[functions.get-walletconnect-config]
 verify_jwt = false

@@ -50,6 +50,8 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@reown/appkit": "^1.8.16",
+    "@reown/appkit-adapter-wagmi": "^1.8.16",
     "@solana-mobile/wallet-adapter-mobile": "^2.2.5",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-walletconnect": "^0.1.21",
