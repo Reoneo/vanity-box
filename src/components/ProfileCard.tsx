@@ -508,14 +508,12 @@ export const ProfileCard = ({
                   });
                 }
                 
-                // Talent card
-                if (hasTalentData || talentLoading) {
-                  cards.push({ 
-                    icon: <Sparkles className="w-6 h-6 text-[#D4AF37]" />,
-                    title: 'Talent', 
-                    onClick: () => setShowTalentModal(true) 
-                  });
-                }
+                // Talent card - always show
+                cards.push({ 
+                  icon: <Sparkles className="w-6 h-6 text-[#D4AF37]" />,
+                  title: 'Talent', 
+                  onClick: () => setShowTalentModal(true) 
+                });
                 
                 // Tokens card
                 if (hasTokens) {
