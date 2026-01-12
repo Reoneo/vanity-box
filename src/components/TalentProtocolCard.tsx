@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Wrench } from 'lucide-react';
 import { TalentProtocolModal } from './TalentProtocolModal';
+import { callEdge } from '@/lib/supaInvoke';
 
 interface TalentProtocolCardProps {
   wallet?: string;
@@ -39,36 +39,25 @@ export const TalentProtocolCard = ({ wallet, ens, talentId }: TalentProtocolCard
 
       try {
         console.log('[TalentCard] Fetching Talent Protocol data...');
-        const response = await fetch(
-          'https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-              'Cache-Control': 'no-store',
-            },
-            body: JSON.stringify({ wallet, ens, talentId }),
-            cache: 'no-store',
-          }
-        );
-
-        const data = await response.json();
+        const data = await callEdge<any>('get-talent-protocol', { wallet, ens, talentId });
         console.log('[TalentCard] Response received:', data);
-        
-        if (data.noData || data.error) {
-          console.log('[TalentCard] No data or error:', data.error || 'noData flag set');
+
+        if (data?.noData || data?.error) {
+          console.log('[TalentCard] No data or error:', data?.error || 'noData flag set');
+          setScores(null);
           setHasData(false);
-        } else if (data.scores) {
+        } else if (data?.scores) {
           console.log('[TalentCard] Scores found:', data.scores);
           setScores(data.scores);
           setHasData(data.scores.builder !== null || data.scores.creator !== null);
         } else {
           console.log('[TalentCard] No scores in response');
+          setScores(null);
           setHasData(false);
         }
       } catch (err) {
         console.error('[TalentCard] Error fetching scores:', err);
+        setScores(null);
         setError('Unable to load Talent data');
         setHasData(false);
       } finally {
