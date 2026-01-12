@@ -200,9 +200,22 @@ serve(async (req) => {
       throw new Error('Talent Protocol API key not configured');
     }
     
-    // Resolve the best identifier - prefer wallet, then ENS, then talentId
-    let identifier = wallet || ens || talentId;
+    // Resolve the best identifier - Talent Protocol API expects wallet address, not ENS names
+    // Priority: wallet address > talentId (ENS names won't work with this API)
+    let identifier: string | undefined;
     let accountSource: string | undefined;
+    
+    // Prioritize wallet address as the API works best with it
+    if (wallet && wallet.startsWith('0x')) {
+      identifier = wallet;
+      accountSource = 'wallet';
+    } else if (talentId) {
+      // talentId can be used directly without account_source
+      identifier = talentId;
+    } else if (ens && ens.includes('.eth')) {
+      // For .eth domains, try without account_source as the API might resolve it
+      identifier = ens;
+    }
     
     if (!identifier) {
       return new Response(JSON.stringify({ 
@@ -214,15 +227,6 @@ serve(async (req) => {
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-    }
-    
-    // If it's an ENS domain, use it as wallet source
-    if (ens && ens.includes('.')) {
-      identifier = ens;
-      accountSource = 'wallet';
-    } else if (wallet && wallet.startsWith('0x')) {
-      identifier = wallet;
-      accountSource = 'wallet';
     }
     
     console.log('[TalentProtocol] Using identifier:', identifier, 'source:', accountSource);
