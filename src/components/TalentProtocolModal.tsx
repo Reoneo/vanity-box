@@ -4,8 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Share2, Check, RefreshCw, X } from 'lucide-react';
+import { ExternalLink, Share2, Check, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { callEdge } from '@/lib/supaInvoke';
 
 interface TalentProtocolModalProps {
   open: boolean;
@@ -61,31 +62,23 @@ export const TalentProtocolModal = ({
     setError(null);
 
     try {
-      const response = await fetch(
-        'https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            'Cache-Control': 'no-store',
-          },
-          body: JSON.stringify({ wallet, ens, talentId }),
-          cache: 'no-store',
-        }
+      const result = await callEdge<TalentData & { error?: string | null; noData?: boolean }>(
+        'get-talent-protocol',
+        { wallet, ens, talentId }
       );
 
-      const result = await response.json();
-      
-      if (result.error) {
-        setError(result.error);
-      } else if (result.noData) {
+      if ((result as any)?.error) {
+        setData(null);
+        setError((result as any).error);
+      } else if ((result as any)?.noData) {
+        setData(null);
         setError('No Talent data found for this user');
       } else {
-        setData(result);
+        setData(result as TalentData);
       }
     } catch (err) {
       console.error('[TalentModal] Error:', err);
+      setData(null);
       setError('Talent data unavailable right now');
     } finally {
       setLoading(false);
