@@ -4,8 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Share2, Check, RefreshCw } from 'lucide-react';
+import { ExternalLink, Share2, Check, RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
+import talentProtocolIcon from '@/assets/talent-protocol-icon.jpeg';
 import { callEdge } from '@/lib/supaInvoke';
 
 interface TalentProtocolModalProps {
@@ -126,15 +127,23 @@ export const TalentProtocolModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-white dark:bg-zinc-900">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-[#D4AF37]/30">
         {/* Header */}
-        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-white dark:bg-zinc-900 z-10 border-b border-border/30">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-md bg-violet-500 flex items-center justify-center text-white text-sm font-bold">
-              ƚ
-            </span>
-            <DialogTitle className="text-lg font-semibold">Talent</DialogTitle>
+        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 z-10 border-b border-[#D4AF37]/30">
+          <div className="flex items-center gap-3">
+            <img 
+              src={talentProtocolIcon} 
+              alt="Talent Protocol" 
+              className="w-8 h-8 rounded-lg"
+            />
+            <DialogTitle className="text-lg font-semibold text-white">Talent Protocol</DialogTitle>
           </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
         </DialogHeader>
 
         {/* Content */}

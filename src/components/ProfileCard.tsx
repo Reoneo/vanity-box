@@ -18,8 +18,9 @@ import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
-import { TalentProtocolCard } from "./TalentProtocolCard";
 import { TalentProtocolModal } from "./TalentProtocolModal";
+import { PolymarketModal } from "./PolymarketModal";
+import CredentialsCarousel from "./CredentialsCarousel";
 import { MagicBentoGrid } from "./MagicBentoGrid";
 import {
   DropdownMenu,
@@ -94,8 +95,10 @@ export const ProfileCard = ({
   const [tokensFetched, setTokensFetched] = useState(false);
   const [transactionsFetched, setTransactionsFetched] = useState(false);
   const [showTalentModal, setShowTalentModal] = useState(false);
+  const [showPolymarketModal, setShowPolymarketModal] = useState(false);
   const [hasTalentData, setHasTalentData] = useState(false);
   const [talentLoading, setTalentLoading] = useState(false);
+  const [talentScore, setTalentScore] = useState<number | null>(null);
 
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -508,12 +511,7 @@ export const ProfileCard = ({
                   });
                 }
                 
-                // Talent card - always show
-                cards.push({ 
-                  icon: <Sparkles className="w-6 h-6 text-[#D4AF37]" />,
-                  title: 'Talent', 
-                  onClick: () => setShowTalentModal(true) 
-                });
+                // Talent button removed - now shown in CredentialsCarousel at bottom
                 
                 // Tokens card
                 if (hasTokens) {
@@ -558,11 +556,15 @@ export const ProfileCard = ({
                 ) : null}
               </div>
 
-              {/* Talent Protocol Card - displayed directly on profile */}
-              <div className="px-4">
-                <TalentProtocolCard
+              {/* Credentials Carousel - Talent Protocol & Polymarket */}
+              <div className="px-4 flex justify-center">
+                <CredentialsCarousel
                   wallet={currentWalletAddress}
                   ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                  talentScore={talentScore}
+                  polymarketWinRate={null}
+                  onTalentClick={() => setShowTalentModal(true)}
+                  onPolymarketClick={() => setShowPolymarketModal(true)}
                 />
               </div>
             </div>
