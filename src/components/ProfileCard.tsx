@@ -4,10 +4,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Check } from "lucide-react";
 import { SocialIcon } from "./SocialIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
 import { ActivityGraph } from "./ActivityGraph";
@@ -104,6 +105,8 @@ export const ProfileCard = ({
   const [polymarketWinRate, setPolymarketWinRate] = useState<number | null>(null);
   const [polymarketProfit, setPolymarketProfit] = useState<number | null>(null);
   const [isHumanVerified, setIsHumanVerified] = useState(false);
+  const [verificationProviders, setVerificationProviders] = useState<string[]>([]);
+  const [showVerifiedPopover, setShowVerifiedPopover] = useState(false);
 
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -217,6 +220,10 @@ export const ProfileCard = ({
             // Extract .value from score objects
             setTalentScore(talentData.scores.builder?.value ?? null);
             setTalentCreatorScore(talentData.scores.creator?.value ?? null);
+            // Store verification providers
+            if (talentData.verification?.humanCheckmark?.providers) {
+              setVerificationProviders(talentData.verification.humanCheckmark.providers);
+            }
           }
         } catch (e) { 
           console.error('Talent Protocol fetch error:', e); 
@@ -431,24 +438,75 @@ export const ProfileCard = ({
                       {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Verified Badge on Avatar - Certificate seal style */}
+                  {/* X-style Verified Badge with Popover */}
                   {hasTalentData && (
-                    <button
-                      onClick={() => setShowTalentModal(true)}
-                      className="absolute -bottom-2 -right-2 w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform"
-                      title="Verified Human - Click for details"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-12 h-12 drop-shadow-lg">
-                        <path 
-                          d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
-                          fill="#3B82F6" 
-                        />
-                        <path 
-                          d="M10 15.172l-3.586-3.586a1 1 0 00-1.414 1.414l4.293 4.293a1 1 0 001.414 0l8-8a1 1 0 10-1.414-1.414L10 15.172z" 
-                          fill="white" 
-                        />
-                      </svg>
-                    </button>
+                    <Popover open={showVerifiedPopover} onOpenChange={setShowVerifiedPopover}>
+                      <PopoverTrigger asChild>
+                        <button
+                          className="absolute -bottom-1 -right-1 w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform"
+                          title="Verified Human - Click for details"
+                        >
+                          <svg viewBox="0 0 22 22" className="w-8 h-8 drop-shadow-md">
+                            <circle cx="11" cy="11" r="11" fill="#1D9BF0" />
+                            <path 
+                              d="M9.5 14.25L6.25 11L5.25 12L9.5 16.25L17.25 8.5L16.25 7.5L9.5 14.25Z" 
+                              fill="white" 
+                            />
+                          </svg>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent 
+                        className="w-72 p-4 bg-background border border-border rounded-xl shadow-xl"
+                        side="bottom"
+                        align="end"
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="font-semibold text-foreground">Verified Identity</h4>
+                            <p className="text-xs text-muted-foreground">Verify your humanity with one of these providers by connecting your wallets.</p>
+                          </div>
+                          <div className="space-y-2">
+                            {['Binance', 'Coinbase', 'Self.xyz', 'Galxe', 'Humanode', 'Human.tech', 'World', 'ZkMe'].map((provider) => {
+                              const isVerified = verificationProviders.some(
+                                p => p.toLowerCase().includes(provider.toLowerCase()) || 
+                                     provider.toLowerCase().includes(p.toLowerCase())
+                              );
+                              return (
+                                <div 
+                                  key={provider} 
+                                  className="flex items-center justify-between p-2 rounded-lg border border-border/50"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center text-xs">
+                                      {provider.charAt(0)}
+                                    </div>
+                                    <span className="text-sm font-medium text-foreground">{provider}</span>
+                                  </div>
+                                  {isVerified ? (
+                                    <Badge className="bg-[#1D9BF0]/10 text-[#1D9BF0] border-0 text-xs px-2">
+                                      VERIFIED
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-muted-foreground border-border text-xs px-2">
+                                      NOT VERIFIED YET
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShowVerifiedPopover(false);
+                              setShowTalentModal(true);
+                            }}
+                            className="w-full text-center text-xs text-[#1D9BF0] hover:underline"
+                          >
+                            View full Talent Profile →
+                          </button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   )}
                 </div>
               </div>
