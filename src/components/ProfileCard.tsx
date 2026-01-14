@@ -412,52 +412,69 @@ export const ProfileCard = ({
           <div className="space-y-3 pb-24">
               {/* Header and Avatar with Verified Badge - Always visible */}
               <div className="relative flex-shrink-0">
-              <div className="w-full aspect-[3/1] lg:aspect-[6/1] overflow-hidden">
-                <img
-                  src={web3BioProfile?.header || defaultHeader}
-                  alt="Header"
-                  className="block w-full h-full object-cover"
-                />
-              </div>
+                <div className="w-full aspect-[3/1] lg:aspect-[5/1] overflow-hidden rounded-t-2xl">
+                  <img
+                    src={web3BioProfile?.header || defaultHeader}
+                    alt="Header"
+                    className="block w-full h-full object-cover"
+                  />
+                  {/* Gradient overlay for better avatar contrast */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+                </div>
 
-              <div className="flex justify-center absolute -bottom-14 left-0 right-0">
-                <div className="relative">
-                  <Avatar className="h-40 w-40 border-4 border-background bg-black">
-                    <AvatarImage 
-                      src={web3BioProfile?.avatar || vanityBoxAvatar} 
-                      alt={web3BioProfile?.displayName || 'User'}
-                    />
-                    <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
-                      {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  {/* Verified Badge on Avatar - Certificate seal style */}
-                  {hasTalentData && (
-                    <button
-                      onClick={() => setShowTalentModal(true)}
-                      className="absolute -bottom-2 -right-2 w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform"
-                      title="Verified Human - Click for details"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-12 h-12 drop-shadow-lg">
-                        <path 
-                          d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
-                          fill="#3B82F6" 
-                        />
-                        <path 
-                          d="M10 15.172l-3.586-3.586a1 1 0 00-1.414 1.414l4.293 4.293a1 1 0 001.414 0l8-8a1 1 0 10-1.414-1.414L10 15.172z" 
-                          fill="white" 
-                        />
-                      </svg>
-                    </button>
-                  )}
+                <div className="flex justify-center absolute -bottom-16 left-0 right-0">
+                  <div className="relative group">
+                    {/* Glow ring behind avatar */}
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
+                      <AvatarImage 
+                        src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                        alt={web3BioProfile?.displayName || 'User'}
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="text-5xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold">
+                        {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    {/* Verified Badge - Premium seal design */}
+                    {hasTalentData && (
+                      <button
+                        onClick={() => setShowTalentModal(true)}
+                        className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
+                        title="Verified Human - Click for details"
+                      >
+                        <div className="relative">
+                          <svg viewBox="0 0 24 24" className="w-10 h-10 drop-shadow-lg">
+                            <defs>
+                              <linearGradient id="badge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#3B82F6" />
+                                <stop offset="100%" stopColor="#1D4ED8" />
+                              </linearGradient>
+                            </defs>
+                            <path 
+                              d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
+                              fill="url(#badge-gradient)" 
+                            />
+                            <path 
+                              d="M9.5 12.5L11 14L14.5 10.5" 
+                              stroke="white" 
+                              strokeWidth="2" 
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </svg>
+                        </div>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="p-6 pt-10 space-y-1 flex-shrink-0">
+            <div className="p-6 pt-20 space-y-3 flex-shrink-0">
 
-              {/* Show resolved ENS name or searched identity - no inline badge */}
-              <h2 className="text-3xl font-bold text-center text-foreground">
+              {/* Display name with refined typography */}
+              <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
                 {getDisplayName()}
               </h2>
 
@@ -566,7 +583,7 @@ export const ProfileCard = ({
                       <button
                         key={btn.title}
                         onClick={btn.onClick}
-                        className="flex-1 max-w-[90px] py-2.5 rounded-full bg-secondary/50 border border-border/50 hover:border-primary/50 hover:bg-secondary/80 transition-all text-sm font-medium text-foreground whitespace-nowrap"
+                        className="flex-1 max-w-[85px] py-2 px-3 rounded-xl bg-muted/60 border border-border/30 hover:border-primary/40 hover:bg-muted/90 hover:shadow-sm active:scale-95 transition-all duration-200 text-sm font-medium text-foreground/90 whitespace-nowrap"
                       >
                         {btn.title}
                       </button>
