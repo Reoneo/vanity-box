@@ -190,7 +190,29 @@ serve(async (req) => {
   }
 
   try {
-    const { wallet, ens, talentId } = await req.json();
+    // Parse request body with fallback for empty/malformed JSON
+    let wallet: string | undefined;
+    let ens: string | undefined;
+    let talentId: string | undefined;
+    
+    try {
+      const body = await req.json();
+      wallet = body?.wallet;
+      ens = body?.ens;
+      talentId = body?.talentId;
+    } catch (parseError) {
+      console.error('[TalentProtocol] Failed to parse request body:', parseError);
+      return new Response(JSON.stringify({ 
+        error: null,
+        noData: true,
+        profile: null,
+        scores: null,
+        verification: null,
+        sections: [],
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     console.log('[TalentProtocol] Request received:', { wallet, ens, talentId });
     
