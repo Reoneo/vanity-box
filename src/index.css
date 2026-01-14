@@ -461,6 +461,24 @@ All colors MUST be HSL. */
   }
 }
 
+/* News Ticker Animation */
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker 15s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
 /* CRITICAL FIX: Force Sonner toasts to top of screen to prevent blocking inputs */
 [data-sonner-toaster] {
   top: 1rem !important;
