@@ -174,13 +174,13 @@ export default function CredentialsCarousel({
           primary: { 
             value: polymarketWinRate, 
             label: 'Win Rate',
-            levelLabel: polymarketWinRate ? `${polymarketWinRate}%` : undefined
+            levelLabel: polymarketWinRate !== null ? `${polymarketWinRate}%` : 'N/A'
           },
-          secondary: polymarketProfit !== null ? { 
+          secondary: { 
             value: polymarketProfit, 
             label: 'Profit',
-            levelLabel: polymarketProfit ? `$${polymarketProfit.toFixed(2)}` : undefined
-          } : undefined,
+            levelLabel: polymarketProfit !== null ? `$${polymarketProfit.toFixed(2)}` : 'N/A'
+          },
         },
         onClick: onPolymarketClick,
         hidden: !hasPolymarketData, // Hide if no polymarket data
