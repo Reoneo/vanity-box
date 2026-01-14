@@ -220,9 +220,11 @@ export const ProfileCard = ({
             setTalentCreatorScore(talentData.scores.creator?.value ?? null);
             
             // Check for human verification - only show badge if user has verified providers
+            console.log('[ProfileCard] Talent verification data:', talentData.verification);
             const hasHumanVerification = 
               talentData.verification?.humanCheckmark?.isVerified === true ||
               (talentData.verification?.humanCheckmark?.providers?.length > 0);
+            console.log('[ProfileCard] Setting isHumanVerified to:', hasHumanVerification);
             setIsHumanVerified(hasHumanVerification);
           }
         } catch (e) { 

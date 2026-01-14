@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, Share2, X, Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { callEdge } from '@/lib/supaInvoke';
 import polymarketIcon from '@/assets/polymarket-icon-blue.png';
+
+const SUPA_URL = "https://gdjjboorqviobvvygpca.supabase.co";
+const SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkampiYm9vcnF2aW9idnZ5Z3BjYSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzQ0MTI2MTI3LCJleHAiOjIwNTk3MDIxMjd9.e_ZYRYULnnR_fqPVXfhKT5wvpAh3dxsK3cZUGXvnK20";
 
 interface PolymarketModalProps {
   open: boolean;
@@ -58,15 +60,22 @@ export const PolymarketModal = ({
     setError(null);
 
     try {
-      const result = await callEdge<PolymarketData & { error?: string | null; noData?: boolean }>(
-        'get-polymarket-data',
-        { wallet }
-      );
+      const res = await fetch(`${SUPA_URL}/functions/v1/get-polymarket-data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPA_ANON}`,
+        },
+        body: JSON.stringify({ wallet }),
+      });
 
-      if ((result as any)?.error) {
+      const result = await res.json();
+      console.log("[PolymarketModal] Response:", result);
+
+      if (result?.error) {
         setData(null);
-        setError((result as any).error);
-      } else if ((result as any)?.noData) {
+        setError(result.error);
+      } else if (result?.noData) {
         setData(null);
         setError('No Polymarket data found for this wallet');
       } else {

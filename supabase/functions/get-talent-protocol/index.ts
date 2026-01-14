@@ -388,15 +388,21 @@ serve(async (req) => {
     };
     
     // Process human checkmark if present - check for points > 0 (verified providers)
-    if (humanCheckmarkData?.data_points && humanCheckmarkData.data_points.length > 0) {
+    // API may return data in either "data_points" or "credentials" array
+    const humanCheckmarkItems = humanCheckmarkData?.data_points || humanCheckmarkData?.credentials || [];
+    console.log('[TalentProtocol] Human checkmark items:', JSON.stringify(humanCheckmarkItems));
+    
+    if (humanCheckmarkItems.length > 0) {
       const providers: string[] = [];
       
-      for (const dp of humanCheckmarkData.data_points) {
+      for (const dp of humanCheckmarkItems) {
         // A provider is verified if points > 0
         const isVerified = dp.points > 0 || dp.value === true;
-        if (isVerified && dp.name) {
+        if (isVerified) {
+          // Use data_issuer_name for provider name (cleaner), fall back to name
+          let providerName = dp.data_issuer_name || dp.name || 'Unknown';
           // Clean up provider name - remove common prefixes/suffixes
-          let providerName = dp.name
+          providerName = providerName
             .replace('Verified by ', '')
             .replace(' verification', '')
             .replace(' Verification', '')
