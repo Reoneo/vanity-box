@@ -218,6 +218,12 @@ export const ProfileCard = ({
             // Extract .value from score objects
             setTalentScore(talentData.scores.builder?.value ?? null);
             setTalentCreatorScore(talentData.scores.creator?.value ?? null);
+            
+            // Check for human verification - only show badge if user has verified providers
+            const hasHumanVerification = 
+              talentData.verification?.humanCheckmark?.isVerified === true ||
+              (talentData.verification?.humanCheckmark?.providers?.length > 0);
+            setIsHumanVerified(hasHumanVerification);
           }
         } catch (e) { 
           console.error('Talent Protocol fetch error:', e); 
@@ -436,8 +442,8 @@ export const ProfileCard = ({
                         {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    {/* Verified Badge - Visual indicator only (not clickable) */}
-                    {hasTalentData && (
+                    {/* Verified Badge - Only show when user has human verification */}
+                    {isHumanVerified && (
                       <div
                         className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center"
                         title="Verified Builder"
