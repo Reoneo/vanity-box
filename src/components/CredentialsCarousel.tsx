@@ -10,8 +10,8 @@ const GAP = 16;
 const SPRING_OPTIONS = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 interface CredentialScores {
-  primary: { value: number | null; label: string; levelLabel?: string };
-  secondary?: { value: number | null; label: string; levelLabel?: string };
+  primary: { value: number | string | null; label: string; levelLabel?: string };
+  secondary?: { value: number | string | null; label: string; levelLabel?: string };
 }
 
 interface CarouselItem {
@@ -88,11 +88,6 @@ function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transiti
                 ? String(item.scores.primary.value) 
                 : '—'}
             </span>
-            {item.scores.primary.value !== null && item.scores.primary.value !== undefined && (
-              <span className="credentials-score-level">
-                {String(item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value as number))}
-              </span>
-            )}
             <span className="credentials-score-label">{String(item.scores.primary.label)}</span>
           </div>
           
@@ -103,11 +98,6 @@ function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transiti
                   ? String(item.scores.secondary.value) 
                   : '—'}
               </span>
-              {item.scores.secondary.value !== null && item.scores.secondary.value !== undefined && (
-                <span className="credentials-score-level">
-                  {String(item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value as number))}
-                </span>
-              )}
               <span className="credentials-score-label">{String(item.scores.secondary.label)}</span>
             </div>
           )}
@@ -182,14 +172,12 @@ export default function CredentialsCarousel({
         icon: polymarketIcon,
         scores: {
           primary: { 
-            value: polymarketWinRate, 
+            value: polymarketWinRate !== null ? `${polymarketWinRate}%` : null, 
             label: 'Win Rate',
-            levelLabel: polymarketWinRate !== null ? `${polymarketWinRate}%` : 'N/A'
           },
           secondary: { 
-            value: polymarketProfit, 
+            value: polymarketProfit !== null ? `$${polymarketProfit.toFixed(2)}` : null, 
             label: 'Profit',
-            levelLabel: polymarketProfit !== null ? `$${polymarketProfit.toFixed(2)}` : 'N/A'
           },
         },
         onClick: onPolymarketClick,
@@ -364,11 +352,6 @@ export default function CredentialsCarousel({
                     ? String(item.scores.primary.value) 
                     : '—'}
                 </span>
-                {item.scores.primary.value !== null && item.scores.primary.value !== undefined && (
-                  <span className="credentials-score-level">
-                    {String(item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value as number))}
-                  </span>
-                )}
                 <span className="credentials-score-label">{String(item.scores.primary.label)}</span>
               </div>
               
@@ -379,11 +362,6 @@ export default function CredentialsCarousel({
                       ? String(item.scores.secondary.value) 
                       : '—'}
                   </span>
-                  {item.scores.secondary.value !== null && item.scores.secondary.value !== undefined && (
-                    <span className="credentials-score-level">
-                      {String(item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value as number))}
-                    </span>
-                  )}
                   <span className="credentials-score-label">{String(item.scores.secondary.label)}</span>
                 </div>
               )}
