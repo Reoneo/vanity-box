@@ -74,27 +74,31 @@ function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transiti
         <div className="credentials-scores-grid">
           <div className="credentials-score-item">
             <span className="credentials-score-value">
-              {item.scores.primary.value ?? '—'}
+              {item.scores.primary.value !== null && item.scores.primary.value !== undefined 
+                ? String(item.scores.primary.value) 
+                : '—'}
             </span>
-            {item.scores.primary.value !== null && (
+            {item.scores.primary.value !== null && item.scores.primary.value !== undefined && (
               <span className="credentials-score-level">
-                {item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value)}
+                {String(item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value as number))}
               </span>
             )}
-            <span className="credentials-score-label">{item.scores.primary.label}</span>
+            <span className="credentials-score-label">{String(item.scores.primary.label)}</span>
           </div>
           
           {item.scores.secondary && (
             <div className="credentials-score-item">
               <span className="credentials-score-value">
-                {item.scores.secondary.value ?? '—'}
+                {item.scores.secondary.value !== null && item.scores.secondary.value !== undefined 
+                  ? String(item.scores.secondary.value) 
+                  : '—'}
               </span>
-              {item.scores.secondary.value !== null && (
+              {item.scores.secondary.value !== null && item.scores.secondary.value !== undefined && (
                 <span className="credentials-score-level">
-                  {item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value)}
+                  {String(item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value as number))}
                 </span>
               )}
-              <span className="credentials-score-label">{item.scores.secondary.label}</span>
+              <span className="credentials-score-label">{String(item.scores.secondary.label)}</span>
             </div>
           )}
         </div>
@@ -338,27 +342,31 @@ export default function CredentialsCarousel({
             <div className="credentials-scores-grid">
               <div className="credentials-score-item">
                 <span className="credentials-score-value">
-                  {item.scores.primary.value ?? '—'}
+                  {item.scores.primary.value !== null && item.scores.primary.value !== undefined 
+                    ? String(item.scores.primary.value) 
+                    : '—'}
                 </span>
-                {item.scores.primary.value !== null && (
+                {item.scores.primary.value !== null && item.scores.primary.value !== undefined && (
                   <span className="credentials-score-level">
-                    {item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value)}
+                    {String(item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value as number))}
                   </span>
                 )}
-                <span className="credentials-score-label">{item.scores.primary.label}</span>
+                <span className="credentials-score-label">{String(item.scores.primary.label)}</span>
               </div>
               
               {item.scores.secondary && (
                 <div className="credentials-score-item">
                   <span className="credentials-score-value">
-                    {item.scores.secondary.value ?? '—'}
+                    {item.scores.secondary.value !== null && item.scores.secondary.value !== undefined 
+                      ? String(item.scores.secondary.value) 
+                      : '—'}
                   </span>
-                  {item.scores.secondary.value !== null && (
+                  {item.scores.secondary.value !== null && item.scores.secondary.value !== undefined && (
                     <span className="credentials-score-level">
-                      {item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value)}
+                      {String(item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value as number))}
                     </span>
                   )}
-                  <span className="credentials-score-label">{item.scores.secondary.label}</span>
+                  <span className="credentials-score-label">{String(item.scores.secondary.label)}</span>
                 </div>
               )}
             </div>
