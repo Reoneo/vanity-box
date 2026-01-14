@@ -416,8 +416,8 @@ export const ProfileCard = ({
       <div className="w-full h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-y-auto">
-          <div className="space-y-3 pb-24">
+          <div className="flex-1 overflow-hidden">
+          <div className="space-y-2 pb-20">
               {/* Header and Avatar with Verified Badge - Always visible */}
               <div className="relative flex-shrink-0">
                 <div className="w-full aspect-[3/1] lg:aspect-[5/1] overflow-hidden rounded-t-2xl">
@@ -478,7 +478,7 @@ export const ProfileCard = ({
                 </div>
               </div>
 
-            <div className="p-6 pt-14 space-y-3 flex-shrink-0">
+            <div className="p-4 pt-12 space-y-2 flex-shrink-0">
 
               {/* Display name with refined typography */}
               <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
