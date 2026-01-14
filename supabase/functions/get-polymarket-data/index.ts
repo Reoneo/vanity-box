@@ -297,32 +297,30 @@ serve(async (req) => {
 
     console.log('[Polymarket] Effective address:', effectiveAddress, 'usedOverride:', usedOverride);
 
-    // Fetch profile first (to get proxy wallet if needed)
+    // Fetch profile first to get proxy wallet
     const { profile, proxyWallet } = await fetchProfile(effectiveAddress);
+    
+    // Determine which address to use for closed positions
+    // Polymarket stores closed position data on the proxy wallet, not the main wallet
+    const closedPositionAddress = proxyWallet && isValidAddress(proxyWallet) 
+      ? proxyWallet 
+      : effectiveAddress;
+    
+    console.log('[Polymarket] Using addresses - open positions:', effectiveAddress, 'closed positions:', closedPositionAddress);
 
-    // Fetch positions and closed positions in parallel
+    // Fetch open positions from main wallet, closed positions from proxy wallet
     let [positions, closedPositions] = await Promise.all([
       fetchPositions(effectiveAddress, limit, maxPages),
-      fetchClosedPositions(effectiveAddress, limit, maxPages),
+      fetchClosedPositions(closedPositionAddress, limit, maxPages),
     ]);
 
-    console.log('[Polymarket] Initial fetch - positions:', positions.length, 'closed:', closedPositions.length);
+    console.log('[Polymarket] Fetch results - positions:', positions.length, 'closed:', closedPositions.length);
 
-    // If no data and proxy wallet exists, try with proxy
-    if (positions.length === 0 && closedPositions.length === 0 && proxyWallet && proxyWallet.toLowerCase() !== effectiveAddress.toLowerCase()) {
-      console.log('[Polymarket] Trying with proxyWallet:', proxyWallet);
-      
-      const [proxyPositions, proxyClosedPositions] = await Promise.all([
-        fetchPositions(proxyWallet, limit, maxPages),
-        fetchClosedPositions(proxyWallet, limit, maxPages),
-      ]);
-
-      if (proxyPositions.length > 0 || proxyClosedPositions.length > 0) {
-        positions = proxyPositions;
-        closedPositions = proxyClosedPositions;
-        effectiveAddress = proxyWallet;
-        console.log('[Polymarket] Proxy fetch - positions:', positions.length, 'closed:', closedPositions.length);
-      }
+    // If closed positions empty and we have a different proxy, also try main wallet as fallback
+    if (closedPositions.length === 0 && closedPositionAddress !== effectiveAddress) {
+      console.log('[Polymarket] No closed positions from proxy, trying main wallet');
+      closedPositions = await fetchClosedPositions(effectiveAddress, limit, maxPages);
+      console.log('[Polymarket] Fallback closed positions:', closedPositions.length);
     }
 
     // Check if we have any data
