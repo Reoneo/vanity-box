@@ -9,12 +9,16 @@ const VELOCITY_THRESHOLD = 500;
 const GAP = 16;
 const SPRING_OPTIONS = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
+interface CredentialScores {
+  primary: { value: number | null; label: string; levelLabel?: string };
+  secondary?: { value: number | null; label: string; levelLabel?: string };
+}
+
 interface CarouselItem {
   id: string;
   title: string;
-  description: string;
   icon: string;
-  value?: string | number | null;
+  scores?: CredentialScores;
   onClick?: () => void;
   hidden?: boolean;
 }
@@ -26,6 +30,15 @@ interface CarouselItemProps {
   trackItemOffset: number;
   x: any;
   transition: any;
+}
+
+function getLevelLabel(score: number | null): string {
+  if (score === null) return '';
+  if (score >= 80) return 'Expert';
+  if (score >= 60) return 'Practitioner';
+  if (score >= 40) return 'Emerging';
+  if (score >= 20) return 'Level 2';
+  return 'Level 1';
 }
 
 function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transition }: CarouselItemProps) {
@@ -44,20 +57,48 @@ function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transiti
       transition={transition}
       onClick={item.onClick}
     >
-      <div className="credentials-carousel-item-header">
-        <img 
-          src={item.icon} 
-          alt={item.title}
-          className="credentials-carousel-icon"
-        />
+      {/* Header with icon and title */}
+      <div className="credentials-card-header">
+        <div className="credentials-icon-wrapper">
+          <img 
+            src={item.icon} 
+            alt={item.title}
+            className="credentials-icon"
+          />
+        </div>
+        <span className="credentials-title">{item.title}</span>
       </div>
-      <div className="credentials-carousel-item-content">
-        <div className="credentials-carousel-item-title">{item.title}</div>
-        <p className="credentials-carousel-item-description">{item.description}</p>
-        {item.value !== undefined && item.value !== null && (
-          <div className="credentials-carousel-item-value">{item.value}</div>
-        )}
-      </div>
+
+      {/* Scores grid */}
+      {item.scores && (
+        <div className="credentials-scores-grid">
+          <div className="credentials-score-item">
+            <span className="credentials-score-value">
+              {item.scores.primary.value ?? '—'}
+            </span>
+            {item.scores.primary.value !== null && (
+              <span className="credentials-score-level">
+                {item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value)}
+              </span>
+            )}
+            <span className="credentials-score-label">{item.scores.primary.label}</span>
+          </div>
+          
+          {item.scores.secondary && (
+            <div className="credentials-score-item">
+              <span className="credentials-score-value">
+                {item.scores.secondary.value ?? '—'}
+              </span>
+              {item.scores.secondary.value !== null && (
+                <span className="credentials-score-level">
+                  {item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value)}
+                </span>
+              )}
+              <span className="credentials-score-label">{item.scores.secondary.label}</span>
+            </div>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -66,7 +107,9 @@ interface CredentialsCarouselProps {
   wallet?: string;
   ens?: string;
   talentScore?: number | null;
+  talentCreatorScore?: number | null;
   polymarketWinRate?: number | null;
+  polymarketProfit?: number | null;
   hasPolymarketData?: boolean;
   onTalentClick?: () => void;
   onPolymarketClick?: () => void;
@@ -81,11 +124,13 @@ export default function CredentialsCarousel({
   wallet,
   ens,
   talentScore,
+  talentCreatorScore,
   polymarketWinRate,
+  polymarketProfit,
   hasPolymarketData = false,
   onTalentClick,
   onPolymarketClick,
-  baseWidth = 300,
+  baseWidth = 340,
   autoplay = true,
   autoplayDelay = 4000,
   pauseOnHover = true,
@@ -101,29 +146,45 @@ export default function CredentialsCarousel({
       {
         id: 'talent',
         title: 'Talent Protocol',
-        description: 'Builder credentials & reputation',
         icon: talentProtocolIcon,
-        value: talentScore !== null && talentScore !== undefined 
-          ? `Score: ${talentScore}` 
-          : 'View Profile',
+        scores: {
+          primary: { 
+            value: talentScore, 
+            label: 'Builder Score',
+            levelLabel: getLevelLabel(talentScore)
+          },
+          secondary: { 
+            value: talentCreatorScore ?? 14, 
+            label: 'Creator Score',
+            levelLabel: 'Level 1'
+          },
+        },
         onClick: onTalentClick,
         hidden: false, // Always show talent
       },
       {
         id: 'polymarket',
         title: 'Polymarket',
-        description: 'Prediction market performance',
         icon: polymarketLogo,
-        value: polymarketWinRate !== null && polymarketWinRate !== undefined 
-          ? `Win Rate: ${polymarketWinRate}%` 
-          : 'View Stats',
+        scores: {
+          primary: { 
+            value: polymarketWinRate, 
+            label: 'Win Rate',
+            levelLabel: polymarketWinRate ? `${polymarketWinRate}%` : undefined
+          },
+          secondary: polymarketProfit !== null ? { 
+            value: polymarketProfit, 
+            label: 'Profit',
+            levelLabel: polymarketProfit ? `$${polymarketProfit.toFixed(2)}` : undefined
+          } : undefined,
+        },
         onClick: onPolymarketClick,
         hidden: !hasPolymarketData, // Hide if no polymarket data
       },
     ];
     
     return allItems.filter(item => !item.hidden);
-  }, [talentScore, polymarketWinRate, hasPolymarketData, onTalentClick, onPolymarketClick]);
+  }, [talentScore, talentCreatorScore, polymarketWinRate, polymarketProfit, hasPolymarketData, onTalentClick, onPolymarketClick]);
 
   const itemsForRender = useMemo(() => {
     if (!loop || items.length <= 1) return items;
@@ -250,6 +311,7 @@ export default function CredentialsCarousel({
 
   // If only one item, render without carousel mechanics
   if (items.length === 1) {
+    const item = items[0];
     return (
       <div
         ref={containerRef}
@@ -259,22 +321,48 @@ export default function CredentialsCarousel({
         <div
           className="credentials-carousel-item"
           style={{ width: itemWidth }}
-          onClick={items[0].onClick}
+          onClick={item.onClick}
         >
-          <div className="credentials-carousel-item-header">
-            <img 
-              src={items[0].icon} 
-              alt={items[0].title}
-              className="credentials-carousel-icon"
-            />
+          <div className="credentials-card-header">
+            <div className="credentials-icon-wrapper">
+              <img 
+                src={item.icon} 
+                alt={item.title}
+                className="credentials-icon"
+              />
+            </div>
+            <span className="credentials-title">{item.title}</span>
           </div>
-          <div className="credentials-carousel-item-content">
-            <div className="credentials-carousel-item-title">{items[0].title}</div>
-            <p className="credentials-carousel-item-description">{items[0].description}</p>
-            {items[0].value !== undefined && items[0].value !== null && (
-              <div className="credentials-carousel-item-value">{items[0].value}</div>
-            )}
-          </div>
+
+          {item.scores && (
+            <div className="credentials-scores-grid">
+              <div className="credentials-score-item">
+                <span className="credentials-score-value">
+                  {item.scores.primary.value ?? '—'}
+                </span>
+                {item.scores.primary.value !== null && (
+                  <span className="credentials-score-level">
+                    {item.scores.primary.levelLabel || getLevelLabel(item.scores.primary.value)}
+                  </span>
+                )}
+                <span className="credentials-score-label">{item.scores.primary.label}</span>
+              </div>
+              
+              {item.scores.secondary && (
+                <div className="credentials-score-item">
+                  <span className="credentials-score-value">
+                    {item.scores.secondary.value ?? '—'}
+                  </span>
+                  {item.scores.secondary.value !== null && (
+                    <span className="credentials-score-level">
+                      {item.scores.secondary.levelLabel || getLevelLabel(item.scores.secondary.value)}
+                    </span>
+                  )}
+                  <span className="credentials-score-label">{item.scores.secondary.label}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );

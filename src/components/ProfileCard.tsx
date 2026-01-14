@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Activity, Image, Users, Coins, Sparkles } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X } from "lucide-react";
 import { SocialIcon } from "./SocialIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
@@ -21,7 +21,7 @@ import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
 import CredentialsCarousel from "./CredentialsCarousel";
-import { MagicBentoGrid } from "./MagicBentoGrid";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -209,11 +209,31 @@ export const ProfileCard = ({
           console.log('Talent Protocol response:', talentData);
           if (!talentData.noData && !talentData.error && talentData.scores) {
             setHasTalentData(talentData.scores.builder !== null || talentData.scores.creator !== null);
+            setTalentScore(talentData.scores.builder || talentData.scores.creator || null);
           }
         } catch (e) { 
           console.error('Talent Protocol fetch error:', e); 
         } finally {
           setTalentLoading(false);
+        }
+
+        // Fetch Polymarket data
+        try {
+          const polyRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-polymarket-data', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ wallet: currentWalletAddress }),
+          });
+          const polyData = await polyRes.json();
+          console.log('Polymarket response:', polyData);
+          if (!polyData.noData && !polyData.error && (polyData.openPositions?.length > 0 || polyData.totalTrades > 0)) {
+            setHasPolymarketData(true);
+          }
+        } catch (e) { 
+          console.error('Polymarket fetch error:', e); 
         }
       };
       fetchAllData();
@@ -373,8 +393,8 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto">
-          <div className="space-y-4 pb-24">
-              {/* Header and Avatar - Always visible */}
+          <div className="space-y-3 pb-24">
+              {/* Header and Avatar with Verified Badge - Always visible */}
               <div className="relative flex-shrink-0">
               <div className="w-full aspect-[3/1] lg:aspect-[6/1] overflow-hidden">
                 <img
@@ -385,40 +405,39 @@ export const ProfileCard = ({
               </div>
 
               <div className="flex justify-center absolute -bottom-14 left-0 right-0">
-                <Avatar className="h-40 w-40 border-4 border-background bg-black">
-                  <AvatarImage 
-                    src={web3BioProfile?.avatar || vanityBoxAvatar} 
-                    alt={web3BioProfile?.displayName || 'User'}
-                  />
-                  <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
-                    {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-40 w-40 border-4 border-background bg-black">
+                    <AvatarImage 
+                      src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                      alt={web3BioProfile?.displayName || 'User'}
+                    />
+                    <AvatarFallback className="text-6xl bg-[#D4AF37]/10 text-[#D4AF37]">
+                      {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Verified Badge on Avatar */}
+                  {hasTalentData && (
+                    <button
+                      onClick={() => setShowTalentModal(true)}
+                      className="absolute -bottom-1 right-2 w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform"
+                      title="Verified Human - Click for details"
+                    >
+                      <svg viewBox="0 0 24 24" className="w-10 h-10 drop-shadow-lg">
+                        <circle cx="12" cy="12" r="10" fill="#3B82F6" />
+                        <path d="M10 15.172l-3.586-3.586a1 1 0 00-1.414 1.414l4.293 4.293a1 1 0 001.414 0l8-8a1 1 0 10-1.414-1.414L10 15.172z" fill="white" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="p-6 pt-16 space-y-2 flex-shrink-0">
+            <div className="p-6 pt-14 space-y-1.5 flex-shrink-0">
 
-              {/* Show resolved ENS name or searched identity with verified badge */}
-              <div className="flex items-center justify-center gap-2">
-                <h2 className="text-3xl font-bold text-center text-foreground">
-                  {getDisplayName()}
-                </h2>
-                {isHumanVerified && (
-                  <button
-                    onClick={() => setShowTalentModal(true)}
-                    className="flex-shrink-0 hover:scale-110 transition-transform"
-                    title="Verified Human - Click for details"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-blue-500 fill-current">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                      <circle cx="12" cy="12" r="10" fill="currentColor" />
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="white" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-              
+              {/* Show resolved ENS name or searched identity - no inline badge */}
+              <h2 className="text-3xl font-bold text-center text-foreground">
+                {getDisplayName()}
+              </h2>
 
               {currentWalletAddress && (
                 <div className="flex items-center justify-center">
@@ -485,7 +504,7 @@ export const ProfileCard = ({
                 </div>
               )}
 
-              {/* Profile Action Bento Cards */}
+              {/* Profile Action Pills - Horizontal Layout */}
               {(() => {
                 const socialLinks = web3BioProfile?.links 
                   ? Object.entries(web3BioProfile.links)
@@ -498,62 +517,39 @@ export const ProfileCard = ({
                 const hasSocials = socialLinks.length > 0;
                 const hasTransactions = transactions.length > 0;
 
-                // Build cards array
-                const cards: { icon: React.ReactNode; title: string; onClick: () => void }[] = [];
+                // Build buttons array
+                const buttons: { title: string; onClick: () => void }[] = [];
                 
-                // Activity card
                 if (hasTransactions) {
-                  cards.push({ 
-                    icon: <Activity className="w-6 h-6 text-[#D4AF37]" />,
-                    title: 'Activity', 
-                    onClick: () => setShowActivityOverlay(true),
-                  });
+                  buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
                 }
-                
-                // NFTs card
                 if (hasNfts) {
-                  cards.push({ 
-                    icon: <Image className="w-6 h-6 text-[#D4AF37]" />,
-                    title: 'NFTs', 
-                    onClick: () => setShowNftsOverlay(true) 
-                  });
+                  buttons.push({ title: 'NFTs', onClick: () => setShowNftsOverlay(true) });
                 }
-                
-                // Social card
                 if (hasSocials) {
-                  cards.push({ 
-                    icon: <Users className="w-6 h-6 text-[#D4AF37]" />,
-                    title: 'Social', 
-                    onClick: () => setShowAllSocials(true) 
-                  });
+                  buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
                 }
-                
-                // Talent button removed - now shown in CredentialsCarousel at bottom
-                
-                // Tokens card
                 if (hasTokens) {
-                  cards.push({ 
-                    icon: <Coins className="w-6 h-6 text-[#D4AF37]" />,
-                    title: 'Tokens', 
-                    onClick: () => setShowTokensOverlay(true) 
-                  });
+                  buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
                 }
 
                 // Sort alphabetically
-                cards.sort((a, b) => a.title.localeCompare(b.title));
+                buttons.sort((a, b) => a.title.localeCompare(b.title));
 
-                if (cards.length === 0) return null;
+                if (buttons.length === 0) return null;
 
                 return (
-                  <MagicBentoGrid
-                    cards={cards}
-                    enableStars={true}
-                    enableSpotlight={true}
-                    enableBorderGlow={true}
-                    enableTilt={true}
-                    clickEffect={true}
-                    glowColor="212, 175, 55"
-                  />
+                  <div className="flex items-center justify-center gap-2 flex-wrap px-4">
+                    {buttons.map((btn) => (
+                      <button
+                        key={btn.title}
+                        onClick={btn.onClick}
+                        className="px-5 py-2.5 rounded-full bg-secondary/50 border border-border/50 hover:border-primary/50 hover:bg-secondary/80 transition-all text-sm font-medium text-foreground"
+                      >
+                        {btn.title}
+                      </button>
+                    ))}
+                  </div>
                 );
               })()}
 
@@ -579,10 +575,13 @@ export const ProfileCard = ({
                   wallet={currentWalletAddress}
                   ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
                   talentScore={talentScore}
+                  talentCreatorScore={null}
                   polymarketWinRate={null}
+                  polymarketProfit={null}
                   hasPolymarketData={hasPolymarketData}
                   onTalentClick={() => setShowTalentModal(true)}
                   onPolymarketClick={() => setShowPolymarketModal(true)}
+                  baseWidth={340}
                 />
               </div>
             </div>
