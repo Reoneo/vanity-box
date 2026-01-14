@@ -35,7 +35,10 @@ serve(async (req) => {
         : undefined;
     
     if (!walletAddress) {
-      throw new Error('walletAddress is required');
+      console.log('No valid walletAddress provided, returning empty array');
+      return new Response(JSON.stringify({ nfts: [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     console.log('🖼️ Fetching ALL OpenSea NFTs for:', walletAddress);
