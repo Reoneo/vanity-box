@@ -182,7 +182,7 @@ export const TalentProtocolModal = ({
             <div className="space-y-4 py-4">
               {/* Profile Header */}
               <div className="flex flex-col items-center gap-2">
-                <Avatar className="h-24 w-24 border-2 border-violet-200 dark:border-violet-800">
+                <Avatar className="h-24 w-24">
                   <AvatarImage src={data.profile?.avatarUrl || undefined} />
                   <AvatarFallback className="text-2xl bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300">
                     {data.profile?.displayName?.charAt(0).toUpperCase() || '?'}
