@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface BioTickerProps {
@@ -10,25 +11,25 @@ export const BioTicker = ({ bio }: BioTickerProps) => {
 
   return (
     <>
-      {/* News Ticker Style Bio */}
+      {/* Bio row - inline with icon, same width as pill buttons */}
       <button
         onClick={() => setShowBioModal(true)}
-        className="w-full overflow-hidden py-1.5 px-4 bg-muted/30 border-y border-border/20 hover:bg-muted/50 transition-colors cursor-pointer group"
+        className="flex items-center justify-center gap-2 px-4 w-full group"
       >
-        <div className="flex items-center gap-2 animate-ticker whitespace-nowrap">
-          <span className="text-xs font-semibold text-[#D4AF37] uppercase tracking-wide flex-shrink-0">
-            Bio:
-          </span>
-          <span className="text-sm text-black dark:text-white">
-            {bio}
-          </span>
-          {/* Duplicate for seamless loop */}
-          <span className="text-xs font-semibold text-[#D4AF37] uppercase tracking-wide flex-shrink-0 ml-12">
-            Bio:
-          </span>
-          <span className="text-sm text-black dark:text-white">
-            {bio}
-          </span>
+        <div className="flex items-center gap-2 max-w-[370px] overflow-hidden">
+          <FileText className="w-4 h-4 text-black dark:text-white flex-shrink-0" />
+          <div className="overflow-hidden">
+            <div className="animate-ticker whitespace-nowrap">
+              <span className="text-sm text-[#D4AF37] hover:underline">
+                {bio}
+              </span>
+              {/* Spacer and duplicate for seamless loop */}
+              <span className="inline-block w-16" />
+              <span className="text-sm text-[#D4AF37]">
+                {bio}
+              </span>
+            </div>
+          </div>
         </div>
       </button>
 
