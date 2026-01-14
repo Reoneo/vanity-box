@@ -4,7 +4,7 @@ import talentProtocolIcon from '@/assets/talent-protocol-icon.jpeg';
 import polymarketIcon from '@/assets/polymarket-icon-blue.png';
 import './CredentialsCarousel.css';
 
-const DRAG_BUFFER = 0;
+const DRAG_BUFFER = 50;
 const VELOCITY_THRESHOLD = 500;
 const GAP = 16;
 const SPRING_OPTIONS = { type: 'spring' as const, stiffness: 300, damping: 30 };
@@ -30,6 +30,7 @@ interface CarouselItemProps {
   trackItemOffset: number;
   x: any;
   transition: any;
+  isDragging: boolean;
 }
 
 function getLevelLabel(score: number | null): string {
@@ -41,10 +42,17 @@ function getLevelLabel(score: number | null): string {
   return 'Level 1';
 }
 
-function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transition }: CarouselItemProps) {
+function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transition, isDragging }: CarouselItemProps) {
   const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
   const outputRange = [90, 0, -90];
   const rotateY = useTransform(x, range, outputRange, { clamp: false });
+
+  const handleTap = () => {
+    if (!isDragging && item.onClick) {
+      console.log('[CarouselItemCard] Tap detected, calling onClick for:', item.id);
+      item.onClick();
+    }
+  };
 
   return (
     <motion.div
@@ -53,9 +61,11 @@ function CarouselItemCard({ item, index, itemWidth, trackItemOffset, x, transiti
         width: itemWidth,
         height: '100%',
         rotateY: rotateY,
+        cursor: item.onClick ? 'pointer' : 'default',
       }}
       transition={transition}
-      onClick={item.onClick}
+      onTap={handleTap}
+      whileTap={{ scale: 0.98 }}
     >
       {/* Header with icon and title */}
       <div className="credentials-card-header">
@@ -201,6 +211,7 @@ export default function CredentialsCarousel({
   const [isHovered, setIsHovered] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -281,7 +292,14 @@ export default function CredentialsCarousel({
     setIsAnimating(false);
   };
 
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
   const handleDragEnd = (_: any, info: any) => {
+    // Delay resetting isDragging to prevent tap from firing
+    setTimeout(() => setIsDragging(false), 50);
+    
     const { offset, velocity } = info;
     const direction =
       offset.x < -DRAG_BUFFER || velocity.x < -VELOCITY_THRESHOLD
@@ -393,6 +411,7 @@ export default function CredentialsCarousel({
           perspectiveOrigin: `${position * trackItemOffset + itemWidth / 2}px 50%`,
           x
         }}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         animate={{ x: -(position * trackItemOffset) }}
         transition={effectiveTransition}
@@ -408,6 +427,7 @@ export default function CredentialsCarousel({
             trackItemOffset={trackItemOffset}
             x={x}
             transition={effectiveTransition}
+            isDragging={isDragging}
           />
         ))}
       </motion.div>
