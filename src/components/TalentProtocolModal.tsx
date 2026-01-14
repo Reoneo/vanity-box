@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Share2, Check, RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
 import talentProtocolIcon from '@/assets/talent-protocol-icon.jpeg';
-import { callEdge } from '@/lib/supaInvoke';
+
+const SUPA_URL = "https://gdjjboorqviobvvygpca.supabase.co";
+const SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE";
 
 interface TalentProtocolModalProps {
   open: boolean;
@@ -62,16 +64,29 @@ export const TalentProtocolModal = ({
     setLoading(true);
     setError(null);
 
-    try {
-      const result = await callEdge<TalentData & { error?: string | null; noData?: boolean }>(
-        'get-talent-protocol',
-        { wallet, ens, talentId }
-      );
+    console.log('[TalentModal] Fetching with:', { wallet, ens, talentId });
 
-      if ((result as any)?.error) {
+    try {
+      const res = await fetch(`${SUPA_URL}/functions/v1/get-talent-protocol`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPA_ANON}`,
+        },
+        body: JSON.stringify({
+          wallet: wallet || undefined,
+          ens: ens || undefined,
+          talentId: talentId || undefined,
+        }),
+      });
+
+      const result = await res.json();
+      console.log('[TalentModal] Response:', result);
+
+      if (result?.error) {
         setData(null);
-        setError((result as any).error);
-      } else if ((result as any)?.noData && !result?.profile && !result?.scores?.builder && !result?.scores?.creator && (!result?.sections || result?.sections?.length === 0)) {
+        setError(result.error);
+      } else if (result?.noData === true && !result?.profile && !result?.scores) {
         setData(null);
         setError('No Talent data found for this user');
       } else {
