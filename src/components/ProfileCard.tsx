@@ -20,6 +20,7 @@ import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
+import { VerificationBadgeModal } from "./VerificationBadgeModal";
 import CredentialsCarousel from "./CredentialsCarousel";
 
 import {
@@ -104,6 +105,7 @@ export const ProfileCard = ({
   const [polymarketWinRate, setPolymarketWinRate] = useState<number | null>(null);
   const [polymarketProfit, setPolymarketProfit] = useState<number | null>(null);
   const [isHumanVerified, setIsHumanVerified] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -238,14 +240,13 @@ export const ProfileCard = ({
           console.log('Polymarket response:', polyData);
           if (!polyData.noData && !polyData.error && (polyData.openPositions?.length > 0 || polyData.totalTrades > 0)) {
             setHasPolymarketData(true);
-            // Calculate win rate from resolved positions
-            if (polyData.resolvedPositions?.length > 0) {
-              const wins = polyData.resolvedPositions.filter((p: any) => p.outcome === 'won').length;
-              setPolymarketWinRate(Math.round((wins / polyData.resolvedPositions.length) * 100));
+            // Use winRate directly from the API response
+            if (typeof polyData.winRate === 'number') {
+              setPolymarketWinRate(polyData.winRate);
             }
-            // Set profit if available
-            if (typeof polyData.totalProfit === 'number') {
-              setPolymarketProfit(polyData.totalProfit);
+            // Use profit directly from the API response
+            if (typeof polyData.profit === 'number') {
+              setPolymarketProfit(polyData.profit);
             }
           }
         } catch (e) { 
@@ -439,7 +440,7 @@ export const ProfileCard = ({
                     {/* Verified Badge - Premium seal design */}
                     {hasTalentData && (
                       <button
-                        onClick={() => setShowTalentModal(true)}
+                        onClick={() => setShowVerificationModal(true)}
                         className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
                         title="Verified Human - Click for details"
                       >
@@ -471,7 +472,7 @@ export const ProfileCard = ({
                 </div>
               </div>
 
-            <div className="p-6 pt-20 space-y-3 flex-shrink-0">
+            <div className="p-6 pt-14 space-y-3 flex-shrink-0">
 
               {/* Display name with refined typography */}
               <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
@@ -609,20 +610,18 @@ export const ProfileCard = ({
               </div>
 
               {/* Credentials Carousel - Talent Protocol & Polymarket */}
-              <div className="px-4 flex justify-center">
-                <CredentialsCarousel
-                  wallet={currentWalletAddress}
-                  ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-                  talentScore={talentScore}
-                  talentCreatorScore={talentCreatorScore}
-                  polymarketWinRate={polymarketWinRate}
-                  polymarketProfit={polymarketProfit}
-                  hasPolymarketData={hasPolymarketData}
-                  onTalentClick={() => setShowTalentModal(true)}
-                  onPolymarketClick={() => setShowPolymarketModal(true)}
-                  baseWidth={340}
-                />
-              </div>
+              <CredentialsCarousel
+                wallet={currentWalletAddress}
+                ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                talentScore={talentScore}
+                talentCreatorScore={talentCreatorScore}
+                polymarketWinRate={polymarketWinRate}
+                polymarketProfit={polymarketProfit}
+                hasPolymarketData={hasPolymarketData}
+                onTalentClick={() => setShowTalentModal(true)}
+                onPolymarketClick={() => setShowPolymarketModal(true)}
+                baseWidth={340}
+              />
             </div>
 
             {/* Flip Card for All Social Links */}
@@ -1582,6 +1581,14 @@ export const ProfileCard = ({
       <TalentProtocolModal
         open={showTalentModal}
         onOpenChange={setShowTalentModal}
+        wallet={currentWalletAddress}
+        ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+      />
+
+      {/* Verification Badge Modal */}
+      <VerificationBadgeModal
+        open={showVerificationModal}
+        onOpenChange={setShowVerificationModal}
         wallet={currentWalletAddress}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
