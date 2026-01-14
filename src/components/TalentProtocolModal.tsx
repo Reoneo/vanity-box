@@ -71,7 +71,7 @@ export const TalentProtocolModal = ({
       if ((result as any)?.error) {
         setData(null);
         setError((result as any).error);
-      } else if ((result as any)?.noData) {
+      } else if ((result as any)?.noData && !result?.profile && !result?.scores?.builder && !result?.scores?.creator && (!result?.sections || result?.sections?.length === 0)) {
         setData(null);
         setError('No Talent data found for this user');
       } else {

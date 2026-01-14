@@ -20,7 +20,6 @@ import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
-import { VerificationBadgeModal } from "./VerificationBadgeModal";
 import CredentialsCarousel from "./CredentialsCarousel";
 
 import {
@@ -105,7 +104,7 @@ export const ProfileCard = ({
   const [polymarketWinRate, setPolymarketWinRate] = useState<number | null>(null);
   const [polymarketProfit, setPolymarketProfit] = useState<number | null>(null);
   const [isHumanVerified, setIsHumanVerified] = useState(false);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  
 
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -440,7 +439,7 @@ export const ProfileCard = ({
                     {/* Verified Badge - Premium seal design */}
                     {hasTalentData && (
                       <button
-                        onClick={() => setShowVerificationModal(true)}
+                        onClick={() => setShowTalentModal(true)}
                         className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
                         title="Verified Human - Click for details"
                       >
@@ -1585,13 +1584,6 @@ export const ProfileCard = ({
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
 
-      {/* Verification Badge Modal */}
-      <VerificationBadgeModal
-        open={showVerificationModal}
-        onOpenChange={setShowVerificationModal}
-        wallet={currentWalletAddress}
-        ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-      />
     </>
   );
 };
