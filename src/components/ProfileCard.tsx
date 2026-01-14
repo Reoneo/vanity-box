@@ -436,12 +436,11 @@ export const ProfileCard = ({
                         {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
                       </AvatarFallback>
                     </Avatar>
-                    {/* Verified Badge - Premium seal design */}
+                    {/* Verified Badge - Visual indicator only (not clickable) */}
                     {hasTalentData && (
-                      <button
-                        onClick={() => setShowTalentModal(true)}
-                        className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
-                        title="Verified Human - Click for details"
+                      <div
+                        className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center"
+                        title="Verified Builder"
                       >
                         <div className="relative">
                           <svg viewBox="0 0 24 24" className="w-10 h-10 drop-shadow-lg">
@@ -465,7 +464,7 @@ export const ProfileCard = ({
                             />
                           </svg>
                         </div>
-                      </button>
+                      </div>
                     )}
                   </div>
                 </div>
