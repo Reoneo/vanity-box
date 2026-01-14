@@ -236,6 +236,27 @@ export type Database = {
         }
         Relationships: []
       }
+      polymarket_profile_overrides: {
+        Row: {
+          created_at: string
+          polymarket_profile_address: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          polymarket_profile_address: string
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          polymarket_profile_address?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
