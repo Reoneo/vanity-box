@@ -21,6 +21,7 @@ import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
 import CredentialsCarousel from "./CredentialsCarousel";
+import { BioTicker } from "./BioTicker";
 
 import {
   DropdownMenu,
@@ -496,10 +497,9 @@ export const ProfileCard = ({
                 </div>
               )}
 
+              {/* Bio - News Ticker Style */}
               {web3BioProfile?.description && (
-                <p className="text-center text-black dark:text-white max-w-2xl mx-auto text-sm">
-                  {web3BioProfile.description}
-                </p>
+                <BioTicker bio={web3BioProfile.description} />
               )}
 
               {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
