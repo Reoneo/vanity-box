@@ -99,6 +99,8 @@ export const ProfileCard = ({
   const [hasTalentData, setHasTalentData] = useState(false);
   const [talentLoading, setTalentLoading] = useState(false);
   const [talentScore, setTalentScore] = useState<number | null>(null);
+  const [hasPolymarketData, setHasPolymarketData] = useState(false);
+  const [isHumanVerified, setIsHumanVerified] = useState(false);
 
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -397,10 +399,25 @@ export const ProfileCard = ({
 
             <div className="p-6 pt-16 space-y-2 flex-shrink-0">
 
-              {/* Show resolved ENS name or searched identity */}
-              <h2 className="text-3xl font-bold text-center text-foreground">
-                {getDisplayName()}
-              </h2>
+              {/* Show resolved ENS name or searched identity with verified badge */}
+              <div className="flex items-center justify-center gap-2">
+                <h2 className="text-3xl font-bold text-center text-foreground">
+                  {getDisplayName()}
+                </h2>
+                {isHumanVerified && (
+                  <button
+                    onClick={() => setShowTalentModal(true)}
+                    className="flex-shrink-0 hover:scale-110 transition-transform"
+                    title="Verified Human - Click for details"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-7 h-7 text-blue-500 fill-current">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                      <circle cx="12" cy="12" r="10" fill="currentColor" />
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="white" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               
 
               {currentWalletAddress && (
@@ -563,6 +580,7 @@ export const ProfileCard = ({
                   ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
                   talentScore={talentScore}
                   polymarketWinRate={null}
+                  hasPolymarketData={hasPolymarketData}
                   onTalentClick={() => setShowTalentModal(true)}
                   onPolymarketClick={() => setShowPolymarketModal(true)}
                 />

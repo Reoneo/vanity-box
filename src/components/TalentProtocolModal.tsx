@@ -127,27 +127,27 @@ export const TalentProtocolModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-[#D4AF37]/30">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-border/50 rounded-3xl">
         {/* Header */}
-        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 z-10 border-b border-[#D4AF37]/30">
+        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b border-border/30">
           <div className="flex items-center gap-3">
             <img 
               src={talentProtocolIcon} 
               alt="Talent Protocol" 
               className="w-8 h-8 rounded-lg"
             />
-            <DialogTitle className="text-lg font-semibold text-white">Talent Protocol</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-foreground">Talent Protocol</DialogTitle>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </DialogHeader>
 
         {/* Content */}
-        <div className="px-4 pb-4">
+        <div className="px-6 pb-6">
           {loading ? (
             <div className="space-y-4 py-4">
               <div className="flex flex-col items-center gap-3">
@@ -209,7 +209,7 @@ export const TalentProtocolModal = ({
               {/* Score Chips */}
               <div className="flex justify-center gap-2 flex-wrap">
                 {data.scores?.builder && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-border/50">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted border border-border/50">
                     <span className="text-sm">🛠️</span>
                     <span className="text-sm font-medium text-foreground">
                       Builder Score {data.scores.builder.value}
@@ -218,7 +218,7 @@ export const TalentProtocolModal = ({
                 )}
                 
                 {data.scores?.creator && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-border/50">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted border border-border/50">
                     <span className="text-sm">🎨</span>
                     <span className="text-sm font-medium text-foreground">
                       Creator Score {data.scores.creator.value}
@@ -276,7 +276,7 @@ export const TalentProtocolModal = ({
                         {section.items.map((item) => (
                           <div
                             key={item.key}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-border/50 text-sm"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted border border-border/50 text-sm"
                           >
                             <span className="opacity-60">{getSectionIcon(section.key)}</span>
                             <span className="font-medium text-foreground">{item.label}</span>

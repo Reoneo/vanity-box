@@ -12,6 +12,10 @@ interface PolymarketPosition {
   shares: number;
   value: number;
   avgPrice: number;
+  icon?: string;
+  status?: string;
+  profit?: number;
+  percentPnl?: number;
 }
 
 interface PolymarketData {
@@ -21,6 +25,11 @@ interface PolymarketData {
   closedPositions: number;
   totalTrades: number;
   profit: number;
+  profile?: {
+    avatar?: string;
+    displayName?: string;
+    joinedDate?: string;
+  };
 }
 
 serve(async (req) => {
@@ -42,17 +51,14 @@ serve(async (req) => {
     console.log('[Polymarket] Fetching data for wallet:', wallet);
 
     // Fetch user's positions from Polymarket Data API
-    // Using the public endpoints that don't require API key
-    const positionsUrl = `https://data-api.polymarket.com/positions?user=${wallet.toLowerCase()}`;
+    const positionsUrl = `https://data-api.polymarket.com/positions?user=${wallet.toLowerCase()}&sizeThreshold=0&limit=100`;
     const activityUrl = `https://data-api.polymarket.com/activity?user=${wallet.toLowerCase()}&limit=100`;
+    const profileUrl = `https://data-api.polymarket.com/profile?user=${wallet.toLowerCase()}`;
 
-    const [positionsRes, activityRes] = await Promise.allSettled([
-      fetch(positionsUrl, {
-        headers: { 'Accept': 'application/json' }
-      }),
-      fetch(activityUrl, {
-        headers: { 'Accept': 'application/json' }
-      })
+    const [positionsRes, activityRes, profileRes] = await Promise.allSettled([
+      fetch(positionsUrl, { headers: { 'Accept': 'application/json' } }),
+      fetch(activityUrl, { headers: { 'Accept': 'application/json' } }),
+      fetch(profileUrl, { headers: { 'Accept': 'application/json' } }),
     ]);
 
     let openPositions: PolymarketPosition[] = [];
@@ -62,25 +68,61 @@ serve(async (req) => {
     let wins = 0;
     let losses = 0;
     let profit = 0;
+    let profile: PolymarketData['profile'] = undefined;
+
+    // Parse profile response
+    if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
+      try {
+        const profileData = await profileRes.value.json();
+        console.log('[Polymarket] Profile data:', JSON.stringify(profileData).slice(0, 500));
+        
+        if (profileData && typeof profileData === 'object') {
+          profile = {
+            avatar: profileData.profilePicture || profileData.avatar || profileData.pfp,
+            displayName: profileData.name || profileData.username || profileData.displayName,
+            joinedDate: profileData.createdAt 
+              ? new Date(profileData.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : undefined,
+          };
+        }
+      } catch (e) {
+        console.error('[Polymarket] Error parsing profile:', e);
+      }
+    }
 
     // Parse positions response
     if (positionsRes.status === 'fulfilled' && positionsRes.value.ok) {
       try {
         const positionsData = await positionsRes.value.json();
-        console.log('[Polymarket] Positions data:', JSON.stringify(positionsData).slice(0, 500));
+        console.log('[Polymarket] Positions data count:', Array.isArray(positionsData) ? positionsData.length : 'not array');
         
         if (Array.isArray(positionsData)) {
           openPositions = positionsData
-            .filter((p: any) => p.size > 0)
             .map((p: any) => ({
               market: p.title || p.question || 'Unknown Market',
               outcome: p.outcome || 'Unknown',
               shares: parseFloat(p.size) || 0,
-              value: parseFloat(p.currentValue) || parseFloat(p.size) * (parseFloat(p.price) || 0),
-              avgPrice: parseFloat(p.avgPrice) || parseFloat(p.price) || 0,
+              value: parseFloat(p.currentValue) || parseFloat(p.size) * (parseFloat(p.curPrice) || 0),
+              avgPrice: parseFloat(p.avgPrice) || 0,
+              icon: p.icon || undefined,
+              status: p.redeemable ? 'Closed' : 'Open',
+              profit: parseFloat(p.cashPnl) || parseFloat(p.realizedPnl) || 0,
+              percentPnl: parseFloat(p.percentPnl) || parseFloat(p.percentRealizedPnl) || 0,
             }));
 
-          totalValue = openPositions.reduce((sum, p) => sum + p.value, 0);
+          // Calculate totals from positions
+          openPositions.forEach((p) => {
+            totalValue += p.value;
+            profit += p.profit || 0;
+            
+            if (p.status === 'Closed') {
+              closedPositions++;
+              if ((p.profit || 0) > 0) wins++;
+              else if ((p.profit || 0) < 0) losses++;
+            }
+          });
+          
+          totalTrades = openPositions.length;
         }
       } catch (e) {
         console.error('[Polymarket] Error parsing positions:', e);
@@ -89,32 +131,37 @@ serve(async (req) => {
       console.log('[Polymarket] Positions request failed or rejected');
     }
 
-    // Parse activity response for trade history and win rate calculation
+    // Parse activity response for additional trade history
     if (activityRes.status === 'fulfilled' && activityRes.value.ok) {
       try {
         const activityData = await activityRes.value.json();
         console.log('[Polymarket] Activity data count:', Array.isArray(activityData) ? activityData.length : 'not array');
         
-        if (Array.isArray(activityData)) {
-          totalTrades = activityData.length;
+        if (Array.isArray(activityData) && activityData.length > 0) {
+          // Use activity for trade count if positions were empty
+          if (totalTrades === 0) {
+            totalTrades = activityData.length;
+          }
           
-          // Calculate P&L and win/loss from trades
-          activityData.forEach((trade: any) => {
-            const pnl = parseFloat(trade.profit) || parseFloat(trade.pnl) || 0;
-            profit += pnl;
-            
-            if (trade.type === 'redeem' || trade.type === 'sell') {
-              closedPositions++;
-              if (pnl > 0) wins++;
-              else if (pnl < 0) losses++;
-            }
-          });
+          // Calculate P&L from activity if we didn't get it from positions
+          if (profit === 0) {
+            activityData.forEach((trade: any) => {
+              const pnl = parseFloat(trade.profit) || parseFloat(trade.pnl) || parseFloat(trade.cashPnl) || 0;
+              profit += pnl;
+              
+              if (trade.type === 'redeem' || trade.type === 'sell') {
+                if (wins + losses === 0) { // Only count if not already counted
+                  closedPositions++;
+                  if (pnl > 0) wins++;
+                  else if (pnl < 0) losses++;
+                }
+              }
+            });
+          }
         }
       } catch (e) {
         console.error('[Polymarket] Error parsing activity:', e);
       }
-    } else {
-      console.log('[Polymarket] Activity request failed or rejected');
     }
 
     // Calculate win rate if we have closed positions
@@ -138,9 +185,10 @@ serve(async (req) => {
       closedPositions,
       totalTrades,
       profit,
+      profile,
     };
 
-    console.log('[Polymarket] Returning data:', JSON.stringify(result).slice(0, 300));
+    console.log('[Polymarket] Returning data with', openPositions.length, 'positions');
 
     return new Response(
       JSON.stringify(result),
