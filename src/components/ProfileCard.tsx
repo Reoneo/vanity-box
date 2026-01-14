@@ -99,7 +99,10 @@ export const ProfileCard = ({
   const [hasTalentData, setHasTalentData] = useState(false);
   const [talentLoading, setTalentLoading] = useState(false);
   const [talentScore, setTalentScore] = useState<number | null>(null);
+  const [talentCreatorScore, setTalentCreatorScore] = useState<number | null>(null);
   const [hasPolymarketData, setHasPolymarketData] = useState(false);
+  const [polymarketWinRate, setPolymarketWinRate] = useState<number | null>(null);
+  const [polymarketProfit, setPolymarketProfit] = useState<number | null>(null);
   const [isHumanVerified, setIsHumanVerified] = useState(false);
 
   // Resolve ENS name for wallet address searches
@@ -208,8 +211,12 @@ export const ProfileCard = ({
           const talentData = await talentRes.json();
           console.log('Talent Protocol response:', talentData);
           if (!talentData.noData && !talentData.error && talentData.scores) {
-            setHasTalentData(talentData.scores.builder !== null || talentData.scores.creator !== null);
-            setTalentScore(talentData.scores.builder || talentData.scores.creator || null);
+            const hasBuilder = talentData.scores.builder !== null;
+            const hasCreator = talentData.scores.creator !== null;
+            setHasTalentData(hasBuilder || hasCreator);
+            // Extract .value from score objects
+            setTalentScore(talentData.scores.builder?.value ?? null);
+            setTalentCreatorScore(talentData.scores.creator?.value ?? null);
           }
         } catch (e) { 
           console.error('Talent Protocol fetch error:', e); 
@@ -231,6 +238,15 @@ export const ProfileCard = ({
           console.log('Polymarket response:', polyData);
           if (!polyData.noData && !polyData.error && (polyData.openPositions?.length > 0 || polyData.totalTrades > 0)) {
             setHasPolymarketData(true);
+            // Calculate win rate from resolved positions
+            if (polyData.resolvedPositions?.length > 0) {
+              const wins = polyData.resolvedPositions.filter((p: any) => p.outcome === 'won').length;
+              setPolymarketWinRate(Math.round((wins / polyData.resolvedPositions.length) * 100));
+            }
+            // Set profit if available
+            if (typeof polyData.totalProfit === 'number') {
+              setPolymarketProfit(polyData.totalProfit);
+            }
           }
         } catch (e) { 
           console.error('Polymarket fetch error:', e); 
@@ -415,16 +431,22 @@ export const ProfileCard = ({
                       {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Verified Badge on Avatar */}
+                  {/* Verified Badge on Avatar - Certificate seal style */}
                   {hasTalentData && (
                     <button
                       onClick={() => setShowTalentModal(true)}
-                      className="absolute -bottom-1 right-2 w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform"
+                      className="absolute -bottom-2 -right-2 w-12 h-12 flex items-center justify-center hover:scale-110 transition-transform"
                       title="Verified Human - Click for details"
                     >
-                      <svg viewBox="0 0 24 24" className="w-10 h-10 drop-shadow-lg">
-                        <circle cx="12" cy="12" r="10" fill="#3B82F6" />
-                        <path d="M10 15.172l-3.586-3.586a1 1 0 00-1.414 1.414l4.293 4.293a1 1 0 001.414 0l8-8a1 1 0 10-1.414-1.414L10 15.172z" fill="white" />
+                      <svg viewBox="0 0 24 24" className="w-12 h-12 drop-shadow-lg">
+                        <path 
+                          d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
+                          fill="#3B82F6" 
+                        />
+                        <path 
+                          d="M10 15.172l-3.586-3.586a1 1 0 00-1.414 1.414l4.293 4.293a1 1 0 001.414 0l8-8a1 1 0 10-1.414-1.414L10 15.172z" 
+                          fill="white" 
+                        />
                       </svg>
                     </button>
                   )}
@@ -432,7 +454,7 @@ export const ProfileCard = ({
               </div>
             </div>
 
-            <div className="p-6 pt-14 space-y-1.5 flex-shrink-0">
+            <div className="p-6 pt-10 space-y-1 flex-shrink-0">
 
               {/* Show resolved ENS name or searched identity - no inline badge */}
               <h2 className="text-3xl font-bold text-center text-foreground">
@@ -539,12 +561,12 @@ export const ProfileCard = ({
                 if (buttons.length === 0) return null;
 
                 return (
-                  <div className="flex items-center justify-center gap-2 flex-wrap px-4">
+                  <div className="flex items-center justify-center gap-2 px-4">
                     {buttons.map((btn) => (
                       <button
                         key={btn.title}
                         onClick={btn.onClick}
-                        className="px-5 py-2.5 rounded-full bg-secondary/50 border border-border/50 hover:border-primary/50 hover:bg-secondary/80 transition-all text-sm font-medium text-foreground"
+                        className="flex-1 max-w-[90px] py-2.5 rounded-full bg-secondary/50 border border-border/50 hover:border-primary/50 hover:bg-secondary/80 transition-all text-sm font-medium text-foreground whitespace-nowrap"
                       >
                         {btn.title}
                       </button>
@@ -575,9 +597,9 @@ export const ProfileCard = ({
                   wallet={currentWalletAddress}
                   ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
                   talentScore={talentScore}
-                  talentCreatorScore={null}
-                  polymarketWinRate={null}
-                  polymarketProfit={null}
+                  talentCreatorScore={talentCreatorScore}
+                  polymarketWinRate={polymarketWinRate}
+                  polymarketProfit={polymarketProfit}
                   hasPolymarketData={hasPolymarketData}
                   onTalentClick={() => setShowTalentModal(true)}
                   onPolymarketClick={() => setShowPolymarketModal(true)}
