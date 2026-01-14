@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ExternalLink, RefreshCw, X, TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react';
+import { ExternalLink, Share2, X, Calendar, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { callEdge } from '@/lib/supaInvoke';
-import polymarketIcon from '@/assets/polymarket-icon.png';
+import polymarketLogo from '@/assets/polymarket-logo.png';
 
 interface PolymarketModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   wallet?: string;
+  ens?: string;
 }
 
 interface PolymarketPosition {
@@ -18,6 +21,10 @@ interface PolymarketPosition {
   shares: number;
   value: number;
   avgPrice: number;
+  icon?: string;
+  status?: string;
+  profit?: number;
+  percentPnl?: number;
 }
 
 interface PolymarketData {
@@ -27,12 +34,18 @@ interface PolymarketData {
   closedPositions: number;
   totalTrades: number;
   profit: number;
+  profile?: {
+    avatar?: string;
+    displayName?: string;
+    joinedDate?: string;
+  };
 }
 
 export const PolymarketModal = ({
   open,
   onOpenChange,
   wallet,
+  ens,
 }: PolymarketModalProps) => {
   const [data, setData] = useState<PolymarketData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -80,130 +93,193 @@ export const PolymarketModal = ({
     }
   };
 
+  const handleShare = async () => {
+    const url = `https://polymarket.com/profile/${wallet}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const displayName = ens || (wallet ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : 'Unknown');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-[#D4AF37]/30">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-border/50 rounded-3xl">
         {/* Header */}
-        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 z-10 border-b border-[#D4AF37]/30">
+        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b border-border/30">
           <div className="flex items-center gap-3">
             <img 
-              src={polymarketIcon} 
+              src={polymarketLogo} 
               alt="Polymarket" 
-              className="w-8 h-8 rounded-lg"
+              className="w-8 h-8 rounded-lg object-contain"
             />
-            <DialogTitle className="text-lg font-semibold text-white">Polymarket</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-foreground">Polymarket</DialogTitle>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </DialogHeader>
 
         {/* Content */}
-        <div className="px-4 pb-4">
+        <div className="px-6 pb-6">
           {loading ? (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Skeleton className="h-20 rounded-xl bg-white/10" />
-                <Skeleton className="h-20 rounded-xl bg-white/10" />
-                <Skeleton className="h-20 rounded-xl bg-white/10" />
-                <Skeleton className="h-20 rounded-xl bg-white/10" />
+            <div className="space-y-6 py-6">
+              {/* Profile skeleton */}
+              <div className="flex flex-col items-center gap-3">
+                <Skeleton className="h-24 w-24 rounded-full" />
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-40" />
               </div>
-              <Skeleton className="h-32 rounded-xl bg-white/10" />
+              {/* Stats skeleton */}
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4].map(i => (
+                  <Skeleton key={i} className="h-16 rounded-xl" />
+                ))}
+              </div>
+              {/* Positions skeleton */}
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-20 rounded-xl" />
+              </div>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <p className="text-white/70 text-center">{error}</p>
+            <div className="flex flex-col items-center gap-4 py-12">
+              <p className="text-muted-foreground text-center">{error}</p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={fetchData}
-                className="gap-2 border-[#D4AF37]/30 text-white hover:bg-[#D4AF37]/20"
+                className="gap-2"
               >
-                <RefreshCw className="w-4 h-4" />
+                <Loader2 className="w-4 h-4" />
                 Retry
               </Button>
             </div>
           ) : data ? (
-            <div className="space-y-4 py-4">
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="w-4 h-4 text-[#D4AF37]" />
-                    <span className="text-xs text-white/60">Portfolio Value</span>
+            <div className="space-y-6 py-4">
+              {/* Profile Header */}
+              <div className="flex flex-col items-center gap-2">
+                <Avatar className="h-24 w-24 border-2 border-border">
+                  <AvatarImage src={data.profile?.avatar} />
+                  <AvatarFallback className="text-2xl bg-muted text-foreground">
+                    {displayName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <h3 className="text-xl font-semibold text-foreground">
+                  {data.profile?.displayName || displayName}
+                </h3>
+                
+                {data.profile?.joinedDate && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span>Joined {data.profile.joinedDate}</span>
                   </div>
-                  <p className="text-xl font-bold text-white">
-                    ${data.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                )}
+              </div>
+
+              {/* Stats Grid - 4 columns like reference */}
+              <div className="grid grid-cols-4 gap-2">
+                <div className="p-3 rounded-xl bg-muted/50 border border-border/30 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Positions Value</p>
+                  <p className="text-sm font-bold text-foreground">
+                    ${data.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 })}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <BarChart3 className="w-4 h-4 text-[#D4AF37]" />
-                    <span className="text-xs text-white/60">Win Rate</span>
-                  </div>
-                  <p className="text-xl font-bold text-white">
+                <div className="p-3 rounded-xl bg-muted/50 border border-border/30 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                  <p className="text-sm font-bold text-foreground">
                     {data.winRate !== null ? `${data.winRate}%` : 'N/A'}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    {data.profit >= 0 ? (
-                      <TrendingUp className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-red-400" />
-                    )}
-                    <span className="text-xs text-white/60">P&L</span>
-                  </div>
-                  <p className={`text-xl font-bold ${data.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {data.profit >= 0 ? '+' : ''}${data.profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className="p-3 rounded-xl bg-muted/50 border border-border/30 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Profit/Loss</p>
+                  <p className={`text-sm font-bold ${data.profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {data.profit >= 0 ? '+' : ''}${Math.abs(data.profit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 })}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs text-white/60">Total Trades</span>
-                  </div>
-                  <p className="text-xl font-bold text-white">{data.totalTrades}</p>
+                <div className="p-3 rounded-xl bg-muted/50 border border-border/30 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Predictions</p>
+                  <p className="text-sm font-bold text-foreground">{data.totalTrades}</p>
                 </div>
               </div>
 
-              {/* Open Positions */}
+              {/* History Positions */}
               {data.openPositions.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-[#D4AF37]">Open Positions</h4>
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    History Positions
+                    <span className="flex-1 h-px bg-border/50" />
+                  </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {data.openPositions.slice(0, 5).map((position, index) => (
+                    {data.openPositions.slice(0, 10).map((position, index) => (
                       <div 
                         key={index}
-                        className="p-3 rounded-lg bg-white/5 border border-white/10"
+                        className="flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/30"
                       >
-                        <p className="text-sm text-white font-medium line-clamp-1">{position.market}</p>
-                        <div className="flex justify-between items-center mt-1">
-                          <span className="text-xs text-white/60">{position.outcome}</span>
-                          <span className="text-xs text-[#D4AF37]">
-                            ${position.value.toFixed(2)}
-                          </span>
+                        {position.icon && (
+                          <img 
+                            src={position.icon} 
+                            alt="" 
+                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground line-clamp-1">
+                            {position.market}
+                            {position.status && (
+                              <span className="ml-2 text-xs text-muted-foreground">{position.status}</span>
+                            )}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-xs text-muted-foreground">
+                              Bought {position.shares.toFixed(2)} {position.outcome}
+                            </span>
+                            {position.profit !== undefined && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${position.profit >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                {position.profit >= 0 ? '+' : ''}${position.profit.toFixed(3)}
+                                {position.percentPnl !== undefined && ` (${position.percentPnl.toFixed(2)}%)`}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                  {loading && (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Footer Actions */}
-              <div className="pt-4 border-t border-[#D4AF37]/20">
+              <div className="flex gap-2 pt-4 border-t border-border/30">
                 <Button
                   variant="outline"
-                  className="w-full gap-2 border-[#D4AF37]/30 text-white hover:bg-[#D4AF37]/20"
+                  className="flex-1 gap-2"
                   onClick={handleOpenInPolymarket}
                 >
                   <ExternalLink className="w-4 h-4" />
-                  View on Polymarket
+                  Open in Polymarket
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={handleShare}
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
                 </Button>
               </div>
             </div>

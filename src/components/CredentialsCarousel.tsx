@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import talentProtocolIcon from '@/assets/talent-protocol-icon.jpeg';
-import polymarketIcon from '@/assets/polymarket-icon.png';
+import polymarketLogo from '@/assets/polymarket-logo.png';
 import './CredentialsCarousel.css';
 
 const DRAG_BUFFER = 0;
@@ -16,6 +16,7 @@ interface CarouselItem {
   icon: string;
   value?: string | number | null;
   onClick?: () => void;
+  hidden?: boolean;
 }
 
 interface CarouselItemProps {
@@ -66,6 +67,7 @@ interface CredentialsCarouselProps {
   ens?: string;
   talentScore?: number | null;
   polymarketWinRate?: number | null;
+  hasPolymarketData?: boolean;
   onTalentClick?: () => void;
   onPolymarketClick?: () => void;
   baseWidth?: number;
@@ -80,9 +82,10 @@ export default function CredentialsCarousel({
   ens,
   talentScore,
   polymarketWinRate,
+  hasPolymarketData = false,
   onTalentClick,
   onPolymarketClick,
-  baseWidth = 280,
+  baseWidth = 300,
   autoplay = true,
   autoplayDelay = 4000,
   pauseOnHover = true,
@@ -92,32 +95,43 @@ export default function CredentialsCarousel({
   const itemWidth = baseWidth - containerPadding * 2;
   const trackItemOffset = itemWidth + GAP;
   
-  const items: CarouselItem[] = useMemo(() => [
-    {
-      id: 'talent',
-      title: 'Talent Protocol',
-      description: 'Builder credentials & reputation',
-      icon: talentProtocolIcon,
-      value: talentScore !== null ? `Score: ${talentScore}` : 'View Profile',
-      onClick: onTalentClick,
-    },
-    {
-      id: 'polymarket',
-      title: 'Polymarket',
-      description: 'Prediction market performance',
-      icon: polymarketIcon,
-      value: polymarketWinRate !== null ? `Win Rate: ${polymarketWinRate}%` : 'View Stats',
-      onClick: onPolymarketClick,
-    },
-  ], [talentScore, polymarketWinRate, onTalentClick, onPolymarketClick]);
+  // Build items array - filter out hidden items
+  const items: CarouselItem[] = useMemo(() => {
+    const allItems: CarouselItem[] = [
+      {
+        id: 'talent',
+        title: 'Talent Protocol',
+        description: 'Builder credentials & reputation',
+        icon: talentProtocolIcon,
+        value: talentScore !== null && talentScore !== undefined 
+          ? `Score: ${talentScore}` 
+          : 'View Profile',
+        onClick: onTalentClick,
+        hidden: false, // Always show talent
+      },
+      {
+        id: 'polymarket',
+        title: 'Polymarket',
+        description: 'Prediction market performance',
+        icon: polymarketLogo,
+        value: polymarketWinRate !== null && polymarketWinRate !== undefined 
+          ? `Win Rate: ${polymarketWinRate}%` 
+          : 'View Stats',
+        onClick: onPolymarketClick,
+        hidden: !hasPolymarketData, // Hide if no polymarket data
+      },
+    ];
+    
+    return allItems.filter(item => !item.hidden);
+  }, [talentScore, polymarketWinRate, hasPolymarketData, onTalentClick, onPolymarketClick]);
 
   const itemsForRender = useMemo(() => {
-    if (!loop) return items;
+    if (!loop || items.length <= 1) return items;
     if (items.length === 0) return [];
     return [items[items.length - 1], ...items, items[0]];
   }, [items, loop]);
 
-  const [position, setPosition] = useState(loop ? 1 : 0);
+  const [position, setPosition] = useState(loop && items.length > 1 ? 1 : 0);
   const x = useMotionValue(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
@@ -140,7 +154,7 @@ export default function CredentialsCarousel({
   }, [pauseOnHover]);
 
   useEffect(() => {
-    if (!autoplay || itemsForRender.length <= 1) return undefined;
+    if (!autoplay || items.length <= 1) return undefined;
     if (pauseOnHover && isHovered) return undefined;
 
     const timer = setInterval(() => {
@@ -148,10 +162,10 @@ export default function CredentialsCarousel({
     }, autoplayDelay);
 
     return () => clearInterval(timer);
-  }, [autoplay, autoplayDelay, isHovered, pauseOnHover, itemsForRender.length]);
+  }, [autoplay, autoplayDelay, isHovered, pauseOnHover, itemsForRender.length, items.length]);
 
   useEffect(() => {
-    const startingPosition = loop ? 1 : 0;
+    const startingPosition = (loop && items.length > 1) ? 1 : 0;
     setPosition(startingPosition);
     x.set(-startingPosition * trackItemOffset);
   }, [items.length, loop, trackItemOffset, x]);
@@ -169,7 +183,7 @@ export default function CredentialsCarousel({
   };
 
   const handleAnimationComplete = () => {
-    if (!loop || itemsForRender.length <= 1) {
+    if (!loop || items.length <= 1 || itemsForRender.length <= 1) {
       setIsAnimating(false);
       return;
     }
@@ -230,9 +244,41 @@ export default function CredentialsCarousel({
       };
 
   const activeIndex =
-    items.length === 0 ? 0 : loop ? (position - 1 + items.length) % items.length : Math.min(position, items.length - 1);
+    items.length === 0 ? 0 : (loop && items.length > 1) ? (position - 1 + items.length) % items.length : Math.min(position, items.length - 1);
 
   if (items.length === 0) return null;
+
+  // If only one item, render without carousel mechanics
+  if (items.length === 1) {
+    return (
+      <div
+        ref={containerRef}
+        className="credentials-carousel-container single-item"
+        style={{ width: `${baseWidth}px` }}
+      >
+        <div
+          className="credentials-carousel-item"
+          style={{ width: itemWidth }}
+          onClick={items[0].onClick}
+        >
+          <div className="credentials-carousel-item-header">
+            <img 
+              src={items[0].icon} 
+              alt={items[0].title}
+              className="credentials-carousel-icon"
+            />
+          </div>
+          <div className="credentials-carousel-item-content">
+            <div className="credentials-carousel-item-title">{items[0].title}</div>
+            <p className="credentials-carousel-item-description">{items[0].description}</p>
+            {items[0].value !== undefined && items[0].value !== null && (
+              <div className="credentials-carousel-item-value">{items[0].value}</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -278,7 +324,7 @@ export default function CredentialsCarousel({
               animate={{
                 scale: activeIndex === index ? 1.2 : 1
               }}
-              onClick={() => setPosition(loop ? index + 1 : index)}
+              onClick={() => setPosition((loop && items.length > 1) ? index + 1 : index)}
               transition={{ duration: 0.15 }}
             />
           ))}
