@@ -227,36 +227,41 @@ export const TalentProtocolModal = ({
                 )}
               </div>
 
-              {/* Human Checkmark Section */}
-              {data.verification?.humanCheckmark?.isVerified && (
-                <div className="space-y-2">
-                  <div className="border-t border-border/30 pt-3">
-                    <h4 className="text-center font-semibold text-foreground mb-2">
-                      Human Checkmark
-                    </h4>
-                    <div className="flex justify-center gap-2 flex-wrap">
-                      {data.verification.humanCheckmark.providers.length > 0 ? (
+              {/* Human Checkmark Section - Always show */}
+              <div className="space-y-2">
+                <div className="border-t border-border/30 pt-3">
+                  <h4 className="text-center font-semibold text-foreground mb-2">
+                    Human Checkmark
+                  </h4>
+                  <div className="flex justify-center gap-2 flex-wrap">
+                    {data.verification?.humanCheckmark?.isVerified ? (
+                      data.verification.humanCheckmark.providers.length > 0 ? (
                         data.verification.humanCheckmark.providers.map((provider) => (
                           <Badge
                             key={provider}
                             variant="outline"
-                            className="gap-1 px-2.5 py-1"
+                            className="gap-1 px-2.5 py-1 bg-green-500/10 border-green-500/30"
                           >
                             <Check className="w-3 h-3 text-green-500" />
                             {provider}
-                            <span className="text-muted-foreground text-xs ml-1">Verified</span>
+                            <span className="text-green-600 dark:text-green-400 text-xs ml-1">Verified</span>
                           </Badge>
                         ))
                       ) : (
-                        <Badge variant="outline" className="gap-1 px-2.5 py-1">
+                        <Badge variant="outline" className="gap-1 px-2.5 py-1 bg-green-500/10 border-green-500/30">
                           <Check className="w-3 h-3 text-green-500" />
                           Verified Human
                         </Badge>
-                      )}
-                    </div>
+                      )
+                    ) : (
+                      <Badge variant="outline" className="gap-1 px-2.5 py-1 text-muted-foreground">
+                        <X className="w-3 h-3 text-muted-foreground" />
+                        Not verified
+                      </Badge>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Credentials Sections */}
               {data.sections.length > 0 && (
