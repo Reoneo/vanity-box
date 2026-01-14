@@ -1622,77 +1622,73 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* Profile Dock - separate from profile container for proper z-index stacking */}
             {web3BioProfile && !showMyIDs && (
-              <div className="fixed bottom-0 left-0 right-0 z-[10000] flex items-center justify-center pb-4 pt-4 pointer-events-none">
-                <div className="pointer-events-auto">
-                  <Dock
-                    items={[
-                      // Only show Home button when viewing a profile (not on home page)
-                      ...(web3BioProfile ? [{
-                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
-                        label: 'Home',
-                        onClick: (e: React.MouseEvent) => {
-                          e.stopPropagation();
-                          setShowSearchBar(false);
-                          setHadPreviousProfile(false); // Prevent useEffect from re-enabling search
-                          setWeb3BioProfile(null);
-                          setEfpStats(null);
-                          setEnsRecords(null);
-                          setIsSearchActive(false);
-                          setHasSearched(false);
-                          setSearchQuery('');
-                          setDisplayQuery('');
-                          setEnsResults([]);
-                          setNfts([]);
-                          setPoapTokens([]);
-                          setActiveDockSection('profile');
-                          setIsHomepage(true);
-                          // Reset detail view state to fix glitch
-                          setShowDetailView(false);
-                          setDetailViewResult(null);
-                        },
-                        isActive: false,
-                      }] : []),
-                      {
-                        icon: <User className="w-6 h-6 text-[#D4AF37]" />,
-                        label: t('profile'),
-                        onClick: () => {
-                          if (!walletAddress) {
-                            toast.error('Please connect your wallet first');
-                            return;
-                          }
-                          // Load the connected user's own profile
-                          const searchIdentifier = connectedUsername || walletAddress;
-                          if (searchIdentifier) {
-                            handleSearch(searchIdentifier);
-                          }
-                        },
-                        isActive: activeDockSection === 'profile',
-                      },
-                      // Only show Edit pencil when viewing own profile
-                      ...(walletAddress && web3BioProfile?.address && 
-                         walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase() ? [{
-                        icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
-                        label: 'Edit',
-                        onClick: () => {
-                          setShowMyIDs(true);
-                          setActiveDockSection('profile');
-                        },
-                        isActive: false,
-                      }] : []),
-                      // Search icon on far right
-                      {
-                        icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
-                        label: 'Search',
-                        onClick: () => {
-                          // Toggle modal search overlay
-                          setShowSearchBar(prev => !prev);
-                        },
-                        isActive: showSearchBar,
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
+              <Dock
+                items={[
+                  // Only show Home button when viewing a profile (not on home page)
+                  ...(web3BioProfile ? [{
+                    icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Home',
+                    onClick: (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setShowSearchBar(false);
+                      setHadPreviousProfile(false); // Prevent useEffect from re-enabling search
+                      setWeb3BioProfile(null);
+                      setEfpStats(null);
+                      setEnsRecords(null);
+                      setIsSearchActive(false);
+                      setHasSearched(false);
+                      setSearchQuery('');
+                      setDisplayQuery('');
+                      setEnsResults([]);
+                      setNfts([]);
+                      setPoapTokens([]);
+                      setActiveDockSection('profile');
+                      setIsHomepage(true);
+                      // Reset detail view state to fix glitch
+                      setShowDetailView(false);
+                      setDetailViewResult(null);
+                    },
+                    isActive: false,
+                  }] : []),
+                  {
+                    icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                    label: t('profile'),
+                    onClick: () => {
+                      if (!walletAddress) {
+                        toast.error('Please connect your wallet first');
+                        return;
+                      }
+                      // Load the connected user's own profile
+                      const searchIdentifier = connectedUsername || walletAddress;
+                      if (searchIdentifier) {
+                        handleSearch(searchIdentifier);
+                      }
+                    },
+                    isActive: activeDockSection === 'profile',
+                  },
+                  // Only show Edit pencil when viewing own profile
+                  ...(walletAddress && web3BioProfile?.address && 
+                     walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase() ? [{
+                    icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
+                    label: 'Edit',
+                    onClick: () => {
+                      setShowMyIDs(true);
+                      setActiveDockSection('profile');
+                    },
+                    isActive: false,
+                  }] : []),
+                  // Search icon on far right
+                  {
+                    icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Search',
+                    onClick: () => {
+                      // Toggle modal search overlay
+                      setShowSearchBar(prev => !prev);
+                    },
+                    isActive: showSearchBar,
+                  },
+                ]}
+              />
             )}
 
             {/* Loading Indicator */}
