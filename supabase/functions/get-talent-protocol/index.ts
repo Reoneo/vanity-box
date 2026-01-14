@@ -387,20 +387,30 @@ serve(async (req) => {
       sections: groupCredentialsIntoSections(credentials),
     };
     
-    // Process human checkmark if present
+    // Process human checkmark if present - check for points > 0 (verified providers)
     if (humanCheckmarkData?.data_points && humanCheckmarkData.data_points.length > 0) {
       const providers: string[] = [];
+      
       for (const dp of humanCheckmarkData.data_points) {
-        if (dp.name && dp.value === true) {
-          providers.push(dp.name.replace('Verified by ', '').replace(' verification', ''));
+        // A provider is verified if points > 0
+        const isVerified = dp.points > 0 || dp.value === true;
+        if (isVerified && dp.name) {
+          // Clean up provider name - remove common prefixes/suffixes
+          let providerName = dp.name
+            .replace('Verified by ', '')
+            .replace(' verification', '')
+            .replace(' Verification', '')
+            .trim();
+          providers.push(providerName);
         }
       }
-      if (providers.length > 0) {
-        response.verification.humanCheckmark = {
-          isVerified: true,
-          providers,
-        };
-      }
+      
+      console.log('[TalentProtocol] Human Checkmark providers found:', providers);
+      
+      response.verification.humanCheckmark = {
+        isVerified: providers.length > 0,
+        providers,
+      };
     } else if (profile?.profile?.human_checkmark) {
       response.verification.humanCheckmark = {
         isVerified: true,
