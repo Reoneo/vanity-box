@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import talentProtocolIcon from '@/assets/talent-protocol-icon.jpeg';
-import polymarketLogo from '@/assets/polymarket-logo.png';
+import polymarketIcon from '@/assets/polymarket-icon-blue.png';
 import './CredentialsCarousel.css';
 
 const DRAG_BUFFER = 0;
@@ -169,7 +169,7 @@ export default function CredentialsCarousel({
       {
         id: 'polymarket',
         title: 'Polymarket',
-        icon: polymarketLogo,
+        icon: polymarketIcon,
         scores: {
           primary: { 
             value: polymarketWinRate, 

@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, Share2, X, Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { callEdge } from '@/lib/supaInvoke';
-import polymarketLogo from '@/assets/polymarket-logo.png';
+import polymarketIcon from '@/assets/polymarket-icon-blue.png';
 
 interface PolymarketModalProps {
   open: boolean;
@@ -112,7 +112,7 @@ export const PolymarketModal = ({
         <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b border-border/30">
           <div className="flex items-center gap-3">
             <img 
-              src={polymarketLogo} 
+              src={polymarketIcon} 
               alt="Polymarket" 
               className="w-8 h-8 rounded-lg object-contain"
             />
