@@ -6,8 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API key will be fetched based on domain
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -38,19 +36,50 @@ serve(async (req) => {
     const parts = cleanSubdomain.split('.');
     const subdomainLabel = parts[0];
     const domain = providedDomain || parts.slice(1).join('.') || 'smith.cash';
+    const cleanDomain = domain.trim().toLowerCase();
 
-    // Get API key for this domain
-    const NAMESTONE_API_KEY = Deno.env.get(`NAMESTONE_API_KEY_${domain.toUpperCase().replace(/\./g, '_')}`) || Deno.env.get('NAMESTONE_API_KEY');
+    console.log(`🔍 Parsed: label="${subdomainLabel}", domain="${cleanDomain}"`);
+
+    // Initialize Supabase client for domain config lookup
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    if (!NAMESTONE_API_KEY) {
-      throw new Error(`API key not configured for domain ${domain}`);
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase configuration missing');
     }
     
-    console.log('🔑 Using API key for domain:', domain);
-    console.log('📝 Domain:', domain);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch API key from domain_configs (same pattern as set-namestone-records)
+    const { data: domainConfig, error: configError } = await supabase
+      .from("domain_configs")
+      .select("*")
+      .eq("domain_name", cleanDomain)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (configError) {
+      console.warn('⚠️ Domain config lookup error:', configError.message);
+    }
+
+    let namestoneApiKey: string | undefined;
+
+    if (domainConfig) {
+      console.log(`🔑 Found domain config for ${cleanDomain}, secret: ${domainConfig.api_key_secret_name}`);
+      namestoneApiKey = Deno.env.get(domainConfig.api_key_secret_name);
+    } else {
+      console.log(`🔑 No domain config found for ${cleanDomain}, using default`);
+      namestoneApiKey = Deno.env.get("NAMESTONE_API_KEY");
+    }
+    
+    if (!namestoneApiKey) {
+      throw new Error(`API key not configured for domain ${cleanDomain}`);
+    }
+    
+    console.log('🔑 API key resolved for domain:', cleanDomain);
     
     const payload = {
-      domain: domain.toLowerCase(),
+      domain: cleanDomain,
       name: subdomainLabel
     };
 
@@ -59,7 +88,7 @@ serve(async (req) => {
     const response = await fetch('https://namestone.com/api/public_v1/get-names', {
       method: 'POST',
       headers: {
-        'Authorization': NAMESTONE_API_KEY,
+        'Authorization': namestoneApiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
@@ -119,30 +148,24 @@ serve(async (req) => {
       console.log('⚠️ No address in Namestone response, checking minted_domains table...');
       
       try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL');
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        const fullName = cleanSubdomain.toLowerCase();
         
-        if (supabaseUrl && supabaseKey) {
-          const supabase = createClient(supabaseUrl, supabaseKey);
-          const fullName = cleanSubdomain.toLowerCase();
-          
-          const { data: mintedData, error: mintedError } = await supabase
-            .from('minted_domains')
-            .select('wallet_address')
-            .eq('full_name', fullName)
-            .eq('is_expired', false)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          
-          if (mintedError) {
-            console.warn('⚠️ Error fetching from minted_domains:', mintedError.message);
-          } else if (mintedData?.wallet_address) {
-            owner = mintedData.wallet_address;
-            console.log('✅ Got owner from minted_domains:', owner);
-          } else {
-            console.log('ℹ️ No matching record in minted_domains for:', fullName);
-          }
+        const { data: mintedData, error: mintedError } = await supabase
+          .from('minted_domains')
+          .select('wallet_address')
+          .eq('full_name', fullName)
+          .eq('is_expired', false)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (mintedError) {
+          console.warn('⚠️ Error fetching from minted_domains:', mintedError.message);
+        } else if (mintedData?.wallet_address) {
+          owner = mintedData.wallet_address;
+          console.log('✅ Got owner from minted_domains:', owner);
+        } else {
+          console.log('ℹ️ No matching record in minted_domains for:', fullName);
         }
       } catch (dbError) {
         console.warn('⚠️ Database fallback failed:', dbError);
