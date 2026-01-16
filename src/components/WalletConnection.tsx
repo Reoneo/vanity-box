@@ -19,7 +19,6 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
 import { useWalletConnect } from '@/contexts/WalletConnectContext';
-import { SIWEVerificationModal } from '@/components/SIWEVerificationModal';
 
 interface User {
   walletAddress?: string;
@@ -55,8 +54,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensLoading, setEnsLoading] = useState(false);
-  const [showSIWEModal, setShowSIWEModal] = useState(false);
-  const [pendingWalletConnectAddress, setPendingWalletConnectAddress] = useState<string | null>(null);
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -66,28 +63,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return value.toFixed(decimals);
   };
 
-  // Handle WalletConnect connection - show SIWE modal for verification
+  // Handle WalletConnect connection
   useEffect(() => {
     if (walletConnectConnected && walletConnectAddress) {
       console.log('[WalletConnection] WalletConnect connected:', walletConnectAddress);
-      
-      // Check if already verified in this session
-      const isVerified = sessionStorage.getItem(`siwe_verified_${walletConnectAddress.toLowerCase()}`);
-      
-      if (isVerified) {
-        // Already verified, proceed directly
-        setWalletType('walletconnect');
-        setUser({
-          walletAddress: walletConnectAddress,
-          username: formatAddress(walletConnectAddress)
-        });
-        setIsLoading(false);
-        fetchEnsName(walletConnectAddress);
-      } else {
-        // Show SIWE verification modal
-        setPendingWalletConnectAddress(walletConnectAddress);
-        setShowSIWEModal(true);
-      }
+      setWalletType('walletconnect');
+      setUser({
+        walletAddress: walletConnectAddress,
+        username: formatAddress(walletConnectAddress)
+      });
+      setIsLoading(false);
+      fetchEnsName(walletConnectAddress);
     }
   }, [walletConnectConnected, walletConnectAddress]);
 
@@ -439,70 +425,42 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
-  // Handler for successful SIWE verification
-  const handleSIWESuccess = () => {
-    if (pendingWalletConnectAddress) {
-      setWalletType('walletconnect');
-      setUser({
-        walletAddress: pendingWalletConnectAddress,
-        username: formatAddress(pendingWalletConnectAddress)
-      });
-      fetchEnsName(pendingWalletConnectAddress);
-      setPendingWalletConnectAddress(null);
-    }
-  };
-
-  // Handler for SIWE cancellation
-  const handleSIWECancel = () => {
-    setPendingWalletConnectAddress(null);
-    wagmiDisconnect();
-  };
-
   // Not connected - show connect button
   if (!user && !petraConnected && !walletConnectConnected) {
     return (
-      <>
-        <Button
-          onClick={() => {
-            console.log('🔍 Checking environment...');
-            console.log('  - window.Telegram:', !!(window as any).Telegram);
-            console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
-            console.log('  - isTelegramWebView():', isTelegramWebView());
-            console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
-            
-            if (isTelegramWebView()) {
-              console.log('✅ Detected Telegram WebView - connecting TON wallet');
-              handleTelegramConnect();
-            } else if (MiniKit.isInstalled()) {
-              console.log('✅ Detected World App - connecting World ID');
-              handleConnect();
-            } else {
-              console.log('✅ Desktop browser - opening WalletConnect modal');
-              handleWalletConnectOpen();
-            }
-          }}
-          disabled={isLoading}
-          variant="outline"
-          size="sm"
-          className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
-        >
-          {isLoading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-              {t('connecting')}
-            </>
-          ) : (
-            t('Connect')
-          )}
-        </Button>
-        
-        <SIWEVerificationModal
-          open={showSIWEModal}
-          onOpenChange={setShowSIWEModal}
-          onSuccess={handleSIWESuccess}
-          onCancel={handleSIWECancel}
-        />
-      </>
+      <Button
+        onClick={() => {
+          console.log('🔍 Checking environment...');
+          console.log('  - window.Telegram:', !!(window as any).Telegram);
+          console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
+          console.log('  - isTelegramWebView():', isTelegramWebView());
+          console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
+          
+          if (isTelegramWebView()) {
+            console.log('✅ Detected Telegram WebView - connecting TON wallet');
+            handleTelegramConnect();
+          } else if (MiniKit.isInstalled()) {
+            console.log('✅ Detected World App - connecting World ID');
+            handleConnect();
+          } else {
+            console.log('✅ Desktop browser - opening WalletConnect modal');
+            handleWalletConnectOpen();
+          }
+        }}
+        disabled={isLoading}
+        variant="outline"
+        size="sm"
+        className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
+      >
+        {isLoading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            {t('connecting')}
+          </>
+        ) : (
+          t('Connect')
+        )}
+      </Button>
     );
   }
 
@@ -520,7 +478,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
 
   return (
-    <>
     <DropdownMenu onOpenChange={(open) => {
       if (open) {
         if (walletType === 'petra') {
@@ -591,13 +548,5 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-    
-    <SIWEVerificationModal
-      open={showSIWEModal}
-      onOpenChange={setShowSIWEModal}
-      onSuccess={handleSIWESuccess}
-      onCancel={handleSIWECancel}
-    />
-    </>
   );
 };

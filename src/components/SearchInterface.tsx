@@ -100,7 +100,6 @@ import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import searchLogo from "@/assets/search-logo.png";
-import iotaLogo from "@/assets/iota-logo.png";
 
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
@@ -568,6 +567,33 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         club: ["Surname", "DeFi"],
       },
       {
+        name: "Smith.box",
+        description: t("desc_smith_cash"),
+        imageUrl: smithBoxAvatar,
+        price: 5,
+        category: ["ENS", "DNS"],
+        club: ["Surname", "DeFi"],
+        enabled: false,
+      },
+      {
+        name: "Vape.box",
+        description: t("desc_vape_box"),
+        imageUrl: vapeBoxAvatar,
+        price: 5,
+        category: ["ENS", "DNS"],
+        club: ["Startup"],
+        enabled: false,
+      },
+      {
+        name: "altcoin.chain",
+        description: t("desc_altcoin_chain"),
+        imageUrl: termuxAvatar,
+        price: 5,
+        category: ["ENS", "DNS"],
+        club: ["Crypto", "DeFi"],
+        enabled: false,
+      },
+      {
         name: "Vanity.ton",
         description: "Telegram-native Web3 identity on TON blockchain",
         imageUrl: vanityTonAvatar,
@@ -588,6 +614,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         enabled: true,
       },
       {
+        name: "Smith.apt",
+        description: "Professional surname identity on Aptos blockchain",
+        imageUrl: smithAptAvatar,
+        price: 5,
+        category: ["Aptos"],
+        club: ["Surname"],
+        selectable: true,
+        enabled: true,
+      },
+      {
         name: "Vanity.hl",
         description: "Native Web3 ID for the HyperLiquid blockchain.",
         imageUrl: vanityHlAvatar,
@@ -603,16 +639,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         imageUrl: vanityBoxAvatar,
         price: 5,
         category: ["ENS", "DNS"],
-        club: ["Personal"],
-        selectable: true,
-        enabled: false,
-      },
-      {
-        name: "Vanity.iota",
-        description: "Native Web3 ID for the IOTA blockchain.",
-        imageUrl: iotaLogo,
-        price: 5,
-        category: ["IOTA"],
         club: ["Personal"],
         selectable: true,
         enabled: false,
