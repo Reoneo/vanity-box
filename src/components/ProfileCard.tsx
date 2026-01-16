@@ -622,18 +622,20 @@ export const ProfileCard = ({
               </div>
 
               {/* Credentials Carousel - Talent Protocol & Polymarket */}
-              <CredentialsCarousel
-                wallet={currentWalletAddress}
-                ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-                talentScore={talentScore}
-                talentCreatorScore={talentCreatorScore}
-                polymarketWinRate={polymarketWinRate}
-                polymarketProfit={polymarketProfit}
-                hasPolymarketData={hasPolymarketData}
-                onTalentClick={() => setShowTalentModal(true)}
-                onPolymarketClick={() => setShowPolymarketModal(true)}
-                baseWidth={340}
-              />
+              <div className="-mt-1.5">
+                <CredentialsCarousel
+                  wallet={currentWalletAddress}
+                  ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                  talentScore={talentScore}
+                  talentCreatorScore={talentCreatorScore}
+                  polymarketWinRate={polymarketWinRate}
+                  polymarketProfit={polymarketProfit}
+                  hasPolymarketData={hasPolymarketData}
+                  onTalentClick={() => setShowTalentModal(true)}
+                  onPolymarketClick={() => setShowPolymarketModal(true)}
+                  baseWidth={340}
+                />
+              </div>
             </div>
 
             {/* Flip Card for All Social Links */}

@@ -97,6 +97,8 @@ import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
 import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
+import vanityVetAvatar from "@/assets/vanity-vet-avatar.png";
+import vanityIotaAvatar from "@/assets/vanity-iota-avatar.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import searchLogo from "@/assets/search-logo.png";
@@ -639,6 +641,26 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         imageUrl: vanityBoxAvatar,
         price: 5,
         category: ["ENS", "DNS"],
+        club: ["Personal"],
+        selectable: true,
+        enabled: false,
+      },
+      {
+        name: "Vanity.vet",
+        description: "Veterinary and VeChain-inspired Web3 identity",
+        imageUrl: vanityVetAvatar,
+        price: 5,
+        category: ["DNS"],
+        club: ["Personal"],
+        selectable: true,
+        enabled: false,
+      },
+      {
+        name: "Vanity.iota",
+        description: "IoT-native identity on the IOTA blockchain",
+        imageUrl: vanityIotaAvatar,
+        price: 5,
+        category: ["DNS"],
         club: ["Personal"],
         selectable: true,
         enabled: false,
@@ -2049,11 +2071,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     // Check if test mode is active (search query is "test321")
                     const isTestMode = displayQuery.toLowerCase() === "test321";
                     
+                    // Domains to hide from search results
+                    const hiddenDomains = ['vape.box', 'smith.box', 'smith.apt', 'altcoin.chain'];
+                    
                     // In test mode, show all domains; otherwise only show coming soon (disabled) domains
+                    // Always exclude hidden domains from display
                     const displayResults = isTestMode 
-                      ? ensResults 
+                      ? ensResults.filter(result => !hiddenDomains.includes(result.name.toLowerCase()))
                       : ensResults.filter(result => 
-                          result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt'
+                          (result.enabled === false || result.name.toLowerCase() === 'vanity.apt') &&
+                          !hiddenDomains.includes(result.name.toLowerCase())
                         );
                     
                     return (
@@ -2075,7 +2102,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         {/* Enhanced Result Cards - Consistent stacked layout */}
                         <div className="space-y-4 will-change-transform">
                           {displayResults.map((result, index) => {
-                            const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt' || result.name.toLowerCase() === 'smith.apt';
+                            const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt';
                             const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
                             
                             return (
