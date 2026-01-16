@@ -16,7 +16,7 @@ export const BioTicker = ({ bio }: BioTickerProps) => {
         className="flex items-center justify-center gap-2 px-4 w-full group"
       >
         <div className="flex items-center gap-2 max-w-[370px] overflow-hidden">
-          <span className="text-sm font-semibold text-[#D4AF37] flex-shrink-0">Bio:</span>
+          <span className="text-sm font-semibold text-black dark:text-black flex-shrink-0">Bio:</span>
           <div className="overflow-hidden">
             <div className="animate-ticker whitespace-nowrap">
               <span className="text-sm text-[#D4AF37] hover:underline">

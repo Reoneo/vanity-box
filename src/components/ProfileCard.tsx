@@ -479,7 +479,7 @@ export const ProfileCard = ({
                 </div>
               </div>
 
-            <div className="p-4 pt-20 space-y-3 flex-shrink-0">
+            <div className="p-4 pt-[52px] space-y-3 flex-shrink-0">
 
               {/* Display name with refined typography */}
               <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
@@ -564,7 +564,8 @@ export const ProfileCard = ({
                   : [];
                 
                 const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
-                const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts;
+                // NFTs button shows if any NFT source has data OR if we're still loading worldchain NFTs
+                const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || nftLoading;
                 const hasTokens = portfolioTokens.length > 0;
                 const hasSocials = socialLinks.length > 0;
                 const hasTransactions = transactions.length > 0;
@@ -622,7 +623,7 @@ export const ProfileCard = ({
               </div>
 
               {/* Credentials Carousel - Talent Protocol & Polymarket */}
-              <div className="-mt-1.5">
+              <div className="-mt-3">
                 <CredentialsCarousel
                   wallet={currentWalletAddress}
                   ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
