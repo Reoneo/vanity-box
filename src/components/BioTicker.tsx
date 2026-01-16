@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface BioTickerProps {
@@ -17,7 +16,7 @@ export const BioTicker = ({ bio }: BioTickerProps) => {
         className="flex items-center justify-center gap-2 px-4 w-full group"
       >
         <div className="flex items-center gap-2 max-w-[370px] overflow-hidden">
-          <FileText className="w-4 h-4 text-black dark:text-white flex-shrink-0" />
+          <span className="text-sm font-semibold text-[#D4AF37] flex-shrink-0">Bio:</span>
           <div className="overflow-hidden">
             <div className="animate-ticker whitespace-nowrap">
               <span className="text-sm text-[#D4AF37] hover:underline">
