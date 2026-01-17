@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface ProfileResult {
   ok: boolean;
-  source: "web3bio" | "namestone" | "hl" | "fallback";
+  source: "web3bio" | "namestone" | "hl" | "vet" | "fallback";
   profile: {
     address: string | null;
     identity: string;
@@ -26,6 +26,7 @@ interface ProfileResult {
     hlDomain?: string;
     hlNfts?: any[];
     hlTokens?: any[];
+    vetDomain?: string;
     farcaster?: any;
     location?: string | null;
     email?: string | null;
@@ -241,6 +242,86 @@ async function fetchHlProfile(domain: string, supabaseUrl: string, supabaseKey: 
   }
 }
 
+// Call vet.domains API for .vet domain resolution
+async function fetchVetProfile(domain: string): Promise<any | null> {
+  console.log(`🔍 Fetching .vet domain profile for: ${domain}`);
+  
+  try {
+    // Forward resolution: name -> address
+    const lookupUrl = `https://vet.domains/api/lookup/name/${encodeURIComponent(domain)}`;
+    const response = await fetchWithRetry(lookupUrl, {}, 2, 10000);
+    
+    if (!response || !response.ok) {
+      console.log(`❌ vet.domains: HTTP ${response?.status || 'failed'}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (!data.address) {
+      console.log("⚠️ vet.domains: Domain not found or no address");
+      return null;
+    }
+    
+    // Build avatar URL
+    const avatarUrl = `https://vet.domains/api/avatar/${encodeURIComponent(domain)}`;
+    
+    console.log("✅ vet.domains domain resolved:", domain, "->", data.address);
+    
+    return {
+      address: data.address,
+      identity: domain,
+      platform: "vechain",
+      displayName: domain,
+      avatar: avatarUrl,
+      description: null,
+      header: null,
+      website: null,
+      url: null,
+      links: {},
+      vetDomain: domain,
+    };
+  } catch (err: any) {
+    console.error("❌ vet.domains fetch error:", err.message);
+    return null;
+  }
+}
+
+// Reverse resolution for vet.domains: address -> primary name
+async function fetchVetReverseProfile(address: string): Promise<any | null> {
+  console.log(`🔍 Fetching .vet reverse lookup for: ${address}`);
+  
+  try {
+    const lookupUrl = `https://vet.domains/api/lookup/address/${encodeURIComponent(address)}`;
+    const response = await fetchWithRetry(lookupUrl, {}, 2, 10000);
+    
+    if (!response || !response.ok) {
+      console.log(`❌ vet.domains reverse: HTTP ${response?.status || 'failed'}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    // Only use verified reverse records (anti-spoof protection)
+    if (!data.name || data.verified !== true) {
+      console.log("⚠️ vet.domains reverse: No verified name found");
+      return null;
+    }
+    
+    const avatarUrl = `https://vet.domains/api/avatar/${encodeURIComponent(data.name)}`;
+    
+    console.log("✅ vet.domains reverse resolved:", address, "->", data.name);
+    
+    return {
+      vetDomain: data.name,
+      avatar: avatarUrl,
+    };
+  } catch (err: any) {
+    console.error("❌ vet.domains reverse fetch error:", err.message);
+    return null;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -270,6 +351,7 @@ serve(async (req) => {
     // Determine identity type
     const isWalletAddress = /^0x[a-fA-F0-9]{40}$/i.test(normalized);
     const isHlDomain = normalized.endsWith(".hl");
+    const isVetDomain = normalized.endsWith(".vet");
     
     // Web3.bio-compatible TLDs
     const web3BioTLDs = [".eth", ".box", ".world.id"];
@@ -284,7 +366,7 @@ serve(async (req) => {
     const isSubdomain = dotCount >= 2;
     const isL2EnsSubdomain = isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id"));
     
-    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}`);
+    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}`);
     
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
     
@@ -325,7 +407,43 @@ serve(async (req) => {
         result = { ok: false, source: "hl", profile: null, notFound: true };
       }
     }
-    // Route 2: Namestone TLDs (direct Namestone lookup)
+    // Route 2: .vet domains (vet.domains API)
+    else if (isVetDomain) {
+      debug.tried.push("vet");
+      const vetStart = Date.now();
+      const vetProfile = await fetchVetProfile(normalized);
+      debug.timingsMs.vet = Date.now() - vetStart;
+      
+      if (vetProfile) {
+        // Optionally enrich with Web3.bio using the resolved address
+        if (vetProfile.address) {
+          debug.tried.push("web3bio");
+          const w3Start = Date.now();
+          const web3Profile = await fetchWeb3BioProfile(vetProfile.address);
+          debug.timingsMs.web3bio = Date.now() - w3Start;
+          
+          if (web3Profile && !web3Profile.notFound) {
+            // Merge, keeping VET-specific data
+            result = {
+              ok: true,
+              source: "vet",
+              profile: {
+                ...web3Profile,
+                vetDomain: vetProfile.vetDomain,
+                avatar: vetProfile.avatar || web3Profile.avatar, // Prefer VET avatar
+              },
+            };
+          } else {
+            result = { ok: true, source: "vet", profile: vetProfile };
+          }
+        } else {
+          result = { ok: true, source: "vet", profile: vetProfile };
+        }
+      } else {
+        result = { ok: false, source: "vet", profile: null, notFound: true };
+      }
+    }
+    // Route 3: Namestone TLDs (direct Namestone lookup)
     else if (isNamestoneTLD) {
       debug.tried.push("namestone");
       const nsStart = Date.now();

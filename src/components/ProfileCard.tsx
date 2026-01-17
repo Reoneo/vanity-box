@@ -105,6 +105,8 @@ export const ProfileCard = ({
   const [polymarketWinRate, setPolymarketWinRate] = useState<number | null>(null);
   const [polymarketProfit, setPolymarketProfit] = useState<number | null>(null);
   const [isHumanVerified, setIsHumanVerified] = useState(false);
+  const [showAvatarPopup, setShowAvatarPopup] = useState(false);
+  const [showHeaderPopup, setShowHeaderPopup] = useState(false);
   
 
   // Resolve ENS name for wallet address searches
@@ -417,22 +419,25 @@ export const ProfileCard = ({
       <div className="w-full h-full flex flex-col">
         {/* Profile Section */}
         {activeSection === 'profile' && (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
           <div className="space-y-2 pb-20">
               {/* Header and Avatar with Verified Badge - Always visible */}
               <div className="relative flex-shrink-0">
-                <div className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden rounded-t-2xl">
+                <div 
+                  className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden cursor-pointer"
+                  onClick={() => setShowHeaderPopup(true)}
+                >
                   <img
                     src={web3BioProfile?.header || defaultHeader}
                     alt="Header"
                     className="block w-full h-full object-cover"
                   />
                   {/* Gradient overlay for better avatar contrast */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
                 </div>
 
                 <div className="flex justify-center absolute -bottom-16 left-0 right-0">
-                  <div className="relative group">
+                  <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
                     {/* Glow ring behind avatar */}
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
                     <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
@@ -623,7 +628,7 @@ export const ProfileCard = ({
               </div>
 
               {/* Credentials Carousel - Talent Protocol & Polymarket */}
-              <div className="-mt-1">
+              <div className="-mt-2">
                 <CredentialsCarousel
                   wallet={currentWalletAddress}
                   ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
@@ -1599,6 +1604,52 @@ export const ProfileCard = ({
         wallet={currentWalletAddress}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
+
+      {/* Avatar Popup Modal */}
+      {showAvatarPopup && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowAvatarPopup(false)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            <button
+              onClick={() => setShowAvatarPopup(false)}
+              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all z-10"
+            >
+              <X className="w-5 h-5 text-foreground" />
+            </button>
+            <img
+              src={web3BioProfile?.avatar || vanityBoxAvatar}
+              alt={web3BioProfile?.displayName || 'User'}
+              className="max-w-[90vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Header Popup Modal */}
+      {showHeaderPopup && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowHeaderPopup(false)}
+        >
+          <div className="relative max-w-[95vw] max-h-[90vh]">
+            <button
+              onClick={() => setShowHeaderPopup(false)}
+              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all z-10"
+            >
+              <X className="w-5 h-5 text-foreground" />
+            </button>
+            <img
+              src={web3BioProfile?.header || defaultHeader}
+              alt="Header"
+              className="max-w-[95vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
 
     </>
   );
