@@ -482,7 +482,31 @@ serve(async (req) => {
       debug.timingsMs.web3bio = Date.now() - w3Start;
       
       if (web3Profile && !web3Profile.notFound) {
-        result = { ok: true, source: "web3bio", profile: web3Profile };
+        // For wallet addresses, also check for .vet reverse lookup to enrich
+        if (isWalletAddress) {
+          debug.tried.push("vet-reverse");
+          const vetStart = Date.now();
+          const vetReverse = await fetchVetReverseProfile(normalized);
+          debug.timingsMs.vetReverse = Date.now() - vetStart;
+          
+          if (vetReverse && vetReverse.vetDomain) {
+            console.log(`✅ Enriching wallet profile with .vet primary name: ${vetReverse.vetDomain}`);
+            result = {
+              ok: true,
+              source: "web3bio",
+              profile: {
+                ...web3Profile,
+                vetDomain: vetReverse.vetDomain,
+                // Use .vet avatar if web3bio doesn't have one
+                avatar: web3Profile.avatar || vetReverse.avatar,
+              },
+            };
+          } else {
+            result = { ok: true, source: "web3bio", profile: web3Profile };
+          }
+        } else {
+          result = { ok: true, source: "web3bio", profile: web3Profile };
+        }
       } 
       // Fallback for L2 ENS subdomains to Namestone
       else if (isL2EnsSubdomain) {
@@ -514,25 +538,52 @@ serve(async (req) => {
           };
         }
       }
-      // Fallback for wallet addresses: create minimal profile
+      // Fallback for wallet addresses: try .vet reverse lookup, then create minimal profile
       else if (isWalletAddress) {
-        console.log("🔄 Creating minimal wallet profile as fallback");
-        result = {
-          ok: true,
-          source: "fallback",
-          profile: {
-            address: normalized,
-            identity: normalized,
-            platform: "ethereum",
-            displayName: null,
-            avatar: null,
-            description: null,
-            header: null,
-            website: null,
-            url: null,
-            links: {},
-          },
-        };
+        console.log("🔄 Trying .vet reverse lookup for wallet address");
+        debug.tried.push("vet-reverse");
+        const vetStart = Date.now();
+        const vetReverse = await fetchVetReverseProfile(normalized);
+        debug.timingsMs.vetReverse = Date.now() - vetStart;
+        
+        if (vetReverse && vetReverse.vetDomain) {
+          console.log(`✅ Found .vet primary name: ${vetReverse.vetDomain}`);
+          result = {
+            ok: true,
+            source: "vet",
+            profile: {
+              address: normalized,
+              identity: vetReverse.vetDomain,
+              platform: "vechain",
+              displayName: vetReverse.vetDomain,
+              avatar: vetReverse.avatar,
+              description: null,
+              header: null,
+              website: null,
+              url: null,
+              links: {},
+              vetDomain: vetReverse.vetDomain,
+            },
+          };
+        } else {
+          console.log("🔄 No .vet name found, creating minimal wallet profile");
+          result = {
+            ok: true,
+            source: "fallback",
+            profile: {
+              address: normalized,
+              identity: normalized,
+              platform: "ethereum",
+              displayName: null,
+              avatar: null,
+              description: null,
+              header: null,
+              website: null,
+              url: null,
+              links: {},
+            },
+          };
+        }
       } else {
         result = { ok: false, source: "web3bio", profile: null, notFound: true };
       }
