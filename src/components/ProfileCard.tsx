@@ -421,7 +421,7 @@ export const ProfileCard = ({
           <div className="space-y-2 pb-20">
               {/* Header and Avatar with Verified Badge - Always visible */}
               <div className="relative flex-shrink-0">
-                <div className="w-full aspect-[3/1] lg:aspect-[5/1] overflow-hidden rounded-t-2xl">
+                <div className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden rounded-t-2xl">
                   <img
                     src={web3BioProfile?.header || defaultHeader}
                     alt="Header"
@@ -479,7 +479,7 @@ export const ProfileCard = ({
                 </div>
               </div>
 
-            <div className="p-4 pt-[52px] space-y-3 flex-shrink-0">
+            <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
 
               {/* Display name with refined typography */}
               <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
@@ -564,8 +564,8 @@ export const ProfileCard = ({
                   : [];
                 
                 const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
-                // NFTs button shows if any NFT source has data OR if we're still loading worldchain NFTs
-                const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || nftLoading;
+                // NFTs button shows if any NFT source has data OR if any NFT source is still loading
+                const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts;
                 const hasTokens = portfolioTokens.length > 0;
                 const hasSocials = socialLinks.length > 0;
                 const hasTransactions = transactions.length > 0;
@@ -623,7 +623,7 @@ export const ProfileCard = ({
               </div>
 
               {/* Credentials Carousel - Talent Protocol & Polymarket */}
-              <div className="-mt-3">
+              <div className="-mt-1">
                 <CredentialsCarousel
                   wallet={currentWalletAddress}
                   ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
