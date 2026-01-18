@@ -2065,8 +2065,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   bottom: '0' 
                 }}
               >
-                <div className="flex-1 overflow-y-auto px-4 pt-4 pb-40">
-                  <div className="max-w-6xl mx-auto">
+                <div className="flex-1 overflow-y-auto px-4 pt-8 pb-40">
+                  <div className="max-w-6xl mx-auto mt-4">
                   {/* Vanity ID Bundle - Single unified card */}
                   <VanityBundleCard 
                     subdomain={displayQuery || 'You'} 
