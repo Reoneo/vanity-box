@@ -43,6 +43,7 @@ import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
 import Dock from "@/components/Dock";
 import { ProfileCard } from "@/components/ProfileCard";
+import { VanityBundleCard } from "@/components/VanityBundleCard";
 import { MessageCircle, Repeat2, Heart } from "lucide-react";
 
 import {
@@ -2066,123 +2067,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               >
                 <div className="flex-1 overflow-y-auto px-4 pt-4 pb-40">
                   <div className="max-w-6xl mx-auto">
-                  {/* Results count header - styled like Coming Soon */}
-                  {(() => {
-                    // Check if test mode is active (search query is "test321")
-                    const isTestMode = displayQuery.toLowerCase() === "test321";
-                    
-                    // Domains to hide from search results
-                    const hiddenDomains = ['vape.box', 'smith.box', 'smith.apt', 'altcoin.chain'];
-                    
-                    // In test mode, show all domains; otherwise only show coming soon (disabled) domains
-                    // Always exclude hidden domains from display
-                    const displayResults = isTestMode 
-                      ? ensResults.filter(result => !hiddenDomains.includes(result.name.toLowerCase()))
-                      : ensResults.filter(result => 
-                          (result.enabled === false || result.name.toLowerCase() === 'vanity.apt') &&
-                          !hiddenDomains.includes(result.name.toLowerCase())
-                        );
-                    
-                    return (
-                      <>
-                        {/* Enhanced Header with black text and gold accents - even spacing */}
-                        <div className="text-center mb-6 mt-2 relative">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/10 to-transparent blur-3xl -z-10" />
-                          <div className="inline-block">
-                            <span className="block text-xs sm:text-sm uppercase tracking-[0.3em] text-[#B8860B] font-semibold mb-3">
-                              {isTestMode ? "All Domains (Test Mode)" : "Available Domains"}
-                            </span>
-                            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black dark:text-white">
-                              {displayResults.length} <span className="text-[#D4AF37]">ID{displayResults.length !== 1 ? "'s" : ""}</span> Found
-                            </h1>
-                            <div className="mt-4 h-1 w-32 mx-auto bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
-                          </div>
-                        </div>
-                        
-                        {/* Enhanced Result Cards - Consistent stacked layout */}
-                        <div className="space-y-4 will-change-transform">
-                          {displayResults.map((result, index) => {
-                            const isComingSoon = result.enabled === false || result.name.toLowerCase() === 'vanity.apt';
-                            const fullName = displayQuery ? `${displayQuery}.${result.name}` : result.name;
-                            
-                            return (
-                              <div
-                                key={index}
-                                className="group relative bg-gradient-to-br from-background via-background to-background/80 backdrop-blur-md border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 rounded-2xl shadow-sm hover:shadow-lg hover:shadow-[#D4AF37]/10 hover:border-[#D4AF37]/60 transition-all duration-300 will-change-transform animate-fade-in overflow-hidden"
-                                style={{ 
-                                  transform: 'translateZ(0)',
-                                  animationDelay: `${index * 60}ms`
-                                }}
-                              >
-                                {/* Subtle gradient overlay on hover */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#D4AF37]/0 via-[#D4AF37]/5 to-[#D4AF37]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                
-                                {/* Card content - stacked layout */}
-                                <div className="relative z-10 p-4 sm:p-5 flex flex-col gap-3">
-                                  
-                                  {/* Top row: Avatar on left, actions on right */}
-                                  <div className="flex items-center justify-between w-full">
-                                    {/* Avatar with enhanced ring */}
-                                    <div className="relative flex-shrink-0">
-                                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] to-[#B8860B] rounded-full blur-sm opacity-50" />
-                                      <img
-                                        src={result.imageUrl || smithCashAvatar}
-                                        alt={fullName}
-                                        className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-[#D4AF37]/50 group-hover:ring-[#D4AF37] transition-all duration-300"
-                                        onError={(e) => {
-                                          e.currentTarget.src = smithCashAvatar;
-                                        }}
-                                      />
-                                    </div>
-
-                                    {/* Actions Group */}
-                                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                                      {/* Info Icon */}
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-full border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10 transition-all duration-300"
-                                        onClick={() => {
-                                          setDetailViewResult(result);
-                                          setShowDetailView(true);
-                                        }}
-                                      >
-                                        <Info className="h-4 w-4 text-black dark:text-white" />
-                                      </Button>
-
-                                      {/* Coming Soon Badge OR Mint Now Button */}
-                                      {isComingSoon ? (
-                                        <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border border-[#D4AF37]/40 text-black dark:text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
-                                          Coming Soon
-                                        </div>
-                                      ) : (
-                                        <Button
-                                          variant="default"
-                                          size="sm"
-                                          className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#B8860B] hover:from-[#B8860B] hover:to-[#D4AF37] text-white text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap border-0"
-                                          onClick={() => handleMint(result)}
-                                        >
-                                          Mint Now
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Bottom row: Name */}
-                                  <div className="flex items-center w-full">
-                                    <div className="font-bold text-black dark:text-white text-sm sm:text-base leading-tight">
-                                      <span className="text-[#D4AF37]">{displayQuery}</span>
-                                      <span>.{result.name}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    );
-                  })()}
+                  {/* Vanity ID Bundle - Single unified card */}
+                  <VanityBundleCard 
+                    subdomain={displayQuery || 'You'} 
+                    onBuyBundle={() => {
+                      toast.info("Vanity ID Bundle coming soon!");
+                    }}
+                  />
                 </div>
               </div>
             </div>
