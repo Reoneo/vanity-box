@@ -29,7 +29,7 @@ const bundleItems: BundleItem[] = [
   { id: "vet", avatar: vanityVetAvatar, base: "vanity.vet" },
 ];
 
-export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = "you", onBuyBundle }) => {
+export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = "you" }) => {
   const sub = subdomain.trim().toLowerCase();
 
   return (
@@ -62,12 +62,12 @@ export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = 
           })}
         </div>
 
-        {/* CTA */}
+        {/* CTA – Coming Soon */}
         <Button
-          onClick={onBuyBundle}
-          className="w-full bg-gradient-to-r from-amber-400 via-amber-400 to-amber-300 hover:from-amber-500 hover:via-amber-400 hover:to-amber-400 text-white font-semibold py-3 h-12 rounded-xl shadow-md transition-all duration-200"
+          disabled
+          className="w-full bg-gradient-to-r from-amber-400 via-amber-400 to-amber-300 text-white font-semibold py-3 h-12 rounded-xl shadow-md opacity-90 cursor-not-allowed"
         >
-          Buy Vanity ID Bundle
+          Coming Soon
         </Button>
       </div>
     </div>
