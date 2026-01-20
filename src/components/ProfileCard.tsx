@@ -47,9 +47,12 @@ interface ProfileCardProps {
   castLoading?: boolean;
   firstTransactionDate?: string | null;
   searchedIdentity?: string;
+  openseaAttempted?: boolean;
+  openseaHasErrors?: boolean;
   onFollowingClick?: () => void;
   onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
+  onEnsureOpenSeaNfts?: () => void;
 }
 
 export const ProfileCard = ({
@@ -67,9 +70,12 @@ export const ProfileCard = ({
   castLoading = false,
   firstTransactionDate = null,
   searchedIdentity,
+  openseaAttempted = false,
+  openseaHasErrors = false,
   onFollowingClick,
   onFollowersClick,
   onLoadMoreNfts,
+  onEnsureOpenSeaNfts,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
@@ -570,7 +576,8 @@ export const ProfileCard = ({
                 
                 const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                 // NFTs button shows if any NFT source has data OR if any NFT source is still loading
-                const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts;
+                // Also show if OpenSea hasn't been attempted yet (data might come when overlay opens)
+                const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted;
                 const hasTokens = portfolioTokens.length > 0;
                 const hasSocials = socialLinks.length > 0;
                 const hasTransactions = transactions.length > 0;
@@ -582,7 +589,14 @@ export const ProfileCard = ({
                   buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
                 }
                 if (hasNfts) {
-                  buttons.push({ title: 'NFTs', onClick: () => setShowNftsOverlay(true) });
+                  buttons.push({ 
+                    title: 'NFTs', 
+                    onClick: () => {
+                      setShowNftsOverlay(true);
+                      // Trigger OpenSea fetch when overlay opens
+                      onEnsureOpenSeaNfts?.();
+                    }
+                  });
                 }
                 if (hasSocials) {
                   buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
@@ -781,10 +795,13 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* OpenSea Button - Only show if loading or has items */}
-                      {(nftLoading || nfts.length > 0) && (
+                      {/* OpenSea Button - Show if loading, has items, or hasn't been attempted yet */}
+                      {(nftLoading || nfts.length > 0 || !openseaAttempted) && (
                         <button
-                          onClick={() => setNftCategory('opensea')}
+                          onClick={() => {
+                            setNftCategory('opensea');
+                            onEnsureOpenSeaNfts?.();
+                          }}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
                         >
                           <div className="flex items-center justify-between h-full">
@@ -792,7 +809,7 @@ export const ProfileCard = ({
                               <h4 className="font-medium text-black text-base">OpenSea</h4>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm text-black/70">
-                                  {nftLoading ? 'Loading…' : `${nfts.length} ${nfts.length === 1 ? 'item' : 'items'}`}
+                                  {nftLoading ? 'Loading…' : openseaHasErrors && nfts.length === 0 ? 'Unavailable' : `${nfts.length} ${nfts.length === 1 ? 'item' : 'items'}`}
                                 </p>
                                 {nfts.length > 0 && (
                                   <div className="flex -space-x-2">
@@ -807,6 +824,9 @@ export const ProfileCard = ({
                           </div>
                         </button>
                       )}
+
+                      {/* Hide OpenSea button if attempted, no items, and no errors */}
+                      {openseaAttempted && nfts.length === 0 && !openseaHasErrors && !nftLoading && null}
 
                       {/* Magic Eden (EVM) Button - Only show if loading or has items */}
                       {(magicEdenLoading || magicEdenNfts.length > 0) && (
@@ -890,6 +910,34 @@ export const ProfileCard = ({
                             <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                           </div>
                         </button>
+                      )}
+
+                      {/* Empty state placeholder when no categories available */}
+                      {poaps.length === 0 && 
+                       nfts.length === 0 && 
+                       openseaAttempted && 
+                       !nftLoading && 
+                       magicEdenNfts.length === 0 && 
+                       !magicEdenLoading &&
+                       worldchainNftCount === 0 &&
+                       !worldchainNftsLoading &&
+                       hlNfts.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p className="text-sm">No NFTs found for this wallet</p>
+                        </div>
+                      )}
+
+                      {/* Loading skeleton when fetching */}
+                      {(nftLoading || magicEdenLoading || worldchainNftsLoading) && 
+                       poaps.length === 0 && 
+                       nfts.length === 0 && 
+                       magicEdenNfts.length === 0 &&
+                       worldchainNftCount === 0 && (
+                        <div className="space-y-2">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="w-full h-16 rounded-2xl bg-muted/40 animate-pulse" />
+                          ))}
+                        </div>
                       )}
                     </div>
                   ) : nftCategory === 'poaps' ? (

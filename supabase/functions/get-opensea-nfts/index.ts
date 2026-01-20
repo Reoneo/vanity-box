@@ -36,7 +36,7 @@ serve(async (req) => {
     
     if (!walletAddress) {
       console.log('No valid walletAddress provided, returning empty array');
-      return new Response(JSON.stringify({ nfts: [] }), {
+      return new Response(JSON.stringify({ nfts: [], attempted: true, errorsByChain: {} }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -47,7 +47,13 @@ serve(async (req) => {
     
     if (!OPENSEA_API_KEY) {
       console.error('❌ OPENSEA_API_KEY not configured');
-      throw new Error('OPENSEA_API_KEY not configured');
+      return new Response(JSON.stringify({ 
+        nfts: [], 
+        attempted: true, 
+        errorsByChain: { all: 'API key not configured' } 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // OpenSea supported chains
@@ -64,9 +70,12 @@ serve(async (req) => {
     ];
 
     let allNfts: any[] = [];
+    const errorsByChain: Record<string, string> = {};
+    const fetchedChains: string[] = [];
     const MAX_TOTAL_NFTS = 1000; // Safety limit
     const MAX_PAGES_PER_CHAIN = 10; // Safety limit per chain
     const LIMIT_PER_REQUEST = 200; // OpenSea max
+    const INTER_CHAIN_DELAY = 100; // Small delay between chains to avoid rate limiting
 
     // Fetch NFTs from all supported chains with pagination
     for (const chain of chains) {
@@ -78,6 +87,8 @@ serve(async (req) => {
       let chainCursor: string | null = null;
       let hasMore = true;
       let pageCount = 0;
+      let retryCount = 0;
+      const MAX_RETRIES = 2;
 
       while (hasMore && pageCount < MAX_PAGES_PER_CHAIN && allNfts.length < MAX_TOTAL_NFTS) {
         try {
@@ -97,6 +108,7 @@ serve(async (req) => {
 
           if (response.ok) {
             const data = await response.json();
+            fetchedChains.push(chain);
             
             if (data.nfts && data.nfts.length > 0) {
               // Add chain info and calculate rarity score for each NFT
@@ -144,12 +156,24 @@ serve(async (req) => {
             } else {
               hasMore = false;
             }
+            
+            retryCount = 0; // Reset retry count on success
+          } else if (response.status === 429 && retryCount < MAX_RETRIES) {
+            // Rate limited - wait and retry
+            retryCount++;
+            console.log(`⚠️ ${chain}: Rate limited (429), retry ${retryCount}/${MAX_RETRIES}...`);
+            await new Promise(r => setTimeout(r, 1000 * retryCount));
+            continue; // Don't increment pageCount, retry same page
           } else {
+            const errorMsg = `HTTP ${response.status}`;
             console.log(`⚠️ ${chain}: API returned ${response.status}`);
+            errorsByChain[chain] = errorMsg;
             hasMore = false;
           }
-        } catch (chainError) {
-          console.log(`⚠️ Error fetching from ${chain}:`, chainError.message);
+        } catch (chainError: any) {
+          const errorMsg = chainError.message || 'Unknown error';
+          console.log(`⚠️ Error fetching from ${chain}:`, errorMsg);
+          errorsByChain[chain] = errorMsg;
           hasMore = false;
         }
       }
@@ -157,9 +181,17 @@ serve(async (req) => {
       if (pageCount > 0) {
         console.log(`📊 ${chain}: completed with ${pageCount + 1} page(s)`);
       }
+      
+      // Small delay between chains to avoid rate limiting
+      if (chains.indexOf(chain) < chains.length - 1) {
+        await new Promise(r => setTimeout(r, INTER_CHAIN_DELAY));
+      }
     }
     
     console.log(`✅ Total NFTs fetched across all chains: ${allNfts.length}`);
+    if (Object.keys(errorsByChain).length > 0) {
+      console.log(`⚠️ Errors by chain:`, errorsByChain);
+    }
 
     // Deduplicate NFTs and track quantities
     const nftMap = new Map();
@@ -178,13 +210,21 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       nfts: deduplicatedNfts,
+      attempted: true,
+      fetchedChains,
+      errorsByChain: Object.keys(errorsByChain).length > 0 ? errorsByChain : undefined,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error fetching OpenSea NFTs:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+    return new Response(JSON.stringify({ 
+      nfts: [],
+      attempted: true, 
+      error: error.message,
+      errorsByChain: { all: error.message }
+    }), {
+      status: 200, // Return 200 with error info instead of 400 to let frontend handle gracefully
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
