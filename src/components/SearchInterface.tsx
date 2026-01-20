@@ -238,6 +238,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [nfts, setNfts] = useState<any[]>([]);
   const [nftLoading, setNftLoading] = useState(false);
   const [nftNextCursor, setNftNextCursor] = useState<string | null>(null);
+  const [openseaAttempted, setOpenseaAttempted] = useState(false);
+  const [openseaHasErrors, setOpenseaHasErrors] = useState(false);
   const [latestCast, setLatestCast] = useState<FarcasterCast | null>(null);
   const [castLoading, setCastLoading] = useState(false);
   const [firstTransactionDate, setFirstTransactionDate] = useState<string | null>(null);
@@ -327,6 +329,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Clear previous profile's NFT data
       setNfts([]);
       setNftNextCursor(null);
+      setOpenseaAttempted(false);
+      setOpenseaHasErrors(false);
       setLatestCast(null);
       setPoapTokens([]);
       // Reset detail view to fix glitch when loading new profile
@@ -1212,8 +1216,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         setNfts(data.nfts || []);
       }
       setNftNextCursor(sanitizedResponseNext || null);
+      
+      // Track that OpenSea was attempted and if there were errors
+      if (data.attempted) {
+        setOpenseaAttempted(true);
+      }
+      if (data.errorsByChain && Object.keys(data.errorsByChain).length > 0) {
+        setOpenseaHasErrors(true);
+        console.warn('OpenSea had errors on some chains:', data.errorsByChain);
+      } else {
+        setOpenseaHasErrors(false);
+      }
     } catch (err: any) {
       console.error("Error fetching NFTs:", err);
+      setOpenseaAttempted(true);
+      setOpenseaHasErrors(true);
       // Don't show error toast if address is invalid - this is expected
       if (!err?.message?.includes('walletAddress is required')) {
         console.error('Unexpected NFT fetch error:', err);
@@ -1631,6 +1648,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     nfts={nfts}
                     nftLoading={nftLoading}
                     nftNextCursor={nftNextCursor}
+                    openseaAttempted={openseaAttempted}
+                    openseaHasErrors={openseaHasErrors}
                     latestCast={latestCast}
                     castLoading={castLoading}
                     firstTransactionDate={firstTransactionDate}
@@ -1638,6 +1657,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onFollowingClick={handleFollowingClick}
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}
+                    onEnsureOpenSeaNfts={() => {
+                      // Only fetch if not already attempted and not currently loading
+                      if (!openseaAttempted && !nftLoading && web3BioProfile?.address) {
+                        console.log('🔄 On-demand: Fetching OpenSea NFTs for:', web3BioProfile.address);
+                        fetchNfts(web3BioProfile.address);
+                      }
+                    }}
                   />
                 </div>
               </div>
