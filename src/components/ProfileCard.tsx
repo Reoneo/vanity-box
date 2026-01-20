@@ -758,70 +758,82 @@ export const ProfileCard = ({
                   {nftCategory === 'main' ? (
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
-                      {/* POAPs Button */}
-                      <button
-                        onClick={() => setNftCategory('poaps')}
-                        className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                      >
-                        <div className="flex items-center justify-between h-full">
-                          <div className="text-left flex-1 min-w-0 mr-3">
-                            <h4 className="font-medium text-black text-base">POAPs</h4>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm text-black/70">{poaps.length} {poaps.length === 1 ? 'item' : 'items'}</p>
-                              <div className="flex -space-x-2">
-                                {poaps.slice(0, 3).map((poap, idx) => (
-                                  <img key={idx} src={poap.eventImageUrl} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                        </div>
-                      </button>
-
-                      {/* OpenSea Button */}
-                      <button
-                        onClick={() => setNftCategory('opensea')}
-                        className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                      >
-                        <div className="flex items-center justify-between h-full">
-                          <div className="text-left flex-1 min-w-0 mr-3">
-                            <h4 className="font-medium text-black text-base">OpenSea</h4>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm text-black/70">{nfts.length} {nfts.length === 1 ? 'item' : 'items'}</p>
-                              <div className="flex -space-x-2">
-                                {nfts.slice(0, 3).map((nft, idx) => (
-                                  <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                        </div>
-                      </button>
-
-                      {/* Magic Eden (EVM) Button */}
-                      <button
-                        onClick={() => setNftCategory('magiceden')}
-                        className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                      >
-                        <div className="flex items-center justify-between h-full">
-                          <div className="text-left flex-1 min-w-0 mr-3">
-                            <h4 className="font-medium text-black text-base">EVM</h4>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm text-black/70">{magicEdenNfts.length} {magicEdenNfts.length === 1 ? 'item' : 'items'}</p>
-                              {magicEdenNfts.length > 0 && (
+                      {/* POAPs Button - Only show if has items */}
+                      {poaps.length > 0 && (
+                        <button
+                          onClick={() => setNftCategory('poaps')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-black text-base">POAPs</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">{poaps.length} {poaps.length === 1 ? 'item' : 'items'}</p>
                                 <div className="flex -space-x-2">
-                                  {magicEdenNfts.slice(0, 3).map((nft, idx) => (
-                                    <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                  {poaps.slice(0, 3).map((poap, idx) => (
+                                    <img key={idx} src={poap.eventImageUrl} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
                                   ))}
                                 </div>
-                              )}
+                              </div>
                             </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                           </div>
-                          <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                        </div>
-                      </button>
+                        </button>
+                      )}
+
+                      {/* OpenSea Button - Only show if loading or has items */}
+                      {(nftLoading || nfts.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('opensea')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-black text-base">OpenSea</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">
+                                  {nftLoading ? 'Loading…' : `${nfts.length} ${nfts.length === 1 ? 'item' : 'items'}`}
+                                </p>
+                                {nfts.length > 0 && (
+                                  <div className="flex -space-x-2">
+                                    {nfts.slice(0, 3).map((nft, idx) => (
+                                      <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Magic Eden (EVM) Button - Only show if loading or has items */}
+                      {(magicEdenLoading || magicEdenNfts.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('magiceden')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-black text-base">EVM</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">
+                                  {magicEdenLoading ? 'Loading…' : `${magicEdenNfts.length} ${magicEdenNfts.length === 1 ? 'item' : 'items'}`}
+                                </p>
+                                {magicEdenNfts.length > 0 && (
+                                  <div className="flex -space-x-2">
+                                    {magicEdenNfts.slice(0, 3).map((nft, idx) => (
+                                      <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
 
                       {/* World Chain Button */}
                       {(worldchainNftsLoading || worldchainNftCount > 0) && (
