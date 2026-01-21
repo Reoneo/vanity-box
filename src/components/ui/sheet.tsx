@@ -6,11 +6,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const Sheet = SheetPrimitive.Root;
-
 const SheetTrigger = SheetPrimitive.Trigger;
-
 const SheetClose = SheetPrimitive.Close;
-
 const SheetPortal = SheetPrimitive.Portal;
 
 const SheetOverlay = React.forwardRef<
@@ -38,7 +35,7 @@ const sheetVariants = cva(
           "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
         left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
         right:
-          "inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+          "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
       },
     },
     defaultVariants: {
@@ -48,23 +45,30 @@ const sheetVariants = cva(
 );
 
 interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {}
 
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
   ({ side = "right", className, children, ...props }, ref) => (
     <SheetPortal>
       <SheetOverlay />
-      <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-        {children}
+      <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), "relative", className)} {...props}>
+        {/* Close button anchored inside the panel (top-right) */}
+        <SheetPrimitive.Close
+          className={cn(
+            "absolute right-4 top-4 z-50",
+            "inline-flex h-10 w-10 items-center justify-center rounded-full",
+            "bg-black/80 text-white shadow",
+            "hover:bg-black active:scale-95 transition",
+            "focus:outline-none focus:ring-2 focus:ring-white/60",
+          )}
+        >
+          <X className="h-5 w-5" strokeWidth={2.5} />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+
+        {/* Add spacing so content doesn't sit under the close button */}
+        <div className="pt-12">{children}</div>
       </SheetPrimitive.Content>
-      {/* Fixed close button in the blurred overlay area */}
-      <SheetPrimitive.Close 
-        className="fixed z-[10001] top-1/2 left-[92.5%] -translate-x-1/2 -translate-y-1/2 rounded-full w-14 h-14 flex items-center justify-center bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white opacity-0 animate-fade-in [animation-delay:1s] [animation-fill-mode:forwards]"
-      >
-        <X className="h-7 w-7 text-white" strokeWidth={2.5} />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
     </SheetPortal>
   ),
 );
