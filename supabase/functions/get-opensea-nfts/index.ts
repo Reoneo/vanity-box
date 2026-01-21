@@ -214,15 +214,44 @@ serve(async (req) => {
       console.log(`⚠️ Errors by chain:`, errorsByChain);
     }
 
-    // Deduplicate NFTs and track quantities
+    // 🔎 Debug a few keys BEFORE dedupe (to catch undefined fields)
+    console.log(
+      "🔎 Sample NFT keys:",
+      allNfts.slice(0, 5).map((n: any) => ({
+        contract: n.contract,
+        identifier: n.identifier,
+        key: `${n.contract}-${n.identifier}`,
+        chain: n.chain,
+      })),
+    );
+
+    // ✅ Safer dedupe: avoids "undefined-undefined" collapse and cross-chain collisions
     const nftMap = new Map<string, any>();
-    allNfts.forEach((nft: any) => {
-      const uniqueKey = `${nft.contract}-${nft.identifier}`;
+
+    allNfts.forEach((nft: any, idx: number) => {
+      const contract =
+        (typeof nft.contract === "string" && nft.contract) ||
+        nft.contract_address ||
+        nft.asset_contract?.address ||
+        nft.token?.address ||
+        "unknown_contract";
+
+      const identifier =
+        (typeof nft.identifier === "string" && nft.identifier) ||
+        nft.token_id ||
+        nft.tokenId ||
+        nft.token?.tokenId ||
+        `unknown_id_${idx}`;
+
+      const chain = nft.chain || "unknown_chain";
+
+      const uniqueKey = `${chain}:${contract}:${identifier}`;
+
       if (nftMap.has(uniqueKey)) {
         const existing = nftMap.get(uniqueKey);
         existing.quantity = (existing.quantity || 1) + 1;
       } else {
-        nftMap.set(uniqueKey, { ...nft, quantity: 1 });
+        nftMap.set(uniqueKey, { ...nft, contract, identifier, quantity: 1 });
       }
     });
 
@@ -250,7 +279,7 @@ serve(async (req) => {
         errorsByChain: { all: error?.message || "Unknown error" },
       }),
       {
-        status: 200, // Return 200 with error info instead of 400 to let frontend handle gracefully
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
