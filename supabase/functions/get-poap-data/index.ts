@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const monthNames = [
+const MONTHS = [
   "January",
   "February",
   "March",
@@ -30,37 +30,69 @@ function safeParseJson<T = any>(text: string): T | null {
 }
 
 function pickBestDate(poap: any): Date | null {
-  // Prefer start_date, then end_date, then year fallback
   const start = poap?.event?.start_date;
   const end = poap?.event?.end_date;
   const year = poap?.event?.year;
 
-  const tryDate = (v: any) => {
+  const parse = (v?: string) => {
     if (!v || typeof v !== "string") return null;
     const d = new Date(v);
     return isNaN(d.getTime()) ? null : d;
   };
 
-  const d1 = tryDate(start);
-  if (d1) return d1;
-
-  const d2 = tryDate(end);
-  if (d2) return d2;
-
-  if (typeof year === "number" && year > 1970 && year < 3000) {
-    const d3 = new Date(Date.UTC(year, 0, 1));
-    return isNaN(d3.getTime()) ? null : d3;
-  }
-
-  return null;
+  return parse(start) || parse(end) || (typeof year === "number" ? new Date(Date.UTC(year, 0, 1)) : null);
 }
 
-function toMonthYearGroupKey(d: Date) {
-  const y = d.getUTCFullYear();
-  const m = d.getUTCMonth() + 1; // 1-12
-  const key = `${y}-${String(m).padStart(2, "0")}`;
-  const label = `${monthNames[m - 1]} ${y}`;
-  return { key, year: y, month: m, label };
+function groupPoapsByMonth(poaps: any[]) {
+  const map = new Map<string, { key: string; year: number; month: number; label: string; items: any[] }>();
+
+  for (const p of poaps) {
+    const d = pickBestDate(p);
+
+    // Unknown bucket (kept last)
+    if (!d) {
+      const key = "unknown";
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          year: 0,
+          month: 0,
+          label: "Unknown date",
+          items: [],
+        });
+      }
+      map.get(key)!.items.push(p);
+      continue;
+    }
+
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth() + 1; // 1-12
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    const label = `${MONTHS[month - 1]} ${year}`;
+
+    if (!map.has(key)) {
+      map.set(key, { key, year, month, label, items: [] });
+    }
+
+    map.get(key)!.items.push(p);
+  }
+
+  // Sort items newest -> oldest within each month
+  for (const g of map.values()) {
+    g.items.sort((a, b) => {
+      const ad = pickBestDate(a)?.getTime() ?? 0;
+      const bd = pickBestDate(b)?.getTime() ?? 0;
+      return bd - ad;
+    });
+  }
+
+  // Sort groups newest -> oldest, unknown last
+  return Array.from(map.values()).sort((a, b) => {
+    if (a.key === "unknown") return 1;
+    if (b.key === "unknown") return -1;
+    if (a.year !== b.year) return b.year - a.year;
+    return b.month - a.month;
+  });
 }
 
 serve(async (req) => {
@@ -76,7 +108,7 @@ serve(async (req) => {
 
     const rawWalletAddress = parsed?.walletAddress;
 
-    // Normalize walletAddress (handle "undefined", objects, whitespace)
+    // Sanitize walletAddress - handle MiniKit's undefined object format
     const walletAddress =
       rawWalletAddress && typeof rawWalletAddress === "object" && (rawWalletAddress as any)?._type === "undefined"
         ? undefined
@@ -85,6 +117,7 @@ serve(async (req) => {
           : undefined;
 
     if (!walletAddress) {
+      // Return 200 so UI can show an empty state without crashing
       return new Response(
         JSON.stringify({
           success: false,
@@ -138,7 +171,9 @@ serve(async (req) => {
       const errorText = await poapsResponse.text().catch(() => "");
       console.error("POAP API error status:", poapsResponse.status);
       console.error("POAP API error body:", errorText);
+      console.error("POAP API error headers:", JSON.stringify(Object.fromEntries(poapsResponse.headers.entries())));
 
+      // Return success:false with 200 status so the UI doesn't crash
       return new Response(
         JSON.stringify({
           success: false,
@@ -157,72 +192,26 @@ serve(async (req) => {
     }
 
     const poaps = await poapsResponse.json();
-    console.log(`Found ${poaps.length} POAPs for wallet ${walletAddress}`);
+    const safePoaps = Array.isArray(poaps) ? poaps : [];
 
-    // --- Group POAPs by Month + Year (for your UI) ---
-    // Attach a best-effort date so frontend can reliably sort/display
-    const poapsWithDate = (Array.isArray(poaps) ? poaps : []).map((p: any) => {
-      const d = pickBestDate(p);
-      return {
-        ...p,
-        __bestDate: d ? d.toISOString() : null,
-      };
-    });
+    console.log(`Found ${safePoaps.length} POAPs for wallet ${walletAddress}`);
 
-    // Build groups
-    const groupMap = new Map<string, { key: string; year: number; month: number; label: string; items: any[] }>();
+    // Add best date (useful for frontend sorting/debugging)
+    const poapsWithDate = safePoaps.map((p: any) => ({
+      ...p,
+      __bestDate: pickBestDate(p)?.toISOString() ?? null,
+    }));
 
-    for (const p of poapsWithDate) {
-      const d = p.__bestDate ? new Date(p.__bestDate) : null;
+    // Group POAPs by month/year for UI
+    const groups = groupPoapsByMonth(poapsWithDate);
 
-      // If no usable date, push into an "Unknown" bucket at the end
-      if (!d || isNaN(d.getTime())) {
-        const unknownKey = "unknown";
-        if (!groupMap.has(unknownKey)) {
-          groupMap.set(unknownKey, {
-            key: unknownKey,
-            year: 0,
-            month: 0,
-            label: "Unknown date",
-            items: [],
-          });
-        }
-        groupMap.get(unknownKey)!.items.push(p);
-        continue;
-      }
-
-      const g = toMonthYearGroupKey(d);
-      if (!groupMap.has(g.key)) {
-        groupMap.set(g.key, { ...g, items: [] });
-      }
-      groupMap.get(g.key)!.items.push(p);
-    }
-
-    // Sort items inside groups (newest first)
-    for (const g of groupMap.values()) {
-      g.items.sort((a: any, b: any) => {
-        const ad = a.__bestDate ? new Date(a.__bestDate).getTime() : 0;
-        const bd = b.__bestDate ? new Date(b.__bestDate).getTime() : 0;
-        return bd - ad;
-      });
-    }
-
-    // Sort groups (newest month first; "Unknown date" last)
-    const groups = Array.from(groupMap.values()).sort((a, b) => {
-      if (a.key === "unknown") return 1;
-      if (b.key === "unknown") return -1;
-
-      // Compare year then month descending
-      if (a.year !== b.year) return b.year - a.year;
-      return b.month - a.month;
-    });
-
-    // Store POAPs in database (your original behavior)
+    // Store POAPs in database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const poapData = (Array.isArray(poaps) ? poaps : []).map((poap: any) => ({
+    // Prepare POAP data for insertion
+    const poapData = safePoaps.map((poap: any) => ({
       wallet_address: walletAddress.toLowerCase(),
       event_id: poap.event.id,
       token_id: poap.tokenId,
@@ -236,6 +225,7 @@ serve(async (req) => {
       chain: poap.chain,
     }));
 
+    // Upsert POAPs (update if exists, insert if not)
     const { error: dbError } = await supabase.from("poap_tokens").upsert(poapData, {
       onConflict: "token_id",
       ignoreDuplicates: false,
@@ -243,18 +233,18 @@ serve(async (req) => {
 
     if (dbError) {
       console.error("Error storing POAPs:", dbError);
-      // Still return success response with data
+      // Still return the POAPs even if storage fails
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        count: Array.isArray(poaps) ? poaps.length : 0,
+        count: safePoaps.length,
 
-        // keep original payload
-        poaps,
+        // Keep original flat array (backwards compatible)
+        poaps: poapsWithDate,
 
-        // NEW: grouped payload for UI
+        // NEW: grouped by month/year for UI rendering
         groups,
       }),
       {
