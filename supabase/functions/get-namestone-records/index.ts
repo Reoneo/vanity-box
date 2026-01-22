@@ -79,7 +79,43 @@ serve(async (req) => {
     console.log('✅ Records fetched successfully:', JSON.stringify(data, null, 2));
 
     // Extract text records from the response
-    const records = Array.isArray(data) && data.length > 0 ? data[0] : data;
+    // CRITICAL: Find the EXACT match for the requested subdomain, not just the first result
+    // The Namestone API returns an array of names that match the search criteria,
+    // which may include partial matches or other subdomains
+    let records: any = null;
+    
+    if (Array.isArray(data) && data.length > 0) {
+      // Look for exact match on the subdomain name
+      const exactMatch = data.find((record: any) => {
+        const recordName = record.name?.toLowerCase();
+        const searchName = subdomainLabel.toLowerCase();
+        return recordName === searchName;
+      });
+      
+      if (exactMatch) {
+        records = exactMatch;
+        console.log('✅ Found exact match for subdomain:', subdomainLabel);
+      } else {
+        // No exact match found - this subdomain has no records
+        console.log('⚠️ No exact match found for subdomain:', subdomainLabel);
+        console.log('📋 Available names in response:', data.map((r: any) => r.name));
+        records = { text_records: {} }; // Return empty records
+      }
+    } else if (data && typeof data === 'object') {
+      // Single object response
+      const recordName = data.name?.toLowerCase();
+      const searchName = subdomainLabel.toLowerCase();
+      if (recordName === searchName) {
+        records = data;
+        console.log('✅ Single record matches subdomain:', subdomainLabel);
+      } else {
+        console.log('⚠️ Single record does not match subdomain:', subdomainLabel, 'vs', recordName);
+        records = { text_records: {} };
+      }
+    } else {
+      records = { text_records: {} };
+    }
+    
     const rawTextRecords = records.text_records || {};
 
     // SECURITY: Filter out metadata fields that should never be displayed/editable
