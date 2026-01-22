@@ -85,7 +85,9 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
-  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid'>('main');
+  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains'>('main');
+  const [ensDomains, setEnsDomains] = useState<any[]>([]);
+  const [ensDomainsLoading, setEnsDomainsLoading] = useState(false);
   const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
   const [magicEdenLoading, setMagicEdenLoading] = useState(false);
   const [hlNfts, setHlNfts] = useState<any[]>([]);
@@ -203,6 +205,26 @@ export const ProfileCard = ({
           const meData = await meRes.json();
           if (meData.nfts) setMagicEdenNfts(meData.nfts);
         } catch (e) { console.error('Magic Eden fetch error:', e); }
+
+        // Fetch ENS Domains from The Graph
+        setEnsDomainsLoading(true);
+        try {
+          const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+          });
+          const ensData = await ensRes.json();
+          console.log('ENS Domains response:', ensData);
+          if (ensData.domains) setEnsDomains(ensData.domains);
+        } catch (e) { 
+          console.error('ENS Domains fetch error:', e); 
+        } finally {
+          setEnsDomainsLoading(false);
+        }
 
         // Fetch Talent Protocol data
         setTalentLoading(true);
@@ -650,6 +672,7 @@ export const ProfileCard = ({
                   talentCreatorScore={talentCreatorScore}
                   polymarketWinRate={polymarketWinRate}
                   polymarketProfit={polymarketProfit}
+                  hasTalentData={hasTalentData}
                   hasPolymarketData={hasPolymarketData}
                   onTalentClick={() => setShowTalentModal(true)}
                   onPolymarketClick={() => setShowPolymarketModal(true)}
@@ -746,7 +769,9 @@ export const ProfileCard = ({
                                 ? 'EVM'
                                 : nftCategory === 'worldchain'
                                   ? 'World Chain'
-                                  : 'Hyperliquid'}
+                                  : nftCategory === 'ensdomains'
+                                    ? 'ENS Domains'
+                                    : 'Hyperliquid'}
                       </h3>
                     </div>
                     <button
@@ -912,6 +937,26 @@ export const ProfileCard = ({
                         </button>
                       )}
 
+                      {/* ENS Domains Button - Only show if loading or has domains */}
+                      {(ensDomainsLoading || ensDomains.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('ensdomains')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-black text-base">ENS Domains</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">
+                                  {ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'domain' : 'domains'}`}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
                       {/* Empty state placeholder when no categories available */}
                       {poaps.length === 0 && 
                        nfts.length === 0 && 
@@ -921,18 +966,21 @@ export const ProfileCard = ({
                        !magicEdenLoading &&
                        worldchainNftCount === 0 &&
                        !worldchainNftsLoading &&
-                       hlNfts.length === 0 && (
+                       hlNfts.length === 0 &&
+                       ensDomains.length === 0 &&
+                       !ensDomainsLoading && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p className="text-sm">No NFTs found for this wallet</p>
                         </div>
                       )}
 
                       {/* Loading skeleton when fetching */}
-                      {(nftLoading || magicEdenLoading || worldchainNftsLoading) && 
+                      {(nftLoading || magicEdenLoading || worldchainNftsLoading || ensDomainsLoading) && 
                        poaps.length === 0 && 
                        nfts.length === 0 && 
                        magicEdenNfts.length === 0 &&
-                       worldchainNftCount === 0 && (
+                       worldchainNftCount === 0 &&
+                       ensDomains.length === 0 && (
                         <div className="space-y-2">
                           {[1, 2, 3].map((i) => (
                             <div key={i} className="w-full h-16 rounded-2xl bg-muted/40 animate-pulse" />
@@ -1114,6 +1162,40 @@ export const ProfileCard = ({
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )
+                  ) : nftCategory === 'ensdomains' ? (
+                    // ENS Domains
+                    ensDomainsLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+                      </div>
+                    ) : ensDomains.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>No ENS domains found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-w-lg mx-auto">
+                        {ensDomains.map((domain: any, index: number) => (
+                          <a
+                            key={`ens-${domain.name}-${index}`}
+                            href={`https://app.ens.domains/${domain.name}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full p-4 rounded-2xl bg-gradient-to-r from-[#D4AF37]/10 to-[#F4E4BC]/10 border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 transition-all"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#5298FF] to-[#3370CC] flex items-center justify-center">
+                                <span className="text-white font-bold text-lg">ENS</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-foreground truncate">{domain.name}</h4>
+                                <p className="text-sm text-muted-foreground capitalize">{domain.type || 'owned'}</p>
+                              </div>
+                              <ExternalLink className="w-4 h-4 text-[#D4AF37] flex-shrink-0" />
+                            </div>
+                          </a>
+                        ))}
                       </div>
                     )
                   ) : null}

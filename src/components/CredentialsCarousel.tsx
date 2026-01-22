@@ -114,6 +114,7 @@ interface CredentialsCarouselProps {
   talentCreatorScore?: number | null;
   polymarketWinRate?: number | null;
   polymarketProfit?: number | null;
+  hasTalentData?: boolean;
   hasPolymarketData?: boolean;
   onTalentClick?: () => void;
   onPolymarketClick?: () => void;
@@ -131,6 +132,7 @@ export default function CredentialsCarousel({
   talentCreatorScore,
   polymarketWinRate,
   polymarketProfit,
+  hasTalentData = false,
   hasPolymarketData = false,
   onTalentClick,
   onPolymarketClick,
@@ -164,7 +166,7 @@ export default function CredentialsCarousel({
           },
         },
         onClick: onTalentClick,
-        hidden: false, // Always show talent
+        hidden: !hasTalentData, // Only show if talent data found
       },
       {
         id: 'polymarket',
@@ -186,7 +188,7 @@ export default function CredentialsCarousel({
     ];
     
     return allItems.filter(item => !item.hidden);
-  }, [talentScore, talentCreatorScore, polymarketWinRate, polymarketProfit, hasPolymarketData, onTalentClick, onPolymarketClick]);
+  }, [talentScore, talentCreatorScore, polymarketWinRate, polymarketProfit, hasTalentData, hasPolymarketData, onTalentClick, onPolymarketClick]);
 
   const itemsForRender = useMemo(() => {
     if (!loop || items.length <= 1) return items;
