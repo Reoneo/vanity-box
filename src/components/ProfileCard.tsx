@@ -88,6 +88,7 @@ export const ProfileCard = ({
   const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains'>('main');
   const [ensDomains, setEnsDomains] = useState<any[]>([]);
   const [ensDomainsLoading, setEnsDomainsLoading] = useState(false);
+  const [selectedEnsDomain, setSelectedEnsDomain] = useState<any>(null);
   const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
   const [magicEdenLoading, setMagicEdenLoading] = useState(false);
   const [hlNfts, setHlNfts] = useState<any[]>([]);
@@ -1165,7 +1166,7 @@ export const ProfileCard = ({
                       </div>
                     )
                   ) : nftCategory === 'ensdomains' ? (
-                    // ENS Domains
+                    // ENS Domains - Grid layout with avatars
                     ensDomainsLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -1175,27 +1176,35 @@ export const ProfileCard = ({
                         <p>No ENS domains found</p>
                       </div>
                     ) : (
-                      <div className="space-y-3 max-w-lg mx-auto">
-                        {ensDomains.map((domain: any, index: number) => (
-                          <a
-                            key={`ens-${domain.name}-${index}`}
-                            href={`https://app.ens.domains/${domain.name}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full p-4 rounded-2xl bg-gradient-to-r from-[#D4AF37]/10 to-[#F4E4BC]/10 border border-[#D4AF37]/30 hover:border-[#D4AF37]/60 transition-all"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#5298FF] to-[#3370CC] flex items-center justify-center">
-                                <span className="text-white font-bold text-lg">ENS</span>
+                      <div className="space-y-4 max-w-2xl mx-auto">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                          {ensDomains.map((domain: any, index: number) => (
+                            <div
+                              key={`ens-${domain.name}-${index}`}
+                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#5298FF]/20 hover:border-[#5298FF]/50 transition-all w-full"
+                              onClick={() => setSelectedEnsDomain(domain)}
+                            >
+                              <div className="aspect-square bg-gradient-to-br from-[#5298FF]/10 to-[#3370CC]/10 overflow-hidden">
+                                <img
+                                  src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`}
+                                  alt={domain.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                                <div className="hidden w-full h-full bg-gradient-to-br from-[#5298FF] to-[#3370CC] flex items-center justify-center">
+                                  <span className="text-white font-bold text-2xl">ENS</span>
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-foreground truncate">{domain.name}</h4>
-                                <p className="text-sm text-muted-foreground capitalize">{domain.type || 'owned'}</p>
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p className="text-white text-xs font-medium truncate">{domain.name}</p>
+                                <p className="text-white/60 text-[10px] capitalize">{domain.type || 'owned'}</p>
                               </div>
-                              <ExternalLink className="w-4 h-4 text-[#D4AF37] flex-shrink-0" />
                             </div>
-                          </a>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )
                   ) : null}
