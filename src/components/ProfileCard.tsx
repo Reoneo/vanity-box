@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
+import { ENSDomainDetailModal } from "./ENSDomainDetailModal";
 import { ActivityGraph } from "./ActivityGraph";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
@@ -149,11 +150,52 @@ export const ProfileCard = ({
   };
 
   // Fetch all data on profile load for button visibility
+  // PRIORITY: Fetch Talent Protocol FIRST so badge shows immediately
   useEffect(() => {
     if (currentWalletAddress && !dataLoaded) {
-      const fetchAllData = async () => {
-        setDataLoaded(true);
-        
+      setDataLoaded(true);
+      
+      // PRIORITY 1: Fetch Talent Protocol data IMMEDIATELY
+      const fetchTalentFirst = async () => {
+        setTalentLoading(true);
+        try {
+          const talentRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ 
+              wallet: currentWalletAddress,
+              ens: searchedIdentity?.includes('.') ? searchedIdentity : undefined 
+            }),
+          });
+          const talentData = await talentRes.json();
+          console.log('[ProfileCard] Talent Protocol response (PRIORITY):', talentData);
+          if (!talentData.noData && !talentData.error && talentData.scores) {
+            const hasBuilder = talentData.scores.builder !== null;
+            const hasCreator = talentData.scores.creator !== null;
+            setHasTalentData(hasBuilder || hasCreator);
+            setTalentScore(talentData.scores.builder?.value ?? null);
+            setTalentCreatorScore(talentData.scores.creator?.value ?? null);
+            
+            const hasHumanVerification = 
+              talentData.verification?.humanCheckmark?.isVerified === true ||
+              (talentData.verification?.humanCheckmark?.providers?.length > 0);
+            setIsHumanVerified(hasHumanVerification);
+          }
+        } catch (e) { 
+          console.error('Talent Protocol fetch error:', e); 
+        } finally {
+          setTalentLoading(false);
+        }
+      };
+      
+      // Start Talent fetch IMMEDIATELY
+      fetchTalentFirst();
+      
+      // Fetch other data in parallel (non-blocking)
+      const fetchOtherData = async () => {
         // Fetch tokens
         try {
           const tokenRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
@@ -227,44 +269,6 @@ export const ProfileCard = ({
           setEnsDomainsLoading(false);
         }
 
-        // Fetch Talent Protocol data
-        setTalentLoading(true);
-        try {
-          const talentRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ 
-              wallet: currentWalletAddress,
-              ens: searchedIdentity?.includes('.') ? searchedIdentity : undefined 
-            }),
-          });
-          const talentData = await talentRes.json();
-          console.log('Talent Protocol response:', talentData);
-          if (!talentData.noData && !talentData.error && talentData.scores) {
-            const hasBuilder = talentData.scores.builder !== null;
-            const hasCreator = talentData.scores.creator !== null;
-            setHasTalentData(hasBuilder || hasCreator);
-            // Extract .value from score objects
-            setTalentScore(talentData.scores.builder?.value ?? null);
-            setTalentCreatorScore(talentData.scores.creator?.value ?? null);
-            
-            // Check for human verification - only show badge if user has verified providers
-            console.log('[ProfileCard] Talent verification data:', talentData.verification);
-            const hasHumanVerification = 
-              talentData.verification?.humanCheckmark?.isVerified === true ||
-              (talentData.verification?.humanCheckmark?.providers?.length > 0);
-            console.log('[ProfileCard] Setting isHumanVerified to:', hasHumanVerification);
-            setIsHumanVerified(hasHumanVerification);
-          }
-        } catch (e) { 
-          console.error('Talent Protocol fetch error:', e); 
-        } finally {
-          setTalentLoading(false);
-        }
-
         // Fetch Polymarket data
         try {
           const polyRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-polymarket-data', {
@@ -279,11 +283,9 @@ export const ProfileCard = ({
           console.log('Polymarket response:', polyData);
           if (!polyData.noData && !polyData.error && (polyData.openPositions?.length > 0 || polyData.totalTrades > 0)) {
             setHasPolymarketData(true);
-            // Use winRate directly from the API response
             if (typeof polyData.winRate === 'number') {
               setPolymarketWinRate(polyData.winRate);
             }
-            // Use profit directly from the API response
             if (typeof polyData.profit === 'number') {
               setPolymarketProfit(polyData.profit);
             }
@@ -292,7 +294,9 @@ export const ProfileCard = ({
           console.error('Polymarket fetch error:', e); 
         }
       };
-      fetchAllData();
+      
+      // Start other data fetch in parallel
+      fetchOtherData();
     }
   }, [currentWalletAddress, dataLoaded, searchedIdentity]);
 
@@ -1801,6 +1805,13 @@ export const ProfileCard = ({
           </div>
         </div>
       )}
+
+      {/* ENS Domain Detail Modal */}
+      <ENSDomainDetailModal
+        domain={selectedEnsDomain}
+        open={!!selectedEnsDomain}
+        onOpenChange={(open) => !open && setSelectedEnsDomain(null)}
+      />
 
     </>
   );
