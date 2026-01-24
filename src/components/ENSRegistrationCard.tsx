@@ -5,10 +5,12 @@
  * - Centered layout under ENS avatar
  * - Soft-gold buttons matching your “Coming Soon” style
  * - Simplified ENS USD pricing tiers by label length
+ *
+ * FIX: View Profile opens the REAL vanity.box URL for the name (using /ens/<name>)
+ *      so your full-page loading screen triggers like your screenshot.
  */
 
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,19 @@ interface ENSRegistrationCardProps {
 
 const ENS_AVATAR = "https://cryptologos.cc/logos/ethereum-name-service-ens-logo.png";
 
+/**
+ * Choose how View Profile opens:
+ * - "same-tab" keeps user in same tab (recommended)
+ * - "new-tab" opens a new tab
+ */
+const VIEW_PROFILE_OPEN: "same-tab" | "new-tab" = "same-tab";
+
+/**
+ * Profile route prefix (requested)
+ * Final URL: https://vanity.box/ens/<name>.eth
+ */
+const PROFILE_ROUTE_PREFIX = "/ens";
+
 function normalizeEnsName(input: string) {
   const raw = (input || "").trim().toLowerCase();
   if (!raw) return "";
@@ -35,11 +50,16 @@ function getUsdTierPrice(label: string | undefined) {
   if (len === 3) return 640;
   if (len === 4) return 160;
   if (len >= 5) return 5;
-  return null; // 1–2 chars not handled by your pricing list
+  return null;
+}
+
+function buildProfileUrl(displayName: string) {
+  const safe = encodeURIComponent(displayName);
+  const base = window.location.origin;
+  return `${base}${PROFILE_ROUTE_PREFIX}/${safe}`;
 }
 
 export const ENSRegistrationCard = ({ searchQuery }: ENSRegistrationCardProps) => {
-  const navigate = useNavigate();
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [viewLoading, setViewLoading] = useState(false);
 
@@ -62,25 +82,32 @@ export const ENSRegistrationCard = ({ searchQuery }: ENSRegistrationCardProps) =
   }
 
   // Soft-gold button (light + dark)
-  // In dark mode we keep the same gold but tweak hover/active a bit
   const softGoldBtn =
     "w-full bg-[#F3D889] text-black hover:bg-[#EECF74] active:bg-[#E3C366] font-semibold " +
     "dark:bg-[#F0D27B] dark:hover:bg-[#E7C869] dark:active:bg-[#DCBC57]";
 
   const softGoldBtnDisabled =
-    "w-full bg-[#F3D889] text-black/60 font-semibold opacity-80 " + "dark:bg-[#F0D27B] dark:text-black/60";
+    "w-full bg-[#F3D889] text-black/60 font-semibold opacity-80 dark:bg-[#F0D27B] dark:text-black/60";
 
   const onViewProfile = async () => {
     if (!displayName) return;
+
     setViewLoading(true);
 
-    // Brief delay so the loading state is visible before navigation
-    await new Promise((r) => setTimeout(r, 200));
+    // brief delay so the button shows loading state
+    await new Promise((r) => setTimeout(r, 150));
 
-    // IMPORTANT:
-    // If your profile route is actually /ens/:name, change this line to:
-    // navigate(`/ens/${displayName}`);
-    navigate(`/${displayName}`);
+    // Open the actual vanity.box URL for the profile so your full-page loader triggers
+    const url = buildProfileUrl(displayName);
+
+    if (VIEW_PROFILE_OPEN === "new-tab") {
+      window.open(url, "_blank", "noopener,noreferrer");
+      setViewLoading(false);
+      return;
+    }
+
+    // Same tab full navigation
+    window.location.assign(url);
   };
 
   return (
@@ -157,7 +184,7 @@ export const ENSRegistrationCard = ({ searchQuery }: ENSRegistrationCardProps) =
           {/* Divider */}
           <div className="w-full h-px bg-black/10 my-1 dark:bg-white/10" />
 
-          {/* Bottom actions (like "Coming Soon") */}
+          {/* Bottom actions */}
           <div className="w-full">
             {status === "loading" ? (
               <Button disabled className={softGoldBtnDisabled}>
