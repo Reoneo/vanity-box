@@ -2,13 +2,18 @@
  * Hook for checking ENS name availability with onchain confirmation
  * Uses the ETH Registrar Controller's available(string) function (authoritative)
  *
- * RELIABILITY FIXES:
- * - Multi-RPC fallback + retries + timeout (prevents random RPC failures)
+ * RELIABILITY FIXES (updated):
+ * - Better error reporting (you'll see the real error, not just "Failed to check availability")
+ * - Multi-RPC fallback + retries + timeout
  * - Controller-first, BaseRegistrar fallback (same logic the controller uses)
  * - Request id guard prevents stale updates during fast typing
  * - Small in-memory cache (TTL) reduces RPC spam
+ * - Safer JSON-RPC parsing (handles HTML / empty / malformed responses)
  *
- * ENS reference: ETHRegistrarController.available(string)  [oai_citation:2‡GitHub](https://github.com/ensdomains/ethregistrar/blob/master/contracts/ETHRegistrarController.sol?utm_source=chatgpt.com)
+ * IMPORTANT:
+ * If you STILL see errors after this, it means the browser can't reach public RPCs reliably
+ * (CORS, rate-limit, mobile network). Then you should move availability checks to a Supabase Edge
+ * function like we discussed.
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -29,16 +34,22 @@ import {
 
 const RPC_URLS = ["https://eth.llamarpc.com", "https://cloudflare-eth.com", "https://rpc.ankr.com/eth"] as const;
 
-const TIMEOUT_MS = 10_000;
-const MAX_ATTEMPTS_PER_RPC = 2;
+const TIMEOUT_MS = 12_000;
+const MAX_ATTEMPTS_PER_RPC = 3;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function safeTruncate(s: string, n = 180) {
+  if (!s) return s;
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
 async function fetchJsonWithTimeout(url: string, body: unknown, timeoutMs: number) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -46,13 +57,34 @@ async function fetchJsonWithTimeout(url: string, body: unknown, timeoutMs: numbe
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    // Some public RPCs return HTML on overload; guard it.
+
     const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch {
-      throw new Error(`RPC returned non-JSON (${res.status})`);
+
+    // Some public RPCs return HTML or empty body on overload.
+    if (!text) {
+      throw new Error(`RPC empty response (${res.status}) from ${url}`);
     }
+
+    let json: any;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // Helps you diagnose CORS / WAF / HTML responses
+      throw new Error(`RPC non-JSON (${res.status}) from ${url}: ${safeTruncate(text)}`);
+    }
+
+    if (!res.ok) {
+      // Sometimes errors are still returned as JSON
+      const msg = json?.error?.message ? String(json.error.message) : `HTTP ${res.status}`;
+      throw new Error(`RPC HTTP error from ${url}: ${msg}`);
+    }
+
+    return json;
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      throw new Error(`RPC timeout after ${timeoutMs}ms: ${url}`);
+    }
+    throw e;
   } finally {
     clearTimeout(t);
   }
@@ -87,20 +119,31 @@ async function callContract<T>(
           TIMEOUT_MS,
         );
 
-        if (json?.error) throw new Error(json.error.message || "RPC error");
-        if (!json?.result) throw new Error("RPC missing result");
+        if (json?.error) {
+          throw new Error(`RPC error from ${rpc}: ${json.error.message || "Unknown RPC error"}`);
+        }
+        if (!json?.result) {
+          throw new Error(`RPC missing result from ${rpc}`);
+        }
 
-        const result = decodeFunctionResult({
-          abi: abi as any,
-          functionName,
-          data: json.result,
-        });
+        try {
+          const result = decodeFunctionResult({
+            abi: abi as any,
+            functionName,
+            data: json.result,
+          });
 
-        return result as T;
+          return result as T;
+        } catch (decodeErr: any) {
+          // ABI mismatch / wrong return type / wrong contract address
+          throw new Error(`Decode failed for ${functionName} via ${rpc}: ${decodeErr?.message || String(decodeErr)}`);
+        }
       } catch (e) {
         lastErr = e;
+
+        // backoff & retry
         if (attempt < MAX_ATTEMPTS_PER_RPC) {
-          await sleep(200 * attempt + Math.floor(Math.random() * 200));
+          await sleep(250 * attempt + Math.floor(Math.random() * 250));
           continue;
         }
       }
@@ -130,9 +173,8 @@ const availCache = new Map<string, { ts: number; value: { status: "available" | 
  *
  * Strategy:
  * 1. Validate label
- * 2. Controller.available(label)  (authoritative)  [oai_citation:3‡GitHub](https://github.com/ensdomains/ethregistrar/blob/master/contracts/ETHRegistrarController.sol?utm_source=chatgpt.com)
+ * 2. Controller.available(label) (authoritative)
  * 3. If controller fails (RPC flake), fallback to BaseRegistrar.available(tokenId)
- *    (this matches controller internal logic)  [oai_citation:4‡GitHub](https://github.com/ensdomains/ens-contracts/blob/staging/contracts/ethregistrar/ETHRegistrarController.sol?utm_source=chatgpt.com)
  * 4. If taken, fetch expiry using BaseRegistrar.nameExpires(tokenId)
  */
 export function useEnsAvailability(searchQuery: string): AvailabilityResult {
@@ -200,16 +242,18 @@ export function useEnsAvailability(searchQuery: string): AvailabilityResult {
           ETH_REGISTRAR_CONTROLLER,
           ETH_REGISTRAR_CONTROLLER_ABI,
           "available",
-          [label], // IMPORTANT: string label (per ENS controller)  [oai_citation:5‡GitHub](https://github.com/ensdomains/ethregistrar/blob/master/contracts/ETHRegistrarController.sol?utm_source=chatgpt.com)
+          [label], // string label
         );
-      } catch (e) {
+      } catch (controllerErr: any) {
         // 2) Fallback: BaseRegistrar.available(uint256 tokenId)
-        // This mirrors controller logic: base.available(uint256(labelhash))  [oai_citation:6‡GitHub](https://github.com/ensdomains/ens-contracts/blob/staging/contracts/ethregistrar/ETHRegistrarController.sol?utm_source=chatgpt.com)
         try {
           isAvailable = await callContract<boolean>(BASE_REGISTRAR, BASE_REGISTRAR_ABI, "available", [tokenId]);
-        } catch (e2) {
-          // If BOTH fail, bubble to outer catch
-          throw e2;
+        } catch (baseErr: any) {
+          // If both fail, surface the most useful combined message
+          const msg = `Controller+BaseRegistrar failed. Controller: ${
+            controllerErr?.message || String(controllerErr)
+          } | Base: ${baseErr?.message || String(baseErr)}`;
+          throw new Error(msg);
         }
       }
 
@@ -242,16 +286,17 @@ export function useEnsAvailability(searchQuery: string): AvailabilityResult {
         label,
         expiryDate: expiry && expiry > 0n ? new Date(Number(expiry) * 1000) : undefined,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("ENS availability check error:", error);
 
       if (reqIdRef.current !== reqId) return;
 
+      // KEY CHANGE: show REAL error so you can diagnose (CORS, timeout, decode, etc.)
       setResult({
         status: "error",
         name: fullName,
         label,
-        error: "Failed to check availability",
+        error: error?.message || String(error) || "Failed to check availability",
       });
     }
   }, []);
