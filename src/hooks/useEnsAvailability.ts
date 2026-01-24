@@ -1,16 +1,18 @@
 /**
  * Hook for checking ENS name availability with onchain confirmation
- * Uses the ETH Registrar Controller's available() function
+ * Uses the ETH Registrar Controller's available(string) function (authoritative)
  *
- * FIXES (reliability):
- * - Uses labelhash (bytes32) for controller.available()  ✅ (string label was wrong / flaky)
- * - Adds multi-RPC fallback + retries + timeout         ✅ (prevents random "Failed to check availability")
- * - Adds simple in-memory cache (TTL)                  ✅ (reduces RPC spam and improves UX)
- * - Adds requestId guard (prevents stale updates)       ✅
+ * RELIABILITY FIXES:
+ * - Multi-RPC fallback + retries + timeout (prevents random RPC failures)
+ * - Controller-first, BaseRegistrar fallback (same logic the controller uses)
+ * - Request id guard prevents stale updates during fast typing
+ * - Small in-memory cache (TTL) reduces RPC spam
+ *
+ * ENS reference: ETHRegistrarController.available(string)  [oai_citation:2‡GitHub](https://github.com/ensdomains/ethregistrar/blob/master/contracts/ETHRegistrarController.sol?utm_source=chatgpt.com)
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { encodeFunctionData, decodeFunctionResult, keccak256, toBytes } from "viem";
+import { encodeFunctionData, decodeFunctionResult } from "viem";
 import {
   ETH_REGISTRAR_CONTROLLER,
   ETH_REGISTRAR_CONTROLLER_ABI,
@@ -18,21 +20,17 @@ import {
   BASE_REGISTRAR_ABI,
   extractLabel,
   validateLabel,
-  labelhash as labelhashFromLib,
+  labelhash,
   labelhashToTokenId,
   yearsToSeconds,
 } from "@/lib/ens";
 
-// --- RPC reliability layer ----------------------------------------------------
+// ---- RPC layer ---------------------------------------------------------------
 
 const RPC_URLS = ["https://eth.llamarpc.com", "https://cloudflare-eth.com", "https://rpc.ankr.com/eth"] as const;
 
-const CALL_TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = 10_000;
 const MAX_ATTEMPTS_PER_RPC = 2;
-
-// tiny cache for availability checks (per tab/session)
-const AVAIL_CACHE_TTL_MS = 30_000;
-const availCache = new Map<string, { ts: number; value: { isAvailable: boolean; expiry?: bigint } }>();
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -41,7 +39,6 @@ function sleep(ms: number) {
 async function fetchJsonWithTimeout(url: string, body: unknown, timeoutMs: number) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -49,18 +46,19 @@ async function fetchJsonWithTimeout(url: string, body: unknown, timeoutMs: numbe
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    const json = await res.json();
-    return json;
+    // Some public RPCs return HTML on overload; guard it.
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`RPC returned non-JSON (${res.status})`);
+    }
   } finally {
     clearTimeout(t);
   }
 }
 
-/**
- * Reliable eth_call:
- * - tries multiple RPCs
- * - retries on transient errors
- */
+// Use fetch-based approach for reliable contract reads (now with retry + fallback)
 async function callContract<T>(
   address: string,
   abi: readonly any[],
@@ -86,12 +84,11 @@ async function callContract<T>(
             method: "eth_call",
             params: [{ to: address, data }, "latest"],
           },
-          CALL_TIMEOUT_MS,
+          TIMEOUT_MS,
         );
 
-        if (json?.error) {
-          throw new Error(json.error.message || "RPC error");
-        }
+        if (json?.error) throw new Error(json.error.message || "RPC error");
+        if (!json?.result) throw new Error("RPC missing result");
 
         const result = decodeFunctionResult({
           abi: abi as any,
@@ -102,10 +99,8 @@ async function callContract<T>(
         return result as T;
       } catch (e) {
         lastErr = e;
-
-        // small backoff
         if (attempt < MAX_ATTEMPTS_PER_RPC) {
-          await sleep(200 * attempt + Math.floor(Math.random() * 150));
+          await sleep(200 * attempt + Math.floor(Math.random() * 200));
           continue;
         }
       }
@@ -115,22 +110,7 @@ async function callContract<T>(
   throw lastErr instanceof Error ? lastErr : new Error("RPC call failed");
 }
 
-// --- ENS helpers --------------------------------------------------------------
-
-/**
- * Controller.available() expects bytes32 labelhash, NOT the string label.
- * This is the key fix.
- */
-function labelhashBytes32(label: string): `0x${string}` {
-  // Prefer your lib if it returns bytes32 hex. If not, compute safely here.
-  try {
-    const lh = labelhashFromLib(label) as any;
-    if (typeof lh === "string" && lh.startsWith("0x") && lh.length === 66) return lh;
-  } catch {
-    // fall through
-  }
-  return keccak256(toBytes(label)) as `0x${string}`;
-}
+// ---- Availability cache ------------------------------------------------------
 
 export type AvailabilityStatus = "idle" | "loading" | "available" | "taken" | "invalid" | "error";
 
@@ -142,13 +122,18 @@ interface AvailabilityResult {
   expiryDate?: Date;
 }
 
+const AVAIL_CACHE_TTL_MS = 30_000;
+const availCache = new Map<string, { ts: number; value: { status: "available" | "taken"; expiry?: bigint } }>();
+
 /**
  * Check ENS name availability with onchain confirmation
  *
  * Strategy:
- * 1. Validate the label format
- * 2. Check via ETH Registrar Controller's available(bytes32 labelhash)
- * 3. If taken, get expiry date from Base Registrar via nameExpires(uint256 tokenId)
+ * 1. Validate label
+ * 2. Controller.available(label)  (authoritative)  [oai_citation:3‡GitHub](https://github.com/ensdomains/ethregistrar/blob/master/contracts/ETHRegistrarController.sol?utm_source=chatgpt.com)
+ * 3. If controller fails (RPC flake), fallback to BaseRegistrar.available(tokenId)
+ *    (this matches controller internal logic)  [oai_citation:4‡GitHub](https://github.com/ensdomains/ens-contracts/blob/staging/contracts/ethregistrar/ETHRegistrarController.sol?utm_source=chatgpt.com)
+ * 4. If taken, fetch expiry using BaseRegistrar.nameExpires(tokenId)
  */
 export function useEnsAvailability(searchQuery: string): AvailabilityResult {
   const [result, setResult] = useState<AvailabilityResult>({
@@ -168,11 +153,9 @@ export function useEnsAvailability(searchQuery: string): AvailabilityResult {
       return;
     }
 
-    // Extract label (remove .eth if present)
     const label = extractLabel(query.trim());
     const fullName = `${label}.eth`;
 
-    // Validate the label
     const validation = validateLabel(label);
     if (!validation.valid) {
       setResult({
@@ -184,77 +167,74 @@ export function useEnsAvailability(searchQuery: string): AvailabilityResult {
       return;
     }
 
-    setResult({
-      status: "loading",
-      name: fullName,
-      label,
-    });
-
-    try {
-      // Cache check
-      const cacheKey = label.toLowerCase();
-      const cached = availCache.get(cacheKey);
-      if (cached && Date.now() - cached.ts < AVAIL_CACHE_TTL_MS) {
-        if (reqIdRef.current !== reqId) return;
-
-        if (cached.value.isAvailable) {
-          setResult({ status: "available", name: fullName, label });
-          return;
-        }
-
-        const expiry = cached.value.expiry;
-        setResult({
-          status: "taken",
-          name: fullName,
-          label,
-          expiryDate: expiry && expiry > 0n ? new Date(Number(expiry) * 1000) : undefined,
-        });
+    // Cache hit
+    const cacheKey = label.toLowerCase();
+    const cached = availCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < AVAIL_CACHE_TTL_MS) {
+      if (cached.value.status === "available") {
+        setResult({ status: "available", name: fullName, label });
         return;
       }
+      setResult({
+        status: "taken",
+        name: fullName,
+        label,
+        expiryDate:
+          cached.value.expiry && cached.value.expiry > 0n ? new Date(Number(cached.value.expiry) * 1000) : undefined,
+      });
+      return;
+    }
 
-      // === ONCHAIN CHECK: ETH Registrar Controller ===
-      // IMPORTANT: available(bytes32 labelhash)
-      const lh = labelhashBytes32(label);
+    setResult({ status: "loading", name: fullName, label });
 
-      const isAvailable = await callContract<boolean>(
-        ETH_REGISTRAR_CONTROLLER,
-        ETH_REGISTRAR_CONTROLLER_ABI,
-        "available",
-        [lh],
-      );
+    try {
+      // Compute tokenId for BaseRegistrar calls
+      const lh = labelhash(label);
+      const tokenId = labelhashToTokenId(lh);
 
+      // 1) Controller-first (authoritative)
+      let isAvailable: boolean | null = null;
+
+      try {
+        isAvailable = await callContract<boolean>(
+          ETH_REGISTRAR_CONTROLLER,
+          ETH_REGISTRAR_CONTROLLER_ABI,
+          "available",
+          [label], // IMPORTANT: string label (per ENS controller)  [oai_citation:5‡GitHub](https://github.com/ensdomains/ethregistrar/blob/master/contracts/ETHRegistrarController.sol?utm_source=chatgpt.com)
+        );
+      } catch (e) {
+        // 2) Fallback: BaseRegistrar.available(uint256 tokenId)
+        // This mirrors controller logic: base.available(uint256(labelhash))  [oai_citation:6‡GitHub](https://github.com/ensdomains/ens-contracts/blob/staging/contracts/ethregistrar/ETHRegistrarController.sol?utm_source=chatgpt.com)
+        try {
+          isAvailable = await callContract<boolean>(BASE_REGISTRAR, BASE_REGISTRAR_ABI, "available", [tokenId]);
+        } catch (e2) {
+          // If BOTH fail, bubble to outer catch
+          throw e2;
+        }
+      }
+
+      // Ignore stale response
       if (reqIdRef.current !== reqId) return;
 
       if (isAvailable) {
-        availCache.set(cacheKey, { ts: Date.now(), value: { isAvailable: true } });
-        setResult({
-          status: "available",
-          name: fullName,
-          label,
-        });
+        availCache.set(cacheKey, { ts: Date.now(), value: { status: "available" } });
+        setResult({ status: "available", name: fullName, label });
         return;
       }
 
-      // Name is taken - get expiry date from Base Registrar
+      // Taken: get expiry date
       let expiry: bigint | undefined;
-
       try {
-        const tokenId = labelhashToTokenId(lh);
-
         const expiryBn = await callContract<bigint>(BASE_REGISTRAR, BASE_REGISTRAR_ABI, "nameExpires", [tokenId]);
-
         expiry = expiryBn;
       } catch (e) {
-        // expiry fetch is a nice-to-have; don't fail the whole check
+        // expiry is nice-to-have; do not fail availability
         console.warn("Failed to fetch expiry date:", e);
       }
 
       if (reqIdRef.current !== reqId) return;
 
-      availCache.set(cacheKey, {
-        ts: Date.now(),
-        value: { isAvailable: false, expiry },
-      });
+      availCache.set(cacheKey, { ts: Date.now(), value: { status: "taken", expiry } });
 
       setResult({
         status: "taken",
@@ -290,8 +270,6 @@ export function useEnsAvailability(searchQuery: string): AvailabilityResult {
 
 /**
  * Get rent price for a name + duration
- * NOTE: rentPrice expects (string name, uint256 duration) on ETHRegistrarController.
- * This stays as you had it.
  */
 export async function getEnsRentPrice(
   label: string,
