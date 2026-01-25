@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 const WEB3BIO_API_KEY = Deno.env.get("WEB3BIO_API_KEY");
@@ -76,7 +76,10 @@ function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
   }
 
   // Website convenience field (from links.website if present)
-  const website = raw.links?.website?.link ?? raw.links?.website?.handle ?? null;
+  const website =
+    raw.links?.website?.link ??
+    raw.links?.website?.handle ??
+    null;
 
   const followerCount = raw.social?.follower ?? null;
   const followingCount = raw.social?.following ?? null;
@@ -98,76 +101,50 @@ function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
   };
 }
 
-function buildWeb3BioEndpoint(identity: string): string {
-  const trimmed = identity.trim();
-  const lower = trimmed.toLowerCase();
-
-  // ✅ DO NOT CHANGE: preserve your .box behavior exactly
-  if (lower.endsWith(".box")) {
-    return `https://api.web3.bio/profile/ens/${encodeURIComponent(trimmed)}`;
-  }
-
-  // ✅ FIX: Base names (base.eth subdomains)
-  if (lower.endsWith(".base.eth")) {
-    return `https://api.web3.bio/profile/basenames/${encodeURIComponent(trimmed)}`;
-  }
-
-  // Optional: cleaner results for ENS .eth via ENS platform endpoint
-  if (lower.endsWith(".eth")) {
-    return `https://api.web3.bio/profile/ens/${encodeURIComponent(trimmed)}`;
-  }
-
-  // Fallback: universal lookup
-  return `https://api.web3.bio/profile/${encodeURIComponent(trimmed)}`;
-}
-
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (!WEB3BIO_API_KEY) {
     console.error("❌ WEB3BIO_API_KEY not configured");
-    return new Response(JSON.stringify({ error: "WEB3BIO_API_KEY not configured" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "WEB3BIO_API_KEY not configured" }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const identity = String(body?.identity ?? "");
-    const trimmed = identity.trim();
+    const { identity } = await req.json();
+    const trimmed = (identity || "").trim();
 
     if (!trimmed) {
-      return new Response(JSON.stringify({ error: "identity is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "identity is required" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`🔍 Web3.bio unified lookup for: ${trimmed}`);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 15000); // Reduced timeout for faster fallback
 
-    const url = buildWeb3BioEndpoint(trimmed);
-    console.log(`🌐 Web3.bio endpoint: ${url}`);
+    // Detect .box domains and use ENS-specific endpoint
+    const isBoxDomain = trimmed.toLowerCase().endsWith('.box');
+    const endpoint = isBoxDomain 
+      ? `https://api.web3.bio/profile/ens/${encodeURIComponent(trimmed)}`
+      : `https://api.web3.bio/profile/${encodeURIComponent(trimmed)}`;
+    const url = endpoint;
 
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "X-API-KEY": `Bearer ${WEB3BIO_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "X-API-KEY": `Bearer ${WEB3BIO_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
 
     console.log(`📥 Web3.bio response status: ${res.status}`);
 
@@ -178,7 +155,7 @@ serve(async (req) => {
           profile: null,
           message: "Profile not found on Web3.bio",
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -191,14 +168,14 @@ serve(async (req) => {
           status: res.status,
           details: text || res.statusText,
         }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const json = (await res.json()) as Web3BioRawProfile[] | Web3BioRawProfile;
     console.log(`✅ Web3.bio data received:`, JSON.stringify(json).substring(0, 200));
 
-    // Universal endpoint returns an array; platform endpoints may return single object
+    // Universal endpoint returns an array; ENS-only endpoint returns single object
     const items = Array.isArray(json) ? json : [json];
     const primary = pickPrimaryProfile(items);
 
@@ -209,7 +186,7 @@ serve(async (req) => {
           profile: null,
           message: "No profile records returned from Web3.bio",
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -222,20 +199,16 @@ serve(async (req) => {
         profile,
         platforms: items.map((p) => p.platform),
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const isAbort = (err instanceof DOMException && err.name === "AbortError") || msg.toLowerCase().includes("abort");
-
     console.error("❌ web3bio-profile error:", err);
-
     return new Response(
       JSON.stringify({
-        error: isAbort ? "Web3.bio request timed out" : "Unexpected error querying Web3.bio",
-        details: msg,
+        error: "Unexpected error querying Web3.bio",
+        details: err instanceof Error ? err.message : String(err),
       }),
-      { status: isAbort ? 504 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
