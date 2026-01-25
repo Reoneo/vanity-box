@@ -45,6 +45,7 @@ import Dock from "@/components/Dock";
 import { ProfileCard } from "@/components/ProfileCard";
 import { VanityBundleCard } from "@/components/VanityBundleCard";
 import { ENSRegistrationCard } from "@/components/ENSRegistrationCard";
+import { NameSearchCarousel } from "@/components/NameSearchCarousel";
 import { MessageCircle, Repeat2, Heart } from "lucide-react";
 
 import {
@@ -2094,8 +2095,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               >
                 <div className="flex-1 overflow-y-auto px-4 pt-8 pb-40">
                   <div className="max-w-6xl mx-auto mt-4">
-                  {/* ENS Domain Registration Card - Above VanityBundleCard */}
-                  <ENSRegistrationCard searchQuery={displayQuery || ''} />
+                  {/* ENS + Basenames Carousel - Above VanityBundleCard */}
+                  <NameSearchCarousel searchQuery={displayQuery || ''} />
                   
                   {/* Vanity ID Bundle - Single unified card */}
                   <VanityBundleCard 
