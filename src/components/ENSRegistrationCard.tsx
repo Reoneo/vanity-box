@@ -32,7 +32,7 @@ const ENS_AVATAR = "https://cryptologos.cc/logos/ethereum-name-service-ens-logo.
  * - "same-tab" → recommended (keeps flow natural)
  * - "new-tab"
  */
-const VIEW_PROFILE_OPEN: "same-tab" | "new-tab" = "same-tab";
+const VIEW_PROFILE_OPEN = "same-tab" as const;
 
 function normalizeEnsName(input: string) {
   const raw = (input || "").trim().toLowerCase();
@@ -89,13 +89,7 @@ export const ENSRegistrationCard = ({ searchQuery }: ENSRegistrationCardProps) =
 
     const url = buildProfileUrl(displayName);
 
-    if (VIEW_PROFILE_OPEN === "new-tab") {
-      window.open(url, "_blank", "noopener,noreferrer");
-      setViewLoading(false);
-      return;
-    }
-
-    // full navigation so profile loader runs
+    // Full navigation so profile loader runs
     window.location.assign(url);
   };
 
