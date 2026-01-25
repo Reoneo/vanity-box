@@ -477,24 +477,26 @@ serve(async (req) => {
         result = { ok: false, source: "namestone", profile: null, notFound: true };
       }
     }
-    // Route 3a: base.eth subdomains - use Web3.bio ENS-specific endpoint
+    // Route 3a: base.eth subdomains - use Web3.bio Basenames-specific endpoint
     else if (isBaseEthSubdomain) {
-      console.log(`🔍 base.eth subdomain detected, using Web3.bio ENS endpoint`);
-      debug.tried.push("web3bio-ens");
+      console.log(`🔍 base.eth subdomain detected, using Web3.bio Basenames endpoint`);
+      debug.tried.push("web3bio-basenames");
       const w3Start = Date.now();
       
-      // Use the ENS-specific endpoint for base.eth subdomains
+      // Use the Basenames-specific endpoint for base.eth subdomains
       const apiKey = Deno.env.get("WEB3BIO_API_KEY");
-      const ensUrl = `https://api.web3.bio/profile/ens/${encodeURIComponent(normalized)}`;
+      const basenamesUrl = `https://api.web3.bio/profile/basenames/${encodeURIComponent(normalized)}`;
       
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (apiKey) headers["X-API-Key"] = apiKey;
       
-      const response = await fetchWithRetry(ensUrl, { headers }, 2, 12000);
+      console.log(`📡 Calling Web3.bio Basenames API: ${basenamesUrl}`);
+      const response = await fetchWithRetry(basenamesUrl, { headers }, 2, 12000);
       debug.timingsMs.web3bio = Date.now() - w3Start;
       
       if (response && response.ok) {
         const data = await response.json();
+        console.log(`📥 Basenames API response:`, JSON.stringify(data).substring(0, 300));
         
         if (data && !data.error && data.address) {
           console.log(`✅ base.eth subdomain resolved: ${normalized} -> ${data.address}`);
@@ -504,7 +506,7 @@ serve(async (req) => {
             profile: {
               address: data.address,
               identity: normalized,
-              platform: "ens",
+              platform: "basenames",
               displayName: data.displayName || normalized,
               avatar: data.avatar,
               description: data.description,
@@ -518,11 +520,12 @@ serve(async (req) => {
             },
           };
         } else {
-          console.log(`⚠️ base.eth subdomain not found or no address`);
+          console.log(`⚠️ base.eth subdomain not found or no address in response`);
           result = { ok: false, source: "web3bio", profile: null, notFound: true };
         }
       } else {
-        console.log(`❌ Web3.bio ENS endpoint failed for base.eth subdomain`);
+        const errorText = response ? await response.text() : 'No response';
+        console.log(`❌ Web3.bio Basenames endpoint failed: ${errorText}`);
         result = { ok: false, source: "web3bio", profile: null, notFound: true };
       }
     }
