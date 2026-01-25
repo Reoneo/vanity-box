@@ -357,6 +357,9 @@ serve(async (req) => {
     const web3BioTLDs = [".eth", ".box", ".world.id"];
     const isWeb3BioCompatible = web3BioTLDs.some(tld => normalized.endsWith(tld));
     
+    // Special handling for base.eth subdomains (e.g., guy.base.eth)
+    const isBaseEthSubdomain = normalized.endsWith(".base.eth") && normalized !== "base.eth";
+    
     // Namestone-only TLDs (not indexed by Web3.bio)
     const namestoneTLDs = [".world", ".cash", ".apt", ".ton", ".flirtad", ".mexipay", ".guavapay", ".termux", ".spyda", ".mith", ".30315", ".teamxrp"];
     const isNamestoneTLD = namestoneTLDs.some(tld => normalized.endsWith(tld)) && !normalized.endsWith(".world.id");
@@ -364,9 +367,9 @@ serve(async (req) => {
     // Check for subdomains (2+ dots)
     const dotCount = normalized.split('.').filter(Boolean).length - 1;
     const isSubdomain = dotCount >= 2;
-    const isL2EnsSubdomain = isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id"));
+    const isL2EnsSubdomain = isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id")) && !isBaseEthSubdomain;
     
-    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}`);
+    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
     
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
     
@@ -474,7 +477,56 @@ serve(async (req) => {
         result = { ok: false, source: "namestone", profile: null, notFound: true };
       }
     }
-    // Route 3: Web3.bio-compatible (.eth, .box, .world.id, wallet addresses)
+    // Route 3a: base.eth subdomains - use Web3.bio ENS-specific endpoint
+    else if (isBaseEthSubdomain) {
+      console.log(`🔍 base.eth subdomain detected, using Web3.bio ENS endpoint`);
+      debug.tried.push("web3bio-ens");
+      const w3Start = Date.now();
+      
+      // Use the ENS-specific endpoint for base.eth subdomains
+      const apiKey = Deno.env.get("WEB3BIO_API_KEY");
+      const ensUrl = `https://api.web3.bio/profile/ens/${encodeURIComponent(normalized)}`;
+      
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (apiKey) headers["X-API-Key"] = apiKey;
+      
+      const response = await fetchWithRetry(ensUrl, { headers }, 2, 12000);
+      debug.timingsMs.web3bio = Date.now() - w3Start;
+      
+      if (response && response.ok) {
+        const data = await response.json();
+        
+        if (data && !data.error && data.address) {
+          console.log(`✅ base.eth subdomain resolved: ${normalized} -> ${data.address}`);
+          result = {
+            ok: true,
+            source: "web3bio",
+            profile: {
+              address: data.address,
+              identity: normalized,
+              platform: "ens",
+              displayName: data.displayName || normalized,
+              avatar: data.avatar,
+              description: data.description,
+              header: data.header,
+              website: data.links?.website?.link,
+              url: data.links?.website?.link,
+              links: data.links || {},
+              ensRecords: data.records || {},
+              location: data.location,
+              email: data.email,
+            },
+          };
+        } else {
+          console.log(`⚠️ base.eth subdomain not found or no address`);
+          result = { ok: false, source: "web3bio", profile: null, notFound: true };
+        }
+      } else {
+        console.log(`❌ Web3.bio ENS endpoint failed for base.eth subdomain`);
+        result = { ok: false, source: "web3bio", profile: null, notFound: true };
+      }
+    }
+    // Route 3b: Web3.bio-compatible (.eth, .box, .world.id, wallet addresses)
     else if (isWeb3BioCompatible || isWalletAddress) {
       debug.tried.push("web3bio");
       const w3Start = Date.now();
