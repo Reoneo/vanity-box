@@ -1,99 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Basenames (.base.eth) are ENS subnames whose records may live on Base.
-// Web3.bio doesn't always index them, so we fall back to onchain ENS
-// resolution using CCIP-read when Web3.bio returns 404.
-import { createPublicClient, http, getEnsAddress, getEnsAvatar, getEnsText } from "https://esm.sh/viem@2.23.2";
-import { mainnet } from "https://esm.sh/viem@2.23.2/chains";
-
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 const WEB3BIO_API_KEY = Deno.env.get("WEB3BIO_API_KEY");
-
-function isBasename(identity: string): boolean {
-  return (identity || "").trim().toLowerCase().endsWith(".base.eth");
-}
-
-function ipfsToGateway(url: string | null): string | null {
-  if (!url) return null;
-  if (url.startsWith("ipfs://")) return url.replace("ipfs://", "https://ipfs.io/ipfs/");
-  if (url.startsWith("ipns://")) return url.replace("ipns://", "https://ipfs.io/ipns/");
-  return url;
-}
-
-async function resolveBasenameOnchain(name: string): Promise<SimpleProfile | null> {
-  const rpcCandidates = [
-    Deno.env.get("ETH_RPC_URL") || "",
-    "https://cloudflare-eth.com",
-    "https://rpc.ankr.com/eth",
-  ].filter(Boolean);
-
-  for (const rpcUrl of rpcCandidates) {
-    try {
-      const client = createPublicClient({
-        chain: mainnet,
-        transport: http(rpcUrl),
-        ccipRead: true,
-      });
-
-      const address = await getEnsAddress(client, { name });
-      if (!address) return null;
-
-      let avatar: string | null = null;
-      let description: string | null = null;
-      let url: string | null = null;
-      let email: string | null = null;
-
-      try {
-        avatar = await getEnsAvatar(client, { name });
-      } catch (_) {
-        avatar = null;
-      }
-      try {
-        description = await getEnsText(client, { name, key: "description" });
-      } catch (_) {
-        description = null;
-      }
-      try {
-        url = await getEnsText(client, { name, key: "url" });
-      } catch (_) {
-        url = null;
-      }
-      try {
-        email = await getEnsText(client, { name, key: "email" });
-      } catch (_) {
-        email = null;
-      }
-
-      const links: Record<string, { link: string; handle: string }> = {};
-      if (url) links.website = { link: url, handle: url };
-
-      return {
-        address,
-        identity: name,
-        platform: "basenames",
-        displayName: name,
-        avatar: ipfsToGateway(avatar),
-        description,
-        email,
-        header: null,
-        website: url,
-        url,
-        links,
-        followerCount: null,
-        followingCount: null,
-      };
-    } catch (err: any) {
-      console.warn("⚠️ Basename onchain resolve failed for RPC", rpcUrl, "-", err?.message || err);
-      continue;
-    }
-  }
-
-  return null;
-}
 
 // Raw item from https://api.web3.bio/profile/{identity}
 type Web3BioRawProfile = {
@@ -164,7 +76,10 @@ function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
   }
 
   // Website convenience field (from links.website if present)
-  const website = raw.links?.website?.link ?? raw.links?.website?.handle ?? null;
+  const website =
+    raw.links?.website?.link ??
+    raw.links?.website?.handle ??
+    null;
 
   const followerCount = raw.social?.follower ?? null;
   const followingCount = raw.social?.following ?? null;
@@ -187,16 +102,16 @@ function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (!WEB3BIO_API_KEY) {
     console.error("❌ WEB3BIO_API_KEY not configured");
-    return new Response(JSON.stringify({ error: "WEB3BIO_API_KEY not configured" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "WEB3BIO_API_KEY not configured" }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -204,10 +119,10 @@ serve(async (req) => {
     const trimmed = (identity || "").trim();
 
     if (!trimmed) {
-      return new Response(JSON.stringify({ error: "identity is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "identity is required" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`🔍 Web3.bio unified lookup for: ${trimmed}`);
@@ -216,8 +131,8 @@ serve(async (req) => {
     const timeout = setTimeout(() => controller.abort(), 15000); // Reduced timeout for faster fallback
 
     // Detect .box domains and use ENS-specific endpoint
-    const isBoxDomain = trimmed.toLowerCase().endsWith(".box");
-    const endpoint = isBoxDomain
+    const isBoxDomain = trimmed.toLowerCase().endsWith('.box');
+    const endpoint = isBoxDomain 
       ? `https://api.web3.bio/profile/ens/${encodeURIComponent(trimmed)}`
       : `https://api.web3.bio/profile/${encodeURIComponent(trimmed)}`;
     const url = endpoint;
@@ -234,36 +149,13 @@ serve(async (req) => {
     console.log(`📥 Web3.bio response status: ${res.status}`);
 
     if (res.status === 404) {
-      // Special-case Basenames: resolve onchain via ENS CCIP-read
-      if (isBasename(trimmed)) {
-        console.log("🔄 Web3.bio 404 for .base.eth — trying onchain ENS CCIP-read fallback");
-        const onchain = await resolveBasenameOnchain(trimmed.toLowerCase());
-        if (onchain) {
-          return new Response(
-            JSON.stringify({
-              notFound: false,
-              profile: onchain,
-              platforms: ["basenames"],
-              message: "Resolved via onchain fallback",
-            }),
-            {
-              status: 200,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            },
-          );
-        }
-      }
-
       return new Response(
         JSON.stringify({
           notFound: true,
           profile: null,
           message: "Profile not found on Web3.bio",
         }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -276,10 +168,7 @@ serve(async (req) => {
           status: res.status,
           details: text || res.statusText,
         }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -297,10 +186,7 @@ serve(async (req) => {
           profile: null,
           message: "No profile records returned from Web3.bio",
         }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -313,10 +199,7 @@ serve(async (req) => {
         profile,
         platforms: items.map((p) => p.platform),
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
     console.error("❌ web3bio-profile error:", err);
@@ -325,7 +208,7 @@ serve(async (req) => {
         error: "Unexpected error querying Web3.bio",
         details: err instanceof Error ? err.message : String(err),
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
