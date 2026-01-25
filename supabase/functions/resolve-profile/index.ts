@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Basenames (.base.eth) are ENS subnames whose records may live on Base and
+// are resolved via CCIP-read (EIP-3668). Web3.bio doesn't always index them,
+// so we add an onchain fallback.
+import { createPublicClient, http, getEnsAddress, getEnsAvatar, getEnsText } from "https://esm.sh/viem@2.23.2";
+import { mainnet } from "https://esm.sh/viem@2.23.2/chains";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -7,7 +13,7 @@ const corsHeaders = {
 
 interface ProfileResult {
   ok: boolean;
-  source: "web3bio" | "namestone" | "hl" | "vet" | "fallback";
+  source: "web3bio" | "namestone" | "hl" | "vet" | "basenames" | "fallback";
   profile: {
     address: string | null;
     identity: string;
@@ -33,6 +39,92 @@ interface ProfileResult {
   notFound?: boolean;
   error?: string;
   debug?: { tried: string[]; timingsMs?: Record<string, number> };
+}
+
+function isBasename(identity: string): boolean {
+  return (identity || "").trim().toLowerCase().endsWith(".base.eth");
+}
+
+function ipfsToGateway(url: string | null): string | null {
+  if (!url) return null;
+  if (url.startsWith("ipfs://")) return url.replace("ipfs://", "https://ipfs.io/ipfs/");
+  if (url.startsWith("ipns://")) return url.replace("ipns://", "https://ipfs.io/ipns/");
+  return url;
+}
+
+async function resolveBasenameOnchain(name: string): Promise<ProfileResult["profile"] | null> {
+  const rpcCandidates = [
+    Deno.env.get("ETH_RPC_URL") || "",
+    "https://cloudflare-eth.com",
+    "https://rpc.ankr.com/eth",
+  ].filter(Boolean);
+
+  for (const rpcUrl of rpcCandidates) {
+    try {
+      const client = createPublicClient({
+        chain: mainnet,
+        transport: http(rpcUrl),
+        ccipRead: true,
+      });
+
+      const address = await getEnsAddress(client, { name });
+      if (!address) return null;
+
+      let avatar: string | null = null;
+      let description: string | null = null;
+      let url: string | null = null;
+      let email: string | null = null;
+
+      try {
+        avatar = await getEnsAvatar(client, { name });
+      } catch (_) {
+        avatar = null;
+      }
+      try {
+        description = await getEnsText(client, { name, key: "description" });
+      } catch (_) {
+        description = null;
+      }
+      try {
+        url = await getEnsText(client, { name, key: "url" });
+      } catch (_) {
+        url = null;
+      }
+      try {
+        email = await getEnsText(client, { name, key: "email" });
+      } catch (_) {
+        email = null;
+      }
+
+      return {
+        address,
+        identity: name,
+        platform: "basenames",
+        displayName: name,
+        avatar: ipfsToGateway(avatar),
+        description,
+        header: null,
+        website: url,
+        url,
+        links: url ? { website: { link: url, handle: url } } : {},
+        followerCount: null,
+        followingCount: null,
+        ensRecords: null,
+        hlDomain: undefined,
+        hlNfts: undefined,
+        hlTokens: undefined,
+        vetDomain: undefined,
+        farcaster: undefined,
+        location: null,
+        email,
+      };
+    } catch (err: any) {
+      console.warn("⚠️ Basename onchain resolve failed for RPC", rpcUrl, "-", err?.message || err);
+      continue;
+    }
+  }
+
+  return null;
 }
 
 // Fetch with timeout helper
@@ -338,7 +430,10 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
-  const debug: { tried: string[]; timingsMs: Record<string, number> } = { tried: [], timingsMs: {} };
+  const debug: { tried: string[]; timingsMs: Record<string, number> } = {
+    tried: [],
+    timingsMs: {},
+  };
 
   try {
     const { identity } = await req.json();
@@ -530,36 +625,52 @@ serve(async (req) => {
           result = { ok: true, source: "web3bio", profile: web3Profile };
         }
       }
-      // Optional fallback: if Web3.bio has nothing for a subdomain, try Namestone
+      // Optional fallback: if Web3.bio has nothing for a subdomain
+      // - For Basenames (.base.eth), resolve onchain via ENS CCIP-read
+      // - Otherwise, try Namestone (for your managed subdomains)
       else if (isL2EnsSubdomain) {
-        console.log("🔄 Web3.bio failed for subdomain, trying Namestone fallback");
-        debug.tried.push("namestone");
-        const nsStart = Date.now();
-        const nsProfile = await fetchNamestoneProfile(normalized, supabaseUrl, supabaseKey);
-        debug.timingsMs.namestone = Date.now() - nsStart;
+        if (isBasename(normalized)) {
+          console.log("🔄 Web3.bio failed for .base.eth — trying onchain ENS CCIP-read fallback");
+          debug.tried.push("basenames");
+          const bnStart = Date.now();
+          const bnProfile = await resolveBasenameOnchain(normalized);
+          debug.timingsMs.basenames = Date.now() - bnStart;
 
-        if (nsProfile) {
-          result = {
-            ok: true,
-            source: "namestone",
-            profile: {
-              address: nsProfile.address,
-              identity: nsProfile.identity || normalized,
-              platform: nsProfile.platform || "namestone",
-              displayName: nsProfile.displayName,
-              avatar: nsProfile.avatar,
-              description: nsProfile.description,
-              header: nsProfile.header,
-              website: nsProfile.website,
-              url: nsProfile.url,
-              links: nsProfile.links,
-              ensRecords: nsProfile.ensRecords,
-              location: nsProfile.location,
-              email: nsProfile.email,
-            },
-          };
+          if (bnProfile) {
+            result = { ok: true, source: "basenames", profile: bnProfile };
+          } else {
+            result = { ok: false, source: "basenames", profile: null, notFound: true };
+          }
         } else {
-          result = { ok: false, source: "web3bio", profile: null, notFound: true };
+          console.log("🔄 Web3.bio failed for subdomain, trying Namestone fallback");
+          debug.tried.push("namestone");
+          const nsStart = Date.now();
+          const nsProfile = await fetchNamestoneProfile(normalized, supabaseUrl, supabaseKey);
+          debug.timingsMs.namestone = Date.now() - nsStart;
+
+          if (nsProfile) {
+            result = {
+              ok: true,
+              source: "namestone",
+              profile: {
+                address: nsProfile.address,
+                identity: nsProfile.identity || normalized,
+                platform: nsProfile.platform || "namestone",
+                displayName: nsProfile.displayName,
+                avatar: nsProfile.avatar,
+                description: nsProfile.description,
+                header: nsProfile.header,
+                website: nsProfile.website,
+                url: nsProfile.url,
+                links: nsProfile.links,
+                ensRecords: nsProfile.ensRecords,
+                location: nsProfile.location,
+                email: nsProfile.email,
+              },
+            };
+          } else {
+            result = { ok: false, source: "web3bio", profile: null, notFound: true };
+          }
         }
       } else {
         result = { ok: false, source: "web3bio", profile: null, notFound: true };
