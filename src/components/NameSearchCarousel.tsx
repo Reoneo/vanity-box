@@ -17,12 +17,14 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Check, X } from 'lucide-react';
+import { Loader2, Check, X, DollarSign } from 'lucide-react';
 import { useEnsAvailability } from '@/hooks/useEnsAvailability';
 import { useBasenameAvailability } from '@/hooks/useBasenameAvailability';
+import { useCryptoPrices } from '@/contexts/CryptoPriceContext';
 import { EnsRegisterModal } from '@/components/EnsRegisterModal';
 import { BasenameRegisterModal } from '@/components/BasenameRegisterModal';
 import { format } from 'date-fns';
+import ethLogoDark from '@/assets/eth-logo-dark.svg';
 
 interface NameSearchCarouselProps {
   searchQuery: string;
@@ -31,6 +33,7 @@ interface NameSearchCarouselProps {
 const ENS_AVATAR = 'https://cryptologos.cc/logos/ethereum-name-service-ens-logo.png';
 const BASE_AVATAR = 'https://cdn.brandfetch.io/id6XsSOVVS/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757929784005';
 
+// ENS pricing in USD per year based on label length
 function getEnsUsdPrice(label: string | undefined) {
   const len = (label || '').length;
   if (len === 3) return 640;
@@ -51,6 +54,13 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
   const [ensModalOpen, setEnsModalOpen] = useState(false);
   const [baseModalOpen, setBaseModalOpen] = useState(false);
   const [viewLoading, setViewLoading] = useState<'ens' | 'base' | null>(null);
+  
+  // Toggle for price display: USD (default) or ETH
+  const [showEthPriceEns, setShowEthPriceEns] = useState(false);
+  const [showEthPriceBase, setShowEthPriceBase] = useState(false);
+  
+  // Get crypto prices for conversion
+  const { prices } = useCryptoPrices();
 
   // Extract clean label
   const cleanLabel = useMemo(() => {
@@ -65,10 +75,21 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
   const ensResult = useEnsAvailability(cleanLabel);
   const ensDisplayName = `${cleanLabel}.eth`;
   const ensUsdPrice = getEnsUsdPrice(cleanLabel);
+  
+  // Convert ENS USD price to ETH
+  const ensEthPrice = ensUsdPrice && prices.eth > 0 
+    ? (ensUsdPrice / prices.eth).toFixed(6) 
+    : null;
 
   // Basenames availability  
   const baseResult = useBasenameAvailability(cleanLabel);
   const baseDisplayName = `${cleanLabel}.base.eth`;
+  
+  // Convert Basenames ETH price to USD
+  const baseEthPrice = baseResult.priceFormatted;
+  const baseUsdPrice = baseResult.price !== null && prices.eth > 0
+    ? (Number(baseResult.price) / 1e18 * prices.eth).toFixed(2)
+    : null;
 
   // Don't render if no valid search
   if (!cleanLabel || cleanLabel.length < 3) {
@@ -80,6 +101,45 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
     await new Promise((r) => setTimeout(r, 150));
     const name = type === 'ens' ? ensDisplayName : baseDisplayName;
     window.location.assign(`/${name}`);
+  };
+
+  // Price display component with toggle
+  const PriceDisplay = ({ 
+    showEth, 
+    usdPrice, 
+    ethPrice, 
+    onToggle,
+    network 
+  }: { 
+    showEth: boolean; 
+    usdPrice: string | null; 
+    ethPrice: string | null; 
+    onToggle: () => void;
+    network: string;
+  }) => {
+    if (!usdPrice && !ethPrice) {
+      return <span>{network}</span>;
+    }
+    
+    return (
+      <button 
+        onClick={onToggle}
+        className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
+        title="Click to toggle currency"
+      >
+        {showEth ? (
+          <>
+            <img src={ethLogoDark} alt="ETH" className="w-3.5 h-3.5" />
+            <span>{ethPrice} ETH/year on {network}</span>
+          </>
+        ) : (
+          <>
+            <DollarSign className="w-3.5 h-3.5" />
+            <span>${usdPrice}/year on {network}</span>
+          </>
+        )}
+      </button>
+    );
   };
 
   return (
@@ -143,15 +203,21 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                   )}
 
                   <p className="text-sm text-black/60 dark:text-white/65">
-                    {ensResult.status === 'available'
-                      ? ensUsdPrice
-                        ? `~$${ensUsdPrice}/year on Ethereum`
-                        : 'Ethereum mainnet'
-                      : ensResult.status === 'taken'
-                        ? ensResult.expiryDate
-                          ? `Expires ${format(ensResult.expiryDate, 'MMM d, yyyy')}`
-                          : 'Already registered'
-                        : 'Ethereum Name Service'}
+                    {ensResult.status === 'available' ? (
+                      <PriceDisplay 
+                        showEth={showEthPriceEns}
+                        usdPrice={ensUsdPrice?.toString() || null}
+                        ethPrice={ensEthPrice}
+                        onToggle={() => setShowEthPriceEns(!showEthPriceEns)}
+                        network="Ethereum"
+                      />
+                    ) : ensResult.status === 'taken' ? (
+                      ensResult.expiryDate
+                        ? `Expires ${format(ensResult.expiryDate, 'MMM d, yyyy')}`
+                        : 'Already registered'
+                    ) : (
+                      'Ethereum Name Service'
+                    )}
                   </p>
                 </div>
 
@@ -251,15 +317,21 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                   )}
 
                   <p className="text-sm text-black/60 dark:text-white/65">
-                    {baseResult.status === 'available'
-                      ? baseResult.priceFormatted
-                        ? `${baseResult.priceFormatted} ETH/year on Base`
-                        : 'Base mainnet'
-                      : baseResult.status === 'taken'
-                        ? baseResult.expiryDate
-                          ? `Expires ${format(baseResult.expiryDate, 'MMM d, yyyy')}`
-                          : 'Already registered'
-                        : 'Basenames on Base'}
+                    {baseResult.status === 'available' ? (
+                      <PriceDisplay 
+                        showEth={showEthPriceBase}
+                        usdPrice={baseUsdPrice}
+                        ethPrice={baseEthPrice}
+                        onToggle={() => setShowEthPriceBase(!showEthPriceBase)}
+                        network="Base"
+                      />
+                    ) : baseResult.status === 'taken' ? (
+                      baseResult.expiryDate
+                        ? `Expires ${format(baseResult.expiryDate, 'MMM d, yyyy')}`
+                        : 'Already registered'
+                    ) : (
+                      'Basenames on Base'
+                    )}
                   </p>
                 </div>
 
@@ -290,9 +362,9 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                       </Button>
                       <Button
                         className={softGoldBtn}
-                        onClick={() => window.open(`https://www.base.org/names/${cleanLabel}`, '_blank')}
+                        onClick={() => window.open(`https://grails.app/${baseDisplayName}`, '_blank')}
                       >
-                        View on Base
+                        Make Offer
                       </Button>
                     </div>
                   ) : (
