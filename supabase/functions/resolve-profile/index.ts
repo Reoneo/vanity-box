@@ -3,7 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface ProfileResult {
@@ -42,8 +41,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    return response;
+    return await fetch(url, { ...options, signal: controller.signal });
   } finally {
     clearTimeout(timeoutId);
   }
@@ -72,7 +70,7 @@ async function fetchWithRetry(
 
       return response;
     } catch (err: any) {
-      console.error(`Fetch attempt ${i + 1} failed for ${url}:`, err.message);
+      console.error(`Fetch attempt ${i + 1} failed for ${url}:`, err?.message || err);
       if (i < maxRetries) {
         const delay = Math.pow(2, i) * 500;
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -84,51 +82,87 @@ async function fetchWithRetry(
   return null;
 }
 
-/**
- * ✅ IMPORTANT CHANGE:
- * Call your internal Supabase Edge Function `web3bio-profile`
- * instead of hitting api.web3.bio directly (prevents header/auth issues and
- * ensures base.eth + .box routing stays consistent).
- */
-async function fetchWeb3BioProfile(identity: string, supabaseUrl: string, supabaseKey: string): Promise<any | null> {
-  const trimmed = identity.trim();
-  console.log(`🔍 Fetching Web3.bio (via edge) for: ${trimmed}`);
+// Call Web3.bio API (universal profile first, fallback to /ns)
+async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
+  const apiKey = Deno.env.get("WEB3BIO_API_KEY");
 
-  const response = await fetchWithRetry(
-    `${supabaseUrl}/functions/v1/web3bio-profile`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Use anon key to call your own function
-        Authorization: `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ identity: trimmed }),
-    },
-    2,
-    12000,
-  );
+  const profileUrl = `https://api.web3.bio/profile/${encodeURIComponent(identity)}`;
+  const nsUrl = `https://api.web3.bio/ns/${encodeURIComponent(identity)}`;
+
+  console.log(`🔍 Fetching Web3.bio profile for: ${identity}`);
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  // Web3.bio expects: X-API-KEY: Bearer {API_KEY}
+  if (apiKey) {
+    headers["X-API-KEY"] = `Bearer ${apiKey}`;
+  }
+
+  // 1) Try /profile (detailed, often array)
+  let response = await fetchWithRetry(profileUrl, { headers }, 2, 12000);
+
+  // If /profile fails hard, try /ns
+  if (!response || (!response.ok && response.status !== 404)) {
+    console.log(`⚠️ Web3.bio /profile failed, trying /ns fallback...`);
+    response = await fetchWithRetry(nsUrl, { headers }, 2, 12000);
+  }
 
   if (!response) {
-    console.log("❌ web3bio-profile: All retries failed");
+    console.log("❌ Web3.bio: All retries failed");
     return null;
   }
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    console.log(`❌ web3bio-profile: HTTP ${response.status}`, text);
-    return null;
-  }
-
-  const data = await response.json().catch(() => null);
-
-  // Your web3bio-profile returns { notFound, profile, platforms, source? }
-  if (!data || data.notFound || !data.profile) {
-    console.log("⚠️ web3bio-profile: not found");
+  if (response.status === 404) {
+    console.log("⚠️ Web3.bio: Profile not found (404)");
     return { notFound: true };
   }
 
-  return data.profile;
+  if (!response.ok) {
+    console.log(`❌ Web3.bio: HTTP ${response.status}`);
+    return null;
+  }
+
+  const data = await response.json();
+
+  // /profile typically returns an array; /ns typically returns a single object
+  const items = Array.isArray(data) ? data : data ? [data] : [];
+
+  if (items.length === 0) return { notFound: true };
+
+  // Pick the primary profile (prefer ENS/Basenames/Farcaster/Lens)
+  const platformPriority = ["ens", "basenames", "farcaster", "lens", "dotbit", "unstoppabledomains", "sns", "linea"];
+
+  let primaryProfile = items[0];
+  for (const platform of platformPriority) {
+    const found = items.find((p: any) => p?.platform === platform);
+    if (found) {
+      primaryProfile = found;
+      break;
+    }
+  }
+
+  // Normalize to your format
+  return {
+    address: primaryProfile.address ?? null,
+    identity: primaryProfile.identity ?? identity,
+    platform: primaryProfile.platform ?? "web3bio",
+    displayName: primaryProfile.displayName ?? primaryProfile.identity ?? identity,
+    avatar: primaryProfile.avatar ?? null,
+    description: primaryProfile.description ?? null,
+    header: primaryProfile.header ?? null,
+    website: primaryProfile.links?.website?.link ?? null,
+    url: primaryProfile.links?.website?.link ?? null,
+    links: primaryProfile.links ?? {},
+    location: primaryProfile.location ?? null,
+    email: primaryProfile.email ?? null,
+    farcaster: primaryProfile.links?.farcaster ?? null,
+    followerCount: primaryProfile.social?.follower ?? null,
+    followingCount: primaryProfile.social?.following ?? null,
+    // Some responses include records/ensRecords
+    ensRecords: primaryProfile.records ?? primaryProfile.ensRecords ?? null,
+  };
 }
 
 // Call Namestone API via our edge function
@@ -164,7 +198,7 @@ async function fetchNamestoneProfile(subdomain: string, supabaseUrl: string, sup
     console.log("✅ Namestone profile found:", data.identity || subdomain);
     return data;
   } catch (err: any) {
-    console.error("❌ Namestone fetch error:", err.message);
+    console.error("❌ Namestone fetch error:", err?.message || err);
     return null;
   }
 }
@@ -216,7 +250,7 @@ async function fetchHlProfile(domain: string, supabaseUrl: string, supabaseKey: 
       hlTokens: data.tokens || [],
     };
   } catch (err: any) {
-    console.error("❌ HLN fetch error:", err.message);
+    console.error("❌ HLN fetch error:", err?.message || err);
     return null;
   }
 }
@@ -259,7 +293,7 @@ async function fetchVetProfile(domain: string): Promise<any | null> {
       vetDomain: domain,
     };
   } catch (err: any) {
-    console.error("❌ vet.domains fetch error:", err.message);
+    console.error("❌ vet.domains fetch error:", err?.message || err);
     return null;
   }
 }
@@ -293,7 +327,7 @@ async function fetchVetReverseProfile(address: string): Promise<any | null> {
       avatar: avatarUrl,
     };
   } catch (err: any) {
-    console.error("❌ vet.domains reverse fetch error:", err.message);
+    console.error("❌ vet.domains reverse fetch error:", err?.message || err);
     return null;
   }
 }
@@ -326,10 +360,12 @@ serve(async (req) => {
     const isHlDomain = normalized.endsWith(".hl");
     const isVetDomain = normalized.endsWith(".vet");
 
-    // ✅ Include .base.eth here so it uses Web3.bio route automatically
+    // Web3.bio-compatible identities:
+    // include basenames (.base.eth) + your existing (.eth/.box/.world.id) + wallet addresses
     const web3BioTLDs = [".eth", ".box", ".world.id", ".base.eth"];
     const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
+    // Namestone-only TLDs (not indexed by Web3.bio)
     const namestoneTLDs = [
       ".world",
       ".cash",
@@ -349,12 +385,12 @@ serve(async (req) => {
     // Check for subdomains (2+ dots)
     const dotCount = normalized.split(".").filter(Boolean).length - 1;
     const isSubdomain = dotCount >= 2;
-    const isBaseEthSubdomain = normalized.endsWith(".base.eth") && normalized !== "base.eth";
     const isL2EnsSubdomain =
-      isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id")) && !isBaseEthSubdomain;
+      isSubdomain &&
+      (normalized.endsWith(".eth") || normalized.endsWith(".world.id") || normalized.endsWith(".base.eth"));
 
     console.log(
-      `📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`,
+      `📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}`,
     );
 
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
@@ -370,7 +406,7 @@ serve(async (req) => {
         if (hlProfile.address) {
           debug.tried.push("web3bio");
           const w3Start = Date.now();
-          const web3Profile = await fetchWeb3BioProfile(hlProfile.address, supabaseUrl, supabaseKey);
+          const web3Profile = await fetchWeb3BioProfile(hlProfile.address);
           debug.timingsMs.web3bio = Date.now() - w3Start;
 
           if (web3Profile && !web3Profile.notFound) {
@@ -394,6 +430,7 @@ serve(async (req) => {
         result = { ok: false, source: "hl", profile: null, notFound: true };
       }
     }
+
     // Route 2: .vet domains
     else if (isVetDomain) {
       debug.tried.push("vet");
@@ -405,7 +442,7 @@ serve(async (req) => {
         if (vetProfile.address) {
           debug.tried.push("web3bio");
           const w3Start = Date.now();
-          const web3Profile = await fetchWeb3BioProfile(vetProfile.address, supabaseUrl, supabaseKey);
+          const web3Profile = await fetchWeb3BioProfile(vetProfile.address);
           debug.timingsMs.web3bio = Date.now() - w3Start;
 
           if (web3Profile && !web3Profile.notFound) {
@@ -428,6 +465,7 @@ serve(async (req) => {
         result = { ok: false, source: "vet", profile: null, notFound: true };
       }
     }
+
     // Route 3: Namestone TLDs
     else if (isNamestoneTLD) {
       debug.tried.push("namestone");
@@ -459,14 +497,16 @@ serve(async (req) => {
         result = { ok: false, source: "namestone", profile: null, notFound: true };
       }
     }
-    // Route 4: Web3.bio-compatible OR wallet addresses
+
+    // Route 4: Web3.bio compatible (.eth/.box/.world.id/.base.eth OR wallet)
     else if (isWeb3BioCompatible || isWalletAddress) {
       debug.tried.push("web3bio");
       const w3Start = Date.now();
-      const web3Profile = await fetchWeb3BioProfile(normalized, supabaseUrl, supabaseKey);
+      const web3Profile = await fetchWeb3BioProfile(normalized);
       debug.timingsMs.web3bio = Date.now() - w3Start;
 
       if (web3Profile && !web3Profile.notFound) {
+        // For wallet addresses, also check for .vet reverse lookup to enrich
         if (isWalletAddress) {
           debug.tried.push("vet-reverse");
           const vetStart = Date.now();
@@ -490,9 +530,9 @@ serve(async (req) => {
           result = { ok: true, source: "web3bio", profile: web3Profile };
         }
       }
-      // Fallback for L2 ENS subdomains to Namestone
+      // Optional fallback: if Web3.bio has nothing for a subdomain, try Namestone
       else if (isL2EnsSubdomain) {
-        console.log("🔄 Web3.bio failed for L2 subdomain, trying Namestone fallback");
+        console.log("🔄 Web3.bio failed for subdomain, trying Namestone fallback");
         debug.tried.push("namestone");
         const nsStart = Date.now();
         const nsProfile = await fetchNamestoneProfile(normalized, supabaseUrl, supabaseKey);
@@ -519,36 +559,18 @@ serve(async (req) => {
             },
           };
         } else {
-          result = { ok: false, source: "namestone", profile: null, notFound: true };
+          result = { ok: false, source: "web3bio", profile: null, notFound: true };
         }
-      }
-      // Fallback for wallet addresses: minimal profile
-      else if (isWalletAddress) {
-        result = {
-          ok: true,
-          source: "fallback",
-          profile: {
-            address: normalized,
-            identity: normalized,
-            platform: "ethereum",
-            displayName: null,
-            avatar: null,
-            description: null,
-            header: null,
-            website: null,
-            url: null,
-            links: {},
-          },
-        };
       } else {
         result = { ok: false, source: "web3bio", profile: null, notFound: true };
       }
     }
-    // Route 5: catch-all web3bio
+
+    // Route 5: unknown - try Web3.bio catch-all
     else {
       debug.tried.push("web3bio");
       const w3Start = Date.now();
-      const web3Profile = await fetchWeb3BioProfile(normalized, supabaseUrl, supabaseKey);
+      const web3Profile = await fetchWeb3BioProfile(normalized);
       debug.timingsMs.web3bio = Date.now() - w3Start;
 
       if (web3Profile && !web3Profile.notFound) {
@@ -574,8 +596,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         ok: false,
-        error: err.message || "Internal error",
-        debug: { tried: debug.tried, timingsMs: { ...debug.timingsMs, total: Date.now() - startTime } },
+        error: err?.message || "Internal error",
+        debug: { tried: [], timingsMs: { total: Date.now() } },
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
