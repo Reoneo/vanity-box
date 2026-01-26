@@ -5,11 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Base Subgraph endpoint for Basenames (ENS on Base)
-const BASE_SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/68543/basenames/version/latest';
+// Use Alchemy's NFT API to get Basenames (they appear as NFTs on Base)
+// Basenames contract on Base: 0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a
+const BASENAMES_CONTRACT = '0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a';
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -18,12 +18,7 @@ serve(async (req) => {
     const { walletAddress } = await req.json();
 
     if (!walletAddress || typeof walletAddress !== 'string') {
-      console.log('❌ No valid wallet address provided');
-      return new Response(JSON.stringify({ 
-        domains: [], 
-        count: 0,
-        error: 'No wallet address provided' 
-      }), {
+      return new Response(JSON.stringify({ domains: [], count: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -31,150 +26,55 @@ serve(async (req) => {
     const normalizedAddress = walletAddress.toLowerCase();
     console.log('🔍 Fetching Basenames for:', normalizedAddress);
 
-    // Query domains owned and resolved by this address on Base
-    const graphqlQuery = {
-      query: `
-        query GetUserBasenames($address: String!) {
-          domains(
-            first: 100
-            orderBy: createdAt
-            orderDirection: desc
-            where: { owner: $address }
-          ) {
-            id
-            name
-            labelName
-            labelhash
-            owner { id }
-            createdAt
-            expiryDate
-          }
-          wrappedDomains(
-            first: 100
-            orderBy: expiryDate
-            orderDirection: desc
-            where: { owner: $address }
-          ) {
-            id
-            name
-            expiryDate
-            owner { id }
-          }
-          resolvedDomains: domains(
-            first: 50
-            orderBy: createdAt
-            orderDirection: desc
-            where: { resolvedAddress: $address }
-          ) {
-            id
-            name
-            labelName
-            owner { id }
-            createdAt
-            expiryDate
-          }
-        }
-      `,
-      variables: {
-        address: normalizedAddress,
-      },
-    };
+    // Use Alchemy NFT API to fetch Basenames NFTs owned by this address
+    const alchemyKey = Deno.env.get('ALCHEMY_API_KEY');
+    
+    if (!alchemyKey) {
+      console.error('❌ ALCHEMY_API_KEY not configured');
+      return new Response(JSON.stringify({ domains: [], count: 0, error: 'API key not configured' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    console.log('📤 Querying Base Subgraph for Basenames...');
-
-    const response = await fetch(BASE_SUBGRAPH_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(graphqlQuery),
+    // Query Alchemy for NFTs from the Basenames contract
+    const alchemyUrl = `https://base-mainnet.g.alchemy.com/nft/v3/${alchemyKey}/getNFTsForOwner`;
+    const params = new URLSearchParams({
+      owner: normalizedAddress,
+      'contractAddresses[]': BASENAMES_CONTRACT,
+      withMetadata: 'true',
+      pageSize: '100',
     });
 
+    console.log('📤 Querying Alchemy for Basenames NFTs...');
+    
+    const response = await fetch(`${alchemyUrl}?${params}`);
+    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Base Subgraph error:', response.status, errorText);
-      throw new Error(`Subgraph error: ${response.status}`);
+      console.error('❌ Alchemy error:', response.status, errorText);
+      throw new Error(`Alchemy error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✅ Base Subgraph response received');
+    console.log(`✅ Alchemy returned ${data.ownedNfts?.length || 0} Basenames`);
 
-    // Check for GraphQL errors
-    if (data.errors) {
-      console.error('❌ GraphQL errors:', data.errors);
-      throw new Error(`GraphQL error: ${data.errors[0]?.message}`);
-    }
-
-    const domains = data?.data?.domains || [];
-    const wrappedDomains = data?.data?.wrappedDomains || [];
-    const resolvedDomains = data?.data?.resolvedDomains || [];
-
-    console.log(`📊 Found ${domains.length} owned domains, ${wrappedDomains.length} wrapped domains, ${resolvedDomains.length} resolved domains`);
-
-    // Merge and deduplicate all domains
-    const domainMap = new Map<string, any>();
-
-    // Add owned domains
-    domains.forEach((d: any) => {
-      if (d.name && !d.name.startsWith('[') && d.name.endsWith('.base.eth')) {
-        domainMap.set(d.name, {
-          name: d.name,
-          labelName: d.labelName,
-          type: 'owned',
-          createdAt: d.createdAt,
-          expiryDate: d.expiryDate,
-          owner: d.owner?.id,
-        });
-      }
+    const formattedDomains = (data.ownedNfts || []).map((nft: any) => {
+      // Extract the name from metadata
+      const name = nft.name || nft.raw?.metadata?.name || `Token #${nft.tokenId}`;
+      const fullName = name.endsWith('.base.eth') ? name : `${name}.base.eth`;
+      
+      return {
+        identifier: fullName,
+        name: fullName,
+        collection: 'Basenames',
+        image_url: nft.image?.cachedUrl || nft.image?.originalUrl || `https://www.base.org/api/basenames/${fullName}/avatar`,
+        display_image_url: nft.image?.cachedUrl || nft.image?.originalUrl || `https://www.base.org/api/basenames/${fullName}/avatar`,
+        type: 'owned',
+        tokenId: nft.tokenId,
+        chain: 'base',
+        isBasename: true,
+      };
     });
-
-    // Add wrapped domains
-    wrappedDomains.forEach((d: any) => {
-      if (d.name && !d.name.startsWith('[') && d.name.endsWith('.base.eth')) {
-        const existing = domainMap.get(d.name);
-        domainMap.set(d.name, {
-          ...existing,
-          name: d.name,
-          type: 'wrapped',
-          expiryDate: d.expiryDate,
-          owner: d.owner?.id,
-        });
-      }
-    });
-
-    // Add resolved domains (names pointing to this address)
-    resolvedDomains.forEach((d: any) => {
-      if (d.name && !d.name.startsWith('[') && d.name.endsWith('.base.eth')) {
-        const existing = domainMap.get(d.name);
-        if (!existing) {
-          domainMap.set(d.name, {
-            name: d.name,
-            labelName: d.labelName,
-            type: 'resolved',
-            createdAt: d.createdAt,
-            expiryDate: d.expiryDate,
-            owner: d.owner?.id,
-          });
-        }
-      }
-    });
-
-    const allDomains = Array.from(domainMap.values());
-    console.log(`✅ Total unique Basenames: ${allDomains.length}`);
-
-    // Format as NFT-like objects for consistency with other NFT categories
-    // Use the Base avatar service for .base.eth domains
-    const formattedDomains = allDomains.map((d: any) => ({
-      identifier: d.name,
-      name: d.name,
-      collection: 'Basenames',
-      // Base uses similar ENS metadata service but on Base chain
-      image_url: `https://www.base.org/api/basenames/${d.name}/avatar`,
-      display_image_url: `https://www.base.org/api/basenames/${d.name}/avatar`,
-      type: d.type,
-      expiryDate: d.expiryDate,
-      createdAt: d.createdAt,
-      chain: 'base',
-      isBasename: true,
-    }));
 
     return new Response(JSON.stringify({
       domains: formattedDomains,
@@ -190,7 +90,7 @@ serve(async (req) => {
       count: 0,
       error: error instanceof Error ? error.message : 'Unknown error',
     }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

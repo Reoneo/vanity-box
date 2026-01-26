@@ -1197,7 +1197,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         return;
       }
       
-      const data = await callEdge("get-opensea-nfts", requestBody);
+      // Use direct fetch instead of callEdge to fix body serialization issues
+      const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-opensea-nfts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenSea API error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
       
       // Sanitize the next cursor from the response
       const responseNext = data.next;
