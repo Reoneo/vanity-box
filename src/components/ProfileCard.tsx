@@ -181,7 +181,13 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
-  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains' | 'basenames'>('main');
+  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains' | 'basenames' | 'iotanames'>('main');
+  
+  // IOTA-specific state
+  const [iotaTokens, setIotaTokens] = useState<any[]>([]);
+  const [iotaNfts, setIotaNfts] = useState<any[]>([]);
+  const [iotaLoading, setIotaLoading] = useState(false);
+  const [iotaFetched, setIotaFetched] = useState(false);
   const [ensDomains, setEnsDomains] = useState<any[]>([]);
   const [ensDomainsLoading, setEnsDomainsLoading] = useState(true);
   const [ensDomainsFetched, setEnsDomainsFetched] = useState(false);
@@ -235,6 +241,13 @@ export const ProfileCard = ({
     [worldchainCollections]
   );
 
+  // Detect if this is an IOTA profile
+  const isIotaProfile = useMemo(() => {
+    return searchedIdentity?.toLowerCase().endsWith('.iota') || 
+           web3BioProfile?.platform === 'iota' ||
+           web3BioProfile?.iotaDomain;
+  }, [searchedIdentity, web3BioProfile]);
+
   // Get the best display name to show
   const getDisplayName = () => {
     // If searchedIdentity contains a dot, it's a domain name - use it directly
@@ -254,13 +267,23 @@ export const ProfileCard = ({
   };
 
   // Fetch all data on profile load for button visibility
-  // PRIORITY: Fetch Talent Protocol FIRST so badge shows immediately
+  // PRIORITY: Fetch Talent Protocol FIRST so badge shows immediately (skip for IOTA profiles)
   useEffect(() => {
     if (currentWalletAddress && !dataLoaded) {
       setDataLoaded(true);
       
-      // PRIORITY 1: Fetch Talent Protocol data IMMEDIATELY
+      // Check if this is an IOTA profile - skip Talent Protocol for IOTA
+      const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
+                     web3BioProfile?.platform === 'iota';
+      
+      // PRIORITY 1: Fetch Talent Protocol data IMMEDIATELY (skip for IOTA)
       const fetchTalentFirst = async () => {
+        if (isIota) {
+          console.log('Skipping Talent Protocol for IOTA profile');
+          setTalentLoading(false);
+          return;
+        }
+        
         setTalentLoading(true);
         try {
           const talentRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol', {
@@ -409,29 +432,63 @@ export const ProfileCard = ({
           setBasenamesFetched(true);
         }
 
-        // Fetch Polymarket data
-        try {
-          const polyRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-polymarket-data', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ wallet: currentWalletAddress }),
-          });
-          const polyData = await polyRes.json();
-          console.log('Polymarket response:', polyData);
-          if (!polyData.noData && !polyData.error && (polyData.openPositions?.length > 0 || polyData.totalTrades > 0)) {
-            setHasPolymarketData(true);
-            if (typeof polyData.winRate === 'number') {
-              setPolymarketWinRate(polyData.winRate);
+        // Fetch Polymarket data (skip for IOTA profiles)
+        if (!isIota && isEvm) {
+          try {
+            const polyRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-polymarket-data', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ wallet: currentWalletAddress }),
+            });
+            const polyData = await polyRes.json();
+            console.log('Polymarket response:', polyData);
+            if (!polyData.noData && !polyData.error && (polyData.openPositions?.length > 0 || polyData.totalTrades > 0)) {
+              setHasPolymarketData(true);
+              if (typeof polyData.winRate === 'number') {
+                setPolymarketWinRate(polyData.winRate);
+              }
+              if (typeof polyData.profit === 'number') {
+                setPolymarketProfit(polyData.profit);
+              }
             }
-            if (typeof polyData.profit === 'number') {
-              setPolymarketProfit(polyData.profit);
-            }
+          } catch (e) { 
+            console.error('Polymarket fetch error:', e); 
           }
-        } catch (e) { 
-          console.error('Polymarket fetch error:', e); 
+        }
+
+        // Fetch IOTA portfolio data (tokens + NFTs) for IOTA profiles
+        if (isIota) {
+          setIotaLoading(true);
+          try {
+            const iotaRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-portfolio', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ 
+                walletAddress: currentWalletAddress,
+                iotaDomain: searchedIdentity 
+              }),
+            });
+            const iotaData = await iotaRes.json();
+            console.log('IOTA Portfolio response:', iotaData);
+            if (iotaData.tokens) {
+              setIotaTokens(iotaData.tokens);
+              // Set portfolio tokens to IOTA tokens for display
+              setPortfolioTokens(iotaData.tokens);
+            }
+            if (iotaData.nfts) setIotaNfts(iotaData.nfts);
+          } catch (e) { 
+            console.error('IOTA Portfolio fetch error:', e); 
+          } finally {
+            setIotaLoading(false);
+            setIotaFetched(true);
+            setTokensFetched(true);
+          }
         }
       };
       
@@ -934,22 +991,24 @@ export const ProfileCard = ({
                         </div>
                       )}
 
-                      {/* Credentials Carousel */}
-                      <div className="pt-2">
-                        <CredentialsCarousel
-                          wallet={currentWalletAddress}
-                          ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-                          talentScore={talentScore}
-                          talentCreatorScore={talentCreatorScore}
-                          polymarketWinRate={polymarketWinRate}
-                          polymarketProfit={polymarketProfit}
-                          hasTalentData={hasTalentData}
-                          hasPolymarketData={hasPolymarketData}
-                          onTalentClick={() => setShowTalentModal(true)}
-                          onPolymarketClick={() => setShowPolymarketModal(true)}
-                          baseWidth={300}
-                        />
-                      </div>
+                      {/* Credentials Carousel - hide for IOTA profiles */}
+                      {!isIotaProfile && (
+                        <div className="pt-2">
+                          <CredentialsCarousel
+                            wallet={currentWalletAddress}
+                            ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                            talentScore={talentScore}
+                            talentCreatorScore={talentCreatorScore}
+                            polymarketWinRate={polymarketWinRate}
+                            polymarketProfit={polymarketProfit}
+                            hasTalentData={hasTalentData}
+                            hasPolymarketData={hasPolymarketData}
+                            onTalentClick={() => setShowTalentModal(true)}
+                            onPolymarketClick={() => setShowPolymarketModal(true)}
+                            baseWidth={300}
+                          />
+                        </div>
+                      )}
                       </div>
                     </div>
                   </div>
@@ -1004,8 +1063,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* OpenSea Button */}
-                            {((nfts.length > 0) || (nftLoading && !openseaAttempted)) && (
+                            {/* OpenSea Button - hide for IOTA profiles */}
+                            {!isIotaProfile && ((nfts.length > 0) || (nftLoading && !openseaAttempted)) && (
                               <button onClick={() => setNftCategory('opensea')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1021,8 +1080,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* Magic Eden Button */}
-                            {(magicEdenLoading || magicEdenNfts.length > 0) && (
+                            {/* Magic Eden Button - hide for IOTA profiles */}
+                            {!isIotaProfile && (magicEdenLoading || magicEdenNfts.length > 0) && (
                               <button onClick={() => setNftCategory('magiceden')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1034,8 +1093,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* World Chain Button */}
-                            {(worldchainNftsLoading || worldchainNftCount > 0) && (
+                            {/* World Chain Button - hide for IOTA profiles */}
+                            {!isIotaProfile && (worldchainNftsLoading || worldchainNftCount > 0) && (
                               <button onClick={() => setNftCategory('worldchain')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1047,8 +1106,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* Hyperliquid Button */}
-                            {(web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                            {/* Hyperliquid Button - hide for IOTA profiles */}
+                            {!isIotaProfile && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
                               <button onClick={() => setNftCategory('hyperliquid')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1086,8 +1145,21 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* Empty state */}
-                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && (
+                            {/* IOTA Names Button - only for IOTA profiles */}
+                            {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
+                              <button onClick={() => setNftCategory('iotanames')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-white text-base">IOTA Names</h4>
+                                    <p className="text-sm text-white/70">{iotaLoading ? 'Loading…' : `${iotaNfts.length} names`}</p>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* Empty state - updated to include IOTA check */}
+                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && iotaNfts.length === 0 && iotaFetched && (
                               <div className="text-center py-8 text-white/50">
                                 <p className="text-sm">No NFTs found for this wallet</p>
                               </div>
@@ -1136,6 +1208,34 @@ export const ProfileCard = ({
                                     </div>
                                   </div>
                                 ))}
+                              </div>
+                            )}
+
+                            {/* IOTA Names Grid */}
+                            {nftCategory === 'iotanames' && (
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {iotaNfts.map((iotaName: any, index: number) => (
+                                  <div key={iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
+                                    <div className="flex flex-col items-center gap-2">
+                                      {iotaName.imageUrl ? (
+                                        <img src={iotaName.imageUrl} alt={iotaName.name} className="w-12 h-12 rounded-full object-cover" />
+                                      ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-lg">
+                                          {iotaName.name?.charAt(0).toUpperCase() || 'I'}
+                                        </div>
+                                      )}
+                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA Name'}</p>
+                                      {iotaName.collection && (
+                                        <p className="text-foreground/60 text-xs truncate max-w-full">{iotaName.collection}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                                {iotaNfts.length === 0 && iotaFetched && (
+                                  <div className="col-span-full text-center py-8 text-white/50">
+                                    <p className="text-sm">No IOTA Names found</p>
+                                  </div>
+                                )}
                               </div>
                             )}
 
@@ -1554,7 +1654,11 @@ export const ProfileCard = ({
                                   ? 'World Chain'
                                   : nftCategory === 'ensdomains'
                                     ? 'ENS Domains'
-                                    : 'Hyperliquid'}
+                                    : nftCategory === 'basenames'
+                                      ? 'Basenames'
+                                      : nftCategory === 'iotanames'
+                                        ? 'IOTA Names'
+                                        : 'Hyperliquid'}
                       </h3>
                       {nftCategory === 'poaps' && formattedPoaps.length > 0 && (
                         <span className="text-sm font-medium text-purple-500">
@@ -1608,8 +1712,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* OpenSea Button - Show if loading, has items, or hasn't been attempted yet */}
-                      {(nftLoading || nfts.length > 0 || !openseaAttempted) && (
+                      {/* OpenSea Button - Show if loading, has items, or hasn't been attempted yet - hide for IOTA */}
+                      {!isIotaProfile && (nftLoading || nfts.length > 0 || !openseaAttempted) && (
                         <button
                           onClick={() => {
                             setNftCategory('opensea');
@@ -1641,8 +1745,8 @@ export const ProfileCard = ({
                       {/* Hide OpenSea button if attempted, no items, and no errors */}
                       {openseaAttempted && nfts.length === 0 && !openseaHasErrors && !nftLoading && null}
 
-                      {/* Magic Eden (EVM) Button - Only show if loading or has items */}
-                      {(magicEdenLoading || magicEdenNfts.length > 0) && (
+                      {/* Magic Eden (EVM) Button - Only show if loading or has items - hide for IOTA */}
+                      {!isIotaProfile && (magicEdenLoading || magicEdenNfts.length > 0) && (
                         <button
                           onClick={() => setNftCategory('magiceden')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -1668,8 +1772,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* World Chain Button */}
-                      {(worldchainNftsLoading || worldchainNftCount > 0) && (
+                      {/* World Chain Button - hide for IOTA */}
+                      {!isIotaProfile && (worldchainNftsLoading || worldchainNftCount > 0) && (
                         <button
                           onClick={() => setNftCategory('worldchain')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -1700,8 +1804,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* Hyperliquid Button - Only show if .hl domain or has HL NFTs */}
-                      {(web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                      {/* Hyperliquid Button - Only show if .hl domain or has HL NFTs - hide for IOTA */}
+                      {!isIotaProfile && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
                         <button
                           onClick={() => setNftCategory('hyperliquid')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -1765,7 +1869,27 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* Empty state placeholder when no categories available */}
+                      {/* IOTA Names Button - only for IOTA profiles */}
+                      {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('iotanames')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-white text-base">IOTA Names</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-white/70">
+                                  {iotaLoading ? 'Loading…' : `${iotaNfts.length} ${iotaNfts.length === 1 ? 'name' : 'names'}`}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Empty state placeholder when no categories available - include IOTA check */}
                       {poaps.length === 0 && 
                        nfts.length === 0 && 
                        openseaAttempted && 
@@ -1778,7 +1902,9 @@ export const ProfileCard = ({
                        ensDomains.length === 0 &&
                        ensDomainsFetched &&
                        basenames.length === 0 &&
-                       basenamesFetched && (
+                       basenamesFetched &&
+                       iotaNfts.length === 0 &&
+                       iotaFetched && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p className="text-sm">No NFTs found for this wallet</p>
                         </div>
@@ -2044,6 +2170,40 @@ export const ProfileCard = ({
                               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                                 <p className="text-white text-xs font-medium truncate">{domain.name}</p>
                                 <p className="text-white/60 text-[10px] capitalize">{domain.type || 'owned'}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ) : nftCategory === 'iotanames' ? (
+                    // IOTA Names - Grid layout
+                    iotaLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" />
+                      </div>
+                    ) : iotaNfts.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>No IOTA Names found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-w-2xl mx-auto">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                          {iotaNfts.map((iotaName: any, index: number) => (
+                            <div
+                              key={`iota-${iotaName.name}-${index}`}
+                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/20 hover:border-[#00BFA5]/50 transition-all w-full"
+                            >
+                              <div className="aspect-square bg-gradient-to-br from-[#00BFA5]/10 to-[#00D9C4]/10 overflow-hidden flex items-center justify-center">
+                                {iotaName.imageUrl ? (
+                                  <img src={iotaName.imageUrl} alt={iotaName.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="text-[#00BFA5] font-bold text-xl">IOTA</span>
+                                )}
+                              </div>
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p className="text-white text-xs font-medium truncate">{iotaName.name}</p>
+                                {iotaName.collection && <p className="text-white/60 text-[10px]">{iotaName.collection}</p>}
                               </div>
                             </div>
                           ))}
