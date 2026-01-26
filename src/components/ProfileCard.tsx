@@ -759,11 +759,14 @@ export const ProfileCard = ({
                         </div>
                       )}
 
-                      {/* Bio */}
+                      {/* Bio with label */}
                       {web3BioProfile?.description && (
-                        <p className="text-sm text-black/70 dark:text-white/70 text-center leading-relaxed max-w-[350px] mx-auto">
-                          {web3BioProfile.description}
-                        </p>
+                        <div className="flex flex-col items-center gap-1 max-w-[350px] mx-auto">
+                          <span className="text-sm font-semibold text-foreground">Bio:</span>
+                          <p className="text-sm text-[#D4AF37] text-center leading-relaxed">
+                            {web3BioProfile.description}
+                          </p>
+                        </div>
                       )}
 
                       {/* Desktop action pills - control right panel */}
@@ -1113,8 +1116,8 @@ export const ProfileCard = ({
               </div>
             </div>
             ) : (
-              /* Mobile: Original stacked layout */
-              <div className="space-y-2 pb-20">
+              /* Mobile: Original stacked layout - black with gold gradient in dark mode */
+              <div className="space-y-2 pb-20 bg-gradient-to-br from-background via-background to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10 min-h-full">
                 {/* Header and Avatar with Verified Badge - Always visible */}
                 <div className="relative flex-shrink-0">
                   <div 
