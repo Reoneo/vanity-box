@@ -1650,7 +1650,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Profile Card - fixed positioning regardless of search bar */}
             {web3BioProfile && !showMyIDs ? (
               <div
-                className="fixed left-0 right-0 top-[80px] bottom-[100px] md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
+                className="fixed left-0 right-0 top-[80px] bottom-[76px] md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
                 {/* Profile Card - no scroll within profile */}
                 <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
