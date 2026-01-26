@@ -1618,7 +1618,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         className="fixed left-0 right-0 z-[9996] overflow-y-auto bg-background"
                         style={{ 
                           top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
-                          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)' 
+                         bottom: 0
                         }}
                       >
                         <HomeFeatureShowcase />
