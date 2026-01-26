@@ -652,7 +652,7 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="fixed inset-0 top-[60px] bottom-[40px] flex flex-col overflow-hidden z-10">
+              <div className="fixed inset-0 top-[60px] bottom-[28px] flex flex-col overflow-hidden z-10">
                 {/* Full-width Header spanning both sides - with avatar overlay */}
                 <div className="relative flex-shrink-0 w-full">
                   <div 
@@ -677,8 +677,8 @@ export const ProfileCard = ({
                           alt={web3BioProfile?.displayName || 'User'}
                           className="object-cover"
                         />
-                        <AvatarFallback className="text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
-                          {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                        <AvatarFallback className="text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5">
+                          👤
                         </AvatarFallback>
                       </Avatar>
                       {isHumanVerified && (
@@ -840,21 +840,32 @@ export const ProfileCard = ({
 
                   {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
                   <div className="w-1/2 flex flex-col min-h-0 bg-black border-l border-[#D4AF37]/20">
-                    {/* Panel header - centered */}
+                    {/* Panel header - with back button on left when in subcategory */}
                     <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
-                      <h3 className="text-xl font-bold text-[#D4AF37] capitalize text-center">
-                        {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
-                      </h3>
+                      <div className="relative flex items-center justify-center">
+                        {desktopActivePanel === 'nfts' && nftCategory !== 'main' && (
+                          <button 
+                            onClick={() => { setNftCategory('main'); setExpandedCollection(null); }} 
+                            className="absolute left-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors"
+                          >
+                            <ChevronDown className="w-4 h-4 rotate-90" />
+                            <span className="text-sm font-medium">Back</span>
+                          </button>
+                        )}
+                        <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
+                          {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
+                        </h3>
+                      </div>
                     </div>
                     
                     {/* Panel content */}
-                    <div className="flex-1 overflow-y-auto pb-28 min-h-0">
+                    <div className="flex-1 overflow-y-auto pb-4 min-h-0">
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
                     {desktopActivePanel === 'nfts' && (
                       /* Desktop NFTs inline panel - reuses existing NFT rendering */
-                      <div className="h-full overflow-y-auto px-6 py-6 pb-24">
+                      <div className="h-full overflow-y-auto px-6 py-3 pb-4">
                         {nftCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {/* POAPs Button */}
@@ -967,12 +978,8 @@ export const ProfileCard = ({
                             )}
                           </div>
                         ) : (
-                          /* Sub-category views with back button */
+                          /* Sub-category views - back button now in header */
                           <div className="space-y-4 max-w-2xl mx-auto">
-                            <button onClick={() => { setNftCategory('main'); setExpandedCollection(null); }} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
-                              <ChevronDown className="w-4 h-4 rotate-90" />
-                              <span className="text-sm font-medium">Back</span>
-                            </button>
                             
                             {nftCategory === 'poaps' && <ChronologicalPoapGrid poaps={formattedPoaps} onPoapClick={(poap) => setSelectedPoap(poap)} />}
                             
@@ -1019,10 +1026,6 @@ export const ProfileCard = ({
                             {nftCategory === 'opensea' && (
                               expandedCollection ? (
                                 <div className="space-y-4">
-                                  <button onClick={() => setExpandedCollection(null)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
-                                    <ChevronDown className="w-4 h-4 rotate-90" />
-                                    <span className="text-sm font-medium">Back to Collections</span>
-                                  </button>
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
@@ -1054,10 +1057,6 @@ export const ProfileCard = ({
                             {nftCategory === 'magiceden' && (
                               expandedCollection ? (
                                 <div className="space-y-4">
-                                  <button onClick={() => setExpandedCollection(null)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
-                                    <ChevronDown className="w-4 h-4 rotate-90" />
-                                    <span className="text-sm font-medium">Back to Collections</span>
-                                  </button>
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {magicEdenGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
