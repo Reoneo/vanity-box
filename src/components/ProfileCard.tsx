@@ -14,7 +14,7 @@ import { ENSDomainDetailModal } from "./ENSDomainDetailModal";
 import { ActivityGraph } from "./ActivityGraph";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
-import defaultHeader from '@/assets/default-header-pattern.png';
+import defaultHeader from '@/assets/luxury-eth-pattern.jpeg';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
@@ -517,9 +517,9 @@ export const ProfileCard = ({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:shadow-lg group"
+                    className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200 border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:shadow-lg group"
                   >
-                    <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <div className="w-14 h-14 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                       <SocialIcon
                         platform={platform}
                         url={url}
@@ -527,10 +527,10 @@ export const ProfileCard = ({
                       />
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-base text-white font-semibold text-center">
+                      <span className="text-base text-black dark:text-white font-semibold text-center">
                         {platform.charAt(0).toUpperCase() + platform.slice(1)}
                       </span>
-                      <span className="text-sm text-white/60 truncate max-w-[140px] text-center">
+                      <span className="text-sm text-black/60 dark:text-white/60 truncate max-w-[140px] text-center">
                         {extractHandle(platform, url)}
                       </span>
                     </div>
@@ -550,7 +550,7 @@ export const ProfileCard = ({
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
             </div>
           ) : portfolioTokens.length === 0 ? (
-            <div className="text-center py-16 text-white/50">
+            <div className="text-center py-16 text-black/50 dark:text-white/50">
               <p className="text-xl font-medium">No tokens found</p>
               <p className="text-sm mt-2">No fungible tokens in this wallet</p>
             </div>
@@ -558,8 +558,8 @@ export const ProfileCard = ({
             <div className="space-y-3 max-w-xl mx-auto">
               {/* Total Value Header */}
               {portfolioTotalValue > 0 && (
-                <div className="text-center py-4 mb-4 bg-white/5 rounded-2xl border border-[#D4AF37]/20">
-                  <p className="text-sm text-white/60">Total Portfolio Value</p>
+                <div className="text-center py-4 mb-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-[#D4AF37]/20">
+                  <p className="text-sm text-black/60 dark:text-white/60">Total Portfolio Value</p>
                   <p className="text-3xl font-bold text-[#D4AF37]">
                     ${portfolioTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -569,21 +569,21 @@ export const ProfileCard = ({
               {portfolioTokens.map((token: any, index: number) => (
                 <div 
                   key={token.id || `token-${index}`}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-black/10 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
                     {token.icon ? (
                       <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-base font-bold text-white">{token.symbol?.slice(0, 2)}</span>
+                      <span className="text-base font-bold text-black dark:text-white">{token.symbol?.slice(0, 2)}</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-white truncate text-base">{token.name}</span>
-                      <span className="text-sm text-white/60 font-medium">{token.symbol}</span>
+                      <span className="font-semibold text-black dark:text-white truncate text-base">{token.name}</span>
+                      <span className="text-sm text-black/60 dark:text-white/60 font-medium">{token.symbol}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-white/50 mt-0.5">
+                    <div className="flex items-center justify-between text-sm text-black/50 dark:text-white/50 mt-0.5">
                       <span>{parseFloat(token.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
                       {token.value > 0 && (
                         <span className="text-[#D4AF37] font-medium">${token.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -606,7 +606,7 @@ export const ProfileCard = ({
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-16 text-white/50">
+            <div className="text-center py-16 text-black/50 dark:text-white/50">
               <p className="text-xl font-medium">No transactions found</p>
               <p className="text-sm mt-2">Transaction history coming soon</p>
             </div>
@@ -615,21 +615,21 @@ export const ProfileCard = ({
               {transactions.map((tx: any, index: number) => (
                 <div 
                   key={tx.id || `tx-${index}`}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${tx.type === 'receive' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${tx.type === 'receive' ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-red-500/20 text-red-600 dark:text-red-400'}`}>
                     <span className="text-xl font-bold">{tx.type === 'receive' ? '↓' : '↑'}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-white truncate capitalize text-base">{tx.type || 'Transaction'}</span>
-                      <span className="text-sm text-white/50">
+                      <span className="font-semibold text-black dark:text-white truncate capitalize text-base">{tx.type || 'Transaction'}</span>
+                      <span className="text-sm text-black/50 dark:text-white/50">
                         {tx.minedAt ? formatDistanceToNow(new Date(tx.minedAt), { addSuffix: true }) : ''}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-white/50 mt-0.5">
+                    <div className="flex items-center justify-between text-sm text-black/50 dark:text-white/50 mt-0.5">
                       <span className="truncate font-mono">{tx.hash?.slice(0, 12)}...</span>
-                      <span className="text-xs uppercase font-medium bg-white/10 px-2 py-0.5 rounded text-white/70">{tx.chain}</span>
+                      <span className="text-xs uppercase font-medium bg-black/10 dark:bg-white/10 px-2 py-0.5 rounded text-black/70 dark:text-white/70">{tx.chain}</span>
                     </div>
                   </div>
                 </div>
@@ -838,10 +838,10 @@ export const ProfileCard = ({
                     </div>
                   </div>
 
-                  {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
-                  <div className="w-1/2 flex flex-col min-h-0 bg-black border-l border-[#D4AF37]/20">
+                  {/* Right side - 50% - Content panels - white in light mode, black in dark mode */}
+                  <div className="w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
                     {/* Panel header - with back button on left when in subcategory */}
-                    <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
+                    <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-white/80 dark:bg-black/50">
                       <div className="relative flex items-center justify-center">
                         {desktopActivePanel === 'nfts' && nftCategory !== 'main' && (
                           <button 
