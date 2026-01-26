@@ -654,7 +654,7 @@ export const ProfileCard = ({
             {!isMobile ? (
               <div className="flex flex-col h-full">
                 {/* Full-width Header spanning both sides */}
-                <div className="relative flex-shrink-0 w-full">
+                <div className="relative flex-shrink-0 w-full z-10">
                   <div 
                     className="w-full aspect-[5.5/1] overflow-hidden cursor-pointer"
                     onClick={() => setShowHeaderPopup(true)}
@@ -667,15 +667,15 @@ export const ProfileCard = ({
                   </div>
                 </div>
 
-                {/* 50:50 Split Content Area - extends to footer */}
-                <div className="flex flex-1 min-h-0">
-                  {/* Left side - 50% - Profile info with black + gold gradient */}
-                  <div className="w-1/2 overflow-y-auto border-r border-border/20 bg-gradient-to-br from-black via-black to-[#D4AF37]/10">
+                {/* 50:50 Split Content Area - extends to footer, covers white bar */}
+                <div className="flex flex-1 min-h-0 relative z-20 pb-32">
+                  {/* Left side - 50% - Profile info: white in light mode, black+gold gradient in dark */}
+                  <div className="w-1/2 overflow-y-auto border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
                     <div className="space-y-3 pb-24">
-                      {/* Avatar overlapping header - 20% larger (h-34 w-34) */}
-                      <div className="flex justify-center -mt-20 relative z-20">
+                      {/* Avatar overlapping header - positioned with z-30 to appear above header */}
+                      <div className="flex justify-center -mt-20 relative z-30">
                         <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
-                          <Avatar className="relative h-[136px] w-[136px] border-4 border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
+                          <Avatar className="relative h-[136px] w-[136px] border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
                             <AvatarImage 
                               src={web3BioProfile?.avatar || vanityBoxAvatar} 
                               alt={web3BioProfile?.displayName || 'User'}
@@ -706,7 +706,7 @@ export const ProfileCard = ({
 
                       <div className="px-6 pt-4 space-y-3 flex-shrink-0">
                       {/* Name */}
-                      <h2 className="text-2xl font-bold text-center text-white tracking-tight">
+                      <h2 className="text-2xl font-bold text-center text-black dark:text-white tracking-tight">
                         {getDisplayName()}
                       </h2>
 
@@ -715,7 +715,7 @@ export const ProfileCard = ({
                         <div className="flex items-center justify-center">
                           <code 
                             onClick={copyAddress}
-                            className="px-3 py-1 bg-white/10 rounded-lg text-sm text-white/90 cursor-pointer hover:bg-white/20 transition-colors font-mono"
+                            className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-lg text-sm text-black/90 dark:text-white/90 cursor-pointer hover:bg-black/20 dark:hover:bg-white/20 transition-colors font-mono"
                           >
                             {copied ? 'Copied!' : shortenAddress(currentWalletAddress)}
                           </code>
@@ -727,12 +727,12 @@ export const ProfileCard = ({
                         <div className="flex justify-center items-center gap-2 text-sm">
                           <button onClick={onFollowingClick} className="flex items-center gap-1.5 hover:opacity-80 transition-colors">
                             <span className="font-bold text-[#D4AF37]">{efpStats.following_count || 0}</span>
-                            <span className="text-white">Following</span>
+                            <span className="text-black dark:text-white">Following</span>
                           </button>
-                          <span className="text-white/50">·</span>
+                          <span className="text-black/50 dark:text-white/50">·</span>
                           <button onClick={onFollowersClick} className="flex items-center gap-1.5 hover:opacity-80 transition-colors">
                             <span className="font-bold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
-                            <span className="text-white">Followers</span>
+                            <span className="text-black dark:text-white">Followers</span>
                           </button>
                         </div>
                       )}
@@ -742,13 +742,13 @@ export const ProfileCard = ({
                         <div className="flex items-center justify-center gap-4 flex-wrap text-sm">
                           {web3BioProfile?.email && (
                             <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
-                              <Mail className="w-4 h-4 text-white/60" />
+                              <Mail className="w-4 h-4 text-black/60 dark:text-white/60" />
                               <span className="truncate max-w-[150px]">{web3BioProfile.email}</span>
                             </a>
                           )}
                           {(web3BioProfile?.website || web3BioProfile?.url) && (
                             <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
-                              <Globe className="w-4 h-4 text-white/60" />
+                              <Globe className="w-4 h-4 text-black/60 dark:text-white/60" />
                               <span className="truncate max-w-[150px]">{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
                             </a>
                           )}
@@ -757,7 +757,7 @@ export const ProfileCard = ({
 
                       {/* Bio */}
                       {web3BioProfile?.description && (
-                        <p className="text-sm text-white/70 text-center leading-relaxed max-w-[350px] mx-auto">
+                        <p className="text-sm text-black/70 dark:text-white/70 text-center leading-relaxed max-w-[350px] mx-auto">
                           {web3BioProfile.description}
                         </p>
                       )}
@@ -795,7 +795,7 @@ export const ProfileCard = ({
                                 className={`py-2 px-4 rounded-xl border text-sm font-medium whitespace-nowrap transition-all duration-200
                                   ${desktopActivePanel === btn.panel 
                                     ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-md' 
-                                    : 'bg-white/10 border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-white/20 text-white'
+                                    : 'bg-black/10 dark:bg-white/10 border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-black/20 dark:hover:bg-white/20 text-black dark:text-white'
                                   }`}
                               >
                                 {btn.title}
@@ -807,7 +807,7 @@ export const ProfileCard = ({
 
                       {/* On-chain date */}
                       {firstTransactionDate && (
-                        <div className="flex items-center justify-center gap-2 text-sm text-white/60 pt-1">
+                        <div className="flex items-center justify-center gap-2 text-sm text-black/60 dark:text-white/60 pt-1">
                           <Calendar className="w-4 h-4" />
                           <span>
                             On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', day: 'numeric' })}
@@ -836,7 +836,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
-                <div className="w-1/2 flex flex-col bg-black border-l border-[#D4AF37]/20 min-h-0">
+                <div className="w-1/2 flex flex-col bg-black border-l border-[#D4AF37]/20 min-h-0 pb-24">
                   {/* Panel header */}
                   <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
                     <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
@@ -845,7 +845,7 @@ export const ProfileCard = ({
                   </div>
                   
                   {/* Panel content */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto pb-8">
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
