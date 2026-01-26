@@ -652,7 +652,7 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="flex flex-col min-h-screen">
+              <div className="absolute inset-0 bottom-0 flex flex-col overflow-hidden">
                 {/* Full-width Header spanning both sides - with avatar overlay */}
                 <div className="relative flex-shrink-0 w-full">
                   <div 
@@ -702,11 +702,11 @@ export const ProfileCard = ({
                 </div>
 
                 {/* 50:50 Split Content Area - extends to footer */}
-                <div className="flex flex-1">
+                <div className="flex flex-1 min-h-0">
                   {/* Left side - 50% - Profile info: white in light mode, black+gold gradient in dark */}
-                  <div className="w-1/2 flex flex-col border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
+                  <div className="w-1/2 flex flex-col min-h-0 border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
                     {/* Left panel content - with top padding for avatar overlap */}
-                    <div className="flex-1 overflow-y-auto pt-20 pb-24">
+                    <div className="flex-1 overflow-y-auto pt-20 pb-28">
                       <div className="px-6 space-y-3">
                       {/* Name */}
                       <h2 className="text-2xl font-bold text-center text-black dark:text-white tracking-tight">
@@ -839,7 +839,7 @@ export const ProfileCard = ({
                   </div>
 
                   {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
-                  <div className="w-1/2 flex flex-col bg-black border-l border-[#D4AF37]/20 pb-24">
+                  <div className="w-1/2 flex flex-col min-h-0 bg-black border-l border-[#D4AF37]/20">
                     {/* Panel header */}
                     <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
                       <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
@@ -848,7 +848,7 @@ export const ProfileCard = ({
                     </div>
                     
                     {/* Panel content */}
-                    <div className="flex-1 overflow-y-auto pb-8">
+                    <div className="flex-1 overflow-y-auto pb-28 min-h-0">
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
