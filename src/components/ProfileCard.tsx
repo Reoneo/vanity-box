@@ -664,20 +664,18 @@ export const ProfileCard = ({
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
                   </div>
                 </div>
 
-                {/* 50:50 Split Content Area */}
+                {/* 50:50 Split Content Area - extends to footer */}
                 <div className="flex flex-1 min-h-0">
                   {/* Left side - 50% - Profile info with black + gold gradient */}
                   <div className="w-1/2 overflow-y-auto border-r border-border/20 bg-gradient-to-br from-black via-black to-[#D4AF37]/10">
-                    <div className="space-y-3 pb-20">
-                      {/* Avatar positioned at top of left panel */}
-                      <div className="flex justify-center -mt-14 relative z-10">
+                    <div className="space-y-3 pb-24">
+                      {/* Avatar overlapping header - 20% larger (h-34 w-34) */}
+                      <div className="flex justify-center -mt-20 relative z-20">
                         <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
-                          <Avatar className="relative h-28 w-28 border-4 border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
+                          <Avatar className="relative h-[136px] w-[136px] border-4 border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
                             <AvatarImage 
                               src={web3BioProfile?.avatar || vanityBoxAvatar} 
                               alt={web3BioProfile?.displayName || 'User'}
@@ -837,8 +835,8 @@ export const ProfileCard = ({
                   </div>
                 </div>
 
-                {/* Right side - 50% - Content panels with popup-style dark background */}
-                <div className="w-1/2 overflow-hidden flex flex-col bg-black border-l border-[#D4AF37]/20">
+                {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
+                <div className="w-1/2 flex flex-col bg-black border-l border-[#D4AF37]/20 min-h-0">
                   {/* Panel header */}
                   <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
                     <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
