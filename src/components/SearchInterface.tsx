@@ -46,6 +46,7 @@ import { ProfileCard } from "@/components/ProfileCard";
 import { VanityBundleCard } from "@/components/VanityBundleCard";
 import { ENSRegistrationCard } from "@/components/ENSRegistrationCard";
 import { NameSearchCarousel } from "@/components/NameSearchCarousel";
+import { HomeFeatureShowcase } from "@/components/HomeFeatureShowcase";
 import { MessageCircle, Repeat2, Heart } from "lucide-react";
 
 import {
@@ -1611,18 +1612,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                 {!isSearchActive ? (
                   <>
-                    {/* Coming Soon Display - Only show when on homepage */}
+                    {/* Feature Showcase - Only show when on homepage */}
                     {isHomepage && !web3BioProfile && !showSearchBar && (
                       <div 
-                        className="fixed left-0 right-0 flex items-center justify-center z-[9996]"
+                        className="fixed left-0 right-0 z-[9996] overflow-y-auto"
                         style={{ 
                           top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
                           bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' 
                         }}
                       >
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#D4AF37] animate-pulse">
-                          Coming Soon
-                        </h1>
+                        <HomeFeatureShowcase />
                       </div>
                     )}
                   </>
