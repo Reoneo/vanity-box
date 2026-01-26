@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.get-talent-protocol]
 verify_jwt = false
+
+[functions.resolve-iota-domain]
+verify_jwt = false

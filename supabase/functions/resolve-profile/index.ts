@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface ProfileResult {
   ok: boolean;
-  source: "web3bio" | "namestone" | "hl" | "vet" | "fallback";
+  source: "web3bio" | "namestone" | "hl" | "vet" | "iota" | "fallback";
   profile: {
     address: string | null;
     identity: string;
@@ -27,6 +27,7 @@ interface ProfileResult {
     hlNfts?: any[];
     hlTokens?: any[];
     vetDomain?: string;
+    iotaDomain?: string;
     farcaster?: any;
     location?: string | null;
     email?: string | null;
@@ -287,6 +288,56 @@ async function fetchVetProfile(domain: string): Promise<any | null> {
   }
 }
 
+// Call IOTA Names resolver
+async function fetchIotaProfile(domain: string, supabaseUrl: string, supabaseKey: string): Promise<any | null> {
+  console.log(`🔍 Fetching .iota domain profile for: ${domain}`);
+  
+  try {
+    const response = await fetchWithTimeout(
+      `${supabaseUrl}/functions/v1/resolve-iota-domain`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ domain }),
+      },
+      15000
+    );
+    
+    if (!response.ok) {
+      console.log(`❌ IOTA Names: HTTP ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.notFound || data.error) {
+      console.log("⚠️ IOTA Names: Domain not found");
+      return null;
+    }
+    
+    console.log("✅ IOTA Names domain resolved:", data.identity);
+    return {
+      address: data.address,
+      identity: data.identity,
+      platform: "iota",
+      displayName: data.displayName || data.identity,
+      avatar: data.avatar || null,
+      description: data.description || null,
+      header: null,
+      website: data.website || null,
+      url: null,
+      links: data.links || {},
+      iotaDomain: data.iotaDomain || data.identity,
+    };
+  } catch (err: any) {
+    console.error("❌ IOTA Names fetch error:", err.message);
+    return null;
+  }
+}
+
 // Reverse resolution for vet.domains: address -> primary name
 async function fetchVetReverseProfile(address: string): Promise<any | null> {
   console.log(`🔍 Fetching .vet reverse lookup for: ${address}`);
@@ -352,6 +403,7 @@ serve(async (req) => {
     const isWalletAddress = /^0x[a-fA-F0-9]{40}$/i.test(normalized);
     const isHlDomain = normalized.endsWith(".hl");
     const isVetDomain = normalized.endsWith(".vet");
+    const isIotaDomain = normalized.endsWith(".iota");
     
     // Web3.bio-compatible TLDs
     const web3BioTLDs = [".eth", ".box", ".world.id"];
@@ -369,7 +421,7 @@ serve(async (req) => {
     const isSubdomain = dotCount >= 2;
     const isL2EnsSubdomain = isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id")) && !isBaseEthSubdomain;
     
-    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
+    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, iota=${isIotaDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
     
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
     
@@ -446,7 +498,20 @@ serve(async (req) => {
         result = { ok: false, source: "vet", profile: null, notFound: true };
       }
     }
-    // Route 3: Namestone TLDs (direct Namestone lookup)
+    // Route 3: .iota domains (IOTA Names)
+    else if (isIotaDomain) {
+      debug.tried.push("iota");
+      const iotaStart = Date.now();
+      const iotaProfile = await fetchIotaProfile(normalized, supabaseUrl, supabaseKey);
+      debug.timingsMs.iota = Date.now() - iotaStart;
+      
+      if (iotaProfile) {
+        result = { ok: true, source: "iota", profile: iotaProfile };
+      } else {
+        result = { ok: false, source: "iota", profile: null, notFound: true };
+      }
+    }
+    // Route 4: Namestone TLDs (direct Namestone lookup)
     else if (isNamestoneTLD) {
       debug.tried.push("namestone");
       const nsStart = Date.now();
