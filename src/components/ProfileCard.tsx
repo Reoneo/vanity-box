@@ -838,7 +838,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Right side - 50% - Content panels with popup-style dark background */}
-                <div className="w-1/2 overflow-hidden flex flex-col bg-black dark:bg-black border-l border-[#D4AF37]/20">
+                <div className="w-1/2 overflow-hidden flex flex-col bg-black border-l border-[#D4AF37]/20">
                   {/* Panel header */}
                   <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
                     <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
@@ -1109,7 +1109,7 @@ export const ProfileCard = ({
                   </div>
                 </div>
               </div>
-              </div>
+            </div>
             ) : (
               /* Mobile: Original stacked layout */
               <div className="space-y-2 pb-20">
