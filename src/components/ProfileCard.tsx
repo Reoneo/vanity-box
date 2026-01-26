@@ -652,7 +652,7 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="absolute inset-0 bottom-0 flex flex-col overflow-hidden">
+              <div className="fixed inset-0 top-[60px] bottom-[100px] flex flex-col overflow-hidden z-10">
                 {/* Full-width Header spanning both sides - with avatar overlay */}
                 <div className="relative flex-shrink-0 w-full">
                   <div 
@@ -840,9 +840,9 @@ export const ProfileCard = ({
 
                   {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
                   <div className="w-1/2 flex flex-col min-h-0 bg-black border-l border-[#D4AF37]/20">
-                    {/* Panel header */}
+                    {/* Panel header - centered */}
                     <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
-                      <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
+                      <h3 className="text-xl font-bold text-[#D4AF37] capitalize text-center">
                         {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
                       </h3>
                     </div>
