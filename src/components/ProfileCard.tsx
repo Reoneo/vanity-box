@@ -788,7 +788,7 @@ export const ProfileCard = ({
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
-                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm flex items-center gap-2">
                       <h3 className="text-lg font-bold text-black dark:text-white">
                         {nftCategory === 'main'
                           ? 'NFTs'
@@ -804,6 +804,11 @@ export const ProfileCard = ({
                                     ? 'ENS Domains'
                                     : 'Hyperliquid'}
                       </h3>
+                      {nftCategory === 'poaps' && formattedPoaps.length > 0 && (
+                        <span className="text-sm font-medium text-purple-500">
+                          {formattedPoaps.length}
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => {

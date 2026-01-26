@@ -1,23 +1,47 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
 
+// Import network logos
+import ethLogo from "@/assets/eth-logo.png";
+
 interface ChronologicalPoapGridProps {
   poaps: any[];
   onPoapClick: (poap: any) => void;
+  totalCount?: number;
 }
 
 interface GroupedPoaps {
   [key: string]: any[];
 }
 
-export const ChronologicalPoapGrid = ({ poaps, onPoapClick }: ChronologicalPoapGridProps) => {
-  // Group POAPs by month/year chronologically (newest first)
+// Network icon component for POAPs (Gnosis/xDAI and Ethereum)
+const PoapNetworkIcon = ({ chain, size = 14 }: { chain?: string; size?: number }) => {
+  const chainLower = (chain || "").toLowerCase();
+  
+  // Gnosis/xDAI chain (most POAPs are on Gnosis)
+  if (chainLower === "gnosis" || chainLower === "xdai") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className="rounded-full">
+        <circle cx="16" cy="16" r="16" fill="#04795B" />
+        <path d="M16 6C10.48 6 6 10.48 6 16s4.48 10 10 10 10-4.48 10-10S21.52 6 16 6zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#fff"/>
+        <circle cx="16" cy="16" r="4" fill="#fff"/>
+      </svg>
+    );
+  }
+  
+  // Ethereum mainnet
+  return <img src={ethLogo} alt="Ethereum" width={size} height={size} className="rounded-full" />;
+};
+
+export const ChronologicalPoapGrid = ({ poaps, onPoapClick, totalCount }: ChronologicalPoapGridProps) => {
+  // Group POAPs by month/year chronologically (newest first) - sorted by MINT date
   const groupedPoaps = useMemo(() => {
     const groups: GroupedPoaps = {};
     
+    // Sort by mint date (when token was created), fallback to event date
     const sortedPoaps = [...poaps].sort((a, b) => {
-      const dateA = a.eventStartDate || a.event_start_date || a.__bestDate;
-      const dateB = b.eventStartDate || b.event_start_date || b.__bestDate;
+      const dateA = a.__mintDate || a.created || a.eventStartDate || a.event_start_date || a.__bestDate;
+      const dateB = b.__mintDate || b.created || b.eventStartDate || b.event_start_date || b.__bestDate;
       if (!dateA && !dateB) return 0;
       if (!dateA) return 1;
       if (!dateB) return -1;
@@ -25,7 +49,8 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick }: ChronologicalPoapG
     });
 
     sortedPoaps.forEach((poap) => {
-      const dateStr = poap.eventStartDate || poap.event_start_date || poap.__bestDate;
+      // Use mint date for grouping
+      const dateStr = poap.__mintDate || poap.created || poap.eventStartDate || poap.event_start_date || poap.__bestDate;
       let monthYear = "Unknown";
       
       if (dateStr) {
@@ -47,24 +72,15 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick }: ChronologicalPoapG
   }, [poaps]);
 
   const monthKeys = Object.keys(groupedPoaps);
+  const displayCount = totalCount ?? poaps.length;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-8">
-      {/* Header with total count */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-600" />
-          <span className="text-sm font-medium text-muted-foreground">
-            {poaps.length} POAPs
-          </span>
-        </div>
-      </div>
-
       {/* Chronological groups */}
       {monthKeys.map((monthYear, groupIndex) => (
         <div key={monthYear} className="space-y-3">
-          {/* Month/Year header */}
-          <div className="flex items-center gap-2 px-1">
+          {/* Month/Year header with count on first group */}
+          <div className="flex items-center justify-between px-1">
             <h3 className="text-lg font-semibold">
               <span className="text-foreground dark:text-white">
                 {monthYear.split(' ')[0]}
@@ -74,6 +90,12 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick }: ChronologicalPoapG
                 {monthYear.split(' ')[1]}
               </span>
             </h3>
+            {/* Show count badge on first group only */}
+            {groupIndex === 0 && (
+              <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                {displayCount} total
+              </span>
+            )}
           </div>
           
           {/* POAPs row for this month */}
@@ -97,17 +119,17 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick }: ChronologicalPoapG
                   </div>
                 </div>
                 
-                {/* Small chain indicator */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-background dark:bg-black border border-purple-500/30 flex items-center justify-center">
-                  <span className="text-[10px]">◆</span>
+                {/* Network chain indicator */}
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-background dark:bg-black border border-purple-500/30 flex items-center justify-center overflow-hidden">
+                  <PoapNetworkIcon chain={poap.chain} size={14} />
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Subtle divider between months (except last) */}
+          {/* Visible divider between months (except last) */}
           {groupIndex < monthKeys.length - 1 && (
-            <div className="border-b border-dashed border-purple-500/20 mx-4 mt-4" />
+            <div className="border-b border-dashed border-purple-400/50 dark:border-purple-400/40 mx-4 mt-4" />
           )}
         </div>
       ))}
