@@ -129,7 +129,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
         ) : (
           <>
             <DollarSign className="w-3.5 h-3.5" />
-            <span>${usdPrice}/yr</span>
+            <span>{usdPrice}/yr</span>
           </>
         )}
       </button>
