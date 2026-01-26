@@ -730,9 +730,9 @@ export const ProfileCard = ({
                     </div>
                     <button
                       onClick={() => setShowAllSocials(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black dark:text-white" />
+                      <X className="w-4 h-4 text-black" />
                     </button>
                   </div>
                 </div>
@@ -1321,9 +1321,9 @@ export const ProfileCard = ({
                     </div>
                     <button
                       onClick={() => setShowTokensOverlay(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black dark:text-white" />
+                      <X className="w-4 h-4 text-black" />
                     </button>
                   </div>
                 </div>
@@ -1400,9 +1400,9 @@ export const ProfileCard = ({
                     </div>
                     <button
                       onClick={() => setShowActivityOverlay(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black dark:text-white" />
+                      <X className="w-4 h-4 text-black" />
                     </button>
                   </div>
                 </div>
