@@ -337,27 +337,28 @@ export const ProfileCard = ({
     if (web3BioProfile?.hlTokens?.length > 0) setHlTokens(web3BioProfile.hlTokens);
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
-  // Auto-select default desktop panel based on data availability (priority: NFTs → Social → Tokens → Activity)
+  // Auto-select default desktop panel based on data availability (priority: Socials → Tokens → Activity → NFTs)
   useEffect(() => {
     if (isMobile || desktopActivePanel !== null) return;
     
-    const hasNftsData = nfts.length > 0 || poaps.length > 0 || magicEdenNfts.length > 0 || worldchainNftCount > 0 || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0;
     const hasSocialsData = web3BioProfile?.links && Object.entries(web3BioProfile.links)
       .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
       .length > 0;
     const hasTokensData = portfolioTokens.length > 0;
     const hasActivityData = transactions.length > 0;
+    const hasNftsData = nfts.length > 0 || poaps.length > 0 || magicEdenNfts.length > 0 || worldchainNftCount > 0 || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0;
     
-    if (hasNftsData) {
-      setDesktopActivePanel('nfts');
-      onEnsureOpenSeaNfts?.();
-    } else if (hasSocialsData) {
+    if (hasSocialsData) {
       setDesktopActivePanel('social');
     } else if (hasTokensData) {
       setDesktopActivePanel('tokens');
     } else if (hasActivityData) {
       setDesktopActivePanel('activity');
+    } else if (hasNftsData) {
+      setDesktopActivePanel('nfts');
+      onEnsureOpenSeaNfts?.();
     }
+    // If nothing available, desktopActivePanel stays null and "No Onchain Data" will show
   }, [isMobile, desktopActivePanel, nfts, poaps, magicEdenNfts, worldchainNftCount, hlNfts, ensDomains, basenames, web3BioProfile?.links, portfolioTokens, transactions, onEnsureOpenSeaNfts]);
 
   // Transactions are now fetched on profile load - no need for overlay-triggered fetch
@@ -1102,8 +1103,9 @@ export const ProfileCard = ({
                       </div>
                     )}
                     {!desktopActivePanel && (
-                      <div className="flex items-center justify-center h-full text-white/50">
-                        <p>Select a category from the left panel</p>
+                      <div className="flex flex-col items-center justify-center h-full text-black/50 dark:text-white/50 gap-2">
+                        <div className="text-lg font-medium">No Onchain Data</div>
+                        <p className="text-sm">No social links, tokens, activity, or NFTs found for this address.</p>
                       </div>
                     )}
                   </div>
