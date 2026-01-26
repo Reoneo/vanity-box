@@ -71,7 +71,20 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick, totalCount }: Chrono
     return groups;
   }, [poaps]);
 
-  const monthKeys = Object.keys(groupedPoaps);
+  // Sort month keys chronologically (newest first)
+  const monthKeys = useMemo(() => {
+    return Object.keys(groupedPoaps).sort((a, b) => {
+      if (a === "Unknown") return 1;
+      if (b === "Unknown") return -1;
+      try {
+        const dateA = new Date(a);
+        const dateB = new Date(b);
+        return dateB.getTime() - dateA.getTime();
+      } catch {
+        return 0;
+      }
+    });
+  }, [groupedPoaps]);
   const displayCount = totalCount ?? poaps.length;
 
   return (
@@ -90,12 +103,6 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick, totalCount }: Chrono
                 {monthYear.split(' ')[1]}
               </span>
             </h3>
-            {/* Show count badge on first group only */}
-            {groupIndex === 0 && (
-              <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-                {displayCount} total
-              </span>
-            )}
           </div>
           
           {/* POAPs row for this month */}
