@@ -24,6 +24,7 @@ import { PolymarketModal } from "./PolymarketModal";
 import CredentialsCarousel from "./CredentialsCarousel";
 import { BioTicker } from "./BioTicker";
 import { ChronologicalPoapGrid } from "./ChronologicalPoapGrid";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import {
   DropdownMenu,
@@ -123,6 +124,10 @@ export const ProfileCard = ({
   const [isHumanVerified, setIsHumanVerified] = useState(false);
   const [showAvatarPopup, setShowAvatarPopup] = useState(false);
   const [showHeaderPopup, setShowHeaderPopup] = useState(false);
+  
+  // Desktop split layout state - which panel to show on the right
+  const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
+  const isMobile = useIsMobile();
   
 
   // Resolve ENS name for wallet address searches
@@ -332,6 +337,29 @@ export const ProfileCard = ({
     if (web3BioProfile?.hlTokens?.length > 0) setHlTokens(web3BioProfile.hlTokens);
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
+  // Auto-select default desktop panel based on data availability (priority: NFTs → Social → Tokens → Activity)
+  useEffect(() => {
+    if (isMobile || desktopActivePanel !== null) return;
+    
+    const hasNftsData = nfts.length > 0 || poaps.length > 0 || magicEdenNfts.length > 0 || worldchainNftCount > 0 || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0;
+    const hasSocialsData = web3BioProfile?.links && Object.entries(web3BioProfile.links)
+      .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
+      .length > 0;
+    const hasTokensData = portfolioTokens.length > 0;
+    const hasActivityData = transactions.length > 0;
+    
+    if (hasNftsData) {
+      setDesktopActivePanel('nfts');
+      onEnsureOpenSeaNfts?.();
+    } else if (hasSocialsData) {
+      setDesktopActivePanel('social');
+    } else if (hasTokensData) {
+      setDesktopActivePanel('tokens');
+    } else if (hasActivityData) {
+      setDesktopActivePanel('activity');
+    }
+  }, [isMobile, desktopActivePanel, nfts, poaps, magicEdenNfts, worldchainNftCount, hlNfts, ensDomains, basenames, web3BioProfile?.links, portfolioTokens, transactions, onEnsureOpenSeaNfts]);
+
   // Transactions are now fetched on profile load - no need for overlay-triggered fetch
 
   // No need to disable body scrolling - parent container handles overflow
@@ -460,17 +488,147 @@ export const ProfileCard = ({
     });
   };
 
-  const extractHandle = (platform: string, url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      const pathParts = urlObj.pathname.split('/').filter(Boolean);
-      const handle = pathParts[pathParts.length - 1] || urlObj.hostname;
-      
-      // Add @ prefix only if handle doesn't already have one
-      return handle.startsWith('@') ? handle : `@${handle}`;
-    } catch {
-      return url; // Fallback to full URL if parsing fails
+  // Helper function to render desktop panel content inline (no overlay header)
+  const renderDesktopPanelContent = (panel: 'nfts' | 'social' | 'tokens' | 'activity') => {
+    if (panel === 'social') {
+      return (
+        <div className="h-full overflow-y-auto px-4 py-4">
+          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+            {web3BioProfile?.links && Object.entries(web3BioProfile.links)
+              .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
+              .map(([platform, linkData]: [string, any]) => {
+                const url = typeof linkData === 'string' ? linkData : linkData?.link;
+                if (!url) return null;
+
+                return (
+                  <a 
+                    key={platform} 
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50"
+                  >
+                    <SocialIcon
+                      platform={platform}
+                      url={url}
+                      size="lg"
+                    />
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-sm text-foreground font-medium text-center">
+                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate max-w-[100px] text-center">
+                        {extractHandle(platform, url)}
+                      </span>
+                    </div>
+                  </a>
+                );
+              })}
+          </div>
+        </div>
+      );
     }
+
+    if (panel === 'tokens') {
+      return (
+        <div className="h-full overflow-y-auto px-4 py-3 pb-24">
+          {portfolioLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+            </div>
+          ) : portfolioTokens.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg">No tokens found</p>
+              <p className="text-sm mt-2">No fungible tokens in this wallet</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-w-lg mx-auto">
+              {/* Total Value Header */}
+              {portfolioTotalValue > 0 && (
+                <div className="text-center py-3 mb-2">
+                  <p className="text-sm text-muted-foreground">Total Value</p>
+                  <p className="text-2xl font-bold text-[#D4AF37]">
+                    ${portfolioTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
+              
+              {portfolioTokens.map((token: any, index: number) => (
+                <div 
+                  key={token.id || `token-${index}`}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                    {token.icon ? (
+                      <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-bold">{token.symbol?.slice(0, 2)}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground truncate">{token.name}</span>
+                      <span className="text-sm text-muted-foreground">{token.symbol}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{parseFloat(token.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+                      {token.value > 0 && (
+                        <span className="text-[#D4AF37]">${token.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (panel === 'activity') {
+      return (
+        <div className="h-full overflow-y-auto px-4 py-3 pb-24">
+          {transactionsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg">No transactions found</p>
+              <p className="text-sm mt-2">Transaction history coming soon</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-w-lg mx-auto">
+              {transactions.map((tx: any, index: number) => (
+                <div 
+                  key={tx.id || `tx-${index}`}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'receive' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                    <span className="text-lg">{tx.type === 'receive' ? '↓' : '↑'}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground truncate capitalize">{tx.type || 'Transaction'}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {tx.minedAt ? formatDistanceToNow(new Date(tx.minedAt), { addSuffix: true }) : ''}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span className="truncate">{tx.hash?.slice(0, 10)}...</span>
+                      <span className="text-xs uppercase">{tx.chain}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // NFTs panel - reuse existing NFT rendering logic
+    return null; // NFTs are handled separately due to complexity
   };
 
   return (
@@ -479,241 +637,696 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto">
-          <div className="space-y-2 pb-20">
-              {/* Header and Avatar with Verified Badge - Always visible */}
-              <div className="relative flex-shrink-0">
-                <div 
-                  className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden cursor-pointer"
-                  onClick={() => setShowHeaderPopup(true)}
-                >
-                  <img
-                    src={web3BioProfile?.header || defaultHeader}
-                    alt="Header"
-                    className="block w-full h-full object-cover"
-                  />
-                  {/* Gradient overlay for better avatar contrast */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+            {/* Desktop: 30:70 split layout */}
+            {!isMobile ? (
+              <div className="flex h-full">
+                {/* Left side - 30% - Profile info */}
+                <div className="w-[30%] min-w-[280px] max-w-[380px] overflow-y-auto border-r border-border/20">
+                  <div className="space-y-2 pb-20">
+                    {/* Header and Avatar with Verified Badge */}
+                    <div className="relative flex-shrink-0">
+                      <div 
+                        className="w-full aspect-[2.5/1] overflow-hidden cursor-pointer"
+                        onClick={() => setShowHeaderPopup(true)}
+                      >
+                        <img
+                          src={web3BioProfile?.header || defaultHeader}
+                          alt="Header"
+                          className="block w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+                      </div>
+
+                      <div className="flex justify-center absolute -bottom-12 left-0 right-0">
+                        <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
+                          <Avatar className="relative h-24 w-24 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
+                            <AvatarImage 
+                              src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                              alt={web3BioProfile?.displayName || 'User'}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="text-4xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold">
+                              {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isHumanVerified && (
+                            <div className="absolute -bottom-1 -right-1 w-8 h-8 flex items-center justify-center" title="Verified Builder">
+                              <div className="relative">
+                                <svg viewBox="0 0 24 24" className="w-8 h-8 drop-shadow-lg">
+                                  <defs>
+                                    <linearGradient id="badge-gradient-desktop" x1="0%" y1="0%" x2="100%" y2="100%">
+                                      <stop offset="0%" stopColor="#3B82F6" />
+                                      <stop offset="100%" stopColor="#1D4ED8" />
+                                    </linearGradient>
+                                  </defs>
+                                  <path d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" fill="url(#badge-gradient-desktop)" />
+                                  <path d="M9.5 12.5L11 14L14.5 10.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 pt-[52px] space-y-2 flex-shrink-0">
+                      <h2 className="text-xl font-bold text-center text-foreground tracking-tight">
+                        {getDisplayName()}
+                      </h2>
+
+                      {currentWalletAddress && (
+                        <div className="flex items-center justify-center">
+                          <code 
+                            onClick={copyAddress}
+                            className="px-2 py-0.5 bg-muted rounded-md text-xs text-black dark:text-white cursor-pointer hover:bg-muted/80 transition-colors"
+                          >
+                            {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
+                          </code>
+                        </div>
+                      )}
+
+                      {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
+                        <div className="flex justify-center items-center gap-1.5 text-sm">
+                          <button onClick={onFollowingClick} className="flex items-center gap-1 hover:opacity-80 transition-colors">
+                            <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
+                            <span className="text-black dark:text-white">Following</span>
+                          </button>
+                          <span className="text-black dark:text-white">·</span>
+                          <button onClick={onFollowersClick} className="flex items-center gap-1 hover:opacity-80 transition-colors">
+                            <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
+                            <span className="text-black dark:text-white">Followers</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
+                        <div className="flex flex-col items-center gap-1.5">
+                          {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                            <div className="flex items-center justify-center gap-3 flex-wrap text-xs">
+                              {web3BioProfile?.email && (
+                                <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1 text-[#D4AF37] hover:underline">
+                                  <Mail className="w-3 h-3 text-black dark:text-white" />
+                                  <span className="truncate max-w-[120px]">{web3BioProfile.email}</span>
+                                </a>
+                              )}
+                              {(web3BioProfile?.website || web3BioProfile?.url) && (
+                                <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#D4AF37] hover:underline">
+                                  <Globe className="w-3 h-3 text-black dark:text-white" />
+                                  <span className="truncate max-w-[120px]">{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          {web3BioProfile?.description && (
+                            <p className="text-xs text-muted-foreground text-center line-clamp-3 max-w-[250px]">{web3BioProfile.description}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Desktop action pills - control right panel */}
+                      {(() => {
+                        const socialLinks = web3BioProfile?.links 
+                          ? Object.entries(web3BioProfile.links).filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
+                          : [];
+                        
+                        const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
+                        const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted || ensDomains.length > 0 || basenames.length > 0;
+                        const hasTokens = portfolioTokens.length > 0;
+                        const hasSocials = socialLinks.length > 0;
+                        const hasTransactions = transactions.length > 0;
+
+                        const buttons: { title: string; panel: 'nfts' | 'social' | 'tokens' | 'activity' }[] = [];
+                        if (hasTransactions) buttons.push({ title: 'Activity', panel: 'activity' });
+                        if (hasNfts) buttons.push({ title: 'NFTs', panel: 'nfts' });
+                        if (hasSocials) buttons.push({ title: 'Social', panel: 'social' });
+                        if (hasTokens) buttons.push({ title: 'Tokens', panel: 'tokens' });
+                        buttons.sort((a, b) => a.title.localeCompare(b.title));
+
+                        if (buttons.length === 0) return null;
+
+                        return (
+                          <div className="flex flex-wrap items-center justify-center gap-1.5 px-2">
+                            {buttons.map((btn) => (
+                              <button
+                                key={btn.title}
+                                onClick={() => {
+                                  setDesktopActivePanel(btn.panel);
+                                  if (btn.panel === 'nfts') onEnsureOpenSeaNfts?.();
+                                }}
+                                className={`py-1.5 px-3 rounded-lg border text-xs font-medium whitespace-nowrap transition-all duration-200
+                                  ${desktopActivePanel === btn.panel 
+                                    ? 'bg-[#D4AF37] border-[#D4AF37] text-black' 
+                                    : 'bg-muted/60 border-border/30 hover:border-primary/40 hover:bg-muted/90 text-foreground/90'
+                                  }`}
+                              >
+                                {btn.title}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
+
+                      {firstTransactionDate && (
+                        <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                          <Calendar className="w-3 h-3" />
+                          <span>
+                            On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', day: 'numeric' })}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Credentials Carousel - smaller for desktop */}
+                      <div className="-mt-1">
+                        <CredentialsCarousel
+                          wallet={currentWalletAddress}
+                          ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                          talentScore={talentScore}
+                          talentCreatorScore={talentCreatorScore}
+                          polymarketWinRate={polymarketWinRate}
+                          polymarketProfit={polymarketProfit}
+                          hasTalentData={hasTalentData}
+                          hasPolymarketData={hasPolymarketData}
+                          onTalentClick={() => setShowTalentModal(true)}
+                          onPolymarketClick={() => setShowPolymarketModal(true)}
+                          baseWidth={260}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex justify-center absolute -bottom-16 left-0 right-0">
-                  <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
-                    {/* Glow ring behind avatar */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
-                    <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
-                      <AvatarImage 
-                        src={web3BioProfile?.avatar || vanityBoxAvatar} 
-                        alt={web3BioProfile?.displayName || 'User'}
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="text-5xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold">
-                        {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                    {/* Verified Badge - Only show when user has human verification */}
-                    {isHumanVerified && (
-                      <div
-                        className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center"
-                        title="Verified Builder"
-                      >
-                        <div className="relative">
-                          <svg viewBox="0 0 24 24" className="w-10 h-10 drop-shadow-lg">
-                            <defs>
-                              <linearGradient id="badge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#3B82F6" />
-                                <stop offset="100%" stopColor="#1D4ED8" />
-                              </linearGradient>
-                            </defs>
-                            <path 
-                              d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
-                              fill="url(#badge-gradient)" 
-                            />
-                            <path 
-                              d="M9.5 12.5L11 14L14.5 10.5" 
-                              stroke="white" 
-                              strokeWidth="2" 
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              fill="none"
-                            />
-                          </svg>
-                        </div>
+                {/* Right side - 70% - Content panels */}
+                <div className="flex-1 overflow-hidden flex flex-col bg-background">
+                  {/* Panel header */}
+                  <div className="flex-shrink-0 px-4 py-3 border-b border-border/30">
+                    <h3 className="text-lg font-bold text-[#D4AF37] capitalize">
+                      {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
+                    </h3>
+                  </div>
+                  
+                  {/* Panel content */}
+                  <div className="flex-1 overflow-y-auto">
+                    {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
+                    {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
+                    {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
+                    {desktopActivePanel === 'nfts' && (
+                      /* Desktop NFTs inline panel - reuses existing NFT rendering */
+                      <div className="h-full overflow-y-auto px-4 py-3 pb-24">
+                        {nftCategory === 'main' ? (
+                          <div className="space-y-2 max-w-lg mx-auto">
+                            {/* POAPs Button */}
+                            {poaps.length > 0 && (
+                              <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-black text-base">POAPs</h4>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm text-black/70">{poaps.length} {poaps.length === 1 ? 'badge' : 'badges'}</p>
+                                      <div className="flex -space-x-2">
+                                        {poaps.slice(0, 3).map((poap, idx) => (
+                                          <img key={idx} src={poap.eventImageUrl} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* OpenSea Button */}
+                            {((nfts.length > 0) || (nftLoading && !openseaAttempted)) && (
+                              <button onClick={() => setNftCategory('opensea')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-black text-base">OpenSea</h4>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm text-black/70">
+                                        {nftLoading ? 'Loading…' : nfts.length === 0 && openseaHasErrors ? 'Unavailable' : `${nfts.length} ${nfts.length === 1 ? 'item' : 'items'}`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* Magic Eden Button */}
+                            {(magicEdenLoading || magicEdenNfts.length > 0) && (
+                              <button onClick={() => setNftCategory('magiceden')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-black text-base">EVM</h4>
+                                    <p className="text-sm text-black/70">{magicEdenLoading ? 'Loading…' : `${magicEdenNfts.length} items`}</p>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* World Chain Button */}
+                            {(worldchainNftsLoading || worldchainNftCount > 0) && (
+                              <button onClick={() => setNftCategory('worldchain')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-black text-base">World Chain</h4>
+                                    <p className="text-sm text-black/70">{worldchainNftsLoading ? 'Loading…' : `${worldchainNftCount} items`}</p>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* Hyperliquid Button */}
+                            {(web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                              <button onClick={() => setNftCategory('hyperliquid')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-black text-base">Hyperliquid</h4>
+                                    <p className="text-sm text-black/70">{hlNfts.length} items</p>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* ENS Domains Button */}
+                            {(ensDomainsLoading || ensDomains.length > 0) && !(ensDomainsFetched && ensDomains.length === 0) && (
+                              <button onClick={() => setNftCategory('ensdomains')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-black text-base">ENS Domains</h4>
+                                    <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} domains`}</p>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* Basenames Button */}
+                            {(basenamesLoading || basenames.length > 0) && !(basenamesFetched && basenames.length === 0) && (
+                              <button onClick={() => setNftCategory('basenames')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0052FF] to-[#4D8FFF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-white text-base">Basenames</h4>
+                                    <p className="text-sm text-white/70">{basenamesLoading ? 'Loading…' : `${basenames.length} names`}</p>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
+                            {/* Empty state */}
+                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <p className="text-sm">No NFTs found for this wallet</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          /* Sub-category views with back button */
+                          <div className="space-y-4 max-w-2xl mx-auto">
+                            <button onClick={() => { setNftCategory('main'); setExpandedCollection(null); }} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
+                              <ChevronDown className="w-4 h-4 rotate-90" />
+                              <span className="text-sm font-medium">Back</span>
+                            </button>
+                            
+                            {nftCategory === 'poaps' && <ChronologicalPoapGrid poaps={formattedPoaps} onPoapClick={(poap) => setSelectedPoap(poap)} />}
+                            
+                            {nftCategory === 'worldchain' && <WorldchainNFTSection walletAddress={currentWalletAddress || ''} />}
+                            
+                            {nftCategory === 'ensdomains' && (
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {ensDomains.map((domain: any) => (
+                                  <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3">
+                                    <div className="flex flex-col items-center gap-2">
+                                      {domain.avatar ? (
+                                        <img src={domain.avatar} alt={domain.name} className="w-12 h-12 rounded-full object-cover" />
+                                      ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                                          {domain.name?.charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
+                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{domain.name}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {nftCategory === 'basenames' && (
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {basenames.map((basename: any) => (
+                                  <div key={basename.name} onClick={() => setSelectedBasename(basename)} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#0052FF]/30 hover:border-[#0052FF]/60 transition-all bg-gradient-to-br from-[#0052FF]/20 to-[#4D8FFF]/20 p-3">
+                                    <div className="flex flex-col items-center gap-2">
+                                      {basename.avatar ? (
+                                        <img src={basename.avatar} alt={basename.name} className="w-12 h-12 rounded-full object-cover" />
+                                      ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D8FFF] flex items-center justify-center text-white font-bold text-lg">
+                                          {basename.name?.charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
+                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{basename.name}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {nftCategory === 'opensea' && (
+                              expandedCollection ? (
+                                <div className="space-y-4">
+                                  <button onClick={() => setExpandedCollection(null)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
+                                    <ChevronDown className="w-4 h-4 rotate-90" />
+                                    <span className="text-sm font-medium">Back to Collections</span>
+                                  </button>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                                      <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                        <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {Object.entries(openSeaGroupedNfts).map(([collection, collectionNfts]: [string, any[]]) => (
+                                    <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                      <div className="flex items-center justify-between h-full">
+                                        <div className="text-left flex-1 min-w-0 mr-3">
+                                          <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                          <p className="text-sm text-black/70">{collectionNfts.length} items</p>
+                                        </div>
+                                        <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              )
+                            )}
+
+                            {nftCategory === 'magiceden' && (
+                              expandedCollection ? (
+                                <div className="space-y-4">
+                                  <button onClick={() => setExpandedCollection(null)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors">
+                                    <ChevronDown className="w-4 h-4 rotate-90" />
+                                    <span className="text-sm font-medium">Back to Collections</span>
+                                  </button>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {magicEdenGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                                      <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                        <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {Object.entries(magicEdenGroupedNfts).map(([collection, collectionNfts]: [string, any[]]) => (
+                                    <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                      <div className="flex items-center justify-between h-full">
+                                        <div className="text-left flex-1 min-w-0 mr-3">
+                                          <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                          <p className="text-sm text-black/70">{collectionNfts.length} items</p>
+                                        </div>
+                                        <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              )
+                            )}
+
+                            {nftCategory === 'hyperliquid' && (
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {hlNfts.map((nft: any, index: number) => (
+                                  <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                    <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                      <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!desktopActivePanel && (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <p>Select a category from the left panel</p>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-
-            <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
-
-              {/* Display name with refined typography */}
-              <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
-                {getDisplayName()}
-              </h2>
-
-              {currentWalletAddress && (
-                <div className="flex items-center justify-center">
-                  <code 
-                    onClick={copyAddress}
-                    className="px-3 py-1 bg-muted rounded-md text-sm text-black dark:text-white cursor-pointer hover:bg-muted/80 transition-colors"
+            ) : (
+              /* Mobile: Original stacked layout */
+              <div className="space-y-2 pb-20">
+                {/* Header and Avatar with Verified Badge - Always visible */}
+                <div className="relative flex-shrink-0">
+                  <div 
+                    className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden cursor-pointer"
+                    onClick={() => setShowHeaderPopup(true)}
                   >
-                    {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
-                  </code>
-                </div>
-              )}
+                    <img
+                      src={web3BioProfile?.header || defaultHeader}
+                      alt="Header"
+                      className="block w-full h-full object-cover"
+                    />
+                    {/* Gradient overlay for better avatar contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+                  </div>
 
-
-              {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
-              {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
-                <div className="flex justify-center items-center gap-1.5 text-sm">
-                  <button
-                    onClick={onFollowingClick}
-                    className="flex items-center gap-1 hover:opacity-80 transition-colors"
-                  >
-                    <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
-                    <span className="text-black dark:text-white">Following</span>
-                  </button>
-                  <span className="text-black dark:text-white">·</span>
-                  <button
-                    onClick={onFollowersClick}
-                    className="flex items-center gap-1 hover:opacity-80 transition-colors"
-                  >
-                    <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
-                    <span className="text-black dark:text-white">Followers</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Email/Website/Bio - Only show if user has email, website, or bio */}
-              {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
-                <div className="flex flex-col items-center gap-1.5">
-                  {/* Email and Website row */}
-                  {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                    <div className="flex items-center justify-center gap-4 flex-wrap">
-                      {web3BioProfile?.email && (
-                        <a 
-                          href={`mailto:${web3BioProfile.email}`} 
-                          className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                  <div className="flex justify-center absolute -bottom-16 left-0 right-0">
+                    <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
+                      {/* Glow ring behind avatar */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
+                        <AvatarImage 
+                          src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                          alt={web3BioProfile?.displayName || 'User'}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="text-5xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold">
+                          {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Verified Badge - Only show when user has human verification */}
+                      {isHumanVerified && (
+                        <div
+                          className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center"
+                          title="Verified Builder"
                         >
-                          <Mail className="w-4 h-4 text-black dark:text-white" />
-                          {web3BioProfile.email}
-                        </a>
+                          <div className="relative">
+                            <svg viewBox="0 0 24 24" className="w-10 h-10 drop-shadow-lg">
+                              <defs>
+                                <linearGradient id="badge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#3B82F6" />
+                                  <stop offset="100%" stopColor="#1D4ED8" />
+                                </linearGradient>
+                              </defs>
+                              <path 
+                                d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
+                                fill="url(#badge-gradient)" 
+                              />
+                              <path 
+                                d="M9.5 12.5L11 14L14.5 10.5" 
+                                stroke="white" 
+                                strokeWidth="2" 
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill="none"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
+
+                  {/* Display name with refined typography */}
+                  <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
+                    {getDisplayName()}
+                  </h2>
+
+                  {currentWalletAddress && (
+                    <div className="flex items-center justify-center">
+                      <code 
+                        onClick={copyAddress}
+                        className="px-3 py-1 bg-muted rounded-md text-sm text-black dark:text-white cursor-pointer hover:bg-muted/80 transition-colors"
+                      >
+                        {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
+                      </code>
+                    </div>
+                  )}
+
+
+                  {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
+                  {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
+                    <div className="flex justify-center items-center gap-1.5 text-sm">
+                      <button
+                        onClick={onFollowingClick}
+                        className="flex items-center gap-1 hover:opacity-80 transition-colors"
+                      >
+                        <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
+                        <span className="text-black dark:text-white">Following</span>
+                      </button>
+                      <span className="text-black dark:text-white">·</span>
+                      <button
+                        onClick={onFollowersClick}
+                        className="flex items-center gap-1 hover:opacity-80 transition-colors"
+                      >
+                        <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
+                        <span className="text-black dark:text-white">Followers</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Email/Website/Bio - Only show if user has email, website, or bio */}
+                  {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
+                    <div className="flex flex-col items-center gap-1.5">
+                      {/* Email and Website row */}
+                      {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                        <div className="flex items-center justify-center gap-4 flex-wrap">
+                          {web3BioProfile?.email && (
+                            <a 
+                              href={`mailto:${web3BioProfile.email}`} 
+                              className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                            >
+                              <Mail className="w-4 h-4 text-black dark:text-white" />
+                              {web3BioProfile.email}
+                            </a>
+                          )}
+                          
+                          {(web3BioProfile?.website || web3BioProfile?.url) && (
+                            <a
+                              href={web3BioProfile.website || web3BioProfile.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                            >
+                              <Globe className="w-4 h-4 text-black dark:text-white" />
+                              <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
+                            </a>
+                          )}
+                        </div>
                       )}
                       
-                      {(web3BioProfile?.website || web3BioProfile?.url) && (
-                        <a
-                          href={web3BioProfile.website || web3BioProfile.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
-                        >
-                          <Globe className="w-4 h-4 text-black dark:text-white" />
-                          <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
-                        </a>
+                      {/* Bio ticker row - same width as pills */}
+                      {web3BioProfile?.description && (
+                        <BioTicker bio={web3BioProfile.description} />
                       )}
                     </div>
                   )}
-                  
-                  {/* Bio ticker row - same width as pills */}
-                  {web3BioProfile?.description && (
-                    <BioTicker bio={web3BioProfile.description} />
-                  )}
-                </div>
-              )}
 
-              {/* Profile Action Pills - Horizontal Layout */}
-              {(() => {
-                const socialLinks = web3BioProfile?.links 
-                  ? Object.entries(web3BioProfile.links)
-                      .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
-                  : [];
-                
-                const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
-                // NFTs button shows if any NFT source has data OR if any NFT source is still loading
-                // Also show if OpenSea hasn't been attempted yet (data might come when overlay opens)
-                const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted;
-                const hasTokens = portfolioTokens.length > 0;
-                const hasSocials = socialLinks.length > 0;
-                const hasTransactions = transactions.length > 0;
+                  {/* Profile Action Pills - Horizontal Layout (Mobile) */}
+                  {(() => {
+                    const socialLinks = web3BioProfile?.links 
+                      ? Object.entries(web3BioProfile.links)
+                          .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
+                      : [];
+                    
+                    const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
+                    // NFTs button shows if any NFT source has data OR if any NFT source is still loading
+                    // Also show if OpenSea hasn't been attempted yet (data might come when overlay opens)
+                    const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted;
+                    const hasTokens = portfolioTokens.length > 0;
+                    const hasSocials = socialLinks.length > 0;
+                    const hasTransactions = transactions.length > 0;
 
-                // Build buttons array
-                const buttons: { title: string; onClick: () => void }[] = [];
-                
-                if (hasTransactions) {
-                  buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
-                }
-                if (hasNfts) {
-                  buttons.push({ 
-                    title: 'NFTs', 
-                    onClick: () => {
-                      setShowNftsOverlay(true);
-                      // Trigger OpenSea fetch when overlay opens
-                      onEnsureOpenSeaNfts?.();
+                    // Build buttons array
+                    const buttons: { title: string; onClick: () => void }[] = [];
+                    
+                    if (hasTransactions) {
+                      buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
                     }
-                  });
-                }
-                if (hasSocials) {
-                  buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
-                }
-                if (hasTokens) {
-                  buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
-                }
+                    if (hasNfts) {
+                      buttons.push({ 
+                        title: 'NFTs', 
+                        onClick: () => {
+                          setShowNftsOverlay(true);
+                          // Trigger OpenSea fetch when overlay opens
+                          onEnsureOpenSeaNfts?.();
+                        }
+                      });
+                    }
+                    if (hasSocials) {
+                      buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
+                    }
+                    if (hasTokens) {
+                      buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
+                    }
 
-                // Sort alphabetically
-                buttons.sort((a, b) => a.title.localeCompare(b.title));
+                    // Sort alphabetically
+                    buttons.sort((a, b) => a.title.localeCompare(b.title));
 
-                if (buttons.length === 0) return null;
+                    if (buttons.length === 0) return null;
 
-                return (
-                  <div className="flex items-center justify-center gap-2 px-4">
-                    {buttons.map((btn) => (
-                      <button
-                        key={btn.title}
-                        onClick={btn.onClick}
-                        className="flex-1 max-w-[85px] py-2 px-3 rounded-xl bg-muted/60 border border-border/30 hover:border-primary/40 hover:bg-muted/90 hover:shadow-sm active:scale-95 transition-all duration-200 text-sm font-medium text-foreground/90 whitespace-nowrap"
-                      >
-                        {btn.title}
-                      </button>
-                    ))}
+                    return (
+                      <div className="flex items-center justify-center gap-2 px-4">
+                        {buttons.map((btn) => (
+                          <button
+                            key={btn.title}
+                            onClick={btn.onClick}
+                            className="flex-1 max-w-[85px] py-2 px-3 rounded-xl bg-muted/60 border border-border/30 hover:border-primary/40 hover:bg-muted/90 hover:shadow-sm active:scale-95 transition-all duration-200 text-sm font-medium text-foreground/90 whitespace-nowrap"
+                          >
+                            {btn.title}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* On-chain date - Always render with fixed height */}
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground min-h-[24px]">
+                    {firstTransactionDate ? (
+                      <>
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            year: 'numeric',
+                            day: 'numeric' 
+                          })}
+                        </span>
+                      </>
+                    ) : null}
                   </div>
-                );
-              })()}
 
-              {/* On-chain date - Always render with fixed height */}
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground min-h-[24px]">
-                {firstTransactionDate ? (
-                  <>
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        year: 'numeric',
-                        day: 'numeric' 
-                      })}
-                    </span>
-                  </>
-                ) : null}
+                  {/* Credentials Carousel - Talent Protocol & Polymarket */}
+                  <div className="-mt-2">
+                    <CredentialsCarousel
+                      wallet={currentWalletAddress}
+                      ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+                      talentScore={talentScore}
+                      talentCreatorScore={talentCreatorScore}
+                      polymarketWinRate={polymarketWinRate}
+                      polymarketProfit={polymarketProfit}
+                      hasTalentData={hasTalentData}
+                      hasPolymarketData={hasPolymarketData}
+                      onTalentClick={() => setShowTalentModal(true)}
+                      onPolymarketClick={() => setShowPolymarketModal(true)}
+                      baseWidth={340}
+                    />
+                  </div>
+                </div>
               </div>
-
-              {/* Credentials Carousel - Talent Protocol & Polymarket */}
-              <div className="-mt-2">
-                <CredentialsCarousel
-                  wallet={currentWalletAddress}
-                  ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-                  talentScore={talentScore}
-                  talentCreatorScore={talentCreatorScore}
-                  polymarketWinRate={polymarketWinRate}
-                  polymarketProfit={polymarketProfit}
-                  hasTalentData={hasTalentData}
-                  hasPolymarketData={hasPolymarketData}
-                  onTalentClick={() => setShowTalentModal(true)}
-                  onPolymarketClick={() => setShowPolymarketModal(true)}
-                  baseWidth={340}
-                />
-              </div>
-            </div>
+            )}
 
             {/* Flip Card for All Social Links */}
-            {showAllSocials && (
+            {showAllSocials && isMobile && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
                 <div 
