@@ -652,7 +652,7 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="fixed inset-0 top-[60px] bottom-[100px] flex flex-col overflow-hidden z-10">
+              <div className="fixed inset-0 top-[60px] bottom-[40px] flex flex-col overflow-hidden z-10">
                 {/* Full-width Header spanning both sides - with avatar overlay */}
                 <div className="relative flex-shrink-0 w-full">
                   <div 
