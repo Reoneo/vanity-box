@@ -5,6 +5,13 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X } from "lucide-react";
+
+// Helper to validate EVM address format (40 hex chars after 0x)
+// IOTA and other non-EVM addresses are longer and should not be passed to EVM APIs
+const isValidEvmAddress = (address?: string): boolean => {
+  if (!address) return false;
+  return /^0x[a-fA-F0-9]{40}$/i.test(address);
+};
 import { SocialIcon } from "./SocialIcon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
@@ -293,58 +300,74 @@ export const ProfileCard = ({
       
       // Fetch other data in parallel (non-blocking)
       const fetchOtherData = async () => {
-        // Fetch tokens
-        try {
-          const tokenRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
-          });
-          const tokenData = await tokenRes.json();
-          console.log('Portfolio API response:', tokenData);
-          if (tokenData.tokens) setPortfolioTokens(tokenData.tokens);
-          if (tokenData.totalValue) setPortfolioTotalValue(tokenData.totalValue);
-        } catch (e) { 
-          console.error('Token fetch error:', e); 
-        } finally {
+        // Check if the address is a valid EVM address (40 hex chars)
+        // IOTA and other non-EVM addresses are longer and should not be passed to EVM-specific APIs
+        const isEvm = isValidEvmAddress(currentWalletAddress);
+        
+        if (!isEvm) {
+          console.log('Skipping EVM-specific API calls for non-EVM address:', currentWalletAddress);
           setTokensFetched(true);
-        }
-
-        // Fetch transactions for Activity button
-        try {
-          const txRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
-          });
-          const txData = await txRes.json();
-          console.log('Transactions API response:', txData);
-          if (txData.transactions) setTransactions(txData.transactions);
-        } catch (e) { 
-          console.error('Transactions fetch error:', e); 
-        } finally {
           setTransactionsFetched(true);
         }
 
-        // Fetch Magic Eden NFTs
-        try {
-          const meRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-magiceden-nfts', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
-          });
-          const meData = await meRes.json();
-          if (meData.nfts) setMagicEdenNfts(meData.nfts);
-        } catch (e) { console.error('Magic Eden fetch error:', e); }
+        // Fetch tokens (EVM only)
+        if (isEvm) {
+          try {
+            const tokenRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            });
+            const tokenData = await tokenRes.json();
+            console.log('Portfolio API response:', tokenData);
+            if (tokenData.tokens) setPortfolioTokens(tokenData.tokens);
+            if (tokenData.totalValue) setPortfolioTotalValue(tokenData.totalValue);
+          } catch (e) { 
+            console.error('Token fetch error:', e); 
+          } finally {
+            setTokensFetched(true);
+          }
+        }
+
+        // Fetch transactions for Activity button (EVM only)
+        if (isEvm) {
+          try {
+            const txRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            });
+            const txData = await txRes.json();
+            console.log('Transactions API response:', txData);
+            if (txData.transactions) setTransactions(txData.transactions);
+          } catch (e) { 
+            console.error('Transactions fetch error:', e); 
+          } finally {
+            setTransactionsFetched(true);
+          }
+        }
+
+        // Fetch Magic Eden NFTs (EVM only)
+        if (isEvm) {
+          try {
+            const meRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-magiceden-nfts', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            });
+            const meData = await meRes.json();
+            if (meData.nfts) setMagicEdenNfts(meData.nfts);
+          } catch (e) { console.error('Magic Eden fetch error:', e); }
+        }
 
         // Fetch ENS Domains from The Graph
         try {

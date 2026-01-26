@@ -148,6 +148,12 @@ export const groupNFTsByCollection = (nfts: WorldchainNFT[]): NFTCollectionGroup
   });
 };
 
+// Helper to validate EVM address format (40 hex chars after 0x)
+const isValidEvmAddress = (address?: string): boolean => {
+  if (!address) return false;
+  return /^0x[a-fA-F0-9]{40}$/i.test(address);
+};
+
 export const useWorldchainNFTs = (walletAddress?: string) => {
   const [nfts, setNfts] = useState<WorldchainNFT[]>([]);
   const [collections, setCollections] = useState<NFTCollectionGroup[]>([]);
@@ -155,6 +161,14 @@ export const useWorldchainNFTs = (walletAddress?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchNFTs = useCallback(async (address: string, skipCache = false) => {
+    // Skip API call for non-EVM addresses (like IOTA addresses which are 64 hex chars)
+    if (!isValidEvmAddress(address)) {
+      console.log('[useWorldchainNFTs] Skipping - not a valid EVM address:', address);
+      setNfts([]);
+      setCollections([]);
+      return;
+    }
+
     // Check cache first
     if (!skipCache) {
       const cached = getFromCache(address);
