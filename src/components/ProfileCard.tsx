@@ -88,10 +88,12 @@ export const ProfileCard = ({
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains' | 'basenames'>('main');
   const [ensDomains, setEnsDomains] = useState<any[]>([]);
-  const [ensDomainsLoading, setEnsDomainsLoading] = useState(false);
+  const [ensDomainsLoading, setEnsDomainsLoading] = useState(true);
+  const [ensDomainsFetched, setEnsDomainsFetched] = useState(false);
   const [selectedEnsDomain, setSelectedEnsDomain] = useState<any>(null);
   const [basenames, setBasenames] = useState<any[]>([]);
-  const [basenamesLoading, setBasenamesLoading] = useState(false);
+  const [basenamesLoading, setBasenamesLoading] = useState(true);
+  const [basenamesFetched, setBasenamesFetched] = useState(false);
   const [selectedBasename, setSelectedBasename] = useState<any>(null);
   const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
   const [magicEdenLoading, setMagicEdenLoading] = useState(false);
@@ -253,7 +255,6 @@ export const ProfileCard = ({
         } catch (e) { console.error('Magic Eden fetch error:', e); }
 
         // Fetch ENS Domains from The Graph
-        setEnsDomainsLoading(true);
         try {
           const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
             method: 'POST',
@@ -270,10 +271,10 @@ export const ProfileCard = ({
           console.error('ENS Domains fetch error:', e); 
         } finally {
           setEnsDomainsLoading(false);
+          setEnsDomainsFetched(true);
         }
 
         // Fetch Basenames from Base subgraph
-        setBasenamesLoading(true);
         try {
           const baseRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-basenames', {
             method: 'POST',
@@ -290,6 +291,7 @@ export const ProfileCard = ({
           console.error('Basenames fetch error:', e); 
         } finally {
           setBasenamesLoading(false);
+          setBasenamesFetched(true);
         }
 
         // Fetch Polymarket data
@@ -965,8 +967,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* ENS Domains Button - Only show if loading or has domains */}
-                      {(ensDomainsLoading || ensDomains.length > 0) && (
+                      {/* ENS Domains Button - Show while loading OR if has domains after fetch */}
+                      {(ensDomainsLoading || ensDomains.length > 0) && !(ensDomainsFetched && ensDomains.length === 0) && (
                         <button
                           onClick={() => setNftCategory('ensdomains')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -985,8 +987,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* Basenames Button - Only show if loading or has basenames */}
-                      {(basenamesLoading || basenames.length > 0) && (
+                      {/* Basenames Button - Show while loading OR if has basenames after fetch */}
+                      {(basenamesLoading || basenames.length > 0) && !(basenamesFetched && basenames.length === 0) && (
                         <button
                           onClick={() => setNftCategory('basenames')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0052FF] to-[#4D8FFF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -1016,9 +1018,9 @@ export const ProfileCard = ({
                        !worldchainNftsLoading &&
                        hlNfts.length === 0 &&
                        ensDomains.length === 0 &&
-                       !ensDomainsLoading &&
+                       ensDomainsFetched &&
                        basenames.length === 0 &&
-                       !basenamesLoading && (
+                       basenamesFetched && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p className="text-sm">No NFTs found for this wallet</p>
                         </div>
