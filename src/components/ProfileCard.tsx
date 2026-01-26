@@ -23,6 +23,7 @@ import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
 import CredentialsCarousel from "./CredentialsCarousel";
 import { BioTicker } from "./BioTicker";
+import { ChronologicalPoapGrid } from "./ChronologicalPoapGrid";
 
 import {
   DropdownMenu,
@@ -1042,20 +1043,11 @@ export const ProfileCard = ({
                       )}
                     </div>
                   ) : nftCategory === 'poaps' ? (
-                    // POAPs grid
-                    <div className="space-y-4 max-w-2xl mx-auto">
-                      <div className="grid grid-cols-3 md:grid-cols-4 gap-4 justify-items-center">
-                        {formattedPoaps.map((poap, index) => (
-                          <div
-                            key={`poap-${poap.identifier}-${index}`}
-                            className="group cursor-pointer transition-transform hover:scale-105"
-                            onClick={() => setSelectedPoap(poap)}
-                          >
-                            <img src={poap.image_url} alt={poap.name} className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    // POAPs chronological grid
+                    <ChronologicalPoapGrid 
+                      poaps={formattedPoaps} 
+                      onPoapClick={(poap) => setSelectedPoap(poap)} 
+                    />
                   ) : nftCategory === 'opensea' ? (
                     // OpenSea collections
                     expandedCollection ? (
