@@ -22,6 +22,7 @@ import { ActivityGraph } from "./ActivityGraph";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
+import iotaHeader from '@/assets/iota-header-pattern.jpeg';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import wldLogo from '@/assets/wld-logo-dark.svg';
@@ -830,7 +831,7 @@ export const ProfileCard = ({
                     onClick={() => setShowHeaderPopup(true)}
                   >
                     <img
-                      src={web3BioProfile?.header || defaultHeader}
+                      src={web3BioProfile?.header || (isIotaProfile ? iotaHeader : defaultHeader)}
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
@@ -1634,7 +1635,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
+                    backgroundImage: `url(${web3BioProfile?.header || (isIotaProfile ? iotaHeader : defaultHeader)})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -2177,7 +2178,7 @@ export const ProfileCard = ({
                       </div>
                     )
                   ) : nftCategory === 'iotanames' ? (
-                    // IOTA Names - Grid layout
+                    // IOTA Names - Full image grid with name below
                     iotaLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" />
@@ -2188,23 +2189,28 @@ export const ProfileCard = ({
                       </div>
                     ) : (
                       <div className="space-y-4 max-w-2xl mx-auto">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
                           {iotaNfts.map((iotaName: any, index: number) => (
                             <div
                               key={`iota-${iotaName.name}-${index}`}
-                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/20 hover:border-[#00BFA5]/50 transition-all w-full"
+                              className="flex flex-col items-center w-full"
                             >
-                              <div className="aspect-square bg-gradient-to-br from-[#00BFA5]/10 to-[#00D9C4]/10 overflow-hidden flex items-center justify-center">
+                              <div className="w-full aspect-square rounded-xl overflow-hidden border-2 border-[#00BFA5]/30 hover:border-[#00BFA5] transition-all shadow-lg hover:shadow-xl">
                                 {iotaName.imageUrl ? (
-                                  <img src={iotaName.imageUrl} alt={iotaName.name} className="w-full h-full object-cover" />
+                                  <img 
+                                    src={iotaName.imageUrl} 
+                                    alt={iotaName.name} 
+                                    className="w-full h-full object-cover"
+                                  />
                                 ) : (
-                                  <span className="text-[#00BFA5] font-bold text-xl">IOTA</span>
+                                  <div className="w-full h-full bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center">
+                                    <span className="text-white font-bold text-3xl">IOTA</span>
+                                  </div>
                                 )}
                               </div>
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{iotaName.name}</p>
-                                {iotaName.collection && <p className="text-white/60 text-[10px]">{iotaName.collection}</p>}
-                              </div>
+                              <p className="mt-2 text-sm font-medium text-foreground text-center truncate w-full px-1">
+                                {iotaName.name}
+                              </p>
                             </div>
                           ))}
                         </div>
@@ -2222,7 +2228,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
+                    backgroundImage: `url(${web3BioProfile?.header || (isIotaProfile ? iotaHeader : defaultHeader)})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -2302,7 +2308,7 @@ export const ProfileCard = ({
                 {/* Header */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ backgroundImage: `url(${web3BioProfile?.header || defaultHeader})` }}
+                  style={{ backgroundImage: `url(${web3BioProfile?.header || (isIotaProfile ? iotaHeader : defaultHeader)})` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
