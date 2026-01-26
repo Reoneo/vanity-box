@@ -204,9 +204,9 @@ export const PoapDetailModal: React.FC<PoapDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm pt-24">
+    <div className="fixed inset-0 z-[99999] flex items-start justify-center p-4 bg-black/80 backdrop-blur-sm pt-20 pb-24">
       <div 
-        className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col border border-[#D4AF37]/20 relative"
+        className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-3xl shadow-2xl w-full max-w-lg max-h-full overflow-hidden flex flex-col border border-[#D4AF37]/20 relative"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
