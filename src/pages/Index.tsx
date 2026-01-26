@@ -33,7 +33,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen bg-white dark:bg-black flex flex-col relative overflow-hidden">
+    <div className="h-screen bg-transparent flex flex-col relative overflow-hidden">
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
 
