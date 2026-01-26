@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense, useMemo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +14,12 @@ import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { WalletConnectProvider } from "@/contexts/WalletConnectContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
+// Lazy load SplashCursor for desktop only
+const SplashCursor = lazy(() => import("@/components/SplashCursor"));
+
+// Detect desktop vs mobile
+const isDesktop = typeof window !== 'undefined' && 
+  !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -41,8 +47,26 @@ const AppContent = () => {
     };
   }, []);
 
+  // Optimized settings for desktop splash effect
+  const splashSettings = useMemo(() => ({
+    DYE_RESOLUTION: 360,
+    SIM_RESOLUTION: 48,
+    PRESSURE_ITERATIONS: 10,
+  }), []);
+
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      {/* Global gold SplashCursor for desktop only */}
+      {isDesktop && (
+        <Suspense fallback={null}>
+          <SplashCursor 
+            enabled={true}
+            DYE_RESOLUTION={splashSettings.DYE_RESOLUTION}
+            SIM_RESOLUTION={splashSettings.SIM_RESOLUTION}
+            PRESSURE_ITERATIONS={splashSettings.PRESSURE_ITERATIONS}
+          />
+        </Suspense>
+      )}
       <CryptoPriceProvider>
         <LanguageProvider>
           <TonConnectProvider>
