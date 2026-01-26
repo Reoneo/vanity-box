@@ -759,11 +759,11 @@ export const ProfileCard = ({
                         </div>
                       )}
 
-                      {/* Bio with label */}
+                      {/* Bio with label - inline on same row */}
                       {web3BioProfile?.description && (
-                        <div className="flex flex-col items-center gap-1 max-w-[350px] mx-auto">
-                          <span className="text-sm font-semibold text-foreground">Bio:</span>
-                          <p className="text-sm text-[#D4AF37] text-center leading-relaxed">
+                        <div className="flex items-start justify-center gap-2 max-w-[380px] mx-auto">
+                          <span className="text-sm font-semibold text-foreground flex-shrink-0">Bio:</span>
+                          <p className="text-sm text-[#D4AF37] leading-relaxed text-left">
                             {web3BioProfile.description}
                           </p>
                         </div>
