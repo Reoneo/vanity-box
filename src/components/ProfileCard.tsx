@@ -503,8 +503,8 @@ export const ProfileCard = ({
   const renderDesktopPanelContent = (panel: 'nfts' | 'social' | 'tokens' | 'activity') => {
     if (panel === 'social') {
       return (
-        <div className="h-full overflow-y-auto px-4 py-4">
-          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+        <div className="h-full overflow-y-auto px-6 py-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-w-2xl mx-auto">
             {web3BioProfile?.links && Object.entries(web3BioProfile.links)
               .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
               .map(([platform, linkData]: [string, any]) => {
@@ -517,18 +517,20 @@ export const ProfileCard = ({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50"
+                    className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-card hover:bg-card/80 transition-all duration-200 border border-border/40 hover:border-[#D4AF37]/60 hover:shadow-lg group"
                   >
-                    <SocialIcon
-                      platform={platform}
-                      url={url}
-                      size="lg"
-                    />
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-sm text-foreground font-medium text-center">
+                    <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                      <SocialIcon
+                        platform={platform}
+                        url={url}
+                        size="lg"
+                      />
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-base text-foreground font-semibold text-center">
                         {platform.charAt(0).toUpperCase() + platform.slice(1)}
                       </span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[100px] text-center">
+                      <span className="text-sm text-muted-foreground truncate max-w-[140px] text-center">
                         {extractHandle(platform, url)}
                       </span>
                     </div>
@@ -542,23 +544,23 @@ export const ProfileCard = ({
 
     if (panel === 'tokens') {
       return (
-        <div className="h-full overflow-y-auto px-4 py-3 pb-24">
+        <div className="h-full overflow-y-auto px-6 py-6 pb-24">
           {portfolioLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
             </div>
           ) : portfolioTokens.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg">No tokens found</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-xl font-medium">No tokens found</p>
               <p className="text-sm mt-2">No fungible tokens in this wallet</p>
             </div>
           ) : (
-            <div className="space-y-2 max-w-lg mx-auto">
+            <div className="space-y-3 max-w-xl mx-auto">
               {/* Total Value Header */}
               {portfolioTotalValue > 0 && (
-                <div className="text-center py-3 mb-2">
-                  <p className="text-sm text-muted-foreground">Total Value</p>
-                  <p className="text-2xl font-bold text-[#D4AF37]">
+                <div className="text-center py-4 mb-4 bg-card/50 rounded-2xl border border-border/30">
+                  <p className="text-sm text-muted-foreground">Total Portfolio Value</p>
+                  <p className="text-3xl font-bold text-[#D4AF37]">
                     ${portfolioTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
@@ -567,24 +569,24 @@ export const ProfileCard = ({
               {portfolioTokens.map((token: any, index: number) => (
                 <div 
                   key={token.id || `token-${index}`}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/40 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
                     {token.icon ? (
                       <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-sm font-bold">{token.symbol?.slice(0, 2)}</span>
+                      <span className="text-base font-bold text-foreground">{token.symbol?.slice(0, 2)}</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground truncate">{token.name}</span>
-                      <span className="text-sm text-muted-foreground">{token.symbol}</span>
+                      <span className="font-semibold text-foreground truncate text-base">{token.name}</span>
+                      <span className="text-sm text-muted-foreground font-medium">{token.symbol}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mt-0.5">
                       <span>{parseFloat(token.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
                       {token.value > 0 && (
-                        <span className="text-[#D4AF37]">${token.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-[#D4AF37] font-medium">${token.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       )}
                     </div>
                   </div>
@@ -598,36 +600,36 @@ export const ProfileCard = ({
 
     if (panel === 'activity') {
       return (
-        <div className="h-full overflow-y-auto px-4 py-3 pb-24">
+        <div className="h-full overflow-y-auto px-6 py-6 pb-24">
           {transactionsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg">No transactions found</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-xl font-medium">No transactions found</p>
               <p className="text-sm mt-2">Transaction history coming soon</p>
             </div>
           ) : (
-            <div className="space-y-3 max-w-lg mx-auto">
+            <div className="space-y-3 max-w-xl mx-auto">
               {transactions.map((tx: any, index: number) => (
                 <div 
                   key={tx.id || `tx-${index}`}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/40 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'receive' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                    <span className="text-lg">{tx.type === 'receive' ? '↓' : '↑'}</span>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${tx.type === 'receive' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                    <span className="text-xl font-bold">{tx.type === 'receive' ? '↓' : '↑'}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground truncate capitalize">{tx.type || 'Transaction'}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground truncate capitalize text-base">{tx.type || 'Transaction'}</span>
+                      <span className="text-sm text-muted-foreground">
                         {tx.minedAt ? formatDistanceToNow(new Date(tx.minedAt), { addSuffix: true }) : ''}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span className="truncate">{tx.hash?.slice(0, 10)}...</span>
-                      <span className="text-xs uppercase">{tx.chain}</span>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mt-0.5">
+                      <span className="truncate font-mono">{tx.hash?.slice(0, 12)}...</span>
+                      <span className="text-xs uppercase font-medium bg-muted px-2 py-0.5 rounded">{tx.chain}</span>
                     </div>
                   </div>
                 </div>
@@ -648,16 +650,16 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto">
-            {/* Desktop: 30:70 split layout */}
+            {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
               <div className="flex h-full">
-                {/* Left side - 30% - Profile info */}
-                <div className="w-[30%] min-w-[280px] max-w-[380px] overflow-y-auto border-r border-border/20">
-                  <div className="space-y-2 pb-20">
+                {/* Left side - 50% - Profile info */}
+                <div className="w-1/2 overflow-y-auto border-r border-border/20">
+                  <div className="space-y-3 pb-20">
                     {/* Header and Avatar with Verified Badge */}
                     <div className="relative flex-shrink-0">
                       <div 
-                        className="w-full aspect-[2.5/1] overflow-hidden cursor-pointer"
+                        className="w-full aspect-[3/1] overflow-hidden cursor-pointer"
                         onClick={() => setShowHeaderPopup(true)}
                       >
                         <img
@@ -665,13 +667,13 @@ export const ProfileCard = ({
                           alt="Header"
                           className="block w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
                       </div>
 
-                      <div className="flex justify-center absolute -bottom-12 left-0 right-0">
+                      <div className="flex justify-center absolute -bottom-14 left-0 right-0">
                         <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
                           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
-                          <Avatar className="relative h-24 w-24 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
+                          <Avatar className="relative h-28 w-28 border-4 border-background shadow-2xl ring-2 ring-primary/30">
                             <AvatarImage 
                               src={web3BioProfile?.avatar || vanityBoxAvatar} 
                               alt={web3BioProfile?.displayName || 'User'}
@@ -682,9 +684,9 @@ export const ProfileCard = ({
                             </AvatarFallback>
                           </Avatar>
                           {isHumanVerified && (
-                            <div className="absolute -bottom-1 -right-1 w-8 h-8 flex items-center justify-center" title="Verified Builder">
+                            <div className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center" title="Verified Builder">
                               <div className="relative">
-                                <svg viewBox="0 0 24 24" className="w-8 h-8 drop-shadow-lg">
+                                <svg viewBox="0 0 24 24" className="w-9 h-9 drop-shadow-lg">
                                   <defs>
                                     <linearGradient id="badge-gradient-desktop" x1="0%" y1="0%" x2="100%" y2="100%">
                                       <stop offset="0%" stopColor="#3B82F6" />
@@ -701,58 +703,62 @@ export const ProfileCard = ({
                       </div>
                     </div>
 
-                    <div className="p-4 pt-[52px] space-y-2 flex-shrink-0">
-                      <h2 className="text-xl font-bold text-center text-foreground tracking-tight">
+                    <div className="px-6 pt-[60px] space-y-3 flex-shrink-0">
+                      {/* Name */}
+                      <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
                         {getDisplayName()}
                       </h2>
 
+                      {/* Wallet Address */}
                       {currentWalletAddress && (
                         <div className="flex items-center justify-center">
                           <code 
                             onClick={copyAddress}
-                            className="px-2 py-0.5 bg-muted rounded-md text-xs text-black dark:text-white cursor-pointer hover:bg-muted/80 transition-colors"
+                            className="px-3 py-1 bg-muted/80 rounded-lg text-sm text-black dark:text-white cursor-pointer hover:bg-muted transition-colors font-mono"
                           >
-                            {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
+                            {copied ? 'Copied!' : shortenAddress(currentWalletAddress)}
                           </code>
                         </div>
                       )}
 
+                      {/* Following/Followers */}
                       {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
-                        <div className="flex justify-center items-center gap-1.5 text-sm">
-                          <button onClick={onFollowingClick} className="flex items-center gap-1 hover:opacity-80 transition-colors">
-                            <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
-                            <span className="text-black dark:text-white">Following</span>
+                        <div className="flex justify-center items-center gap-2 text-sm">
+                          <button onClick={onFollowingClick} className="flex items-center gap-1.5 hover:opacity-80 transition-colors">
+                            <span className="font-bold text-[#D4AF37]">{efpStats.following_count || 0}</span>
+                            <span className="text-foreground">Following</span>
                           </button>
-                          <span className="text-black dark:text-white">·</span>
-                          <button onClick={onFollowersClick} className="flex items-center gap-1 hover:opacity-80 transition-colors">
-                            <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
-                            <span className="text-black dark:text-white">Followers</span>
+                          <span className="text-muted-foreground">·</span>
+                          <button onClick={onFollowersClick} className="flex items-center gap-1.5 hover:opacity-80 transition-colors">
+                            <span className="font-bold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
+                            <span className="text-foreground">Followers</span>
                           </button>
                         </div>
                       )}
 
-                      {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
-                        <div className="flex flex-col items-center gap-1.5">
-                          {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                            <div className="flex items-center justify-center gap-3 flex-wrap text-xs">
-                              {web3BioProfile?.email && (
-                                <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1 text-[#D4AF37] hover:underline">
-                                  <Mail className="w-3 h-3 text-black dark:text-white" />
-                                  <span className="truncate max-w-[120px]">{web3BioProfile.email}</span>
-                                </a>
-                              )}
-                              {(web3BioProfile?.website || web3BioProfile?.url) && (
-                                <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[#D4AF37] hover:underline">
-                                  <Globe className="w-3 h-3 text-black dark:text-white" />
-                                  <span className="truncate max-w-[120px]">{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
-                                </a>
-                              )}
-                            </div>
+                      {/* Email/Website */}
+                      {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                        <div className="flex items-center justify-center gap-4 flex-wrap text-sm">
+                          {web3BioProfile?.email && (
+                            <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
+                              <Mail className="w-4 h-4 text-muted-foreground" />
+                              <span className="truncate max-w-[150px]">{web3BioProfile.email}</span>
+                            </a>
                           )}
-                          {web3BioProfile?.description && (
-                            <p className="text-xs text-muted-foreground text-center line-clamp-3 max-w-[250px]">{web3BioProfile.description}</p>
+                          {(web3BioProfile?.website || web3BioProfile?.url) && (
+                            <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
+                              <Globe className="w-4 h-4 text-muted-foreground" />
+                              <span className="truncate max-w-[150px]">{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
+                            </a>
                           )}
                         </div>
+                      )}
+
+                      {/* Bio */}
+                      {web3BioProfile?.description && (
+                        <p className="text-sm text-muted-foreground text-center leading-relaxed max-w-[350px] mx-auto">
+                          {web3BioProfile.description}
+                        </p>
                       )}
 
                       {/* Desktop action pills - control right panel */}
@@ -777,7 +783,7 @@ export const ProfileCard = ({
                         if (buttons.length === 0) return null;
 
                         return (
-                          <div className="flex flex-wrap items-center justify-center gap-1.5 px-2">
+                          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                             {buttons.map((btn) => (
                               <button
                                 key={btn.title}
@@ -785,10 +791,10 @@ export const ProfileCard = ({
                                   setDesktopActivePanel(btn.panel);
                                   if (btn.panel === 'nfts') onEnsureOpenSeaNfts?.();
                                 }}
-                                className={`py-1.5 px-3 rounded-lg border text-xs font-medium whitespace-nowrap transition-all duration-200
+                                className={`py-2 px-4 rounded-xl border text-sm font-medium whitespace-nowrap transition-all duration-200
                                   ${desktopActivePanel === btn.panel 
-                                    ? 'bg-[#D4AF37] border-[#D4AF37] text-black' 
-                                    : 'bg-muted/60 border-border/30 hover:border-primary/40 hover:bg-muted/90 text-foreground/90'
+                                    ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-md' 
+                                    : 'bg-muted/60 border-border/40 hover:border-[#D4AF37]/50 hover:bg-muted text-foreground'
                                   }`}
                               >
                                 {btn.title}
@@ -798,17 +804,18 @@ export const ProfileCard = ({
                         );
                       })()}
 
+                      {/* On-chain date */}
                       {firstTransactionDate && (
-                        <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-1">
+                          <Calendar className="w-4 h-4" />
                           <span>
                             On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', day: 'numeric' })}
                           </span>
                         </div>
                       )}
 
-                      {/* Credentials Carousel - smaller for desktop */}
-                      <div className="-mt-1">
+                      {/* Credentials Carousel */}
+                      <div className="pt-2">
                         <CredentialsCarousel
                           wallet={currentWalletAddress}
                           ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
@@ -820,18 +827,18 @@ export const ProfileCard = ({
                           hasPolymarketData={hasPolymarketData}
                           onTalentClick={() => setShowTalentModal(true)}
                           onPolymarketClick={() => setShowPolymarketModal(true)}
-                          baseWidth={260}
+                          baseWidth={300}
                         />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Right side - 70% - Content panels */}
-                <div className="flex-1 overflow-hidden flex flex-col bg-background">
+                {/* Right side - 50% - Content panels */}
+                <div className="w-1/2 overflow-hidden flex flex-col bg-background">
                   {/* Panel header */}
-                  <div className="flex-shrink-0 px-4 py-3 border-b border-border/30">
-                    <h3 className="text-lg font-bold text-[#D4AF37] capitalize">
+                  <div className="flex-shrink-0 px-6 py-4 border-b border-border/30 bg-muted/20">
+                    <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
                       {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
                     </h3>
                   </div>
@@ -843,9 +850,9 @@ export const ProfileCard = ({
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
                     {desktopActivePanel === 'nfts' && (
                       /* Desktop NFTs inline panel - reuses existing NFT rendering */
-                      <div className="h-full overflow-y-auto px-4 py-3 pb-24">
+                      <div className="h-full overflow-y-auto px-6 py-6 pb-24">
                         {nftCategory === 'main' ? (
-                          <div className="space-y-2 max-w-lg mx-auto">
+                          <div className="space-y-3 max-w-xl mx-auto">
                             {/* POAPs Button */}
                             {poaps.length > 0 && (
                               <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
