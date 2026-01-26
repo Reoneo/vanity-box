@@ -50,16 +50,14 @@ Deno.serve(async (req) => {
         
         if (nameRecord) {
           targetAddress = nameRecord.targetAddress || nameRecord.owner;
-          const data = nameRecord.data || {};
           domainData = {
             name: lookupName,
             owner: nameRecord.owner,
             targetAddress: nameRecord.targetAddress,
-            data: data,
+            data: nameRecord.data || {},
             expirationTimestampMs: nameRecord.expirationTimestampMs,
-            avatar: data.avatar || data.image || null,
           };
-          console.log(`Resolved ${lookupName} to ${targetAddress}, avatar: ${domainData.avatar || 'none'}`);
+          console.log(`Resolved ${lookupName} to ${targetAddress}`);
         }
       } catch (e) {
         console.error("Failed to resolve IOTA domain:", e);
