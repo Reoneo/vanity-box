@@ -650,27 +650,31 @@ export const ProfileCard = ({
         {/* Profile Section */}
         {activeSection === 'profile' && (
           <div className="flex-1 overflow-y-auto">
-            {/* Desktop: 50:50 split layout */}
+            {/* Desktop: 50:50 split layout with full-width header */}
             {!isMobile ? (
-              <div className="flex h-full">
-                {/* Left side - 50% - Profile info */}
-                <div className="w-1/2 overflow-y-auto border-r border-border/20">
-                  <div className="space-y-3 pb-20">
-                    {/* Header and Avatar with Verified Badge */}
-                    <div className="relative flex-shrink-0">
-                      <div 
-                        className="w-full aspect-[3/1] overflow-hidden cursor-pointer"
-                        onClick={() => setShowHeaderPopup(true)}
-                      >
-                        <img
-                          src={web3BioProfile?.header || defaultHeader}
-                          alt="Header"
-                          className="block w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
-                      </div>
+              <div className="flex flex-col h-full">
+                {/* Full-width Header spanning both columns */}
+                <div className="relative flex-shrink-0 w-full">
+                  <div 
+                    className="w-full aspect-[5/1] overflow-hidden cursor-pointer"
+                    onClick={() => setShowHeaderPopup(true)}
+                  >
+                    <img
+                      src={web3BioProfile?.header || defaultHeader}
+                      alt="Header"
+                      className="block w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
+                  </div>
+                </div>
 
-                      <div className="flex justify-center absolute -bottom-14 left-0 right-0">
+                {/* 50:50 Split Content Area */}
+                <div className="flex flex-1 min-h-0">
+                  {/* Left side - 50% - Profile info */}
+                  <div className="w-1/2 overflow-y-auto border-r border-border/20">
+                    <div className="space-y-3 pb-20">
+                      {/* Avatar positioned at top of content area */}
+                      <div className="flex justify-center -mt-16 relative z-10">
                         <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
                           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
                           <Avatar className="relative h-28 w-28 border-4 border-background shadow-2xl ring-2 ring-primary/30">
@@ -701,9 +705,8 @@ export const ProfileCard = ({
                           )}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="px-6 pt-[60px] space-y-3 flex-shrink-0">
+                      <div className="px-6 pt-2 space-y-3 flex-shrink-0">
                       {/* Name */}
                       <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
                         {getDisplayName()}
@@ -832,16 +835,15 @@ export const ProfileCard = ({
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Right side - 50% - Content panels */}
-                <div className="w-1/2 overflow-hidden flex flex-col bg-background">
-                  {/* Panel header */}
-                  <div className="flex-shrink-0 px-6 py-4 border-b border-border/30 bg-muted/20">
-                    <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
-                      {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
-                    </h3>
-                  </div>
+                  {/* Right side - 50% - Content panels */}
+                  <div className="w-1/2 overflow-hidden flex flex-col bg-black/95 dark:bg-black">
+                    {/* Panel header */}
+                    <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20">
+                      <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
+                        {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
+                      </h3>
+                    </div>
                   
                   {/* Panel content */}
                   <div className="flex-1 overflow-y-auto">
@@ -1106,9 +1108,10 @@ export const ProfileCard = ({
                   </div>
                 </div>
               </div>
-            ) : (
-              /* Mobile: Original stacked layout */
-              <div className="space-y-2 pb-20">
+            </div>
+          ) : (
+            /* Mobile: Original stacked layout */
+            <div className="space-y-2 pb-20">
                 {/* Header and Avatar with Verified Badge - Always visible */}
                 <div className="relative flex-shrink-0">
                   <div 
@@ -1339,10 +1342,9 @@ export const ProfileCard = ({
                       baseWidth={340}
                     />
                   </div>
-                </div>
               </div>
-            )}
-
+            </div>
+          )}
             {/* Flip Card for All Social Links */}
             {showAllSocials && isMobile && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
