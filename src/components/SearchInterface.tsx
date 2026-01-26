@@ -19,7 +19,7 @@ import {
 import { useWalletConnect } from "@/contexts/WalletConnectContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { ensNormalize } from "viem/ens";
+import { normalize } from "viem/ens";
 import { ProfileCard } from "@/components/ProfileCard";
 import Dock from "@/components/Dock";
 import ensLogo from "@/assets/ens-logo-dark.svg";
@@ -61,7 +61,7 @@ const corsHeaders = {
 // Helper: safe normalize
 function safeNormalize(input: string) {
   try {
-    return ensNormalize(input);
+    return normalize(input);
   } catch {
     return input;
   }
@@ -70,7 +70,7 @@ function safeNormalize(input: string) {
 export const SearchInterface = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { walletAddress, isConnected, openWalletModal } = useWalletConnect();
+  const { address: walletAddress, isConnected, openModal: openWalletModal } = useWalletConnect();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
