@@ -1,52 +1,72 @@
 
-Goal
-- Remove the visible blank gap above the fixed footer in mobile “Profile view” by making the profile container extend all the way down to the footer (same “background reaches the bottom” behavior you already have on desktop).
+# Fix IOTA Names (.iota) Domain Resolution
 
-What’s causing the gap (based on the code)
-- The profile is rendered inside a fixed-position wrapper in `src/components/SearchInterface.tsx`:
-  - `top-[80px] bottom-[100px] md:bottom-[140px]`
-- On mobile, that `bottom-[100px]` literally reserves 100px of empty space at the bottom of the viewport. Since the footer is fixed at `bottom-0`, you end up with a visible “dead zone” between where the profile stops and where the footer starts.
-- You confirmed:
-  - It happens in “Profile view only”
-  - The dock is visible
-  - The gap is constant (not related to address bar resizing)
+## Problem Identified
+The `resolve-iota-domain` edge function is failing with "Invalid IOTA name" error because:
 
-Design decision (what we’ll do)
-- Make the profile wrapper extend to the bottom of the viewport on mobile: `bottom-0`
-- Keep desktop behavior as-is (`md:bottom-[140px]`) if you still want desktop spacing reserved for UI elements.
-- Ensure the profile content remains readable/not hidden behind the dock/footer by managing padding inside the scrollable profile content (not by shrinking the container with `bottom-[100px]`).
+1. **Incorrect name format**: Code removes `.iota` suffix before calling `getNameRecord()`, but the SDK expects the full name including `.iota`
+   - Current: `getNameRecord('vanity')` - fails
+   - Correct: `getNameRecord('vanity.iota')` - expected by SDK
 
-Implementation steps (no guesswork; exact targets)
-1) Update the fixed profile wrapper in `src/components/SearchInterface.tsx`
-   - Locate the wrapper currently:
-     - `className="fixed left-0 right-0 top-[80px] bottom-[100px] md:bottom-[140px] ..."`
-   - Change it to:
-     - `bottom-0 md:bottom-[140px]`
-   - Rationale:
-     - This removes the forced 100px empty space on mobile while preserving whatever desktop layout spacing you intended.
+2. **Outdated SDK initialization**: The current implementation uses the older `IotaClient` approach, but the SDK documentation shows a newer GraphQL-based initialization
 
-2) Verify mobile profile scrolling + dock overlap behavior
-   - After step (1), the profile background will reach the footer, but the dock (which is `position: fixed`) will still sit on top of content.
-   - We’ll confirm whether the bottom-most profile content gets obscured behind the dock/footer.
-   - If it does, we will adjust *internal padding* (not container bottom) in the mobile profile layout:
-     - `src/components/ProfileCard.tsx` mobile root currently includes `pb-20`
-     - We may tune this value slightly (e.g., `pb-24` / `pb-28`) so the last items in the profile are never hidden behind the dock, while still keeping the container `bottom-0` to eliminate the gap.
+## Solution
 
-3) Validate against the “footer must be fixed” requirement
-   - We will not change the footer positioning (it stays `fixed bottom-0 left-0 right-0`) to preserve your keyboard behavior constraint on mobile.
-   - The fix is entirely about the profile container’s bottom boundary.
+### Step 1: Update Edge Function - Fix Name Format and SDK Initialization
 
-4) Quick QA checklist (mobile)
-   - Open a profile on a small phone viewport.
-   - Confirm:
-     - No blank strip/gap above the footer.
-     - Profile background reaches the footer cleanly.
-     - Dock still floats above content (no layout shift).
-     - Bottom-most profile content isn’t trapped behind the dock/footer.
+Update `supabase/functions/resolve-iota-domain/index.ts` to:
 
-Files we’ll touch
-- `src/components/SearchInterface.tsx` (required): change `bottom-[100px]` → `bottom-0` for mobile profile container.
-- `src/components/ProfileCard.tsx` (optional, only if needed): adjust mobile bottom padding to ensure content isn’t obscured by the dock/footer after the container is allowed to reach the bottom.
+```text
+Changes:
+- Remove the code that strips ".iota" suffix (lines 61-64)
+- Keep the full domain name for getNameRecord() call
+- Update SDK initialization to use GraphQL client approach from documentation
+- Add better error handling and logging
+```
 
-Risks / edge cases
-- If anything relied on the old reserved 100px bottom space (unlikely, since that was creating the visible gap), removing it could reveal dock overlap. That’s why step (2) includes padding adjustment inside the scrollable content instead of reintroducing a “gap” by shrinking the container.
+**Key code changes:**
+
+```typescript
+// NEW: Use GraphQL-based initialization (per SDK docs)
+const { IotaNamesClient } = await import("npm:@iota/iota-names-sdk@latest");
+const { getNetwork, Network } = await import("npm:@iota/iota-sdk@latest/client");
+const { IotaGraphQLClient } = await import("npm:@iota/iota-sdk@latest/graphql");
+
+const network = getNetwork(Network.Mainnet);
+const iotaNamesClient = new IotaNamesClient({
+  graphQlClient: new IotaGraphQLClient({ url: network.graphql! }),
+  network: network.id,
+});
+
+// FIX: Keep the full domain name WITH .iota suffix
+const domainName = domain.toLowerCase();
+// Ensure it ends with .iota
+const lookupName = domainName.endsWith(".iota") ? domainName : `${domainName}.iota`;
+
+console.log(`Looking up IOTA name: ${lookupName}`);
+nameRecord = await iotaNamesClient.getNameRecord(lookupName);
+```
+
+### Step 2: Deploy and Test
+
+1. Deploy the updated `resolve-iota-domain` edge function
+2. Test searching for "vanity.iota"
+3. Verify the wallet address is correctly resolved and displayed
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `supabase/functions/resolve-iota-domain/index.ts` | Fix name format, update SDK initialization |
+
+## Expected Outcome
+
+- Searching "vanity.iota" will correctly resolve to the associated wallet address
+- Profile will display with the IOTA domain name
+- Loading bar will complete instead of sticking at 98%
+
+## Technical Notes
+
+- The SDK documentation explicitly shows: `await iotaNamesClient.getNameRecord('example.iota')` with the suffix included
+- The GraphQL initialization approach is the recommended method per the latest SDK documentation
+- If "vanity.iota" is not registered on IOTA mainnet, it will correctly return "not found" instead of "Invalid IOTA name"
