@@ -5,8 +5,58 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ENS Subgraph endpoint
-const ENS_SUBGRAPH_URL = 'https://api.thegraph.com/subgraphs/name/ensdomains/ens';
+// ENS Subgraph endpoints - try decentralized first, then hosted fallback
+const ENS_SUBGRAPH_URLS = [
+  'https://gateway.thegraph.com/api/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH',
+  'https://api.thegraph.com/subgraphs/name/ensdomains/ens',
+];
+
+// Helper to delay between retries
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Fetch with retry logic
+async function fetchWithRetry(urls: string[], body: string, maxRetries = 2): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (const url of urls) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📤 Trying ENS subgraph (attempt ${attempt + 1}): ${url.substring(0, 50)}...`);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
+
+        // If rate limited, wait and retry
+        if (response.status === 429) {
+          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
+          console.log(`⏳ Rate limited, waiting ${waitTime}ms before retry...`);
+          await delay(waitTime);
+          continue;
+        }
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`❌ Subgraph error (${response.status}):`, errorText);
+          lastError = new Error(`Subgraph error: ${response.status}`);
+          break; // Try next URL
+        }
+
+        return response;
+      } catch (error) {
+        console.error(`❌ Fetch error:`, error);
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < maxRetries) {
+          await delay(Math.pow(2, attempt) * 500);
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error('All subgraph endpoints failed');
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -82,21 +132,9 @@ serve(async (req) => {
       },
     };
 
-    console.log('📤 Querying ENS subgraph...');
-
-    const response = await fetch(ENS_SUBGRAPH_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(graphqlQuery),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ ENS Subgraph error:', response.status, errorText);
-      throw new Error(`Subgraph error: ${response.status}`);
-    }
-
+    const response = await fetchWithRetry(ENS_SUBGRAPH_URLS, JSON.stringify(graphqlQuery));
     const data = await response.json();
+    
     console.log('✅ ENS Subgraph response received');
 
     const domains = data?.data?.domains || [];
@@ -184,7 +222,7 @@ serve(async (req) => {
       count: 0,
       error: error instanceof Error ? error.message : 'Unknown error',
     }), {
-      status: 500,
+      status: 200, // Return 200 with empty data to avoid breaking UI
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
