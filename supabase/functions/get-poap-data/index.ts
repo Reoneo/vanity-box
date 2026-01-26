@@ -43,6 +43,14 @@ function pickBestDate(poap: any): Date | null {
   return parse(start) || parse(end) || (typeof year === "number" ? new Date(Date.UTC(year, 0, 1)) : null);
 }
 
+// Get mint date (when token was created/minted)
+function getMintDate(poap: any): Date | null {
+  const created = poap?.created;
+  if (!created || typeof created !== "string") return null;
+  const d = new Date(created);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function groupPoapsByMonth(poaps: any[]) {
   const map = new Map<string, { key: string; year: number; month: number; label: string; items: any[] }>();
 
@@ -200,6 +208,7 @@ serve(async (req) => {
     const poapsWithDate = safePoaps.map((p: any) => ({
       ...p,
       __bestDate: pickBestDate(p)?.toISOString() ?? null,
+      __mintDate: getMintDate(p)?.toISOString() ?? null,
     }));
 
     // Group POAPs by month/year for UI
