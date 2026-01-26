@@ -55,6 +55,42 @@ const Index = () => {
           </article>
         </main>
 
+        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] pointer-events-auto">
+          <div className="container mx-auto px-4 flex items-center justify-between text-xs">
+            {/* Language Selector on Left */}
+            <div className="flex items-center gap-1.5">
+              <LanguageSelector />
+            </div>
+
+            {/* Copyright Centered */}
+            <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal whitespace-nowrap">
+              © 2026 vanity.box. All rights reserved.
+            </div>
+
+            {/* Network Switch and Theme Toggle on Right */}
+            <div className="flex items-center gap-3">
+              {/* Network Switch - only show when wallet is connected */}
+              {walletConnected && (
+                <button
+                  onClick={openChainModal}
+                  className="hover:opacity-70 transition-opacity"
+                  aria-label="Switch Network"
+                >
+                  <NetworkIcon size={20} />
+                </button>
+              )}
+              
+              {/* Theme Toggle */}
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="hover:opacity-70 transition-opacity"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? <Sun className="w-6 h-6 text-black" /> : <Moon className="w-6 h-6 text-black" />}
+              </button>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );
