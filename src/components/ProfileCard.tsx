@@ -652,9 +652,9 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="flex flex-col h-full">
-                {/* Full-width Header spanning both sides */}
-                <div className="relative flex-shrink-0 w-full z-10">
+              <div className="flex flex-col min-h-screen">
+                {/* Full-width Header spanning both sides - with avatar overlay */}
+                <div className="relative flex-shrink-0 w-full">
                   <div 
                     className="w-full aspect-[5.5/1] overflow-hidden cursor-pointer"
                     onClick={() => setShowHeaderPopup(true)}
@@ -665,46 +665,49 @@ export const ProfileCard = ({
                       className="block w-full h-full object-cover"
                     />
                   </div>
+                  {/* Avatar positioned absolutely to overlay header - centered on left half */}
+                  <div 
+                    className="absolute -bottom-16 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
+                    onClick={() => setShowAvatarPopup(true)}
+                  >
+                    <div className="relative group">
+                      <Avatar className="h-[136px] w-[136px] border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
+                        <AvatarImage 
+                          src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                          alt={web3BioProfile?.displayName || 'User'}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                          {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isHumanVerified && (
+                        <div className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center" title="Verified Builder">
+                          <div className="relative">
+                            <svg viewBox="0 0 24 24" className="w-9 h-9 drop-shadow-lg">
+                              <defs>
+                                <linearGradient id="badge-gradient-desktop-header" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#3B82F6" />
+                                  <stop offset="100%" stopColor="#1D4ED8" />
+                                </linearGradient>
+                              </defs>
+                              <path d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" fill="url(#badge-gradient-desktop-header)" />
+                              <path d="M9.5 12.5L11 14L14.5 10.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* 50:50 Split Content Area - extends to footer, covers white bar */}
-                <div className="flex flex-1 min-h-0 relative z-20 pb-32">
+                {/* 50:50 Split Content Area - extends to footer */}
+                <div className="flex flex-1">
                   {/* Left side - 50% - Profile info: white in light mode, black+gold gradient in dark */}
-                  <div className="w-1/2 overflow-y-auto border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
-                    <div className="space-y-3 pb-24">
-                      {/* Avatar overlapping header - positioned with z-30 to appear above header */}
-                      <div className="flex justify-center -mt-20 relative z-30">
-                        <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
-                          <Avatar className="relative h-[136px] w-[136px] border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
-                            <AvatarImage 
-                              src={web3BioProfile?.avatar || vanityBoxAvatar} 
-                              alt={web3BioProfile?.displayName || 'User'}
-                              className="object-cover"
-                            />
-                            <AvatarFallback className="text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
-                              {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
-                            </AvatarFallback>
-                          </Avatar>
-                          {isHumanVerified && (
-                            <div className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center" title="Verified Builder">
-                              <div className="relative">
-                                <svg viewBox="0 0 24 24" className="w-9 h-9 drop-shadow-lg">
-                                  <defs>
-                                    <linearGradient id="badge-gradient-desktop" x1="0%" y1="0%" x2="100%" y2="100%">
-                                      <stop offset="0%" stopColor="#3B82F6" />
-                                      <stop offset="100%" stopColor="#1D4ED8" />
-                                    </linearGradient>
-                                  </defs>
-                                  <path d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" fill="url(#badge-gradient-desktop)" />
-                                  <path d="M9.5 12.5L11 14L14.5 10.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                                </svg>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="px-6 pt-4 space-y-3 flex-shrink-0">
+                  <div className="w-1/2 flex flex-col border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
+                    {/* Left panel content - with top padding for avatar overlap */}
+                    <div className="flex-1 overflow-y-auto pt-20 pb-24">
+                      <div className="px-6 space-y-3">
                       {/* Name */}
                       <h2 className="text-2xl font-bold text-center text-black dark:text-white tracking-tight">
                         {getDisplayName()}
@@ -831,21 +834,21 @@ export const ProfileCard = ({
                           baseWidth={300}
                         />
                       </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
-                <div className="w-1/2 flex flex-col bg-black border-l border-[#D4AF37]/20 min-h-0 pb-24">
-                  {/* Panel header */}
-                  <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
-                    <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
-                      {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
-                    </h3>
-                  </div>
-                  
-                  {/* Panel content */}
-                  <div className="flex-1 overflow-y-auto pb-8">
+                  {/* Right side - 50% - Content panels with popup-style dark background - extends to footer */}
+                  <div className="w-1/2 flex flex-col bg-black border-l border-[#D4AF37]/20 pb-24">
+                    {/* Panel header */}
+                    <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
+                      <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
+                        {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
+                      </h3>
+                    </div>
+                    
+                    {/* Panel content */}
+                    <div className="flex-1 overflow-y-auto pb-8">
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
