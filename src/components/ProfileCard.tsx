@@ -86,10 +86,13 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
-  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains'>('main');
+  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains' | 'basenames'>('main');
   const [ensDomains, setEnsDomains] = useState<any[]>([]);
   const [ensDomainsLoading, setEnsDomainsLoading] = useState(false);
   const [selectedEnsDomain, setSelectedEnsDomain] = useState<any>(null);
+  const [basenames, setBasenames] = useState<any[]>([]);
+  const [basenamesLoading, setBasenamesLoading] = useState(false);
+  const [selectedBasename, setSelectedBasename] = useState<any>(null);
   const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
   const [magicEdenLoading, setMagicEdenLoading] = useState(false);
   const [hlNfts, setHlNfts] = useState<any[]>([]);
@@ -267,6 +270,26 @@ export const ProfileCard = ({
           console.error('ENS Domains fetch error:', e); 
         } finally {
           setEnsDomainsLoading(false);
+        }
+
+        // Fetch Basenames from Base subgraph
+        setBasenamesLoading(true);
+        try {
+          const baseRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-basenames', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+            },
+            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+          });
+          const baseData = await baseRes.json();
+          console.log('Basenames response:', baseData);
+          if (baseData.domains) setBasenames(baseData.domains);
+        } catch (e) { 
+          console.error('Basenames fetch error:', e); 
+        } finally {
+          setBasenamesLoading(false);
         }
 
         // Fetch Polymarket data
@@ -962,6 +985,26 @@ export const ProfileCard = ({
                         </button>
                       )}
 
+                      {/* Basenames Button - Only show if loading or has basenames */}
+                      {(basenamesLoading || basenames.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('basenames')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0052FF] to-[#4D8FFF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-white text-base">Basenames</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-white/70">
+                                  {basenamesLoading ? 'Loading…' : `${basenames.length} ${basenames.length === 1 ? 'name' : 'names'}`}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
                       {/* Empty state placeholder when no categories available */}
                       {poaps.length === 0 && 
                        nfts.length === 0 && 
@@ -973,19 +1016,22 @@ export const ProfileCard = ({
                        !worldchainNftsLoading &&
                        hlNfts.length === 0 &&
                        ensDomains.length === 0 &&
-                       !ensDomainsLoading && (
+                       !ensDomainsLoading &&
+                       basenames.length === 0 &&
+                       !basenamesLoading && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p className="text-sm">No NFTs found for this wallet</p>
                         </div>
                       )}
 
                       {/* Loading skeleton when fetching */}
-                      {(nftLoading || magicEdenLoading || worldchainNftsLoading || ensDomainsLoading) && 
+                      {(nftLoading || magicEdenLoading || worldchainNftsLoading || ensDomainsLoading || basenamesLoading) && 
                        poaps.length === 0 && 
                        nfts.length === 0 && 
                        magicEdenNfts.length === 0 &&
                        worldchainNftCount === 0 &&
-                       ensDomains.length === 0 && (
+                       ensDomains.length === 0 &&
+                       basenames.length === 0 && (
                         <div className="space-y-2">
                           {[1, 2, 3].map((i) => (
                             <div key={i} className="w-full h-16 rounded-2xl bg-muted/40 animate-pulse" />
@@ -1200,6 +1246,48 @@ export const ProfileCard = ({
                                 />
                                 <div className="hidden w-full h-full bg-gradient-to-br from-[#5298FF] to-[#3370CC] flex items-center justify-center">
                                   <span className="text-white font-bold text-2xl">ENS</span>
+                                </div>
+                              </div>
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p className="text-white text-xs font-medium truncate">{domain.name}</p>
+                                <p className="text-white/60 text-[10px] capitalize">{domain.type || 'owned'}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ) : nftCategory === 'basenames' ? (
+                    // Basenames - Grid layout with avatars
+                    basenamesLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#0052FF]" />
+                      </div>
+                    ) : basenames.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>No Basenames found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-w-2xl mx-auto">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
+                          {basenames.map((domain: any, index: number) => (
+                            <div
+                              key={`basename-${domain.name}-${index}`}
+                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#0052FF]/20 hover:border-[#0052FF]/50 transition-all w-full"
+                              onClick={() => setSelectedBasename(domain)}
+                            >
+                              <div className="aspect-square bg-gradient-to-br from-[#0052FF]/10 to-[#4D8FFF]/10 overflow-hidden">
+                                <img
+                                  src={domain.image_url}
+                                  alt={domain.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                                <div className="hidden w-full h-full bg-gradient-to-br from-[#0052FF] to-[#4D8FFF] flex items-center justify-center">
+                                  <span className="text-white font-bold text-xl">BASE</span>
                                 </div>
                               </div>
                               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
