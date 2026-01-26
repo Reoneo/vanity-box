@@ -517,9 +517,9 @@ export const ProfileCard = ({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-card hover:bg-card/80 transition-all duration-200 border border-border/40 hover:border-[#D4AF37]/60 hover:shadow-lg group"
+                    className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:shadow-lg group"
                   >
-                    <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                       <SocialIcon
                         platform={platform}
                         url={url}
@@ -527,10 +527,10 @@ export const ProfileCard = ({
                       />
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-base text-foreground font-semibold text-center">
+                      <span className="text-base text-white font-semibold text-center">
                         {platform.charAt(0).toUpperCase() + platform.slice(1)}
                       </span>
-                      <span className="text-sm text-muted-foreground truncate max-w-[140px] text-center">
+                      <span className="text-sm text-white/60 truncate max-w-[140px] text-center">
                         {extractHandle(platform, url)}
                       </span>
                     </div>
@@ -550,7 +550,7 @@ export const ProfileCard = ({
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
             </div>
           ) : portfolioTokens.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
+            <div className="text-center py-16 text-white/50">
               <p className="text-xl font-medium">No tokens found</p>
               <p className="text-sm mt-2">No fungible tokens in this wallet</p>
             </div>
@@ -558,8 +558,8 @@ export const ProfileCard = ({
             <div className="space-y-3 max-w-xl mx-auto">
               {/* Total Value Header */}
               {portfolioTotalValue > 0 && (
-                <div className="text-center py-4 mb-4 bg-card/50 rounded-2xl border border-border/30">
-                  <p className="text-sm text-muted-foreground">Total Portfolio Value</p>
+                <div className="text-center py-4 mb-4 bg-white/5 rounded-2xl border border-[#D4AF37]/20">
+                  <p className="text-sm text-white/60">Total Portfolio Value</p>
                   <p className="text-3xl font-bold text-[#D4AF37]">
                     ${portfolioTotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -569,21 +569,21 @@ export const ProfileCard = ({
               {portfolioTokens.map((token: any, index: number) => (
                 <div 
                   key={token.id || `token-${index}`}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/40 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
                     {token.icon ? (
                       <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-base font-bold text-foreground">{token.symbol?.slice(0, 2)}</span>
+                      <span className="text-base font-bold text-white">{token.symbol?.slice(0, 2)}</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-foreground truncate text-base">{token.name}</span>
-                      <span className="text-sm text-muted-foreground font-medium">{token.symbol}</span>
+                      <span className="font-semibold text-white truncate text-base">{token.name}</span>
+                      <span className="text-sm text-white/60 font-medium">{token.symbol}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mt-0.5">
+                    <div className="flex items-center justify-between text-sm text-white/50 mt-0.5">
                       <span>{parseFloat(token.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
                       {token.value > 0 && (
                         <span className="text-[#D4AF37] font-medium">${token.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -606,7 +606,7 @@ export const ProfileCard = ({
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
+            <div className="text-center py-16 text-white/50">
               <p className="text-xl font-medium">No transactions found</p>
               <p className="text-sm mt-2">Transaction history coming soon</p>
             </div>
@@ -615,21 +615,21 @@ export const ProfileCard = ({
               {transactions.map((tx: any, index: number) => (
                 <div 
                   key={tx.id || `tx-${index}`}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border/40 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${tx.type === 'receive' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${tx.type === 'receive' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                     <span className="text-xl font-bold">{tx.type === 'receive' ? '↓' : '↑'}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-foreground truncate capitalize text-base">{tx.type || 'Transaction'}</span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="font-semibold text-white truncate capitalize text-base">{tx.type || 'Transaction'}</span>
+                      <span className="text-sm text-white/50">
                         {tx.minedAt ? formatDistanceToNow(new Date(tx.minedAt), { addSuffix: true }) : ''}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mt-0.5">
+                    <div className="flex items-center justify-between text-sm text-white/50 mt-0.5">
                       <span className="truncate font-mono">{tx.hash?.slice(0, 12)}...</span>
-                      <span className="text-xs uppercase font-medium bg-muted px-2 py-0.5 rounded">{tx.chain}</span>
+                      <span className="text-xs uppercase font-medium bg-white/10 px-2 py-0.5 rounded text-white/70">{tx.chain}</span>
                     </div>
                   </div>
                 </div>
@@ -652,34 +652,38 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="flex h-full">
-                {/* Left side - 50% - Profile info */}
-                <div className="w-1/2 overflow-y-auto border-r border-border/20">
-                  <div className="space-y-3 pb-20">
-                    {/* Header and Avatar with Verified Badge */}
-                    <div className="relative flex-shrink-0">
-                      <div 
-                        className="w-full aspect-[3/1] overflow-hidden cursor-pointer"
-                        onClick={() => setShowHeaderPopup(true)}
-                      >
-                        <img
-                          src={web3BioProfile?.header || defaultHeader}
-                          alt="Header"
-                          className="block w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
-                      </div>
+              <div className="flex flex-col h-full">
+                {/* Full-width Header spanning both sides */}
+                <div className="relative flex-shrink-0 w-full">
+                  <div 
+                    className="w-full aspect-[5.5/1] overflow-hidden cursor-pointer"
+                    onClick={() => setShowHeaderPopup(true)}
+                  >
+                    <img
+                      src={web3BioProfile?.header || defaultHeader}
+                      alt="Header"
+                      className="block w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
+                  </div>
+                </div>
 
-                      <div className="flex justify-center absolute -bottom-14 left-0 right-0">
+                {/* 50:50 Split Content Area */}
+                <div className="flex flex-1 min-h-0">
+                  {/* Left side - 50% - Profile info with black + gold gradient */}
+                  <div className="w-1/2 overflow-y-auto border-r border-border/20 bg-gradient-to-br from-black via-black to-[#D4AF37]/10">
+                    <div className="space-y-3 pb-20">
+                      {/* Avatar positioned at top of left panel */}
+                      <div className="flex justify-center -mt-14 relative z-10">
                         <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
                           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
-                          <Avatar className="relative h-28 w-28 border-4 border-background shadow-2xl ring-2 ring-primary/30">
+                          <Avatar className="relative h-28 w-28 border-4 border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
                             <AvatarImage 
                               src={web3BioProfile?.avatar || vanityBoxAvatar} 
                               alt={web3BioProfile?.displayName || 'User'}
                               className="object-cover"
                             />
-                            <AvatarFallback className="text-4xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold">
+                            <AvatarFallback className="text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
                               {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
                             </AvatarFallback>
                           </Avatar>
@@ -701,11 +705,10 @@ export const ProfileCard = ({
                           )}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="px-6 pt-[60px] space-y-3 flex-shrink-0">
+                      <div className="px-6 pt-4 space-y-3 flex-shrink-0">
                       {/* Name */}
-                      <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
+                      <h2 className="text-2xl font-bold text-center text-white tracking-tight">
                         {getDisplayName()}
                       </h2>
 
@@ -714,7 +717,7 @@ export const ProfileCard = ({
                         <div className="flex items-center justify-center">
                           <code 
                             onClick={copyAddress}
-                            className="px-3 py-1 bg-muted/80 rounded-lg text-sm text-black dark:text-white cursor-pointer hover:bg-muted transition-colors font-mono"
+                            className="px-3 py-1 bg-white/10 rounded-lg text-sm text-white/90 cursor-pointer hover:bg-white/20 transition-colors font-mono"
                           >
                             {copied ? 'Copied!' : shortenAddress(currentWalletAddress)}
                           </code>
@@ -726,12 +729,12 @@ export const ProfileCard = ({
                         <div className="flex justify-center items-center gap-2 text-sm">
                           <button onClick={onFollowingClick} className="flex items-center gap-1.5 hover:opacity-80 transition-colors">
                             <span className="font-bold text-[#D4AF37]">{efpStats.following_count || 0}</span>
-                            <span className="text-foreground">Following</span>
+                            <span className="text-white">Following</span>
                           </button>
-                          <span className="text-muted-foreground">·</span>
+                          <span className="text-white/50">·</span>
                           <button onClick={onFollowersClick} className="flex items-center gap-1.5 hover:opacity-80 transition-colors">
                             <span className="font-bold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
-                            <span className="text-foreground">Followers</span>
+                            <span className="text-white">Followers</span>
                           </button>
                         </div>
                       )}
@@ -741,13 +744,13 @@ export const ProfileCard = ({
                         <div className="flex items-center justify-center gap-4 flex-wrap text-sm">
                           {web3BioProfile?.email && (
                             <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
-                              <Mail className="w-4 h-4 text-muted-foreground" />
+                              <Mail className="w-4 h-4 text-white/60" />
                               <span className="truncate max-w-[150px]">{web3BioProfile.email}</span>
                             </a>
                           )}
                           {(web3BioProfile?.website || web3BioProfile?.url) && (
                             <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
-                              <Globe className="w-4 h-4 text-muted-foreground" />
+                              <Globe className="w-4 h-4 text-white/60" />
                               <span className="truncate max-w-[150px]">{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
                             </a>
                           )}
@@ -756,7 +759,7 @@ export const ProfileCard = ({
 
                       {/* Bio */}
                       {web3BioProfile?.description && (
-                        <p className="text-sm text-muted-foreground text-center leading-relaxed max-w-[350px] mx-auto">
+                        <p className="text-sm text-white/70 text-center leading-relaxed max-w-[350px] mx-auto">
                           {web3BioProfile.description}
                         </p>
                       )}
@@ -794,7 +797,7 @@ export const ProfileCard = ({
                                 className={`py-2 px-4 rounded-xl border text-sm font-medium whitespace-nowrap transition-all duration-200
                                   ${desktopActivePanel === btn.panel 
                                     ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-md' 
-                                    : 'bg-muted/60 border-border/40 hover:border-[#D4AF37]/50 hover:bg-muted text-foreground'
+                                    : 'bg-white/10 border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-white/20 text-white'
                                   }`}
                               >
                                 {btn.title}
@@ -806,7 +809,7 @@ export const ProfileCard = ({
 
                       {/* On-chain date */}
                       {firstTransactionDate && (
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-1">
+                        <div className="flex items-center justify-center gap-2 text-sm text-white/60 pt-1">
                           <Calendar className="w-4 h-4" />
                           <span>
                             On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric', day: 'numeric' })}
@@ -834,10 +837,10 @@ export const ProfileCard = ({
                   </div>
                 </div>
 
-                {/* Right side - 50% - Content panels */}
-                <div className="w-1/2 overflow-hidden flex flex-col bg-background">
+                {/* Right side - 50% - Content panels with popup-style dark background */}
+                <div className="w-1/2 overflow-hidden flex flex-col bg-black dark:bg-black border-l border-[#D4AF37]/20">
                   {/* Panel header */}
-                  <div className="flex-shrink-0 px-6 py-4 border-b border-border/30 bg-muted/20">
+                  <div className="flex-shrink-0 px-6 py-4 border-b border-[#D4AF37]/20 bg-black/50">
                     <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
                       {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
                     </h3>
@@ -957,7 +960,7 @@ export const ProfileCard = ({
 
                             {/* Empty state */}
                             {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && (
-                              <div className="text-center py-8 text-muted-foreground">
+                              <div className="text-center py-8 text-white/50">
                                 <p className="text-sm">No NFTs found for this wallet</p>
                               </div>
                             )}
@@ -1099,12 +1102,13 @@ export const ProfileCard = ({
                       </div>
                     )}
                     {!desktopActivePanel && (
-                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <div className="flex items-center justify-center h-full text-white/50">
                         <p>Select a category from the left panel</p>
                       </div>
                     )}
                   </div>
                 </div>
+              </div>
               </div>
             ) : (
               /* Mobile: Original stacked layout */
