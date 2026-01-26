@@ -488,6 +488,17 @@ export const ProfileCard = ({
     });
   };
 
+  const extractHandle = (platform: string, url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      const handle = pathParts[pathParts.length - 1] || urlObj.hostname;
+      return handle.startsWith('@') ? handle : `@${handle}`;
+    } catch {
+      return url;
+    }
+  };
+
   // Helper function to render desktop panel content inline (no overlay header)
   const renderDesktopPanelContent = (panel: 'nfts' | 'social' | 'tokens' | 'activity') => {
     if (panel === 'social') {
@@ -2060,7 +2071,6 @@ export const ProfileCard = ({
                 </div>
               </div>
             )}
-            </div>
           </div>
         )}
 
