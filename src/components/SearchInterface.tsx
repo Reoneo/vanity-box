@@ -1615,10 +1615,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     {/* Feature Showcase - Only show when on homepage */}
                     {isHomepage && !web3BioProfile && !showSearchBar && (
                       <div 
-                        className="fixed left-0 right-0 z-[9996] overflow-y-auto"
+                        className="fixed left-0 right-0 z-[9996] overflow-y-auto bg-background"
                         style={{ 
                           top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
-                          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' 
+                          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)' 
                         }}
                       >
                         <HomeFeatureShowcase />
