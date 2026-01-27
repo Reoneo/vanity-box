@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Import network logos
 import ethLogo from "@/assets/eth-logo.png";
@@ -8,6 +10,9 @@ interface ChronologicalPoapGridProps {
   poaps: any[];
   onPoapClick: (poap: any) => void;
   totalCount?: number;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 interface GroupedPoaps {
@@ -33,7 +38,14 @@ const PoapNetworkIcon = ({ chain, size = 14 }: { chain?: string; size?: number }
   return <img src={ethLogo} alt="Ethereum" width={size} height={size} className="rounded-full" />;
 };
 
-export const ChronologicalPoapGrid = ({ poaps, onPoapClick, totalCount }: ChronologicalPoapGridProps) => {
+export const ChronologicalPoapGrid = ({ 
+  poaps, 
+  onPoapClick, 
+  totalCount, 
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false
+}: ChronologicalPoapGridProps) => {
   // Group POAPs by month/year chronologically (newest first) - sorted by MINT date
   const groupedPoaps = useMemo(() => {
     const groups: GroupedPoaps = {};
@@ -85,7 +97,10 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick, totalCount }: Chrono
       }
     });
   }, [groupedPoaps]);
+  
   const displayCount = totalCount ?? poaps.length;
+  const loadedCount = poaps.length;
+  const remainingCount = displayCount - loadedCount;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-8">
@@ -140,6 +155,32 @@ export const ChronologicalPoapGrid = ({ poaps, onPoapClick, totalCount }: Chrono
           )}
         </div>
       ))}
+
+      {/* Load More button */}
+      {hasMore && onLoadMore && (
+        <div className="flex flex-col items-center gap-2 pt-4 pb-2">
+          <p className="text-sm text-muted-foreground">
+            Showing {loadedCount.toLocaleString()} of {displayCount.toLocaleString()} POAPs
+          </p>
+          <Button
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+            variant="outline"
+            className="w-full max-w-xs bg-gradient-to-r from-purple-500/10 to-purple-600/10 border-purple-500/30 hover:border-purple-500/50 hover:bg-purple-500/20"
+          >
+            {isLoadingMore ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                Load More ({Math.min(remainingCount, 1000).toLocaleString()} more)
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       {poaps.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
