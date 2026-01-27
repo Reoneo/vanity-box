@@ -213,6 +213,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [followingList, setFollowingList] = useState<EFPUser[]>([]);
   const [takenSubdomains, setTakenSubdomains] = useState<Set<string>>(new Set());
   const [poapCount, setPoapCount] = useState<number>(0);
+  const [poapTotalCount, setPoapTotalCount] = useState<number>(0);
+  const [poapHasMore, setPoapHasMore] = useState<boolean>(false);
+  const [poapOffset, setPoapOffset] = useState<number>(0);
+  const [poapLoadingMore, setPoapLoadingMore] = useState<boolean>(false);
   const [isLoadingPoaps, setIsLoadingPoaps] = useState(false);
   const [followersPage, setFollowersPage] = useState(0);
   const [followingPage, setFollowingPage] = useState(0);
@@ -413,32 +417,37 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const loadPoaps = async () => {
         try {
           setIsLoadingPoaps(true);
+          // Reset pagination state
+          setPoapOffset(0);
+          
           const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-            body: { walletAddress: web3BioProfile.address },
+            body: { walletAddress: web3BioProfile.address, offset: 0, limit: 1000 },
           });
 
           if (!poapError && poapData?.success) {
             setPoapCount(poapData.count || 0);
+            setPoapTotalCount(poapData.totalCount || poapData.count || 0);
+            setPoapHasMore(poapData.hasMore || false);
+            setPoapOffset(poapData.count || 0);
             
-            const { data: tokensData } = await supabase
-              .from('poap_tokens')
-              .select('*')
-              .eq('wallet_address', web3BioProfile.address.toLowerCase());
-            
-            if (tokensData) {
-              setPoapTokens(tokensData.map((token: any) => ({
-                eventId: token.event_id,
-                eventName: token.event_name,
-                eventDescription: token.event_description,
-                eventImageUrl: token.event_image_url,
-                eventStartDate: token.event_start_date,
-                eventEndDate: token.event_end_date,
-                eventYear: token.event_year,
-                tokenId: token.token_id,
-                owner: token.owner,
-                chain: token.chain,
+            // Use the poaps directly from the API response (already has all metadata)
+            if (poapData.poaps && Array.isArray(poapData.poaps)) {
+              setPoapTokens(poapData.poaps.map((poap: any) => ({
+                eventId: poap.event?.id,
+                eventName: poap.event?.name,
+                eventDescription: poap.event?.description,
+                eventImageUrl: poap.event?.image_url,
+                eventStartDate: poap.event?.start_date,
+                eventEndDate: poap.event?.end_date,
+                eventYear: poap.event?.year,
+                tokenId: poap.tokenId,
+                owner: poap.owner,
+                chain: poap.chain,
+                __mintDate: poap.__mintDate,
+                __bestDate: poap.__bestDate,
+                created: poap.created,
               })));
-              console.log(`✅ Background: Loaded ${tokensData.length} POAPs`);
+              console.log(`✅ Background: Loaded ${poapData.poaps.length} POAPs (total: ${poapData.totalCount}, hasMore: ${poapData.hasMore})`);
             }
           }
         } catch (error) {
@@ -452,6 +461,48 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return () => clearTimeout(timer);
     }
   }, [web3BioProfile?.address]);
+
+  // Load more POAPs handler
+  const handleLoadMorePoaps = async () => {
+    if (!web3BioProfile?.address || poapLoadingMore || !poapHasMore) return;
+    
+    try {
+      setPoapLoadingMore(true);
+      console.log(`🔄 Loading more POAPs from offset ${poapOffset}...`);
+      
+      const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
+        body: { walletAddress: web3BioProfile.address, offset: poapOffset, limit: 1000 },
+      });
+
+      if (!poapError && poapData?.success && poapData.poaps) {
+        // Append new poaps to existing ones
+        const newPoaps = poapData.poaps.map((poap: any) => ({
+          eventId: poap.event?.id,
+          eventName: poap.event?.name,
+          eventDescription: poap.event?.description,
+          eventImageUrl: poap.event?.image_url,
+          eventStartDate: poap.event?.start_date,
+          eventEndDate: poap.event?.end_date,
+          eventYear: poap.event?.year,
+          tokenId: poap.tokenId,
+          owner: poap.owner,
+          chain: poap.chain,
+          __mintDate: poap.__mintDate,
+          __bestDate: poap.__bestDate,
+          created: poap.created,
+        }));
+        
+        setPoapTokens(prev => [...prev, ...newPoaps]);
+        setPoapOffset(prev => prev + poapData.count);
+        setPoapHasMore(poapData.hasMore || false);
+        console.log(`✅ Loaded ${newPoaps.length} more POAPs (offset now: ${poapOffset + poapData.count}, hasMore: ${poapData.hasMore})`);
+      }
+    } catch (error) {
+      console.error('Error loading more POAPs:', error);
+    } finally {
+      setPoapLoadingMore(false);
+    }
+  };
 
   // Hide search bar when profile is loaded, show when cleared
   useEffect(() => {
@@ -1661,6 +1712,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     connectedWalletAddress={walletAddress}
                     efpStats={efpStats || undefined}
                     poaps={poapTokens}
+                    poapTotalCount={poapTotalCount}
+                    poapHasMore={poapHasMore}
+                    poapLoadingMore={poapLoadingMore}
+                    onLoadMorePoaps={handleLoadMorePoaps}
                     socialIcons={socialIcons}
                     nfts={nfts}
                     nftLoading={nftLoading}
@@ -1708,6 +1763,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       setEnsResults([]);
                       setNfts([]);
                       setPoapTokens([]);
+                      setPoapTotalCount(0);
+                      setPoapHasMore(false);
+                      setPoapOffset(0);
                       setActiveDockSection('profile');
                       setIsHomepage(true);
                       // Reset detail view state to fix glitch

@@ -51,6 +51,10 @@ interface ProfileCardProps {
   connectedWalletAddress?: string;
   efpStats?: any;
   poaps?: any[];
+  poapTotalCount?: number;
+  poapHasMore?: boolean;
+  poapLoadingMore?: boolean;
+  onLoadMorePoaps?: () => void;
   socialIcons?: Record<string, string>;
   nfts?: any[];
   nftLoading?: boolean;
@@ -158,6 +162,10 @@ export const ProfileCard = ({
   connectedWalletAddress,
   efpStats,
   poaps = [],
+  poapTotalCount,
+  poapHasMore = false,
+  poapLoadingMore = false,
+  onLoadMorePoaps,
   socialIcons = {},
   nfts = [],
   nftLoading = false,
@@ -1044,13 +1052,13 @@ export const ProfileCard = ({
                         {nftCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {/* POAPs Button */}
-                            {poaps.length > 0 && (
+                            {(poaps.length > 0 || (poapTotalCount && poapTotalCount > 0)) && (
                               <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
                                     <h4 className="font-medium text-black text-base">POAPs</h4>
                                     <div className="flex items-center gap-2">
-                                      <p className="text-sm text-black/70">{poaps.length} {poaps.length === 1 ? 'badge' : 'badges'}</p>
+                                      <p className="text-sm text-black/70">{(poapTotalCount || poaps.length).toLocaleString()} {(poapTotalCount || poaps.length) === 1 ? 'badge' : 'badges'}</p>
                                       <div className="flex -space-x-2">
                                         {poaps.slice(0, 3).map((poap, idx) => (
                                           <img key={idx} src={poap.eventImageUrl} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
@@ -1169,7 +1177,7 @@ export const ProfileCard = ({
                           /* Sub-category views - back button now in header */
                           <div className="space-y-4 max-w-2xl mx-auto">
                             
-                            {nftCategory === 'poaps' && <ChronologicalPoapGrid poaps={formattedPoaps} onPoapClick={(poap) => setSelectedPoap(poap)} />}
+                            {nftCategory === 'poaps' && <ChronologicalPoapGrid poaps={formattedPoaps} onPoapClick={(poap) => setSelectedPoap(poap)} totalCount={poapTotalCount} hasMore={poapHasMore} onLoadMore={onLoadMorePoaps} isLoadingMore={poapLoadingMore} />}
                             
                             {nftCategory === 'worldchain' && <WorldchainNFTSection walletAddress={currentWalletAddress || ''} />}
                             
@@ -1690,7 +1698,7 @@ export const ProfileCard = ({
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
                       {/* POAPs Button - Only show if has items */}
-                      {poaps.length > 0 && (
+                      {(poaps.length > 0 || (poapTotalCount && poapTotalCount > 0)) && (
                         <button
                           onClick={() => setNftCategory('poaps')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -1699,7 +1707,7 @@ export const ProfileCard = ({
                             <div className="text-left flex-1 min-w-0 mr-3">
                               <h4 className="font-medium text-black text-base">POAPs</h4>
                               <div className="flex items-center gap-2">
-                                <p className="text-sm text-black/70">{poaps.length} {poaps.length === 1 ? 'item' : 'items'}</p>
+                                <p className="text-sm text-black/70">{(poapTotalCount || poaps.length).toLocaleString()} {(poapTotalCount || poaps.length) === 1 ? 'item' : 'items'}</p>
                                 <div className="flex -space-x-2">
                                   {poaps.slice(0, 3).map((poap, idx) => (
                                     <img key={idx} src={poap.eventImageUrl} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
@@ -1929,7 +1937,11 @@ export const ProfileCard = ({
                     // POAPs chronological grid
                     <ChronologicalPoapGrid 
                       poaps={formattedPoaps} 
-                      onPoapClick={(poap) => setSelectedPoap(poap)} 
+                      onPoapClick={(poap) => setSelectedPoap(poap)}
+                      totalCount={poapTotalCount}
+                      hasMore={poapHasMore}
+                      onLoadMore={onLoadMorePoaps}
+                      isLoadingMore={poapLoadingMore}
                     />
                   ) : nftCategory === 'opensea' ? (
                     // OpenSea collections

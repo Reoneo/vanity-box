@@ -112,9 +112,12 @@ serve(async (req) => {
   try {
     // Safer body parsing (prevents crashes if body is empty/malformed)
     const rawText = await req.text();
-    const parsed = safeParseJson<{ walletAddress?: any }>(rawText);
+    const parsed = safeParseJson<{ walletAddress?: any; offset?: number; limit?: number; countOnly?: boolean }>(rawText);
 
     const rawWalletAddress = parsed?.walletAddress;
+    const offset = parsed?.offset ?? 0;
+    const limit = parsed?.limit ?? 1000;
+    const countOnly = parsed?.countOnly ?? false;
 
     // Sanitize walletAddress - handle MiniKit's undefined object format
     const walletAddress =
@@ -130,8 +133,10 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           count: 0,
+          totalCount: 0,
           poaps: [],
           groups: [],
+          hasMore: false,
           error: "Wallet address is required",
         }),
         {
@@ -141,7 +146,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Fetching POAPs for wallet:", walletAddress);
+    console.log(`Fetching POAPs for wallet: ${walletAddress}, offset: ${offset}, limit: ${limit}, countOnly: ${countOnly}`);
 
     const poapApiKey = Deno.env.get("POAP_API_KEY");
 
@@ -151,8 +156,10 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           count: 0,
+          totalCount: 0,
           poaps: [],
           groups: [],
+          hasMore: false,
           error: "POAP API key not configured",
         }),
         {
@@ -162,7 +169,8 @@ serve(async (req) => {
       );
     }
 
-    // Fetch POAPs using X-API-Key (open endpoint)
+    // Fetch ALL POAPs to get accurate total count
+    // The POAP API doesn't support pagination, so we fetch everything
     const apiUrl = `https://api.poap.tech/actions/scan/${walletAddress}`;
     console.log("Calling POAP API:", apiUrl);
 
@@ -186,8 +194,10 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           count: 0,
+          totalCount: 0,
           poaps: [],
           groups: [],
+          hasMore: false,
           error: "Failed to fetch POAPs from API",
           details: errorText,
           status: poapsResponse.status,
@@ -199,13 +209,44 @@ serve(async (req) => {
       );
     }
 
-    const poaps = await poapsResponse.json();
-    const safePoaps = Array.isArray(poaps) ? poaps : [];
+    const allPoaps = await poapsResponse.json();
+    const safeAllPoaps = Array.isArray(allPoaps) ? allPoaps : [];
+    const totalCount = safeAllPoaps.length;
 
-    console.log(`Found ${safePoaps.length} POAPs for wallet ${walletAddress}`);
+    console.log(`Found ${totalCount} total POAPs for wallet ${walletAddress}`);
+
+    // If countOnly is requested, return just the count
+    if (countOnly) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          count: 0,
+          totalCount,
+          poaps: [],
+          groups: [],
+          hasMore: totalCount > 0,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Sort all POAPs by mint date (newest first) before pagination
+    const sortedPoaps = safeAllPoaps.sort((a: any, b: any) => {
+      const dateA = getMintDate(a)?.getTime() ?? pickBestDate(a)?.getTime() ?? 0;
+      const dateB = getMintDate(b)?.getTime() ?? pickBestDate(b)?.getTime() ?? 0;
+      return dateB - dateA;
+    });
+
+    // Apply pagination
+    const paginatedPoaps = sortedPoaps.slice(offset, offset + limit);
+    const hasMore = offset + limit < totalCount;
+
+    console.log(`Returning ${paginatedPoaps.length} POAPs (offset: ${offset}, hasMore: ${hasMore})`);
 
     // Add best date (useful for frontend sorting/debugging)
-    const poapsWithDate = safePoaps.map((p: any) => ({
+    const poapsWithDate = paginatedPoaps.map((p: any) => ({
       ...p,
       __bestDate: pickBestDate(p)?.toISOString() ?? null,
       __mintDate: getMintDate(p)?.toISOString() ?? null,
@@ -214,13 +255,13 @@ serve(async (req) => {
     // Group POAPs by month/year for UI
     const groups = groupPoapsByMonth(poapsWithDate);
 
-    // Store POAPs in database
+    // Store POAPs in database (only the current batch)
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Prepare POAP data for insertion
-    const poapData = safePoaps.map((poap: any) => ({
+    const poapData = paginatedPoaps.map((poap: any) => ({
       wallet_address: walletAddress.toLowerCase(),
       event_id: poap.event.id,
       token_id: poap.tokenId,
@@ -248,7 +289,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        count: safePoaps.length,
+        count: paginatedPoaps.length,
+        totalCount,
+        hasMore,
+        offset,
+        limit,
 
         // Keep original flat array (backwards compatible)
         poaps: poapsWithDate,
@@ -266,8 +311,10 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         count: 0,
+        totalCount: 0,
         poaps: [],
         groups: [],
+        hasMore: false,
         error: error?.message || "An unexpected error occurred",
       }),
       {
