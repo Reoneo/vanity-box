@@ -122,7 +122,7 @@ export const HomeFeatureShowcase: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] text-[#D4AF37] uppercase tracking-widest font-semibold mb-1">After</p>
                 <p className="font-bold text-lg sm:text-xl text-foreground">
-                  yourname.eth
+                  YourName.iota
                 </p>
               </div>
             </div>

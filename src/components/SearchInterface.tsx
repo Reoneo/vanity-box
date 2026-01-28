@@ -339,7 +339,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setOpenseaAttempted(false);
       setOpenseaHasErrors(false);
       setLatestCast(null);
+      // Reset ALL POAP state to ensure fresh data for new profile
       setPoapTokens([]);
+      setPoapCount(0);
+      setPoapTotalCount(0);
+      setPoapHasMore(false);
+      setPoapOffset(0);
+      setIsLoadingPoaps(false);
       // Reset detail view to fix glitch when loading new profile
       setShowDetailView(false);
       setDetailViewResult(null);
