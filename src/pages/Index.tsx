@@ -33,12 +33,12 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen bg-transparent flex flex-col relative overflow-hidden">
+    <div className="min-h-screen h-full bg-black dark:bg-black flex flex-col relative overflow-x-hidden">
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
 
       {/* Content wrapper */}
-      <div className="h-screen flex flex-col relative z-40">
+      <div className="min-h-screen h-full flex flex-col relative z-40">
         {/* Blur overlay when language selector is open */}
         <div className="fixed inset-0 z-[9998] pointer-events-none">
           <div className="absolute inset-0" id="page-blur-target"></div>
@@ -49,8 +49,8 @@ const Index = () => {
         </div>
 
         {/* Hero Section - Takes remaining space between header and footer */}
-        <main className="flex-1 relative z-10 flex items-center justify-center pointer-events-auto overflow-hidden">
-          <article className="w-full h-full">
+        <main className="flex-1 relative z-10 flex items-center justify-center pointer-events-auto overflow-x-hidden bg-black dark:bg-black">
+          <article className="w-full h-full bg-black dark:bg-black">
             <SearchInterface />
           </article>
         </main>
