@@ -506,7 +506,42 @@ serve(async (req) => {
       debug.timingsMs.iota = Date.now() - iotaStart;
       
       if (iotaProfile) {
-        result = { ok: true, source: "iota", profile: iotaProfile };
+        // Enrich with Web3.bio data (Farcaster, social links, etc.) if we have an address
+        if (iotaProfile.address) {
+          debug.tried.push("web3bio");
+          const w3Start = Date.now();
+          const web3Profile = await fetchWeb3BioProfile(iotaProfile.address);
+          debug.timingsMs.web3bio = Date.now() - w3Start;
+          
+          if (web3Profile && !web3Profile.notFound) {
+            console.log("✅ Enriching IOTA profile with Web3.bio data");
+            // Merge, keeping IOTA-specific data and preferring IOTA avatar/name
+            result = {
+              ok: true,
+              source: "iota",
+              profile: {
+                ...web3Profile,
+                // Override with IOTA-specific data
+                identity: iotaProfile.identity,
+                platform: "iota",
+                displayName: iotaProfile.displayName || web3Profile.displayName,
+                avatar: iotaProfile.avatar || web3Profile.avatar,
+                description: iotaProfile.description || web3Profile.description,
+                iotaDomain: iotaProfile.iotaDomain,
+                // Merge links (IOTA links take priority, then Web3.bio)
+                links: {
+                  ...web3Profile.links,
+                  ...iotaProfile.links,
+                },
+                farcaster: web3Profile.farcaster || web3Profile.links?.farcaster,
+              },
+            };
+          } else {
+            result = { ok: true, source: "iota", profile: iotaProfile };
+          }
+        } else {
+          result = { ok: true, source: "iota", profile: iotaProfile };
+        }
       } else {
         result = { ok: false, source: "iota", profile: null, notFound: true };
       }

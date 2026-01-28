@@ -68,12 +68,30 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     if (walletConnectConnected && walletConnectAddress) {
       console.log('[WalletConnection] WalletConnect connected:', walletConnectAddress);
       setWalletType('walletconnect');
-      setUser({
-        walletAddress: walletConnectAddress,
-        username: formatAddress(walletConnectAddress)
-      });
-      setIsLoading(false);
-      fetchEnsName(walletConnectAddress);
+      
+      // Fetch ENS name first, then set user and dispatch event
+      const initWalletConnect = async () => {
+        const resolvedEns = await fetchEnsNameAsync(walletConnectAddress);
+        const displayName = resolvedEns || formatAddress(walletConnectAddress);
+        
+        setUser({
+          walletAddress: walletConnectAddress,
+          username: displayName
+        });
+        setIsLoading(false);
+        
+        // Dispatch wallet-connected event with the resolved ENS name
+        window.dispatchEvent(new CustomEvent('wallet-connected', { 
+          detail: { 
+            walletAddress: walletConnectAddress, 
+            username: resolvedEns, // Send the ENS name, not formatted address
+            walletType: 'walletconnect' 
+          } 
+        }));
+        console.log('[WalletConnection] Dispatched wallet-connected event with ENS:', resolvedEns);
+      };
+      
+      initWalletConnect();
     }
   }, [walletConnectConnected, walletConnectAddress]);
 
@@ -147,16 +165,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   };
 
-  // Fetch ENS name for connected wallet
-  const fetchEnsName = async (address: string) => {
-    setEnsLoading(true);
+  // Fetch ENS name for connected wallet (async version that returns the result)
+  const fetchEnsNameAsync = async (address: string): Promise<string | null> => {
     try {
       const response = await fetch(`https://api.ensideas.com/ens/resolve/${address}`);
       if (response.ok) {
         const data = await response.json();
         if (data.name) {
           setEnsName(data.name);
-          return;
+          return data.name;
         }
       }
       
@@ -164,14 +181,24 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         const worldEns = await getWorldChainENS(address);
         if (worldEns) {
           setEnsName(worldEns);
-          return;
+          return worldEns;
         }
       }
       
       setEnsName(null);
+      return null;
     } catch (error) {
       console.error('Failed to fetch ENS:', error);
       setEnsName(null);
+      return null;
+    }
+  };
+
+  // Fetch ENS name for connected wallet (sets loading state)
+  const fetchEnsName = async (address: string) => {
+    setEnsLoading(true);
+    try {
+      await fetchEnsNameAsync(address);
     } finally {
       setEnsLoading(false);
     }
