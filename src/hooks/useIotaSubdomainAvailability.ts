@@ -15,9 +15,9 @@ export interface IotaSubdomainResult {
   error: string | null;
 }
 
-// Validate subdomain format: 1+ alphanumeric chars or hyphens, no leading/trailing hyphens
+// Validate subdomain format: 3+ alphanumeric chars or hyphens, no leading/trailing hyphens
 function isValidSubdomainLabel(label: string): boolean {
-  if (!label || label.length < 1) return false;
+  if (!label || label.length < 3) return false; // Minimum 3 characters
   // Allow alphanumeric and hyphens, but not starting/ending with hyphen
   const pattern = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i;
   return pattern.test(label) && label.length <= 63;
@@ -41,8 +41,12 @@ export function useIotaSubdomainAvailability(label: string): IotaSubdomainResult
 
     const cleanLabel = (label || '').trim().toLowerCase();
     
-    // Skip if empty or too short
-    if (!cleanLabel || cleanLabel.length < 1) {
+    // Skip if empty or too short (minimum 3 characters)
+    if (!cleanLabel || cleanLabel.length < 3) {
+      if (cleanLabel.length > 0 && cleanLabel.length < 3) {
+        setStatus('invalid');
+        setError('Minimum 3 characters required');
+      }
       return;
     }
 
@@ -105,15 +109,16 @@ export function useIotaSubdomainAvailability(label: string): IotaSubdomainResult
 }
 
 /**
- * Get the price for a subdomain in USD based on character length
+ * Get the price for a vanity.iota subdomain in USD based on character length
+ * Pricing: 3 chars = $300, 4 = $100, 5 = $50, 6-9 = $25, 10+ = $5
+ * Minimum 3 characters required
  */
 export function getSubdomainPriceUsd(label: string): number {
   const len = (label || '').trim().length;
-  if (len === 1) return 100;
-  if (len === 2) return 50;
-  if (len === 3) return 25;
-  if (len === 4) return 15;
-  if (len === 5) return 10;
-  if (len >= 6 && len <= 9) return 5;
-  return 1; // 10+ characters
+  if (len < 3) return -1; // Invalid - minimum 3 characters
+  if (len === 3) return 300;
+  if (len === 4) return 100;
+  if (len === 5) return 50;
+  if (len >= 6 && len <= 9) return 25;
+  return 5; // 10+ characters
 }

@@ -92,10 +92,11 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
     ? (Number(baseResult.price) / 1e18 * prices.eth).toFixed(2)
     : null;
 
-  // IOTA vanity.iota subdomain availability
+  // IOTA vanity.iota subdomain availability (minimum 3 characters)
   const iotaResult = useIotaSubdomainAvailability(cleanLabel);
   const iotaDisplayName = `${cleanLabel}.vanity.iota`;
   const iotaUsdPrice = getSubdomainPriceUsd(cleanLabel);
+  const isIotaValidLength = cleanLabel.length >= 3;
   
   // Convert IOTA USD price to IOTA tokens (placeholder: ~$0.25 per IOTA)
   const iotaTokenPrice = iotaUsdPrice > 0 ? (iotaUsdPrice / 0.25).toFixed(2) : null;
@@ -311,9 +312,9 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               <X className="w-3 h-3 mr-1" />
               Registered
             </Badge>
-          ) : iotaResult.status === 'invalid' ? (
+          ) : iotaResult.status === 'invalid' || !isIotaValidLength ? (
             <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
-              Invalid
+              {!isIotaValidLength && cleanLabel.length > 0 ? 'Min 3 chars' : 'Invalid'}
             </Badge>
           ) : (
             <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
@@ -350,7 +351,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Checking…
             </Button>
-          ) : iotaResult.status === 'available' ? (
+          ) : iotaResult.status === 'available' && isIotaValidLength ? (
             <Button 
               className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold"
               size="sm"
@@ -366,6 +367,10 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               disabled={viewLoading === 'iota'}
             >
               {viewLoading === 'iota' ? 'Loading…' : 'View Profile'}
+            </Button>
+          ) : !isIotaValidLength ? (
+            <Button disabled className="w-full bg-teal-500/50 text-white font-semibold opacity-80" size="sm">
+              Min 3 Characters
             </Button>
           ) : (
             <Button disabled className="w-full bg-teal-500/50 text-white font-semibold opacity-80" size="sm">

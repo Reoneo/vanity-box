@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.get-iota-onchain-profile]
 verify_jwt = false
+
+[functions.create-vanity-box-redirect]
+verify_jwt = false
