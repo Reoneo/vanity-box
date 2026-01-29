@@ -882,7 +882,7 @@ export const ProfileCard = ({
                 {/* 50:50 Split Content Area - extends to footer */}
                 <div className="flex flex-1 min-h-0">
                   {/* Left side - 50% - Profile info: white in light mode, black+gold gradient in dark */}
-                  <div className="w-1/2 flex flex-col min-h-0 border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
+                  <div className="w-1/2 flex flex-col min-h-0 border-r border-[#D4AF37]/20 bg-white dark:bg-black">
                     {/* Left panel content - with top padding for avatar overlap */}
                     <div className="flex-1 overflow-y-auto pt-20 pb-28">
                       <div className="px-6 space-y-3">
@@ -1022,7 +1022,7 @@ export const ProfileCard = ({
                   </div>
 
                   {/* Right side - 50% - Content panels with themed background - extends to footer */}
-                  <div className="w-1/2 flex flex-col min-h-0 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10 border-l border-[#D4AF37]/20">
+                  <div className="w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
                     {/* Panel header - with back button on left when in subcategory */}
                     <div className="flex-shrink-0 px-6 py-4 bg-black/5 dark:bg-black/50">
                       <div className="relative flex items-center justify-center">
