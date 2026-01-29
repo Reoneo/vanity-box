@@ -1,63 +1,101 @@
 
+# Fix: IOTA Wallet Profile Button - Reverse Lookup Using JSON-RPC
 
-# Profile Panel Theme Consistency Fix
+## Problem Summary
+When you connect your IOTA wallet and click the Profile button in the dock, the app shows "No results found" instead of loading your primary `.iota` domain profile. Manual search works correctly because it uses the name directly.
 
-## Problem Analysis
-The desktop profile layout (left panel) currently displays an undesired gradient that transitions from white to black, creating an inconsistent and unappealing visual appearance. The user wants the theme to match Image 2 which shows a clean, consistent look with both panels having a subtle white/gold gradient.
+The root cause is that the current `resolve-iota-address` edge function uses IOTA Names SDK methods that may not be working correctly or returning results in an inconsistent format. The official IOTA documentation recommends using the **JSON-RPC API** method `iotax_iotaNamesReverseLookup` for reverse lookup (address to default name).
 
-## Current State
-Looking at the code in `ProfileCard.tsx`:
+## Solution Overview
+Replace the SDK-based reverse lookup with a direct JSON-RPC call to `iotax_iotaNamesReverseLookup`, which is the officially documented method for resolving an address to its default `.iota` name.
 
-**Line 885 (Left Panel):**
-```typescript
-<div className="w-1/2 flex flex-col min-h-0 border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
-```
+## Technical Details
 
-**Line 1025 (Right Panel):**
-```typescript
-<div className="w-1/2 flex flex-col min-h-0 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10 border-l border-[#D4AF37]/20">
-```
-
-The styling appears consistent, but the visual issue in Image 1 suggests there may be conflicting styles or the border styling is creating an unwanted visual effect.
-
-## Solution
-
-### 1. Simplify the Left Panel Background
-Remove the complex gradient and use a simpler, cleaner background that matches the desired look:
-
-**For Light Mode:**
-- Use a clean white background (`bg-white`) instead of a gradient
-- Maintain the subtle gold accent only as a border color
-
-**For Dark Mode:**
-- Use solid black with a very subtle gold-tinted overlay
-- Remove the gradient transition that creates the unpleasant visual
-
-### 2. Update Both Panels for Consistency
-Update both left and right panels to use the same simplified styling:
+### 1. Update Edge Function: `resolve-iota-address`
+Replace the complex SDK-based logic with a simple JSON-RPC call:
 
 ```typescript
-// Left panel (line 885)
-<div className="w-1/2 flex flex-col min-h-0 border-r border-[#D4AF37]/20 bg-white dark:bg-black">
+// Direct JSON-RPC call to mainnet
+const rpcUrl = "https://api.mainnet.iota.cafe";
 
-// Right panel (line 1025)  
-<div className="w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
+const rpcResponse = await fetch(rpcUrl, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "iotax_iotaNamesReverseLookup",
+    params: [address], // The IOTA address (0x...)
+  }),
+});
+
+const rpcData = await rpcResponse.json();
+const iotaName = rpcData?.result; // Returns the default name string, e.g., "vanity.iota"
 ```
 
-### 3. Apply Subtle Gold Accent via Container
-Instead of applying the gradient directly to the panels, use the parent container to create a subtle gold ambient effect if desired.
+**Benefits:**
+- Uses the official IOTA API endpoint documented at `docs.iota.org`
+- Simpler code with fewer dependencies
+- More reliable than SDK methods that may have version incompatibilities
+- Returns the name directly as a string
+
+### 2. Validate IOTA Address Format
+IOTA addresses are 64 hex characters with a `0x` prefix. The function will validate this format before making the RPC call:
+
+```typescript
+function isValidIotaAddress(addr: string): boolean {
+  return /^0x[0-9a-fA-F]{64}$/i.test(addr?.trim() || '');
+}
+```
+
+### 3. Profile Button Flow
+The existing flow in `SearchInterface.tsx` and `WalletConnection.tsx` remains unchanged since it already:
+1. Calls the `resolve-iota-address` edge function on wallet connection
+2. Stores the resolved name as `connectedUsername`
+3. Uses `connectedUsername` in the Profile button's `onClick` handler
+
+The fix is purely in the edge function's reverse lookup logic.
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/ProfileCard.tsx` | Update left panel styling (line ~885) and right panel styling (line ~1025) to use clean backgrounds |
+| `supabase/functions/resolve-iota-address/index.ts` | Replace SDK-based lookup with direct JSON-RPC call to `iotax_iotaNamesReverseLookup` |
 
-## Technical Details
+## Implementation Flow
 
-The changes will:
-1. Replace `bg-gradient-to-br from-white via-white to-[#D4AF37]/5` with `bg-white` for light mode
-2. Replace `dark:from-black dark:via-black dark:to-[#D4AF37]/10` with `dark:bg-black` for dark mode
-3. Keep the gold border styling (`border-[#D4AF37]/20`) for visual consistency
-4. This matches the clean look shown in Image 2 where both panels have a uniform background color
+```text
+User connects IOTA wallet
+        |
+        v
+WalletConnection.tsx detects connection
+        |
+        v
+Calls resolve-iota-address edge function
+        |
+        v
+Edge function calls JSON-RPC: iotax_iotaNamesReverseLookup
+        |
+        v
+Returns default name (e.g., "vanity.iota")
+        |
+        v
+WalletConnection dispatches wallet-connected event with username
+        |
+        v
+SearchInterface stores connectedUsername
+        |
+        v
+Profile button uses connectedUsername for handleSearch()
+        |
+        v
+Profile loads correctly!
+```
 
+## API Reference
+- **Endpoint**: `https://api.mainnet.iota.cafe`
+- **Method**: `iotax_iotaNamesReverseLookup`
+- **Parameter**: IOTA address (string, 0x-prefixed, 64 hex chars)
+- **Returns**: Default name string (e.g., "vanity.iota") or null
+
+Source: [IOTA API Reference](https://docs.iota.org/iota-api-ref#iotax_iotanamesreverselookup)
