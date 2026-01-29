@@ -2271,16 +2271,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               >
                 <div className="flex-1 overflow-y-auto px-4 md:px-8 pt-6 md:pt-10 pb-40">
                   <div className="max-w-4xl mx-auto space-y-6">
-                    {/* ENS + Basenames - Side by side on desktop */}
+                    {/* Vanity ID Bundle with IOTA Early Access */}
                     <NameSearchCarousel searchQuery={displayQuery || ''} />
-                    
-                    {/* Vanity ID Bundle - Single unified card */}
-                    <VanityBundleCard 
-                      subdomain={displayQuery || 'You'} 
-                      onBuyBundle={() => {
-                        toast.info("Vanity ID Bundle coming soon!");
-                      }}
-                    />
                   </div>
                 </div>
               </div>
