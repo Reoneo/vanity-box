@@ -90,7 +90,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
         <div className="text-center mb-4 md:mb-5">
           <div className="inline-flex items-center gap-2 mb-2">
             <h3 className="text-lg md:text-xl font-bold text-foreground">Vanity ID Bundle</h3>
-            <Badge className="bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/30">
+            <Badge className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">
               <Sparkles className="w-3 h-3 mr-1" />
               Early Access
             </Badge>
