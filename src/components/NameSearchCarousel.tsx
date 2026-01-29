@@ -115,15 +115,15 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                 {/* Avatar with active indicator */}
                 <div className={`
                   relative w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 bg-background shadow-sm
-                  ${isIota ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30' : 'border-border/40'}
+                  ${isIota ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30' : isBox ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30' : 'border-border/40'}
                 `}>
                   <img src={item.avatar} alt={fullName} className="w-full h-full object-cover" />
                 </div>
 
                 {/* Subdomain label */}
                 <span className={`
-                  text-[9px] md:text-[10px] font-medium mt-1.5 text-center break-all max-w-[80px]
-                  ${isIota ? 'text-[#D4AF37]' : 'text-muted-foreground'}
+                  text-[9px] md:text-[10px] mt-1.5 text-center break-all max-w-[80px]
+                  ${isIota ? 'text-[#D4AF37] font-medium' : isBox ? 'text-[#D4AF37] font-bold' : 'text-black dark:text-gray-300'}
                 `}>
                   {fullName}
                 </span>
