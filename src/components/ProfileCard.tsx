@@ -1022,7 +1022,7 @@ export const ProfileCard = ({
                   </div>
 
                   {/* Right side - 50% - Content panels with themed background - extends to footer */}
-                  <div className="w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
+                  <div className="w-1/2 flex flex-col min-h-0 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10 border-l border-[#D4AF37]/20">
                     {/* Panel header - with back button on left when in subcategory */}
                     <div className="flex-shrink-0 px-6 py-4 bg-black/5 dark:bg-black/50">
                       <div className="relative flex items-center justify-center">

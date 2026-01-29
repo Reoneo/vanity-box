@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     // Import the SDK dynamically using GraphQL approach (per SDK documentation)
     const { IotaNamesClient } = await import("npm:@iota/iota-names-sdk@^0.5.1");
-    const { getNetwork, Network } = await import("npm:@iota/iota-sdk@^1.10.1/client");
+    const { getNetwork, Network } = await import("npm:@iota/iota-sdk@^1.10.0/client");
     const { IotaGraphQLClient } = await import("npm:@iota/iota-sdk@^1.10.1/graphql");
 
     // Initialize IOTA Names client using GraphQL approach (per SDK documentation)
