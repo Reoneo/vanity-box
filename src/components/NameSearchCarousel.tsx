@@ -1,7 +1,7 @@
 /**
  * NameSearchCarousel
- * Side-by-side layout on desktop, stacked on mobile for name search results
- * Shows ENS (.eth) and Basenames (.base.eth)
+ * Three-column layout on desktop, stacked on mobile for name search results
+ * Shows ENS (.eth), IOTA (.vanity.iota), and Basenames (.base.eth)
  */
 
 import { useState, useMemo } from 'react';
@@ -12,11 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, Check, X, DollarSign } from 'lucide-react';
 import { useEnsAvailability } from '@/hooks/useEnsAvailability';
 import { useBasenameAvailability } from '@/hooks/useBasenameAvailability';
+import { useIotaSubdomainAvailability, getSubdomainPriceUsd } from '@/hooks/useIotaSubdomainAvailability';
 import { useCryptoPrices } from '@/contexts/CryptoPriceContext';
 import { EnsRegisterModal } from '@/components/EnsRegisterModal';
 import { BasenameRegisterModal } from '@/components/BasenameRegisterModal';
+import { IotaSubdomainMintModal } from '@/components/IotaSubdomainMintModal';
 import { format } from 'date-fns';
 import ethLogoDark from '@/assets/eth-logo-dark.svg';
+import vanityIotaAvatar from '@/assets/vanity-iota-avatar.png';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NameSearchCarouselProps {
@@ -46,12 +49,14 @@ const softGoldBtnDisabled =
 export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
   const [ensModalOpen, setEnsModalOpen] = useState(false);
   const [baseModalOpen, setBaseModalOpen] = useState(false);
-  const [viewLoading, setViewLoading] = useState<'ens' | 'base' | null>(null);
+  const [iotaModalOpen, setIotaModalOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState<'ens' | 'base' | 'iota' | null>(null);
   const isMobile = useIsMobile();
   
-  // Toggle for price display: USD (default) or ETH
+  // Toggle for price display: USD (default) or crypto
   const [showEthPriceEns, setShowEthPriceEns] = useState(false);
   const [showEthPriceBase, setShowEthPriceBase] = useState(false);
+  const [showIotaPriceIota, setShowIotaPriceIota] = useState(false);
   
   // Get crypto prices for conversion
   const { prices } = useCryptoPrices();
@@ -61,6 +66,8 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
     const raw = (searchQuery || '').trim().toLowerCase();
     if (raw.endsWith('.eth')) return raw.slice(0, -4);
     if (raw.endsWith('.base.eth')) return raw.slice(0, -9);
+    if (raw.endsWith('.vanity.iota')) return raw.slice(0, -12);
+    if (raw.endsWith('.iota')) return raw.slice(0, -5);
     if (raw.includes('.')) return '';
     return raw;
   }, [searchQuery]);
@@ -85,33 +92,45 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
     ? (Number(baseResult.price) / 1e18 * prices.eth).toFixed(2)
     : null;
 
+  // IOTA vanity.iota subdomain availability
+  const iotaResult = useIotaSubdomainAvailability(cleanLabel);
+  const iotaDisplayName = `${cleanLabel}.vanity.iota`;
+  const iotaUsdPrice = getSubdomainPriceUsd(cleanLabel);
+  
+  // Convert IOTA USD price to IOTA tokens (placeholder: ~$0.25 per IOTA)
+  const iotaTokenPrice = iotaUsdPrice > 0 ? (iotaUsdPrice / 0.25).toFixed(2) : null;
+
   // Don't render if no valid search
-  if (!cleanLabel || cleanLabel.length < 3) {
+  if (!cleanLabel || cleanLabel.length < 1) {
     return null;
   }
 
-  const handleViewProfile = async (type: 'ens' | 'base') => {
+  const handleViewProfile = async (type: 'ens' | 'base' | 'iota') => {
     setViewLoading(type);
     await new Promise((r) => setTimeout(r, 150));
-    const name = type === 'ens' ? ensDisplayName : baseDisplayName;
+    const name = type === 'ens' ? ensDisplayName : type === 'base' ? baseDisplayName : iotaDisplayName;
     window.location.assign(`/${name}`);
   };
 
   // Price display component with toggle
   const PriceDisplay = ({ 
-    showEth, 
+    showCrypto, 
     usdPrice, 
-    ethPrice, 
+    cryptoPrice, 
+    cryptoSymbol,
+    cryptoIcon,
     onToggle,
     network 
   }: { 
-    showEth: boolean; 
+    showCrypto: boolean; 
     usdPrice: string | null; 
-    ethPrice: string | null; 
+    cryptoPrice: string | null; 
+    cryptoSymbol: string;
+    cryptoIcon?: string;
     onToggle: () => void;
     network: string;
   }) => {
-    if (!usdPrice && !ethPrice) {
+    if (!usdPrice && !cryptoPrice) {
       return <span>{network}</span>;
     }
     
@@ -121,10 +140,10 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
         className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
         title="Click to toggle currency"
       >
-        {showEth ? (
+        {showCrypto ? (
           <>
-            <img src={ethLogoDark} alt="ETH" className="w-3.5 h-3.5" />
-            <span>{ethPrice} ETH/yr</span>
+            {cryptoIcon && <img src={cryptoIcon} alt={cryptoSymbol} className="w-3.5 h-3.5" />}
+            <span>{cryptoPrice} {cryptoSymbol}/yr</span>
           </>
         ) : (
           <>
@@ -189,9 +208,11 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
           <p className="text-xs text-muted-foreground">
             {ensResult.status === 'available' ? (
               <PriceDisplay 
-                showEth={showEthPriceEns}
+                showCrypto={showEthPriceEns}
                 usdPrice={ensUsdPrice?.toString() || null}
-                ethPrice={ensEthPrice}
+                cryptoPrice={ensEthPrice}
+                cryptoSymbol="ETH"
+                cryptoIcon={ethLogoDark}
                 onToggle={() => setShowEthPriceEns(!showEthPriceEns)}
                 network="Ethereum"
               />
@@ -238,6 +259,116 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
             </div>
           ) : (
             <Button disabled className={softGoldBtnDisabled} size="sm">
+              Unavailable
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+
+  // IOTA Vanity Card Component
+  const IotaVanityCard = () => (
+    <Card
+      className="
+        flex-1 p-4 rounded-2xl shadow-lg
+        bg-card border border-teal-500/40
+        dark:border-teal-500/25
+      "
+    >
+      <div className="flex flex-col items-center text-center gap-3">
+        {/* Avatar */}
+        <div
+          className="
+            w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden
+            bg-teal-500/10 border border-teal-500/30
+            dark:bg-teal-500/20 dark:border-teal-500/30
+          "
+        >
+          <img src={vanityIotaAvatar} alt="IOTA" className="w-12 h-12 object-cover rounded-lg" loading="lazy" />
+        </div>
+
+        {/* Content */}
+        <div className="w-full flex flex-col items-center gap-1.5">
+          {iotaResult.status === 'loading' ? (
+            <Skeleton className="h-6 w-40 dark:bg-white/10" />
+          ) : (
+            <h3 className="text-lg font-extrabold text-foreground">{iotaDisplayName}</h3>
+          )}
+
+          {iotaResult.status === 'loading' ? (
+            <Badge className="bg-muted text-muted-foreground border border-border">
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              Checking
+            </Badge>
+          ) : iotaResult.status === 'available' ? (
+            <Badge className="bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-300">
+              <Check className="w-3 h-3 mr-1" />
+              Available
+            </Badge>
+          ) : iotaResult.status === 'taken' ? (
+            <Badge className="bg-red-500/15 text-red-700 border border-red-500/25 dark:text-red-300">
+              <X className="w-3 h-3 mr-1" />
+              Registered
+            </Badge>
+          ) : iotaResult.status === 'invalid' ? (
+            <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
+              Invalid
+            </Badge>
+          ) : (
+            <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
+              Error
+            </Badge>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            {iotaResult.status === 'available' ? (
+              <PriceDisplay 
+                showCrypto={showIotaPriceIota}
+                usdPrice={iotaUsdPrice?.toString() || null}
+                cryptoPrice={iotaTokenPrice}
+                cryptoSymbol="IOTA"
+                onToggle={() => setShowIotaPriceIota(!showIotaPriceIota)}
+                network="IOTA"
+              />
+            ) : iotaResult.status === 'taken' ? (
+              iotaResult.expiryDate
+                ? `Expires ${format(iotaResult.expiryDate, 'MMM d, yyyy')}`
+                : 'Already registered'
+            ) : (
+              'IOTA Names'
+            )}
+          </p>
+        </div>
+
+        <div className="w-full h-px bg-border my-1" />
+
+        {/* Buttons */}
+        <div className="w-full">
+          {iotaResult.status === 'loading' ? (
+            <Button disabled className="w-full bg-teal-500/50 text-white font-semibold opacity-80" size="sm">
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Checking…
+            </Button>
+          ) : iotaResult.status === 'available' ? (
+            <Button 
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold"
+              size="sm"
+              onClick={() => setIotaModalOpen(true)}
+            >
+              Register
+            </Button>
+          ) : iotaResult.status === 'taken' ? (
+            <Button 
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold" 
+              size="sm"
+              onClick={() => handleViewProfile('iota')}
+              disabled={viewLoading === 'iota'}
+            >
+              {viewLoading === 'iota' ? 'Loading…' : 'View Profile'}
+            </Button>
+          ) : (
+            <Button disabled className="w-full bg-teal-500/50 text-white font-semibold opacity-80" size="sm">
               Unavailable
             </Button>
           )}
@@ -299,9 +430,11 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
           <p className="text-xs text-muted-foreground">
             {baseResult.status === 'available' ? (
               <PriceDisplay 
-                showEth={showEthPriceBase}
+                showCrypto={showEthPriceBase}
                 usdPrice={baseUsdPrice}
-                ethPrice={baseEthPrice}
+                cryptoPrice={baseEthPrice}
+                cryptoSymbol="ETH"
+                cryptoIcon={ethLogoDark}
                 onToggle={() => setShowEthPriceBase(!showEthPriceBase)}
                 network="Base"
               />
@@ -362,11 +495,20 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
   return (
     <>
-      {/* Side by side on desktop, stacked on mobile */}
-      <div className={`w-full mb-4 ${isMobile ? 'space-y-3' : 'flex gap-4'}`}>
-        <EnsCard />
-        <BasenamesCard />
-      </div>
+      {/* Desktop: 3-column grid (ENS | IOTA | Base), Mobile: stacked with IOTA first */}
+      {isMobile ? (
+        <div className="w-full mb-4 space-y-3">
+          <IotaVanityCard />
+          <EnsCard />
+          <BasenamesCard />
+        </div>
+      ) : (
+        <div className="w-full mb-4 grid grid-cols-3 gap-4">
+          <EnsCard />
+          <IotaVanityCard />
+          <BasenamesCard />
+        </div>
+      )}
 
       {/* Registration modals */}
       <EnsRegisterModal 
@@ -380,6 +522,11 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
         onOpenChange={setBaseModalOpen} 
         name={baseDisplayName} 
         label={cleanLabel} 
+      />
+      <IotaSubdomainMintModal
+        open={iotaModalOpen}
+        onOpenChange={setIotaModalOpen}
+        label={cleanLabel}
       />
     </>
   );
