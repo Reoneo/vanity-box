@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.resolve-iota-domain]
 verify_jwt = false
+
+[functions.get-iota-onchain-profile]
+verify_jwt = false
