@@ -1,173 +1,213 @@
 
-# IOTA vanity.iota Subdomain Minting Feature
+
+# IOTA Vanity.iota Subdomain Enhancement Plan
 
 ## Overview
-Add a new card to the `NameSearchCarousel` component that allows users to mint vanity.iota subdomains (e.g., `guy.vanity.iota`). This card will appear:
-- **Desktop**: Between the ENS (.eth) and Base (.base.eth) cards (3-column layout)
-- **Mobile**: At the top of the stack (first card)
+This plan updates the vanity.iota subdomain feature with:
+1. **New pricing structure** (3-character minimum: $300, 4=$100, 5=$50, 6-9=$25, 10+=$5)
+2. **Cloudflare DNS integration** to create matching vanity.box subdomains that redirect users to their onchain profile
+3. **Improved mint modal UI** with a premium design matching the SubdomainMintModal pattern
 
-The subdomain pricing follows the same structure as ENS subdomains defined in the custom knowledge.
+---
 
-## Pricing Structure (USD)
-| Character Length | Price (USD) |
-|------------------|-------------|
-| 1 character | $100 |
-| 2 characters | $50 |
-| 3 characters | $25 |
-| 4 characters | $15 |
-| 5 characters | $10 |
-| 6-9 characters | $5 |
-| 10+ characters | $1 |
+## Part 1: Pricing Update
 
-## Technical Implementation
+### File: `src/hooks/useIotaSubdomainAvailability.ts`
 
-### 1. Create IOTA Subdomain Availability Hook
-**New file: `src/hooks/useIotaSubdomainAvailability.ts`**
+Update the `getSubdomainPriceUsd` function and minimum character validation:
 
-A hook that checks if a vanity.iota subdomain is available by querying the IOTA Names SDK:
-- Uses `iotaNamesClient.getNameRecord()` to check if the subdomain exists
-- Returns status: `idle`, `loading`, `available`, `taken`, `invalid`, `error`
-- Includes expiration date if the name is taken
-- Validates subdomain format (3+ characters, alphanumeric + hyphens)
+```typescript
+// New pricing structure
+export function getSubdomainPriceUsd(label: string): number {
+  const len = (label || '').trim().length;
+  if (len < 3) return -1; // Invalid - minimum 3 characters
+  if (len === 3) return 300;
+  if (len === 4) return 100;
+  if (len === 5) return 50;
+  if (len >= 6 && len <= 9) return 25;
+  return 5; // 10+ characters
+}
 
-### 2. Create IOTA Subdomain Mint Modal
-**New file: `src/components/IotaSubdomainMintModal.tsx`**
-
-A modal for minting vanity.iota subdomains using the IOTA Names SDK:
-- Uses `IotaNamesTransaction.createSubname()` from `@iota/iota-names-sdk`
-- Integrates with IOTA dApp Kit for wallet signing via `useSignAndExecuteTransaction`
-- Shows price in IOTA tokens (converted from USD using crypto prices)
-- Requires IOTA wallet connection (prompts user to connect if not connected)
-- Sets subdomain to expire same as parent (vanity.iota)
-- Enables `allowChildCreation: false` and `allowTimeExtension: true`
-
-### 3. Update NameSearchCarousel Component
-**Modified file: `src/components/NameSearchCarousel.tsx`**
-
-Add a third card for IOTA vanity.iota subdomains:
-- Import the new availability hook and modal
-- Add state for IOTA modal open/close
-- Create `IotaVanityCard` component with teal/IOTA branding
-- Modify layout:
-  - Desktop: 3-column grid (`grid-cols-3`)
-  - Mobile: Stack with IOTA card first
-- Display price in USD/IOTA with toggle (similar to ENS/ETH toggle)
-
-### 4. Environment Variables & Constants
-**Constants needed (stored in code, not env vars):**
-- `VANITY_IOTA_PARENT_NFT_ID`: The object ID of the vanity.iota Name NFT that owns the subnames
-- This will need to be obtained from the vanity.iota name owner's wallet
-
-## Component Layout
-
-### Desktop (3-column)
-```
-+----------------+----------------+----------------+
-|    guy.eth     | guy.vanity.iota|  guy.base.eth  |
-|      ENS       |      IOTA      |   Basenames    |
-+----------------+----------------+----------------+
+// Validation update: minimum 3 characters
+function isValidSubdomainLabel(label: string): boolean {
+  if (!label || label.length < 3) return false; // Changed from 1 to 3
+  const pattern = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i;
+  return pattern.test(label) && label.length <= 63;
+}
 ```
 
-### Mobile (stacked)
-```
-+--------------------------------+
-|        guy.vanity.iota         |
-|            IOTA                |
-+--------------------------------+
-|           guy.eth              |
-|             ENS                |
-+--------------------------------+
-|        guy.base.eth            |
-|          Basenames             |
-+--------------------------------+
+### File: `src/components/NameSearchCarousel.tsx`
+
+Update IOTA card to show "Invalid" badge for names under 3 characters and display updated prices.
+
+---
+
+## Part 2: Cloudflare DNS Integration
+
+### New Secrets Required
+
+| Secret Name | Description |
+|-------------|-------------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Zone.DNS write permission |
+| `CLOUDFLARE_ZONE_ID` | Zone ID for vanity.box domain |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+
+### New Edge Function: `supabase/functions/create-vanity-box-redirect/index.ts`
+
+This edge function will:
+1. Accept subdomain name (e.g., "tim")
+2. Create a CNAME or A record for `tim.vanity.box`
+3. Set up Cloudflare redirect rule to forward to `https://vanity.box/tim.vanity.iota`
+
+```typescript
+// Edge function creates DNS record via Cloudflare API
+POST https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records
+{
+  "type": "CNAME",
+  "name": "tim", // subdomain
+  "content": "vanity.box", // points to main domain
+  "proxied": true // enables Cloudflare redirect rules
+}
+
+// Then create a redirect rule for this subdomain
+POST https://api.cloudflare.com/client/v4/zones/{zone_id}/rulesets/{ruleset_id}/rules
+{
+  "action": "redirect",
+  "expression": "(http.host eq \"tim.vanity.box\")",
+  "action_parameters": {
+    "from_value": {
+      "target_url": {
+        "value": "https://vanity.box/tim.vanity.iota"
+      },
+      "status_code": 301
+    }
+  }
+}
 ```
 
-## Minting Flow
+### Integration with Minting Flow
 
-1. User searches for a name (e.g., "guy")
-2. IOTA card shows availability of `guy.vanity.iota`
-3. If available, user clicks "Register" button
-4. Modal opens showing:
-   - Subdomain preview
-   - Price in USD + IOTA equivalent
-   - IOTA wallet connection status
-5. User connects IOTA wallet (if not connected)
-6. User confirms transaction in wallet
-7. Transaction executes `createSubname()` on IOTA Names
-8. Success toast + redirect to profile
+The `IotaSubdomainMintModal` will call this edge function after successful subdomain mint to:
+1. Create DNS record for `{name}.vanity.box`
+2. Configure redirect to `https://vanity.box/{name}.vanity.iota`
+
+---
+
+## Part 3: Improved Mint Modal UI
+
+### File: `src/components/IotaSubdomainMintModal.tsx`
+
+Complete redesign following the `SubdomainMintModal.tsx` pattern with:
+
+**Header Section**
+- Premium gradient background (teal theme)
+- Large avatar/icon display
+- Subdomain name prominently displayed
+
+**Pricing Display**
+- Clean price breakdown card showing:
+  - Character length indicator
+  - Base price in USD
+  - Equivalent price in IOTA tokens
+  - Network/gas fee estimate
+  - Total price
+
+**Features Section**
+- What you get with your vanity.iota subdomain:
+  - Onchain identity on IOTA
+  - Vanity.box redirect (`{name}.vanity.box`)
+  - Profile customization via Move contract
+
+**Wallet Connection**
+- IOTA wallet status indicator
+- Connect button if not connected
+- Connected wallet address display with truncation
+
+**Action Buttons**
+- Primary gradient button: "Mint for $X"
+- Loading states during minting
+- Success/error states with appropriate icons
+
+**Visual Improvements**
+- Rounded corners (2xl)
+- Soft shadows and borders
+- Animated transitions between steps
+- IOTA teal color scheme (#14B8A6)
+- Professional typography hierarchy
+
+---
+
+## Part 4: Database Changes (Optional)
+
+### Table: `iota_minted_subdomains`
+
+Track minted vanity.iota subdomains for analytics and redirect management:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| subdomain | text | The subdomain label (e.g., "tim") |
+| full_name | text | Full domain (e.g., "tim.vanity.iota") |
+| wallet_address | text | Owner's IOTA wallet address |
+| mint_tx_digest | text | IOTA transaction digest |
+| cloudflare_record_id | text | Cloudflare DNS record ID |
+| price_usd | decimal | Price paid in USD |
+| created_at | timestamp | Registration timestamp |
+
+---
 
 ## Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/hooks/useIotaSubdomainAvailability.ts` | Check subdomain availability via IOTA Names SDK |
-| `src/components/IotaSubdomainMintModal.tsx` | Modal for minting with wallet integration |
+| `supabase/functions/create-vanity-box-redirect/index.ts` | Cloudflare DNS + redirect rule creation |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/NameSearchCarousel.tsx` | Add IOTA card, update layout to 3-column on desktop |
-| `src/lib/iota/names.ts` | Add subdomain-specific helper functions |
+| `src/hooks/useIotaSubdomainAvailability.ts` | Update pricing, 3-char minimum |
+| `src/components/IotaSubdomainMintModal.tsx` | Complete UI redesign |
+| `src/components/NameSearchCarousel.tsx` | Update IOTA card for new pricing |
+| `supabase/config.toml` | Add new edge function config |
 
-## SDK Integration Details
+---
 
-The IOTA Names SDK provides the `IotaNamesTransaction` class for creating subnames:
+## Technical Flow
 
-```typescript
-import { IotaNamesClient, IotaNamesTransaction } from '@iota/iota-names-sdk';
-import { Transaction } from '@iota/iota-sdk/transactions';
-import { useSignAndExecuteTransaction } from '@iota/dapp-kit';
-
-// Create transaction
-const tx = new Transaction();
-const iotaNamesTx = new IotaNamesTransaction(iotaNamesClient, tx);
-
-// Create subname
-const subnameNft = iotaNamesTx.createSubname({
-  parentNft: VANITY_IOTA_PARENT_NFT_ID,
-  name: 'guy.vanity.iota',
-  expirationTimestampMs: parentExpiration,
-  allowChildCreation: false,
-  allowTimeExtension: true,
-});
-
-// Transfer to user
-tx.transferObjects([subnameNft], tx.pure.address(userAddress));
-
-// Sign and execute
-signAndExecute({ transaction: tx });
+```text
+User searches "tim"
+       ↓
+NameSearchCarousel shows availability + price ($25 for 3 chars)
+       ↓
+User clicks "Register"
+       ↓
+IotaSubdomainMintModal opens
+       ↓
+User connects IOTA wallet (if not connected)
+       ↓
+User confirms mint transaction
+       ↓
+IotaNamesTransaction.createSubname() executed
+       ↓
+On success, call create-vanity-box-redirect edge function
+       ↓
+Edge function creates tim.vanity.box DNS + redirect rule
+       ↓
+Show success with both URLs:
+  - tim.vanity.iota (onchain identity)
+  - tim.vanity.box → redirects to profile
 ```
 
-## UI/UX Details
+---
 
-### Card Styling (IOTA Theme)
-- Border: `border-teal-500/40`
-- Avatar background: `bg-teal-500/10`
-- Register button: `bg-teal-500 hover:bg-teal-600 text-white`
-- Uses existing `vanity-iota-avatar.png` asset
+## Implementation Order
 
-### Price Display
-- Shows USD price by default
-- Click to toggle to IOTA equivalent
-- Uses existing `useCryptoPrices()` hook for IOTA price
+1. **Update pricing** in `useIotaSubdomainAvailability.ts`
+2. **Update NameSearchCarousel** for 3-char minimum display
+3. **Create Cloudflare edge function** for DNS/redirect
+4. **Redesign IotaSubdomainMintModal** with premium UI
+5. **Integrate Cloudflare call** into mint success flow
+6. **Add secrets** for Cloudflare API access
+7. **Test end-to-end** mint + redirect flow
 
-### Availability Badge
-- Available: Green badge with checkmark
-- Registered: Red badge with X
-- Loading: Spinning loader
-- Invalid: Amber badge
-
-## Dependencies
-All required packages are already installed:
-- `@iota/iota-names-sdk@^0.5.1`
-- `@iota/dapp-kit@^0.8.3`
-- `@iota/iota-sdk@^1.10.0`
-
-## Important Notes
-
-1. **Parent NFT Access**: The minting flow requires access to the `vanity.iota` parent NFT object ID. This is typically owned by Vanity.box's operational wallet, so the minting may need to be coordinated via a backend service or the user needs to own the parent.
-
-2. **Alternative Approach**: If Vanity.box owns `vanity.iota`, the minting could be done via an edge function that holds the parent NFT signing capability, similar to how ENS subdomains are minted via Namestone.
-
-3. **For MVP**: The implementation will include placeholder constants for the parent NFT ID that can be configured once the vanity.iota name is acquired.
