@@ -4,7 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil } from "lucide-react";
+import type { OnchainProfileData } from "@/lib/iota/vanityProfile";
 
 // Helper to validate EVM address format (40 hex chars after 0x)
 // IOTA and other non-EVM addresses are longer and should not be passed to EVM APIs
@@ -69,6 +70,11 @@ interface ProfileCardProps {
   onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
   onEnsureOpenSeaNfts?: () => void;
+  // IOTA Onchain Profile props
+  iotaOnchainProfile?: OnchainProfileData | null;
+  iotaNameObjectId?: string | null;
+  iotaOwnerAddress?: string | null;
+  onEditIotaProfile?: () => void;
 }
 
 // Chain icon helper function for activity feed
@@ -180,6 +186,10 @@ export const ProfileCard = ({
   onFollowersClick,
   onLoadMoreNfts,
   onEnsureOpenSeaNfts,
+  iotaOnchainProfile,
+  iotaNameObjectId,
+  iotaOwnerAddress,
+  onEditIotaProfile,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
@@ -255,6 +265,12 @@ export const ProfileCard = ({
            web3BioProfile?.platform === 'iota' ||
            web3BioProfile?.iotaDomain;
   }, [searchedIdentity, web3BioProfile]);
+
+  // Check if the connected wallet is the owner of this IOTA profile
+  const isIotaProfileOwner = useMemo(() => {
+    if (!isIotaProfile || !connectedWalletAddress || !iotaOwnerAddress) return false;
+    return connectedWalletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase();
+  }, [isIotaProfile, connectedWalletAddress, iotaOwnerAddress]);
 
   // Get the best display name to show
   const getDisplayName = () => {
@@ -946,6 +962,18 @@ export const ProfileCard = ({
                         </div>
                       )}
 
+                      {/* IOTA Profile Edit Button - Only for owners */}
+                      {isIotaProfile && isIotaProfileOwner && onEditIotaProfile && (
+                        <div className="flex justify-center pt-2">
+                          <button
+                            onClick={onEditIotaProfile}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 border border-[#D4AF37]/30 text-[#D4AF37] transition-all"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            <span className="text-sm font-medium">Edit Onchain Profile</span>
+                          </button>
+                        </div>
+                      )}
                       {/* Desktop action pills - control right panel */}
                       {(() => {
                         const socialLinks = web3BioProfile?.links 

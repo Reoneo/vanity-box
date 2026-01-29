@@ -47,6 +47,7 @@ import { VanityBundleCard } from "@/components/VanityBundleCard";
 import { ENSRegistrationCard } from "@/components/ENSRegistrationCard";
 import { NameSearchCarousel } from "@/components/NameSearchCarousel";
 import { HomeFeatureShowcase } from "@/components/HomeFeatureShowcase";
+import { IotaProfileEditModal } from "@/components/IotaProfileEditModal";
 import { MessageCircle, Repeat2, Heart } from "lucide-react";
 
 import {
@@ -252,6 +253,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [castLoading, setCastLoading] = useState(false);
   const [firstTransactionDate, setFirstTransactionDate] = useState<string | null>(null);
 
+  // IOTA Onchain Profile state
+  const [iotaOnchainProfile, setIotaOnchainProfile] = useState<any>(null);
+  const [iotaNameObjectId, setIotaNameObjectId] = useState<string | null>(null);
+  const [iotaOwnerAddress, setIotaOwnerAddress] = useState<string | null>(null);
+  const [iotaOnchainProfileLoading, setIotaOnchainProfileLoading] = useState(false);
+  const [showIotaEditModal, setShowIotaEditModal] = useState(false);
   // Social icons mapping
   const socialIcons: Record<string, string> = {
     telegram: telegramIcon,
@@ -472,7 +479,47 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address]);
 
-  // Load more POAPs handler
+  // Load IOTA onchain profile when viewing an .iota profile
+  useEffect(() => {
+    const loadIotaOnchainProfile = async () => {
+      const name = displayQuery?.toLowerCase();
+      if (!name || !name.endsWith('.iota')) {
+        // Reset IOTA profile state when not viewing an .iota profile
+        setIotaOnchainProfile(null);
+        setIotaNameObjectId(null);
+        setIotaOwnerAddress(null);
+        return;
+      }
+
+      console.log('🔄 Loading IOTA onchain profile for:', name);
+      setIotaOnchainProfileLoading(true);
+
+      try {
+        const response = await callEdge('get-iota-onchain-profile', { name });
+        
+        if (response.success) {
+          setIotaOnchainProfile(response.profile);
+          setIotaNameObjectId(response.nameObjectId);
+          setIotaOwnerAddress(response.ownerAddress);
+          console.log('✅ IOTA onchain profile loaded:', response);
+        } else {
+          console.log('⚠️ IOTA onchain profile not found:', response.message);
+          setIotaOnchainProfile(null);
+          setIotaNameObjectId(null);
+          setIotaOwnerAddress(response.ownerAddress || null);
+        }
+      } catch (error) {
+        console.error('❌ Failed to load IOTA onchain profile:', error);
+        setIotaOnchainProfile(null);
+        setIotaNameObjectId(null);
+        setIotaOwnerAddress(null);
+      } finally {
+        setIotaOnchainProfileLoading(false);
+      }
+    };
+
+    loadIotaOnchainProfile();
+  }, [displayQuery]);
   const handleLoadMorePoaps = async () => {
     if (!web3BioProfile?.address || poapLoadingMore || !poapHasMore) return;
     
@@ -1746,10 +1793,37 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         fetchNfts(web3BioProfile.address);
                       }
                     }}
+                    iotaOnchainProfile={iotaOnchainProfile}
+                    iotaNameObjectId={iotaNameObjectId}
+                    iotaOwnerAddress={iotaOwnerAddress}
+                    onEditIotaProfile={() => setShowIotaEditModal(true)}
                   />
                 </div>
               </div>
             ) : null}
+
+            {/* IOTA Profile Edit Modal */}
+            {showIotaEditModal && displayQuery?.toLowerCase().endsWith('.iota') && (
+              <IotaProfileEditModal
+                open={showIotaEditModal}
+                onClose={() => setShowIotaEditModal(false)}
+                iotaName={displayQuery}
+                nameObjectId={iotaNameObjectId || ''}
+                currentProfile={iotaOnchainProfile}
+                onProfileUpdated={() => {
+                  // Refetch the onchain profile
+                  callEdge('get-iota-onchain-profile', { name: displayQuery })
+                    .then(response => {
+                      if (response.success) {
+                        setIotaOnchainProfile(response.profile);
+                        setIotaNameObjectId(response.nameObjectId);
+                        setIotaOwnerAddress(response.ownerAddress);
+                      }
+                    })
+                    .catch(console.error);
+                }}
+              />
+            )}
 
             {/* Profile Dock - separate from profile container for proper z-index stacking */}
             {web3BioProfile && !showMyIDs && (
