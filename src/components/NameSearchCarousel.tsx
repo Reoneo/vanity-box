@@ -1,7 +1,6 @@
 /**
  * NameSearchCarousel
- * Three-column layout on desktop, stacked on mobile for name search results
- * Shows ENS (.eth), IOTA (.vanity.iota), and Basenames (.base.eth)
+ * Shows Vanity ID Bundle with IOTA subdomain registration (Early Access)
  */
 
 import { useState, useMemo } from 'react';
@@ -9,56 +8,46 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Check, X, DollarSign } from 'lucide-react';
-import { useEnsAvailability } from '@/hooks/useEnsAvailability';
-import { useBasenameAvailability } from '@/hooks/useBasenameAvailability';
+import { Loader2, Check, X, DollarSign, Sparkles, ExternalLink } from 'lucide-react';
 import { useIotaSubdomainAvailability, getSubdomainPriceUsd } from '@/hooks/useIotaSubdomainAvailability';
 import { useCryptoPrices } from '@/contexts/CryptoPriceContext';
-import { EnsRegisterModal } from '@/components/EnsRegisterModal';
-import { BasenameRegisterModal } from '@/components/BasenameRegisterModal';
 import { IotaSubdomainMintModal } from '@/components/IotaSubdomainMintModal';
 import { format } from 'date-fns';
-import ethLogoDark from '@/assets/eth-logo-dark.svg';
-import vanityIotaAvatar from '@/assets/vanity-iota-avatar.png';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+// Import chain logos
+import vanityBoxAvatar from '@/assets/vanity-box-avatar.png';
+import vanityAptAvatar from '@/assets/vanity-apt-avatar.jpeg';
+import vanityHlAvatar from '@/assets/vanity-hl-avatar.png';
+import vanityIotaAvatar from '@/assets/vanity-iota-avatar.png';
+import tonLogoBlue from '@/assets/ton-logo-blue.png';
+import vanityVetAvatar from '@/assets/vanity-vet-avatar.png';
 
 interface NameSearchCarouselProps {
   searchQuery: string;
 }
 
-const ENS_AVATAR = 'https://cryptologos.cc/logos/ethereum-name-service-ens-logo.png';
-const BASE_AVATAR = 'https://cdn.brandfetch.io/id6XsSOVVS/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757929784005';
+type BundleItem = {
+  id: string;
+  avatar: string;
+  base: string;
+  isActive: boolean; // true = can mint now (Early Access)
+};
 
-// ENS pricing in USD per year based on label length
-function getEnsUsdPrice(label: string | undefined) {
-  const len = (label || '').length;
-  if (len === 3) return 640;
-  if (len === 4) return 160;
-  if (len >= 5) return 5;
-  return null;
-}
-
-// Shared button styles
-const softGoldBtn =
-  'w-full bg-[#F3D889] text-black hover:bg-[#EECF74] active:bg-[#E3C366] font-semibold ' +
-  'dark:bg-[#F0D27B] dark:hover:bg-[#E7C869] dark:active:bg-[#DCBC57]';
-
-const softGoldBtnDisabled =
-  'w-full bg-[#F3D889] text-black/60 font-semibold opacity-80 dark:bg-[#F0D27B] dark:text-black/60';
+const bundleItems: BundleItem[] = [
+  { id: 'box', avatar: vanityBoxAvatar, base: 'vanity.box', isActive: false },
+  { id: 'iota', avatar: vanityIotaAvatar, base: 'vanity.iota', isActive: true },
+  { id: 'apt', avatar: vanityAptAvatar, base: 'vanity.apt', isActive: false },
+  { id: 'hl', avatar: vanityHlAvatar, base: 'vanity.hl', isActive: false },
+  { id: 'ton', avatar: tonLogoBlue, base: 'vanity.ton', isActive: false },
+  { id: 'vet', avatar: vanityVetAvatar, base: 'vanity.vet', isActive: false },
+];
 
 export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
-  const [ensModalOpen, setEnsModalOpen] = useState(false);
-  const [baseModalOpen, setBaseModalOpen] = useState(false);
   const [iotaModalOpen, setIotaModalOpen] = useState(false);
-  const [viewLoading, setViewLoading] = useState<'ens' | 'base' | 'iota' | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [showIotaPrice, setShowIotaPrice] = useState(false);
   const isMobile = useIsMobile();
-  
-  // Toggle for price display: USD (default) or crypto
-  const [showEthPriceEns, setShowEthPriceEns] = useState(false);
-  const [showEthPriceBase, setShowEthPriceBase] = useState(false);
-  const [showIotaPriceIota, setShowIotaPriceIota] = useState(false);
-  
-  // Get crypto prices for conversion
   const { prices } = useCryptoPrices();
 
   // Extract clean label
@@ -68,37 +57,19 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
     if (raw.endsWith('.base.eth')) return raw.slice(0, -9);
     if (raw.endsWith('.vanity.iota')) return raw.slice(0, -12);
     if (raw.endsWith('.iota')) return raw.slice(0, -5);
+    if (raw.endsWith('.vanity.box')) return raw.slice(0, -11);
+    if (raw.endsWith('.box')) return raw.slice(0, -4);
     if (raw.includes('.')) return '';
     return raw;
   }, [searchQuery]);
-
-  // ENS availability
-  const ensResult = useEnsAvailability(cleanLabel);
-  const ensDisplayName = `${cleanLabel}.eth`;
-  const ensUsdPrice = getEnsUsdPrice(cleanLabel);
-  
-  // Convert ENS USD price to ETH
-  const ensEthPrice = ensUsdPrice && prices.eth > 0 
-    ? (ensUsdPrice / prices.eth).toFixed(6) 
-    : null;
-
-  // Basenames availability  
-  const baseResult = useBasenameAvailability(cleanLabel);
-  const baseDisplayName = `${cleanLabel}.base.eth`;
-  
-  // Convert Basenames ETH price to USD
-  const baseEthPrice = baseResult.priceFormatted;
-  const baseUsdPrice = baseResult.price !== null && prices.eth > 0
-    ? (Number(baseResult.price) / 1e18 * prices.eth).toFixed(2)
-    : null;
 
   // IOTA vanity.iota subdomain availability (minimum 3 characters)
   const iotaResult = useIotaSubdomainAvailability(cleanLabel);
   const iotaDisplayName = `${cleanLabel}.vanity.iota`;
   const iotaUsdPrice = getSubdomainPriceUsd(cleanLabel);
   const isIotaValidLength = cleanLabel.length >= 3;
-  
-  // Convert IOTA USD price to IOTA tokens (placeholder: ~$0.25 per IOTA)
+
+  // Convert IOTA USD price to IOTA tokens (~$0.25 per IOTA placeholder)
   const iotaTokenPrice = iotaUsdPrice > 0 ? (iotaUsdPrice / 0.25).toFixed(2) : null;
 
   // Don't render if no valid search
@@ -106,428 +77,187 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
     return null;
   }
 
-  const handleViewProfile = async (type: 'ens' | 'base' | 'iota') => {
-    setViewLoading(type);
+  const handleViewProfile = async () => {
+    setViewLoading(true);
     await new Promise((r) => setTimeout(r, 150));
-    const name = type === 'ens' ? ensDisplayName : type === 'base' ? baseDisplayName : iotaDisplayName;
-    window.location.assign(`/${name}`);
+    window.location.assign(`/${iotaDisplayName}`);
   };
-
-  // Price display component with toggle
-  const PriceDisplay = ({ 
-    showCrypto, 
-    usdPrice, 
-    cryptoPrice, 
-    cryptoSymbol,
-    cryptoIcon,
-    onToggle,
-    network 
-  }: { 
-    showCrypto: boolean; 
-    usdPrice: string | null; 
-    cryptoPrice: string | null; 
-    cryptoSymbol: string;
-    cryptoIcon?: string;
-    onToggle: () => void;
-    network: string;
-  }) => {
-    if (!usdPrice && !cryptoPrice) {
-      return <span>{network}</span>;
-    }
-    
-    return (
-      <button 
-        onClick={onToggle}
-        className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
-        title="Click to toggle currency"
-      >
-        {showCrypto ? (
-          <>
-            {cryptoIcon && <img src={cryptoIcon} alt={cryptoSymbol} className="w-3.5 h-3.5" />}
-            <span>{cryptoPrice} {cryptoSymbol}/yr</span>
-          </>
-        ) : (
-          <>
-            <DollarSign className="w-3.5 h-3.5" />
-            <span>{usdPrice}/yr</span>
-          </>
-        )}
-      </button>
-    );
-  };
-
-  // ENS Card Component
-  const EnsCard = () => (
-    <Card
-      className="
-        flex-1 p-4 rounded-2xl shadow-lg
-        bg-card border border-[#D4AF37]/60
-        dark:border-[#D4AF37]/25
-      "
-    >
-      <div className="flex flex-col items-center text-center gap-3">
-        {/* Avatar */}
-        <div
-          className="
-            w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden
-            bg-white border border-[#D4AF37]/40
-            dark:bg-[#0f1626] dark:border-[#D4AF37]/25
-          "
-        >
-          <img src={ENS_AVATAR} alt="ENS" className="w-10 h-10 object-contain" loading="lazy" />
-        </div>
-
-        {/* Content */}
-        <div className="w-full flex flex-col items-center gap-1.5">
-          {ensResult.status === 'loading' ? (
-            <Skeleton className="h-6 w-32 dark:bg-white/10" />
-          ) : (
-            <h3 className="text-lg font-extrabold text-foreground">{ensDisplayName}</h3>
-          )}
-
-          {ensResult.status === 'loading' ? (
-            <Badge className="bg-muted text-muted-foreground border border-border">
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Checking
-            </Badge>
-          ) : ensResult.status === 'available' ? (
-            <Badge className="bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-300">
-              <Check className="w-3 h-3 mr-1" />
-              Available
-            </Badge>
-          ) : ensResult.status === 'taken' ? (
-            <Badge className="bg-red-500/15 text-red-700 border border-red-500/25 dark:text-red-300">
-              <X className="w-3 h-3 mr-1" />
-              Registered
-            </Badge>
-          ) : (
-            <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
-              {ensResult.status === 'invalid' ? 'Invalid' : 'Error'}
-            </Badge>
-          )}
-
-          <p className="text-xs text-muted-foreground">
-            {ensResult.status === 'available' ? (
-              <PriceDisplay 
-                showCrypto={showEthPriceEns}
-                usdPrice={ensUsdPrice?.toString() || null}
-                cryptoPrice={ensEthPrice}
-                cryptoSymbol="ETH"
-                cryptoIcon={ethLogoDark}
-                onToggle={() => setShowEthPriceEns(!showEthPriceEns)}
-                network="Ethereum"
-              />
-            ) : ensResult.status === 'taken' ? (
-              ensResult.expiryDate
-                ? `Expires ${format(ensResult.expiryDate, 'MMM d, yyyy')}`
-                : 'Already registered'
-            ) : (
-              'Ethereum Name Service'
-            )}
-          </p>
-        </div>
-
-        <div className="w-full h-px bg-border my-1" />
-
-        {/* Buttons */}
-        <div className="w-full">
-          {ensResult.status === 'loading' ? (
-            <Button disabled className={softGoldBtnDisabled} size="sm">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Checking…
-            </Button>
-          ) : ensResult.status === 'available' ? (
-            <Button className={softGoldBtn} size="sm" onClick={() => setEnsModalOpen(true)}>
-              Register
-            </Button>
-          ) : ensResult.status === 'taken' ? (
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                className={softGoldBtn} 
-                size="sm"
-                onClick={() => handleViewProfile('ens')}
-                disabled={viewLoading === 'ens'}
-              >
-                {viewLoading === 'ens' ? 'Loading…' : 'View'}
-              </Button>
-              <Button
-                className={softGoldBtn}
-                size="sm"
-                onClick={() => window.open(`https://grails.app/${ensDisplayName}`, '_blank')}
-              >
-                Offer
-              </Button>
-            </div>
-          ) : (
-            <Button disabled className={softGoldBtnDisabled} size="sm">
-              Unavailable
-            </Button>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-
-  // IOTA Vanity Card Component
-  const IotaVanityCard = () => (
-    <Card
-      className="
-        flex-1 p-4 rounded-2xl shadow-lg
-        bg-card border border-teal-500/40
-        dark:border-teal-500/25
-      "
-    >
-      <div className="flex flex-col items-center text-center gap-3">
-        {/* Avatar */}
-        <div
-          className="
-            w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden
-            bg-teal-500/10 border border-teal-500/30
-            dark:bg-teal-500/20 dark:border-teal-500/30
-          "
-        >
-          <img src={vanityIotaAvatar} alt="IOTA" className="w-12 h-12 object-cover rounded-lg" loading="lazy" />
-        </div>
-
-        {/* Content */}
-        <div className="w-full flex flex-col items-center gap-1.5">
-          {iotaResult.status === 'loading' ? (
-            <Skeleton className="h-6 w-40 dark:bg-white/10" />
-          ) : (
-            <h3 className="text-lg font-extrabold text-foreground">{iotaDisplayName}</h3>
-          )}
-
-          {iotaResult.status === 'loading' ? (
-            <Badge className="bg-muted text-muted-foreground border border-border">
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Checking
-            </Badge>
-          ) : iotaResult.status === 'available' ? (
-            <Badge className="bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-300">
-              <Check className="w-3 h-3 mr-1" />
-              Available
-            </Badge>
-          ) : iotaResult.status === 'taken' ? (
-            <Badge className="bg-red-500/15 text-red-700 border border-red-500/25 dark:text-red-300">
-              <X className="w-3 h-3 mr-1" />
-              Registered
-            </Badge>
-          ) : iotaResult.status === 'invalid' || !isIotaValidLength ? (
-            <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
-              {!isIotaValidLength && cleanLabel.length > 0 ? 'Min 3 chars' : 'Invalid'}
-            </Badge>
-          ) : (
-            <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
-              Error
-            </Badge>
-          )}
-
-          <p className="text-xs text-muted-foreground">
-            {iotaResult.status === 'available' ? (
-              <PriceDisplay 
-                showCrypto={showIotaPriceIota}
-                usdPrice={iotaUsdPrice?.toString() || null}
-                cryptoPrice={iotaTokenPrice}
-                cryptoSymbol="IOTA"
-                onToggle={() => setShowIotaPriceIota(!showIotaPriceIota)}
-                network="IOTA"
-              />
-            ) : iotaResult.status === 'taken' ? (
-              iotaResult.expiryDate
-                ? `Expires ${format(iotaResult.expiryDate, 'MMM d, yyyy')}`
-                : 'Already registered'
-            ) : (
-              'IOTA Names'
-            )}
-          </p>
-        </div>
-
-        <div className="w-full h-px bg-border my-1" />
-
-        {/* Buttons */}
-        <div className="w-full">
-          {iotaResult.status === 'loading' ? (
-            <Button disabled className="w-full bg-teal-500/50 text-white font-semibold opacity-80" size="sm">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Checking…
-            </Button>
-          ) : iotaResult.status === 'available' && isIotaValidLength ? (
-            <Button 
-              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold"
-              size="sm"
-              onClick={() => setIotaModalOpen(true)}
-            >
-              Register
-            </Button>
-          ) : iotaResult.status === 'taken' ? (
-            <Button 
-              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold" 
-              size="sm"
-              onClick={() => handleViewProfile('iota')}
-              disabled={viewLoading === 'iota'}
-            >
-              {viewLoading === 'iota' ? 'Loading…' : 'View Profile'}
-            </Button>
-          ) : !isIotaValidLength ? (
-            <Button disabled className="w-full bg-teal-500/50 text-white font-semibold opacity-80" size="sm">
-              Min 3 Characters
-            </Button>
-          ) : (
-            <Button disabled className="w-full bg-teal-500/50 text-white font-semibold opacity-80" size="sm">
-              Unavailable
-            </Button>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-
-  // Basenames Card Component
-  const BasenamesCard = () => (
-    <Card
-      className="
-        flex-1 p-4 rounded-2xl shadow-lg
-        bg-card border border-[#0052FF]/40
-        dark:border-[#0052FF]/25
-      "
-    >
-      <div className="flex flex-col items-center text-center gap-3">
-        {/* Avatar */}
-        <div
-          className="
-            w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden
-            bg-[#0052FF]/10 border border-[#0052FF]/30
-            dark:bg-[#0052FF]/20 dark:border-[#0052FF]/30
-          "
-        >
-          <img src={BASE_AVATAR} alt="Base" className="w-12 h-12 object-cover rounded-lg" loading="lazy" />
-        </div>
-
-        {/* Content */}
-        <div className="w-full flex flex-col items-center gap-1.5">
-          {baseResult.status === 'loading' ? (
-            <Skeleton className="h-6 w-40 dark:bg-white/10" />
-          ) : (
-            <h3 className="text-lg font-extrabold text-foreground">{baseDisplayName}</h3>
-          )}
-
-          {baseResult.status === 'loading' ? (
-            <Badge className="bg-muted text-muted-foreground border border-border">
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Checking
-            </Badge>
-          ) : baseResult.status === 'available' ? (
-            <Badge className="bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-300">
-              <Check className="w-3 h-3 mr-1" />
-              Available
-            </Badge>
-          ) : baseResult.status === 'taken' ? (
-            <Badge className="bg-red-500/15 text-red-700 border border-red-500/25 dark:text-red-300">
-              <X className="w-3 h-3 mr-1" />
-              Registered
-            </Badge>
-          ) : (
-            <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
-              {baseResult.status === 'invalid' ? 'Invalid' : 'Error'}
-            </Badge>
-          )}
-
-          <p className="text-xs text-muted-foreground">
-            {baseResult.status === 'available' ? (
-              <PriceDisplay 
-                showCrypto={showEthPriceBase}
-                usdPrice={baseUsdPrice}
-                cryptoPrice={baseEthPrice}
-                cryptoSymbol="ETH"
-                cryptoIcon={ethLogoDark}
-                onToggle={() => setShowEthPriceBase(!showEthPriceBase)}
-                network="Base"
-              />
-            ) : baseResult.status === 'taken' ? (
-              baseResult.expiryDate
-                ? `Expires ${format(baseResult.expiryDate, 'MMM d, yyyy')}`
-                : 'Already registered'
-            ) : (
-              'Basenames on Base'
-            )}
-          </p>
-        </div>
-
-        <div className="w-full h-px bg-border my-1" />
-
-        {/* Buttons */}
-        <div className="w-full">
-          {baseResult.status === 'loading' ? (
-            <Button disabled className={softGoldBtnDisabled} size="sm">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Checking…
-            </Button>
-          ) : baseResult.status === 'available' ? (
-            <Button 
-              className="w-full bg-[#0052FF] hover:bg-[#0040CC] text-white font-semibold"
-              size="sm"
-              onClick={() => setBaseModalOpen(true)}
-            >
-              Register
-            </Button>
-          ) : baseResult.status === 'taken' ? (
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                className={softGoldBtn} 
-                size="sm"
-                onClick={() => handleViewProfile('base')}
-                disabled={viewLoading === 'base'}
-              >
-                {viewLoading === 'base' ? 'Loading…' : 'View'}
-              </Button>
-              <Button
-                className={softGoldBtn}
-                size="sm"
-                onClick={() => window.open(`https://grails.app/${baseDisplayName}`, '_blank')}
-              >
-                Offer
-              </Button>
-            </div>
-          ) : (
-            <Button disabled className={softGoldBtnDisabled} size="sm">
-              Unavailable
-            </Button>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
 
   return (
     <>
-      {/* Desktop: 3-column grid (ENS | IOTA | Base), Mobile: stacked with IOTA first */}
-      {isMobile ? (
-        <div className="w-full mb-4 space-y-3">
-          <IotaVanityCard />
-          <EnsCard />
-          <BasenamesCard />
+      <Card className="w-full mb-4 p-5 md:p-6 rounded-2xl shadow-lg bg-card border border-border/50">
+        {/* Header */}
+        <div className="text-center mb-4 md:mb-5">
+          <div className="inline-flex items-center gap-2 mb-2">
+            <h3 className="text-lg md:text-xl font-bold text-foreground">Vanity ID Bundle</h3>
+            <Badge className="bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/30">
+              <Sparkles className="w-3 h-3 mr-1" />
+              Early Access
+            </Badge>
+          </div>
+          <p className="text-xs md:text-sm text-muted-foreground">One identity. Multiple chains.</p>
         </div>
-      ) : (
-        <div className="w-full mb-4 grid grid-cols-3 gap-4">
-          <EnsCard />
-          <IotaVanityCard />
-          <BasenamesCard />
-        </div>
-      )}
 
-      {/* Registration modals */}
-      <EnsRegisterModal 
-        open={ensModalOpen} 
-        onOpenChange={setEnsModalOpen} 
-        name={ensDisplayName} 
-        label={cleanLabel} 
-      />
-      <BasenameRegisterModal 
-        open={baseModalOpen} 
-        onOpenChange={setBaseModalOpen} 
-        name={baseDisplayName} 
-        label={cleanLabel} 
-      />
+        {/* Chain Icons Grid */}
+        <div className={`grid gap-3 md:gap-4 mb-5 ${isMobile ? 'grid-cols-3' : 'grid-cols-6'}`}>
+          {bundleItems.map((item) => {
+            const fullName = `${cleanLabel}.${item.base}`;
+            const isIota = item.id === 'iota';
+
+            return (
+              <div 
+                key={item.id} 
+                className={`flex flex-col items-center ${!item.isActive ? 'opacity-50' : ''}`}
+              >
+                {/* Avatar with active indicator */}
+                <div className={`
+                  relative w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 bg-background shadow-sm
+                  ${isIota ? 'border-teal-500 ring-2 ring-teal-500/30' : 'border-border/40'}
+                `}>
+                  <img src={item.avatar} alt={fullName} className="w-full h-full object-cover" />
+                  {isIota && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-teal-500 rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Subdomain label */}
+                <span className={`
+                  text-[9px] md:text-[10px] font-medium mt-1.5 text-center break-all max-w-[80px]
+                  ${isIota ? 'text-teal-600 dark:text-teal-400' : 'text-muted-foreground'}
+                `}>
+                  {fullName}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Divider */}
+        <div className="w-full h-px bg-border mb-4" />
+
+        {/* IOTA Registration Section (Early Access) */}
+        <div className="bg-teal-500/5 dark:bg-teal-500/10 rounded-xl p-4 border border-teal-500/20">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <img src={vanityIotaAvatar} alt="IOTA" className="w-8 h-8 rounded-full" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">{iotaDisplayName}</p>
+                <p className="text-xs text-muted-foreground">IOTA Network</p>
+              </div>
+            </div>
+
+            {/* Status Badge */}
+            {iotaResult.status === 'loading' ? (
+              <Badge className="bg-muted text-muted-foreground border border-border">
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                Checking
+              </Badge>
+            ) : iotaResult.status === 'available' && isIotaValidLength ? (
+              <Badge className="bg-emerald-500/15 text-emerald-700 border border-emerald-500/25 dark:text-emerald-300">
+                <Check className="w-3 h-3 mr-1" />
+                Available
+              </Badge>
+            ) : iotaResult.status === 'taken' ? (
+              <Badge className="bg-red-500/15 text-red-700 border border-red-500/25 dark:text-red-300">
+                <X className="w-3 h-3 mr-1" />
+                Registered
+              </Badge>
+            ) : !isIotaValidLength && cleanLabel.length > 0 ? (
+              <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
+                Min 3 chars
+              </Badge>
+            ) : (
+              <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/25 dark:text-amber-300">
+                Invalid
+              </Badge>
+            )}
+          </div>
+
+          {/* Price display */}
+          {iotaResult.status === 'available' && isIotaValidLength && (
+            <div className="flex items-center justify-between mb-3">
+              <button 
+                onClick={() => setShowIotaPrice(!showIotaPrice)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showIotaPrice ? (
+                  <span>{iotaTokenPrice} IOTA</span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="w-3.5 h-3.5" />
+                    {iotaUsdPrice}
+                  </span>
+                )}
+              </button>
+              <span className="text-xs text-muted-foreground">({cleanLabel.length} characters)</span>
+            </div>
+          )}
+
+          {/* What you get */}
+          <div className="bg-background/50 rounded-lg p-3 mb-3">
+            <p className="text-xs font-medium text-foreground mb-2">Mint {cleanLabel}.vanity.iota and instantly get:</p>
+            <ul className="space-y-1.5">
+              <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Check className="w-3 h-3 text-teal-500 flex-shrink-0" />
+                <span>Onchain identity on IOTA</span>
+              </li>
+              <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Check className="w-3 h-3 text-teal-500 flex-shrink-0" />
+                <span><strong>{cleanLabel}.vanity.box</strong> DNS redirect to your profile</span>
+              </li>
+              <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                <ExternalLink className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                <span className="opacity-70">Other chain IDs coming soon</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Action Button */}
+          {iotaResult.status === 'loading' ? (
+            <Button 
+              disabled 
+              className="w-full bg-teal-500/50 text-white font-semibold"
+            >
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Checking availability…
+            </Button>
+          ) : iotaResult.status === 'available' && isIotaValidLength ? (
+            <Button 
+              className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold shadow-md"
+              onClick={() => setIotaModalOpen(true)}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Mint for ${iotaUsdPrice}
+            </Button>
+          ) : iotaResult.status === 'taken' ? (
+            <Button 
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold"
+              onClick={handleViewProfile}
+              disabled={viewLoading}
+            >
+              {viewLoading ? 'Loading…' : 'View Profile'}
+            </Button>
+          ) : !isIotaValidLength ? (
+            <Button 
+              disabled 
+              className="w-full bg-teal-500/50 text-white/80 font-semibold"
+            >
+              Minimum 3 Characters Required
+            </Button>
+          ) : (
+            <Button 
+              disabled 
+              className="w-full bg-teal-500/50 text-white/80 font-semibold"
+            >
+              Unavailable
+            </Button>
+          )}
+        </div>
+      </Card>
+
+      {/* Registration modal */}
       <IotaSubdomainMintModal
         open={iotaModalOpen}
         onOpenChange={setIotaModalOpen}
