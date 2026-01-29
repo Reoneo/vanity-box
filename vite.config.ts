@@ -50,5 +50,10 @@ export default defineConfig(({ mode }) => ({
         "./src/shims/getpara-solana-wallet-connectors.ts"
       ),
     },
+    // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
+  },
+  optimizeDeps: {
+    include: ["@tanstack/react-query", "@iota/dapp-kit"],
   },
 }));
