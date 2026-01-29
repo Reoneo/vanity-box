@@ -12,6 +12,7 @@ import { TonConnectProvider } from "@/contexts/TonConnectContext";
 import { FarcasterAuthProvider } from "@/contexts/FarcasterAuthContext";
 import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { WalletConnectProvider } from "@/contexts/WalletConnectContext";
+import { IotaWalletProvider } from "@/contexts/IotaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load SplashCursor for desktop only
@@ -73,11 +74,13 @@ const AppContent = () => {
             <PetraWalletProvider>
               <FarcasterAuthProvider>
                 <WalletConnectProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <AppRoutes />
-                  </TooltipProvider>
+                  <IotaWalletProvider>
+                    <TooltipProvider>
+                      <Toaster />
+                      <Sonner />
+                      <AppRoutes />
+                    </TooltipProvider>
+                  </IotaWalletProvider>
                 </WalletConnectProvider>
               </FarcasterAuthProvider>
             </PetraWalletProvider>

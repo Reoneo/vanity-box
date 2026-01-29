@@ -14,11 +14,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
 import petraIcon from '@/assets/petra-icon.png';
+import iotaLogo from '@/assets/vanity-iota-avatar.png';
 import { isTelegramWebView } from '@/lib/telegram';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
 import { useWalletConnect } from '@/contexts/WalletConnectContext';
+import { ConnectWalletChooser } from '@/components/ConnectWalletChooser';
+import { useCurrentAccount as useIotaCurrentAccount, useDisconnectWallet as useIotaDisconnect } from '@iota/dapp-kit';
 
 interface User {
   walletAddress?: string;
@@ -47,13 +50,27 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     isReady: walletConnectReady
   } = useWalletConnect();
   
-  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'walletconnect' | null>(null);
+  const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'walletconnect' | 'iota' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensLoading, setEnsLoading] = useState(false);
+  const [showChooser, setShowChooser] = useState(false);
+
+  // IOTA wallet state (web only)
+  const iotaAccount = useIotaCurrentAccount();
+  const { mutate: disconnectIota } = useIotaDisconnect();
+  const iotaConnected = !!iotaAccount?.address;
+
+  // Check if we're on desktop browser (not mobile phone or special app)
+  // Include iPad/tablets as desktop since they can use browser extensions
+  const isMobilePhone = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isInSpecialApp = !!(window as any).Telegram?.WebApp || 
+    typeof (window as any).WorldApp !== 'undefined' || 
+    MiniKit.isInstalled();
+  const isDesktopBrowser = typeof window !== 'undefined' && !isMobilePhone && !isInSpecialApp;
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -111,6 +128,27 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   }, [petraConnected, petraAccount, petraNetwork]);
 
+  // Handle IOTA wallet connection (web only)
+  useEffect(() => {
+    if (iotaConnected && iotaAccount?.address) {
+      console.log('[WalletConnection] IOTA wallet connected:', iotaAccount.address);
+      setWalletType('iota');
+      setUser({
+        walletAddress: iotaAccount.address,
+        username: formatAddress(iotaAccount.address)
+      });
+      setIsLoading(false);
+      
+      window.dispatchEvent(new CustomEvent('wallet-connected', { 
+        detail: { 
+          walletAddress: iotaAccount.address, 
+          walletType: 'iota',
+          username: null // Will be resolved by profile lookup
+        } 
+      }));
+    }
+  }, [iotaConnected, iotaAccount?.address]);
+
   useEffect(() => {
     console.log('🌍 Environment check on mount:');
     console.log('  - Telegram WebView:', isTelegramWebView());
@@ -118,13 +156,16 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     console.log('  - User Agent:', navigator.userAgent.substring(0, 150));
 
     const handleTriggerConnect = () => {
-      if (!user && !petraConnected && !walletConnectConnected) {
+      if (!user && !petraConnected && !walletConnectConnected && !iotaConnected) {
         if (isTelegramWebView()) {
           console.log('🔄 Trigger: Connecting via Telegram');
           handleTelegramConnect();
         } else if (MiniKit.isInstalled()) {
           console.log('🔄 Trigger: Connecting via World App');
           handleConnect();
+        } else if (isDesktopBrowser) {
+          console.log('🔄 Trigger: Opening wallet chooser');
+          setShowChooser(true);
         } else {
           console.log('🔄 Trigger: Opening WalletConnect modal');
           handleWalletConnectOpen();
@@ -136,7 +177,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return () => {
       window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
     };
-  }, [user, petraConnected, walletConnectConnected]);
+  }, [user, petraConnected, walletConnectConnected, iotaConnected, isDesktopBrowser]);
 
   // Fetch Aptos balance with network awareness
   const fetchAptosBalance = async () => {
@@ -343,6 +384,12 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       setWalletType(null);
       setEnsName(null);
       window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+    } else if (walletType === 'iota') {
+      disconnectIota();
+      setUser(null);
+      setWalletType(null);
+      setEnsName(null);
+      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     } else if (walletType === 'worldchain') {
       setUser(null);
       setWalletType(null);
@@ -453,41 +500,58 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   // Not connected - show connect button
-  if (!user && !petraConnected && !walletConnectConnected) {
+  if (!user && !petraConnected && !walletConnectConnected && !iotaConnected) {
     return (
-      <Button
-        onClick={() => {
-          console.log('🔍 Checking environment...');
-          console.log('  - window.Telegram:', !!(window as any).Telegram);
-          console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
-          console.log('  - isTelegramWebView():', isTelegramWebView());
-          console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
-          
-          if (isTelegramWebView()) {
-            console.log('✅ Detected Telegram WebView - connecting TON wallet');
-            handleTelegramConnect();
-          } else if (MiniKit.isInstalled()) {
-            console.log('✅ Detected World App - connecting World ID');
-            handleConnect();
-          } else {
-            console.log('✅ Desktop browser - opening WalletConnect modal');
-            handleWalletConnectOpen();
-          }
-        }}
-        disabled={isLoading}
-        variant="outline"
-        size="sm"
-        className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
-      >
-        {isLoading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-            {t('connecting')}
-          </>
-        ) : (
-          t('Connect')
+      <>
+        <Button
+          onClick={() => {
+            console.log('🔍 Checking environment...');
+            console.log('  - window.Telegram:', !!(window as any).Telegram);
+            console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
+            console.log('  - isTelegramWebView():', isTelegramWebView());
+            console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
+            console.log('  - isDesktopBrowser:', isDesktopBrowser);
+            
+            if (isTelegramWebView()) {
+              console.log('✅ Detected Telegram WebView - connecting TON wallet');
+              handleTelegramConnect();
+            } else if (MiniKit.isInstalled()) {
+              console.log('✅ Detected World App - connecting World ID');
+              handleConnect();
+            } else if (isDesktopBrowser) {
+              console.log('✅ Desktop browser - opening wallet chooser');
+              setShowChooser(true);
+            } else {
+              console.log('✅ Mobile browser - opening WalletConnect modal');
+              handleWalletConnectOpen();
+            }
+          }}
+          disabled={isLoading}
+          variant="outline"
+          size="sm"
+          className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
+        >
+          {isLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+              {t('connecting')}
+            </>
+          ) : (
+            t('Connect')
+          )}
+        </Button>
+        
+        {/* Wallet chooser for desktop browsers */}
+        {isDesktopBrowser && (
+          <ConnectWalletChooser
+            open={showChooser}
+            onOpenChange={setShowChooser}
+            onWalletConnect={() => {
+              handleWalletConnectOpen();
+            }}
+          />
         )}
-      </Button>
+      </>
     );
   }
 
@@ -496,13 +560,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     ? petraAccount.address 
     : walletType === 'walletconnect' && walletConnectAddress
     ? walletConnectAddress
+    : walletType === 'iota' && iotaAccount?.address
+    ? iotaAccount.address
     : user?.walletAddress || '';
   const displayUsername = walletType === 'petra' 
     ? formatAddress(petraAccount?.address || '')
     : walletType === 'walletconnect' && walletConnectAddress
     ? ensName || formatAddress(walletConnectAddress)
+    : walletType === 'iota' && iotaAccount?.address
+    ? formatAddress(iotaAccount.address)
     : user?.username || formatAddress(user?.walletAddress || '');
-  const walletIcon = walletType === 'petra' ? petraIcon : wldLogo;
+  const walletIcon = walletType === 'petra' ? petraIcon : walletType === 'iota' ? iotaLogo : wldLogo;
 
   return (
     <DropdownMenu onOpenChange={(open) => {
