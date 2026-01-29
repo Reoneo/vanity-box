@@ -169,7 +169,7 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="max-w-md p-0 overflow-hidden bg-background border-border rounded-2xl">
           {/* Premium Header with Gradient */}
-          <div className="relative h-32 bg-gradient-to-br from-teal-500/30 via-teal-600/20 to-cyan-500/20">
+          <div className="relative h-32 bg-gradient-to-br from-[#D4AF37]/30 via-[#C9A030]/20 to-[#B8960A]/20">
             {/* Pattern overlay */}
             <div 
               className="absolute inset-0 opacity-20"
@@ -184,7 +184,7 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
             {/* Avatar and Name */}
             <div className="absolute bottom-4 left-6 flex items-end gap-4">
               <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 p-0.5 shadow-xl shadow-teal-500/20">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#B8960A] p-0.5 shadow-xl shadow-[#D4AF37]/20">
                   <div className="w-full h-full rounded-2xl bg-background flex items-center justify-center overflow-hidden">
                     <img 
                       src={vanityIotaAvatar} 
@@ -192,9 +192,6 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                       className="w-16 h-16 object-cover rounded-xl" 
                     />
                   </div>
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center ring-2 ring-background">
-                  <Check className="w-3.5 h-3.5 text-white" />
                 </div>
               </div>
               <div className="pb-1">
@@ -225,8 +222,8 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
             {/* Not connected state */}
             {isIotaWalletAvailable && !isConnected && step === 'quote' && (
               <div className="text-center py-8 space-y-5">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-teal-500/10 flex items-center justify-center">
-                  <Wallet className="w-8 h-8 text-teal-500" />
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-[#D4AF37]/10 flex items-center justify-center">
+                  <Wallet className="w-8 h-8 text-[#D4AF37]" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">Connect IOTA Wallet</h3>
@@ -236,7 +233,7 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                 </div>
                 <Button 
                   onClick={() => setConnectModalOpen(true)}
-                  className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-8 h-12 text-base font-semibold rounded-xl shadow-lg shadow-teal-500/20"
+                  className="bg-[#D4AF37] hover:bg-[#C9A030] text-black px-8 h-12 text-base font-semibold rounded-xl shadow-lg shadow-[#D4AF37]/20"
                 >
                   <Wallet className="w-5 h-5 mr-2" />
                   Connect IOTA Wallet
@@ -250,8 +247,8 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                 {/* Features Section */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-muted/30 rounded-xl p-3 flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center flex-shrink-0">
-                      <Globe className="w-4 h-4 text-teal-500" />
+                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center flex-shrink-0">
+                      <Globe className="w-4 h-4 text-[#D4AF37]" />
                     </div>
                     <div>
                       <p className="text-xs font-medium text-foreground">Onchain Identity</p>
@@ -259,8 +256,8 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                     </div>
                   </div>
                   <div className="bg-muted/30 rounded-xl p-3 flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
-                      <Link2 className="w-4 h-4 text-cyan-500" />
+                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center flex-shrink-0">
+                      <Link2 className="w-4 h-4 text-[#D4AF37]" />
                     </div>
                     <div>
                       <p className="text-xs font-medium text-foreground">Vanity.box URL</p>
@@ -292,22 +289,22 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                 </div>
 
                 {/* What you get */}
-                <div className="bg-teal-500/5 border border-teal-500/20 rounded-xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-teal-600 dark:text-teal-400">
+                <div className="bg-[#D4AF37]/5 border border-[#D4AF37]/20 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-[#D4AF37]">
                     <Sparkles className="w-4 h-4" />
                     <span className="text-sm font-medium">What you get</span>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-1.5 ml-6">
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <Check className="w-3.5 h-3.5 text-[#D4AF37]" />
                       <span><strong>{fullName}</strong> on IOTA blockchain</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <Check className="w-3.5 h-3.5 text-[#D4AF37]" />
                       <span><strong>{label}.vanity.box</strong> redirect URL</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <Check className="w-3.5 h-3.5 text-[#D4AF37]" />
                       <span>Customizable onchain profile</span>
                     </li>
                   </ul>
@@ -316,7 +313,7 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                 {/* Wallet Status */}
                 <div className="flex items-center justify-between bg-muted/20 rounded-xl px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-emerald-500" />
+                    <Shield className="w-4 h-4 text-[#D4AF37]" />
                     <span className="text-sm text-muted-foreground">Connected Wallet</span>
                   </div>
                   <span className="text-sm font-mono text-foreground">
@@ -332,9 +329,8 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                   onClick={handleMint}
                   className={cn(
                     "w-full h-14 text-lg font-semibold rounded-xl transition-all",
-                    "bg-gradient-to-r from-teal-500 to-teal-600",
-                    "hover:from-teal-600 hover:to-teal-700",
-                    "text-white shadow-lg shadow-teal-500/25",
+                    "bg-[#D4AF37] hover:bg-[#C9A030]",
+                    "text-black shadow-lg shadow-[#D4AF37]/25",
                     "active:scale-[0.98]"
                   )}
                 >
@@ -348,9 +344,9 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
             {(step === 'minting' || step === 'creating_redirect') && (
               <div className="text-center py-10 space-y-5">
                 <div className="relative w-20 h-20 mx-auto">
-                  <div className="absolute inset-0 rounded-2xl bg-teal-500/20 animate-pulse" />
-                  <div className="absolute inset-2 rounded-xl bg-teal-500/30 flex items-center justify-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-teal-500" />
+                  <div className="absolute inset-0 rounded-2xl bg-[#D4AF37]/20 animate-pulse" />
+                  <div className="absolute inset-2 rounded-xl bg-[#D4AF37]/30 flex items-center justify-center">
+                    <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
                   </div>
                 </div>
                 <div>

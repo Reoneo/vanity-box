@@ -103,29 +103,27 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
           {bundleItems.map((item) => {
             const fullName = `${cleanLabel}.${item.base}`;
             const isIota = item.id === 'iota';
+            const isBox = item.id === 'box';
+            // box and iota should not be greyed out
+            const shouldGrey = !item.isActive && !isBox;
 
             return (
               <div 
                 key={item.id} 
-                className={`flex flex-col items-center ${!item.isActive ? 'opacity-50' : ''}`}
+                className={`flex flex-col items-center ${shouldGrey ? 'opacity-50' : ''}`}
               >
                 {/* Avatar with active indicator */}
                 <div className={`
                   relative w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 bg-background shadow-sm
-                  ${isIota ? 'border-teal-500 ring-2 ring-teal-500/30' : 'border-border/40'}
+                  ${isIota ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30' : 'border-border/40'}
                 `}>
                   <img src={item.avatar} alt={fullName} className="w-full h-full object-cover" />
-                  {isIota && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-teal-500 rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-white" />
-                    </div>
-                  )}
                 </div>
 
                 {/* Subdomain label */}
                 <span className={`
                   text-[9px] md:text-[10px] font-medium mt-1.5 text-center break-all max-w-[80px]
-                  ${isIota ? 'text-teal-600 dark:text-teal-400' : 'text-muted-foreground'}
+                  ${isIota ? 'text-[#D4AF37]' : 'text-muted-foreground'}
                 `}>
                   {fullName}
                 </span>
@@ -138,10 +136,10 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
         <div className="w-full h-px bg-border mb-4" />
 
         {/* IOTA Registration Section (Early Access) */}
-        <div className="bg-teal-500/5 dark:bg-teal-500/10 rounded-xl p-4 border border-teal-500/20">
+        <div className="bg-[#D4AF37]/5 dark:bg-[#D4AF37]/10 rounded-xl p-4 border border-[#D4AF37]/30">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <img src={vanityIotaAvatar} alt="IOTA" className="w-8 h-8 rounded-full" />
+              <img src={vanityIotaAvatar} alt="IOTA" className="w-8 h-8 rounded-full border border-[#D4AF37]/30" />
               <div>
                 <p className="text-sm font-semibold text-foreground">{iotaDisplayName}</p>
                 <p className="text-xs text-muted-foreground">IOTA Network</p>
@@ -200,16 +198,16 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
             <p className="text-xs font-medium text-foreground mb-2">Mint {cleanLabel}.vanity.iota and instantly get:</p>
             <ul className="space-y-1.5">
               <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Check className="w-3 h-3 text-teal-500 flex-shrink-0" />
+                <Check className="w-3 h-3 text-[#D4AF37] flex-shrink-0" />
                 <span>Onchain identity on IOTA</span>
               </li>
               <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Check className="w-3 h-3 text-teal-500 flex-shrink-0" />
+                <Check className="w-3 h-3 text-[#D4AF37] flex-shrink-0" />
                 <span><strong>{cleanLabel}.vanity.box</strong> DNS redirect to your profile</span>
               </li>
               <li className="flex items-center gap-2 text-xs text-muted-foreground">
                 <ExternalLink className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                <span className="opacity-70">Other chain IDs coming soon</span>
+                <span className="opacity-70">All matching ID's will be free to claim soon!</span>
               </li>
             </ul>
           </div>
@@ -218,14 +216,14 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
           {iotaResult.status === 'loading' ? (
             <Button 
               disabled 
-              className="w-full bg-teal-500/50 text-white font-semibold"
+              className="w-full bg-[#D4AF37]/50 text-black font-semibold"
             >
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Checking availability…
             </Button>
           ) : iotaResult.status === 'available' && isIotaValidLength ? (
             <Button 
-              className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold shadow-md"
+              className="w-full bg-[#D4AF37] hover:bg-[#C9A030] text-black font-semibold shadow-md"
               onClick={() => setIotaModalOpen(true)}
             >
               <Sparkles className="w-4 h-4 mr-2" />
@@ -233,7 +231,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
             </Button>
           ) : iotaResult.status === 'taken' ? (
             <Button 
-              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold"
+              className="w-full bg-[#D4AF37] hover:bg-[#C9A030] text-black font-semibold"
               onClick={handleViewProfile}
               disabled={viewLoading}
             >
@@ -242,14 +240,14 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
           ) : !isIotaValidLength ? (
             <Button 
               disabled 
-              className="w-full bg-teal-500/50 text-white/80 font-semibold"
+              className="w-full bg-[#D4AF37]/50 text-black/80 font-semibold"
             >
               Minimum 3 Characters Required
             </Button>
           ) : (
             <Button 
               disabled 
-              className="w-full bg-teal-500/50 text-white/80 font-semibold"
+              className="w-full bg-[#D4AF37]/50 text-black/80 font-semibold"
             >
               Unavailable
             </Button>
