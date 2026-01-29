@@ -1,72 +1,63 @@
 
-# Fix IOTA Names (.iota) Domain Resolution
 
-## Problem Identified
-The `resolve-iota-domain` edge function is failing with "Invalid IOTA name" error because:
+# Profile Panel Theme Consistency Fix
 
-1. **Incorrect name format**: Code removes `.iota` suffix before calling `getNameRecord()`, but the SDK expects the full name including `.iota`
-   - Current: `getNameRecord('vanity')` - fails
-   - Correct: `getNameRecord('vanity.iota')` - expected by SDK
+## Problem Analysis
+The desktop profile layout (left panel) currently displays an undesired gradient that transitions from white to black, creating an inconsistent and unappealing visual appearance. The user wants the theme to match Image 2 which shows a clean, consistent look with both panels having a subtle white/gold gradient.
 
-2. **Outdated SDK initialization**: The current implementation uses the older `IotaClient` approach, but the SDK documentation shows a newer GraphQL-based initialization
+## Current State
+Looking at the code in `ProfileCard.tsx`:
+
+**Line 885 (Left Panel):**
+```typescript
+<div className="w-1/2 flex flex-col min-h-0 border-r border-border/20 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10">
+```
+
+**Line 1025 (Right Panel):**
+```typescript
+<div className="w-1/2 flex flex-col min-h-0 bg-gradient-to-br from-white via-white to-[#D4AF37]/5 dark:from-black dark:via-black dark:to-[#D4AF37]/10 border-l border-[#D4AF37]/20">
+```
+
+The styling appears consistent, but the visual issue in Image 1 suggests there may be conflicting styles or the border styling is creating an unwanted visual effect.
 
 ## Solution
 
-### Step 1: Update Edge Function - Fix Name Format and SDK Initialization
+### 1. Simplify the Left Panel Background
+Remove the complex gradient and use a simpler, cleaner background that matches the desired look:
 
-Update `supabase/functions/resolve-iota-domain/index.ts` to:
+**For Light Mode:**
+- Use a clean white background (`bg-white`) instead of a gradient
+- Maintain the subtle gold accent only as a border color
 
-```text
-Changes:
-- Remove the code that strips ".iota" suffix (lines 61-64)
-- Keep the full domain name for getNameRecord() call
-- Update SDK initialization to use GraphQL client approach from documentation
-- Add better error handling and logging
-```
+**For Dark Mode:**
+- Use solid black with a very subtle gold-tinted overlay
+- Remove the gradient transition that creates the unpleasant visual
 
-**Key code changes:**
+### 2. Update Both Panels for Consistency
+Update both left and right panels to use the same simplified styling:
 
 ```typescript
-// NEW: Use GraphQL-based initialization (per SDK docs)
-const { IotaNamesClient } = await import("npm:@iota/iota-names-sdk@latest");
-const { getNetwork, Network } = await import("npm:@iota/iota-sdk@latest/client");
-const { IotaGraphQLClient } = await import("npm:@iota/iota-sdk@latest/graphql");
+// Left panel (line 885)
+<div className="w-1/2 flex flex-col min-h-0 border-r border-[#D4AF37]/20 bg-white dark:bg-black">
 
-const network = getNetwork(Network.Mainnet);
-const iotaNamesClient = new IotaNamesClient({
-  graphQlClient: new IotaGraphQLClient({ url: network.graphql! }),
-  network: network.id,
-});
-
-// FIX: Keep the full domain name WITH .iota suffix
-const domainName = domain.toLowerCase();
-// Ensure it ends with .iota
-const lookupName = domainName.endsWith(".iota") ? domainName : `${domainName}.iota`;
-
-console.log(`Looking up IOTA name: ${lookupName}`);
-nameRecord = await iotaNamesClient.getNameRecord(lookupName);
+// Right panel (line 1025)  
+<div className="w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
 ```
 
-### Step 2: Deploy and Test
-
-1. Deploy the updated `resolve-iota-domain` edge function
-2. Test searching for "vanity.iota"
-3. Verify the wallet address is correctly resolved and displayed
+### 3. Apply Subtle Gold Accent via Container
+Instead of applying the gradient directly to the panels, use the parent container to create a subtle gold ambient effect if desired.
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `supabase/functions/resolve-iota-domain/index.ts` | Fix name format, update SDK initialization |
+| `src/components/ProfileCard.tsx` | Update left panel styling (line ~885) and right panel styling (line ~1025) to use clean backgrounds |
 
-## Expected Outcome
+## Technical Details
 
-- Searching "vanity.iota" will correctly resolve to the associated wallet address
-- Profile will display with the IOTA domain name
-- Loading bar will complete instead of sticking at 98%
+The changes will:
+1. Replace `bg-gradient-to-br from-white via-white to-[#D4AF37]/5` with `bg-white` for light mode
+2. Replace `dark:from-black dark:via-black dark:to-[#D4AF37]/10` with `dark:bg-black` for dark mode
+3. Keep the gold border styling (`border-[#D4AF37]/20`) for visual consistency
+4. This matches the clean look shown in Image 2 where both panels have a uniform background color
 
-## Technical Notes
-
-- The SDK documentation explicitly shows: `await iotaNamesClient.getNameRecord('example.iota')` with the suffix included
-- The GraphQL initialization approach is the recommended method per the latest SDK documentation
-- If "vanity.iota" is not registered on IOTA mainnet, it will correctly return "not found" instead of "Invalid IOTA name"
