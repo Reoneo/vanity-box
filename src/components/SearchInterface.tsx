@@ -48,6 +48,7 @@ import { ENSRegistrationCard } from "@/components/ENSRegistrationCard";
 import { NameSearchCarousel } from "@/components/NameSearchCarousel";
 import { HomeFeatureShowcase } from "@/components/HomeFeatureShowcase";
 import { IotaProfileEditModal } from "@/components/IotaProfileEditModal";
+import { useIotaWallet } from "@/contexts/IotaWalletContext";
 import { MessageCircle, Repeat2, Heart } from "lucide-react";
 
 import {
@@ -184,6 +185,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const location = useLocation();
   const searchIdRef = useRef(0); // Prevent stale searches
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Get IOTA wallet state
+  const { address: iotaWalletAddress, isConnected: isIotaConnected } = useIotaWallet();
 
   // Function to remove underscores from input
   const handleSearchChange = (value: string) => {
@@ -1766,7 +1770,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     activeSection={activeDockSection}
                     web3BioProfile={web3BioProfile}
                     currentWalletAddress={web3BioProfile.address}
-                    connectedWalletAddress={walletAddress}
+                    connectedWalletAddress={
+                      // For .iota profiles, use IOTA wallet address if connected
+                      displayQuery?.toLowerCase().endsWith('.iota') && isIotaConnected && iotaWalletAddress
+                        ? iotaWalletAddress
+                        : walletAddress
+                    }
                     efpStats={efpStats || undefined}
                     poaps={poapTokens}
                     poapTotalCount={poapTotalCount}

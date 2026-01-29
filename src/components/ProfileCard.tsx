@@ -268,8 +268,13 @@ export const ProfileCard = ({
 
   // Check if the connected wallet is the owner of this IOTA profile
   const isIotaProfileOwner = useMemo(() => {
-    if (!isIotaProfile || !connectedWalletAddress || !iotaOwnerAddress) return false;
-    return connectedWalletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase();
+    if (!isIotaProfile || !connectedWalletAddress || !iotaOwnerAddress) {
+      console.log('🔐 IOTA owner check failed:', { isIotaProfile, connectedWalletAddress, iotaOwnerAddress });
+      return false;
+    }
+    const isOwner = connectedWalletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase();
+    console.log('🔐 IOTA owner check:', { connectedWalletAddress, iotaOwnerAddress, isOwner });
+    return isOwner;
   }, [isIotaProfile, connectedWalletAddress, iotaOwnerAddress]);
 
   // Get the best display name to show
