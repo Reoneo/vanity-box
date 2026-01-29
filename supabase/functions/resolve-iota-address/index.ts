@@ -25,8 +25,9 @@ Deno.serve(async (req) => {
 
     // Import the SDK dynamically
     const { IotaNamesClient } = await import("npm:@iota/iota-names-sdk@^0.5.1");
-    const { getNetwork, Network } = await import("npm:@iota/iota-sdk@^1.10.0/client");
-    const { IotaGraphQLClient } = await import("npm:@iota/iota-sdk@^1.10.0/graphql");
+    // Keep versions aligned with other IOTA functions in this repo
+    const { getNetwork, Network } = await import("npm:@iota/iota-sdk@^1.10.1/client");
+    const { IotaGraphQLClient } = await import("npm:@iota/iota-sdk@^1.10.1/graphql");
 
     // Initialize IOTA Names client
     const network = getNetwork(Network.Mainnet);
@@ -38,28 +39,40 @@ Deno.serve(async (req) => {
     });
 
     // Do reverse lookup - find names owned by this address
-    let iotaName = null;
+    let iotaName: string | null = null;
     
     try {
-      // The SDK should have a method to get names by owner
-      // Try to use the default name for the address first
-      const defaultName = await iotaNamesClient.getDefaultNameForAddress(address);
+      // Prefer a default/primary name if the SDK supports it (method name differs across versions)
+      const maybeDefault =
+        (iotaNamesClient as any).getDefaultNameForAddress?.(address) ??
+        (iotaNamesClient as any).getDefaultNameFromAddress?.(address);
+
+      const defaultName = await maybeDefault;
       console.log("Default name for address:", defaultName);
-      
-      if (defaultName) {
+
+      if (typeof defaultName === "string" && defaultName.trim()) {
         iotaName = defaultName;
+      } else if (defaultName?.name && typeof defaultName.name === "string") {
+        iotaName = defaultName.name;
       }
     } catch (defaultError: any) {
       console.log("No default name, trying to get owned names:", defaultError.message);
       
       try {
-        // Try to get all names owned by the address
-        const ownedNames = await iotaNamesClient.getNamesForAddress(address);
+        // Try to get all names owned by the address.
+        // NOTE: the correct method is `getNamesFromAddress` (used elsewhere in this repo).
+        const ownedNames = await (iotaNamesClient as any).getNamesFromAddress?.(address);
         console.log("Owned names:", ownedNames);
-        
-        if (ownedNames && ownedNames.length > 0) {
-          // Use the first owned name
-          iotaName = ownedNames[0];
+
+        if (Array.isArray(ownedNames) && ownedNames.length > 0) {
+          const first = ownedNames[0];
+          if (typeof first === "string") {
+            iotaName = first;
+          } else if (first?.name && typeof first.name === "string") {
+            iotaName = first.name;
+          } else if (first?.label && typeof first.label === "string") {
+            iotaName = first.label;
+          }
         }
       } catch (ownedError: any) {
         console.log("Could not get owned names:", ownedError.message);

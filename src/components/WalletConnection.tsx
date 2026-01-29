@@ -138,47 +138,27 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       // Resolve IOTA address to .iota name
       const resolveIotaName = async () => {
         try {
-          const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/resolve-iota-address', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ address: iotaAccount.address }),
+          const data = await callEdge<any>("resolve-iota-address", {
+            address: iotaAccount.address,
           });
-          
-          if (response.ok) {
-            const data = await response.json();
-            const iotaName = data.name; // e.g., "vanity.iota"
-            console.log('[WalletConnection] Resolved IOTA name:', iotaName);
-            
-            setUser({
-              walletAddress: iotaAccount.address,
-              username: iotaName || formatAddress(iotaAccount.address)
-            });
-            
-            window.dispatchEvent(new CustomEvent('wallet-connected', { 
-              detail: { 
-                walletAddress: iotaAccount.address, 
+
+          const iotaName = typeof data?.name === 'string' ? data.name : null; // e.g., "vanity.iota"
+          console.log('[WalletConnection] Resolved IOTA name:', iotaName);
+
+          setUser({
+            walletAddress: iotaAccount.address,
+            username: iotaName || formatAddress(iotaAccount.address),
+          });
+
+          window.dispatchEvent(
+            new CustomEvent('wallet-connected', {
+              detail: {
+                walletAddress: iotaAccount.address,
                 walletType: 'iota',
-                username: iotaName // The resolved .iota name for profile lookup
-              } 
-            }));
-          } else {
-            // Fallback to address if resolution fails
-            setUser({
-              walletAddress: iotaAccount.address,
-              username: formatAddress(iotaAccount.address)
-            });
-            
-            window.dispatchEvent(new CustomEvent('wallet-connected', { 
-              detail: { 
-                walletAddress: iotaAccount.address, 
-                walletType: 'iota',
-                username: null
-              } 
-            }));
-          }
+                username: iotaName, // used by Profile dock button
+              },
+            })
+          );
         } catch (error) {
           console.error('[WalletConnection] Failed to resolve IOTA name:', error);
           setUser({

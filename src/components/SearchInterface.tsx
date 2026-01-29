@@ -201,6 +201,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [hasSearched, setHasSearched] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
   const [connectedUsername, setConnectedUsername] = useState<string | undefined>(undefined);
+  const [connectedWalletType, setConnectedWalletType] = useState<string | undefined>(undefined);
   const [showMyIDs, setShowMyIDs] = useState(false);
   const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
   const [efpStats, setEfpStats] = useState<EFPStats | null>(null);
@@ -276,6 +277,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     const handleWalletChange = (event: CustomEvent) => {
       setWalletAddress(event.detail?.walletAddress);
       setConnectedUsername(event.detail?.username);
+      setConnectedWalletType(event.detail?.walletType);
     };
 
     const handleShowMyIDs = () => {
@@ -294,6 +296,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     window.addEventListener("wallet-disconnected", () => {
       setWalletAddress(undefined);
       setConnectedUsername(undefined);
+      setConnectedWalletType(undefined);
       setShowMyIDs(false);
     });
     window.addEventListener("show-my-ids", handleShowMyIDs);
@@ -322,6 +325,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         setWalletAddress(undefined);
         setShowMyIDs(false);
       });
+      // Note: the anonymous handler above can't be removed; this matches existing behavior.
       window.removeEventListener("show-my-ids", handleShowMyIDs);
       window.removeEventListener("show-search", handleShowSearch);
       window.removeEventListener("toggle-search-bar", handleToggleSearchBar as EventListener);
@@ -1783,16 +1787,26 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   {
                     icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                     label: t('profile'),
-                    onClick: () => {
+                    onClick: async () => {
                       if (!walletAddress) {
                         toast.error('Please connect your wallet first');
                         return;
                       }
-                      // Load the connected user's own profile
-                      const searchIdentifier = connectedUsername || walletAddress;
-                      if (searchIdentifier) {
-                        handleSearch(searchIdentifier);
+
+                      // Load the connected user's own profile.
+                      // For IOTA wallets, a raw address lookup often returns no results — prefer the resolved .iota name.
+                      let searchIdentifier = connectedUsername || walletAddress;
+                      if (!connectedUsername && connectedWalletType === 'iota') {
+                        try {
+                          const data = await callEdge<any>('resolve-iota-address', { address: walletAddress });
+                          const maybeName = typeof data?.name === 'string' ? data.name : null;
+                          if (maybeName) searchIdentifier = maybeName;
+                        } catch (e) {
+                          console.warn('Failed to resolve .iota name on-demand; falling back to address', e);
+                        }
                       }
+
+                      if (searchIdentifier) handleSearch(searchIdentifier);
                     },
                     isActive: activeDockSection === 'profile',
                   },
