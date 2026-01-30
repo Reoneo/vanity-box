@@ -1,6 +1,10 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Fingerprint, Zap, Globe, ArrowDown, Sparkles, Link2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Fingerprint, Zap, Globe, ArrowDown, Wallet } from 'lucide-react';
+import vanitySilhouetteAvatar from '@/assets/vanity-silhouette-avatar.jpeg';
+
+// Extensions to cycle through
+const extensions = ['.box', '.iota', '.ton', '.apt', '.hl', '.vet'];
 
 const features = [
   {
@@ -24,6 +28,16 @@ const features = [
 ];
 
 export const HomeFeatureShowcase: React.FC = () => {
+  const [extensionIndex, setExtensionIndex] = useState(0);
+
+  // Cycle through extensions every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setExtensionIndex((prev) => (prev + 1) % extensions.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-6 overflow-hidden">
       {/* Luxury Background Pattern */}
@@ -88,14 +102,14 @@ export const HomeFeatureShowcase: React.FC = () => {
             {/* Shimmer effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_3s_infinite]" />
             
-            {/* Before */}
-            <div className="relative flex items-center gap-4">
+            {/* Before - Centered */}
+            <div className="relative flex flex-col items-center text-center gap-2">
               <div className="w-11 h-11 rounded-full bg-muted/80 flex items-center justify-center flex-shrink-0 border border-border/50">
-                <Link2 className="w-5 h-5 text-muted-foreground" />
+                <Wallet className="w-5 h-5 text-muted-foreground" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div>
                 <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-medium mb-1">Before</p>
-                <p className="font-mono text-sm text-foreground/50 truncate">
+                <p className="font-mono text-sm text-foreground/50">
                   0x0b08dA7068b73A579Bd5E8a...
                 </p>
               </div>
@@ -114,15 +128,31 @@ export const HomeFeatureShowcase: React.FC = () => {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent" />
             </div>
             
-            {/* After */}
-            <div className="relative flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8860B] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#D4AF37]/40 ring-2 ring-[#D4AF37]/20 ring-offset-2 ring-offset-card">
-                <Sparkles className="w-5 h-5 text-white" />
+            {/* After - Centered with animated extension */}
+            <div className="relative flex flex-col items-center text-center gap-2">
+              <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 shadow-lg shadow-[#D4AF37]/40 ring-2 ring-[#D4AF37]/20 ring-offset-2 ring-offset-card">
+                <img 
+                  src={vanitySilhouetteAvatar} 
+                  alt="Vanity ID Avatar" 
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="flex-1 min-w-0">
+              <div>
                 <p className="text-[11px] text-[#D4AF37] uppercase tracking-widest font-semibold mb-1">After</p>
                 <p className="font-bold text-lg sm:text-xl text-foreground">
-                  YourName.iota
+                  Name.Vanity
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={extensionIndex}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-[#D4AF37]"
+                    >
+                      {extensions[extensionIndex]}
+                    </motion.span>
+                  </AnimatePresence>
                 </p>
               </div>
             </div>
