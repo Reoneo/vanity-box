@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import chain logos
-import vanityBoxAvatar from '@/assets/vanity-box-avatar.png';
+import vanityBoxAvatar from '@/assets/vanity-box-hex-black.png';
 import vanityAptAvatar from '@/assets/vanity-apt-avatar.jpeg';
 import vanityHlAvatar from '@/assets/vanity-hl-avatar.png';
 import vanityIotaAvatar from '@/assets/vanity-iota-avatar.png';
@@ -189,7 +189,6 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                     <span className="line-through text-muted-foreground/60">${pricing.originalPrice}</span>
                     <span className="text-[#D4AF37] font-semibold">${pricing.earlyAccessPrice}</span>
                     <Badge className="ml-1 bg-[#D4AF37]/20 text-[#D4AF37] text-[9px] px-1 py-0 border border-[#D4AF37]/30">
-                      <Percent className="w-2 h-2 mr-0.5" />
                       50% OFF
                     </Badge>
                   </span>
@@ -228,13 +227,12 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               Checking availability…
             </Button>
           ) : iotaResult.status === 'available' && isIotaValidLength ? (
-            <Button 
+          <Button 
               className="w-full bg-[#D4AF37] hover:bg-[#C9A030] text-black font-semibold shadow-md"
               onClick={() => setIotaModalOpen(true)}
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Mint for ${pricing.earlyAccessPrice}
-              <span className="ml-1 text-xs opacity-75 line-through">${pricing.originalPrice}</span>
             </Button>
           ) : iotaResult.status === 'taken' ? (
             <Button 
