@@ -39,7 +39,7 @@ export const HomeFeatureShowcase: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-start pt-2 sm:pt-8 px-3 sm:px-6 overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-start pt-8 sm:pt-8 px-3 sm:px-6 overflow-hidden">
       {/* Luxury Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Radial gradient backdrop - more pronounced */}
