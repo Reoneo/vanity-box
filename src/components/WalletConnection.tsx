@@ -198,12 +198,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         } else if (MiniKit.isInstalled()) {
           console.log('🔄 Trigger: Connecting via World App');
           handleConnect();
-        } else if (isDesktopBrowser) {
-          console.log('🔄 Trigger: Opening IOTA wallet modal directly');
-          setShowIotaModal(true);
         } else {
-          console.log('🔄 Trigger: Opening WalletConnect modal');
-          handleWalletConnectOpen();
+          // Both desktop and mobile browser -> show IOTA modal
+          // On mobile, the modal will show "Desktop Required" message
+          console.log('🔄 Trigger: Opening IOTA wallet modal');
+          setShowIotaModal(true);
         }
       }
     };
@@ -212,7 +211,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return () => {
       window.removeEventListener('trigger-wallet-connect', handleTriggerConnect);
     };
-  }, [user, petraConnected, walletConnectConnected, iotaConnected, isDesktopBrowser]);
+  }, [user, petraConnected, walletConnectConnected, iotaConnected]);
 
   // Fetch Aptos balance with network awareness
   const fetchAptosBalance = async () => {
@@ -553,12 +552,11 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             } else if (MiniKit.isInstalled()) {
               console.log('✅ Detected World App - connecting World ID');
               handleConnect();
-            } else if (isDesktopBrowser) {
-              console.log('✅ Desktop browser - opening IOTA wallet modal directly');
-              setShowIotaModal(true);
             } else {
-              console.log('✅ Mobile browser - opening WalletConnect modal');
-              handleWalletConnectOpen();
+              // Both desktop and mobile browser -> show IOTA modal
+              // On mobile, the IOTA modal in IotaSubdomainMintModal shows "Desktop Required" message
+              console.log('✅ Opening IOTA wallet modal');
+              setShowIotaModal(true);
             }
           }}
           disabled={isLoading}
@@ -576,7 +574,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           )}
         </Button>
         
-        {/* IOTA Connect Modal for desktop browsers */}
+        {/* IOTA Connect Modal - only render on desktop where IOTA provider exists */}
         {isDesktopBrowser && (
           <ConnectModal 
             trigger={<span style={{ display: 'none' }} />}
