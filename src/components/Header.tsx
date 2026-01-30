@@ -118,7 +118,7 @@ export const Header: React.FC = () => {
                   isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]"
                 )}
               >
-                <div className="flex flex-col items-center justify-end h-full pb-1">
+                <div className="relative flex items-center justify-center h-full">
                   <img 
                     src={vanityLogo} 
                     alt="Vanity.box Logo" 
@@ -126,7 +126,7 @@ export const Header: React.FC = () => {
                     loading="eager"
                     fetchPriority="high"
                   />
-                  <span className="text-[8px] font-bold tracking-[0.2em] text-black -mt-0.5">VANITY.BOX</span>
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold tracking-[0.2em] text-black">VANITY.BOX</span>
                 </div>
               </div>
 
@@ -206,7 +206,7 @@ export const Header: React.FC = () => {
               <div
                 className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden"
               >
-                <div className="flex flex-col items-center justify-end h-full pb-1">
+                <div className="relative flex items-center justify-center h-full">
                   <img 
                     src={vanityLogo} 
                     alt="Vanity.box Logo" 
@@ -214,7 +214,7 @@ export const Header: React.FC = () => {
                     loading="eager"
                     fetchPriority="high"
                   />
-                  <span className="text-[8px] font-bold tracking-[0.2em] text-black -mt-0.5">VANITY.BOX</span>
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold tracking-[0.2em] text-black">VANITY.BOX</span>
                 </div>
               </div>
             </>
@@ -261,7 +261,7 @@ export const Header: React.FC = () => {
           <div
             className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2"
           >
-            <div className="flex flex-col items-center justify-end h-full pb-1">
+            <div className="relative flex items-center justify-center h-full">
               <img 
                 src={vanityLogo} 
                 alt="Vanity.box Logo" 
@@ -269,7 +269,7 @@ export const Header: React.FC = () => {
                 loading="eager"
                 fetchPriority="high"
               />
-              <span className="text-[8px] font-bold tracking-[0.2em] text-black -mt-0.5">VANITY.BOX</span>
+              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold tracking-[0.2em] text-black">VANITY.BOX</span>
             </div>
           </div>
 
