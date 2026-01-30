@@ -126,7 +126,7 @@ export const Header: React.FC = () => {
                     loading="eager"
                     fetchPriority="high"
                   />
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold tracking-[0.2em] text-black">VANITY.BOX</span>
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black tracking-[0.2em] text-black">VANITY.BOX</span>
                 </div>
               </div>
 
@@ -214,7 +214,7 @@ export const Header: React.FC = () => {
                     loading="eager"
                     fetchPriority="high"
                   />
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold tracking-[0.2em] text-black">VANITY.BOX</span>
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black tracking-[0.2em] text-black">VANITY.BOX</span>
                 </div>
               </div>
             </>
@@ -269,7 +269,7 @@ export const Header: React.FC = () => {
                 loading="eager"
                 fetchPriority="high"
               />
-              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold tracking-[0.2em] text-black">VANITY.BOX</span>
+              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black tracking-[0.2em] text-black">VANITY.BOX</span>
             </div>
           </div>
 
