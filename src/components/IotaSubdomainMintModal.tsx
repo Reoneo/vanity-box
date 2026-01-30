@@ -14,7 +14,8 @@ import {
   Globe, Link2, Sparkles, Shield, ArrowRight, Copy, Clock, Percent
 } from 'lucide-react';
 import { useIotaWallet } from '@/contexts/IotaWalletContext';
-import { useCurrentAccount, ConnectModal } from '@iota/dapp-kit';
+import { ConnectModal } from '@iota/dapp-kit';
+import { useIotaAccountSafe, isIotaAvailable } from '@/hooks/use-iota-wallet-safe';
 import { useCryptoPrices } from '@/contexts/CryptoPriceContext';
 import { getSubdomainPricing } from '@/hooks/useIotaSubdomainAvailability';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +39,8 @@ interface IotaSubdomainMintModalProps {
 export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdomainMintModalProps) {
   const navigate = useNavigate();
   const { isConnected } = useIotaWallet();
-  const currentAccount = useCurrentAccount();
+  // Use safe hook that returns null on mobile instead of throwing WalletContext error
+  const currentAccount = useIotaAccountSafe();
   const { prices, isLoading: pricesLoading } = useCryptoPrices();
   
   const [step, setStep] = useState<MintStep>('quote');
@@ -657,12 +659,14 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
         </DialogContent>
       </Dialog>
 
-      {/* IOTA Wallet Connect Modal */}
-      <ConnectModal
-        trigger={<></>}
-        open={connectModalOpen}
-        onOpenChange={setConnectModalOpen}
-      />
+      {/* IOTA Wallet Connect Modal - only render when IOTA is available (desktop) */}
+      {isIotaAvailable && (
+        <ConnectModal
+          trigger={<></>}
+          open={connectModalOpen}
+          onOpenChange={setConnectModalOpen}
+        />
+      )}
     </>
   );
 }
