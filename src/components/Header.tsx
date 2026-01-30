@@ -107,7 +107,7 @@ export const Header: React.FC = () => {
         <link rel="preload" as="image" href={vanityLogo} />
         
         {/* Content */}
-          <div className="relative z-10 container mx-auto px-4 h-28 flex items-center justify-between">
+          <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
           {/* Mobile: Show left-aligned controls when wallet is connected */}
           {isWalletConnected && (
             <div className="flex items-center gap-1 md:hidden">
