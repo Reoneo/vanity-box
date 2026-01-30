@@ -1,188 +1,157 @@
 
+## Fix WalletContext Error and Simplify Wallet Connection
 
-## IOTA Subdomain Payment Flow Enhancement
-
-This plan implements half-price early access pricing, live IOTA price fetching, payment validation, and backend minting for vanity.iota subdomains.
-
----
-
-### Overview
-
-The current IOTA subdomain minting modal uses a placeholder price and simulates minting. This implementation will:
-1. Display half-price early access pricing with clear visual indicators
-2. Fetch live IOTA token prices from CryptoCompare API
-3. Require payment to a specific wallet address before minting
-4. Validate payment receipt in the backend before completing the mint
+This plan addresses the "Could not find WalletContext" error on mobile and simplifies the wallet connection flow to only use IOTA wallet connect on both mobile and desktop.
 
 ---
 
-### Payment Receiver Address
+### Problem Analysis
 
-All IOTA subdomain payments will be sent to:
-```
-0x20ea2665976a7731a1ee82f8d53be43b0f411b231c1c15850b92b8fdbd4b2839
-```
+The error "Could not find WalletContext" occurs because:
+
+1. **IotaWalletProvider** intentionally skips rendering IOTA providers on mobile phones and special apps (Telegram, World App)
+2. **IotaSubdomainMintModal** directly imports and uses `useCurrentAccount` and `ConnectModal` from `@iota/dapp-kit`
+3. **ConnectWalletChooser** also uses these hooks directly
+4. When these components render on mobile, they try to access a context that doesn't exist
 
 ---
 
-### Half-Price Early Access Pricing
+### Solution Overview
 
-Current pricing (will be halved):
-
-| Characters | Original USD | Early Access USD |
-|------------|--------------|------------------|
-| 3 chars    | $300         | $150             |
-| 4 chars    | $100         | $50              |
-| 5 chars    | $50          | $25              |
-| 6-9 chars  | $25          | $12.50           |
-| 10+ chars  | $5           | $2.50            |
-
-The UI will show:
-- Original price with strikethrough
-- Half price prominently displayed
-- "Early Access 50% Off" badge
+1. Create safe wrapper components for IOTA hooks that gracefully handle missing context
+2. Update `IotaSubdomainMintModal` to use safe hooks and show a "desktop required" message on mobile
+3. Remove WalletConnect from the connect button flow - only trigger IOTA connection
+4. Preserve World ID (World App) and Telegram (TON) connection flows for those specific environments
 
 ---
 
 ### Technical Implementation
 
-#### 1. Add IOTA to Crypto Price Fetching
+#### 1. Update `src/hooks/use-iota-wallet-safe.tsx`
 
-**File: `supabase/functions/get-crypto-prices/index.ts`**
+Add a safe wrapper for `useCurrentAccount` that can be used in components that may render on mobile:
 
-Update to include IOTA token in the CryptoCompare API request:
-```text
-- Current: ETH,WLD,USDC,APT
-- Updated: ETH,WLD,USDC,APT,IOTA
-```
-
-**File: `src/utils/cryptoPrices.ts`**
-
-Add IOTA to the CryptoPrices interface and fetchCryptoPrices function.
-
-**File: `src/contexts/CryptoPriceContext.tsx`**
-
-Add IOTA with a fallback price (~$0.22 based on current market).
-
----
-
-#### 2. Create IOTA Payment Edge Functions
-
-**New: `supabase/functions/initiate-iota-payment/index.ts`**
-
-- Accept: subdomain, wallet address, payment amount, payment method (IOTA/ETH)
-- Generate unique payment reference
-- Store in `payment_references` table with `iota` domain marker
-- Return: payment reference, payment receiver address, exact token amount
-
-**New: `supabase/functions/verify-iota-payment/index.ts`**
-
-- Accept: transaction hash, payment reference, wallet address
-- Query IOTA mainnet RPC to verify transaction
-- Check: correct receiver address, correct amount, transaction confirmed
-- Update payment status to 'verified'
-- Return: success/failure with verification details
-
----
-
-#### 3. Create IOTA Subdomain Minting Edge Function
-
-**New: `supabase/functions/mint-iota-subdomain/index.ts`**
-
-This function will:
-1. Validate the payment reference is verified
-2. Confirm payment matches subdomain and wallet
-3. Create the Cloudflare DNS record and page rule (via existing create-vanity-box-redirect logic)
-4. Store the minted domain record
-5. Return success with vanity.box URL
-
----
-
-#### 4. Update Frontend Modal
-
-**File: `src/hooks/useIotaSubdomainAvailability.ts`**
-
-Update `getSubdomainPriceUsd` to return both original and early access prices:
 ```typescript
-export function getSubdomainPricing(label: string): { 
-  originalPrice: number; 
-  earlyAccessPrice: number; 
-  isEarlyAccess: boolean 
+// Add new hook
+export function useIotaCurrentAccountSafe() {
+  if (!isIotaAvailable) {
+    return null;
+  }
+  return useCurrentAccount();
 }
 ```
 
-**File: `src/components/IotaSubdomainMintModal.tsx`**
+#### 2. Update `src/components/IotaSubdomainMintModal.tsx`
 
-Major updates:
-1. Use live IOTA price from CryptoPriceContext
-2. Display early access pricing with original price strikethrough
-3. Add payment flow steps: `quote` → `awaiting_payment` → `verifying_payment` → `minting` → `success`
-4. Show payment instructions with receiver address
-5. Add transaction hash input for verification
-6. Poll for payment verification before proceeding to mint
+Replace direct IOTA hook imports with safe versions:
 
-**File: `src/components/NameSearchCarousel.tsx`**
+- Replace `useCurrentAccount` from `@iota/dapp-kit` with `useIotaCurrentAccountSafe`
+- Wrap the `ConnectModal` in a conditional render check for `isIotaAvailable`
+- The existing "Desktop Required" message will be shown on mobile
 
-Update to display half-price and early access badge for IOTA cards.
+Key changes:
+```typescript
+// Before
+import { useCurrentAccount, ConnectModal } from '@iota/dapp-kit';
+const currentAccount = useCurrentAccount();
 
----
+// After
+import { useIotaCurrentAccountSafe, isIotaAvailable } from '@/hooks/use-iota-wallet-safe';
+const currentAccount = useIotaCurrentAccountSafe();
 
-#### 5. Database Schema (Existing Tables)
-
-The existing `payment_references` and `minted_domains` tables will be used. No new tables required since:
-- `payment_references` already supports IOTA via `payment_method` field
-- `minted_domains` can store vanity.iota entries with `domain = 'vanity.iota'`
-
----
-
-### Payment Flow Diagram
-
-```text
-┌─────────────┐     ┌──────────────────┐     ┌────────────────────┐
-│  User sees  │────▶│  User clicks     │────▶│  Backend creates   │
-│  half-price │     │  "Mint" button   │     │  payment reference │
-└─────────────┘     └──────────────────┘     └────────────────────┘
-                                                       │
-                                                       ▼
-┌─────────────┐     ┌──────────────────┐     ┌────────────────────┐
-│  DNS record │◀────│  Backend mints   │◀────│  User sends IOTA/  │
-│  created    │     │  after payment   │     │  ETH to receiver   │
-└─────────────┘     │  verified        │     └────────────────────┘
-                    └──────────────────┘              │
-                            ▲                         ▼
-                            │              ┌────────────────────┐
-                            └──────────────│  User submits      │
-                                           │  transaction hash  │
-                                           └────────────────────┘
+// Only render ConnectModal when IOTA is available
+{isIotaAvailable && (
+  <ConnectModal ... />
+)}
 ```
 
+#### 3. Update `src/components/WalletConnection.tsx`
+
+Simplify the connection flow:
+- On desktop: Trigger IOTA wallet connect directly (current behavior)
+- On mobile (standard browser): Show a message that wallet connection requires desktop, OR redirect to World App
+- In Telegram: Continue using TON wallet connection
+- In World App: Continue using World ID wallet authentication
+
+Update `handleTriggerConnect`:
+```typescript
+const handleTriggerConnect = () => {
+  if (isTelegramWebView()) {
+    handleTelegramConnect();  // TON wallet
+  } else if (MiniKit.isInstalled()) {
+    handleConnect();  // World App wallet auth
+  } else if (isDesktopBrowser) {
+    setShowIotaModal(true);  // IOTA wallet (current)
+  } else {
+    // Mobile browser - show IOTA modal which will display "Desktop Required"
+    setShowIotaModal(true);
+  }
+};
+```
+
+Remove any WalletConnect fallback from the else branch.
+
+#### 4. Delete or simplify `src/components/ConnectWalletChooser.tsx`
+
+This component is no longer needed since we're not offering a choice between IOTA and WalletConnect. It can be:
+- Deleted entirely, OR
+- Simplified to just trigger IOTA connect directly
+
 ---
-
-### Security Considerations
-
-1. **Backend Payment Validation**: Payment verification occurs server-side by querying the IOTA blockchain
-2. **Reference Matching**: Payment reference must match subdomain, domain, and wallet address
-3. **Replay Prevention**: Payment references can only be used once (status transitions: pending → verified)
-4. **Amount Verification**: Backend confirms the exact token amount was received
-
----
-
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `supabase/functions/initiate-iota-payment/index.ts` | Generate payment reference for IOTA subdomains |
-| `supabase/functions/verify-iota-payment/index.ts` | Verify IOTA/ETH payment on-chain |
-| `supabase/functions/mint-iota-subdomain/index.ts` | Complete minting after payment verification |
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/get-crypto-prices/index.ts` | Add IOTA to price fetching |
-| `src/utils/cryptoPrices.ts` | Add IOTA to interface and function |
-| `src/contexts/CryptoPriceContext.tsx` | Add IOTA fallback price |
-| `src/hooks/useIotaSubdomainAvailability.ts` | Add early access pricing function |
-| `src/components/IotaSubdomainMintModal.tsx` | Complete payment flow with half-price display |
-| `src/components/NameSearchCarousel.tsx` | Display early access badge and half-price |
+| `src/hooks/use-iota-wallet-safe.tsx` | Add `useIotaCurrentAccountSafe` hook |
+| `src/components/IotaSubdomainMintModal.tsx` | Use safe IOTA hooks, conditional ConnectModal render |
+| `src/components/WalletConnection.tsx` | Remove WalletConnect flow, trigger IOTA connect on mobile (shows desktop required message) |
+| `src/components/ConnectWalletChooser.tsx` | Delete file (no longer needed) |
 
+---
+
+### Flow Diagram After Changes
+
+```text
+User clicks "Connect Wallet"
+           │
+           ▼
+    ┌──────────────────┐
+    │  In Telegram?    │──Yes──▶ TON Wallet Connect
+    └──────────────────┘
+           │ No
+           ▼
+    ┌──────────────────┐
+    │  In World App?   │──Yes──▶ World ID Wallet Auth
+    └──────────────────┘
+           │ No
+           ▼
+    ┌──────────────────┐
+    │  Any Device      │──────▶ Show IOTA Connect Modal
+    └──────────────────┘
+           │
+           ▼
+    ┌──────────────────────────────┐
+    │  Mobile?                     │
+    │  → Shows "Desktop Required"  │
+    │  Desktop?                    │
+    │  → Shows wallet options      │
+    └──────────────────────────────┘
+```
+
+---
+
+### Preserved Functionality
+
+- **World ID/World App**: Continues to use MiniKit wallet authentication
+- **Telegram**: Continues to use TON wallet connection
+- **IOTA Desktop**: Works as before with wallet selection modal
+- **Mobile Browser**: Shows "Desktop Required" message when trying to mint IOTA subdomains
+
+---
+
+### Edge Cases Handled
+
+1. **Mobile browser search**: User can search for names, but minting will show "Desktop Required"
+2. **Webview in apps**: Works fine as long as it's Telegram or World App (detected correctly)
+3. **Tablet browsers**: Treated as desktop (iPads can use browser extensions)
