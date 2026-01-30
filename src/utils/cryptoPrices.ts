@@ -6,6 +6,7 @@ export interface CryptoPrices {
   wld: number;
   usdc: number;
   apt: number;
+  iota: number;
 }
 
 export async function fetchCryptoPrices(): Promise<CryptoPrices> {
@@ -22,6 +23,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
         wld: data.prices.wld || 2.0,
         usdc: data.prices.usdc || 1.0,
         apt: data.prices.apt || 8.5,
+        iota: data.prices.iota || 0.22,
       };
     }
 
@@ -34,6 +36,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrices> {
       wld: 2.0,
       usdc: 1.0,
       apt: 8.5,
+      iota: 0.22,
     };
   }
 }

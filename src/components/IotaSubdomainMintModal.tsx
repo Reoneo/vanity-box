@@ -1,139 +1,207 @@
 /**
  * IOTA Subdomain Mint Modal
- * Premium UI for minting vanity.iota subdomains using the IOTA Names SDK
+ * Premium UI for minting vanity.iota subdomains with payment verification
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { 
   Loader2, Check, AlertCircle, Wallet, ExternalLink, 
-  Globe, Link2, Sparkles, Shield, ArrowRight 
+  Globe, Link2, Sparkles, Shield, ArrowRight, Copy, Clock, Percent
 } from 'lucide-react';
 import { useIotaWallet } from '@/contexts/IotaWalletContext';
-import { useCurrentAccount, ConnectModal, useSignAndExecuteTransaction } from '@iota/dapp-kit';
+import { useCurrentAccount, ConnectModal } from '@iota/dapp-kit';
 import { useCryptoPrices } from '@/contexts/CryptoPriceContext';
-import { getSubdomainPriceUsd } from '@/hooks/useIotaSubdomainAvailability';
+import { getSubdomainPricing } from '@/hooks/useIotaSubdomainAvailability';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { callEdge } from '@/lib/supaInvoke';
 import { cn } from '@/lib/utils';
 import vanityIotaAvatar from '@/assets/vanity-iota-avatar.png';
 
-// Placeholder - needs to be updated with actual vanity.iota parent NFT object ID
-const VANITY_IOTA_PARENT_NFT_ID = import.meta.env.VITE_VANITY_IOTA_PARENT_NFT_ID || '';
-// Parent expiration timestamp (needs to match vanity.iota expiration)
-const VANITY_IOTA_EXPIRATION_MS = import.meta.env.VITE_VANITY_IOTA_EXPIRATION_MS 
-  ? parseInt(import.meta.env.VITE_VANITY_IOTA_EXPIRATION_MS, 10)
-  : Date.now() + (365 * 24 * 60 * 60 * 1000 * 10); // Default: 10 years from now
+// Payment receiver address
+const PAYMENT_RECEIVER_ADDRESS = "0x20ea2665976a7731a1ee82f8d53be43b0f411b231c1c15850b92b8fdbd4b2839";
 
-// IOTA price placeholder (update when added to CryptoPriceContext)
-const IOTA_USD_PRICE = 0.25;
-
-type MintStep = 'quote' | 'minting' | 'creating_redirect' | 'success' | 'error';
+type MintStep = 'quote' | 'awaiting_payment' | 'verifying_payment' | 'minting' | 'success' | 'error';
+type PaymentMethod = 'IOTA' | 'ETH';
 
 interface IotaSubdomainMintModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  label: string; // The subdomain label (e.g., "guy" for guy.vanity.iota)
+  label: string;
 }
 
 export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdomainMintModalProps) {
   const navigate = useNavigate();
   const { isConnected } = useIotaWallet();
   const currentAccount = useCurrentAccount();
-  const { prices } = useCryptoPrices();
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const { prices, isLoading: pricesLoading } = useCryptoPrices();
   
   const [step, setStep] = useState<MintStep>('quote');
   const [error, setError] = useState<string | null>(null);
-  const [txDigest, setTxDigest] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string>('');
+  const [paymentReference, setPaymentReference] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('IOTA');
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [vanityBoxUrl, setVanityBoxUrl] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [tokenAmount, setTokenAmount] = useState<string>('0');
 
   const fullName = `${label}.vanity.iota`;
-  const priceUsd = getSubdomainPriceUsd(label);
+  const pricing = getSubdomainPricing(label);
   
-  // Convert USD to IOTA tokens
-  const iotaTokenPrice = priceUsd > 0 ? (priceUsd / IOTA_USD_PRICE).toFixed(2) : '—';
+  // Calculate token amount based on payment method and live prices
+  const calculateTokenAmount = useCallback(() => {
+    if (pricing.earlyAccessPrice <= 0) return '0';
+    
+    if (paymentMethod === 'IOTA') {
+      const iotaPrice = prices.iota || 0.22;
+      return (pricing.earlyAccessPrice / iotaPrice).toFixed(2);
+    } else {
+      const ethPrice = prices.eth || 2600;
+      return (pricing.earlyAccessPrice / ethPrice).toFixed(6);
+    }
+  }, [pricing.earlyAccessPrice, paymentMethod, prices]);
+
+  // Update token amount when prices or method change
+  useEffect(() => {
+    setTokenAmount(calculateTokenAmount());
+  }, [calculateTokenAmount]);
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (open) {
       setStep('quote');
       setError(null);
-      setTxDigest(null);
+      setTxHash('');
+      setPaymentReference(null);
       setVanityBoxUrl(null);
+      setIsVerifying(false);
     }
   }, [open]);
 
-  const handleCreateVanityBoxRedirect = async (digest: string) => {
-    if (!currentAccount?.address) return;
-
-    setStep('creating_redirect');
-    
-    try {
-      const result = await callEdge<{
-        success: boolean;
-        vanityBoxUrl?: string;
-        error?: string;
-      }>('create-vanity-box-redirect', {
-        subdomain: label,
-        walletAddress: currentAccount.address,
-        txDigest: digest,
-      });
-
-      if (result.success && result.vanityBoxUrl) {
-        setVanityBoxUrl(result.vanityBoxUrl);
-        console.log('[IOTA Mint] Vanity.box redirect created:', result.vanityBoxUrl);
-      }
-    } catch (err: any) {
-      console.error('[IOTA Mint] Failed to create vanity.box redirect:', err);
-      // Don't fail the mint - redirect is a bonus feature
-    }
-
-    setStep('success');
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText(PAYMENT_RECEIVER_ADDRESS);
+    toast.success('Payment address copied!');
   };
 
-  const handleMint = useCallback(async () => {
+  const handleCopyAmount = () => {
+    navigator.clipboard.writeText(tokenAmount);
+    toast.success('Amount copied!');
+  };
+
+  const handleInitiatePayment = useCallback(async () => {
     if (!currentAccount?.address) {
       setConnectModalOpen(true);
       return;
     }
 
-    if (!VANITY_IOTA_PARENT_NFT_ID) {
-      // Show coming soon message since parent NFT is not configured
-      toast.info('IOTA subdomain minting coming soon!', {
-        description: 'The vanity.iota parent name needs to be configured first.',
-      });
-      return;
-    }
-
-    setStep('minting');
     setError(null);
 
     try {
-      // TODO: Implement actual minting when parent NFT is ready
-      // 1. Build transaction with IotaNamesTransaction.createSubname()
-      // 2. Transfer NFT to user address
-      // 3. Execute with signAndExecuteTransaction()
+      const result = await callEdge<{
+        success: boolean;
+        reference?: string;
+        paymentAddress?: string;
+        tokenAmount?: string;
+        error?: string;
+      }>('initiate-iota-payment', {
+        subdomain: label,
+        walletAddress: currentAccount.address,
+        paymentAmountUsd: pricing.earlyAccessPrice,
+        paymentMethod: paymentMethod,
+        tokenAmount: tokenAmount,
+      });
+
+      if (!result.success || !result.reference) {
+        throw new Error(result.error || 'Failed to initiate payment');
+      }
+
+      setPaymentReference(result.reference);
+      setStep('awaiting_payment');
       
-      // For now, simulate the minting flow
-      const mockDigest = `mock_${Date.now()}`;
-      setTxDigest(mockDigest);
+      console.log('[IOTA Mint] Payment initiated:', result.reference);
+    } catch (err: any) {
+      console.error('[IOTA Mint] Payment initiation error:', err);
+      setError(err?.message || 'Failed to initiate payment');
+      toast.error('Failed to initiate payment', { description: err?.message });
+    }
+  }, [currentAccount, label, pricing.earlyAccessPrice, paymentMethod, tokenAmount]);
+
+  const handleVerifyPayment = useCallback(async () => {
+    if (!txHash.trim() || !paymentReference || !currentAccount?.address) {
+      toast.error('Please enter a valid transaction hash');
+      return;
+    }
+
+    setIsVerifying(true);
+    setError(null);
+
+    try {
+      const result = await callEdge<{
+        success: boolean;
+        verified?: boolean;
+        error?: string;
+        subdomain?: string;
+      }>('verify-iota-payment', {
+        txHash: txHash.trim(),
+        reference: paymentReference,
+        walletAddress: currentAccount.address,
+      });
+
+      if (!result.success || !result.verified) {
+        throw new Error(result.error || 'Payment verification failed');
+      }
+
+      console.log('[IOTA Mint] Payment verified');
+      setStep('minting');
       
-      // Create the vanity.box redirect
-      await handleCreateVanityBoxRedirect(mockDigest);
-      
+      // Proceed to mint
+      await handleMint();
+    } catch (err: any) {
+      console.error('[IOTA Mint] Verification error:', err);
+      setError(err?.message || 'Payment verification failed');
+      toast.error('Verification failed', { description: err?.message });
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [txHash, paymentReference, currentAccount]);
+
+  const handleMint = useCallback(async () => {
+    if (!currentAccount?.address || !paymentReference) return;
+
+    try {
+      const result = await callEdge<{
+        success: boolean;
+        vanityBoxUrl?: string;
+        profileUrl?: string;
+        error?: string;
+      }>('mint-iota-subdomain', {
+        reference: paymentReference,
+        walletAddress: currentAccount.address,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Minting failed');
+      }
+
+      if (result.vanityBoxUrl) {
+        setVanityBoxUrl(result.vanityBoxUrl);
+      }
+
+      setStep('success');
       toast.success(`Successfully minted ${fullName}! 🎉`);
     } catch (err: any) {
-      console.error('[IOTA Mint] Error:', err);
-      setError(err?.message || 'Failed to mint subdomain');
+      console.error('[IOTA Mint] Minting error:', err);
+      setError(err?.message || 'Minting failed');
       setStep('error');
       toast.error('Minting failed', { description: err?.message });
     }
-  }, [currentAccount, fullName, label]);
+  }, [currentAccount, paymentReference, fullName]);
 
   const handleViewProfile = () => {
     onOpenChange(false);
@@ -141,10 +209,11 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
   };
 
   const handleClose = (open: boolean) => {
-    if (!open && step !== 'minting' && step !== 'creating_redirect') {
+    if (!open && step !== 'minting' && step !== 'verifying_payment') {
       setStep('quote');
       setError(null);
-      setTxDigest(null);
+      setTxHash('');
+      setPaymentReference(null);
       setVanityBoxUrl(null);
     }
     onOpenChange(open);
@@ -193,6 +262,11 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                     />
                   </div>
                 </div>
+                {/* Early Access Badge */}
+                <Badge className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-[9px] px-1.5 py-0.5 shadow-lg">
+                  <Percent className="w-2.5 h-2.5 mr-0.5" />
+                  50% OFF
+                </Badge>
               </div>
               <div className="pb-1">
                 <h2 className="text-xl font-bold text-foreground tracking-tight">{fullName}</h2>
@@ -244,6 +318,17 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
             {/* Quote Step - Connected */}
             {isIotaWalletAvailable && isConnected && step === 'quote' && (
               <>
+                {/* Early Access Banner */}
+                <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-xl p-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#D4AF37]">Early Access - 50% Off!</p>
+                    <p className="text-xs text-muted-foreground">Limited time pricing for early adopters</p>
+                  </div>
+                </div>
+
                 {/* Features Section */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-muted/30 rounded-xl p-3 flex items-start gap-3">
@@ -268,7 +353,7 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
 
                 <Separator className="my-4" />
 
-                {/* Price Breakdown */}
+                {/* Price Breakdown with Early Access */}
                 <div className="bg-muted/30 rounded-xl p-4 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subdomain</span>
@@ -282,32 +367,41 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-foreground">Total</span>
                     <div className="text-right">
-                      <span className="text-2xl font-bold text-foreground">${priceUsd}</span>
-                      <p className="text-xs text-muted-foreground">≈ {iotaTokenPrice} IOTA</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg line-through text-muted-foreground">${pricing.originalPrice}</span>
+                        <span className="text-2xl font-bold text-[#D4AF37]">${pricing.earlyAccessPrice}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {pricesLoading ? '...' : `≈ ${tokenAmount} ${paymentMethod}`}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* What you get */}
-                <div className="bg-[#D4AF37]/5 border border-[#D4AF37]/20 rounded-xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-[#D4AF37]">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="text-sm font-medium">What you get</span>
-                  </div>
-                  <ul className="text-sm text-muted-foreground space-y-1.5 ml-6">
-                    <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span><strong>{fullName}</strong> on IOTA blockchain</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span><strong>{label}.vanity.box</strong> redirect URL</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Customizable onchain profile</span>
-                    </li>
-                  </ul>
+                {/* Payment Method Selection */}
+                <div className="flex gap-2">
+                  <Button
+                    variant={paymentMethod === 'IOTA' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaymentMethod('IOTA')}
+                    className={cn(
+                      "flex-1",
+                      paymentMethod === 'IOTA' && "bg-[#D4AF37] hover:bg-[#C9A030] text-black"
+                    )}
+                  >
+                    Pay with IOTA
+                  </Button>
+                  <Button
+                    variant={paymentMethod === 'ETH' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaymentMethod('ETH')}
+                    className={cn(
+                      "flex-1",
+                      paymentMethod === 'ETH' && "bg-[#D4AF37] hover:bg-[#C9A030] text-black"
+                    )}
+                  >
+                    Pay with ETH
+                  </Button>
                 </div>
 
                 {/* Wallet Status */}
@@ -326,7 +420,7 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
 
                 {/* Mint Button */}
                 <Button
-                  onClick={handleMint}
+                  onClick={handleInitiatePayment}
                   className={cn(
                     "w-full h-14 text-lg font-semibold rounded-xl transition-all",
                     "bg-[#D4AF37] hover:bg-[#C9A030]",
@@ -334,14 +428,112 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                     "active:scale-[0.98]"
                   )}
                 >
-                  <span>Mint for ${priceUsd}</span>
+                  <span>Mint for ${pricing.earlyAccessPrice}</span>
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </>
             )}
 
-            {/* Minting Step */}
-            {(step === 'minting' || step === 'creating_redirect') && (
+            {/* Awaiting Payment Step */}
+            {step === 'awaiting_payment' && (
+              <div className="space-y-5">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-[#D4AF37]/10 flex items-center justify-center mb-4">
+                    <Clock className="w-8 h-8 text-[#D4AF37]" />
+                  </div>
+                  <h3 className="font-semibold text-lg">Send Payment</h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Send exactly <strong>{tokenAmount} {paymentMethod}</strong> to the address below
+                  </p>
+                </div>
+
+                {/* Payment Details */}
+                <div className="bg-muted/30 rounded-xl p-4 space-y-4">
+                  {/* Amount */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Amount</p>
+                    <div className="flex items-center justify-between bg-background rounded-lg p-3 border border-border">
+                      <span className="font-mono text-lg font-semibold">{tokenAmount} {paymentMethod}</span>
+                      <Button size="sm" variant="ghost" onClick={handleCopyAmount}>
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">(${pricing.earlyAccessPrice} USD)</p>
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Send to Address</p>
+                    <div className="flex items-center justify-between bg-background rounded-lg p-3 border border-border">
+                      <span className="font-mono text-xs break-all">{PAYMENT_RECEIVER_ADDRESS}</span>
+                      <Button size="sm" variant="ghost" onClick={handleCopyAddress} className="flex-shrink-0 ml-2">
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Reference */}
+                  {paymentReference && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Reference</p>
+                      <div className="bg-background rounded-lg p-3 border border-border">
+                        <span className="font-mono text-sm">{paymentReference}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Transaction Hash Input */}
+                <div>
+                  <p className="text-sm font-medium mb-2">After sending, paste your transaction hash:</p>
+                  <Input
+                    placeholder="0x..."
+                    value={txHash}
+                    onChange={(e) => setTxHash(e.target.value)}
+                    className="font-mono text-sm"
+                  />
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg p-3 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                {/* Verify Button */}
+                <Button
+                  onClick={handleVerifyPayment}
+                  disabled={!txHash.trim() || isVerifying}
+                  className={cn(
+                    "w-full h-12 font-semibold rounded-xl",
+                    "bg-[#D4AF37] hover:bg-[#C9A030] text-black"
+                  )}
+                >
+                  {isVerifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Verify Payment & Mint
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep('quote')}
+                  className="w-full"
+                >
+                  Go Back
+                </Button>
+              </div>
+            )}
+
+            {/* Verifying/Minting Step */}
+            {(step === 'verifying_payment' || step === 'minting') && (
               <div className="text-center py-10 space-y-5">
                 <div className="relative w-20 h-20 mx-auto">
                   <div className="absolute inset-0 rounded-2xl bg-[#D4AF37]/20 animate-pulse" />
@@ -351,12 +543,12 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">
-                    {step === 'minting' ? 'Minting Subdomain' : 'Creating Redirect'}
+                    {step === 'verifying_payment' ? 'Verifying Payment' : 'Minting Subdomain'}
                   </h3>
                   <p className="text-muted-foreground text-sm mt-1">
-                    {step === 'minting' 
-                      ? 'Confirm the transaction in your wallet...'
-                      : 'Setting up your vanity.box redirect...'}
+                    {step === 'verifying_payment' 
+                      ? 'Checking your transaction on the blockchain...'
+                      : 'Creating your subdomain and DNS redirect...'}
                   </p>
                 </div>
               </div>
@@ -403,9 +595,9 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
                   )}
                 </div>
 
-                {txDigest && (
+                {txHash && (
                   <a
-                    href={`https://explorer.iota.org/mainnet/tx/${txDigest}`}
+                    href={`https://explorer.iota.org/mainnet/tx/${txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"

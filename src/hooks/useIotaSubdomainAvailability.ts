@@ -122,3 +122,21 @@ export function getSubdomainPriceUsd(label: string): number {
   if (len >= 6 && len <= 9) return 25;
   return 5; // 10+ characters
 }
+
+/**
+ * Get early access pricing (50% off) and original price
+ */
+export interface SubdomainPricing {
+  originalPrice: number;
+  earlyAccessPrice: number;
+  isEarlyAccess: boolean;
+}
+
+export function getSubdomainPricing(label: string): SubdomainPricing {
+  const originalPrice = getSubdomainPriceUsd(label);
+  return {
+    originalPrice,
+    earlyAccessPrice: originalPrice > 0 ? originalPrice / 2 : -1,
+    isEarlyAccess: true, // Early access period is active
+  };
+}
