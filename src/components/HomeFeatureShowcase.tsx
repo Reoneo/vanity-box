@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Fingerprint, Zap, Users, ArrowDown, Sparkles, Link2 } from 'lucide-react';
+import { Fingerprint, Zap, Globe, ArrowDown, Sparkles, Link2 } from 'lucide-react';
 
 const features = [
   {
@@ -16,9 +16,9 @@ const features = [
     gradient: "from-[#D4AF37] to-[#C5A028]",
   },
   {
-    icon: Users,
-    title: "Connect",
-    description: "Discover & collaborate",
+    icon: Globe,
+    title: "DNS",
+    description: "Matching URL link",
     gradient: "from-[#D4AF37] to-[#DAA520]",
   },
 ];
@@ -156,19 +156,6 @@ export const HomeFeatureShowcase: React.FC = () => {
           ))}
         </motion.div>
 
-        {/* CTA - More prominent */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.5 }}
-          className="flex items-center gap-3"
-        >
-          <div className="w-16 h-px bg-gradient-to-r from-transparent to-[#D4AF37]/60" />
-          <p className="text-muted-foreground text-sm font-medium tracking-wide">
-            Search any name to begin
-          </p>
-          <div className="w-16 h-px bg-gradient-to-l from-transparent to-[#D4AF37]/60" />
-        </motion.div>
       </div>
     </div>
   );
