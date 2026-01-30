@@ -221,10 +221,8 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
     onOpenChange(open);
   };
 
-  // Check if IOTA wallet integration is available (not on mobile)
-  const isIotaWalletAvailable = typeof window !== 'undefined' && 
-    !/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
+  // Check if IOTA wallet integration is available (uses centralized check - blocks only in special apps)
+  const isIotaWalletAvailable = isIotaAvailable;
   // Get price breakdown text
   const getPriceBreakdown = () => {
     const len = label.length;
@@ -659,8 +657,8 @@ export function IotaSubdomainMintModal({ open, onOpenChange, label }: IotaSubdom
         </DialogContent>
       </Dialog>
 
-      {/* IOTA Wallet Connect Modal - only render when IOTA is available (desktop) */}
-      {isIotaAvailable && (
+      {/* IOTA Wallet Connect Modal - render on all browsers except special apps */}
+      {isIotaWalletAvailable && (
         <ConnectModal
           trigger={<></>}
           open={connectModalOpen}
