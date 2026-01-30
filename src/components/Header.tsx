@@ -118,7 +118,7 @@ export const Header: React.FC = () => {
                   isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]"
                 )}
               >
-                <div className="relative flex items-center justify-center h-full">
+                <div className="relative flex items-center justify-center h-20">
                   <img 
                     src={vanityLogo} 
                     alt="Vanity.box Logo" 
@@ -206,7 +206,7 @@ export const Header: React.FC = () => {
               <div
                 className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden"
               >
-                <div className="relative flex items-center justify-center h-full">
+                <div className="relative flex items-center justify-center h-20">
                   <img 
                     src={vanityLogo} 
                     alt="Vanity.box Logo" 
@@ -261,7 +261,7 @@ export const Header: React.FC = () => {
           <div
             className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2"
           >
-            <div className="relative flex items-center justify-center h-full">
+            <div className="relative flex items-center justify-center h-20">
               <img 
                 src={vanityLogo} 
                 alt="Vanity.box Logo" 
