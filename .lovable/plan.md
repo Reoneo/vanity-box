@@ -1,31 +1,32 @@
 
-## Plan: Make Header Logo Fully Visible
+## Plan: Position VANITY.BOX Text at Bottom of Header
 
 ### Problem
-The logo currently has a `-mt-14` (negative top margin) which pushes half of it above the header, making only the bottom portion visible.
+The "VANITY.BOX" text is appearing outside the header because the `bottom-1` positioning doesn't work correctly - the parent container with `h-full` doesn't have a proper height context since its ancestors don't propagate an explicit height.
 
 ### Solution
-Remove the negative margin (`-mt-14`) from the logo image in all three header instances. This will bring the full logo into view while keeping:
-- The "VANITY.BOX" text in its current position
-- The header height unchanged at `h-20`
+Give the logo container an explicit height of `h-20` (matching the header height) so the absolute positioning of the text works correctly. The text will then be positioned at the bottom of that container, layered over the logo.
 
 ### Changes Required
 
 **File: `src/components/Header.tsx`**
 
-Update the logo styling in 3 locations:
+Update the logo container in 3 locations to use explicit `h-20` height:
 
-1. **Line 125** - Mobile (wallet connected):
-   - Change: `className="h-28 w-auto object-contain -mt-14"`
-   - To: `className="h-28 w-auto object-contain"`
+1. **Line 121** - Mobile (wallet connected):
+   - Change: `<div className="relative flex items-center justify-center h-full">`
+   - To: `<div className="relative flex items-center justify-center h-20">`
 
-2. **Line 212** - Mobile (wallet disconnected, centered):
-   - Change: `className="h-28 w-auto object-contain -mt-14"`
-   - To: `className="h-28 w-auto object-contain"`
+2. **Line 209** - Mobile (wallet disconnected, centered):
+   - Change: `<div className="relative flex items-center justify-center h-full">`
+   - To: `<div className="relative flex items-center justify-center h-20">`
 
-3. **Line 268** - Desktop/Tablet (centered):
-   - Change: `className="h-28 w-auto object-contain -mt-14"`
-   - To: `className="h-28 w-auto object-contain"`
+3. **Line 264** - Desktop/Tablet (centered):
+   - Change: `<div className="relative flex items-center justify-center h-full">`
+   - To: `<div className="relative flex items-center justify-center h-20">`
 
 ### Result
-The logo will be fully visible within the header, positioned above the "VANITY.BOX" text. The text will remain at the bottom of the header container as it currently is.
+- The logo stays in exactly the same position (centered in the `h-20` container)
+- The "VANITY.BOX" text will be positioned at the bottom of the header (4px from bottom due to `bottom-1`)
+- The text will layer over the logo without affecting its position
+- Header size remains unchanged at `h-20`
