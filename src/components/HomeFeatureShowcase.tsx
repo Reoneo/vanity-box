@@ -39,7 +39,7 @@ export const HomeFeatureShowcase: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-6 overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-start pt-4 sm:pt-8 px-4 sm:px-6 overflow-hidden">
       {/* Luxury Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Radial gradient backdrop - more pronounced */}
@@ -60,7 +60,7 @@ export const HomeFeatureShowcase: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-lg flex flex-col items-center gap-8">
+      <div className="relative z-10 w-full max-w-lg flex flex-col items-center gap-5 sm:gap-6">
         
         {/* Hero Section - Larger and more impactful */}
         <motion.div
