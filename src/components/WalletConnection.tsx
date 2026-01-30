@@ -59,13 +59,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [ensLoading, setEnsLoading] = useState(false);
   const [showIotaModal, setShowIotaModal] = useState(false);
 
-  // Check if we're on desktop browser (not mobile phone or special app)
-  // Include iPad/tablets as desktop since they can use browser extensions
-  const isMobilePhone = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Check if we're in a special app (Telegram, World App) - these have their own wallet flows
+  // Mobile browsers now support IOTA wallet connection
   const isInSpecialApp = !!(window as any).Telegram?.WebApp || 
     typeof (window as any).WorldApp !== 'undefined' || 
     MiniKit.isInstalled();
-  const isDesktopBrowser = typeof window !== 'undefined' && !isMobilePhone && !isInSpecialApp;
+  
+  // IOTA wallet is available in any browser (desktop or mobile) except special apps
+  const isIotaWalletAvailable = typeof window !== 'undefined' && !isInSpecialApp;
 
   // IOTA wallet state (desktop only) - uses safe hooks that return null on mobile
   // isIotaAvailable is computed at module level, so it's stable across renders
@@ -544,7 +545,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
             console.log('  - isTelegramWebView():', isTelegramWebView());
             console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
-            console.log('  - isDesktopBrowser:', isDesktopBrowser);
+            console.log('  - isIotaWalletAvailable:', isIotaWalletAvailable);
             
             if (isTelegramWebView()) {
               console.log('✅ Detected Telegram WebView - connecting TON wallet');
@@ -553,8 +554,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
               console.log('✅ Detected World App - connecting World ID');
               handleConnect();
             } else {
-              // Both desktop and mobile browser -> show IOTA modal
-              // On mobile, the IOTA modal in IotaSubdomainMintModal shows "Desktop Required" message
+              // Desktop or mobile browser -> show IOTA wallet modal
               console.log('✅ Opening IOTA wallet modal');
               setShowIotaModal(true);
             }
@@ -574,8 +574,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           )}
         </Button>
         
-        {/* IOTA Connect Modal - only render on desktop where IOTA provider exists */}
-        {isDesktopBrowser && (
+        {/* IOTA Connect Modal - render on any browser (desktop or mobile) except special apps */}
+        {isIotaWalletAvailable && (
           <ConnectModal 
             trigger={<span style={{ display: 'none' }} />}
             open={showIotaModal} 
