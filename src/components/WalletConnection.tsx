@@ -20,8 +20,8 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import { toast } from 'sonner';
 import { useWalletConnect } from '@/contexts/WalletConnectContext';
-import { ConnectWalletChooser } from '@/components/ConnectWalletChooser';
-import { useCurrentAccount as useIotaCurrentAccount, useDisconnectWallet as useIotaDisconnect } from '@iota/dapp-kit';
+import { ConnectModal } from '@iota/dapp-kit';
+import { useIotaAccountSafe, useIotaDisconnectSafe } from '@/hooks/use-iota-wallet-safe';
 
 interface User {
   walletAddress?: string;
@@ -57,12 +57,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [activeNetwork, setActiveNetwork] = useState<string>('mainnet');
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensLoading, setEnsLoading] = useState(false);
-  const [showChooser, setShowChooser] = useState(false);
-
-  // IOTA wallet state (web only)
-  const iotaAccount = useIotaCurrentAccount();
-  const { mutate: disconnectIota } = useIotaDisconnect();
-  const iotaConnected = !!iotaAccount?.address;
+  const [showIotaModal, setShowIotaModal] = useState(false);
 
   // Check if we're on desktop browser (not mobile phone or special app)
   // Include iPad/tablets as desktop since they can use browser extensions
@@ -71,6 +66,13 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     typeof (window as any).WorldApp !== 'undefined' || 
     MiniKit.isInstalled();
   const isDesktopBrowser = typeof window !== 'undefined' && !isMobilePhone && !isInSpecialApp;
+
+  // IOTA wallet state (desktop only) - uses safe hooks that return null on mobile
+  // isIotaAvailable is computed at module level, so it's stable across renders
+  const iotaAccount = useIotaAccountSafe();
+  const iotaDisconnectResult = useIotaDisconnectSafe();
+  const disconnectIota = iotaDisconnectResult.mutate;
+  const iotaConnected = !!iotaAccount?.address;
 
   // Helper to format balance with proper decimals
   const formatBalance = (value: number, decimals = 6): string => {
@@ -197,8 +199,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           console.log('🔄 Trigger: Connecting via World App');
           handleConnect();
         } else if (isDesktopBrowser) {
-          console.log('🔄 Trigger: Opening wallet chooser');
-          setShowChooser(true);
+          console.log('🔄 Trigger: Opening IOTA wallet modal directly');
+          setShowIotaModal(true);
         } else {
           console.log('🔄 Trigger: Opening WalletConnect modal');
           handleWalletConnectOpen();
@@ -552,8 +554,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
               console.log('✅ Detected World App - connecting World ID');
               handleConnect();
             } else if (isDesktopBrowser) {
-              console.log('✅ Desktop browser - opening wallet chooser');
-              setShowChooser(true);
+              console.log('✅ Desktop browser - opening IOTA wallet modal directly');
+              setShowIotaModal(true);
             } else {
               console.log('✅ Mobile browser - opening WalletConnect modal');
               handleWalletConnectOpen();
@@ -574,13 +576,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           )}
         </Button>
         
-        {/* Wallet chooser for desktop browsers */}
+        {/* IOTA Connect Modal for desktop browsers */}
         {isDesktopBrowser && (
-          <ConnectWalletChooser
-            open={showChooser}
-            onOpenChange={setShowChooser}
-            onWalletConnect={() => {
-              handleWalletConnectOpen();
+          <ConnectModal 
+            trigger={<span style={{ display: 'none' }} />}
+            open={showIotaModal} 
+            onOpenChange={(open) => {
+              setShowIotaModal(open);
+            }}
+            onConnected={({ wallet }) => {
+              console.log('[WalletConnection] IOTA wallet connected via modal:', wallet.name);
+              setShowIotaModal(false);
             }}
           />
         )}
