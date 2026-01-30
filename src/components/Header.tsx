@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
 import { SpotifyPauseButton } from './SpotifyPauseButton';
-import vanityLogo from '../assets/vanity-logo.png';
+import vanityLogo from '../assets/vanity-box-logo-new.svg';
 import vanityContactIcon from '../assets/vanity-contact-icon.png';
 import worldAppIcon from '@/assets/world-app-icon.png';
 import telegramIcon from '@/assets/telegram-icon.png';
@@ -118,14 +118,16 @@ export const Header: React.FC = () => {
                   isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]"
                 )}
               >
-                <img 
-                  src={vanityLogo} 
-                  alt="Vanity.box Logo" 
-                  className="h-24 w-auto object-contain transform scale-100"
-                  loading="eager"
-                  fetchPriority="high"
-                  style={{ marginTop: '2px', marginBottom: '2px' }}
-                />
+                <div className="flex flex-col items-center">
+                  <img 
+                    src={vanityLogo} 
+                    alt="Vanity.box Logo" 
+                    className="h-12 w-auto object-contain"
+                    loading="eager"
+                    fetchPriority="high"
+                  />
+                  <span className="text-[10px] font-bold tracking-wider text-black mt-0.5">VANITY.BOX</span>
+                </div>
               </div>
 
               {/* Menu Button */}
@@ -204,13 +206,16 @@ export const Header: React.FC = () => {
               <div
                 className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden"
               >
-                <img 
-                  src={vanityLogo} 
-                  alt="Vanity.box Logo" 
-                  className="h-20 w-auto object-contain"
-                  loading="eager"
-                  fetchPriority="high"
-                />
+                <div className="flex flex-col items-center">
+                  <img 
+                    src={vanityLogo} 
+                    alt="Vanity.box Logo" 
+                    className="h-12 w-auto object-contain"
+                    loading="eager"
+                    fetchPriority="high"
+                  />
+                  <span className="text-[10px] font-bold tracking-wider text-black mt-0.5">VANITY.BOX</span>
+                </div>
               </div>
             </>
           )}
@@ -256,13 +261,16 @@ export const Header: React.FC = () => {
           <div
             className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2"
           >
-            <img 
-              src={vanityLogo} 
-              alt="Vanity.box Logo" 
-              className="h-20 w-auto object-contain"
-              loading="eager"
-              fetchPriority="high"
-            />
+            <div className="flex flex-col items-center">
+              <img 
+                src={vanityLogo} 
+                alt="Vanity.box Logo" 
+                className="h-12 w-auto object-contain"
+                loading="eager"
+                fetchPriority="high"
+              />
+              <span className="text-[10px] font-bold tracking-wider text-black mt-0.5">VANITY.BOX</span>
+            </div>
           </div>
 
           
