@@ -1,18 +1,15 @@
 import { useCurrentAccount, useDisconnectWallet } from '@iota/dapp-kit';
-import { useMemo } from 'react';
 
-// Check if we're on mobile phone or special app environment
-// This is computed at module load time, so it's stable
-const checkIsMobilePhone = () => typeof window !== 'undefined' && 
-  /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
+// Check if we're in a special app environment (Telegram, World App)
+// These have their own wallet flows, so IOTA wallet is not available there
+// Mobile browsers are now supported for IOTA wallet connection
 const checkIsInSpecialApp = () => typeof window !== 'undefined' && (
   !!(window as any).Telegram?.WebApp ||
   typeof (window as any).WorldApp !== 'undefined'
 );
 
-// Compute once at module load
-export const isIotaAvailable = typeof window !== 'undefined' && !checkIsMobilePhone() && !checkIsInSpecialApp();
+// Compute once at module load - only block in special apps
+export const isIotaAvailable = typeof window !== 'undefined' && !checkIsInSpecialApp();
 
 // Safe wrapper hooks that return null/noop on mobile
 // These hooks are safe to call unconditionally - they just won't use IOTA hooks on mobile

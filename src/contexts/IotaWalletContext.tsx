@@ -70,19 +70,18 @@ function IotaWalletContextInner({ children }: { children: ReactNode }) {
   );
 }
 
-// Main IOTA provider - only render IOTA providers on web browsers (not mobile phones)
+// Main IOTA provider - render on all browsers except special apps (Telegram, World App)
 export function IotaWalletProvider({ children }: { children: ReactNode }) {
-  // Check if we're on mobile phone or in a special environment (Telegram, World App)
-  // Include iPad/tablets as desktop since they can use browser extensions
-  const isMobilePhone = typeof window !== 'undefined' && 
-    /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Check if we're in a special environment (Telegram, World App)
+  // These have their own wallet flows, so skip IOTA providers there
+  // Mobile browsers are now supported for IOTA wallet connection
   const isInSpecialApp = typeof window !== 'undefined' && (
     !!(window as any).Telegram?.WebApp ||
     typeof (window as any).WorldApp !== 'undefined'
   );
 
-  // Skip IOTA providers on mobile phone/app environments
-  if (isMobilePhone || isInSpecialApp) {
+  // Skip IOTA providers only in special app environments
+  if (isInSpecialApp) {
     return <>{children}</>;
   }
 
