@@ -8,8 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Check, X, DollarSign, Sparkles, ExternalLink } from 'lucide-react';
-import { useIotaSubdomainAvailability, getSubdomainPriceUsd } from '@/hooks/useIotaSubdomainAvailability';
+import { Loader2, Check, X, DollarSign, Sparkles, ExternalLink, Percent } from 'lucide-react';
+import { useIotaSubdomainAvailability, getSubdomainPricing } from '@/hooks/useIotaSubdomainAvailability';
 import { useCryptoPrices } from '@/contexts/CryptoPriceContext';
 import { IotaSubdomainMintModal } from '@/components/IotaSubdomainMintModal';
 import { format } from 'date-fns';
@@ -66,11 +66,13 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
   // IOTA vanity.iota subdomain availability (minimum 3 characters)
   const iotaResult = useIotaSubdomainAvailability(cleanLabel);
   const iotaDisplayName = `${cleanLabel}.vanity.iota`;
-  const iotaUsdPrice = getSubdomainPriceUsd(cleanLabel);
+  const pricing = getSubdomainPricing(cleanLabel);
   const isIotaValidLength = cleanLabel.length >= 3;
 
-  // Convert IOTA USD price to IOTA tokens (~$0.25 per IOTA placeholder)
-  const iotaTokenPrice = iotaUsdPrice > 0 ? (iotaUsdPrice / 0.25).toFixed(2) : null;
+  // Convert IOTA USD price to IOTA tokens using live price
+  const iotaTokenPrice = pricing.earlyAccessPrice > 0 
+    ? (pricing.earlyAccessPrice / (prices.iota || 0.22)).toFixed(2) 
+    : null;
 
   // Don't render if no valid search
   if (!cleanLabel || cleanLabel.length < 1) {
@@ -173,7 +175,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
             )}
           </div>
 
-          {/* Price display */}
+          {/* Price display with Early Access */}
           {iotaResult.status === 'available' && isIotaValidLength && (
             <div className="flex items-center justify-between mb-3">
               <button 
@@ -184,8 +186,12 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                   <span>{iotaTokenPrice} IOTA</span>
                 ) : (
                   <span className="flex items-center gap-1">
-                    <DollarSign className="w-3.5 h-3.5" />
-                    {iotaUsdPrice}
+                    <span className="line-through text-muted-foreground/60">${pricing.originalPrice}</span>
+                    <span className="text-[#D4AF37] font-semibold">${pricing.earlyAccessPrice}</span>
+                    <Badge className="ml-1 bg-[#D4AF37]/20 text-[#D4AF37] text-[9px] px-1 py-0 border border-[#D4AF37]/30">
+                      <Percent className="w-2 h-2 mr-0.5" />
+                      50% OFF
+                    </Badge>
                   </span>
                 )}
               </button>
@@ -227,7 +233,8 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               onClick={() => setIotaModalOpen(true)}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              Mint for ${iotaUsdPrice}
+              Mint for ${pricing.earlyAccessPrice}
+              <span className="ml-1 text-xs opacity-75 line-through">${pricing.originalPrice}</span>
             </Button>
           ) : iotaResult.status === 'taken' ? (
             <Button 

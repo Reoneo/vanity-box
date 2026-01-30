@@ -9,7 +9,7 @@ interface CryptoPriceContextValue {
 }
 
 const CryptoPriceContext = createContext<CryptoPriceContextValue>({
-  prices: { eth: 2600, wld: 1.85, usdc: 1.0, apt: 8.5 },
+  prices: { eth: 2600, wld: 1.85, usdc: 1.0, apt: 8.5, iota: 0.22 },
   isLoading: true,
   lastUpdated: null,
 });
@@ -22,6 +22,7 @@ export const CryptoPriceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     wld: 1.85,
     usdc: 1.0,
     apt: 8.5,
+    iota: 0.22,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
