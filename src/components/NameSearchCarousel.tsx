@@ -35,8 +35,8 @@ type BundleItem = {
 };
 
 const bundleItems: BundleItem[] = [
-  { id: 'box', avatar: vanityBoxAvatar, base: 'vanity.box', isActive: false },
   { id: 'iota', avatar: vanityIotaAvatar, base: 'vanity.iota', isActive: true },
+  { id: 'box', avatar: vanityBoxAvatar, base: 'vanity.box', isActive: false },
   { id: 'apt', avatar: vanityAptAvatar, base: 'vanity.apt', isActive: false },
   { id: 'hl', avatar: vanityHlAvatar, base: 'vanity.hl', isActive: false },
   { id: 'ton', avatar: tonLogoBlue, base: 'vanity.ton', isActive: false },
@@ -210,9 +210,9 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                 <Check className="w-3 h-3 text-[#D4AF37] flex-shrink-0" />
                 <span><strong>{cleanLabel}.vanity.box</strong> DNS redirect to your profile</span>
               </li>
-              <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                <ExternalLink className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-                <span className="opacity-70">All matching ID's will be free to claim soon!</span>
+              <li className="flex items-center gap-2 text-xs">
+                <span className="w-3 h-0.5 bg-[#D4AF37] rounded-full flex-shrink-0" />
+                <span className="font-semibold text-foreground">All matching ID's will be free to claim soon!</span>
               </li>
             </ul>
           </div>
