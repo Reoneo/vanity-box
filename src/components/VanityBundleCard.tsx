@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Import chain logos
-import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
+import vanityBoxAvatar from "@/assets/vanity-box-hex-black.png";
 import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import vanityIotaAvatar from "@/assets/vanity-iota-avatar.png";
