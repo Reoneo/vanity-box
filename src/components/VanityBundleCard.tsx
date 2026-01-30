@@ -22,10 +22,10 @@ type BundleItem = {
 };
 
 const bundleItems: BundleItem[] = [
+  { id: "iota", avatar: vanityIotaAvatar, base: "vanity.iota" },
   { id: "box", avatar: vanityBoxAvatar, base: "vanity.box" },
   { id: "apt", avatar: vanityAptAvatar, base: "vanity.apt" },
   { id: "hl", avatar: vanityHlAvatar, base: "vanity.hl" },
-  { id: "iota", avatar: vanityIotaAvatar, base: "vanity.iota" },
   { id: "ton", avatar: tonLogoBlue, base: "vanity.ton" },
   { id: "vet", avatar: vanityVetAvatar, base: "vanity.vet" },
 ];
