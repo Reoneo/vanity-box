@@ -5,7 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// IOTA Mainnet endpoints - indexer is required for IOTA Names methods
 const IOTA_RPC_MAINNET = "https://api.mainnet.iota.cafe";
+const IOTA_INDEXER_MAINNET = "https://indexer.mainnet.iota.cafe";
 
 // Environment variables (to be set after Move contract deployment)
 // VANITY_PROFILE_REGISTRY_ID - The shared registry object ID
@@ -46,21 +48,43 @@ async function iotaRpc(method: string, params: unknown[]): Promise<any> {
   return data.result;
 }
 
-// Resolve IOTA name to owner address
+// Resolve IOTA name to owner address using indexer
 async function resolveNameToOwner(name: string): Promise<string | null> {
   try {
     const fullName = name.endsWith('.iota') ? name : `${name}.iota`;
     console.log(`Resolving name to owner: ${fullName}`);
     
-    const result = await iotaRpc("iotax_iotaNamesLookup", [fullName]);
+    // Use indexer endpoint for IOTA Names methods
+    const response = await fetch(IOTA_INDEXER_MAINNET, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "iotax_iotaNamesLookup",
+        params: [fullName],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`RPC request failed: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
     
-    if (!result || typeof result !== "string") {
+    if (data.error) {
+      console.error(`RPC error: ${data.error.message}`);
+      return null;
+    }
+    
+    if (!data.result || !data.result.targetAddress) {
       console.log(`No owner found for name: ${fullName}`);
       return null;
     }
     
-    console.log(`Resolved ${fullName} to owner: ${result}`);
-    return result;
+    console.log(`Resolved ${fullName} to owner: ${data.result.targetAddress}`);
+    return data.result.targetAddress;
   } catch (error) {
     console.error("Error resolving name to owner:", error);
     return null;
