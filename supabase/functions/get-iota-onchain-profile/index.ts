@@ -189,7 +189,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { name } = await req.json();
+    // Safely parse JSON body, handle empty requests
+    let name: string | undefined;
+    try {
+      const body = await req.text();
+      if (body && body.trim()) {
+        const parsed = JSON.parse(body);
+        name = parsed.name;
+      }
+    } catch (parseError) {
+      console.log("Failed to parse request body:", parseError);
+    }
 
     if (!name) {
       return new Response(
