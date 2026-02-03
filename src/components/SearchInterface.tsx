@@ -2284,12 +2284,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* No Results State */}
             <div className="w-full sm:max-w-3xl sm:mx-auto px-4">
               {!isHomepage && hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
-                <div className="text-center py-12 animate-in fade-in duration-500">
-                  <p className="text-gray-400 text-lg mb-2">{t('no_results_found')}</p>
-                  <p className="text-sm text-gray-500">{t('try_different_query')}</p>
-                  {theme === "light" && (
-                    <img src={noResultsGif} alt="No results found" className="w-48 h-48 mx-auto mt-6 object-contain" />
-                  )}
+                <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-500">
+                  <div className="w-24 h-24 mb-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center border border-amber-500/30">
+                    <img 
+                      src={noResultsGif}
+                      alt="No results"
+                      className="w-16 h-16 object-contain opacity-80"
+                    />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">{t('no_results_found')}</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs mb-4">{t('try_different_query')}</p>
+                  <div className="px-4 py-2 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground">
+                      Tip: Check for typos like <span className="text-amber-500">.ioa</span> → <span className="text-emerald-500">.iota</span>
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

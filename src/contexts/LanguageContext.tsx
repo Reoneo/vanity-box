@@ -84,6 +84,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       connect_wallet: 'Connect Wallet',
       approve_in_wallet: 'Approve in your wallet',
       confirm_in_wallet: 'Confirm transaction in wallet',
+      no_results_found: 'No results found',
+      try_different_query: 'Try a different search query or check spelling',
     },
     ca: {
       inbox: 'Safata d\'entrada',
