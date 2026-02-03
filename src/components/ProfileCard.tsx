@@ -860,7 +860,7 @@ export const ProfileCard = ({
                     onClick={() => setShowHeaderPopup(true)}
                   >
                     <img
-                      src={isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)}
+                      src={web3BioProfile?.header || iotaHeaderPattern}
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
@@ -1086,7 +1086,7 @@ export const ProfileCard = ({
                         {nftCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {/* POAPs Button */}
-                            {(poaps.length > 0 || (poapTotalCount && poapTotalCount > 0)) && (
+                            {(poaps.length > 0 || poapTotalCount > 0) && (
                               <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1379,7 +1379,7 @@ export const ProfileCard = ({
                     onClick={() => setShowHeaderPopup(true)}
                   >
                     <img
-                      src={isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)}
+                      src={web3BioProfile?.header || iotaHeaderPattern}
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
@@ -1613,7 +1613,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})`
+                    backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -1676,7 +1676,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})`
+                    backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -1732,7 +1732,7 @@ export const ProfileCard = ({
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
                       {/* POAPs Button - Only show if has items */}
-                      {(poaps.length > 0 || (poapTotalCount && poapTotalCount > 0)) && (
+                      {(poaps.length > 0 || poapTotalCount > 0) && (
                         <button
                           onClick={() => setNftCategory('poaps')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -2268,7 +2268,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})`
+                    backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -2348,7 +2348,7 @@ export const ProfileCard = ({
                 {/* Header */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})` }}
+                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
@@ -2841,7 +2841,7 @@ export const ProfileCard = ({
               <X className="w-5 h-5 text-foreground" />
             </button>
             <img
-              src={isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)}
+              src={web3BioProfile?.header || iotaHeaderPattern}
               alt="Header"
               className="max-w-[95vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
