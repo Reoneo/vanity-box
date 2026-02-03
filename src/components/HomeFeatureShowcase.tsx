@@ -69,14 +69,6 @@ export const HomeFeatureShowcase: React.FC = () => {
               </span>
             </h1>
           </motion.div>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-muted-foreground text-sm sm:text-lg font-medium tracking-wide"
-          >
-            One name. Every chain. Infinite possibilities.
-          </motion.p>
         </motion.div>
 
         {/* Address Comparison Card - Compact for mobile */}
