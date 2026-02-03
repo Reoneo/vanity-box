@@ -203,7 +203,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [filters, setFilters] = useState<FilterState>({ protocol: [], club: [] });
   const [hasManuallyAdjustedFilters, setHasManuallyAdjustedFilters] = useState(false);
   const [ensResults, setEnsResults] = useState<ENSResult[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true); // Start as true to prevent initial flicker
   const [walletAddress, setWalletAddress] = useState<string | undefined>(undefined);
   const [connectedUsername, setConnectedUsername] = useState<string | undefined>(undefined);
   const [connectedWalletType, setConnectedWalletType] = useState<string | undefined>(undefined);
@@ -594,13 +594,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [username]);
 
-  // Show homepage initially when component mounts
-  useEffect(() => {
-    if (!hasSearched && !username) {
-      setIsHomepage(true);
-      setHasSearched(true);
-    }
-  }, []);
+  // Show homepage initially - no need to set hasSearched since it's initialized as true
 
   // Re-fetch results when language changes
   useEffect(() => {
