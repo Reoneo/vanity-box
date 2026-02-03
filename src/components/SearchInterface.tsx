@@ -1015,6 +1015,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         if (resolverError) {
           console.error('❌ resolve-profile error:', resolverError);
           toast.error("Profile lookup failed. Please try again.");
+          // Prevent the loading progress from getting stuck at 98%
+          if (searchIdRef.current === currentSearchId) setIsLoading(false);
           return;
         }
         
@@ -1049,6 +1051,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           } else if (!resolverData?.notFound) {
             toast.error("Profile lookup failed. Please try again.");
           }
+
+          // Not found (or other non-profile response) — stop the blocking loader.
+          // The rest of the search flow can still render “no results” UI.
+          if (searchIdRef.current === currentSearchId) setIsLoading(false);
           return;
         }
         
@@ -1109,6 +1115,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         } else {
           toast.error("Profile lookup timed out. Please try again.");
         }
+
+        // Prevent the loading progress from getting stuck at 98%
+        if (searchIdRef.current === currentSearchId) setIsLoading(false);
         return;
       } finally {
         // Always set loading to false when profile resolution completes or fails
