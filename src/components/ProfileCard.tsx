@@ -489,35 +489,65 @@ export const ProfileCard = ({
           }
         }
 
-        // Fetch IOTA portfolio data (tokens + NFTs) for IOTA profiles
+        // Fetch IOTA data via Blockberry API (tokens, NFTs, transactions in parallel)
         if (isIota) {
           setIotaLoading(true);
-          try {
-            const iotaRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-portfolio', {
+          setTransactionsLoading(true);
+          
+          const iotaFetchPromises = [
+            // Fetch IOTA tokens via Blockberry
+            fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-tokens', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ 
-                walletAddress: currentWalletAddress,
-                iotaDomain: searchedIdentity 
-              }),
-            });
-            const iotaData = await iotaRes.json();
-            console.log('IOTA Portfolio response:', iotaData);
-            if (iotaData.tokens) {
-              setIotaTokens(iotaData.tokens);
-              // Set portfolio tokens to IOTA tokens for display
-              setPortfolioTokens(iotaData.tokens);
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            }).then(res => res.json()).catch(e => ({ error: e.message, tokens: [] })),
+            
+            // Fetch IOTA NFTs via Blockberry
+            fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-nfts', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            }).then(res => res.json()).catch(e => ({ error: e.message, nfts: [] })),
+            
+            // Fetch IOTA transactions via Blockberry
+            fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-transactions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            }).then(res => res.json()).catch(e => ({ error: e.message, transactions: [] })),
+          ];
+          
+          try {
+            const [tokensData, nftsData, txData] = await Promise.all(iotaFetchPromises);
+            
+            console.log('IOTA Tokens (Blockberry):', tokensData);
+            console.log('IOTA NFTs (Blockberry):', nftsData);
+            console.log('IOTA Transactions (Blockberry):', txData);
+            
+            if (tokensData.tokens) {
+              setIotaTokens(tokensData.tokens);
+              setPortfolioTokens(tokensData.tokens);
+              if (tokensData.totalValue) setPortfolioTotalValue(tokensData.totalValue);
             }
-            if (iotaData.nfts) setIotaNfts(iotaData.nfts);
+            if (nftsData.nfts) setIotaNfts(nftsData.nfts);
+            if (txData.transactions) setTransactions(txData.transactions);
           } catch (e) { 
-            console.error('IOTA Portfolio fetch error:', e); 
+            console.error('IOTA Blockberry fetch error:', e); 
           } finally {
             setIotaLoading(false);
             setIotaFetched(true);
             setTokensFetched(true);
+            setTransactionsLoading(false);
+            setTransactionsFetched(true);
           }
         }
       };
