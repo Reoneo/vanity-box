@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { Fingerprint, Zap, Globe, ArrowDown, Wallet } from 'lucide-react';
 import vanitySilhouetteAvatar from '@/assets/vanity-silhouette-avatar.jpeg';
-
-// Extensions to cycle through
-const extensions = ['.iota', '.box'];
 
 const features = [
   {
     icon: Fingerprint,
     title: "Identity",
-    description: "One name across all chains",
+    description: "Powered by IOTA DID",
     gradient: "from-[#D4AF37] to-[#B8860B]",
   },
   {
@@ -22,21 +19,12 @@ const features = [
   {
     icon: Globe,
     title: "DNS",
-    description: "Matching URL link",
+    description: "Matching .box URL link",
     gradient: "from-[#D4AF37] to-[#DAA520]",
   },
 ];
 
 export const HomeFeatureShowcase: React.FC = () => {
-  const [extensionIndex, setExtensionIndex] = useState(0);
-
-  // Cycle through extensions every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setExtensionIndex((prev) => (prev + 1) % extensions.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-start pt-8 sm:pt-8 px-3 sm:px-6 overflow-hidden">
@@ -128,7 +116,7 @@ export const HomeFeatureShowcase: React.FC = () => {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent" />
             </div>
             
-            {/* After - Centered with animated extension */}
+            {/* After - Centered with .iota only */}
             <div className="relative flex flex-col items-center text-center gap-1.5 sm:gap-2">
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden flex-shrink-0 shadow-lg shadow-[#D4AF37]/40 ring-2 ring-[#D4AF37]/20 ring-offset-2 ring-offset-card">
                 <img 
@@ -140,19 +128,7 @@ export const HomeFeatureShowcase: React.FC = () => {
               <div>
                 <p className="text-[10px] sm:text-[11px] text-[#D4AF37] uppercase tracking-widest font-semibold mb-0.5 sm:mb-1">After</p>
                 <p className="font-bold text-base sm:text-xl text-foreground">
-                  Name.Vanity
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={extensionIndex}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className="text-[#D4AF37]"
-                    >
-                      {extensions[extensionIndex]}
-                    </motion.span>
-                  </AnimatePresence>
+                  Name.Vanity<span className="text-[#D4AF37]">.iota</span>
                 </p>
               </div>
             </div>

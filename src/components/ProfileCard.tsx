@@ -23,6 +23,7 @@ import { ActivityGraph } from "./ActivityGraph";
 import { formatDistanceToNow } from "date-fns";
 import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
+import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import wldLogo from '@/assets/wld-logo-dark.svg';
@@ -859,7 +860,7 @@ export const ProfileCard = ({
                     onClick={() => setShowHeaderPopup(true)}
                   >
                     <img
-                      src={web3BioProfile?.header || defaultHeader}
+                      src={isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)}
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
@@ -872,12 +873,12 @@ export const ProfileCard = ({
                     <div className="relative group">
                       <Avatar className="h-[136px] w-[136px] border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
                         <AvatarImage 
-                          src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                          src={web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
                           className="object-cover"
                         />
-                        <AvatarFallback className="text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5">
-                          👤
+                        <AvatarFallback className="text-5xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                          {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       {isHumanVerified && (
@@ -1378,7 +1379,7 @@ export const ProfileCard = ({
                     onClick={() => setShowHeaderPopup(true)}
                   >
                     <img
-                      src={web3BioProfile?.header || defaultHeader}
+                      src={isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)}
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
@@ -1392,12 +1393,12 @@ export const ProfileCard = ({
                       <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
                       <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
                         <AvatarImage 
-                          src={web3BioProfile?.avatar || vanityBoxAvatar} 
+                          src={web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
                           className="object-cover"
                         />
-                        <AvatarFallback className="text-5xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold">
-                          {web3BioProfile?.displayName?.charAt(0).toUpperCase() || '?'}
+                        <AvatarFallback className="text-5xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                          {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       {/* Verified Badge - Only show when user has human verification */}
@@ -1612,7 +1613,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
+                    backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -1675,7 +1676,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
+                    backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -2267,7 +2268,7 @@ export const ProfileCard = ({
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
                   style={{ 
-                    backgroundImage: `url(${web3BioProfile?.header || defaultHeader})`
+                    backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})`
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -2347,7 +2348,7 @@ export const ProfileCard = ({
                 {/* Header */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ backgroundImage: `url(${web3BioProfile?.header || defaultHeader})` }}
+                  style={{ backgroundImage: `url(${isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)})` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
@@ -2840,7 +2841,7 @@ export const ProfileCard = ({
               <X className="w-5 h-5 text-foreground" />
             </button>
             <img
-              src={web3BioProfile?.header || defaultHeader}
+              src={isIotaProfile ? (web3BioProfile?.header || iotaHeaderPattern) : (web3BioProfile?.header || defaultHeader)}
               alt="Header"
               className="max-w-[95vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
