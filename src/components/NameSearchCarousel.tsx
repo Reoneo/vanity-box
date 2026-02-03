@@ -222,8 +222,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               className="w-full bg-[#D4AF37] hover:bg-[#C9A030] text-black font-semibold shadow-md"
               onClick={() => setIotaModalOpen(true)}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Mint for ${pricing.earlyAccessPrice}
+              Mint
             </Button>
           ) : iotaResult.status === 'taken' ? (
             <Button 

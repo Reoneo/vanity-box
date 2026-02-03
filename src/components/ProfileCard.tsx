@@ -78,12 +78,17 @@ interface ProfileCardProps {
   onEditIotaProfile?: () => void;
 }
 
+// Official IOTA icon URL
+const IOTA_ICON_URL = "https://d315pvdvxi2gex.cloudfront.net/d96a337f84c5c900f31e08817.svg";
+
 // Chain icon helper function for activity feed
 const getChainIcon = (chain: string, size: number = 18) => {
   const chainLower = (chain || 'ethereum').toLowerCase();
   const iconClass = 'rounded-full';
   
   switch (chainLower) {
+    case 'iota':
+      return <img src={IOTA_ICON_URL} alt="IOTA" width={size} height={size} className={iconClass} />;
     case 'ethereum':
     case 'eth':
       return <img src={ethLogo} alt="Ethereum" width={size} height={size} className={iconClass} />;
@@ -2263,27 +2268,24 @@ export const ProfileCard = ({
                         <p>No IOTA Names found</p>
                       </div>
                     ) : (
-                      <div className="space-y-4 max-w-2xl mx-auto">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {iotaNfts.map((iotaName: any, index: number) => (
-                            <div
-                              key={`iota-${iotaName.name}-${index}`}
-                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/20 hover:border-[#00BFA5]/50 transition-all w-full"
-                            >
-                              <div className="aspect-square bg-gradient-to-br from-[#00BFA5]/10 to-[#00D9C4]/10 overflow-hidden flex items-center justify-center">
-                                {iotaName.imageUrl ? (
-                                  <img src={iotaName.imageUrl} alt={iotaName.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <span className="text-[#00BFA5] font-bold text-xl">IOTA</span>
-                                )}
-                              </div>
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{iotaName.name}</p>
-                                {iotaName.collection && <p className="text-white/60 text-[10px]">{iotaName.collection}</p>}
-                              </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {iotaNfts.map((iotaName: any, index: number) => (
+                          <div key={iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
+                            <div className="flex flex-col items-center gap-2">
+                              {iotaName.imageUrl ? (
+                                <img src={iotaName.imageUrl} alt={iotaName.name} className="w-12 h-12 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-lg">
+                                  {iotaName.name?.charAt(0).toUpperCase() || 'I'}
+                                </div>
+                              )}
+                              <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA Name'}</p>
+                              {iotaName.collection && (
+                                <p className="text-foreground/60 text-xs truncate max-w-full">{iotaName.collection}</p>
+                              )}
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
                     )
                   ) : null}

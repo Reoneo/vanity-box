@@ -486,9 +486,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   // Load IOTA onchain profile when viewing an .iota profile
   useEffect(() => {
     const loadIotaOnchainProfile = async () => {
-      const name = displayQuery?.toLowerCase();
-      if (!name || !name.endsWith('.iota')) {
-        // Reset IOTA profile state when not viewing an .iota profile
+      const name = displayQuery?.toLowerCase()?.trim();
+      
+      // Guard: Only proceed if this is a valid .iota domain name (not just ending with .iota but a proper domain)
+      if (!name || !name.endsWith('.iota') || name.length < 6) {
+        // Reset IOTA profile state when not viewing a valid .iota profile
+        setIotaOnchainProfile(null);
+        setIotaNameObjectId(null);
+        setIotaOwnerAddress(null);
+        return;
+      }
+      
+      // Additional guard: Ensure the name has actual content before .iota
+      const nameWithoutTld = name.replace('.iota', '');
+      if (!nameWithoutTld || nameWithoutTld.length < 1) {
         setIotaOnchainProfile(null);
         setIotaNameObjectId(null);
         setIotaOwnerAddress(null);
