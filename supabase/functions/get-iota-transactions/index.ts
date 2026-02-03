@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BLOCKBERRY_API_URL = "https://api.blockberry.one/iota";
+const BLOCKBERRY_API_URL = "https://api.blockberry.one/iota-mainnet";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
