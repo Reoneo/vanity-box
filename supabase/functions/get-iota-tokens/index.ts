@@ -1,4 +1,4 @@
-// Edge function to fetch IOTA tokens/coins via Blockberry API
+// Edge function to fetch IOTA tokens/coins via native IOTA JSON-RPC API
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BLOCKBERRY_API_URL = "https://api.blockberry.one/iota-mainnet";
+const IOTA_RPC_URL = "https://api.mainnet.iota.cafe";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,73 +24,72 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get("BLOCKBERRY_API_KEY");
-    if (!apiKey) {
-      console.error("BLOCKBERRY_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "API not configured", tokens: [] }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    console.log(`[get-iota-tokens] Fetching balances for ${walletAddress}`);
 
-    console.log(`[get-iota-tokens] Fetching tokens for ${walletAddress}`);
-
-    // Fetch account coins from Blockberry
-    const url = `${BLOCKBERRY_API_URL}/v1/accounts/${walletAddress}/coins?size=100`;
-    
-    const response = await fetch(url, {
-      method: "GET",
+    // Use IOTA native RPC to get all balances
+    const response = await fetch(IOTA_RPC_URL, {
+      method: "POST",
       headers: {
-        "Accept": "application/json",
-        "x-api-key": apiKey,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "iotax_getAllBalances",
+        params: [walletAddress],
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Blockberry coins API error:", response.status, errorText);
+      console.error("IOTA RPC error:", response.status);
       return new Response(
-        JSON.stringify({ error: `API error: ${response.status}`, tokens: [] }),
+        JSON.stringify({ error: `RPC error: ${response.status}`, tokens: [] }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    const coins = data?.content || data || [];
     
-    console.log(`[get-iota-tokens] Found ${Array.isArray(coins) ? coins.length : 0} coin types`);
+    if (data.error) {
+      console.error("IOTA RPC error:", data.error);
+      return new Response(
+        JSON.stringify({ error: data.error.message, tokens: [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const balances = data.result || [];
+    console.log(`[get-iota-tokens] Found ${balances.length} coin types`);
 
     // Transform to standard token format
-    const tokens = (Array.isArray(coins) ? coins : []).map((coin: any) => {
-      const isNativeIota = coin.coinType === "0x2::iota::IOTA" || coin.symbol === "IOTA";
-      const decimals = coin.decimals || 9;
-      const balance = parseFloat(coin.balance || coin.amount || "0");
-      const quantity = balance / Math.pow(10, decimals);
+    const tokens = balances.map((coin: any) => {
+      const isNativeIota = coin.coinType === "0x2::iota::IOTA";
+      const totalBalance = BigInt(coin.totalBalance || "0");
+      const decimals = 9; // IOTA uses 9 decimals
+      const quantity = Number(totalBalance) / Math.pow(10, decimals);
+      
+      // Extract symbol from coinType (e.g., "0x2::iota::IOTA" -> "IOTA")
+      const parts = (coin.coinType || "").split("::");
+      const symbol = parts.length > 2 ? parts[parts.length - 1] : (isNativeIota ? "IOTA" : "UNKNOWN");
       
       return {
-        symbol: coin.symbol || (isNativeIota ? "IOTA" : "UNKNOWN"),
-        name: coin.name || coin.symbol || (isNativeIota ? "IOTA" : "Unknown Token"),
+        symbol: symbol,
+        name: isNativeIota ? "IOTA" : symbol,
         quantity: quantity,
         decimals: decimals,
-        coinType: coin.coinType || coin.type,
-        icon: coin.iconUrl || coin.logoUrl || (isNativeIota ? "https://assets.coingecko.com/coins/images/34421/standard/IOTA_Logo_icon_black_circle.png" : null),
+        coinType: coin.coinType,
+        coinObjectCount: coin.coinObjectCount,
+        icon: isNativeIota ? "https://assets.coingecko.com/coins/images/34421/standard/IOTA_Logo_icon_black_circle.png" : null,
         chain: "iota",
-        usdValue: coin.usdValue || null,
-        priceUsd: coin.priceUsd || null,
+        usdValue: null,
+        priceUsd: null,
       };
     }).filter((t: any) => t.quantity > 0);
-
-    // Calculate total USD value if available
-    const totalValue = tokens.reduce((sum: number, t: any) => {
-      if (t.usdValue) return sum + parseFloat(t.usdValue);
-      if (t.priceUsd && t.quantity) return sum + (t.priceUsd * t.quantity);
-      return sum;
-    }, 0);
 
     return new Response(
       JSON.stringify({
         tokens,
-        totalValue,
+        totalValue: null, // Would need price API for USD values
         walletAddress,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
