@@ -489,13 +489,13 @@ export const ProfileCard = ({
           }
         }
 
-        // Fetch IOTA data via Blockberry API (tokens, NFTs, transactions in parallel)
+        // Fetch IOTA data via native IOTA RPC (tokens, NFTs, transactions in parallel)
         if (isIota) {
           setIotaLoading(true);
           setTransactionsLoading(true);
           
           const iotaFetchPromises = [
-            // Fetch IOTA tokens via Blockberry
+            // Fetch IOTA tokens via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-tokens', {
               method: 'POST',
               headers: {
@@ -505,7 +505,7 @@ export const ProfileCard = ({
               body: JSON.stringify({ walletAddress: currentWalletAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, tokens: [] })),
             
-            // Fetch IOTA NFTs via Blockberry
+            // Fetch IOTA NFTs via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-nfts', {
               method: 'POST',
               headers: {
@@ -515,7 +515,7 @@ export const ProfileCard = ({
               body: JSON.stringify({ walletAddress: currentWalletAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, nfts: [] })),
             
-            // Fetch IOTA transactions via Blockberry
+            // Fetch IOTA transactions via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-transactions', {
               method: 'POST',
               headers: {
@@ -529,9 +529,9 @@ export const ProfileCard = ({
           try {
             const [tokensData, nftsData, txData] = await Promise.all(iotaFetchPromises);
             
-            console.log('IOTA Tokens (Blockberry):', tokensData);
-            console.log('IOTA NFTs (Blockberry):', nftsData);
-            console.log('IOTA Transactions (Blockberry):', txData);
+            console.log('IOTA Tokens:', tokensData);
+            console.log('IOTA NFTs:', nftsData);
+            console.log('IOTA Transactions:', txData);
             
             if (tokensData.tokens) {
               setIotaTokens(tokensData.tokens);
@@ -541,7 +541,7 @@ export const ProfileCard = ({
             if (nftsData.nfts) setIotaNfts(nftsData.nfts);
             if (txData.transactions) setTransactions(txData.transactions);
           } catch (e) { 
-            console.error('IOTA Blockberry fetch error:', e); 
+            console.error('IOTA fetch error:', e);
           } finally {
             setIotaLoading(false);
             setIotaFetched(true);

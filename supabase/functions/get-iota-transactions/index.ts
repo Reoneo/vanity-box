@@ -1,4 +1,4 @@
-// Edge function to fetch IOTA transaction activity via Blockberry API
+// Edge function to fetch IOTA transaction activity via native IOTA JSON-RPC API
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BLOCKBERRY_API_URL = "https://api.blockberry.one/iota-mainnet";
+const IOTA_RPC_URL = "https://api.mainnet.iota.cafe";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { walletAddress, page = 0, size = 50 } = await req.json();
+    const { walletAddress, cursor = null, limit = 20 } = await req.json();
 
     if (!walletAddress) {
       return new Response(
@@ -24,80 +24,120 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get("BLOCKBERRY_API_KEY");
-    if (!apiKey) {
-      console.error("BLOCKBERRY_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "API not configured", transactions: [] }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    console.log(`[get-iota-transactions] Fetching transactions for ${walletAddress}`);
 
-    console.log(`[get-iota-transactions] Fetching activity for ${walletAddress}`);
-
-    // Fetch account activities/transactions from Blockberry
-    const url = `${BLOCKBERRY_API_URL}/v1/accounts/${walletAddress}/activities?page=${page}&size=${size}&orderBy=DESC`;
-    
-    const response = await fetch(url, {
-      method: "GET",
+    // Use IOTA native RPC to query transaction blocks
+    const response = await fetch(IOTA_RPC_URL, {
+      method: "POST",
       headers: {
-        "Accept": "application/json",
-        "x-api-key": apiKey,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "iotax_queryTransactionBlocks",
+        params: [
+          {
+            filter: {
+              FromAddress: walletAddress,
+            },
+            options: {
+              showInput: true,
+              showEffects: true,
+              showEvents: true,
+              showBalanceChanges: true,
+            },
+          },
+          cursor,
+          limit,
+          true, // descending order (newest first)
+        ],
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Blockberry activities API error:", response.status, errorText);
+      console.error("IOTA RPC error:", response.status);
       return new Response(
-        JSON.stringify({ error: `API error: ${response.status}`, transactions: [] }),
+        JSON.stringify({ error: `RPC error: ${response.status}`, transactions: [] }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    const activities = data?.content || data || [];
     
-    console.log(`[get-iota-transactions] Found ${Array.isArray(activities) ? activities.length : 0} activities`);
+    if (data.error) {
+      console.error("IOTA RPC error:", data.error);
+      return new Response(
+        JSON.stringify({ error: data.error.message, transactions: [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const txBlocks = data.result?.data || [];
+    const nextCursor = data.result?.nextCursor || null;
+    const hasNextPage = data.result?.hasNextPage || false;
+    
+    console.log(`[get-iota-transactions] Found ${txBlocks.length} transactions`);
 
     // Transform to standard transaction format
-    const transactions = (Array.isArray(activities) ? activities : []).map((tx: any) => {
-      const timestamp = tx.timestamp || tx.timestampMs;
-      const date = timestamp ? new Date(typeof timestamp === 'number' ? timestamp : parseInt(timestamp)) : null;
+    const transactions = txBlocks.map((tx: any) => {
+      const timestampMs = tx.timestampMs;
+      const date = timestampMs ? new Date(parseInt(timestampMs)) : null;
+      const effects = tx.effects || {};
+      const status = effects.status?.status === "success" ? "success" : "failed";
       
-      // Determine transaction type
-      let type = tx.type || tx.transactionType || "UNKNOWN";
-      if (type === "RECEIVE" || tx.to?.toLowerCase() === walletAddress.toLowerCase()) {
-        type = "RECEIVE";
-      } else if (type === "SEND" || tx.from?.toLowerCase() === walletAddress.toLowerCase()) {
-        type = "SEND";
+      // Get gas fee from effects
+      const gasUsed = effects.gasUsed || {};
+      const totalGas = BigInt(gasUsed.computationCost || "0") + 
+                       BigInt(gasUsed.storageCost || "0") - 
+                       BigInt(gasUsed.storageRebate || "0");
+      const gasFee = Number(totalGas) / 1e9; // Convert to IOTA
+      
+      // Determine transaction type from balance changes
+      const balanceChanges = tx.balanceChanges || [];
+      let type = "UNKNOWN";
+      let amount = "0";
+      let coinType = "0x2::iota::IOTA";
+      
+      for (const change of balanceChanges) {
+        const changeAmount = BigInt(change.amount || "0");
+        if (change.owner?.AddressOwner === walletAddress) {
+          if (changeAmount < 0) {
+            type = "SEND";
+            amount = (Number(-changeAmount) / 1e9).toString();
+            coinType = change.coinType || coinType;
+          } else if (changeAmount > 0) {
+            type = "RECEIVE";
+            amount = (Number(changeAmount) / 1e9).toString();
+            coinType = change.coinType || coinType;
+          }
+          break;
+        }
       }
 
       return {
-        hash: tx.digest || tx.txHash || tx.transactionHash || tx.hash,
+        hash: tx.digest,
         type: type,
-        status: tx.status || "success",
+        status: status,
         timestamp: date?.toISOString() || null,
-        timestampMs: timestamp,
-        from: tx.sender || tx.from,
-        to: tx.recipient || tx.to,
-        amount: tx.amount || tx.value || "0",
-        coinType: tx.coinType || tx.tokenType || "0x2::iota::IOTA",
-        symbol: tx.symbol || tx.coinSymbol || "IOTA",
-        fee: tx.gasFee || tx.fee || null,
+        timestampMs: timestampMs,
+        from: walletAddress,
+        to: null, // Would need to parse transaction input for recipient
+        amount: amount,
+        coinType: coinType,
+        symbol: coinType.includes("::iota::IOTA") ? "IOTA" : coinType.split("::").pop() || "UNKNOWN",
+        fee: gasFee.toFixed(9),
         chain: "iota",
-        functionName: tx.functionName || tx.function || null,
-        packageId: tx.packageId || tx.package || null,
+        functionName: null,
+        packageId: null,
       };
     });
 
     // Pagination info
     const pagination = {
-      page: data.page || page,
-      size: data.size || size,
-      totalPages: data.totalPages || 1,
-      totalElements: data.totalElements || transactions.length,
-      hasMore: data.hasNext || (transactions.length === size),
+      cursor: nextCursor,
+      hasMore: hasNextPage,
+      count: transactions.length,
     };
 
     return new Response(

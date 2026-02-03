@@ -1,4 +1,4 @@
-// Edge function to fetch IOTA NFTs via Blockberry API
+// Edge function to fetch IOTA NFTs via native IOTA JSON-RPC API
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BLOCKBERRY_API_URL = "https://api.blockberry.one/iota-mainnet";
+const IOTA_RPC_URL = "https://api.mainnet.iota.cafe";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,57 +24,95 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get("BLOCKBERRY_API_KEY");
-    if (!apiKey) {
-      console.error("BLOCKBERRY_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "API not configured", nfts: [] }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     console.log(`[get-iota-nfts] Fetching NFTs for ${walletAddress}`);
 
-    // Fetch NFTs owned by wallet from Blockberry
-    const url = `${BLOCKBERRY_API_URL}/v1/accounts/${walletAddress}/nfts?size=100&orderBy=DESC`;
-    
-    const response = await fetch(url, {
-      method: "GET",
+    // Use IOTA native RPC to get owned objects (filter for NFT-like objects)
+    const response = await fetch(IOTA_RPC_URL, {
+      method: "POST",
       headers: {
-        "Accept": "application/json",
-        "x-api-key": apiKey,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "iotax_getOwnedObjects",
+        params: [
+          walletAddress,
+          {
+            options: {
+              showType: true,
+              showContent: true,
+              showDisplay: true,
+              showOwner: true,
+            },
+          },
+          null, // cursor
+          50,   // limit
+        ],
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Blockberry NFTs API error:", response.status, errorText);
+      console.error("IOTA RPC error:", response.status);
       return new Response(
-        JSON.stringify({ error: `API error: ${response.status}`, nfts: [] }),
+        JSON.stringify({ error: `RPC error: ${response.status}`, nfts: [] }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    const nftList = data?.content || data || [];
     
-    console.log(`[get-iota-nfts] Found ${Array.isArray(nftList) ? nftList.length : 0} NFTs`);
+    if (data.error) {
+      console.error("IOTA RPC error:", data.error);
+      return new Response(
+        JSON.stringify({ error: data.error.message, nfts: [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Transform to standard NFT format
-    const nfts = (Array.isArray(nftList) ? nftList : []).map((nft: any) => {
-      return {
-        identifier: nft.objectId || nft.id || nft.nftId,
-        name: nft.name || nft.displayName || "Unknown NFT",
-        description: nft.description || null,
-        imageUrl: nft.imageUrl || nft.image || nft.displayImageUrl || null,
-        collection: nft.collectionName || nft.collection || nft.projectName || "IOTA NFT",
-        collectionId: nft.collectionId || nft.collectionObjectId || null,
-        chain: "iota",
-        objectType: nft.objectType || nft.type,
-        rarity: nft.rarity || null,
-        attributes: nft.attributes || nft.properties || [],
-      };
-    });
+    const objects = data.result?.data || [];
+    console.log(`[get-iota-nfts] Found ${objects.length} owned objects`);
+
+    // Filter for NFT-like objects (exclude coins and system objects)
+    // NFTs typically have display metadata and are not coin types
+    const nfts = objects
+      .filter((obj: any) => {
+        const type = obj.data?.type || "";
+        const hasDisplay = obj.data?.display?.data;
+        // Exclude coin types
+        if (type.includes("::coin::Coin<") || type.includes("0x2::coin::")) return false;
+        // Exclude staking objects
+        if (type.includes("::staking_pool::") || type.includes("::timelocked_staking::")) return false;
+        // Include objects with display metadata (NFTs typically have this)
+        if (hasDisplay) return true;
+        // Include IOTA Names NFTs
+        if (type.includes("::registration::Registration") || type.includes("::subdomain_registration::")) return true;
+        return false;
+      })
+      .map((obj: any) => {
+        const display = obj.data?.display?.data || {};
+        const content = obj.data?.content?.fields || {};
+        const type = obj.data?.type || "";
+        
+        // Determine collection name from type
+        let collection = "IOTA NFT";
+        if (type.includes("::registration::Registration") || type.includes("iota_names")) {
+          collection = "IOTA Names";
+        }
+        
+        return {
+          identifier: obj.data?.objectId,
+          name: display.name || content.name || "Unknown NFT",
+          description: display.description || content.description || null,
+          imageUrl: display.image_url || display.img_url || content.image_url || content.url || null,
+          collection: collection,
+          collectionId: null,
+          chain: "iota",
+          objectType: type,
+          rarity: null,
+          attributes: [],
+        };
+      });
 
     // Group by collection for summary
     const collections: Record<string, number> = {};
@@ -82,6 +120,8 @@ serve(async (req) => {
       const col = nft.collection || "Unknown";
       collections[col] = (collections[col] || 0) + 1;
     });
+
+    console.log(`[get-iota-nfts] Filtered to ${nfts.length} NFTs`);
 
     return new Response(
       JSON.stringify({
