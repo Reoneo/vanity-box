@@ -102,7 +102,7 @@ export const Header: React.FC = () => {
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-      <header className="fixed top-0 left-0 right-0 z-[100] w-full bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] pt-safe-area-inset-top">
+      <header className="fixed top-0 left-0 right-0 z-[100] w-full bg-[#D4AF37] pt-safe-area-inset-top">
         {/* Preload the logo */}
         <link rel="preload" as="image" href={vanityLogo} />
         

@@ -338,6 +338,47 @@ async function fetchIotaProfile(domain: string, supabaseUrl: string, supabaseKey
   }
 }
 
+// Reverse resolution for IOTA: address -> primary .iota name
+async function fetchIotaReverseProfile(address: string, supabaseUrl: string, supabaseKey: string): Promise<any | null> {
+  console.log(`🔍 Fetching IOTA reverse lookup for: ${address}`);
+  
+  try {
+    const response = await fetchWithTimeout(
+      `${supabaseUrl}/functions/v1/resolve-iota-address`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ address }),
+      },
+      10000
+    );
+    
+    if (!response.ok) {
+      console.log(`❌ IOTA reverse: HTTP ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success || !data.name) {
+      console.log("⚠️ IOTA reverse: No name found for address");
+      return null;
+    }
+    
+    console.log(`✅ IOTA reverse resolved: ${address} -> ${data.name}`);
+    
+    return {
+      iotaDomain: data.name,
+    };
+  } catch (err: any) {
+    console.error("❌ IOTA reverse fetch error:", err.message);
+    return null;
+  }
+}
+
 // Reverse resolution for vet.domains: address -> primary name
 async function fetchVetReverseProfile(address: string): Promise<any | null> {
   console.log(`🔍 Fetching .vet reverse lookup for: ${address}`);
@@ -400,7 +441,11 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     
     // Determine identity type
-    const isWalletAddress = /^0x[a-fA-F0-9]{40}$/i.test(normalized);
+    // EVM wallet addresses are 40 hex chars (0x + 40)
+    const isEvmWalletAddress = /^0x[a-fA-F0-9]{40}$/i.test(normalized);
+    // IOTA wallet addresses are 64 hex chars (0x + 64)
+    const isIotaWalletAddress = /^0x[a-fA-F0-9]{64}$/i.test(normalized);
+    const isWalletAddress = isEvmWalletAddress || isIotaWalletAddress;
     const isHlDomain = normalized.endsWith(".hl");
     const isVetDomain = normalized.endsWith(".vet");
     const isIotaDomain = normalized.endsWith(".iota");
@@ -693,51 +738,119 @@ serve(async (req) => {
           };
         }
       }
-      // Fallback for wallet addresses: try .vet reverse lookup, then create minimal profile
+      // Fallback for wallet addresses: try IOTA reverse (for 64-char addresses) or .vet reverse, then create minimal profile
       else if (isWalletAddress) {
-        console.log("🔄 Trying .vet reverse lookup for wallet address");
-        debug.tried.push("vet-reverse");
-        const vetStart = Date.now();
-        const vetReverse = await fetchVetReverseProfile(normalized);
-        debug.timingsMs.vetReverse = Date.now() - vetStart;
-        
-        if (vetReverse && vetReverse.vetDomain) {
-          console.log(`✅ Found .vet primary name: ${vetReverse.vetDomain}`);
-          result = {
-            ok: true,
-            source: "vet",
-            profile: {
-              address: normalized,
-              identity: vetReverse.vetDomain,
-              platform: "vechain",
-              displayName: vetReverse.vetDomain,
-              avatar: vetReverse.avatar,
-              description: null,
-              header: null,
-              website: null,
-              url: null,
-              links: {},
-              vetDomain: vetReverse.vetDomain,
-            },
-          };
+        // Try IOTA reverse lookup for 64-char addresses
+        if (isIotaWalletAddress) {
+          console.log("🔄 Trying IOTA reverse lookup for wallet address");
+          debug.tried.push("iota-reverse");
+          const iotaStart = Date.now();
+          const iotaReverse = await fetchIotaReverseProfile(normalized, supabaseUrl, supabaseKey);
+          debug.timingsMs.iotaReverse = Date.now() - iotaStart;
+          
+          if (iotaReverse && iotaReverse.iotaDomain) {
+            console.log(`✅ Found .iota primary name: ${iotaReverse.iotaDomain}`);
+            // Now fetch the full IOTA profile for this domain
+            debug.tried.push("iota");
+            const iotaProfileStart = Date.now();
+            const iotaProfile = await fetchIotaProfile(iotaReverse.iotaDomain, supabaseUrl, supabaseKey);
+            debug.timingsMs.iota = Date.now() - iotaProfileStart;
+            
+            if (iotaProfile) {
+              result = {
+                ok: true,
+                source: "iota",
+                profile: {
+                  ...iotaProfile,
+                  address: normalized,
+                  iotaDomain: iotaReverse.iotaDomain,
+                },
+              };
+            } else {
+              // Return basic profile with just the domain
+              result = {
+                ok: true,
+                source: "iota",
+                profile: {
+                  address: normalized,
+                  identity: iotaReverse.iotaDomain,
+                  platform: "iota",
+                  displayName: iotaReverse.iotaDomain,
+                  avatar: null,
+                  description: null,
+                  header: null,
+                  website: null,
+                  url: null,
+                  links: {},
+                  iotaDomain: iotaReverse.iotaDomain,
+                },
+              };
+            }
+          } else {
+            console.log("🔄 No .iota name found, creating minimal IOTA wallet profile");
+            result = {
+              ok: true,
+              source: "fallback",
+              profile: {
+                address: normalized,
+                identity: normalized,
+                platform: "iota",
+                displayName: null,
+                avatar: null,
+                description: null,
+                header: null,
+                website: null,
+                url: null,
+                links: {},
+              },
+            };
+          }
         } else {
-          console.log("🔄 No .vet name found, creating minimal wallet profile");
-          result = {
-            ok: true,
-            source: "fallback",
-            profile: {
-              address: normalized,
-              identity: normalized,
-              platform: "ethereum",
-              displayName: null,
-              avatar: null,
-              description: null,
-              header: null,
-              website: null,
-              url: null,
-              links: {},
-            },
-          };
+          // Try .vet reverse lookup for EVM addresses
+          console.log("🔄 Trying .vet reverse lookup for wallet address");
+          debug.tried.push("vet-reverse");
+          const vetStart = Date.now();
+          const vetReverse = await fetchVetReverseProfile(normalized);
+          debug.timingsMs.vetReverse = Date.now() - vetStart;
+          
+          if (vetReverse && vetReverse.vetDomain) {
+            console.log(`✅ Found .vet primary name: ${vetReverse.vetDomain}`);
+            result = {
+              ok: true,
+              source: "vet",
+              profile: {
+                address: normalized,
+                identity: vetReverse.vetDomain,
+                platform: "vechain",
+                displayName: vetReverse.vetDomain,
+                avatar: vetReverse.avatar,
+                description: null,
+                header: null,
+                website: null,
+                url: null,
+                links: {},
+                vetDomain: vetReverse.vetDomain,
+              },
+            };
+          } else {
+            console.log("🔄 No .vet name found, creating minimal wallet profile");
+            result = {
+              ok: true,
+              source: "fallback",
+              profile: {
+                address: normalized,
+                identity: normalized,
+                platform: "ethereum",
+                displayName: null,
+                avatar: null,
+                description: null,
+                header: null,
+                website: null,
+                url: null,
+                links: {},
+              },
+            };
+          }
         }
       } else {
         result = { ok: false, source: "web3bio", profile: null, notFound: true };
