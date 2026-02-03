@@ -37,10 +37,6 @@ type BundleItem = {
 const bundleItems: BundleItem[] = [
   { id: 'iota', avatar: vanityIotaAvatar, base: 'vanity.iota', isActive: true },
   { id: 'box', avatar: vanityBoxAvatar, base: 'vanity.box', isActive: false },
-  { id: 'apt', avatar: vanityAptAvatar, base: 'vanity.apt', isActive: false },
-  { id: 'hl', avatar: vanityHlAvatar, base: 'vanity.hl', isActive: false },
-  { id: 'ton', avatar: tonLogoBlue, base: 'vanity.ton', isActive: false },
-  { id: 'vet', avatar: vanityVetAvatar, base: 'vanity.vet', isActive: false },
 ];
 
 export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
@@ -91,17 +87,16 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
         {/* Header */}
         <div className="text-center mb-4 md:mb-5">
           <div className="inline-flex items-center gap-2 mb-2">
-            <h3 className="text-lg md:text-xl font-bold text-foreground">Vanity ID Bundle</h3>
+            <h3 className="text-lg md:text-xl font-bold text-foreground">Your Digital ID</h3>
             <Badge className="bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">
               <Sparkles className="w-3 h-3 mr-1" />
               Early Access
             </Badge>
           </div>
-          <p className="text-xs md:text-sm text-muted-foreground">One identity. Multiple chains.</p>
         </div>
 
         {/* Chain Icons Grid */}
-        <div className={`grid gap-3 md:gap-4 mb-5 ${isMobile ? 'grid-cols-3' : 'grid-cols-6'}`}>
+        <div className="grid grid-cols-2 gap-4 md:gap-6 mb-5 max-w-xs mx-auto">
           {bundleItems.map((item) => {
             const fullName = `${cleanLabel}.${item.base}`;
             const isIota = item.id === 'iota';
@@ -209,10 +204,6 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               <li className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Check className="w-3 h-3 text-[#D4AF37] flex-shrink-0" />
                 <span><strong>{cleanLabel}.vanity.box</strong> DNS redirect to your profile</span>
-              </li>
-              <li className="flex items-center gap-2 text-xs">
-                <span className="w-3 h-0.5 bg-[#D4AF37] rounded-full flex-shrink-0" />
-                <span className="font-semibold text-foreground">All matching ID's will be free to claim soon!</span>
               </li>
             </ul>
           </div>

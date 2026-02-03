@@ -4,7 +4,7 @@ import { Fingerprint, Zap, Globe, ArrowDown, Wallet } from 'lucide-react';
 import vanitySilhouetteAvatar from '@/assets/vanity-silhouette-avatar.jpeg';
 
 // Extensions to cycle through
-const extensions = ['.box', '.iota', '.ton', '.apt', '.hl', '.vet'];
+const extensions = ['.iota', '.box'];
 
 const features = [
   {
