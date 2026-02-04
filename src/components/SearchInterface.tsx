@@ -596,12 +596,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Auto-search when username is in URL
   useEffect(() => {
-    if (username && !hasSearched) {
-      setSearchQuery(username);
-      // Trigger search after a short delay to ensure component is mounted
-      setTimeout(() => {
-        handleSearch(username);
-      }, 100);
+    // If username exists in URL, always trigger search (for direct profile links)
+    if (username) {
+      // Only trigger if we're not already viewing this profile
+      const currentProfile = displayQuery?.toLowerCase();
+      const urlProfile = username.toLowerCase();
+      
+      if (currentProfile !== urlProfile) {
+        console.log('🔗 URL profile detected:', username);
+        setSearchQuery(username);
+        setIsHomepage(false);
+        // Trigger search after a short delay to ensure component is mounted
+        setTimeout(() => {
+          handleSearch(username);
+        }, 100);
+      }
     }
   }, [username]);
 
