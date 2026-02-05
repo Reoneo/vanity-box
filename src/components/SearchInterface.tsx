@@ -178,6 +178,13 @@ interface SearchInterfaceProps {
   onClearSearch?: () => void;
 }
 
+interface IotaNameItem {
+  name: string;
+  nftId: string;
+  isSubname: boolean;
+  targetAddress?: string;
+}
+
 export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfaceProps) => {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
@@ -187,7 +194,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [searchQuery, setSearchQuery] = useState("");
   
   // Get IOTA wallet state
-  const { address: iotaWalletAddress, isConnected: isIotaConnected } = useIotaWallet();
+  const { address: iotaWalletAddress, isConnected: isIotaConnected, setIotaNameTargetAddress } = useIotaWallet();
+
+  // IOTA owned names state
+  const [iotaOwnedNames, setIotaOwnedNames] = useState<IotaNameItem[]>([]);
+  const [iotaNamesLoading, setIotaNamesLoading] = useState(false);
+  const [showSetPrimaryModal, setShowSetPrimaryModal] = useState(false);
+  const [primaryNameToSet, setPrimaryNameToSet] = useState<IotaNameItem | null>(null);
+  const [primaryTargetAddress, setPrimaryTargetAddress] = useState("");
+  const [isSettingPrimary, setIsSettingPrimary] = useState(false);
 
   // Function to remove underscores from input
   const handleSearchChange = (value: string) => {
@@ -535,6 +550,112 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     loadIotaOnchainProfile();
   }, [displayQuery]);
+
+  // Load IOTA owned names when My IDs is shown
+  useEffect(() => {
+    const loadMyIotaNames = async () => {
+      if (!showMyIDs) return;
+
+      // Only show IOTA list if user is connected to IOTA wallet
+      if (!isIotaConnected || !iotaWalletAddress) {
+        setIotaOwnedNames([]);
+        return;
+      }
+
+      try {
+        setIotaNamesLoading(true);
+        const res = await callEdge<any>("get-iota-owned-names", {
+          ownerAddress: iotaWalletAddress,
+        });
+
+        if (!res?.success) {
+          setIotaOwnedNames([]);
+          return;
+        }
+
+        const names: IotaNameItem[] = Array.isArray(res?.names) ? res.names : [];
+
+        // Sort: parent names first, then subnames; alphabetical
+        names.sort((a, b) => {
+          if (a.isSubname !== b.isSubname) return a.isSubname ? 1 : -1;
+          return a.name.localeCompare(b.name);
+        });
+
+        setIotaOwnedNames(names);
+      } catch (e) {
+        console.error("Failed to load IOTA names:", e);
+        setIotaOwnedNames([]);
+      } finally {
+        setIotaNamesLoading(false);
+      }
+    };
+
+    loadMyIotaNames();
+  }, [showMyIDs, isIotaConnected, iotaWalletAddress]);
+
+  // IOTA name management handlers
+  const openSetPrimary = (item: IotaNameItem) => {
+    if (!isIotaConnected || !iotaWalletAddress) {
+      toast.error("Connect your IOTA wallet to manage IOTA names.");
+      return;
+    }
+    setPrimaryNameToSet(item);
+    setPrimaryTargetAddress(iotaWalletAddress);
+    setShowSetPrimaryModal(true);
+  };
+
+  const confirmSetPrimary = async () => {
+    if (!primaryNameToSet) return;
+
+    const target = primaryTargetAddress.trim();
+    if (!target) {
+      toast.error("Enter a target address.");
+      return;
+    }
+
+    if (!isIotaConnected || !iotaWalletAddress) {
+      toast.error("Connect your IOTA wallet first.");
+      return;
+    }
+
+    if (typeof setIotaNameTargetAddress !== "function") {
+      toast.error("IOTA action not available. Please refresh and try again.");
+      console.error("Missing setIotaNameTargetAddress in IotaWalletContext");
+      return;
+    }
+
+    try {
+      setIsSettingPrimary(true);
+
+      await setIotaNameTargetAddress({
+        nftId: primaryNameToSet.nftId,
+        address: target,
+        isSubname: primaryNameToSet.isSubname,
+      });
+
+      toast.success(`Set target for ${primaryNameToSet.name} → ${target.slice(0, 8)}...${target.slice(-6)}`);
+
+      // Optimistic UI update
+      setIotaOwnedNames((prev) =>
+        prev.map((n) =>
+          n.nftId === primaryNameToSet.nftId ? { ...n, targetAddress: target } : n
+        )
+      );
+
+      setShowSetPrimaryModal(false);
+      setPrimaryNameToSet(null);
+    } catch (e: any) {
+      console.error("Set primary failed:", e);
+      toast.error(e?.message || "Failed to set target address.");
+    } finally {
+      setIsSettingPrimary(false);
+    }
+  };
+
+  const comingSoonToast = (label: string) => {
+    toast.message(`${label}: Coming Soon`);
+  };
+
   const handleLoadMorePoaps = async () => {
     if (!web3BioProfile?.address || poapLoadingMore || !poapHasMore) return;
     
@@ -2161,8 +2282,189 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {walletAddress && showMyIDs && (
               <div className="fixed left-0 right-0 flex flex-col z-[9997] top-[80px] bottom-[140px] px-0 pt-0">
                 <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
-                  <UserDomainsDisplay walletAddress={walletAddress} />
+                  <div className="px-4 pt-4 pb-6 space-y-4">
+
+                    {/* IOTA Names Panel */}
+                    <div className="border border-[#D4AF37]/30 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="text-white font-semibold text-lg">IOTA IDs</h3>
+                          <p className="text-xs text-gray-300/80">
+                            Your IOTA domains + subdomains with onchain actions.
+                          </p>
+                        </div>
+                        <Badge className="bg-[#D4AF37] text-black">
+                          {isIotaConnected ? "Connected" : "Not connected"}
+                        </Badge>
+                      </div>
+
+                      {!isIotaConnected || !iotaWalletAddress ? (
+                        <div className="rounded-xl border border-[#D4AF37]/20 bg-black/30 p-3">
+                          <p className="text-sm text-gray-200">
+                            Connect your IOTA wallet to view and manage your{" "}
+                            <span className="text-[#D4AF37]">.iota</span> names.
+                          </p>
+                        </div>
+                      ) : iotaNamesLoading ? (
+                        <div className="space-y-2">
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                        </div>
+                      ) : iotaOwnedNames.length === 0 ? (
+                        <div className="rounded-xl border border-[#D4AF37]/20 bg-black/30 p-3">
+                          <p className="text-sm text-gray-200">
+                            No IOTA names found for{" "}
+                            <span className="font-mono">
+                              {iotaWalletAddress.slice(0, 6)}…{iotaWalletAddress.slice(-4)}
+                            </span>
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {iotaOwnedNames.map((n) => (
+                            <div
+                              key={n.nftId}
+                              className="rounded-xl border border-[#D4AF37]/20 bg-black/30 p-3 flex flex-col gap-2"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-white font-semibold truncate">{n.name}</span>
+                                    <Badge
+                                      className={cn(
+                                        "text-xs",
+                                        n.isSubname
+                                          ? "bg-emerald-500/20 text-emerald-200 border border-emerald-500/30"
+                                          : "bg-blue-500/20 text-blue-200 border border-blue-500/30"
+                                      )}
+                                    >
+                                      {n.isSubname ? "Subname" : "Name"}
+                                    </Badge>
+                                  </div>
+
+                                  <div className="mt-1 text-xs text-gray-300/80">
+                                    Target:{" "}
+                                    {n.targetAddress ? (
+                                      <span className="font-mono">
+                                        {n.targetAddress.slice(0, 8)}…{n.targetAddress.slice(-6)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-400">Not set</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <Button
+                                  size="sm"
+                                  className="bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                                  onClick={() => openSetPrimary(n)}
+                                >
+                                  Set as Primary
+                                </Button>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                                  onClick={() => comingSoonToast("Edit Profile")}
+                                >
+                                  Edit Profile
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                                  onClick={() => comingSoonToast("IOTA DID")}
+                                >
+                                  IOTA DID
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Keep existing domains list below (ENS/DNS etc.) */}
+                    <div className="border border-border rounded-2xl p-4 bg-background/60">
+                      <h3 className="font-semibold text-foreground mb-2">Other IDs</h3>
+                      <UserDomainsDisplay walletAddress={walletAddress} />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Set Primary Modal */}
+                {showSetPrimaryModal && primaryNameToSet && (
+                  <>
+                    <div
+                      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[10002]"
+                      onClick={() => {
+                        if (!isSettingPrimary) {
+                          setShowSetPrimaryModal(false);
+                          setPrimaryNameToSet(null);
+                        }
+                      }}
+                    />
+                    <div className="fixed inset-0 z-[10003] flex items-center justify-center p-4">
+                      <div className="w-full max-w-md rounded-2xl border border-[#D4AF37]/30 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-white font-semibold">Set as Primary</h3>
+                          <button
+                            className="text-gray-300 hover:text-white"
+                            onClick={() => {
+                              if (!isSettingPrimary) {
+                                setShowSetPrimaryModal(false);
+                                setPrimaryNameToSet(null);
+                              }
+                            }}
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        <p className="text-sm text-gray-200 mb-3">
+                          Setting target address for{" "}
+                          <span className="text-[#D4AF37] font-semibold">{primaryNameToSet.name}</span>
+                        </p>
+
+                        <Input
+                          value={primaryTargetAddress}
+                          onChange={(e) => setPrimaryTargetAddress(e.target.value)}
+                          placeholder="Enter target address"
+                          className="bg-black/30 border-[#D4AF37]/30 text-white placeholder:text-gray-400 mb-3"
+                        />
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            className="flex-1 border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                            disabled={isSettingPrimary}
+                            onClick={() => {
+                              setShowSetPrimaryModal(false);
+                              setPrimaryNameToSet(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            className="flex-1 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black"
+                            disabled={isSettingPrimary}
+                            onClick={confirmSetPrimary}
+                          >
+                            {isSettingPrimary ? "Setting..." : "Confirm"}
+                          </Button>
+                        </div>
+
+                        <p className="text-[11px] text-gray-300/70 mt-3">
+                          This will update the target address for your IOTA name onchain.
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
