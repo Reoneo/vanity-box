@@ -1002,22 +1002,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const normalizedQuery = trimmedQuery.toLowerCase();
       const currentSearchId = ++searchIdRef.current;
       
-      console.log(`🔍 Using resolve-profile for: ${isWalletAddress ? normalizedAddress : normalizedQuery}`);
+      console.log(`🔍 Using client-side profile resolver for: ${isWalletAddress ? normalizedAddress : normalizedQuery}`);
       
       try {
-        // Use the unified resolve-profile edge function with client-side timeout
+        // Use client-side profile resolution with public APIs (no edge function needed)
         const timeoutPromise = new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error('Profile lookup timed out')), 20000)
         );
         
-        const resolverPromise = supabase.functions.invoke('resolve-profile', {
-          body: { identity: isWalletAddress ? normalizedAddress : normalizedQuery }
-        });
+        // Import the resolver functions inline to avoid circular dependencies
+        const { resolveProfileDirect } = await import('@/hooks/useProfileResolver');
         
-        const { data: resolverData, error: resolverError } = await Promise.race([
+        const resolverPromise = resolveProfileDirect(isWalletAddress ? normalizedAddress : normalizedQuery);
+        
+        const resolverData = await Promise.race([
           resolverPromise,
           timeoutPromise.then(() => { throw new Error('timeout'); })
-        ]) as { data: any; error: any };
+        ]);
         
         // Check if this search is still current
         if (searchIdRef.current !== currentSearchId) {
@@ -1025,20 +1026,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           return;
         }
         
-        console.log('📥 resolve-profile response:', { 
+        console.log('📥 Client resolver response:', { 
           ok: resolverData?.ok, 
           source: resolverData?.source, 
-          error: resolverError,
           debug: resolverData?.debug 
         });
-        
-        if (resolverError) {
-          console.error('❌ resolve-profile error:', resolverError);
-          toast.error("Profile lookup failed. Please try again.");
-          // Prevent the loading progress from getting stuck at 98%
-          if (searchIdRef.current === currentSearchId) setIsLoading(false);
-          return;
-        }
         
         if (!resolverData?.ok || !resolverData?.profile) {
           console.log('⚠️ No profile found:', resolverData?.notFound ? 'not found' : 'unknown error');
@@ -1073,7 +1065,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           }
 
           // Not found (or other non-profile response) — stop the blocking loader.
-          // The rest of the search flow can still render “no results” UI.
           if (searchIdRef.current === currentSearchId) setIsLoading(false);
           return;
         }
@@ -1143,7 +1134,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         // Always set loading to false when profile resolution completes or fails
         if (searchIdRef.current === currentSearchId) {
           // Profile resolution done - continue to subdomain checks if needed
-          // setIsLoading will be set to false after subdomain checks complete
         }
       }
     }
