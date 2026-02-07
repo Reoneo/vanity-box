@@ -6,10 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// IOTA Mainnet RPC and Indexer endpoints
-// The indexer endpoint is required for IOTA Names methods
-const IOTA_MAINNET_RPC = "https://api.mainnet.iota.cafe";
+// IOTA Mainnet endpoints - use official indexer for IOTA Names methods
+// The indexer endpoint is the primary source for IOTA Names resolution
 const IOTA_MAINNET_INDEXER = "https://indexer.mainnet.iota.cafe";
+const IOTA_MAINNET_RPC = "https://api.mainnet.iota.cafe";
 
 interface IotaNameRecord {
   targetAddress: string | null;
@@ -28,10 +28,10 @@ interface IotaRpcResponse {
   };
 }
 
-async function resolveIotaName(name: string): Promise<string | null> {
+async function resolveIotaName(name: string): Promise<{ address: string | null; nftId: string | null }> {
   console.log(`🔍 Resolving IOTA name via JSON-RPC: ${name}`);
   
-  // Try indexer first (IOTA Names methods are served by the indexer)
+  // Use indexer as primary (IOTA Names methods are served by the indexer)
   const endpoints = [IOTA_MAINNET_INDEXER, IOTA_MAINNET_RPC];
   
   for (const endpoint of endpoints) {
@@ -63,13 +63,21 @@ async function resolveIotaName(name: string): Promise<string | null> {
         continue;
       }
 
-      if (data.result && data.result.targetAddress) {
-        console.log(`✅ Resolved ${name} to: ${data.result.targetAddress} (via ${endpoint})`);
-        return data.result.targetAddress;
+      if (data.result) {
+        const address = data.result.targetAddress || null;
+        const nftId = data.result.nftId || null;
+        
+        console.log(`✅ Resolved ${name}:`, {
+          targetAddress: address,
+          nftId: nftId,
+          expirationTimestampMs: data.result.expirationTimestampMs,
+        });
+        
+        return { address, nftId };
       }
 
-      console.log(`⚠️ No target address found for: ${name}`);
-      return null;
+      console.log(`⚠️ No result found for: ${name}`);
+      return { address: null, nftId: null };
     } catch (error) {
       console.error(`❌ Network error with ${endpoint}:`, error);
       continue;
@@ -77,7 +85,7 @@ async function resolveIotaName(name: string): Promise<string | null> {
   }
   
   console.log(`❌ Failed to resolve ${name} using all endpoints`);
-  return null;
+  return { address: null, nftId: null };
 }
 
 Deno.serve(async (req) => {
@@ -107,7 +115,7 @@ Deno.serve(async (req) => {
       : `${domain.toLowerCase()}.iota`;
 
     // Resolve using IOTA Mainnet JSON-RPC (iotax_iotaNamesLookup)
-    const walletAddress = await resolveIotaName(fullName);
+    const { address: walletAddress, nftId } = await resolveIotaName(fullName);
 
     if (!walletAddress) {
       return new Response(
@@ -136,6 +144,7 @@ Deno.serve(async (req) => {
       url: null,
       links: {},
       iotaDomain: fullName,
+      nftId: nftId, // Include the NFT ID for profile editing
     };
 
     console.log(`✅ Successfully resolved .iota domain: ${domain} -> ${walletAddress}`);

@@ -821,9 +821,9 @@ class InfiniteGridMenu {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.uniformMatrix4fv(this.discLocations.uWorldMatrix, false, this.worldMatrix);
-    gl.uniformMatrix4fv(this.discLocations.uViewMatrix, false, this.camera.matrices.view);
-    gl.uniformMatrix4fv(this.discLocations.uProjectionMatrix, false, this.camera.matrices.projection);
+    gl.uniformMatrix4fv(this.discLocations.uWorldMatrix, false, this.worldMatrix as Float32Array);
+    gl.uniformMatrix4fv(this.discLocations.uViewMatrix, false, this.camera.matrices.view as Float32Array);
+    gl.uniformMatrix4fv(this.discLocations.uProjectionMatrix, false, this.camera.matrices.projection as Float32Array);
     gl.uniform3f(
       this.discLocations.uCameraPosition,
       this.camera.position[0],

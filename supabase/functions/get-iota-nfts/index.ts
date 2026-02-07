@@ -7,7 +7,96 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Use official IOTA mainnet RPC endpoint
 const IOTA_RPC_URL = "https://api.mainnet.iota.cafe";
+
+// Known IOTA Names registration type patterns
+const IOTA_NAMES_REGISTRATION_TYPES = [
+  "::registration::Registration",
+  "::registration::NameRegistration",
+  "::subdomain_registration::SubdomainRegistration",
+  "iota_names::registration",
+  "iota_names::subdomain",
+];
+
+// Helper to check if a type indicates an IOTA Names NFT
+function isIotaNamesType(type: string): boolean {
+  const normalizedType = type.toLowerCase();
+  return IOTA_NAMES_REGISTRATION_TYPES.some(pattern => 
+    normalizedType.includes(pattern.toLowerCase())
+  );
+}
+
+// Helper to derive a collection name from NFT metadata
+function deriveCollectionName(obj: any): string {
+  const type = obj.data?.type || "";
+  const display = obj.data?.display?.data || {};
+  const content = obj.data?.content?.fields || {};
+  const name = display.name || content.name || "";
+  
+  // 1. Check for IOTA Names registration NFTs (domains/subdomains)
+  if (isIotaNamesType(type)) {
+    return "IOTA Names";
+  }
+  
+  // 2. Check if display data has a collection field (official standard)
+  if (display.collection && typeof display.collection === "string") {
+    return display.collection;
+  }
+  
+  // 3. Check for common collection name patterns in content fields
+  if (content.collection_name && typeof content.collection_name === "string") {
+    return content.collection_name;
+  }
+  
+  if (content.collection && typeof content.collection === "string") {
+    return content.collection;
+  }
+  
+  // 4. Check for known NFT collections by name patterns
+  if (name) {
+    const normalizedName = name.toLowerCase();
+    
+    // Genesis NFT collection
+    if (normalizedName.startsWith("genesis nft") || normalizedName.includes("genesis #")) {
+      return "Genesis NFT Collection";
+    }
+    
+    // OG NFT patterns
+    if (normalizedName.includes("og ") || normalizedName.startsWith("og#")) {
+      return "OG Collection";
+    }
+    
+    // Founders NFTs
+    if (normalizedName.includes("founder") || normalizedName.startsWith("founders")) {
+      return "Founders Collection";
+    }
+    
+    // IOTA Rebased launch NFTs
+    if (normalizedName.includes("rebased") || normalizedName.includes("launch")) {
+      return "IOTA Rebased";
+    }
+  }
+  
+  // 5. Try to extract collection from the package/module name in the type
+  // Type format: package_id::module_name::struct_name
+  const typeMatch = type.match(/0x[a-f0-9]+::([a-z_]+)::/i);
+  if (typeMatch && typeMatch[1]) {
+    const moduleName = typeMatch[1];
+    // Skip common generic module names
+    if (!["coin", "nft", "object", "display", "balance", "token"].includes(moduleName.toLowerCase())) {
+      // Convert snake_case to Title Case
+      const formattedName = moduleName
+        .split("_")
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+      return `${formattedName} Collection`;
+    }
+  }
+  
+  // 6. Default fallback
+  return "IOTA NFT";
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -85,8 +174,8 @@ serve(async (req) => {
         if (type.includes("::staking_pool::") || type.includes("::timelocked_staking::")) return false;
         // Include objects with display metadata (NFTs typically have this)
         if (hasDisplay) return true;
-        // Include IOTA Names NFTs
-        if (type.includes("::registration::Registration") || type.includes("::subdomain_registration::")) return true;
+        // Include IOTA Names NFTs even without display
+        if (isIotaNamesType(type)) return true;
         return false;
       })
       .map((obj: any) => {
@@ -94,15 +183,24 @@ serve(async (req) => {
         const content = obj.data?.content?.fields || {};
         const type = obj.data?.type || "";
         
-        // Determine collection name from type
-        let collection = "IOTA NFT";
-        if (type.includes("::registration::Registration") || type.includes("iota_names")) {
-          collection = "IOTA Names";
+        // Use the improved collection derivation logic
+        const collection = deriveCollectionName(obj);
+        
+        // Extract domain name for IOTA Names
+        let nftName = display.name || content.name || "Unknown NFT";
+        if (collection === "IOTA Names") {
+          // Try to get the actual domain name from content fields
+          const domainName = content.domain_name || content.name || content.label;
+          if (domainName && !domainName.endsWith('.iota')) {
+            nftName = `${domainName}.iota`;
+          } else if (domainName) {
+            nftName = domainName;
+          }
         }
         
         return {
           identifier: obj.data?.objectId,
-          name: display.name || content.name || "Unknown NFT",
+          name: nftName,
           description: display.description || content.description || null,
           imageUrl: display.image_url || display.img_url || content.image_url || content.url || null,
           collection: collection,
@@ -121,7 +219,7 @@ serve(async (req) => {
       collections[col] = (collections[col] || 0) + 1;
     });
 
-    console.log(`[get-iota-nfts] Filtered to ${nfts.length} NFTs`);
+    console.log(`[get-iota-nfts] Filtered to ${nfts.length} NFTs across ${Object.keys(collections).length} collections:`, collections);
 
     return new Response(
       JSON.stringify({
