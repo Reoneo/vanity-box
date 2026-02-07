@@ -200,26 +200,30 @@ async function fetchIotaProfile(domain: string): Promise<any | null> {
 
 /**
  * Reverse resolution for IOTA: address -> primary .iota name
+ * Note: iotax_iotaNamesReverseLookup returns a string (the name), not an object
  */
 async function fetchIotaReverseProfile(address: string): Promise<any | null> {
   console.log(`🔍 [Client] IOTA reverse lookup for: ${address}`);
 
   try {
-    const result = await iotaJsonRpc<any>(
+    const result = await iotaJsonRpc<string | null>(
       'iotax_iotaNamesReverseLookup',
-      [address],
+      [address.toLowerCase()],
       'mainnet'
     );
 
-    if (!result || !result.name) {
+    // The API returns just the name string, or null if not found
+    if (!result || typeof result !== 'string' || result.trim().length === 0) {
       console.log('⚠️ IOTA reverse: No name found for address');
       return null;
     }
 
-    console.log(`✅ IOTA reverse resolved: ${address} -> ${result.name}`);
+    // Ensure the name ends with .iota
+    const iotaDomain = result.endsWith('.iota') ? result : `${result}.iota`;
+    console.log(`✅ IOTA reverse resolved: ${address} -> ${iotaDomain}`);
 
     return {
-      iotaDomain: result.name,
+      iotaDomain,
     };
   } catch (err: any) {
     console.error('❌ IOTA reverse fetch error:', err.message);
