@@ -1,6 +1,6 @@
 // IOTA Identity Context - Manages DID, VC, VP, and Verification state
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import type { 
   IdentityState, 
   IdentityActions, 
@@ -23,7 +23,9 @@ import {
 } from '@/lib/identity/vault';
 import { toast } from 'sonner';
 
-interface IdentityContextValue extends IdentityState, IdentityActions {}
+interface IdentityContextValue extends IdentityState, IdentityActions {
+  isInitialized: boolean;
+}
 
 const defaultState: IdentityState = {
   holderDid: null,
@@ -54,15 +56,56 @@ interface IdentityProviderProps {
 
 export function IdentityProvider({ children, walletAddress, walletSignature }: IdentityProviderProps) {
   const [state, setState] = useState<IdentityState>(defaultState);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Helper to get a signature for vault encryption
-  // In a real implementation, this would prompt the user to sign a message
   const getVaultKey = useCallback(() => {
     return walletSignature || `vault-key-${walletAddress}`;
   }, [walletAddress, walletSignature]);
 
-  // Create a new Holder DID
+  // Restore identity from local vault on mount
+  useEffect(() => {
+    const restoreVault = async () => {
+      try {
+        const vault = await loadVaultFromStorage(getVaultKey());
+        if (vault && vault.holderDid) {
+          // Determine the appropriate step based on restored data
+          let restoredStep: IdentityStep = 'vc';
+          if (vault.lastVerification?.valid) {
+            restoredStep = 'complete';
+          } else if (vault.vcList.length > 0) {
+            restoredStep = 'vp';
+          }
+
+          setState(prev => ({
+            ...prev,
+            holderDid: vault.holderDid,
+            vcList: vault.vcList || [],
+            issuerDid: vault.issuerDid,
+            verificationResult: vault.lastVerification,
+            currentStep: restoredStep,
+          }));
+          console.log('✅ Identity restored from vault:', vault.holderDid);
+        }
+      } catch (error) {
+        console.warn('Could not restore vault:', error);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    restoreVault();
+  }, [getVaultKey]);
+
+  // Create a new Holder DID (or return existing)
   const createDid = useCallback(async (): Promise<string | null> => {
+    // If we already have a DID, return it instead of creating a new one
+    if (state.holderDid) {
+      toast.info('DID already exists');
+      setState(prev => ({ ...prev, currentStep: 'vc' }));
+      return state.holderDid;
+    }
+
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
@@ -78,7 +121,7 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
           currentStep: 'vc',
         }));
 
-        // Save to vault
+        // Save to vault immediately
         await saveVaultToStorage(
           response.holderDid,
           state.vcList,
@@ -87,7 +130,7 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
           getVaultKey()
         );
 
-        toast.success('DID created successfully');
+        toast.success('DID created and anchored');
         return response.holderDid;
       } else {
         throw new Error('Invalid response from DID creation');
@@ -98,7 +141,7 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
       toast.error(message);
       return null;
     }
-  }, [walletAddress, state.vcList, state.issuerDid, state.verificationResult, getVaultKey]);
+  }, [walletAddress, state.holderDid, state.vcList, state.issuerDid, state.verificationResult, getVaultKey]);
 
   // Request a Verifiable Credential from the Issuer
   const requestOwnershipCredential = useCallback(async (name: string): Promise<VerifiableCredential | null> => {
@@ -306,6 +349,7 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
 
   const contextValue: IdentityContextValue = {
     ...state,
+    isInitialized,
     createDid,
     requestOwnershipCredential,
     createPresentationFromCredential,

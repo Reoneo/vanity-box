@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Fingerprint, 
   ShieldCheck, 
@@ -37,6 +36,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     isLoading,
     error,
     currentStep,
+    isInitialized,
     createDid,
     requestOwnershipCredential,
     createPresentationFromCredential,
@@ -49,7 +49,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const [currentNonce, setCurrentNonce] = useState<string>('');
   const [vpExpiresAt, setVpExpiresAt] = useState<string>('');
 
-  // Determine step statuses
+  // Determine step statuses based on current identity state
   const getStepStatus = (step: number): StepStatus => {
     if (step === 1) {
       if (holderDid) return 'completed';
@@ -93,8 +93,18 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     }
   };
 
+  // Show loading state while vault is being restored
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-[#D4AF37]" />
+        <span className="ml-2 text-muted-foreground">Loading identity...</span>
+      </div>
+    );
+  }
+
   return (
-    <ScrollArea className="max-h-[75vh] overflow-y-auto">
+    <div className="space-y-6 pr-4">
       <div className="space-y-6 pr-4">
         {/* Header with status */}
         <div className="flex items-center justify-between">
@@ -237,7 +247,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
           onVerify={handleVerify}
         />
       </div>
-    </ScrollArea>
+    </div>
   );
 }
 
