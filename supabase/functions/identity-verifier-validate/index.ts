@@ -5,7 +5,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 // Known issuer DID
@@ -59,17 +59,37 @@ function createLog(): VerificationLog {
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   const log = createLog();
 
   try {
-    const { vpJwt } = await req.json();
-
-    if (!vpJwt) {
+    // Robust JSON body parsing
+    let vpJwt: string | undefined;
+    try {
+      const body = await req.json();
+      vpJwt = body?.vpJwt;
+    } catch {
+      log.add('❌ Invalid JSON input - failed to parse request body');
       return new Response(
-        JSON.stringify({ error: 'VP JWT is required' }),
+        JSON.stringify({ 
+          valid: false, 
+          output: log.toString(),
+          error: 'Invalid JSON input' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!vpJwt || typeof vpJwt !== 'string' || vpJwt.trim().length === 0) {
+      log.add('❌ VP JWT is required but was missing or empty');
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          output: log.toString(),
+          error: 'VP JWT is required' 
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
