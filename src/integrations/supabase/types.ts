@@ -257,6 +257,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_notarizations: {
+        Row: {
+          created_at: string
+          id: string
+          iota_name: string
+          ipfs_cid: string
+          notarized_at: string
+          sha256_hash: string
+          updated_at: string
+          version: number
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          iota_name: string
+          ipfs_cid: string
+          notarized_at?: string
+          sha256_hash: string
+          updated_at?: string
+          version?: number
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          iota_name?: string
+          ipfs_cid?: string
+          notarized_at?: string
+          sha256_hash?: string
+          updated_at?: string
+          version?: number
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
