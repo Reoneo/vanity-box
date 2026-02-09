@@ -113,3 +113,12 @@ verify_jwt = false
 
 [functions.create-vanity-box-redirect]
 verify_jwt = false
+
+[functions.upload-profile-ipfs]
+verify_jwt = false
+
+[functions.notarize-profile-iota]
+verify_jwt = false
+
+[functions.verify-profile-integrity]
+verify_jwt = false

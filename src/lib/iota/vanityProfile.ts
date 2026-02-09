@@ -1,12 +1,6 @@
-import { iotaJsonRpc, IOTA_NETWORK, type IotaNetwork } from './client';
+import { callEdge } from '@/lib/supaInvoke';
 
-// Environment variables for the deployed Move contract
-// These will be set after the contract is deployed
-export const VANITY_PROFILE_PACKAGE_ID = import.meta.env.VITE_VANITY_PROFILE_PACKAGE_ID || '';
-export const VANITY_PROFILE_REGISTRY_ID = import.meta.env.VITE_VANITY_PROFILE_REGISTRY_ID || '';
-export const IOTA_NAMES_NAME_NFT_TYPE = import.meta.env.VITE_IOTA_NAMES_NAME_NFT_TYPE || '';
-
-// Platform constants matching Move contract
+// Platform constants
 export const PLATFORM_CODES = {
   X: 1,
   TWITTER: 1,
@@ -38,6 +32,14 @@ export interface OnchainProfileData {
   links: SocialLink[];
 }
 
+export interface ProfileNotarization {
+  ipfsCid: string;
+  sha256Hash: string;
+  notarizedAt: string;
+  gatewayUrl: string;
+  verified?: boolean;
+}
+
 // Convert platform code to human-readable name
 export function getPlatformName(code: PlatformCode): string {
   const names: Record<PlatformCode, string> = {
@@ -63,76 +65,123 @@ export function getPlatformCode(name: string): PlatformCode | null {
 }
 
 /**
- * Fetch onchain profile data from the Move registry
- * Uses getDynamicFieldObject to read from the table
+ * Upload profile data to IPFS via Pinata and notarize the hash on IOTA
  */
-export async function fetchOnchainProfile(
-  registryId: string,
-  nameObjectId: string,
-  network: IotaNetwork = IOTA_NETWORK
-): Promise<OnchainProfileData | null> {
-  try {
-    if (!registryId || !nameObjectId) {
-      console.log('[VanityProfile] Missing registryId or nameObjectId');
-      return null;
-    }
-    
-    console.log(`[VanityProfile] Fetching profile for nameObjectId: ${nameObjectId}`);
-    
-    // Read the dynamic field from the registry table
-    // The key is the Name NFT object ID
-    const result = await iotaJsonRpc<{ content?: { fields?: { value?: any } } } | null>(
-      'iota_getDynamicFieldObject',
-      [
-        registryId,
-        {
-          type: '0x2::object::ID',
-          value: nameObjectId
-        }
-      ],
-      network
-    );
-    
-    if (!result?.content?.fields?.value) {
-      console.log('[VanityProfile] No profile found for this name');
-      return null;
-    }
-    
-    const data = result.content.fields.value;
-    
-    // Parse the profile data from Move struct format
-    const profile: OnchainProfileData = {
-      avatarUrl: data.avatar_url || '',
-      headerUrl: data.header_url || '',
-      bio: data.bio || '',
-      email: data.email || '',
-      website: data.website || '',
-      links: parseLinks(data.links || []),
-    };
-    
-    console.log('[VanityProfile] Fetched profile:', profile);
-    return profile;
-  } catch (error) {
-    console.error('[VanityProfile] Error fetching profile:', error);
-    return null;
-  }
-}
+export async function saveProfileToIPFS(
+  iotaName: string,
+  walletAddress: string,
+  profileData: OnchainProfileData
+): Promise<{ ipfsCid: string; sha256Hash: string; gatewayUrl: string }> {
+  // Step 1: Upload to IPFS
+  const uploadResult = await callEdge<{
+    success: boolean;
+    ipfsCid: string;
+    sha256Hash: string;
+    gatewayUrl: string;
+    error?: string;
+  }>('upload-profile-ipfs', {
+    iotaName,
+    walletAddress,
+    avatarUrl: profileData.avatarUrl,
+    headerUrl: profileData.headerUrl,
+    bio: profileData.bio,
+    email: profileData.email,
+    website: profileData.website,
+    links: profileData.links.filter(l => l.url.trim()),
+  });
 
-// Parse links from Move vector format
-function parseLinks(linksData: any[]): SocialLink[] {
-  if (!Array.isArray(linksData)) return [];
-  
-  return linksData.map(link => ({
-    platform: link.platform as PlatformCode,
-    url: link.url || '',
-  })).filter(link => link.url);
+  if (!uploadResult?.success || !uploadResult.ipfsCid) {
+    throw new Error(uploadResult?.error || 'Failed to upload profile to IPFS');
+  }
+
+  // Step 2: Notarize on IOTA
+  const notarizeResult = await callEdge<{
+    success: boolean;
+    error?: string;
+  }>('notarize-profile-iota', {
+    iotaName,
+    walletAddress,
+    ipfsCid: uploadResult.ipfsCid,
+    sha256Hash: uploadResult.sha256Hash,
+  });
+
+  if (!notarizeResult?.success) {
+    console.warn('Notarization warning:', notarizeResult?.error);
+    // Don't fail - IPFS upload succeeded, notarization is secondary
+  }
+
+  return {
+    ipfsCid: uploadResult.ipfsCid,
+    sha256Hash: uploadResult.sha256Hash,
+    gatewayUrl: uploadResult.gatewayUrl,
+  };
 }
 
 /**
- * Check if the Move contract is deployed and configured
+ * Verify profile integrity by comparing IPFS content hash with notarized hash
  */
-export function isContractConfigured(): boolean {
-  return !!(VANITY_PROFILE_PACKAGE_ID && VANITY_PROFILE_REGISTRY_ID);
+export async function verifyProfileIntegrity(
+  iotaName: string
+): Promise<{
+  verified: boolean;
+  reason: string;
+  message: string;
+  ipfsCid?: string;
+  notarizedAt?: string;
+  profile?: OnchainProfileData | null;
+  gatewayUrl?: string;
+}> {
+  const result = await callEdge<{
+    verified: boolean;
+    reason: string;
+    message: string;
+    ipfsCid?: string;
+    notarizedAt?: string;
+    profile?: any;
+    gatewayUrl?: string;
+  }>('verify-profile-integrity', { iotaName });
+
+  return result;
+}
+
+/**
+ * Fetch profile from IPFS via the notarization record
+ */
+export async function fetchProfileFromIPFS(
+  iotaName: string
+): Promise<{ profile: OnchainProfileData | null; notarization: ProfileNotarization | null }> {
+  try {
+    const result = await verifyProfileIntegrity(iotaName);
+    
+    if (!result.verified || !result.profile) {
+      return { profile: null, notarization: null };
+    }
+
+    const profile: OnchainProfileData = {
+      avatarUrl: result.profile.avatarUrl || '',
+      headerUrl: result.profile.headerUrl || '',
+      bio: result.profile.bio || '',
+      email: result.profile.email || '',
+      website: result.profile.website || '',
+      links: (result.profile.links || []).map((l: any) => ({
+        platform: l.platform as PlatformCode,
+        url: l.url || '',
+      })),
+    };
+
+    const notarization: ProfileNotarization = {
+      ipfsCid: result.ipfsCid || '',
+      sha256Hash: '',
+      notarizedAt: result.notarizedAt || '',
+      gatewayUrl: result.gatewayUrl || '',
+      verified: result.verified,
+    };
+
+    return { profile, notarization };
+  } catch (error) {
+    console.error('[VanityProfile] Error fetching from IPFS:', error);
+    return { profile: null, notarization: null };
+  }
 }
 
 /**
@@ -150,7 +199,7 @@ export function createEmptyProfile(): OnchainProfileData {
 }
 
 /**
- * Validate profile data against Move contract constraints
+ * Validate profile data
  */
 export function validateProfileData(profile: OnchainProfileData): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -184,28 +233,24 @@ export function validateProfileData(profile: OnchainProfileData): { valid: boole
 const profileCache = new Map<string, { data: OnchainProfileData | null; timestamp: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds
 
-export async function fetchOnchainProfileCached(
-  registryId: string,
-  nameObjectId: string,
-  network: IotaNetwork = IOTA_NETWORK
-): Promise<OnchainProfileData | null> {
-  const cacheKey = `${registryId}-${nameObjectId}`;
-  const cached = profileCache.get(cacheKey);
+export async function fetchProfileCached(
+  iotaName: string
+): Promise<{ profile: OnchainProfileData | null; notarization: ProfileNotarization | null }> {
+  const cached = profileCache.get(iotaName);
   
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    console.log('[VanityProfile] Returning cached profile');
-    return cached.data;
+    return { profile: cached.data, notarization: null };
   }
   
-  const data = await fetchOnchainProfile(registryId, nameObjectId, network);
-  profileCache.set(cacheKey, { data, timestamp: Date.now() });
+  const result = await fetchProfileFromIPFS(iotaName);
+  profileCache.set(iotaName, { data: result.profile, timestamp: Date.now() });
   
-  return data;
+  return result;
 }
 
-export function clearProfileCache(registryId?: string, nameObjectId?: string): void {
-  if (registryId && nameObjectId) {
-    profileCache.delete(`${registryId}-${nameObjectId}`);
+export function clearProfileCache(iotaName?: string): void {
+  if (iotaName) {
+    profileCache.delete(iotaName);
   } else {
     profileCache.clear();
   }
