@@ -2,59 +2,19 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// IOTA Mainnet endpoints - use official indexer for IOTA Names methods
-const IOTA_RPC_MAINNET = "https://api.mainnet.iota.cafe";
+// IOTA Mainnet endpoints
 const IOTA_INDEXER_MAINNET = "https://indexer.mainnet.iota.cafe";
-
-// Environment variables (to be set after Move contract deployment)
-// VANITY_PROFILE_REGISTRY_ID - The shared registry object ID
-// IOTA_NAMES_NAME_NFT_TYPE - The full type path for Name NFTs
-
-interface ProfileData {
-  avatarUrl: string;
-  headerUrl: string;
-  bio: string;
-  email: string;
-  website: string;
-  links: { platform: number; url: string }[];
-}
-
-// JSON-RPC helper
-async function iotaRpc(method: string, params: unknown[]): Promise<any> {
-  const response = await fetch(IOTA_RPC_MAINNET, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: 1,
-      method,
-      params,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`RPC request failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  if (data.error) {
-    throw new Error(data.error.message || "RPC call failed");
-  }
-
-  return data.result;
-}
+const IOTA_RPC_MAINNET = "https://api.mainnet.iota.cafe";
 
 // Resolve IOTA name to owner address and NFT ID using indexer
 async function resolveNameToOwnerAndNft(name: string): Promise<{ ownerAddress: string | null; nftId: string | null }> {
   try {
     const fullName = name.endsWith('.iota') ? name : `${name}.iota`;
-    console.log(`🔍 Resolving name to owner and NFT ID: ${fullName}`);
+    console.log(`🔍 Resolving name: ${fullName}`);
     
-    // Try indexer first, then RPC fallback
     const endpoints = [IOTA_INDEXER_MAINNET, IOTA_RPC_MAINNET];
     
     for (const endpoint of endpoints) {
@@ -70,93 +30,23 @@ async function resolveNameToOwnerAndNft(name: string): Promise<{ ownerAddress: s
           }),
         });
 
-        if (!response.ok) {
-          console.error(`❌ RPC request to ${endpoint} failed: ${response.status}`);
-          continue;
-        }
-
+        if (!response.ok) continue;
         const data = await response.json();
+        if (data.error || !data.result) continue;
         
-        if (data.error) {
-          console.error(`❌ RPC error from ${endpoint}: ${data.error.message}`);
-          continue;
-        }
-        
-        if (!data.result) {
-          console.log(`⚠️ No result for name: ${fullName} from ${endpoint}`);
-          return { ownerAddress: null, nftId: null };
-        }
-        
-        const ownerAddress = data.result.targetAddress || null;
-        const nftId = data.result.nftId || null;
-        
-        console.log(`✅ Resolved ${fullName}:`, { ownerAddress, nftId });
-        return { ownerAddress, nftId };
-        
-      } catch (endpointError) {
-        console.error(`❌ Network error with ${endpoint}:`, endpointError);
+        return {
+          ownerAddress: data.result.targetAddress || null,
+          nftId: data.result.nftId || null,
+        };
+      } catch {
         continue;
       }
     }
     
-    console.log(`❌ All endpoints failed for name: ${fullName}`);
     return { ownerAddress: null, nftId: null };
-  } catch (error) {
-    console.error("Error resolving name to owner:", error);
+  } catch {
     return { ownerAddress: null, nftId: null };
   }
-}
-
-// Fetch profile from registry dynamic field
-async function fetchProfileFromRegistry(
-  registryId: string,
-  nameObjectId: string
-): Promise<ProfileData | null> {
-  try {
-    console.log(`📦 Fetching profile for nameObjectId: ${nameObjectId} from registry: ${registryId}`);
-    
-    const result = await iotaRpc("iota_getDynamicFieldObject", [
-      registryId,
-      {
-        type: "0x2::object::ID",
-        value: nameObjectId
-      }
-    ]);
-    
-    if (!result?.content?.fields?.value) {
-      console.log("⚠️ No profile found for this name");
-      return null;
-    }
-    
-    const data = result.content.fields.value;
-    
-    // Parse profile data from Move struct format
-    const profile: ProfileData = {
-      avatarUrl: data.avatar_url || "",
-      headerUrl: data.header_url || "",
-      bio: data.bio || "",
-      email: data.email || "",
-      website: data.website || "",
-      links: parseLinks(data.links || []),
-    };
-    
-    console.log("✅ Fetched profile:", profile);
-    return profile;
-  } catch (error) {
-    console.error("❌ Error fetching profile from registry:", error);
-    return null;
-  }
-}
-
-function parseLinks(linksData: any[]): { platform: number; url: string }[] {
-  if (!Array.isArray(linksData)) return [];
-  
-  return linksData
-    .map((link) => ({
-      platform: link.platform as number,
-      url: link.url || "",
-    }))
-    .filter((link) => link.url);
 }
 
 Deno.serve(async (req) => {
@@ -165,7 +55,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Safely parse JSON body, handle empty requests
     let name: string | undefined;
     try {
       const body = await req.text();
@@ -173,8 +62,8 @@ Deno.serve(async (req) => {
         const parsed = JSON.parse(body);
         name = parsed.name;
       }
-    } catch (parseError) {
-      console.log("⚠️ Failed to parse request body:", parseError);
+    } catch {
+      // ignore parse error
     }
 
     if (!name) {
@@ -184,11 +73,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`📨 Getting onchain profile for: ${name}`);
+    console.log(`📨 Getting profile for: ${name}`);
 
-    // Get registry ID from environment
-    const registryId = Deno.env.get("VANITY_PROFILE_REGISTRY_ID") || "";
-    
     // Step 1: Resolve name to owner address and NFT ID
     const { ownerAddress, nftId: nameObjectId } = await resolveNameToOwnerAndNft(name);
     
@@ -199,44 +85,60 @@ Deno.serve(async (req) => {
           profile: null,
           ownerAddress: null,
           nameObjectId: null,
-          message: "Could not resolve name - domain may not exist or is not registered"
+          message: "Could not resolve name"
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // If contract not deployed yet, return what we have
-    if (!registryId) {
-      console.log("⚠️ Move contract not deployed yet - registry ID not configured");
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          profile: null,
-          ownerAddress,
-          nameObjectId,
-          message: "Onchain profile contract not yet deployed",
-          contractDeployed: false
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Step 2: Fetch profile from IPFS via notarization record
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Step 2: If we don't have the NFT ID from lookup, we can still return the owner
-    if (!nameObjectId) {
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          profile: null,
-          ownerAddress,
-          nameObjectId: null,
-          message: "Name resolved but NFT ID not available"
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const cleanName = name.endsWith('.iota') ? name : `${name}.iota`;
+    const { data: record } = await supabase
+      .from("profile_notarizations")
+      .select("*")
+      .eq("iota_name", cleanName)
+      .maybeSingle();
 
-    // Step 3: Fetch profile from registry
-    const profile = await fetchProfileFromRegistry(registryId, nameObjectId);
+    let profile = null;
+    let ipfsCid = null;
+    let verified = false;
+
+    if (record?.ipfs_cid) {
+      ipfsCid = record.ipfs_cid;
+      try {
+        const ipfsRes = await fetch(`https://gateway.pinata.cloud/ipfs/${record.ipfs_cid}`);
+        if (ipfsRes.ok) {
+          const ipfsContent = await ipfsRes.text();
+          
+          // Verify hash
+          const encoder = new TextEncoder();
+          const data = encoder.encode(ipfsContent);
+          const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          const computedHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+          verified = computedHash === record.sha256_hash;
+          
+          const parsed = JSON.parse(ipfsContent);
+          profile = {
+            avatarUrl: parsed.avatarUrl || "",
+            headerUrl: parsed.headerUrl || "",
+            bio: parsed.bio || "",
+            email: parsed.email || "",
+            website: parsed.website || "",
+            links: parsed.links || [],
+          };
+          
+          console.log(`✅ Profile loaded from IPFS, verified: ${verified}`);
+        }
+      } catch (e) {
+        console.error("❌ IPFS fetch error:", e);
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -244,18 +146,17 @@ Deno.serve(async (req) => {
         profile,
         ownerAddress,
         nameObjectId,
-        contractDeployed: true
+        ipfsCid,
+        verified,
+        notarizedAt: record?.notarized_at || null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: any) {
-    console.error("❌ Error getting onchain profile:", error);
+    console.error("❌ Error:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message || "Failed to get onchain profile",
-        success: false
-      }),
+      JSON.stringify({ error: error.message, success: false }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

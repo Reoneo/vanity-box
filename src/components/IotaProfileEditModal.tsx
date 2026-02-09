@@ -8,7 +8,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Plus, Trash2, Loader2, Image, Globe, Mail, User, Link2, Fingerprint } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, Plus, Trash2, Loader2, Image, Globe, Mail, User, Link2, Fingerprint, ShieldCheck, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   OnchainProfileData,
@@ -16,8 +17,7 @@ import {
   PlatformCode,
   getPlatformName,
   validateProfileData,
-  VANITY_PROFILE_PACKAGE_ID,
-  VANITY_PROFILE_REGISTRY_ID,
+  saveProfileToIPFS,
   clearProfileCache,
 } from '@/lib/iota/vanityProfile';
 import { IdentityPanel } from '@/components/identity/IdentityPanel';
@@ -58,6 +58,7 @@ export function IotaProfileEditModal({
   const [isPending, setIsPending] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('profile');
   const { address: iotaWalletAddress } = useIotaWallet();
+  const [lastSaveResult, setLastSaveResult] = useState<{ ipfsCid: string; gatewayUrl: string } | null>(null);
   
   // Form state
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -77,7 +78,6 @@ export function IotaProfileEditModal({
       setWebsite(currentProfile.website || '');
       setLinks(currentProfile.links || []);
     } else {
-      // Reset to empty for new profile
       setAvatarUrl('');
       setHeaderUrl('');
       setBio('');
@@ -85,10 +85,10 @@ export function IotaProfileEditModal({
       setWebsite('');
       setLinks([]);
     }
+    setLastSaveResult(null);
   }, [currentProfile, open]);
   
   const handleAddLink = () => {
-    // Find first unused platform
     const usedPlatforms = new Set(links.map(l => l.platform));
     const availablePlatform = PLATFORM_OPTIONS.find(p => !usedPlatforms.has(p.code as PlatformCode));
     
@@ -114,7 +114,6 @@ export function IotaProfileEditModal({
   };
   
   const handleSave = async () => {
-    // Validate
     const profileData: OnchainProfileData = {
       avatarUrl,
       headerUrl,
@@ -129,19 +128,34 @@ export function IotaProfileEditModal({
       validation.errors.forEach(err => toast.error(err));
       return;
     }
-    
-    // Check if contract is configured
-    if (!VANITY_PROFILE_PACKAGE_ID || !VANITY_PROFILE_REGISTRY_ID) {
-      toast.error('Onchain profile contract not yet deployed. The Move contract must be deployed to IOTA mainnet before profile editing is available.');
+
+    if (!iotaWalletAddress) {
+      toast.error('Please connect your IOTA wallet first');
       return;
     }
     
-    // TODO: When contract is deployed, use useSignAndExecuteTransaction hook from @iota/dapp-kit
-    // For now, show a message that the contract needs to be deployed first
-    toast.info('Onchain profile editing will be available once the Move contract is deployed to IOTA mainnet.');
+    setIsPending(true);
+    try {
+      // Upload to IPFS and notarize on IOTA
+      const result = await saveProfileToIPFS(iotaName, iotaWalletAddress, profileData);
+      
+      setLastSaveResult({
+        ipfsCid: result.ipfsCid,
+        gatewayUrl: result.gatewayUrl,
+      });
+      
+      // Clear cache so profile reloads fresh
+      clearProfileCache(iotaName);
+      
+      toast.success('Profile saved to IPFS & notarized on IOTA!');
+      onProfileUpdated();
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast.error(error.message || 'Failed to save profile');
+    } finally {
+      setIsPending(false);
+    }
   };
-  
-  const isContractReady = !!(VANITY_PROFILE_PACKAGE_ID && VANITY_PROFILE_REGISTRY_ID);
   
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -152,7 +166,7 @@ export function IotaProfileEditModal({
             Edit {iotaName}
           </DialogTitle>
           <DialogDescription>
-            Manage your profile and identity on the IOTA blockchain.
+            Profile stored on IPFS, integrity verified via IOTA notarization.
           </DialogDescription>
         </DialogHeader>
         
@@ -174,17 +188,35 @@ export function IotaProfileEditModal({
           <TabsContent value="profile" className="mt-0">
             <ScrollArea className="max-h-[calc(90vh-220px)]">
               <div className="p-6 pt-4 space-y-6">
-                {/* Contract not deployed warning */}
-                {!isContractReady && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">
-                    <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium">Contract Not Deployed</p>
-                      <p className="text-xs opacity-80 mt-1">
-                        The onchain profile Move contract has not been deployed yet. 
-                        Profile editing will be available once the contract is live on IOTA mainnet.
-                      </p>
-                    </div>
+                {/* IPFS + IOTA info banner */}
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
+                  <ShieldCheck className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">Decentralized & Tamper-Proof</p>
+                    <p className="text-xs opacity-80 mt-1">
+                      Your profile is stored on IPFS and its SHA-256 hash is notarized on the IOTA ledger for integrity verification.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Last save result */}
+                {lastSaveResult && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+                    <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                      <ShieldCheck className="w-3 h-3 mr-1" />
+                      Notarized
+                    </Badge>
+                    <span className="text-xs text-muted-foreground truncate flex-1">
+                      CID: {lastSaveResult.ipfsCid.slice(0, 20)}...
+                    </span>
+                    <a 
+                      href={lastSaveResult.gatewayUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      View <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 )}
                 
@@ -251,7 +283,7 @@ export function IotaProfileEditModal({
                   <p className="text-xs text-muted-foreground">{bio.length}/1000 characters</p>
                 </div>
                 
-                {/* Email with warning */}
+                {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />
@@ -266,7 +298,7 @@ export function IotaProfileEditModal({
                   />
                   <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
                     <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                    <span>Warning: Email stored onchain is public and permanent.</span>
+                    <span>Email is stored on IPFS and publicly accessible.</span>
                   </div>
                 </div>
                 
@@ -358,15 +390,15 @@ export function IotaProfileEditModal({
               </Button>
               <Button 
                 onClick={handleSave} 
-                disabled={isPending || !isContractReady}
+                disabled={isPending || !iotaWalletAddress}
               >
                 {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
+                    Saving to IPFS...
                   </>
                 ) : (
-                  'Save to Blockchain'
+                  'Save to IPFS & Notarize'
                 )}
               </Button>
             </div>
