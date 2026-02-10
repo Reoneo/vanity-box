@@ -108,6 +108,8 @@ import vanityIotaAvatar from "@/assets/vanity-iota-avatar.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import searchLogo from "@/assets/search-logo.png";
+import { isIotaName } from "@/lib/iota/isIotaName";
+import { makeIotaDisplayProfile } from "@/lib/iota/iotaDisplayProfile";
 
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
@@ -483,23 +485,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address]);
 
-  // Load IOTA onchain profile when viewing an .iota profile
+  // Load IOTA onchain profile when viewing ANY .iota domain or subdomain
   useEffect(() => {
     const loadIotaOnchainProfile = async () => {
       const name = displayQuery?.toLowerCase()?.trim();
-      
-      // Guard: Only proceed if this is a valid .iota domain name (not just ending with .iota but a proper domain)
-      if (!name || !name.endsWith('.iota') || name.length < 6) {
-        // Reset IOTA profile state when not viewing a valid .iota profile
-        setIotaOnchainProfile(null);
-        setIotaNameObjectId(null);
-        setIotaOwnerAddress(null);
-        return;
-      }
-      
-      // Additional guard: Ensure the name has actual content before .iota
-      const nameWithoutTld = name.replace('.iota', '');
-      if (!nameWithoutTld || nameWithoutTld.length < 1) {
+
+      // Works for ALL .iota names + subdomains
+      if (!isIotaName(name)) {
         setIotaOnchainProfile(null);
         setIotaNameObjectId(null);
         setIotaOwnerAddress(null);
@@ -511,7 +503,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
       try {
         const response = await callEdge('get-iota-onchain-profile', { name });
-        
+
         if (response.success) {
           setIotaOnchainProfile(response.profile);
           setIotaNameObjectId(response.nameObjectId);
@@ -1781,11 +1773,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
                   <ProfileCard
                     activeSection={activeDockSection}
-                    web3BioProfile={web3BioProfile}
-                    currentWalletAddress={web3BioProfile.address}
+                    web3BioProfile={
+                      isIotaName(displayQuery) && iotaOnchainProfile
+                        ? makeIotaDisplayProfile({
+                            base: web3BioProfile,
+                            iotaOnchainProfile,
+                            identity: displayQuery,
+                            ownerAddress: iotaOwnerAddress,
+                          })
+                        : web3BioProfile
+                    }
+                    currentWalletAddress={
+                      isIotaName(displayQuery) && iotaOnchainProfile
+                        ? (iotaOwnerAddress || web3BioProfile.address)
+                        : web3BioProfile.address
+                    }
                     connectedWalletAddress={
-                      // For .iota profiles, use IOTA wallet address if connected
-                      displayQuery?.toLowerCase().endsWith('.iota') && isIotaConnected && iotaWalletAddress
+                      isIotaName(displayQuery) && isIotaConnected && iotaWalletAddress
                         ? iotaWalletAddress
                         : walletAddress
                     }
@@ -1809,8 +1813,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}
                     onEnsureOpenSeaNfts={() => {
-                      // Only fetch if not already attempted and not currently loading
-                      if (!openseaAttempted && !nftLoading && web3BioProfile?.address) {
+                      // Never fetch OpenSea for .iota domains / IOTA addresses
+                      const isIota = isIotaName(displayQuery);
+
+                      const isEvmAddr =
+                        typeof web3BioProfile?.address === 'string' &&
+                        /^0x[a-fA-F0-9]{40}$/.test(web3BioProfile.address);
+
+                      if (!isIota && isEvmAddr && !openseaAttempted && !nftLoading) {
                         console.log('🔄 On-demand: Fetching OpenSea NFTs for:', web3BioProfile.address);
                         fetchNfts(web3BioProfile.address);
                       }
@@ -1825,7 +1835,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             ) : null}
 
             {/* IOTA Profile Edit Modal */}
-            {showIotaEditModal && displayQuery?.toLowerCase().endsWith('.iota') && (
+            {showIotaEditModal && isIotaName(displayQuery) && (
               <IotaProfileEditModal
                 open={showIotaEditModal}
                 onClose={() => setShowIotaEditModal(false)}
