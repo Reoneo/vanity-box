@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Plus, Trash2, Loader2, Image, Globe, Mail, User, Link2, Fingerprint, ShieldCheck, ExternalLink } from 'lucide-react';
@@ -32,19 +31,20 @@ interface IotaProfileEditModalProps {
   onProfileUpdated: () => void;
 }
 
-// Platform options for the dropdown
+// Platform options for the dropdown — includes Discord (code 12)
 const PLATFORM_OPTIONS = [
-  { code: 1, name: 'X / Twitter', placeholder: 'https://x.com/username' },
-  { code: 2, name: 'LinkedIn', placeholder: 'https://linkedin.com/in/username' },
+  { code: 1, name: 'X / Twitter', placeholder: 'https://x.com/username or @username' },
+  { code: 2, name: 'LinkedIn', placeholder: 'https://linkedin.com/in/username or username' },
   { code: 3, name: 'Facebook', placeholder: 'https://facebook.com/username' },
-  { code: 4, name: 'Instagram', placeholder: 'https://instagram.com/username' },
+  { code: 4, name: 'Instagram', placeholder: 'https://instagram.com/username or @username' },
   { code: 5, name: 'Bluesky', placeholder: 'https://bsky.app/profile/username' },
   { code: 6, name: 'WhatsApp', placeholder: 'https://wa.me/number' },
-  { code: 7, name: 'Telegram', placeholder: 'https://t.me/username' },
+  { code: 7, name: 'Telegram', placeholder: 'https://t.me/username or username' },
   { code: 8, name: 'Reddit', placeholder: 'https://reddit.com/u/username' },
   { code: 9, name: 'Spotify', placeholder: 'https://open.spotify.com/user/...' },
   { code: 10, name: 'YouTube', placeholder: 'https://youtube.com/@channel' },
-  { code: 11, name: 'GitHub', placeholder: 'https://github.com/username' },
+  { code: 11, name: 'GitHub', placeholder: 'https://github.com/username or username' },
+  { code: 12, name: 'Discord', placeholder: 'Invite link or username' },
 ];
 
 export function IotaProfileEditModal({
@@ -112,6 +112,21 @@ export function IotaProfileEditModal({
     }
     setLinks(newLinks);
   };
+
+  // When saving, normalise Discord usernames to "discord:username" format
+  const normaliseLinkForSave = (link: SocialLink): SocialLink => {
+    if (link.platform === 12) {
+      const raw = link.url.trim();
+      // If it's a discord invite link, keep as-is
+      if (/^https?:\/\//i.test(raw) && /discord\.(gg|com)/i.test(raw)) {
+        return link;
+      }
+      // Otherwise store as discord:username
+      const username = raw.replace(/^discord:/i, '').replace(/^@/, '').trim();
+      return { ...link, url: `discord:${username}` };
+    }
+    return link;
+  };
   
   const handleSave = async () => {
     const profileData: OnchainProfileData = {
@@ -120,7 +135,7 @@ export function IotaProfileEditModal({
       bio,
       email,
       website,
-      links: links.filter(l => l.url.trim()),
+      links: links.filter(l => l.url.trim()).map(normaliseLinkForSave),
     };
     
     const validation = validateProfileData(profileData);
@@ -136,7 +151,6 @@ export function IotaProfileEditModal({
     
     setIsPending(true);
     try {
-      // Upload to IPFS and notarize on IOTA
       const result = await saveProfileToIPFS(iotaName, iotaWalletAddress, profileData);
       
       setLastSaveResult({
@@ -144,7 +158,6 @@ export function IotaProfileEditModal({
         gatewayUrl: result.gatewayUrl,
       });
       
-      // Clear cache so profile reloads fresh
       clearProfileCache(iotaName);
       
       toast.success('Profile saved to IPFS & notarized on IOTA!');
@@ -159,8 +172,8 @@ export function IotaProfileEditModal({
   
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-lg p-0 max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden">
+        <DialogHeader className="p-6 pb-0 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             Edit {iotaName}
@@ -170,8 +183,8 @@ export function IotaProfileEditModal({
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="px-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <div className="px-6 flex-shrink-0">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
@@ -185,8 +198,8 @@ export function IotaProfileEditModal({
           </div>
           
           {/* Profile Tab */}
-          <TabsContent value="profile" className="mt-0">
-            <ScrollArea className="max-h-[calc(90vh-220px)]">
+          <TabsContent value="profile" className="mt-0 flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div className="p-6 pt-4 space-y-6">
                 {/* IPFS + IOTA info banner */}
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
@@ -381,10 +394,10 @@ export function IotaProfileEditModal({
                   )}
                 </div>
               </div>
-            </ScrollArea>
+            </div>
             
-            {/* Profile Footer */}
-            <div className="flex justify-end gap-3 p-6 pt-4 border-t">
+            {/* Sticky Profile Footer */}
+            <div className="flex justify-end gap-3 p-6 pt-4 border-t bg-background flex-shrink-0">
               <Button variant="outline" onClick={onClose} disabled={isPending}>
                 Cancel
               </Button>
@@ -405,15 +418,13 @@ export function IotaProfileEditModal({
           </TabsContent>
           
           {/* Identity Tab */}
-          <TabsContent value="identity" className="mt-0">
-            <ScrollArea className="max-h-[calc(90vh-180px)]">
-              <div className="p-6 pt-4">
-                <IdentityPanel 
-                  iotaName={iotaName} 
-                  walletAddress={iotaWalletAddress || ''} 
-                />
-              </div>
-            </ScrollArea>
+          <TabsContent value="identity" className="mt-0 flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-6 pt-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <IdentityPanel 
+                iotaName={iotaName} 
+                walletAddress={iotaWalletAddress || ''} 
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

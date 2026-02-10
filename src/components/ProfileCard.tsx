@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil } from "lucide-react";
 import type { OnchainProfileData } from "@/lib/iota/vanityProfile";
+import { toast } from "sonner";
 
 // Helper to validate EVM address format (40 hex chars after 0x)
 // IOTA and other non-EVM addresses are longer and should not be passed to EVM APIs
@@ -14,6 +15,7 @@ const isValidEvmAddress = (address?: string): boolean => {
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 };
 import { SocialIcon } from "./SocialIcon";
+import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
@@ -740,21 +742,25 @@ export const ProfileCard = ({
             {web3BioProfile?.links && Object.entries(web3BioProfile.links)
               .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
               .map(([platform, linkData]: [string, any]) => {
-                const url = typeof linkData === 'string' ? linkData : linkData?.link;
-                if (!url) return null;
+                const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
+                if (!rawUrl) return null;
+
+                const normalized = normalizeSocialUrl(platform, rawUrl);
+                const finalUrl = normalized.url;
+
+                const WrapEl = finalUrl ? 'a' : 'div';
+                const wrapProps = finalUrl ? { href: finalUrl, target: '_blank', rel: 'noreferrer' } : {};
 
                 return (
-                  <a 
+                  <WrapEl 
                     key={platform} 
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200 border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:shadow-lg group"
+                    {...(wrapProps as any)}
+                    className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200 border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:shadow-lg group cursor-pointer"
                   >
                     <div className="w-14 h-14 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                       <SocialIcon
                         platform={platform}
-                        url={url}
+                        url={rawUrl}
                         size="lg"
                       />
                     </div>
@@ -763,10 +769,10 @@ export const ProfileCard = ({
                         {platform.charAt(0).toUpperCase() + platform.slice(1)}
                       </span>
                       <span className="text-sm text-black/60 dark:text-white/60 truncate max-w-[140px] text-center">
-                        {extractHandle(platform, url)}
+                        {normalized.isDiscordUsername ? `Discord: ${normalized.displayHandle}` : normalized.displayHandle || extractHandle(platform, rawUrl)}
                       </span>
                     </div>
-                  </a>
+                  </WrapEl>
                 );
               })}
           </div>
@@ -1672,20 +1678,23 @@ export const ProfileCard = ({
                     {web3BioProfile?.links && Object.entries(web3BioProfile.links)
                       .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
                       .map(([platform, linkData]: [string, any]) => {
-                        const url = typeof linkData === 'string' ? linkData : linkData?.link;
-                        if (!url) return null;
+                        const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
+                        if (!rawUrl) return null;
+
+                        const normalized = normalizeSocialUrl(platform, rawUrl);
+                        const finalUrl = normalized.url;
+                        const WrapEl = finalUrl ? 'a' : 'div';
+                        const wrapProps = finalUrl ? { href: finalUrl, target: '_blank', rel: 'noreferrer' } : {};
 
                         return (
-                          <a 
+                          <WrapEl 
                             key={platform} 
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50"
+                            {...(wrapProps as any)}
+                            className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50 cursor-pointer"
                           >
                             <SocialIcon
                               platform={platform}
-                              url={url}
+                              url={rawUrl}
                               size="lg"
                             />
                             <div className="flex flex-col items-center gap-0.5">
@@ -1693,10 +1702,10 @@ export const ProfileCard = ({
                                 {platform.charAt(0).toUpperCase() + platform.slice(1)}
                               </span>
                               <span className="text-xs text-muted-foreground truncate max-w-[100px] text-center">
-                                {extractHandle(platform, url)}
+                                {normalized.isDiscordUsername ? normalized.displayHandle : normalized.displayHandle || extractHandle(platform, rawUrl)}
                               </span>
                             </div>
-                          </a>
+                          </WrapEl>
                         );
                       })}
                   </div>
@@ -2457,32 +2466,43 @@ export const ProfileCard = ({
                 .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && linkData)
                 .map(([platform, linkData]: [string, any]) => {
                   const displayLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
-                  const url = typeof linkData === 'string' ? linkData : linkData?.link;
-                  const handle = typeof linkData === 'string' ? extractHandle(platform, linkData) : linkData?.handle;
+                  const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
                   
-                  if (!url) return null;
+                  if (!rawUrl) return null;
+
+                  const normalized = normalizeSocialUrl(platform, rawUrl);
                   
                   return (
                     <button
                       key={platform}
-                      onClick={() => window.open(url, '_blank')}
+                      onClick={() => {
+                        if (normalized.isDiscordUsername) {
+                          navigator.clipboard.writeText(normalized.displayHandle);
+                          toast.success(`Copied Discord username: ${normalized.displayHandle}`);
+                        } else if (normalized.url) {
+                          window.open(normalized.url, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
                       className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-colors active:opacity-90 group touch-action-manipulation flex-shrink-0"
                     >
                       <SocialIcon
                         platform={platform}
-                        url={url}
+                        url={rawUrl}
                         size="md"
-                        onClick={() => window.open(url, '_blank')}
                       />
                       <div className="flex-1 text-left">
                         <div className="font-semibold text-base text-foreground group-hover:text-[#D4AF37] transition-colors">
                           {displayLabel}
                         </div>
                         <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                          {handle || extractHandle(platform, url)}
+                          {normalized.isDiscordUsername ? `Discord: ${normalized.displayHandle}` : normalized.displayHandle || extractHandle(platform, rawUrl)}
                         </div>
                       </div>
-                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#D4AF37] transition-colors flex-shrink-0" />
+                      {normalized.isDiscordUsername ? (
+                        <Copy className="w-4 h-4 text-muted-foreground group-hover:text-[#D4AF37] transition-colors flex-shrink-0" />
+                      ) : (
+                        <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#D4AF37] transition-colors flex-shrink-0" />
+                      )}
                     </button>
                   );
                 })}

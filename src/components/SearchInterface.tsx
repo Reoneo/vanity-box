@@ -259,12 +259,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [castLoading, setCastLoading] = useState(false);
   const [firstTransactionDate, setFirstTransactionDate] = useState<string | null>(null);
 
-  // IOTA Onchain Profile state
+  // IOTA Onchain Profile state + cache
   const [iotaOnchainProfile, setIotaOnchainProfile] = useState<any>(null);
   const [iotaNameObjectId, setIotaNameObjectId] = useState<string | null>(null);
   const [iotaOwnerAddress, setIotaOwnerAddress] = useState<string | null>(null);
   const [iotaOnchainProfileLoading, setIotaOnchainProfileLoading] = useState(false);
   const [showIotaEditModal, setShowIotaEditModal] = useState(false);
+  const iotaProfileCacheRef = useRef<Map<string, { profile: any; nameObjectId: string | null; ownerAddress: string | null }>>(new Map());
   // Social icons mapping
   const socialIcons: Record<string, string> = {
     telegram: telegramIcon,
@@ -498,6 +499,43 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         return;
       }
 
+      // Check in-memory cache first
+      const cached = iotaProfileCacheRef.current.get(name);
+      if (cached) {
+        console.log('⚡ IOTA profile from memory cache:', name);
+        setIotaOnchainProfile(cached.profile);
+        setIotaNameObjectId(cached.nameObjectId);
+        setIotaOwnerAddress(cached.ownerAddress);
+        return;
+      }
+
+      // Check sessionStorage cache
+      try {
+        const sessionKey = `iotaProfile:${name}`;
+        const sessionData = sessionStorage.getItem(sessionKey);
+        if (sessionData) {
+          const parsed = JSON.parse(sessionData);
+          console.log('⚡ IOTA profile from sessionStorage:', name);
+          setIotaOnchainProfile(parsed.profile);
+          setIotaNameObjectId(parsed.nameObjectId);
+          setIotaOwnerAddress(parsed.ownerAddress);
+          // Also populate memory cache
+          iotaProfileCacheRef.current.set(name, parsed);
+          // Still fetch fresh data in background
+          callEdge('get-iota-onchain-profile', { name }).then(response => {
+            if (response.success) {
+              const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
+              iotaProfileCacheRef.current.set(name, entry);
+              sessionStorage.setItem(sessionKey, JSON.stringify(entry));
+              setIotaOnchainProfile(response.profile);
+              setIotaNameObjectId(response.nameObjectId);
+              setIotaOwnerAddress(response.ownerAddress);
+            }
+          }).catch(() => {});
+          return;
+        }
+      } catch {}
+
       console.log('🔄 Loading IOTA onchain profile for:', name);
       setIotaOnchainProfileLoading(true);
 
@@ -505,9 +543,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         const response = await callEdge('get-iota-onchain-profile', { name });
 
         if (response.success) {
+          const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
           setIotaOnchainProfile(response.profile);
           setIotaNameObjectId(response.nameObjectId);
           setIotaOwnerAddress(response.ownerAddress);
+          // Cache it
+          iotaProfileCacheRef.current.set(name, entry);
+          try { sessionStorage.setItem(`iotaProfile:${name}`, JSON.stringify(entry)); } catch {}
           console.log('✅ IOTA onchain profile loaded:', response);
         } else {
           console.log('⚠️ IOTA onchain profile not found:', response.message);
@@ -1764,8 +1806,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </>
             )}
 
+            {/* Skeleton loader for .iota profiles while IPFS data loads */}
+            {isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile && web3BioProfile && !showMyIDs && (
+              <div className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-4 pt-8 flex flex-col items-center z-[9997] bg-background">
+                <Skeleton className="w-full max-w-lg h-32 rounded-2xl mb-4" />
+                <Skeleton className="w-20 h-20 rounded-full mb-4" />
+                <Skeleton className="w-48 h-6 rounded-lg mb-2" />
+                <Skeleton className="w-32 h-4 rounded-lg mb-6" />
+                <Skeleton className="w-full max-w-md h-16 rounded-xl mb-3" />
+                <Skeleton className="w-full max-w-md h-16 rounded-xl" />
+              </div>
+            )}
+
             {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs ? (
+            {web3BioProfile && !showMyIDs && !(isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile) ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
