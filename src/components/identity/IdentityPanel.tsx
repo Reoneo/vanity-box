@@ -49,7 +49,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const [currentNonce, setCurrentNonce] = useState<string>('');
   const [vpExpiresAt, setVpExpiresAt] = useState<string>('');
 
-  // Determine step statuses based on current identity state
   const getStepStatus = (step: number): StepStatus => {
     if (step === 1) {
       if (holderDid) return 'completed';
@@ -74,11 +73,10 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     return 'pending';
   };
 
-  // Handle creating presentation
   const handleCreatePresentation = async (vcJwt: string) => {
     const nonce = generateNonce();
     setCurrentNonce(nonce);
-    setVpExpiresAt(calculateExpiry(600)); // 10 minutes
+    setVpExpiresAt(calculateExpiry(600));
     
     const vpJwt = await createPresentationFromCredential(vcJwt, nonce);
     if (vpJwt) {
@@ -86,14 +84,12 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     }
   };
 
-  // Handle verification
   const handleVerify = async () => {
     if (lastVpJwt) {
       await verifyPresentation(lastVpJwt);
     }
   };
 
-  // Show loading state while vault is being restored
   if (!isInitialized) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -104,28 +100,27 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   }
 
   return (
-    <div className="space-y-6 pr-4">
-      <div className="space-y-6 pr-4">
-        {/* Header with status */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center">
-              <Fingerprint className="w-5 h-5 text-[#D4AF37]" />
-            </div>
-            <div>
-              <h3 className="font-semibold">IOTA Identity</h3>
-              <p className="text-xs text-muted-foreground">DID + VC + VP + Verify</p>
-            </div>
+    <div className="space-y-6">
+      {/* Header with status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center">
+            <Fingerprint className="w-5 h-5 text-[#D4AF37]" />
           </div>
-          {verificationResult?.valid && (
-            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
-              <CheckCircle2 className="w-3 h-3 mr-1" />
-              Verified
-            </Badge>
-          )}
+          <div>
+            <h3 className="font-semibold">IOTA Identity</h3>
+            <p className="text-xs text-muted-foreground">DID + VC + VP + Verify</p>
+          </div>
         </div>
+        {verificationResult?.valid && (
+          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
+            <CheckCircle2 className="w-3 h-3 mr-1" />
+            Verified
+          </Badge>
+        )}
+      </div>
 
-        <Separator />
+      <Separator />
 
       {/* Step Cards */}
       <div className="space-y-4">
@@ -237,16 +232,15 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         </div>
       </div>
 
-        {/* Presentation Modal */}
-        <PresentationModal
-          open={showPresentationModal}
-          onClose={() => setShowPresentationModal(false)}
-          vpJwt={lastVpJwt}
-          expiresAt={vpExpiresAt}
-          nonce={currentNonce}
-          onVerify={handleVerify}
-        />
-      </div>
+      {/* Presentation Modal */}
+      <PresentationModal
+        open={showPresentationModal}
+        onClose={() => setShowPresentationModal(false)}
+        vpJwt={lastVpJwt}
+        expiresAt={vpExpiresAt}
+        nonce={currentNonce}
+        onVerify={handleVerify}
+      />
     </div>
   );
 }

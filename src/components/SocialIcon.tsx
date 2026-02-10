@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Twitter,
   Instagram,
   Linkedin,
   Youtube,
   Globe,
+  Copy,
+  Check,
 } from "lucide-react";
 import { 
   SiBluesky, 
@@ -16,6 +18,8 @@ import {
   SiTelegram, 
   SiDiscord 
 } from "react-icons/si";
+import { normalizeSocialUrl } from "@/lib/socialLinks";
+import { toast } from "sonner";
 
 interface SocialIconProps {
   platform: string;
@@ -31,8 +35,8 @@ export const SocialIcon = ({
   onClick 
 }: SocialIconProps) => {
   const platformLower = platform.toLowerCase();
+  const [copied, setCopied] = useState(false);
   
-  // Size configurations
   const sizeConfig = {
     sm: { container: "w-8 h-8", icon: "w-4 h-4" },
     md: { container: "w-10 h-10", icon: "w-5 h-5" },
@@ -41,7 +45,6 @@ export const SocialIcon = ({
   
   const { container, icon } = sizeConfig[size];
   
-  // Get the appropriate icon component
   const getIcon = () => {
     switch (platformLower) {
       case 'twitter':
@@ -74,22 +77,35 @@ export const SocialIcon = ({
     }
   };
 
+  // Normalize the URL for this platform
+  const normalized = normalizeSocialUrl(platformLower, url);
+
   const handleClick = () => {
     if (onClick) {
       onClick();
-    } else {
-      window.open(url, '_blank');
+      return;
+    }
+    // Discord username (not an invite link) → copy to clipboard
+    if (normalized.isDiscordUsername) {
+      navigator.clipboard.writeText(normalized.displayHandle);
+      setCopied(true);
+      toast.success(`Copied Discord username: ${normalized.displayHandle}`);
+      setTimeout(() => setCopied(false), 2000);
+      return;
+    }
+    if (normalized.url) {
+      window.open(normalized.url, '_blank', 'noopener,noreferrer');
     }
   };
 
   return (
     <button
       onClick={handleClick}
-      title={platform}
+      title={normalized.isDiscordUsername ? `Discord: ${normalized.displayHandle} (click to copy)` : platform}
       className={`${container} flex items-center justify-center rounded-full bg-[#D4AF37]/80 shadow-md transition-all hover:scale-110`}
     >
       <div className="text-black">
-        {getIcon()}
+        {normalized.isDiscordUsername && copied ? <Check className={icon} /> : getIcon()}
       </div>
     </button>
   );

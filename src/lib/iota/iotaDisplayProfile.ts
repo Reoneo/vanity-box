@@ -58,6 +58,8 @@ function platformCodeToKey(code: PlatformCode): string {
       return 'youtube';
     case 11:
       return 'github';
+    case 12:
+      return 'discord';
     default:
       return 'website';
   }

@@ -14,6 +14,7 @@ export const PLATFORM_CODES = {
   SPOTIFY: 9,
   YOUTUBE: 10,
   GITHUB: 11,
+  DISCORD: 12,
 } as const;
 
 export type PlatformCode = typeof PLATFORM_CODES[keyof typeof PLATFORM_CODES];
@@ -42,7 +43,7 @@ export interface ProfileNotarization {
 
 // Convert platform code to human-readable name
 export function getPlatformName(code: PlatformCode): string {
-  const names: Record<PlatformCode, string> = {
+  const names: Record<number, string> = {
     1: 'X',
     2: 'LinkedIn',
     3: 'Facebook',
@@ -54,6 +55,7 @@ export function getPlatformName(code: PlatformCode): string {
     9: 'Spotify',
     10: 'YouTube',
     11: 'GitHub',
+    12: 'Discord',
   };
   return names[code] || 'Unknown';
 }
