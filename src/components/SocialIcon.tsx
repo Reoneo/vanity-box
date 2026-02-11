@@ -80,26 +80,28 @@ export const SocialIcon = ({
   // Normalize the URL for this platform
   const normalized = normalizeSocialUrl(platformLower, url);
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
+      e.preventDefault();
+      e.stopPropagation();
       onClick();
       return;
     }
     // Discord username (not an invite link) → copy to clipboard
     if (normalized.isDiscordUsername) {
+      e.preventDefault();
+      e.stopPropagation();
       navigator.clipboard.writeText(normalized.displayHandle);
       setCopied(true);
       toast.success(`Copied Discord username: ${normalized.displayHandle}`);
       setTimeout(() => setCopied(false), 2000);
       return;
     }
-    if (normalized.url) {
-      window.open(normalized.url, '_blank', 'noopener,noreferrer');
-    }
+    // Don't handle click here — let the parent <a> handle navigation
   };
 
   return (
-    <button
+    <div
       onClick={handleClick}
       title={normalized.isDiscordUsername ? `Discord: ${normalized.displayHandle} (click to copy)` : platform}
       className={`${container} flex items-center justify-center rounded-full bg-[#D4AF37]/80 shadow-md transition-all hover:scale-110`}
@@ -107,6 +109,6 @@ export const SocialIcon = ({
       <div className="text-black">
         {normalized.isDiscordUsername && copied ? <Check className={icon} /> : getIcon()}
       </div>
-    </button>
+    </div>
   );
 };
