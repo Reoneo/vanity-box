@@ -1424,14 +1424,12 @@ export const ProfileCard = ({
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
-                    {/* Gradient overlay for better avatar contrast */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+                    {/* No gradient overlay – matches desktop */}
                   </div>
 
                   <div className="flex justify-center absolute -bottom-16 left-0 right-0">
                     <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
-                      {/* Glow ring behind avatar */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 blur-xl scale-110 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      {/* No glow ring – matches desktop */}
                       <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
                         <AvatarImage 
                           src={web3BioProfile?.avatar} 
