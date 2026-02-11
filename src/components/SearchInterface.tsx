@@ -1048,11 +1048,35 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         const { resolveProfileDirect } = await import('@/hooks/useProfileResolver');
         
         const resolverPromise = resolveProfileDirect(isWalletAddress ? normalizedAddress : normalizedQuery);
+
+        // For .iota names, fire the onchain profile fetch in parallel with resolver
+        let iotaOnchainPromise: Promise<any> | null = null;
+        if (isIotaName(normalizedQuery)) {
+          const cached = iotaProfileCacheRef.current.get(normalizedQuery);
+          if (!cached) {
+            iotaOnchainPromise = callEdge('get-iota-onchain-profile', { name: normalizedQuery }).catch(() => null);
+          }
+        }
         
         const resolverData = await Promise.race([
           resolverPromise,
           timeoutPromise.then(() => { throw new Error('timeout'); })
         ]);
+
+        // If we started a parallel IOTA onchain fetch, apply results now
+        if (iotaOnchainPromise) {
+          iotaOnchainPromise.then(response => {
+            if (response?.success) {
+              const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
+              iotaProfileCacheRef.current.set(normalizedQuery, entry);
+              try { sessionStorage.setItem(`iotaProfile:${normalizedQuery}`, JSON.stringify(entry)); } catch {}
+              setIotaOnchainProfile(response.profile);
+              setIotaNameObjectId(response.nameObjectId);
+              setIotaOwnerAddress(response.ownerAddress);
+              setIotaOnchainProfileLoading(false);
+            }
+          });
+        }
         
         // Check if this search is still current
         if (searchIdRef.current !== currentSearchId) {
