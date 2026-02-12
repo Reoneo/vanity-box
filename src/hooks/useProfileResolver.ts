@@ -342,7 +342,7 @@ export function useProfileResolver() {
 
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
-      // Route 1: .iota domains
+      // Route 1: .iota domains — skip Web3.bio for instant loading
       if (isIotaDomain) {
         debug.tried.push('iota');
         const iotaStart = Date.now();
@@ -350,35 +350,7 @@ export function useProfileResolver() {
         debug.timingsMs.iota = Date.now() - iotaStart;
 
         if (iotaProfile) {
-          // Enrich with Web3.bio data using the resolved address
-          if (iotaProfile.address) {
-            debug.tried.push('web3bio');
-            const w3Start = Date.now();
-            const web3Profile = await fetchWeb3BioProfile(iotaProfile.address);
-            debug.timingsMs.web3bio = Date.now() - w3Start;
-
-            if (web3Profile && !web3Profile.notFound) {
-              resolverResult = {
-                ok: true,
-                source: 'iota',
-                profile: {
-                  ...web3Profile,
-                  identity: iotaProfile.identity,
-                  platform: 'iota',
-                  displayName: iotaProfile.displayName || web3Profile.displayName,
-                  avatar: iotaProfile.avatar || web3Profile.avatar,
-                  description: iotaProfile.description || web3Profile.description,
-                  iotaDomain: iotaProfile.iotaDomain,
-                  links: { ...web3Profile.links, ...iotaProfile.links },
-                  farcaster: web3Profile.farcaster || web3Profile.links?.farcaster,
-                },
-              };
-            } else {
-              resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
-            }
-          } else {
-            resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
-          }
+          resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
         } else {
           resolverResult = { ok: false, source: 'iota', profile: null, notFound: true };
         }
@@ -640,7 +612,7 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
 
     let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
-    // Route 1: .iota domains
+    // Route 1: .iota domains — skip Web3.bio for instant loading
     if (isIotaDomain) {
       debug.tried.push('iota');
       const iotaStart = Date.now();
@@ -648,35 +620,8 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
       debug.timingsMs.iota = Date.now() - iotaStart;
 
       if (iotaProfile) {
-        // Enrich with Web3.bio data using the resolved address
-        if (iotaProfile.address) {
-          debug.tried.push('web3bio');
-          const w3Start = Date.now();
-          const web3Profile = await fetchWeb3BioProfile(iotaProfile.address);
-          debug.timingsMs.web3bio = Date.now() - w3Start;
-
-          if (web3Profile && !web3Profile.notFound) {
-            resolverResult = {
-              ok: true,
-              source: 'iota',
-              profile: {
-                ...web3Profile,
-                identity: iotaProfile.identity,
-                platform: 'iota',
-                displayName: iotaProfile.displayName || web3Profile.displayName,
-                avatar: iotaProfile.avatar || web3Profile.avatar,
-                description: iotaProfile.description || web3Profile.description,
-                iotaDomain: iotaProfile.iotaDomain,
-                links: { ...web3Profile.links, ...iotaProfile.links },
-                farcaster: web3Profile.farcaster || web3Profile.links?.farcaster,
-              },
-            };
-          } else {
-            resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
-          }
-        } else {
-          resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
-        }
+        // Return immediately — onchain IPFS profile data will be loaded in parallel by the UI
+        resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
       } else {
         resolverResult = { ok: false, source: 'iota', profile: null, notFound: true };
       }

@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -185,6 +185,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const { theme } = useTheme();
   const { username } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const searchIdRef = useRef(0); // Prevent stale searches
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -628,11 +629,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const protocols = ["DNS", "ENS"];
   const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
 
-  // Auto-search when username is in URL
+  // Auto-search when username is in URL (including back/forward navigation)
   useEffect(() => {
-    // If username exists in URL, always trigger search (for direct profile links)
     if (username) {
-      // Only trigger if we're not already viewing this profile
       const currentProfile = displayQuery?.toLowerCase();
       const urlProfile = username.toLowerCase();
       
@@ -640,13 +639,32 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         console.log('🔗 URL profile detected:', username);
         setSearchQuery(username);
         setIsHomepage(false);
-        // Trigger search after a short delay to ensure component is mounted
         setTimeout(() => {
           handleSearch(username);
         }, 100);
       }
+    } else if (location.pathname === '/') {
+      // Back button to home — reset state
+      if (displayQuery || web3BioProfile || isSearchActive) {
+        setShowSearchBar(false);
+        setHadPreviousProfile(false);
+        setWeb3BioProfile(null);
+        setEfpStats(null);
+        setEnsRecords(null);
+        setIsSearchActive(false);
+        setHasSearched(false);
+        setSearchQuery('');
+        setDisplayQuery('');
+        setEnsResults([]);
+        setNfts([]);
+        setPoapTokens([]);
+        setActiveDockSection('profile');
+        setIsHomepage(true);
+        setShowDetailView(false);
+        setDetailViewResult(null);
+      }
     }
-  }, [username]);
+  }, [username, location.pathname]);
 
   // Show homepage initially - no need to set hasSearched since it's initialized as true
 
@@ -1003,6 +1021,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Update the display query to match what's being searched
     setDisplayQuery(trimmedQuery);
 
+    // Update URL to reflect the current search
+    const urlPath = `/${encodeURIComponent(trimmedQuery)}`;
+    if (location.pathname !== urlPath) {
+      navigate(urlPath, { replace: false });
+    }
     setIsLoading(true);
     setHasSearched(true);
     setIsSearchActive(true);
@@ -1623,6 +1646,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       setDisplayQuery('');
                       setSearchQuery('');
                       setIsHomepage(true);
+                      navigate('/', { replace: false });
                     },
                     isActive: false,
                   },
@@ -1958,6 +1982,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       // Reset detail view state to fix glitch
                       setShowDetailView(false);
                       setDetailViewResult(null);
+                      navigate('/', { replace: false });
                     },
                     isActive: false,
                   }] : []),
@@ -2251,7 +2276,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       {
                         icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                         label: 'Home',
-                        onClick: () => {
+                      onClick: () => {
                           // Clear all data when returning home from My IDs
                           setShowMyIDs(false);
                           setWeb3BioProfile(null);
@@ -2267,6 +2292,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setActiveDockSection('profile');
                           setShowSearchBar(false);
                           setIsHomepage(true);
+                          navigate('/', { replace: false });
                         },
                         isActive: false,
                       },
@@ -2326,6 +2352,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         // Reset detail view state to fix glitch
                         setShowDetailView(false);
                         setDetailViewResult(null);
+                        navigate('/', { replace: false });
                       },
                       isActive: false,
                     }] : []),
