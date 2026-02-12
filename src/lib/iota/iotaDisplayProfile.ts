@@ -74,12 +74,14 @@ export function makeIotaDisplayProfile(args: {
   const { base, iotaOnchainProfile, identity, ownerAddress } = args;
 
   // Convert array links -> existing UI links object format
+  // Store raw handles (e.g. "@smithdotbox") — normalizeSocialUrl in socialLinks.ts
+  // will build the correct platform URL when rendering.
   const links: Record<string, any> = {};
   for (const l of iotaOnchainProfile.links || []) {
     const key = platformCodeToKey(l.platform);
-    const url = normalizeUrlMaybe(l.url);
-    if (!url) continue;
-    links[key] = { link: url };
+    const raw = (l.url || '').trim();
+    if (!raw) continue;
+    links[key] = { link: raw };
   }
 
   const website = normalizeUrlMaybe(iotaOnchainProfile.website);

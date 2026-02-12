@@ -1830,16 +1830,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </>
             )}
 
-            {/* Skeleton loader for .iota profiles while IPFS data loads */}
+            {/* Loading progress bar for .iota profiles while IPFS data loads */}
             {isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile && web3BioProfile && !showMyIDs && (
-              <div className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-4 pt-8 flex flex-col items-center z-[9997] bg-background">
-                <Skeleton className="w-full max-w-lg h-32 rounded-2xl mb-4" />
-                <Skeleton className="w-20 h-20 rounded-full mb-4" />
-                <Skeleton className="w-48 h-6 rounded-lg mb-2" />
-                <Skeleton className="w-32 h-4 rounded-lg mb-6" />
-                <Skeleton className="w-full max-w-md h-16 rounded-xl mb-3" />
-                <Skeleton className="w-full max-w-md h-16 rounded-xl" />
-              </div>
+              <LoadingProgress isLoading={true} />
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
