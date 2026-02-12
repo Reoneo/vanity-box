@@ -1993,8 +1993,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
                     label: 'Edit',
                     onClick: () => {
-                      setShowMyIDs(true);
-                      setActiveDockSection('profile');
+                      if (isIotaName(displayQuery)) {
+                        // For .iota profiles, open edit onchain profile modal directly
+                        setShowIotaEditModal(true);
+                      } else {
+                        setShowMyIDs(true);
+                        setActiveDockSection('profile');
+                      }
                     },
                     isActive: false,
                   }] : []),
