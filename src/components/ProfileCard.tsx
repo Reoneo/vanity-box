@@ -1008,19 +1008,6 @@ export const ProfileCard = ({
                           </p>
                         </div>
                       )}
-
-                      {/* IOTA Profile Edit Button - Only for owners */}
-                      {isIotaProfile && isIotaProfileOwner && onEditIotaProfile && (
-                        <div className="flex justify-center pt-2">
-                          <button
-                            onClick={onEditIotaProfile}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 border border-[#D4AF37]/30 text-[#D4AF37] transition-all"
-                          >
-                            <Pencil className="w-4 h-4" />
-                            <span className="text-sm font-medium">Edit Onchain Profile</span>
-                          </button>
-                        </div>
-                      )}
                       {/* Desktop action pills - control right panel */}
                       {(() => {
                         const socialLinks = web3BioProfile?.links 
