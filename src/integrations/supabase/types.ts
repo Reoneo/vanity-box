@@ -83,6 +83,364 @@ export type Database = {
         }
         Relationships: []
       }
+      messaging_conversations: {
+        Row: {
+          conversation_id: string
+          conversation_type: string
+          created_at: string
+          created_by: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string
+          conversation_type?: string
+          created_at?: string
+          created_by: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string
+          conversation_type?: string
+          created_at?: string
+          created_by?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "messaging_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          device_label: string
+          device_pubkey: string
+          identity_id: string
+          last_seen_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string
+          device_label?: string
+          device_pubkey: string
+          identity_id: string
+          last_seen_at?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          device_label?: string
+          device_pubkey?: string
+          identity_id?: string
+          last_seen_at?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_devices_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_envelopes: {
+        Row: {
+          header: Json | null
+          message_id: string
+          recipient_device_id: string
+          wrapped_msg_key: string
+        }
+        Insert: {
+          header?: Json | null
+          message_id: string
+          recipient_device_id: string
+          wrapped_msg_key: string
+        }
+        Update: {
+          header?: Json | null
+          message_id?: string
+          recipient_device_id?: string
+          wrapped_msg_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_envelopes_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_messages"
+            referencedColumns: ["message_id"]
+          },
+          {
+            foreignKeyName: "messaging_envelopes_recipient_device_id_fkey"
+            columns: ["recipient_device_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_devices"
+            referencedColumns: ["device_id"]
+          },
+        ]
+      }
+      messaging_identities: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          did: string | null
+          display_name: string | null
+          domain_name: string
+          domain_type: string
+          id: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          did?: string | null
+          display_name?: string | null
+          domain_name: string
+          domain_type?: string
+          id?: string
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          did?: string | null
+          display_name?: string | null
+          domain_name?: string
+          domain_type?: string
+          id?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      messaging_members: {
+        Row: {
+          conversation_id: string
+          identity_id: string
+          joined_at: string
+          left_at: string | null
+          role: string
+        }
+        Insert: {
+          conversation_id: string
+          identity_id: string
+          joined_at?: string
+          left_at?: string | null
+          role?: string
+        }
+        Update: {
+          conversation_id?: string
+          identity_id?: string
+          joined_at?: string
+          left_at?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_conversations"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "messaging_members_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_messages: {
+        Row: {
+          ad: string | null
+          attachments: Json | null
+          cipher_suite: string
+          ciphertext: string
+          conversation_id: string
+          message_id: string
+          nonce: string
+          notarization_batch_id: string | null
+          sender_device_id: string
+          sender_identity_id: string
+          sent_at: string
+        }
+        Insert: {
+          ad?: string | null
+          attachments?: Json | null
+          cipher_suite?: string
+          ciphertext: string
+          conversation_id: string
+          message_id?: string
+          nonce: string
+          notarization_batch_id?: string | null
+          sender_device_id: string
+          sender_identity_id: string
+          sent_at?: string
+        }
+        Update: {
+          ad?: string | null
+          attachments?: Json | null
+          cipher_suite?: string
+          ciphertext?: string
+          conversation_id?: string
+          message_id?: string
+          nonce?: string
+          notarization_batch_id?: string | null
+          sender_device_id?: string
+          sender_identity_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_conversations"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "messaging_messages_sender_device_id_fkey"
+            columns: ["sender_device_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_devices"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "messaging_messages_sender_identity_id_fkey"
+            columns: ["sender_identity_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_notarization_batches: {
+        Row: {
+          batch_id: string
+          created_at: string
+          error: string | null
+          iota_notarization_id: string | null
+          iota_tx_digest: string | null
+          leaf_count: number
+          root_hash: string
+          status: string
+        }
+        Insert: {
+          batch_id?: string
+          created_at?: string
+          error?: string | null
+          iota_notarization_id?: string | null
+          iota_tx_digest?: string | null
+          leaf_count: number
+          root_hash: string
+          status?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          error?: string | null
+          iota_notarization_id?: string | null
+          iota_tx_digest?: string | null
+          leaf_count?: number
+          root_hash?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      messaging_notarization_proofs: {
+        Row: {
+          batch_id: string
+          leaf_hash: string
+          leaf_index: number
+          message_id: string
+          proof: Json
+        }
+        Insert: {
+          batch_id: string
+          leaf_hash: string
+          leaf_index: number
+          message_id: string
+          proof: Json
+        }
+        Update: {
+          batch_id?: string
+          leaf_hash?: string
+          leaf_index?: number
+          message_id?: string
+          proof?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_notarization_proofs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_notarization_batches"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "messaging_notarization_proofs_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "messaging_messages"
+            referencedColumns: ["message_id"]
+          },
+        ]
+      }
+      messaging_prekeys: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          prekey_id: number
+          prekey_pub: string
+          signature: string | null
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          prekey_id: number
+          prekey_pub: string
+          signature?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          prekey_id?: number
+          prekey_pub?: string
+          signature?: string | null
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_prekeys_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_devices"
+            referencedColumns: ["device_id"]
+          },
+        ]
+      }
       minted_domains: {
         Row: {
           created_at: string

@@ -122,3 +122,27 @@ verify_jwt = false
 
 [functions.verify-profile-integrity]
 verify_jwt = false
+
+[functions.register-messaging-identity]
+verify_jwt = false
+
+[functions.get-messaging-conversations]
+verify_jwt = false
+
+[functions.start-messaging-conversation]
+verify_jwt = false
+
+[functions.get-conversation-devices]
+verify_jwt = false
+
+[functions.send-encrypted-message]
+verify_jwt = false
+
+[functions.get-encrypted-messages]
+verify_jwt = false
+
+[functions.verify-message-notarization]
+verify_jwt = false
+
+[functions.notarize-message-batch]
+verify_jwt = false
