@@ -2028,6 +2028,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: false,
                   }] : []),
+                  // Messages icon
+                  {
+                    icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Messages',
+                    onClick: () => {
+                      navigate('/messages');
+                    },
+                    isActive: false,
+                  },
                   // Search icon on far right
                   {
                     icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
