@@ -6,37 +6,48 @@ import { ChatThread } from "@/components/chat/ChatThread";
 import { NewConversationModal } from "@/components/chat/NewConversationModal";
 import { useMessaging } from "@/hooks/useMessaging";
 import { useIotaWallet } from "@/contexts/IotaWalletContext";
+import { useWalletConnect } from "@/contexts/WalletConnectContext";
+import { getLinkedDomain } from "@/lib/messaging/linkDomain";
 import { toast } from "sonner";
 
 export default function Messages() {
   const navigate = useNavigate();
   const { address: iotaAddress } = useIotaWallet();
+  const { address: evmAddress } = useWalletConnect();
   
-  // Get wallet address and domain from localStorage or connected wallet
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [domain, setDomain] = useState<string | null>(null);
   const [showNewConvo, setShowNewConvo] = useState(false);
 
   useEffect(() => {
-    // Try to get domain from the key vault
+    // 1. Check linked domain from profile route / VP verification
+    const linked = getLinkedDomain();
+    if (linked) {
+      setDomain(linked);
+    }
+
+    // 2. Try to get wallet from key vault (has registered keys)
     try {
       const vault = localStorage.getItem("vanitybox_msg_vault");
       if (vault) {
         const parsed = JSON.parse(vault);
-        const firstDomain = Object.keys(parsed)[0];
-        if (firstDomain) {
-          setDomain(firstDomain);
-          setWalletAddress(parsed[firstDomain]?.walletAddress || iotaAddress || null);
+        // Prefer the linked domain's vault entry, else first available
+        const vaultDomain = linked && parsed[linked] ? linked : Object.keys(parsed)[0];
+        if (vaultDomain) {
+          if (!linked) setDomain(vaultDomain);
+          setWalletAddress(parsed[vaultDomain]?.walletAddress || iotaAddress || evmAddress || null);
           return;
         }
       }
     } catch {}
     
-    // Fall back to connected IOTA wallet
+    // 3. Fall back to connected wallet
     if (iotaAddress) {
       setWalletAddress(iotaAddress);
+    } else if (evmAddress) {
+      setWalletAddress(evmAddress);
     }
-  }, [iotaAddress]);
+  }, [iotaAddress, evmAddress]);
 
   const {
     isRegistered,
@@ -102,7 +113,7 @@ export default function Messages() {
         <p className="text-muted-foreground mb-2 max-w-md">
           Generate your device encryption keys and register your identity.
         </p>
-        <p className="text-sm text-muted-foreground/70 mb-6 max-w-md">
+        <p className="text-sm text-muted-foreground/70 mb-2 max-w-md">
           Domain: <span className="text-[#D4AF37] font-mono">{domain || "Not linked"}</span>
         </p>
         {domain ? (
@@ -114,8 +125,8 @@ export default function Messages() {
             {isLoading ? "Generating keys…" : "Generate Keys & Register"}
           </button>
         ) : (
-          <p className="text-sm text-red-400">
-            Please link a domain first by searching for your profile.
+          <p className="text-sm text-muted-foreground mb-4 max-w-md">
+            Visit your profile first, then come back here to set up messaging.
           </p>
         )}
         <button
