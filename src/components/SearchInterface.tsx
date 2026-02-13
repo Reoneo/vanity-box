@@ -110,6 +110,7 @@ import { DynamicMetaTags } from "@/components/DynamicMetaTags";
 import searchLogo from "@/assets/search-logo.png";
 import { isIotaName } from "@/lib/iota/isIotaName";
 import { makeIotaDisplayProfile } from "@/lib/iota/iotaDisplayProfile";
+import { setLinkedDomain } from "@/lib/messaging/linkDomain";
 
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
@@ -488,6 +489,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   }, [web3BioProfile?.address]);
 
   // Load IOTA onchain profile when viewing ANY .iota domain or subdomain
+  // Auto-link domain for messaging when viewing any profile
+  useEffect(() => {
+    if (displayQuery && web3BioProfile) {
+      setLinkedDomain(displayQuery);
+    }
+  }, [displayQuery, web3BioProfile]);
+
   useEffect(() => {
     const loadIotaOnchainProfile = async () => {
       const name = displayQuery?.toLowerCase()?.trim();

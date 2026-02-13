@@ -22,6 +22,7 @@ import { CredentialList } from './CredentialList';
 import { VerificationResultCard } from './VerificationResultCard';
 import { PresentationModal } from './PresentationModal';
 import { generateNonce, calculateExpiry } from '@/lib/identity/vault';
+import { setLinkedDomain } from '@/lib/messaging/linkDomain';
 
 interface IdentityPanelContentProps {
   iotaName: string;
@@ -89,6 +90,13 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
       await verifyPresentation(lastVpJwt);
     }
   };
+
+  // Auto-link domain for messaging after successful VP verification
+  useEffect(() => {
+    if (verificationResult?.valid && iotaName) {
+      setLinkedDomain(iotaName);
+    }
+  }, [verificationResult?.valid, iotaName]);
 
   if (!isInitialized) {
     return (
