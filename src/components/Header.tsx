@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WalletConnection } from './WalletConnection';
 import { SpotifyPauseButton } from './SpotifyPauseButton';
-import vanityLogo from '../assets/vanity-box-logo-new.svg';
+import vanityLogo from '../assets/vanity-box-logo-v.png';
 import vanityContactIcon from '../assets/vanity-contact-icon.png';
 import worldAppIcon from '@/assets/world-app-icon.png';
 import telegramIcon from '@/assets/telegram-icon.png';
@@ -122,11 +122,10 @@ export const Header: React.FC = () => {
                   <img 
                     src={vanityLogo} 
                     alt="Vanity.box Logo" 
-                    className="h-28 w-auto object-contain -mt-3"
+                    className="h-16 w-auto object-contain"
                     loading="eager"
                     fetchPriority="high"
                   />
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black tracking-[0.2em] text-black">VANITY.BOX</span>
                 </div>
               </div>
 
@@ -210,11 +209,10 @@ export const Header: React.FC = () => {
                   <img 
                     src={vanityLogo} 
                     alt="Vanity.box Logo" 
-                    className="h-28 w-auto object-contain -mt-3"
+                    className="h-16 w-auto object-contain"
                     loading="eager"
                     fetchPriority="high"
                   />
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black tracking-[0.2em] text-black">VANITY.BOX</span>
                 </div>
               </div>
             </>
@@ -265,11 +263,10 @@ export const Header: React.FC = () => {
               <img 
                 src={vanityLogo} 
                 alt="Vanity.box Logo" 
-                className="h-28 w-auto object-contain -mt-3"
+                className="h-16 w-auto object-contain"
                 loading="eager"
                 fetchPriority="high"
               />
-              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black tracking-[0.2em] text-black">VANITY.BOX</span>
             </div>
           </div>
 
