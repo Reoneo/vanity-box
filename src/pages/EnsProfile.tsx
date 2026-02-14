@@ -114,7 +114,7 @@ const EnsProfile = () => {
                   <Skeleton className="h-5 w-32" />
                 </div>
               </div>
-              <Skeleton className="h-28 w-full rounded-xl" />
+              <Skeleton className="h-26 w-full rounded-xl" />
               <Skeleton className="h-48 w-full rounded-xl" />
             </div>
           ) : error ? (
