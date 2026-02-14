@@ -9,6 +9,8 @@ import { useIotaWallet } from "@/contexts/IotaWalletContext";
 import { useWalletConnect } from "@/contexts/WalletConnectContext";
 import { getLinkedDomain } from "@/lib/messaging/linkDomain";
 import { toast } from "sonner";
+import { Header } from "@/components/Header";
+import Dock from "@/components/Dock";
 
 export default function Messages() {
   const navigate = useNavigate();
@@ -141,14 +143,23 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-50">
+      {/* App Header */}
+      <Header />
+
+      {/* Messages Header with gold border */}
+      <header className="flex items-center gap-3 px-4 py-3 border-y-2 border-[#D4AF37] bg-background/80 backdrop-blur-md sticky top-20 z-50">
         <button
           onClick={() => {
             if (activeConversation) {
               setActiveConversation(null);
             } else {
-              navigate("/");
+              // Navigate back to the linked profile instead of home
+              const linked = getLinkedDomain();
+              if (linked) {
+                navigate(`/${linked}`);
+              } else {
+                navigate(-1 as any);
+              }
             }
           }}
           className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -175,7 +186,7 @@ export default function Messages() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden border-x-2 border-[#D4AF37]">
         {activeConversation ? (
           <ChatThread
             messages={messages}
@@ -190,6 +201,12 @@ export default function Messages() {
           />
         )}
       </div>
+
+      {/* Bottom gold border */}
+      <div className="border-t-2 border-[#D4AF37]" />
+
+      {/* Dock */}
+      <Dock />
 
       {/* New conversation modal */}
       {showNewConvo && (
