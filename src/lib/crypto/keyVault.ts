@@ -20,10 +20,14 @@ export function saveDeviceKeys(data: VaultData): void {
   localStorage.setItem(VAULT_KEY, JSON.stringify(existing));
 }
 
-/** Load device keys for a specific domain */
+/** Load device keys for a specific domain (case-insensitive) */
 export function loadDeviceKeys(domain: string): VaultData | null {
   const all = loadAllDeviceKeys();
-  return all[domain] || null;
+  const normalized = domain.toLowerCase().trim();
+  // Try exact match first, then case-insensitive
+  if (all[normalized]) return all[normalized];
+  const key = Object.keys(all).find(k => k.toLowerCase().trim() === normalized);
+  return key ? all[key] : null;
 }
 
 /** Load all device keys */
