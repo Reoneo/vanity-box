@@ -3,17 +3,17 @@
  * Lightweight view for displaying ENS name details and records
  */
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, ExternalLink, Copy, Check, Calendar, Globe, Twitter, Github, Mail } from 'lucide-react';
-import { format } from 'date-fns';
-import { callEdge } from '@/lib/supaInvoke';
-import ensLogoBlue from '@/assets/ens-logo-blue.png';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, ExternalLink, Copy, Check, Calendar, Globe, Twitter, Github, Mail } from "lucide-react";
+import { format } from "date-fns";
+import { callEdge } from "@/lib/supaInvoke";
+import ensLogoBlue from "@/assets/ens-logo-blue.png";
 
 interface EnsRecord {
   key: string;
@@ -43,23 +43,23 @@ const EnsProfile = () => {
 
   useEffect(() => {
     if (!name) return;
-    
+
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         // Use existing edge function to resolve ENS profile
-        const data = await callEdge<EnsProfileData>('resolve-ens-profile', { name });
-        
+        const data = await callEdge<EnsProfileData>("resolve-ens-profile", { name });
+
         if (data) {
           setProfile(data);
         } else {
-          setError('Profile not found');
+          setError("Profile not found");
         }
       } catch (e) {
-        console.error('Failed to fetch ENS profile:', e);
-        setError('Failed to load profile');
+        console.error("Failed to fetch ENS profile:", e);
+        setError("Failed to load profile");
       } finally {
         setLoading(false);
       }
@@ -114,7 +114,7 @@ const EnsProfile = () => {
                   <Skeleton className="h-5 w-32" />
                 </div>
               </div>
-              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-28 w-full rounded-xl" />
               <Skeleton className="h-48 w-full rounded-xl" />
             </div>
           ) : error ? (
@@ -124,7 +124,7 @@ const EnsProfile = () => {
               </div>
               <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
               <p className="text-muted-foreground mb-4">{error}</p>
-              <Button variant="outline" onClick={() => navigate('/')}>
+              <Button variant="outline" onClick={() => navigate("/")}>
                 Go Home
               </Button>
             </div>
@@ -138,8 +138,9 @@ const EnsProfile = () => {
                     alt={name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = '<span class="flex items-center justify-center w-full h-full text-white font-bold text-2xl">ENS</span>';
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.parentElement!.innerHTML =
+                        '<span class="flex items-center justify-center w-full h-full text-white font-bold text-2xl">ENS</span>';
                     }}
                   />
                 </div>
@@ -151,17 +152,13 @@ const EnsProfile = () => {
                       className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mt-1"
                     >
                       <span className="font-mono text-sm">{truncateAddress(profile.address)}</span>
-                      {copiedAddress ? (
-                        <Check className="w-4 h-4 text-emerald-500" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
+                      {copiedAddress ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                     </button>
                   )}
                   {profile.expiryDate && (
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-2">
                       <Calendar className="w-4 h-4" />
-                      <span>Expires {format(new Date(profile.expiryDate), 'MMM d, yyyy')}</span>
+                      <span>Expires {format(new Date(profile.expiryDate), "MMM d, yyyy")}</span>
                     </div>
                   )}
                 </div>
@@ -248,7 +245,7 @@ const EnsProfile = () => {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => window.open(`https://app.ens.domains/${name}`, '_blank')}
+                  onClick={() => window.open(`https://app.ens.domains/${name}`, "_blank")}
                 >
                   <img src={ensLogoBlue} alt="ENS" className="w-4 h-4 mr-2" />
                   Manage on ENS
@@ -257,7 +254,7 @@ const EnsProfile = () => {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => window.open(`https://etherscan.io/name-lookup-search?id=${name}`, '_blank')}
+                  onClick={() => window.open(`https://etherscan.io/name-lookup-search?id=${name}`, "_blank")}
                 >
                   Etherscan
                   <ExternalLink className="w-4 h-4 ml-2" />

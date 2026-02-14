@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { WalletConnection } from './WalletConnection';
-import { SpotifyPauseButton } from './SpotifyPauseButton';
-import vanityLogo from '../assets/vanity-box-logo-v.png';
-import vanityContactIcon from '../assets/vanity-contact-icon.png';
-import worldAppIcon from '@/assets/world-app-icon.png';
-import telegramIcon from '@/assets/telegram-icon.png';
-import petraIcon from '@/assets/petra-icon.png';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, Home } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
-import { MiniKit } from '@worldcoin/minikit-js';
-import { isTelegramWebView } from '@/lib/telegram';
+import React, { useState, useEffect } from "react";
+import { WalletConnection } from "./WalletConnection";
+import { SpotifyPauseButton } from "./SpotifyPauseButton";
+import vanityLogo from "../assets/vanity-box-logo-v.png";
+import vanityContactIcon from "../assets/vanity-contact-icon.png";
+import worldAppIcon from "@/assets/world-app-icon.png";
+import telegramIcon from "@/assets/telegram-icon.png";
+import petraIcon from "@/assets/petra-icon.png";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, Home } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
+import { MiniKit } from "@worldcoin/minikit-js";
+import { isTelegramWebView } from "@/lib/telegram";
 
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,11 +35,11 @@ export const Header: React.FC = () => {
 
     const handleMintOpen = () => setIsMintWindowOpen(true);
     const handleMintClose = () => setIsMintWindowOpen(false);
-    
+
     const handleWalletConnected = (e?: CustomEvent) => {
       setIsWalletConnected(true);
       // Check if it's Petra wallet from event detail
-      if (e?.detail?.walletType === 'petra') {
+      if (e?.detail?.walletType === "petra") {
         setIsPetraConnected(true);
       }
     };
@@ -47,67 +47,67 @@ export const Header: React.FC = () => {
       setIsWalletConnected(false);
       setIsPetraConnected(false);
     };
-    
+
     const handleShowMyIds = () => setShowMyIds(true);
     const handleHideMyIds = () => setShowMyIds(false);
-    
+
     const handleProfileLoaded = () => setHasProfile(true);
     const handleProfileCleared = () => {
       setHasProfile(false);
       setShowSearchBar(false);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('mint-window-open', handleMintOpen);
-    window.addEventListener('mint-window-close', handleMintClose);
-    window.addEventListener('wallet-connected', handleWalletConnected);
-    window.addEventListener('wallet-disconnected', handleWalletDisconnected);
-    window.addEventListener('show-my-ids', handleShowMyIds);
-    window.addEventListener('back-to-domains', handleHideMyIds);
-    window.addEventListener('profile-loaded', handleProfileLoaded);
-    window.addEventListener('profile-cleared', handleProfileCleared);
-    
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("mint-window-open", handleMintOpen);
+    window.addEventListener("mint-window-close", handleMintClose);
+    window.addEventListener("wallet-connected", handleWalletConnected);
+    window.addEventListener("wallet-disconnected", handleWalletDisconnected);
+    window.addEventListener("show-my-ids", handleShowMyIds);
+    window.addEventListener("back-to-domains", handleHideMyIds);
+    window.addEventListener("profile-loaded", handleProfileLoaded);
+    window.addEventListener("profile-cleared", handleProfileCleared);
+
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('mint-window-open', handleMintOpen);
-      window.removeEventListener('mint-window-close', handleMintClose);
-      window.removeEventListener('wallet-connected', handleWalletConnected);
-      window.removeEventListener('wallet-disconnected', handleWalletDisconnected);
-      window.removeEventListener('show-my-ids', handleShowMyIds);
-      window.removeEventListener('back-to-domains', handleHideMyIds);
-      window.removeEventListener('profile-loaded', handleProfileLoaded);
-      window.removeEventListener('profile-cleared', handleProfileCleared);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("mint-window-open", handleMintOpen);
+      window.removeEventListener("mint-window-close", handleMintClose);
+      window.removeEventListener("wallet-connected", handleWalletConnected);
+      window.removeEventListener("wallet-disconnected", handleWalletDisconnected);
+      window.removeEventListener("show-my-ids", handleShowMyIds);
+      window.removeEventListener("back-to-domains", handleHideMyIds);
+      window.removeEventListener("profile-loaded", handleProfileLoaded);
+      window.removeEventListener("profile-cleared", handleProfileCleared);
     };
   }, []);
 
   const toggleSearchBar = () => {
     setShowSearchBar(!showSearchBar);
-    window.dispatchEvent(new CustomEvent('toggle-search-bar', { detail: { show: !showSearchBar } }));
+    window.dispatchEvent(new CustomEvent("toggle-search-bar", { detail: { show: !showSearchBar } }));
   };
 
   const scrollToSearch = () => {
     // If mint window is open, just close it and stay on search results
     if (isMintWindowOpen) {
-      window.dispatchEvent(new Event('mint-window-close'));
+      window.dispatchEvent(new Event("mint-window-close"));
       setIsMintWindowOpen(false);
       return;
     }
-    
+
     // Otherwise, reset to main page state
     setShowMyIds(false);
-    window.dispatchEvent(new Event('back-to-domains'));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.dispatchEvent(new Event("back-to-domains"));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  
+
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
       <header className="fixed top-0 left-0 right-0 z-[100] w-full bg-[#D4AF37] pt-safe-area-inset-top">
         {/* Preload the logo */}
         <link rel="preload" as="image" href={vanityLogo} />
-        
+
         {/* Content */}
-          <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
+        <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
           {/* Mobile: Show left-aligned controls when wallet is connected */}
           {isWalletConnected && (
             <div className="flex items-center gap-1 md:hidden">
@@ -115,14 +115,14 @@ export const Header: React.FC = () => {
               <div
                 className={cn(
                   "flex items-center -ml-2 transition-all duration-500",
-                  isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]"
+                  isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]",
                 )}
               >
                 <div className="relative flex items-center justify-center h-20">
-                  <img 
-                    src={vanityLogo} 
-                    alt="Vanity.box Logo" 
-                    className="h-32 w-auto object-contain"
+                  <img
+                    src={vanityLogo}
+                    alt="Vanity.box Logo"
+                    className="h-28 w-auto object-contain"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -180,36 +180,32 @@ export const Header: React.FC = () => {
                   </button>
                 </TriggerOrClose>
 
-            {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
-            {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
-              <>
-                <SpotifyPauseButton />
-                <button
-                  type="button"
-                  aria-label="Scroll to search"
-                  onClick={scrollToSearch}
-                  className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
-                >
-                  <Search className="w-5 h-5 text-black" />
-                </button>
-              </>
-            )}
-            
-            {/* Spotify Pause when search icon is not visible */}
-            {!showSearchIcon && (
-              <SpotifyPauseButton />
-            )}
+                {/* Spotify Pause & Search Icon - only show when scrolled, NOT on mint or my ids pages */}
+                {showSearchIcon && !isMintWindowOpen && !showMyIds && !hasProfile && (
+                  <>
+                    <SpotifyPauseButton />
+                    <button
+                      type="button"
+                      aria-label="Scroll to search"
+                      onClick={scrollToSearch}
+                      className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md transition-all duration-300"
+                    >
+                      <Search className="w-5 h-5 text-black" />
+                    </button>
+                  </>
+                )}
+
+                {/* Spotify Pause when search icon is not visible */}
+                {!showSearchIcon && <SpotifyPauseButton />}
               </div>
 
               {/* Centered Logo (Mobile when wallet disconnected) - NO CLICK */}
-              <div
-                className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden"
-              >
+              <div className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden">
                 <div className="relative flex items-center justify-center h-20">
-                  <img 
-                    src={vanityLogo} 
-                    alt="Vanity.box Logo" 
-                    className="h-32 w-auto object-contain"
+                  <img
+                    src={vanityLogo}
+                    alt="Vanity.box Logo"
+                    className="h-28 w-auto object-contain"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -248,29 +244,24 @@ export const Header: React.FC = () => {
                 </button>
               </>
             )}
-            
+
             {/* Spotify Pause when search icon is not visible */}
-            {!showSearchIcon && (
-              <SpotifyPauseButton />
-            )}
+            {!showSearchIcon && <SpotifyPauseButton />}
           </div>
 
           {/* Desktop/Tablet: Centered Logo - NO CLICK */}
-          <div
-            className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2"
-          >
+          <div className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2">
             <div className="relative flex items-center justify-center h-20">
-              <img 
-                src={vanityLogo} 
-                alt="Vanity.box Logo" 
-                className="h-32 w-auto object-contain"
+              <img
+                src={vanityLogo}
+                alt="Vanity.box Logo"
+                className="h-28 w-auto object-contain"
                 loading="eager"
                 fetchPriority="high"
               />
             </div>
           </div>
 
-          
           {/* Wallet Connection - Right Side */}
           <div className="flex items-center">
             <WalletConnection />
@@ -279,20 +270,20 @@ export const Header: React.FC = () => {
       </header>
 
       {/* Slide-over Menu */}
-      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-6 overflow-y-auto">
+      <SheetContent
+        side="left"
+        className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-6 overflow-y-auto"
+      >
         <nav className="space-y-6">
-          
           {/* Supported Wallets - at top of menu */}
           <div className="space-y-3">
-            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">
-              Supported Wallets
-            </h3>
+            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Supported Wallets</h3>
             <div className="flex items-center justify-center gap-6">
               {/* World App Icon */}
               <button
                 onClick={() => {
                   if (!MiniKit.isInstalled()) {
-                    window.open('https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd', '_blank');
+                    window.open("https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd", "_blank");
                   }
                   setMenuOpen(false);
                 }}
@@ -300,9 +291,9 @@ export const Header: React.FC = () => {
                 aria-label="World App"
               >
                 <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
-                  <img 
-                    src={worldAppIcon} 
-                    alt="World App" 
+                  <img
+                    src={worldAppIcon}
+                    alt="World App"
                     className="w-16 h-16 object-contain transition-transform group-hover:scale-110"
                   />
                 </div>
@@ -312,7 +303,7 @@ export const Header: React.FC = () => {
               <button
                 onClick={() => {
                   if (!isTelegramWebView()) {
-                    window.open('https://t.me/vanitybox_bot/vanity', '_blank');
+                    window.open("https://t.me/vanitybox_bot/vanity", "_blank");
                   }
                   setMenuOpen(false);
                 }}
@@ -320,9 +311,9 @@ export const Header: React.FC = () => {
                 aria-label="Telegram"
               >
                 <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
-                  <img 
-                    src={telegramIcon} 
-                    alt="Telegram" 
+                  <img
+                    src={telegramIcon}
+                    alt="Telegram"
                     className="w-16 h-16 object-contain transition-transform group-hover:scale-110"
                   />
                 </div>
@@ -331,16 +322,16 @@ export const Header: React.FC = () => {
               {/* Petra Icon */}
               <button
                 onClick={() => {
-                  window.location.href = 'https://petra.app/explore?link=https://vanity.box';
+                  window.location.href = "https://petra.app/explore?link=https://vanity.box";
                   setMenuOpen(false);
                 }}
                 className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
                 aria-label="Petra"
               >
                 <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
-                  <img 
-                    src={petraIcon} 
-                    alt="Petra" 
+                  <img
+                    src={petraIcon}
+                    alt="Petra"
                     className="w-16 h-16 object-contain transition-transform group-hover:scale-110"
                   />
                 </div>
@@ -352,7 +343,7 @@ export const Header: React.FC = () => {
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Legal</h3>
             <div className="flex flex-col gap-3">
-              <Link 
+              <Link
                 to="/privacy-policy"
                 onClick={() => setMenuOpen(false)}
                 className="h-14 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between transition-all duration-300 hover:shadow-lg"
@@ -360,7 +351,7 @@ export const Header: React.FC = () => {
                 <span className="font-medium">Privacy Policy</span>
                 <ChevronRight className="w-5 h-5" />
               </Link>
-              <Link 
+              <Link
                 to="/terms-of-use"
                 onClick={() => setMenuOpen(false)}
                 className="h-14 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between transition-all duration-300 hover:shadow-lg"
@@ -375,27 +366,23 @@ export const Header: React.FC = () => {
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Contact</h3>
             <div className="flex items-center gap-4">
-              <a 
+              <a
                 href="https://vanity.box/vanity.box"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:scale-110 transition-transform duration-200"
                 aria-label="Vanity.box"
               >
-                <img 
-                  src={vanityContactIcon} 
-                  alt="Vanity.box" 
-                  className="w-6 h-6 rounded-full object-cover"
-                />
+                <img src={vanityContactIcon} alt="Vanity.box" className="w-6 h-6 rounded-full object-cover" />
               </a>
-              <a 
+              <a
                 href="mailto:R@vanity.box"
                 className="hover:scale-110 transition-transform duration-200"
                 aria-label="Email"
               >
                 <Mail className="w-6 h-6 text-[#D4AF37]" />
               </a>
-              <a 
+              <a
                 href="https://t.me/portofspain"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -404,7 +391,7 @@ export const Header: React.FC = () => {
               >
                 <Send className="w-6 h-6 text-[#D4AF37]" />
               </a>
-              <a 
+              <a
                 href="https://www.linkedin.com/company/105790273/"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -413,7 +400,7 @@ export const Header: React.FC = () => {
               >
                 <Linkedin className="w-6 h-6 text-[#D4AF37]" />
               </a>
-              <a 
+              <a
                 href="https://twitter.com/smithdotbox"
                 target="_blank"
                 rel="noopener noreferrer"
