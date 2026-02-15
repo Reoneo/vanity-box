@@ -488,3 +488,8 @@ All colors MUST be HSL. */
 [data-sonner-toast] {
   margin-bottom: 0.5rem !important;
 }
+
+/* Safe-area padding for mobile devices with home indicators */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

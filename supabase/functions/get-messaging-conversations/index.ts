@@ -13,9 +13,9 @@ Deno.serve(async (req) => {
 
   try {
     const { wallet_address, domain_name } = await req.json();
-    if (!wallet_address || !domain_name) {
+    if (!wallet_address) {
       return new Response(
-        JSON.stringify({ error: "Missing wallet_address or domain_name" }),
+        JSON.stringify({ error: "Missing wallet_address" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -25,12 +25,28 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find identity
-    const { data: identity } = await supabase
-      .from("messaging_identities")
-      .select("id")
-      .eq("domain_name", domain_name.toLowerCase())
-      .single();
+    // Find identity — try domain_name first, then fall back to wallet_address
+    let identity: { id: string } | null = null;
+
+    if (domain_name) {
+      const { data } = await supabase
+        .from("messaging_identities")
+        .select("id")
+        .eq("domain_name", domain_name.toLowerCase())
+        .single();
+      identity = data;
+    }
+
+    // Fallback: look up by wallet_address (may return multiple identities)
+    if (!identity) {
+      const { data } = await supabase
+        .from("messaging_identities")
+        .select("id")
+        .eq("wallet_address", wallet_address.toLowerCase())
+        .limit(1)
+        .maybeSingle();
+      identity = data;
+    }
 
     if (!identity) {
       return new Response(
