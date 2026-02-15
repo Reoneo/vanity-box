@@ -166,15 +166,26 @@ export function useMessaging(walletAddress: string | null, domain: string | null
 
         const plaintext = new TextEncoder().encode(JSON.stringify({ text }));
 
-        // Include own device for multi-device decryption
-        const allDevices = recipientData.devices.map((d) => ({
-          deviceId: d.device_id,
-          x25519PubKey: new Uint8Array(
-            atob(d.device_pubkey)
-              .split("")
-              .map((c) => c.charCodeAt(0))
-          ),
+        // Ensure sender device is always in the recipient list
+        const devicesFromApi = Array.isArray(recipientData?.devices) ? recipientData.devices : [];
+        const { publicKeyB64: selfPubKeyB64 } = keypairToB64(keypairRef.current);
+        const hasSelf = devicesFromApi.some((d) => d.device_id === deviceIdRef.current);
+        const devicesWithSelf = hasSelf
+          ? devicesFromApi
+          : [...devicesFromApi, { device_id: deviceIdRef.current!, device_pubkey: selfPubKeyB64 }];
+
+        // De-dupe by device_id
+        const seen = new Map<string, string>();
+        for (const d of devicesWithSelf) {
+          if (d?.device_id && d?.device_pubkey) seen.set(d.device_id, d.device_pubkey);
+        }
+
+        const allDevices = Array.from(seen.entries()).map(([deviceId, pubkey]) => ({
+          deviceId,
+          x25519PubKey: new Uint8Array(atob(pubkey).split("").map((c) => c.charCodeAt(0))),
         }));
+
+        if (allDevices.length === 0) throw new Error("No recipient devices available");
 
         const { payload, envelopes } = await encryptForRecipients(
           plaintext,
@@ -233,7 +244,7 @@ export function useMessaging(walletAddress: string | null, domain: string | null
               sender_domain: msg.sender_domain,
               sender_avatar: msg.sender_avatar,
               sent_at: msg.sent_at,
-              text: "[Unable to decrypt]",
+              text: "[Unable to decrypt on this device]",
               isOwn: msg.sender_domain === domain,
               notarized: msg.notarized,
             });

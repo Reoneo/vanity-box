@@ -7,10 +7,11 @@ function DockIcon({ children, className = '' }: any) {
 }
 
 export default function Dock({
-  items,
+  items = [],
   className = '',
   baseItemSize = 50
 }: any) {
+  const safeItems = Array.isArray(items) ? items : [];
   // Remove all animation-related logic
 
   return (
@@ -20,7 +21,7 @@ export default function Dock({
         role="toolbar"
         aria-label="Application dock"
       >
-        {items.map((item: any, index: number) => (
+        {safeItems.map((item: any, index: number) => (
           <div
             key={index}
             onClick={item.onClick}

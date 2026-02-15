@@ -28,6 +28,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (!Array.isArray(envelopes) || envelopes.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No recipient envelopes provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Require sender device envelope so sender can decrypt own messages
+    const hasSenderEnvelope = envelopes.some((e: any) => e?.recipientDeviceId === sender_device_id);
+    if (!hasSenderEnvelope) {
+      return new Response(
+        JSON.stringify({ error: "Missing envelope for sender device" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -86,11 +102,20 @@ Deno.serve(async (req) => {
       wrapped_msg_key: e.wrappedMsgKeyB64,
     }));
 
-    const { error: envErr } = await supabase
-      .from("messaging_envelopes")
-      .insert(envelopeRows);
+    try {
+      const { error: envErr } = await supabase
+        .from("messaging_envelopes")
+        .insert(envelopeRows);
 
-    if (envErr) throw envErr;
+      if (envErr) throw envErr;
+    } catch (envInsertErr) {
+      // Cleanup orphaned message to prevent undecryptable rows
+      await supabase
+        .from("messaging_messages")
+        .delete()
+        .eq("message_id", message.message_id);
+      throw envInsertErr;
+    }
 
     // Update conversation updated_at
     await supabase
