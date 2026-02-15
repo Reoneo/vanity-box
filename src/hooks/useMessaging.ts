@@ -64,15 +64,20 @@ export function useMessaging(walletAddress: string | null, domain: string | null
   const keypairRef = useRef<E2EEKeypair | null>(null);
   const deviceIdRef = useRef<string | null>(null);
 
-  // Initialise or restore device keys
+  // Initialise or restore device keys (async vault)
   useEffect(() => {
     if (!domain) return;
-    const stored = loadDeviceKeys(domain);
-    if (stored) {
-      keypairRef.current = keypairFromB64(stored.publicKeyB64, stored.privateKeyB64);
-      deviceIdRef.current = stored.deviceId;
-      setIsRegistered(true);
-    }
+    let cancelled = false;
+    (async () => {
+      const stored = await loadDeviceKeys(domain);
+      if (cancelled) return;
+      if (stored) {
+        keypairRef.current = keypairFromB64(stored.publicKeyB64, stored.privateKeyB64);
+        deviceIdRef.current = stored.deviceId;
+        setIsRegistered(true);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [domain]);
 
   // Register identity + device with edge function
@@ -100,8 +105,8 @@ export function useMessaging(walletAddress: string | null, domain: string | null
       setIdentity(result.identity);
       setIsRegistered(true);
 
-      // Save keys locally
-      saveDeviceKeys({
+      // Save keys locally (encrypted at rest)
+      await saveDeviceKeys({
         publicKeyB64,
         privateKeyB64,
         deviceId: result.device_id,
