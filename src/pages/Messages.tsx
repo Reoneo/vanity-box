@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MessageSquarePlus, Shield, Lock } from "lucide-react";
+import { ArrowLeft, Home, MessageSquare, MessageSquarePlus, Shield, Lock, User } from "lucide-react";
 import { ConversationList } from "@/components/chat/ConversationList";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { NewConversationModal } from "@/components/chat/NewConversationModal";
@@ -206,7 +206,30 @@ export default function Messages() {
       <div className="border-t-2 border-[#D4AF37]" />
 
       {/* Dock */}
-      <Dock />
+      <Dock
+        items={[
+          {
+            icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+            label: "Home",
+            onClick: () => navigate("/"),
+          },
+          {
+            icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+            label: "Profile",
+            onClick: () => {
+              const linked = getLinkedDomain();
+              if (linked || domain) navigate(`/${linked || domain}`);
+              else navigate("/");
+            },
+          },
+          {
+            icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
+            label: "Messages",
+            onClick: () => navigate("/messages"),
+            isActive: true,
+          },
+        ]}
+      />
 
       {/* New conversation modal */}
       {showNewConvo && (
