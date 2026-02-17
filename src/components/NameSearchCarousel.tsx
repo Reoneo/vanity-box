@@ -35,7 +35,7 @@ type BundleItem = {
 };
 
 const bundleItems: BundleItem[] = [
-  { id: 'iota', avatar: vanityIotaAvatar, base: 'vanity.iota', isActive: true },
+  { id: 'iota', avatar: vanityIotaAvatar, base: 'Vanity.iota', isActive: true },
   { id: 'box', avatar: vanityBoxAvatar, base: 'vanity.box', isActive: false },
 ];
 
@@ -61,7 +61,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
   // IOTA vanity.iota subdomain availability (minimum 3 characters)
   const iotaResult = useIotaSubdomainAvailability(cleanLabel);
-  const iotaDisplayName = `${cleanLabel}.vanity.iota`;
+  const iotaDisplayName = `${cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1)}.Vanity.iota`;
   const pricing = getSubdomainPricing(cleanLabel);
   const isIotaValidLength = cleanLabel.length >= 3;
 
@@ -98,7 +98,8 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
         {/* Chain Icons Grid */}
         <div className="grid grid-cols-2 gap-4 md:gap-6 mb-5 max-w-xs mx-auto">
           {bundleItems.map((item) => {
-            const fullName = `${cleanLabel}.${item.base}`;
+            const displayLabel = cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1);
+            const fullName = `${displayLabel}.${item.base}`;
             const isIota = item.id === 'iota';
             const isBox = item.id === 'box';
             // box and iota should not be greyed out

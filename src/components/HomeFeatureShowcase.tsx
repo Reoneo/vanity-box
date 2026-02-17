@@ -145,28 +145,6 @@ export const HomeFeatureShowcase: React.FC = () => {
           ))}
         </motion.div>
 
-        {/* Stats / Trust Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.7 }}
-          className="w-full flex items-center justify-center gap-6 pt-1"
-        >
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Shield className="w-3.5 h-3.5 text-[#D4AF37]/70" />
-            <span className="text-[11px] font-medium">Decentralized</span>
-          </div>
-          <div className="w-px h-3 bg-border" />
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Layers className="w-3.5 h-3.5 text-[#D4AF37]/70" />
-            <span className="text-[11px] font-medium">Multi-chain</span>
-          </div>
-          <div className="w-px h-3 bg-border" />
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Globe className="w-3.5 h-3.5 text-[#D4AF37]/70" />
-            <span className="text-[11px] font-medium">Open</span>
-          </div>
-        </motion.div>
       </div>
     </div>
   );
