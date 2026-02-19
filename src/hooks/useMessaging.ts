@@ -250,7 +250,7 @@ export function useMessaging(walletAddress: string | null, domain: string | null
               sender_avatar: msg.sender_avatar,
               sent_at: msg.sent_at,
               text: "[Unable to decrypt on this device]",
-              isOwn: msg.sender_domain === domain,
+              isOwn: msg.sender_domain?.toLowerCase() === domain?.toLowerCase(),
               notarized: msg.notarized,
             });
             continue;
@@ -275,7 +275,7 @@ export function useMessaging(walletAddress: string | null, domain: string | null
               sender_avatar: msg.sender_avatar,
               sent_at: msg.sent_at,
               text: parsed.text || "",
-              isOwn: msg.sender_domain === domain,
+              isOwn: msg.sender_domain?.toLowerCase() === domain?.toLowerCase(),
               notarized: msg.notarized,
             });
           } catch {
