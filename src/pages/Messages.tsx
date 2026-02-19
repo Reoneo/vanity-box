@@ -8,6 +8,7 @@ import { useMessaging } from "@/hooks/useMessaging";
 import { useIotaWallet } from "@/contexts/IotaWalletContext";
 import { useWalletConnect } from "@/contexts/WalletConnectContext";
 import { getLinkedDomain } from "@/lib/messaging/linkDomain";
+import { loadAllDeviceKeys } from "@/lib/crypto/keyVault";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import Dock from "@/components/Dock";
@@ -31,21 +32,26 @@ export default function Messages() {
     const linked = getLinkedDomain();
     if (linked) setDomain(linked);
 
-    try {
-      const vault = localStorage.getItem("vanitybox_msg_vault");
-      if (vault) {
-        const parsed = JSON.parse(vault);
-        const vaultDomain = linked && parsed[linked] ? linked : Object.keys(parsed)[0];
-        if (vaultDomain) {
-          if (!linked) setDomain(vaultDomain);
-          setWalletAddress(parsed[vaultDomain]?.walletAddress || iotaAddress || evmAddress || null);
-          return;
+    // Use the async vault loader (vault is encrypted, not raw JSON)
+    (async () => {
+      try {
+        const allKeys = await loadAllDeviceKeys();
+        const vaultDomains = Object.keys(allKeys);
+        if (vaultDomains.length > 0) {
+          const normalizedLinked = linked?.toLowerCase().trim();
+          const vaultDomain = normalizedLinked && (allKeys[normalizedLinked] || vaultDomains.find(k => k.toLowerCase().trim() === normalizedLinked))
+            ? (normalizedLinked)
+            : vaultDomains[0];
+          if (vaultDomain && !linked) setDomain(vaultDomain);
         }
+      } catch (err) {
+        console.warn("Failed to load device keys from vault:", err);
       }
-    } catch {}
-    
-    if (iotaAddress) setWalletAddress(iotaAddress);
-    else if (evmAddress) setWalletAddress(evmAddress);
+
+      // Wallet address comes from connected wallets
+      if (iotaAddress) setWalletAddress(iotaAddress);
+      else if (evmAddress) setWalletAddress(evmAddress);
+    })();
   }, [iotaAddress, evmAddress]);
 
   const {

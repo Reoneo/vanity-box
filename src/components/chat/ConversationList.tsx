@@ -24,7 +24,7 @@ export function ConversationList({ conversations, onSelect, domain }: Conversati
     <div className="flex-1 overflow-y-auto">
       {conversations.map((conv) => {
         const otherMembers = conv.members.filter(
-          (m) => m.domain_name !== domain
+          (m) => m.domain_name?.toLowerCase() !== domain?.toLowerCase()
         );
         const displayName =
           otherMembers[0]?.display_name || otherMembers[0]?.domain_name || "Unknown";
