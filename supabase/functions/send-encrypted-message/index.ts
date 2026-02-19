@@ -35,7 +35,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Require sender device envelope so sender can decrypt own messages
     const hasSenderEnvelope = envelopes.some((e: any) => e?.recipientDeviceId === sender_device_id);
     if (!hasSenderEnvelope) {
       return new Response(
@@ -49,10 +48,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify sender is a member
+    // Verify sender identity exists and wallet matches
     const { data: sender } = await supabase
       .from("messaging_identities")
-      .select("id")
+      .select("id, wallet_address")
       .eq("domain_name", sender_domain.toLowerCase())
       .single();
 
@@ -63,6 +62,31 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Server-side check: verify the provided wallet matches the registered identity
+    if (sender.wallet_address.toLowerCase() !== sender_wallet.toLowerCase()) {
+      return new Response(
+        JSON.stringify({ error: "Wallet address does not match registered identity" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify device belongs to this identity
+    const { data: deviceCheck } = await supabase
+      .from("messaging_devices")
+      .select("device_id")
+      .eq("device_id", sender_device_id)
+      .eq("identity_id", sender.id)
+      .is("revoked_at", null)
+      .maybeSingle();
+
+    if (!deviceCheck) {
+      return new Response(
+        JSON.stringify({ error: "Device does not belong to sender identity" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify membership
     const { data: membership } = await supabase
       .from("messaging_members")
       .select("identity_id")
@@ -109,7 +133,6 @@ Deno.serve(async (req) => {
 
       if (envErr) throw envErr;
     } catch (envInsertErr) {
-      // Cleanup orphaned message to prevent undecryptable rows
       await supabase
         .from("messaging_messages")
         .delete()

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Home, MessageSquare, MessageSquarePlus, Search, Shield, Lock, User } from "lucide-react";
 import { ConversationList } from "@/components/chat/ConversationList";
@@ -10,6 +10,7 @@ import { useWalletConnect } from "@/contexts/WalletConnectContext";
 import { getLinkedDomain } from "@/lib/messaging/linkDomain";
 import { loadAllDeviceKeys } from "@/lib/crypto/keyVault";
 import { toast } from "sonner";
+import { useSignMessage, useAccount } from "wagmi";
 import { Header } from "@/components/Header";
 import Dock from "@/components/Dock";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -54,11 +55,18 @@ export default function Messages() {
     })();
   }, [iotaAddress, evmAddress]);
 
+  // Wallet signing for EVM identity registration
+  const { signMessageAsync } = useSignMessage();
+  const { address: wagmiAddress } = useAccount();
+  const signMessageFn = useCallback(async (message: string) => {
+    return signMessageAsync({ message, account: wagmiAddress! });
+  }, [signMessageAsync, wagmiAddress]);
+
   const {
     isRegistered, isLoading, conversations, activeConversation,
     messages, register, fetchConversations, startConversation,
     sendMessage, openConversation, setActiveConversation,
-  } = useMessaging(walletAddress, domain);
+  } = useMessaging(walletAddress, domain, signMessageFn);
 
   useEffect(() => {
     if (isRegistered && walletAddress && domain) fetchConversations();

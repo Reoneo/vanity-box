@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Gift, Send, Trash2, Plus, X, RefreshCw, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useWalletSign } from '@/hooks/useWalletSign';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -28,6 +29,7 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
   domain
 }) => {
   const { t } = useLanguage();
+  const { signForOperation } = useWalletSign();
   const [transferAddress, setTransferAddress] = useState('');
   const [customRecords, setCustomRecords] = useState<{ key: string; value: string }[]>([]);
   const [newRecordKey, setNewRecordKey] = useState('');
@@ -220,9 +222,13 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
       toast.info('Deleting domain from Namestone...');
       
       const subdomain = `${domain.name}.${domain.domain}`;
+
+      const { signature, timestamp } = await signForOperation('Delete domain', {
+        Subdomain: subdomain,
+      });
       
       const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-        body: { subdomain, domain: domain.domain, walletAddress: domain.address },
+        body: { subdomain, domain: domain.domain, walletAddress: domain.address, signature, timestamp },
       });
 
       if (error) {
@@ -290,11 +296,17 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
 
       console.log(`[DomainManagementModal] Saving records for ${subdomain}:`, textRecords);
 
+      const { signature, timestamp } = await signForOperation('Update domain records', {
+        Subdomain: subdomain,
+      });
+
       const { data, error } = await supabase.functions.invoke('set-namestone-records', {
         body: {
           subdomain,
           walletAddress: domain.address,
           textRecords,
+          signature,
+          timestamp,
         },
       });
 

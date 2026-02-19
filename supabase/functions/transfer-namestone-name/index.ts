@@ -1,67 +1,104 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { verifyMessage } from 'https://esm.sh/viem@2.37.5';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API key will be fetched based on domain
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { subdomain, toAddress } = await req.json();
-
-    console.log('==========================================');
-    console.log('🔄 STARTING DOMAIN TRANSFER PROCESS');
-    console.log('==========================================');
-    console.log('📝 Subdomain:', subdomain);
-    console.log('👛 To Address:', toAddress);
-    console.log('==========================================');
+    const { subdomain, toAddress, walletAddress, signature, timestamp } = await req.json();
 
     if (!subdomain || !toAddress) {
       throw new Error('Missing required parameters: subdomain and toAddress');
     }
 
-    // Parse subdomain to extract label and domain
+    // --- Signature verification ---
+    if (!walletAddress || !signature || !timestamp) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Wallet signature required for domain transfer' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Reject stale requests (5 min window)
+    if (Date.now() - timestamp > 300_000) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Request expired' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const expectedMessage = [
+      'Transfer domain',
+      `Subdomain: ${subdomain}`,
+      `To: ${toAddress}`,
+      `Timestamp: ${timestamp}`,
+    ].join('\n');
+
+    const isValid = await verifyMessage({
+      address: walletAddress as `0x${string}`,
+      message: expectedMessage,
+      signature: signature as `0x${string}`,
+    });
+
+    if (!isValid) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid wallet signature' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // --- End signature verification ---
+
+    console.log('🔄 DOMAIN TRANSFER – verified owner:', walletAddress);
+
     const parts = subdomain.split('.');
     const subdomainLabel = parts[0];
     const domainFromSubdomain = parts.slice(1).join('.');
-    
-    console.log('🏷️  Subdomain label:', subdomainLabel);
-    console.log('🌐 Domain:', domainFromSubdomain);
 
-    // Validate Ethereum address format (basic check)
     if (!/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
       throw new Error('Invalid Ethereum address format');
     }
 
-    // Resolve API key for this domain using domain_configs first, then fall back to env naming pattern/default
+    // Verify ownership via minted_domains
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: domainRecord } = await supabase
+      .from('minted_domains')
+      .select('wallet_address')
+      .eq('full_name', subdomain.toLowerCase())
+      .maybeSingle();
+
+    if (domainRecord && domainRecord.wallet_address.toLowerCase() !== walletAddress.toLowerCase()) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'You do not own this domain' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Resolve API key
     let NAMESTONE_API_KEY: string | null = null;
 
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL');
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      if (supabaseUrl && supabaseServiceKey) {
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        const { data: cfg, error: dbError } = await supabase
-          .from('domain_configs')
-          .select('api_key_secret_name, status')
-          .eq('domain_name', domainFromSubdomain.toLowerCase())
-          .single();
+      const { data: cfg, error: dbError } = await supabase
+        .from('domain_configs')
+        .select('api_key_secret_name, status')
+        .eq('domain_name', domainFromSubdomain.toLowerCase())
+        .single();
 
-        if (!dbError && cfg && cfg.status === 'active' && cfg.api_key_secret_name) {
-          NAMESTONE_API_KEY = Deno.env.get(cfg.api_key_secret_name) || null;
-          console.log('🔑 Using API key from domain_configs:', cfg.api_key_secret_name);
-        }
+      if (!dbError && cfg && cfg.status === 'active' && cfg.api_key_secret_name) {
+        NAMESTONE_API_KEY = Deno.env.get(cfg.api_key_secret_name) || null;
       }
     } catch (lookupErr) {
-      console.log('ℹ️ Skipping domain_configs lookup due to error:', lookupErr);
+      console.log('ℹ️ Skipping domain_configs lookup:', lookupErr);
     }
 
     if (!NAMESTONE_API_KEY) {
@@ -71,18 +108,14 @@ serve(async (req) => {
     if (!NAMESTONE_API_KEY) {
       throw new Error(`API key not configured for domain ${domainFromSubdomain}`);
     }
-    
-    console.log('🔑 Using API key for domain:', domainFromSubdomain);
 
     const namestonePayload = {
       domain: (domainFromSubdomain || 'smith.cash').toLowerCase(),
       name: subdomainLabel,
       address: toAddress,
-      chain_id: 480, // World Chain network ID
+      chain_id: 480,
     };
-    
-    console.log('📤 Sending transfer request to Namestone:', JSON.stringify(namestonePayload, null, 2));
-    
+
     const namestoneResponse = await fetch('https://namestone.com/api/public_v1/set-name', {
       method: 'POST',
       headers: {
@@ -92,24 +125,14 @@ serve(async (req) => {
       body: JSON.stringify(namestonePayload),
     });
 
-    console.log('📥 Namestone response status:', namestoneResponse.status);
-    
     if (!namestoneResponse.ok) {
       const errorText = await namestoneResponse.text();
-      console.error('❌ NAMESTONE API ERROR');
-      console.error('Status:', namestoneResponse.status);
-      console.error('Error message:', errorText);
       throw new Error(`Namestone API error: ${namestoneResponse.status} - ${errorText}`);
     }
 
     const namestoneData = await namestoneResponse.json();
-    console.log('✅ Namestone response:', JSON.stringify(namestoneData, null, 2));
     console.log('✅ Domain transferred successfully via Namestone');
 
-    console.log('\n==========================================');
-    console.log('🎉 DOMAIN TRANSFER COMPLETE');
-    console.log('==========================================');
-    
     return new Response(
       JSON.stringify({
         success: true,
@@ -118,22 +141,16 @@ serve(async (req) => {
         namestoneData,
         message: 'Domain transferred successfully'
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
-    console.error('Error in transfer-namestone-name function:', error);
+    console.error('Error in transfer-namestone-name:', error);
     return new Response(
       JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

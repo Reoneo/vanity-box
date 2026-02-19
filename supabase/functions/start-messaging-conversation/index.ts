@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find sender identity
+    // Find sender identity and verify wallet matches
     const { data: sender } = await supabase
       .from("messaging_identities")
-      .select("id")
+      .select("id, wallet_address")
       .eq("domain_name", sender_domain.toLowerCase())
       .single();
 
@@ -37,6 +37,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Sender not registered" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side check: verify wallet matches registered identity
+    if (sender.wallet_address.toLowerCase() !== sender_wallet.toLowerCase()) {
+      return new Response(
+        JSON.stringify({ error: "Wallet address does not match registered identity" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -51,7 +59,6 @@ Deno.serve(async (req) => {
     if (recipient) {
       recipientId = recipient.id;
     } else {
-      // Auto-create a placeholder identity for the recipient
       const { data: newRecipient, error: recErr } = await supabase
         .from("messaging_identities")
         .insert({
@@ -88,7 +95,6 @@ Deno.serve(async (req) => {
     )?.conversation_id;
 
     if (existingConvId) {
-      // Verify it's a direct conversation
       const { data: conv } = await supabase
         .from("messaging_conversations")
         .select("conversation_type")
@@ -115,7 +121,6 @@ Deno.serve(async (req) => {
 
     if (convErr) throw convErr;
 
-    // Add both members
     await supabase.from("messaging_members").insert([
       { conversation_id: conv.conversation_id, identity_id: sender.id, role: "admin" },
       { conversation_id: conv.conversation_id, identity_id: recipientId, role: "member" },

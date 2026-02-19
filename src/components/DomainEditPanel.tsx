@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useWalletSign } from '@/hooks/useWalletSign';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -22,6 +23,7 @@ interface DomainEditPanelProps {
 
 export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
   const { t } = useLanguage();
+  const { signForOperation } = useWalletSign();
   const [customRecords, setCustomRecords] = useState<{ key: string; value: string }[]>([]);
   const [newRecordKey, setNewRecordKey] = useState('');
   const [newRecordValue, setNewRecordValue] = useState('');
@@ -76,9 +78,13 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       toast.info(t('deleting_domain'));
       
       const subdomain = `${domain.name}.${domain.domain}`;
+
+      const { signature, timestamp } = await signForOperation('Delete domain', {
+        Subdomain: subdomain,
+      });
       
       const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-        body: { subdomain, domain: domain.domain, walletAddress: domain.address },
+        body: { subdomain, domain: domain.domain, walletAddress: domain.address, signature, timestamp },
       });
 
       if (error) {
@@ -123,8 +129,13 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
       const subdomain = `${domain.name}.${domain.domain}`;
 
+      const { signature, timestamp } = await signForOperation('Transfer domain', {
+        Subdomain: subdomain,
+        To: to,
+      });
+
       const { data, error } = await supabase.functions.invoke('transfer-namestone-name', {
-        body: { subdomain, toAddress: to },
+        body: { subdomain, toAddress: to, walletAddress: domain.address, signature, timestamp },
       });
 
       if (error) throw error;
@@ -190,11 +201,17 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
       console.log(`[DomainEditPanel] Saving records for ${subdomain}:`, textRecords);
 
+      const { signature, timestamp } = await signForOperation('Update domain records', {
+        Subdomain: subdomain,
+      });
+
       const { data, error } = await supabase.functions.invoke('set-namestone-records', {
         body: {
           subdomain,
           walletAddress: domain.address,
           textRecords,
+          signature,
+          timestamp,
         },
       });
 
