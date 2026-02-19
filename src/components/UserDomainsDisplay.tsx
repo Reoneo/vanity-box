@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
+import { useWalletSign } from '@/hooks/useWalletSign';
 import { Loader2, Pencil, Send, Trash2, ExternalLink, RefreshCw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -35,6 +36,7 @@ interface UserDomainsDisplayProps {
 export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAddress }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { signForOperation } = useWalletSign();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -403,11 +405,15 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
           try {
             toast.info(t('deleting_domain'));
 
+            const { signature, timestamp } = await signForOperation('Delete domain', { Subdomain: fullName });
+
             const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
               body: { 
                 subdomain: fullName, 
                 domain: domainToDelete.domain,
-                walletAddress: walletAddress 
+                walletAddress: walletAddress,
+                signature,
+                timestamp,
               },
             });
 

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { verifyMessage } from 'https://esm.sh/viem@2.37.5';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { wallet_address, domain_name, domain_type, device_pubkey } =
+    const { wallet_address, domain_name, domain_type, device_pubkey, signature, timestamp } =
       await req.json();
 
     if (!wallet_address || !domain_name || !device_pubkey) {
@@ -21,6 +22,48 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // --- Signature verification (EVM wallets) ---
+    // IOTA wallets use a different signing scheme; skip verification for non-0x addresses
+    const isEvmAddress = /^0x[a-fA-F0-9]{40}$/.test(wallet_address);
+
+    if (isEvmAddress) {
+      if (!signature || !timestamp) {
+        return new Response(
+          JSON.stringify({ error: "Wallet signature required for identity registration" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (Date.now() - timestamp > 300_000) {
+        return new Response(
+          JSON.stringify({ error: "Request expired" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const expectedMessage = [
+        'Register messaging identity',
+        `Wallet: ${wallet_address}`,
+        `Domain: ${domain_name}`,
+        `Device: ${device_pubkey}`,
+        `Timestamp: ${timestamp}`,
+      ].join('\n');
+
+      const isValid = await verifyMessage({
+        address: wallet_address as `0x${string}`,
+        message: expectedMessage,
+        signature: signature as `0x${string}`,
+      });
+
+      if (!isValid) {
+        return new Response(
+          JSON.stringify({ error: "Invalid wallet signature" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    // --- End signature verification ---
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -55,13 +98,11 @@ Deno.serve(async (req) => {
     let deviceId: string;
     if (existingDevice) {
       deviceId = existingDevice.device_id;
-      // Update last seen
       await supabase
         .from("messaging_devices")
         .update({ last_seen_at: new Date().toISOString() })
         .eq("device_id", deviceId);
     } else {
-      // Create new device
       const { data: newDevice, error: devErr } = await supabase
         .from("messaging_devices")
         .insert({

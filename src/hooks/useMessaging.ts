@@ -54,7 +54,11 @@ export interface DecryptedMessage {
   notarized: boolean;
 }
 
-export function useMessaging(walletAddress: string | null, domain: string | null) {
+export function useMessaging(
+  walletAddress: string | null,
+  domain: string | null,
+  signMessageFn?: (message: string) => Promise<string>
+) {
   const [identity, setIdentity] = useState<MessagingIdentity | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
@@ -91,6 +95,23 @@ export function useMessaging(walletAddress: string | null, domain: string | null
       }
       const { publicKeyB64, privateKeyB64 } = keypairToB64(keypairRef.current);
 
+      // Build signature payload for EVM wallets
+      const isEvm = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+      let signature: string | undefined;
+      let timestamp: number | undefined;
+
+      if (isEvm && signMessageFn) {
+        timestamp = Date.now();
+        const message = [
+          'Register messaging identity',
+          `Wallet: ${walletAddress}`,
+          `Domain: ${domain}`,
+          `Device: ${publicKeyB64}`,
+          `Timestamp: ${timestamp}`,
+        ].join('\n');
+        signature = await signMessageFn(message);
+      }
+
       const result = await callEdge<{
         identity: MessagingIdentity;
         device_id: string;
@@ -99,6 +120,8 @@ export function useMessaging(walletAddress: string | null, domain: string | null
         domain_name: domain,
         domain_type: domain.endsWith(".iota") ? "iota" : domain.endsWith(".eth") ? "eth" : domain.endsWith(".box") ? "box" : "other",
         device_pubkey: publicKeyB64,
+        signature,
+        timestamp,
       });
 
       deviceIdRef.current = result.device_id;
@@ -131,7 +154,7 @@ export function useMessaging(walletAddress: string | null, domain: string | null
     } catch (err) {
       console.error("Failed to fetch conversations:", err);
     }
-  }, [walletAddress, domain]);
+  }, [walletAddress, domain, signMessageFn]);
 
   // Start a new conversation with a domain
   const startConversation = useCallback(

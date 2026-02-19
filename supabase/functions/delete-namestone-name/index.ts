@@ -1,47 +1,87 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyMessage } from 'https://esm.sh/viem@2.37.5';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API key will be fetched based on domain
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { subdomain, domain: providedDomain, walletAddress } = await req.json();
-
-    console.log('==========================================');
-    console.log('🗑️  DELETING NAMESTONE NAME');
-    console.log('==========================================');
-    console.log('📝 Subdomain:', subdomain);
-    console.log('📝 Wallet Address:', walletAddress);
-    console.log('==========================================');
+    const { subdomain, domain: providedDomain, walletAddress, signature, timestamp } = await req.json();
 
     if (!subdomain) {
       throw new Error('Missing subdomain parameter');
     }
-    
     if (!walletAddress) {
       throw new Error('Missing wallet address parameter');
     }
 
-    // Extract subdomain label and domain
+    // --- Signature verification ---
+    if (!signature || !timestamp) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Wallet signature required for domain deletion' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (Date.now() - timestamp > 300_000) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Request expired' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const expectedMessage = [
+      'Delete domain',
+      `Subdomain: ${subdomain}`,
+      `Timestamp: ${timestamp}`,
+    ].join('\n');
+
+    const isValid = await verifyMessage({
+      address: walletAddress as `0x${string}`,
+      message: expectedMessage,
+      signature: signature as `0x${string}`,
+    });
+
+    if (!isValid) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid wallet signature' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // --- End signature verification ---
+
+    console.log('🗑️ DELETE – verified owner:', walletAddress);
+
     const parts = subdomain.split('.');
     const subdomainLabel = parts[0];
     const domain = providedDomain || parts.slice(1).join('.') || 'smith.cash';
 
-    // Resolve API key for this domain using domain_configs first, then env fallbacks
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Verify ownership via minted_domains
+    const { data: domainRecord } = await supabase
+      .from('minted_domains')
+      .select('wallet_address')
+      .eq('full_name', subdomain.toLowerCase())
+      .maybeSingle();
+
+    if (domainRecord && domainRecord.wallet_address.toLowerCase() !== walletAddress.toLowerCase()) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'You do not own this domain' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Resolve API key
     let usedSecret = '';
     let NAMESTONE_API_KEY = '';
 
@@ -53,10 +93,7 @@ serve(async (req) => {
         .eq('status', 'active')
         .maybeSingle();
 
-      if (cfgError) {
-        console.warn('⚠️ Could not read domain_configs:', cfgError);
-      }
-      if (cfg?.api_key_secret_name) {
+      if (!cfgError && cfg?.api_key_secret_name) {
         usedSecret = cfg.api_key_secret_name;
         NAMESTONE_API_KEY = Deno.env.get(cfg.api_key_secret_name) || '';
       }
@@ -73,22 +110,16 @@ serve(async (req) => {
         Deno.env.get(envKeyBase) ||
         Deno.env.get('NAMESTONE_API_KEY') ||
         '';
-      usedSecret = NAMESTONE_API_KEY ? (NAMESTONE_API_KEY === Deno.env.get('NAMESTONE_API_KEY') ? 'NAMESTONE_API_KEY' : `${envKeyExact} or ${envKeyBase}`) : usedSecret;
     }
     
     if (!NAMESTONE_API_KEY) {
       throw new Error(`API key not configured for domain ${domain}`);
     }
-    
-    console.log('🔑 Using API key for domain via', usedSecret || 'domain_configs', '→', domain);
-    console.log('📝 Domain:', domain);
-    
+
     const payload = {
       domain: domain.toLowerCase(),
       name: subdomainLabel
     };
-
-    console.log('📤 Sending delete request to Namestone:', JSON.stringify(payload, null, 2));
 
     const response = await fetch('https://namestone.com/api/public_v1/delete-name', {
       method: 'POST',
@@ -99,24 +130,16 @@ serve(async (req) => {
       body: JSON.stringify(payload),
     });
 
-    console.log('📥 Namestone response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ NAMESTONE API ERROR');
-      console.error('Status:', response.status);
-      console.error('Error message:', errorText);
-
-      // Treat missing names as idempotent success so UI can proceed and DB stays clean
       const lower = errorText.toLowerCase();
       if (lower.includes('name does not exist') || lower.includes('not found')) {
-        console.warn('⚠️ Name not found on Namestone. Proceeding with local cleanup as successful delete.');
+        console.warn('⚠️ Name not found on Namestone – proceeding with local cleanup.');
       } else {
         throw new Error(`Namestone API error: ${response.status} - ${errorText}`);
       }
     }
 
-    // Parse response when OK, otherwise synthesize a minimal payload
     let data: any = null;
     try {
       if (response.ok) {
@@ -125,70 +148,43 @@ serve(async (req) => {
         data = { softDeleted: true };
       }
     } catch (e) {
-      console.warn('⚠️ Could not parse Namestone response JSON:', e);
       data = { softDeleted: !response.ok };
     }
 
-    console.log('✅ Delete flow completed (remote or soft):', JSON.stringify(data, null, 2));
-
-    // Also delete from minted_domains table to keep database in sync
+    // Delete from minted_domains
     try {
-      // Supabase client already initialized above
-
       const fullName = `${subdomainLabel}.${domain}`;
-      console.log('🗃️  Deleting from database:', { fullName, walletAddress: walletAddress.toLowerCase() });
-      
-    const { data: primaryDel, error: deleteError } = await supabase
-      .from('minted_domains')
-      .delete()
-      .eq('full_name', fullName)
-      .eq('wallet_address', walletAddress.toLowerCase())
-      .select('id');
-
-    if (deleteError) {
-      console.error('⚠️ Error deleting from minted_domains (wallet scoped):', deleteError);
-    } else if (!primaryDel || primaryDel.length === 0) {
-      console.warn('ℹ️ No rows deleted with wallet filter. Attempting fallback delete by full_name only.');
-      const { error: fallbackError } = await supabase
+      const { data: primaryDel, error: deleteError } = await supabase
         .from('minted_domains')
         .delete()
-        .eq('full_name', fullName);
-      if (fallbackError) {
-        console.error('⚠️ Fallback delete error:', fallbackError);
-      } else {
-        console.log('✅ Deleted from minted_domains by full_name');
+        .eq('full_name', fullName)
+        .eq('wallet_address', walletAddress.toLowerCase())
+        .select('id');
+
+      if (deleteError) {
+        console.error('⚠️ Delete error (wallet scoped):', deleteError);
+      } else if (!primaryDel || primaryDel.length === 0) {
+        await supabase
+          .from('minted_domains')
+          .delete()
+          .eq('full_name', fullName);
       }
-    } else {
-      console.log('✅ Also deleted from minted_domains table (wallet scoped)');
-    }
     } catch (dbError) {
       console.error('⚠️ Database cleanup error:', dbError);
-      // Don't fail the whole request if DB cleanup fails
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        subdomain,
-        data,
-        message: 'Name deleted successfully'
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({ success: true, subdomain, data, message: 'Name deleted successfully' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
-    console.error('Error in delete-namestone-name function:', error);
+    console.error('Error in delete-namestone-name:', error);
     return new Response(
       JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
