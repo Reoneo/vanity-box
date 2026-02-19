@@ -146,3 +146,6 @@ verify_jwt = false
 
 [functions.notarize-message-batch]
 verify_jwt = false
+
+[functions.issue-ethereum-vc]
+verify_jwt = false

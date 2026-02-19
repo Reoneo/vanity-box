@@ -51,7 +51,7 @@ export function CredentialList({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm truncate">
-                        {vc.claims.name}
+                        {vc.claims.name || vc.claims.address}
                       </span>
                       <Badge variant="outline" className="text-xs bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/30">
                         {vc.claims.chain}

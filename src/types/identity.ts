@@ -16,8 +16,9 @@ export interface VerifiableCredential {
 
 export interface VanityNameClaims {
   name: string;
-  chain: 'IOTA';
+  chain: 'IOTA' | 'Ethereum';
   issuedBy?: string;
+  address?: string;
 }
 
 export interface VerifiablePresentation {
