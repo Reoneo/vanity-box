@@ -14,13 +14,15 @@ import {
   Download,
   Upload,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Wallet
 } from 'lucide-react';
 import { useIdentity, IdentityProvider } from '@/contexts/IdentityContext';
 import { StepCard, StepStatus } from './StepCard';
 import { CredentialList } from './CredentialList';
 import { VerificationResultCard } from './VerificationResultCard';
 import { PresentationModal } from './PresentationModal';
+import { LinkEthereumWalletModal } from '@/components/LinkEthereumWalletModal';
 import { generateNonce, calculateExpiry } from '@/lib/identity/vault';
 import { setLinkedDomain } from '@/lib/messaging/linkDomain';
 
@@ -47,6 +49,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   } = useIdentity();
 
   const [showPresentationModal, setShowPresentationModal] = useState(false);
+  const [showLinkEthModal, setShowLinkEthModal] = useState(false);
   const [currentNonce, setCurrentNonce] = useState<string>('');
   const [vpExpiresAt, setVpExpiresAt] = useState<string>('');
 
@@ -222,6 +225,38 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         </StepCard>
       </div>
 
+      {/* Link Ethereum Wallet */}
+      {holderDid && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold">Link Ethereum Wallet</h4>
+                <p className="text-xs text-muted-foreground">Bind an EVM address to your DID via VC</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowLinkEthModal(true)}
+                className="border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+              >
+                <Wallet className="w-4 h-4 mr-1" />
+                Link Wallet
+              </Button>
+            </div>
+            {/* Show existing EVM credentials */}
+            {vcList.filter(vc => vc.type === 'EthereumWalletOwnershipCredential').map((vc, i) => (
+              <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-xs font-mono truncate flex-1">{vc.claims.address}</span>
+                <Badge variant="outline" className="text-xs">Ethereum</Badge>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <Separator />
 
       {/* Vault Actions */}
@@ -248,6 +283,13 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         expiresAt={vpExpiresAt}
         nonce={currentNonce}
         onVerify={handleVerify}
+      />
+
+      {/* Link Ethereum Wallet Modal */}
+      <LinkEthereumWalletModal
+        open={showLinkEthModal}
+        onClose={() => setShowLinkEthModal(false)}
+        iotaName={iotaName}
       />
     </div>
   );
