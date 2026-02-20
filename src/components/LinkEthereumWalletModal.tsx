@@ -21,6 +21,7 @@ type LinkStep = 'connect' | 'sign' | 'issuing' | 'done' | 'error';
 export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereumWalletModalProps) {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const { connectAsync, connectors } = useConnect();
   const { holderDid, vcList } = useIdentity();
 
   const [step, setStep] = useState<LinkStep>('connect');
@@ -35,21 +36,35 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
   );
 
   const handleSignAndLink = useCallback(async () => {
-    if (!address || !holderDid) {
-      toast.error('Connect your Ethereum wallet and create a DID first');
+    if (!holderDid) {
+      toast.error('Create a DID in the Identity tab first');
       return;
     }
 
     setIsLoading(true);
-    setStep('sign');
     setErrorMsg('');
 
     try {
-      // Build SIWE-style message
+      // Step 1: Connect wallet if not already connected
+      let signerAddress = address;
+      if (!isConnected || !address) {
+        setStep('connect');
+        // Find WalletConnect connector, fall back to first available
+        const wcConnector = connectors.find(c => c.id === 'walletConnect') || connectors[0];
+        if (!wcConnector) {
+          throw new Error('No wallet connectors available');
+        }
+        const result = await connectAsync({ connector: wcConnector });
+        signerAddress = result.accounts[0];
+        if (!signerAddress) throw new Error('No address returned from wallet');
+      }
+
+      // Step 2: Sign message
+      setStep('sign');
       const timestamp = new Date().toISOString();
       const message = [
         `vanity.box wants you to sign in with your Ethereum account:`,
-        address,
+        signerAddress,
         '',
         `Link Ethereum wallet to IOTA identity ${iotaName}`,
         '',
@@ -58,8 +73,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
         `Issued At: ${timestamp}`,
       ].join('\n');
 
-      // Request signature from connected wallet
-      const signature = await signMessageAsync({ message, account: address });
+      const signature = await signMessageAsync({ message, account: signerAddress as `0x${string}` });
 
       setStep('issuing');
 
@@ -68,7 +82,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
         'issue-ethereum-vc',
         {
           holderDid,
-          address,
+          address: signerAddress,
           message,
           signature,
         }
@@ -94,7 +108,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     } finally {
       setIsLoading(false);
     }
-  }, [address, holderDid, iotaName, signMessageAsync]);
+  }, [address, isConnected, connectors, connectAsync, holderDid, iotaName, signMessageAsync]);
 
   const handleClose = () => {
     setStep('connect');
@@ -103,7 +117,8 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     onClose();
   };
 
-  const canSign = isConnected && !!address && !!holderDid;
+  // Only require holderDid — wallet connection happens on click
+  const canSign = !!holderDid;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
