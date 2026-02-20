@@ -1,13 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Wallet, CheckCircle2, AlertTriangle, Link2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAccount, useSignMessage, useConnect } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { callEdge } from '@/lib/supaInvoke';
 import { useIdentity } from '@/contexts/IdentityContext';
+import { useWalletConnect } from '@/contexts/WalletConnectContext';
 import ethLogoDark from '@/assets/eth-logo-dark.png';
 
 interface LinkEthereumWalletModalProps {
@@ -16,51 +17,34 @@ interface LinkEthereumWalletModalProps {
   iotaName: string;
 }
 
-type LinkStep = 'connect' | 'sign' | 'issuing' | 'done' | 'error';
+type LinkStep = 'idle' | 'awaiting-wallet' | 'sign' | 'issuing' | 'done' | 'error';
 
 export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereumWalletModalProps) {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { connectAsync, connectors } = useConnect();
+  const { openModal } = useWalletConnect();
   const { holderDid, vcList } = useIdentity();
 
-  const [step, setStep] = useState<LinkStep>('connect');
+  const [step, setStep] = useState<LinkStep>('idle');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [issuedVcJwt, setIssuedVcJwt] = useState<string | null>(null);
 
-  // Check if an EVM VC already exists for this address
+  // Track if we're waiting for wallet connection to auto-proceed
+  const pendingSignRef = useRef(false);
+
   const existingEvmVc = vcList.find(
-    vc => vc.type === 'EthereumWalletOwnershipCredential' && 
+    vc => vc.type === 'EthereumWalletOwnershipCredential' &&
           vc.claims.address?.toLowerCase() === address?.toLowerCase()
   );
 
-  const handleSignAndLink = useCallback(async () => {
-    if (!holderDid) {
-      toast.error('Create a DID in the Identity tab first');
-      return;
-    }
-
+  // Core signing + VC issuance logic (assumes wallet is connected)
+  const performSignAndIssue = useCallback(async (signerAddress: string) => {
     setIsLoading(true);
+    setStep('sign');
     setErrorMsg('');
 
     try {
-      // Step 1: Connect wallet if not already connected
-      let signerAddress = address;
-      if (!isConnected || !address) {
-        setStep('connect');
-        // Find WalletConnect connector, fall back to first available
-        const wcConnector = connectors.find(c => c.id === 'walletConnect') || connectors[0];
-        if (!wcConnector) {
-          throw new Error('No wallet connectors available');
-        }
-        const result = await connectAsync({ connector: wcConnector });
-        signerAddress = result.accounts[0];
-        if (!signerAddress) throw new Error('No address returned from wallet');
-      }
-
-      // Step 2: Sign message
-      setStep('sign');
       const timestamp = new Date().toISOString();
       const message = [
         `vanity.box wants you to sign in with your Ethereum account:`,
@@ -77,15 +61,9 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
 
       setStep('issuing');
 
-      // Call backend to verify signature and issue VC
       const response = await callEdge<{ vcJwt: string; issuerDid: string; issuedAt: string }>(
         'issue-ethereum-vc',
-        {
-          holderDid,
-          address: signerAddress,
-          message,
-          signature,
-        }
+        { holderDid, address: signerAddress, message, signature }
       );
 
       if (response?.vcJwt) {
@@ -98,7 +76,6 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     } catch (error: any) {
       console.error('Link wallet error:', error);
       const msg = error?.message || 'Failed to link wallet';
-      // User rejected in wallet
       if (msg.includes('User rejected') || msg.includes('user rejected') || msg.includes('denied')) {
         setErrorMsg('Signature request was rejected');
       } else {
@@ -108,17 +85,51 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     } finally {
       setIsLoading(false);
     }
-  }, [address, isConnected, connectors, connectAsync, holderDid, iotaName, signMessageAsync]);
+  }, [holderDid, iotaName, signMessageAsync]);
+
+  // When wallet connects while we're waiting, auto-proceed to sign
+  useEffect(() => {
+    if (pendingSignRef.current && isConnected && address && step === 'awaiting-wallet') {
+      pendingSignRef.current = false;
+      performSignAndIssue(address);
+    }
+  }, [isConnected, address, step, performSignAndIssue]);
+
+  const handleSignAndLink = useCallback(() => {
+    if (!holderDid) {
+      toast.error('Create a DID in the Identity tab first');
+      return;
+    }
+
+    if (isConnected && address) {
+      // Already connected — go straight to signing
+      performSignAndIssue(address);
+    } else {
+      // Not connected — open RainbowKit modal and wait
+      pendingSignRef.current = true;
+      setStep('awaiting-wallet');
+      openModal();
+    }
+  }, [holderDid, isConnected, address, performSignAndIssue, openModal]);
 
   const handleClose = () => {
-    setStep('connect');
+    pendingSignRef.current = false;
+    setStep('idle');
     setErrorMsg('');
     setIssuedVcJwt(null);
     onClose();
   };
 
-  // Only require holderDid — wallet connection happens on click
   const canSign = !!holderDid;
+  const showButton = step !== 'done';
+  const buttonLoading = isLoading || step === 'awaiting-wallet';
+
+  const buttonLabel = () => {
+    if (step === 'awaiting-wallet') return 'Waiting for wallet…';
+    if (isLoading) return 'Processing…';
+    if (!isConnected) return 'Connect & Sign';
+    return 'Sign & Link';
+  };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -157,7 +168,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
               {isConnected && address ? (
                 <p className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">{address}</p>
               ) : (
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Not connected</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Not connected — will prompt on sign</p>
               )}
             </div>
             {isConnected && (
@@ -183,11 +194,12 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
           <Separator />
 
           {/* Step info */}
-          {step === 'connect' && !existingEvmVc && (
+          {(step === 'idle' || step === 'awaiting-wallet') && !existingEvmVc && (
             <div className="text-xs sm:text-sm text-muted-foreground">
-              <p>Clicking <strong>Sign & Link</strong> will:</p>
+              <p>Clicking <strong>{isConnected ? 'Sign & Link' : 'Connect & Sign'}</strong> will:</p>
               <ol className="list-decimal list-inside mt-1.5 sm:mt-2 space-y-1 text-[11px] sm:text-xs">
-                <li>Ask your Ethereum wallet to sign a proof-of-ownership message</li>
+                {!isConnected && <li>Open a wallet selector to connect your Ethereum wallet</li>}
+                <li>Ask your wallet to sign a proof-of-ownership message</li>
                 <li>Send the signature to Vanity.box for verification</li>
                 <li>Issue an <code className="text-[#D4AF37]">EthereumWalletOwnershipCredential</code> VC</li>
               </ol>
@@ -237,21 +249,21 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
             <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               {step === 'done' ? 'Close' : 'Cancel'}
             </Button>
-            {step !== 'done' && (
+            {showButton && (
               <Button
                 onClick={handleSignAndLink}
-                disabled={!canSign || isLoading || !!existingEvmVc}
+                disabled={!canSign || buttonLoading || !!existingEvmVc}
                 className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#C4A030] text-black"
               >
-                {isLoading ? (
+                {buttonLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing…
+                    {buttonLabel()}
                   </>
                 ) : (
                   <>
                     <Link2 className="h-4 w-4 mr-2" />
-                    Sign & Link
+                    {buttonLabel()}
                   </>
                 )}
               </Button>
