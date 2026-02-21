@@ -5,10 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Wallet, CheckCircle2, AlertTriangle, Link2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, useSignMessage, useConnect } from 'wagmi';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { callEdge } from '@/lib/supaInvoke';
 import { useIdentity } from '@/contexts/IdentityContext';
-import { useWalletConnect } from '@/contexts/WalletConnectContext';
 import ethLogoDark from '@/assets/eth-logo-dark.png';
 
 interface LinkEthereumWalletModalProps {
@@ -22,7 +22,8 @@ type LinkStep = 'idle' | 'awaiting-wallet' | 'sign' | 'issuing' | 'done' | 'erro
 export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereumWalletModalProps) {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { openModal } = useWalletConnect();
+  const { openConnectModal } = useConnectModal();
+  const { connectors, connectAsync } = useConnect();
   const { holderDid, vcList } = useIdentity();
 
   const [step, setStep] = useState<LinkStep>('idle');
@@ -95,7 +96,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     }
   }, [isConnected, address, step, performSignAndIssue]);
 
-  const handleSignAndLink = useCallback(() => {
+  const handleSignAndLink = useCallback(async () => {
     if (!holderDid) {
       toast.error('Create a DID in the Identity tab first');
       return;
@@ -105,12 +106,40 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
       // Already connected — go straight to signing
       performSignAndIssue(address);
     } else {
-      // Not connected — open RainbowKit modal and wait
+      // Not connected — try RainbowKit modal first, fallback to direct connect
       pendingSignRef.current = true;
       setStep('awaiting-wallet');
-      openModal();
+      
+      if (openConnectModal) {
+        console.log('[LinkEthWallet] Opening RainbowKit modal');
+        openConnectModal();
+      } else {
+        // Direct fallback: use wagmi connectAsync with first available connector
+        console.log('[LinkEthWallet] No RainbowKit modal, using connectAsync fallback');
+        try {
+          const wcConnector = connectors.find(c => c.id === 'walletConnect') 
+                           || connectors.find(c => c.type === 'walletConnect')
+                           || connectors[0];
+          if (wcConnector) {
+            const result = await connectAsync({ connector: wcConnector });
+            if (result?.accounts?.[0]) {
+              pendingSignRef.current = false;
+              performSignAndIssue(result.accounts[0]);
+            }
+          } else {
+            toast.error('No wallet connectors available');
+            setStep('error');
+            setErrorMsg('No wallet connectors available. Please refresh and try again.');
+          }
+        } catch (err: any) {
+          console.error('[LinkEthWallet] connectAsync failed:', err);
+          pendingSignRef.current = false;
+          setStep('error');
+          setErrorMsg(err?.message || 'Failed to connect wallet');
+        }
+      }
     }
-  }, [holderDid, isConnected, address, performSignAndIssue, openModal]);
+  }, [holderDid, isConnected, address, performSignAndIssue, openConnectModal, connectors, connectAsync]);
 
   const handleClose = () => {
     pendingSignRef.current = false;
