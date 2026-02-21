@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Wallet, CheckCircle2, AlertTriangle, Link2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAccount, useSignMessage, useConnect } from 'wagmi';
+import { useAccount, useSignMessage, useConnect, useDisconnect } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { callEdge } from '@/lib/supaInvoke';
 import { useIdentity } from '@/contexts/IdentityContext';
+import { setSuppressWalletEvents } from '@/contexts/WalletConnectContext';
 import ethLogoDark from '@/assets/eth-logo-dark.png';
 
 interface LinkEthereumWalletModalProps {
@@ -24,6 +25,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
   const { signMessageAsync } = useSignMessage();
   const { openConnectModal } = useConnectModal();
   const { connectors, connectAsync } = useConnect();
+  const { disconnect: disconnectEvm } = useDisconnect();
   const { holderDid, vcList } = useIdentity();
 
   const [step, setStep] = useState<LinkStep>('idle');
@@ -71,6 +73,12 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
         setIssuedVcJwt(response.vcJwt);
         setStep('done');
         toast.success('Ethereum wallet linked successfully!');
+        
+        // Auto-disconnect EVM wallet and restore suppression
+        try {
+          disconnectEvm();
+        } catch {}
+        setSuppressWalletEvents(false);
       } else {
         throw new Error('Invalid response from credential issuance');
       }
@@ -86,7 +94,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     } finally {
       setIsLoading(false);
     }
-  }, [holderDid, iotaName, signMessageAsync]);
+  }, [holderDid, iotaName, signMessageAsync, disconnectEvm]);
 
   // When wallet connects while we're waiting, auto-proceed to sign
   useEffect(() => {
@@ -106,12 +114,13 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
       // Already connected — go straight to signing
       performSignAndIssue(address);
     } else {
-      // Not connected — try RainbowKit modal first, fallback to direct connect
+      // Not connected — suppress global wallet events and open modal
+      setSuppressWalletEvents(true);
       pendingSignRef.current = true;
       setStep('awaiting-wallet');
       
       if (openConnectModal) {
-        console.log('[LinkEthWallet] Opening RainbowKit modal');
+        console.log('[LinkEthWallet] Opening RainbowKit modal (events suppressed)');
         openConnectModal();
       } else {
         // Direct fallback: use wagmi connectAsync with first available connector
@@ -143,6 +152,11 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
 
   const handleClose = () => {
     pendingSignRef.current = false;
+    setSuppressWalletEvents(false); // Restore events on close
+    // If EVM was connected during linking but flow didn't complete, disconnect it
+    if (isConnected && step !== 'done') {
+      try { disconnectEvm(); } catch {}
+    }
     setStep('idle');
     setErrorMsg('');
     setIssuedVcJwt(null);
