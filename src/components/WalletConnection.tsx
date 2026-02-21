@@ -83,9 +83,14 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     return value.toFixed(decimals);
   };
 
-  // Handle WalletConnect connection
+  // Handle WalletConnect connection — but don't override IOTA wallet
   useEffect(() => {
     if (walletConnectConnected && walletConnectAddress) {
+      // If IOTA is already the active wallet, don't switch to walletconnect
+      if (walletType === 'iota' && iotaConnected) {
+        console.log('[WalletConnection] Ignoring WalletConnect — IOTA wallet is active (likely ETH linking flow)');
+        return;
+      }
       console.log('[WalletConnection] WalletConnect connected:', walletConnectAddress);
       setWalletType('walletconnect');
       
@@ -104,7 +109,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         window.dispatchEvent(new CustomEvent('wallet-connected', { 
           detail: { 
             walletAddress: walletConnectAddress, 
-            username: resolvedEns, // Send the ENS name, not formatted address
+            username: resolvedEns,
             walletType: 'walletconnect' 
           } 
         }));

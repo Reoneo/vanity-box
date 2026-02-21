@@ -64,6 +64,10 @@ export const useWalletConnect = () => useContext(WalletContext);
 let openConnectModalFn: (() => void) | null = null;
 let openChainModalFn: (() => void) | null = null;
 
+// Global flag to suppress wallet-connected events during ETH linking flow
+let suppressWalletEvents = false;
+export function setSuppressWalletEvents(value: boolean) { suppressWalletEvents = value; }
+
 // Inner component that uses wagmi hooks
 function WalletContextInner({ children }: { children: ReactNode }) {
   const { address, isConnected } = useAccount();
@@ -77,7 +81,7 @@ function WalletContextInner({ children }: { children: ReactNode }) {
     prevConnectedRef.current = isConnected;
     
     // Only fire event on transition, not on every render
-    if (isConnected && address && !wasConnected) {
+    if (isConnected && address && !wasConnected && !suppressWalletEvents) {
       window.dispatchEvent(new CustomEvent('wallet-connected', {
         detail: { walletType: 'walletconnect', walletAddress: address }
       }));
