@@ -37,13 +37,23 @@ export const Header: React.FC = () => {
     const handleMintClose = () => setIsMintWindowOpen(false);
 
     const handleWalletConnected = (e?: CustomEvent) => {
+      const incomingType = e?.detail?.walletType;
+      // If we're already connected and IOTA is primary, ignore walletconnect events
+      if (isWalletConnected && incomingType === 'walletconnect') {
+        return;
+      }
       setIsWalletConnected(true);
-      // Check if it's Petra wallet from event detail
-      if (e?.detail?.walletType === "petra") {
+      if (incomingType === "petra") {
         setIsPetraConnected(true);
       }
     };
-    const handleWalletDisconnected = () => {
+    const handleWalletDisconnected = (e?: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      const disconnectedType = detail?.walletType;
+      // If a walletType is provided and it's walletconnect, don't clear primary state
+      if (disconnectedType === 'walletconnect' && isWalletConnected) {
+        return;
+      }
       setIsWalletConnected(false);
       setIsPetraConnected(false);
     };

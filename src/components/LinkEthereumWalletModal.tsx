@@ -3,13 +3,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Wallet, CheckCircle2, AlertTriangle, Link2, ShieldCheck } from 'lucide-react';
+import { Loader2, Wallet, CheckCircle2, AlertTriangle, Link2, ShieldCheck, Unplug } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAccount, useSignMessage, useConnect, useDisconnect } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { callEdge } from '@/lib/supaInvoke';
 import { useIdentity } from '@/contexts/IdentityContext';
-import { setSuppressWalletEvents } from '@/contexts/WalletConnectContext';
+import { setEvmLinking } from '@/contexts/WalletConnectContext';
+import type { VerifiableCredential } from '@/types/identity';
 import ethLogoDark from '@/assets/eth-logo-dark.png';
 
 interface LinkEthereumWalletModalProps {
@@ -26,7 +27,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
   const { openConnectModal } = useConnectModal();
   const { connectors, connectAsync } = useConnect();
   const { disconnect: disconnectEvm } = useDisconnect();
-  const { holderDid, vcList } = useIdentity();
+  const { holderDid, vcList, addExternalCredential } = useIdentity();
 
   const [step, setStep] = useState<LinkStep>('idle');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +41,16 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     vc => vc.type === 'EthereumWalletOwnershipCredential' &&
           vc.claims.address?.toLowerCase() === address?.toLowerCase()
   );
+
+  // Set/clear EVM linking flag on open/close
+  useEffect(() => {
+    if (open) {
+      setEvmLinking(true);
+    }
+    return () => {
+      setEvmLinking(false);
+    };
+  }, [open]);
 
   // Core signing + VC issuance logic (assumes wallet is connected)
   const performSignAndIssue = useCallback(async (signerAddress: string) => {
@@ -70,15 +81,28 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
       );
 
       if (response?.vcJwt) {
+        // Construct and persist the VC into the identity vault
+        const newVc: VerifiableCredential = {
+          vcJwt: response.vcJwt,
+          issuerDid: response.issuerDid,
+          type: 'EthereumWalletOwnershipCredential',
+          issuedAt: response.issuedAt || new Date().toISOString(),
+          claims: {
+            name: iotaName,
+            chain: 'Ethereum',
+            address: signerAddress,
+          },
+        };
+
+        await addExternalCredential(newVc);
+
         setIssuedVcJwt(response.vcJwt);
         setStep('done');
-        toast.success('Ethereum wallet linked successfully!');
-        
-        // Auto-disconnect EVM wallet and restore suppression
-        try {
-          disconnectEvm();
-        } catch {}
-        setSuppressWalletEvents(false);
+
+        // Auto-disconnect EVM wallet silently (linking flag is still active)
+        try { disconnectEvm(); } catch {}
+
+        toast.success('Ethereum wallet linked — disconnected');
       } else {
         throw new Error('Invalid response from credential issuance');
       }
@@ -94,7 +118,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     } finally {
       setIsLoading(false);
     }
-  }, [holderDid, iotaName, signMessageAsync, disconnectEvm]);
+  }, [holderDid, iotaName, signMessageAsync, disconnectEvm, addExternalCredential]);
 
   // When wallet connects while we're waiting, auto-proceed to sign
   useEffect(() => {
@@ -111,11 +135,8 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     }
 
     if (isConnected && address) {
-      // Already connected — go straight to signing
       performSignAndIssue(address);
     } else {
-      // Not connected — suppress global wallet events and open modal
-      setSuppressWalletEvents(true);
       pendingSignRef.current = true;
       setStep('awaiting-wallet');
       
@@ -123,7 +144,6 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
         console.log('[LinkEthWallet] Opening RainbowKit modal (events suppressed)');
         openConnectModal();
       } else {
-        // Direct fallback: use wagmi connectAsync with first available connector
         console.log('[LinkEthWallet] No RainbowKit modal, using connectAsync fallback');
         try {
           const wcConnector = connectors.find(c => c.id === 'walletConnect') 
@@ -150,13 +170,17 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
     }
   }, [holderDid, isConnected, address, performSignAndIssue, openConnectModal, connectors, connectAsync]);
 
+  const handleDisconnectEvm = useCallback(() => {
+    try { disconnectEvm(); } catch {}
+  }, [disconnectEvm]);
+
   const handleClose = () => {
     pendingSignRef.current = false;
-    setSuppressWalletEvents(false); // Restore events on close
     // If EVM was connected during linking but flow didn't complete, disconnect it
     if (isConnected && step !== 'done') {
       try { disconnectEvm(); } catch {}
     }
+    setEvmLinking(false);
     setStep('idle');
     setErrorMsg('');
     setIssuedVcJwt(null);
@@ -175,8 +199,8 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto p-4 sm:p-6">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto p-4 sm:p-6 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader className="space-y-1.5">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <img src={ethLogoDark} alt="ETH" className="w-5 h-5 flex-shrink-0" />
@@ -192,7 +216,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
           {existingEvmVc && (
             <div className="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
               <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400">
                   Wallet already linked
                 </p>
@@ -214,11 +238,24 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
                 <p className="text-[10px] sm:text-xs text-muted-foreground">Not connected — will prompt on sign</p>
               )}
             </div>
-            {isConnected && (
-              <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-                Connected
-              </Badge>
-            )}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {isConnected && (
+                <>
+                  <Badge variant="outline" className="text-[10px] sm:text-xs whitespace-nowrap bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                    Connected
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleDisconnectEvm}
+                    title="Disconnect Ethereum"
+                  >
+                    <Unplug className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* DID status */}
@@ -268,7 +305,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
               <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                  Credential issued!
+                  Credential issued & EVM wallet disconnected
                 </p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                   Your Ethereum address is now linked to {iotaName} via a Verifiable Credential.
@@ -287,8 +324,8 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-2">
+          {/* Actions — sticky at bottom */}
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-2 sticky bottom-0 bg-background pb-1">
             <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               {step === 'done' ? 'Close' : 'Cancel'}
             </Button>

@@ -86,9 +86,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Handle WalletConnect connection — but don't override IOTA wallet
   useEffect(() => {
     if (walletConnectConnected && walletConnectAddress) {
-      // If IOTA is already the active wallet, don't switch to walletconnect
-      if (walletType === 'iota' && iotaConnected) {
-        console.log('[WalletConnection] Ignoring WalletConnect — IOTA wallet is active (likely ETH linking flow)');
+      // If IOTA is already the active wallet OR EVM linking is in progress, don't switch
+      if ((walletType === 'iota' && iotaConnected) || (window as any).__VANITY_EVM_LINKING) {
+        console.log('[WalletConnection] Ignoring WalletConnect — IOTA wallet is active or EVM linking in progress');
         return;
       }
       console.log('[WalletConnection] WalletConnect connected:', walletConnectAddress);

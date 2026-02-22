@@ -62,6 +62,7 @@ export interface IdentityActions {
   requestOwnershipCredential: (name: string) => Promise<VerifiableCredential | null>;
   createPresentationFromCredential: (vcJwt: string, nonce?: string) => Promise<string | null>;
   verifyPresentation: (vpJwt: string) => Promise<VerificationResult | null>;
+  addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
   exportVault: () => Promise<string | null>;
   importVault: (encryptedData: string, walletSignature: string) => Promise<boolean>;
   clearIdentity: () => void;

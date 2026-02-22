@@ -64,9 +64,14 @@ export const useWalletConnect = () => useContext(WalletContext);
 let openConnectModalFn: (() => void) | null = null;
 let openChainModalFn: (() => void) | null = null;
 
-// Global flag to suppress wallet-connected events during ETH linking flow
-let suppressWalletEvents = false;
-export function setSuppressWalletEvents(value: boolean) { suppressWalletEvents = value; }
+// Global flag to suppress wallet events during ETH linking flow
+// Exposed on window for cross-component access
+export function isEvmLinking(): boolean {
+  return !!(window as any).__VANITY_EVM_LINKING;
+}
+export function setEvmLinking(value: boolean) {
+  (window as any).__VANITY_EVM_LINKING = value;
+}
 
 // Inner component that uses wagmi hooks
 function WalletContextInner({ children }: { children: ReactNode }) {
@@ -81,7 +86,8 @@ function WalletContextInner({ children }: { children: ReactNode }) {
     prevConnectedRef.current = isConnected;
     
     // Only fire event on transition, not on every render
-    if (isConnected && address && !wasConnected && !suppressWalletEvents) {
+    // SUPPRESS entirely when EVM linking is active
+    if (isConnected && address && !wasConnected && !isEvmLinking()) {
       window.dispatchEvent(new CustomEvent('wallet-connected', {
         detail: { walletType: 'walletconnect', walletAddress: address }
       }));
@@ -90,7 +96,12 @@ function WalletContextInner({ children }: { children: ReactNode }) {
 
   const disconnect = useCallback(() => {
     wagmiDisconnect();
-    window.dispatchEvent(new CustomEvent('wallet-disconnected', {}));
+    // Only dispatch wallet-disconnected if NOT in linking mode
+    if (!isEvmLinking()) {
+      window.dispatchEvent(new CustomEvent('wallet-disconnected', {
+        detail: { walletType: 'walletconnect' }
+      }));
+    }
   }, [wagmiDisconnect]);
 
   const openModal = useCallback(() => {
