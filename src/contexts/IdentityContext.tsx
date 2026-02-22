@@ -347,6 +347,31 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
     setState(prev => ({ ...prev, currentStep: step }));
   }, []);
 
+  // Add an externally-issued VC (e.g. EthereumWalletOwnershipCredential)
+  const addExternalCredential = useCallback(async (newVc: VerifiableCredential): Promise<void> => {
+    // Deduplicate by type + address
+    const isDuplicate = state.vcList.some(
+      vc => vc.type === newVc.type && vc.claims?.address?.toLowerCase() === newVc.claims?.address?.toLowerCase()
+    );
+    const updatedVcList = isDuplicate
+      ? state.vcList.map(vc =>
+          vc.type === newVc.type && vc.claims?.address?.toLowerCase() === newVc.claims?.address?.toLowerCase()
+            ? newVc : vc
+        )
+      : [...state.vcList, newVc];
+
+    setState(prev => ({ ...prev, vcList: updatedVcList }));
+
+    // Persist to vault
+    await saveVaultToStorage(
+      state.holderDid,
+      updatedVcList,
+      state.issuerDid,
+      state.verificationResult,
+      getVaultKey()
+    );
+  }, [state.holderDid, state.vcList, state.issuerDid, state.verificationResult, getVaultKey]);
+
   const contextValue: IdentityContextValue = {
     ...state,
     isInitialized,
@@ -354,6 +379,7 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
     requestOwnershipCredential,
     createPresentationFromCredential,
     verifyPresentation,
+    addExternalCredential,
     exportVault,
     importVault,
     clearIdentity,

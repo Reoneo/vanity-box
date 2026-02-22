@@ -289,11 +289,31 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     checkWallet();
 
-    // Listen for wallet connection events
+    // Listen for wallet connection events — ignore walletconnect if IOTA is primary
     const handleWalletChange = (event: CustomEvent) => {
+      const incomingType = event.detail?.walletType;
+      // If IOTA is already our primary wallet, ignore walletconnect events
+      if (incomingType === 'walletconnect' && connectedWalletType === 'iota') {
+        console.log('[SearchInterface] Ignoring walletconnect event — IOTA is primary');
+        return;
+      }
       setWalletAddress(event.detail?.walletAddress);
       setConnectedUsername(event.detail?.username);
       setConnectedWalletType(event.detail?.walletType);
+    };
+
+    // Named handler for wallet-disconnected so we can check walletType
+    const handleWalletDisconnected = (event: Event) => {
+      const detail = (event as CustomEvent)?.detail;
+      const disconnectedType = detail?.walletType;
+      // Only clear state if the disconnected wallet matches the current primary,
+      // or if no type info provided (legacy behavior)
+      if (!disconnectedType || disconnectedType === connectedWalletType) {
+        setWalletAddress(undefined);
+        setConnectedUsername(undefined);
+        setConnectedWalletType(undefined);
+        setShowMyIDs(false);
+      }
     };
 
     const handleShowMyIDs = () => {
@@ -309,12 +329,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     };
 
     window.addEventListener("wallet-connected", handleWalletChange as EventListener);
-    window.addEventListener("wallet-disconnected", () => {
-      setWalletAddress(undefined);
-      setConnectedUsername(undefined);
-      setConnectedWalletType(undefined);
-      setShowMyIDs(false);
-    });
+    window.addEventListener("wallet-disconnected", handleWalletDisconnected);
     window.addEventListener("show-my-ids", handleShowMyIDs);
     window.addEventListener("show-search", handleShowSearch);
     
@@ -326,7 +341,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     const handleDirectProfileLoad = (event: CustomEvent) => {
       const { identifier, skipSearch } = event.detail;
       if (skipSearch && identifier) {
-        // Directly load profile without showing search UI
         console.log('🔍 Direct profile load requested for:', identifier);
         handleSearch(identifier);
       }
@@ -337,17 +351,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     return () => {
       window.removeEventListener("wallet-connected", handleWalletChange as EventListener);
-      window.removeEventListener("wallet-disconnected", () => {
-        setWalletAddress(undefined);
-        setShowMyIDs(false);
-      });
-      // Note: the anonymous handler above can't be removed; this matches existing behavior.
+      window.removeEventListener("wallet-disconnected", handleWalletDisconnected);
       window.removeEventListener("show-my-ids", handleShowMyIDs);
       window.removeEventListener("show-search", handleShowSearch);
       window.removeEventListener("toggle-search-bar", handleToggleSearchBar as EventListener);
       window.removeEventListener("load-direct-profile", handleDirectProfileLoad as EventListener);
     };
-  }, []);
+  }, [connectedWalletType]);
 
   // Reset to profile section when new profile loads
   useEffect(() => {

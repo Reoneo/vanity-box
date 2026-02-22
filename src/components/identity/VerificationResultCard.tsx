@@ -4,8 +4,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, X, ShieldCheck, ShieldX, Clock, User, FileCode2 } from 'lucide-react';
+import { Check, X, ShieldCheck, ShieldX, Clock, User, FileCode2, Link2 } from 'lucide-react';
 import type { VerificationResult } from '@/types/identity';
+import { useIdentity } from '@/contexts/IdentityContext';
 import { formatDistanceToNow } from 'date-fns';
 
 interface VerificationResultCardProps {
@@ -14,6 +15,12 @@ interface VerificationResultCardProps {
 
 export function VerificationResultCard({ result }: VerificationResultCardProps) {
   const isValid = result.valid;
+  const { vcList } = useIdentity();
+
+  // Find the latest EthereumWalletOwnershipCredential
+  const ethVc = vcList.find(
+    vc => vc.type === 'EthereumWalletOwnershipCredential' && vc.claims?.address
+  );
 
   return (
     <Card className={`transition-all ${isValid ? 'border-emerald-500/50' : 'border-red-500/50'}`}>
@@ -84,6 +91,18 @@ export function VerificationResultCard({ result }: VerificationResultCardProps) 
                   {result.claims.chain}
                 </Badge>
               </div>
+              {/* Linked Ethereum Wallet from EthereumWalletOwnershipCredential */}
+              {ethVc && (
+                <div className="flex items-center justify-between text-sm gap-2">
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <Link2 className="w-3 h-3" />
+                    Ethereum Wallet
+                  </span>
+                  <span className="font-mono text-xs truncate max-w-[200px] text-[#D4AF37]" title={ethVc.claims.address}>
+                    {ethVc.claims.address}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
