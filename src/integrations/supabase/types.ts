@@ -83,6 +83,36 @@ export type Database = {
         }
         Relationships: []
       }
+      iota_wallet_links: {
+        Row: {
+          chain: string
+          evm_address: string
+          holder_did: string
+          iota_name: string
+          issued_at: string
+          updated_at: string
+          vc_jwt: string | null
+        }
+        Insert: {
+          chain?: string
+          evm_address: string
+          holder_did: string
+          iota_name: string
+          issued_at?: string
+          updated_at?: string
+          vc_jwt?: string | null
+        }
+        Update: {
+          chain?: string
+          evm_address?: string
+          holder_did?: string
+          iota_name?: string
+          issued_at?: string
+          updated_at?: string
+          vc_jwt?: string | null
+        }
+        Relationships: []
+      }
       messaging_conversations: {
         Row: {
           conversation_id: string

@@ -1,8 +1,10 @@
 // Edge Function: Issue Ethereum Wallet Ownership VC
 // Verifies EVM signature (SIWE-style) then issues an EthereumWalletOwnershipCredential
+// Also persists the link in iota_wallet_links table
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { hashMessage, recoverAddress } from "https://esm.sh/viem@2.37.5";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -63,7 +65,7 @@ serve(async (req) => {
   }
 
   try {
-    const { holderDid, address, message, signature } = await req.json();
+    const { holderDid, address, message, signature, iotaName } = await req.json();
 
     if (!holderDid) {
       return new Response(
@@ -108,6 +110,35 @@ serve(async (req) => {
     const vcJwt = createEvmVcJwt(holderDid, address);
 
     console.log(`✅ Issued EthereumWalletOwnershipCredential for ${address} to ${holderDid.slice(0, 30)}...`);
+
+    // Persist the link in iota_wallet_links if iotaName is provided
+    if (iotaName) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+        const { error: upsertError } = await supabase
+          .from('iota_wallet_links')
+          .upsert({
+            iota_name: iotaName.toLowerCase(),
+            holder_did: holderDid,
+            chain: 'ethereum',
+            evm_address: address.toLowerCase(),
+            vc_jwt: vcJwt,
+            issued_at: new Date().toISOString(),
+          }, { onConflict: 'iota_name' });
+
+        if (upsertError) {
+          console.error('[issue-ethereum-vc] Failed to upsert wallet link:', upsertError);
+        } else {
+          console.log(`✅ Persisted wallet link: ${iotaName} → ${address}`);
+        }
+      } catch (dbErr: any) {
+        console.error('[issue-ethereum-vc] DB error:', dbErr.message);
+        // Don't fail the VC issuance if DB write fails
+      }
+    }
 
     return new Response(
       JSON.stringify({

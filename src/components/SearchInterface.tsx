@@ -261,13 +261,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [castLoading, setCastLoading] = useState(false);
   const [firstTransactionDate, setFirstTransactionDate] = useState<string | null>(null);
 
-  // IOTA Onchain Profile state + cache
+   // IOTA Onchain Profile state + cache
   const [iotaOnchainProfile, setIotaOnchainProfile] = useState<any>(null);
   const [iotaNameObjectId, setIotaNameObjectId] = useState<string | null>(null);
   const [iotaOwnerAddress, setIotaOwnerAddress] = useState<string | null>(null);
   const [iotaOnchainProfileLoading, setIotaOnchainProfileLoading] = useState(false);
   const [showIotaEditModal, setShowIotaEditModal] = useState(false);
   const iotaProfileCacheRef = useRef<Map<string, { profile: any; nameObjectId: string | null; ownerAddress: string | null }>>(new Map());
+
+  // Linked EVM address for .iota profiles (resolved from iota_wallet_links)
+  const [linkedEvmAddress, setLinkedEvmAddress] = useState<string | null>(null);
+  const linkedEvmFetchedRef = useRef<string | null>(null); // track which profile we already fetched for
   // Social icons mapping
   const socialIcons: Record<string, string> = {
     telegram: telegramIcon,
@@ -379,6 +383,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Reset detail view to fix glitch when loading new profile
       setShowDetailView(false);
       setDetailViewResult(null);
+      // Reset linked EVM address
+      setLinkedEvmAddress(null);
+      linkedEvmFetchedRef.current = null;
     }
   }, [web3BioProfile]);
 
@@ -425,39 +432,63 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address, efpStats]);
 
-  // Preload NFTs in background when profile loads
+  // Resolve linked EVM address for .iota profiles (once per profile)
   useEffect(() => {
-    const address = web3BioProfile?.address;
+    const name = displayQuery?.toLowerCase()?.trim();
+    if (!name || !isIotaName(name)) {
+      setLinkedEvmAddress(null);
+      linkedEvmFetchedRef.current = null;
+      return;
+    }
+    // Only fetch once per profile
+    if (linkedEvmFetchedRef.current === name) return;
+    linkedEvmFetchedRef.current = name;
+
+    callEdge('get-iota-linked-evm', { iotaName: name })
+      .then((res: any) => {
+        if (res?.success && res.evmAddress && /^0x[a-fA-F0-9]{40}$/i.test(res.evmAddress)) {
+          console.log(`✅ Linked EVM for ${name}: ${res.evmAddress}`);
+          setLinkedEvmAddress(res.evmAddress);
+        } else {
+          setLinkedEvmAddress(null);
+        }
+      })
+      .catch(() => setLinkedEvmAddress(null));
+  }, [displayQuery]);
+
+  // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
+  useEffect(() => {
+    const isIota = isIotaName(displayQuery);
+    const address = isIota ? linkedEvmAddress : web3BioProfile?.address;
     const isValidAddress = address && 
                           address !== 'undefined' && 
                           typeof address === 'string' && 
                           address.trim() !== '' &&
-                          !(typeof address === 'object' && (address as any)?._type === 'undefined');
+                          /^0x[a-fA-F0-9]{40}$/i.test(address);
     
     if (isValidAddress && nfts.length === 0 && !nftLoading) {
       console.log('🔄 Background: Preloading OpenSea NFTs for address:', address);
-      // Small delay to let initial profile load complete
       const timer = setTimeout(() => {
         fetchNfts(address, undefined);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (address && !isValidAddress) {
-      console.warn('🔄 Background: Skipping NFT preload - invalid address:', address);
     }
-  }, [web3BioProfile?.address]);
+  }, [web3BioProfile?.address, linkedEvmAddress, displayQuery]);
 
-  // Preload POAPs in background when profile loads  
+  // Preload POAPs in background when profile loads (use linkedEvmAddress for IOTA)
   useEffect(() => {
-    if (web3BioProfile?.address && poapTokens.length === 0 && !isLoadingPoaps) {
-      console.log('🔄 Background: Ensuring POAPs are loaded...');
+    const isIota = isIotaName(displayQuery);
+    const poapAddress = isIota ? linkedEvmAddress : web3BioProfile?.address;
+    
+    if (poapAddress && /^0x[a-fA-F0-9]{40}$/i.test(poapAddress) && poapTokens.length === 0 && !isLoadingPoaps) {
+      console.log('🔄 Background: Ensuring POAPs are loaded for:', poapAddress);
       const loadPoaps = async () => {
         try {
           setIsLoadingPoaps(true);
-          // Reset pagination state
           setPoapOffset(0);
           
           const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-            body: { walletAddress: web3BioProfile.address, offset: 0, limit: 1000 },
+            body: { walletAddress: poapAddress, offset: 0, limit: 1000 },
           });
 
           if (!poapError && poapData?.success) {
@@ -466,7 +497,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             setPoapHasMore(poapData.hasMore || false);
             setPoapOffset(poapData.count || 0);
             
-            // Use the poaps directly from the API response (already has all metadata)
             if (poapData.poaps && Array.isArray(poapData.poaps)) {
               setPoapTokens(poapData.poaps.map((poap: any) => ({
                 eventId: poap.event?.id,
@@ -496,7 +526,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const timer = setTimeout(loadPoaps, 500);
       return () => clearTimeout(timer);
     }
-  }, [web3BioProfile?.address]);
+  }, [web3BioProfile?.address, linkedEvmAddress, displayQuery]);
 
   // Load IOTA onchain profile when viewing ANY .iota domain or subdomain
   // Auto-link domain for messaging when viewing any profile
@@ -589,14 +619,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     loadIotaOnchainProfile();
   }, [displayQuery]);
   const handleLoadMorePoaps = async () => {
-    if (!web3BioProfile?.address || poapLoadingMore || !poapHasMore) return;
+    const isIota = isIotaName(displayQuery);
+    const poapAddress = isIota ? linkedEvmAddress : web3BioProfile?.address;
+    if (!poapAddress || poapLoadingMore || !poapHasMore) return;
     
     try {
       setPoapLoadingMore(true);
       console.log(`🔄 Loading more POAPs from offset ${poapOffset}...`);
       
       const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-        body: { walletAddress: web3BioProfile.address, offset: poapOffset, limit: 1000 },
+        body: { walletAddress: poapAddress, offset: poapOffset, limit: 1000 },
       });
 
       if (!poapError && poapData?.success && poapData.poaps) {
@@ -1925,8 +1957,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}
                     onEnsureOpenSeaNfts={() => {
-                      // Never fetch OpenSea for .iota domains / IOTA addresses
                       const isIota = isIotaName(displayQuery);
+
+                      // For IOTA profiles, use linkedEvmAddress if available
+                      if (isIota && linkedEvmAddress && !openseaAttempted && !nftLoading) {
+                        console.log('🔄 On-demand: Fetching OpenSea NFTs for linked EVM:', linkedEvmAddress);
+                        fetchNfts(linkedEvmAddress);
+                        return;
+                      }
 
                       const isEvmAddr =
                         typeof web3BioProfile?.address === 'string' &&
@@ -1937,6 +1975,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         fetchNfts(web3BioProfile.address);
                       }
                     }}
+                    linkedEvmAddress={linkedEvmAddress}
                     iotaOnchainProfile={iotaOnchainProfile}
                     iotaNameObjectId={iotaNameObjectId}
                     iotaOwnerAddress={iotaOwnerAddress}
