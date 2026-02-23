@@ -73,6 +73,8 @@ interface ProfileCardProps {
   onFollowersClick?: () => void;
   onLoadMoreNfts?: () => void;
   onEnsureOpenSeaNfts?: () => void;
+  // Linked EVM address for .iota profiles
+  linkedEvmAddress?: string | null;
   // IOTA Onchain Profile props
   iotaOnchainProfile?: OnchainProfileData | null;
   iotaNameObjectId?: string | null;
@@ -194,6 +196,7 @@ export const ProfileCard = ({
   onFollowersClick,
   onLoadMoreNfts,
   onEnsureOpenSeaNfts,
+  linkedEvmAddress,
   iotaOnchainProfile,
   iotaNameObjectId,
   iotaOwnerAddress,
@@ -1133,8 +1136,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* OpenSea Button - hide for IOTA profiles */}
-                            {!isIotaProfile && ((nfts.length > 0) || (nftLoading && !openseaAttempted)) && (
+                            {/* OpenSea Button - show for IOTA profiles with linked EVM */}
+                            {(!isIotaProfile || !!linkedEvmAddress) && ((nfts.length > 0) || (nftLoading && !openseaAttempted)) && (
                               <button onClick={() => setNftCategory('opensea')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1150,8 +1153,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* Magic Eden Button - hide for IOTA profiles */}
-                            {!isIotaProfile && (magicEdenLoading || magicEdenNfts.length > 0) && (
+                            {/* Magic Eden Button - show for IOTA profiles with linked EVM */}
+                            {(!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
                               <button onClick={() => setNftCategory('magiceden')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1163,8 +1166,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* World Chain Button - hide for IOTA profiles */}
-                            {!isIotaProfile && (worldchainNftsLoading || worldchainNftCount > 0) && (
+                            {/* World Chain Button - show for IOTA profiles with linked EVM */}
+                            {(!isIotaProfile || !!linkedEvmAddress) && (worldchainNftsLoading || worldchainNftCount > 0) && (
                               <button onClick={() => setNftCategory('worldchain')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1176,8 +1179,8 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* Hyperliquid Button - hide for IOTA profiles */}
-                            {!isIotaProfile && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                            {/* Hyperliquid Button - show for IOTA profiles with linked EVM */}
+                            {(!isIotaProfile || !!linkedEvmAddress) && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
                               <button onClick={() => setNftCategory('hyperliquid')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -1228,8 +1231,16 @@ export const ProfileCard = ({
                               </button>
                             )}
 
+                            {/* Hint for IOTA profiles without linked EVM */}
+                            {isIotaProfile && !linkedEvmAddress && poaps.length === 0 && nfts.length === 0 && (
+                              <div className="text-center py-6 text-muted-foreground">
+                                <p className="text-sm">No Ethereum wallet linked to this IOTA ID yet.</p>
+                                <p className="text-xs mt-1 opacity-70">Link an ETH wallet via Identity → Link Ethereum Wallet to show POAPs & NFTs.</p>
+                              </div>
+                            )}
+
                             {/* Empty state - updated to include IOTA check */}
-                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && iotaNfts.length === 0 && iotaFetched && (
+                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && iotaNfts.length === 0 && iotaFetched && !isIotaProfile && (
                               <div className="text-center py-8 text-white/50">
                                 <p className="text-sm">No NFTs found for this wallet</p>
                               </div>
@@ -1783,8 +1794,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* OpenSea Button - Show if loading, has items, or hasn't been attempted yet - hide for IOTA */}
-                      {!isIotaProfile && (nftLoading || nfts.length > 0 || !openseaAttempted) && (
+                      {/* OpenSea Button - show for IOTA profiles with linked EVM */}
+                      {(!isIotaProfile || !!linkedEvmAddress) && (nftLoading || nfts.length > 0 || !openseaAttempted) && (
                         <button
                           onClick={() => {
                             setNftCategory('opensea');
@@ -1816,8 +1827,8 @@ export const ProfileCard = ({
                       {/* Hide OpenSea button if attempted, no items, and no errors */}
                       {openseaAttempted && nfts.length === 0 && !openseaHasErrors && !nftLoading && null}
 
-                      {/* Magic Eden (EVM) Button - Only show if loading or has items - hide for IOTA */}
-                      {!isIotaProfile && (magicEdenLoading || magicEdenNfts.length > 0) && (
+                      {/* Magic Eden (EVM) Button - show for IOTA profiles with linked EVM */}
+                      {(!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
                         <button
                           onClick={() => setNftCategory('magiceden')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -1843,8 +1854,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* World Chain Button - hide for IOTA */}
-                      {!isIotaProfile && (worldchainNftsLoading || worldchainNftCount > 0) && (
+                      {/* World Chain Button - show for IOTA profiles with linked EVM */}
+                      {(!isIotaProfile || !!linkedEvmAddress) && (worldchainNftsLoading || worldchainNftCount > 0) && (
                         <button
                           onClick={() => setNftCategory('worldchain')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"

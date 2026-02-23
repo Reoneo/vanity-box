@@ -77,7 +77,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
 
       const response = await callEdge<{ vcJwt: string; issuerDid: string; issuedAt: string }>(
         'issue-ethereum-vc',
-        { holderDid, address: signerAddress, message, signature }
+        { holderDid, address: signerAddress, message, signature, iotaName }
       );
 
       if (response?.vcJwt) {
