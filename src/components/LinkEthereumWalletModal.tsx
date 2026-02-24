@@ -96,8 +96,18 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
 
         await addExternalCredential(newVc);
 
+        // Persist link in localStorage for cross-component access (fallback when DB hasn't propagated)
+        try {
+          localStorage.setItem(`iota-linked-evm:${iotaName.toLowerCase()}`, signerAddress.toLowerCase());
+        } catch {}
+
         setIssuedVcJwt(response.vcJwt);
         setStep('done');
+
+        // Notify SearchInterface immediately so NFTs/POAPs load
+        window.dispatchEvent(new CustomEvent('iota-evm-linked', {
+          detail: { iotaName: iotaName.toLowerCase(), evmAddress: signerAddress.toLowerCase() },
+        }));
 
         // Auto-disconnect EVM wallet silently (linking flag is still active)
         try { disconnectEvm(); } catch {}

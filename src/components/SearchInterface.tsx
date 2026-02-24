@@ -432,7 +432,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address, efpStats]);
 
-  // Resolve linked EVM address for .iota profiles (once per profile)
+  // Resolve linked EVM address for .iota profiles
+  // Priority: 1) localStorage (instant, works for owner) 2) DB via edge function (works for public viewers)
   useEffect(() => {
     const name = displayQuery?.toLowerCase()?.trim();
     if (!name || !isIotaName(name)) {
@@ -440,20 +441,56 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       linkedEvmFetchedRef.current = null;
       return;
     }
-    // Only fetch once per profile
+
+    // 1) Check localStorage fallback immediately (set when VC was issued)
+    try {
+      const localEvm = localStorage.getItem(`iota-linked-evm:${name}`);
+      if (localEvm && /^0x[a-fA-F0-9]{40}$/i.test(localEvm)) {
+        console.log(`⚡ Linked EVM from localStorage for ${name}: ${localEvm}`);
+        setLinkedEvmAddress(localEvm);
+      }
+    } catch {}
+
+    // Only call edge once per profile name
     if (linkedEvmFetchedRef.current === name) return;
     linkedEvmFetchedRef.current = name;
 
+    // 2) Also query DB (for public viewers who don't have localStorage)
     callEdge('get-iota-linked-evm', { iotaName: name })
       .then((res: any) => {
         if (res?.success && res.evmAddress && /^0x[a-fA-F0-9]{40}$/i.test(res.evmAddress)) {
-          console.log(`✅ Linked EVM for ${name}: ${res.evmAddress}`);
+          console.log(`✅ Linked EVM from DB for ${name}: ${res.evmAddress}`);
           setLinkedEvmAddress(res.evmAddress);
-        } else {
-          setLinkedEvmAddress(null);
+          // Also update localStorage so future loads are instant
+          try { localStorage.setItem(`iota-linked-evm:${name}`, res.evmAddress.toLowerCase()); } catch {}
         }
+        // Don't clear linkedEvmAddress if DB returns nothing — localStorage fallback may have set it
       })
-      .catch(() => setLinkedEvmAddress(null));
+      .catch(() => {});
+  }, [displayQuery]);
+
+  // Listen for real-time 'iota-evm-linked' events (fired when VC is issued in the same session)
+  useEffect(() => {
+    const handleEvmLinked = (event: Event) => {
+      const { iotaName: linkedName, evmAddress } = (event as CustomEvent).detail || {};
+      const currentName = displayQuery?.toLowerCase()?.trim();
+      if (linkedName === currentName && evmAddress && /^0x[a-fA-F0-9]{40}$/i.test(evmAddress)) {
+        console.log(`🔗 Real-time EVM link event for ${linkedName}: ${evmAddress}`);
+        setLinkedEvmAddress(evmAddress);
+        // Reset stale NFT/POAP state so fresh fetch triggers
+        setNfts([]);
+        setNftNextCursor(null);
+        setOpenseaAttempted(false);
+        setOpenseaHasErrors(false);
+        setPoapTokens([]);
+        setPoapCount(0);
+        setPoapTotalCount(0);
+        setPoapHasMore(false);
+        setPoapOffset(0);
+      }
+    };
+    window.addEventListener('iota-evm-linked', handleEvmLinked);
+    return () => window.removeEventListener('iota-evm-linked', handleEvmLinked);
   }, [displayQuery]);
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
