@@ -19,12 +19,12 @@ export const BioTicker = ({ bio }: BioTickerProps) => {
           <span className="text-sm font-semibold text-foreground flex-shrink-0">Bio:</span>
           <div className="overflow-hidden">
             <div className="animate-ticker whitespace-nowrap">
-              <span className="text-sm text-[#D4AF37] hover:underline">
+              <span className="text-sm text-foreground dark:text-[#D4AF37] hover:underline">
                 {bio}
               </span>
               {/* Spacer and duplicate for seamless loop */}
               <span className="inline-block w-16" />
-              <span className="text-sm text-[#D4AF37]">
+              <span className="text-sm text-foreground dark:text-[#D4AF37]">
                 {bio}
               </span>
             </div>

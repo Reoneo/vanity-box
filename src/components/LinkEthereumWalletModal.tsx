@@ -211,7 +211,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto p-4 sm:p-6 max-h-[calc(100dvh-2rem)] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-[26rem] mx-auto p-4 sm:p-6 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader className="space-y-1.5">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <img src={ethLogoDark} alt="ETH" className="w-5 h-5 flex-shrink-0" />
@@ -231,7 +231,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
                 <p className="text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400">
                   Wallet already linked
                 </p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 font-mono truncate">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 font-mono break-all leading-relaxed">
                   {existingEvmVc.claims.address}
                 </p>
                 <Button
@@ -273,7 +273,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium">Ethereum Wallet</p>
               {isConnected && address ? (
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">{address}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-mono break-all leading-relaxed">{address}</p>
               ) : (
                 <p className="text-[10px] sm:text-xs text-muted-foreground">Not connected — will prompt on sign</p>
               )}
@@ -304,7 +304,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium">IOTA DID</p>
               {holderDid ? (
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">{holderDid}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-mono break-all leading-relaxed">{holderDid}</p>
               ) : (
                 <p className="text-[10px] sm:text-xs text-amber-500">Create a DID in the Identity tab first</p>
               )}

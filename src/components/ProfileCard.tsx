@@ -990,13 +990,13 @@ export const ProfileCard = ({
                       {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
                         <div className="flex items-center justify-center gap-4 flex-wrap text-sm">
                           {web3BioProfile?.email && (
-                            <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
+                            <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1.5 text-foreground dark:text-[#D4AF37] hover:underline">
                               <Mail className="w-4 h-4 text-black/60 dark:text-white/60" />
                               <span className="truncate max-w-[150px]">{web3BioProfile.email}</span>
                             </a>
                           )}
                           {(web3BioProfile?.website || web3BioProfile?.url) && (
-                            <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#D4AF37] hover:underline">
+                            <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-foreground dark:text-[#D4AF37] hover:underline">
                               <Globe className="w-4 h-4 text-black/60 dark:text-white/60" />
                               <span className="truncate max-w-[150px]">{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
                             </a>
@@ -1008,7 +1008,7 @@ export const ProfileCard = ({
                       {web3BioProfile?.description && (
                         <div className="flex items-start justify-center gap-2 max-w-[380px] mx-auto">
                           <span className="text-sm font-semibold text-foreground flex-shrink-0">Bio:</span>
-                          <p className="text-sm text-[#D4AF37] leading-relaxed text-left">
+                          <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-left">
                             {web3BioProfile.description}
                           </p>
                         </div>
