@@ -27,7 +27,7 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
   const { openConnectModal } = useConnectModal();
   const { connectors, connectAsync } = useConnect();
   const { disconnect: disconnectEvm } = useDisconnect();
-  const { holderDid, vcList, addExternalCredential } = useIdentity();
+  const { holderDid, vcList, addExternalCredential, removeCredentialByType } = useIdentity();
 
   const [step, setStep] = useState<LinkStep>('idle');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,9 +37,10 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
   // Track if we're waiting for wallet connection to auto-proceed
   const pendingSignRef = useRef(false);
 
+  const [isUnlinking, setIsUnlinking] = useState(false);
+
   const existingEvmVc = vcList.find(
-    vc => vc.type === 'EthereumWalletOwnershipCredential' &&
-          vc.claims.address?.toLowerCase() === address?.toLowerCase()
+    vc => vc.type === 'EthereumWalletOwnershipCredential'
   );
 
   // Set/clear EVM linking flag on open/close
@@ -233,6 +234,35 @@ export function LinkEthereumWalletModal({ open, onClose, iotaName }: LinkEthereu
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 font-mono truncate">
                   {existingEvmVc.claims.address}
                 </p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-2 h-7 text-xs"
+                  disabled={isUnlinking}
+                  onClick={async () => {
+                    setIsUnlinking(true);
+                    try {
+                      // 1. Remove VC from vault
+                      await removeCredentialByType('EthereumWalletOwnershipCredential');
+                      // 2. Clear localStorage
+                      try { localStorage.removeItem(`iota-linked-evm:${iotaName.toLowerCase()}`); } catch {}
+                      // 3. Delete DB row via edge function
+                      try { await callEdge('delete-iota-linked-evm', { iotaName: iotaName.toLowerCase() }); } catch (e) { console.warn('DB delete failed (may not exist):', e); }
+                      // 4. Dispatch unlink event
+                      window.dispatchEvent(new CustomEvent('iota-evm-unlinked', { detail: { iotaName: iotaName.toLowerCase() } }));
+                      // 5. Reset modal
+                      setStep('idle');
+                      setIssuedVcJwt(null);
+                      toast.success('Ethereum wallet unlinked');
+                    } catch (err: any) {
+                      toast.error(err?.message || 'Failed to unlink');
+                    } finally {
+                      setIsUnlinking(false);
+                    }
+                  }}
+                >
+                  {isUnlinking ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Unlinking…</> : 'Unlink Wallet'}
+                </Button>
               </div>
             </div>
           )}
