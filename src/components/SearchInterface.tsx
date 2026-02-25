@@ -273,7 +273,49 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   // Linked EVM address for .iota profiles (resolved from iota_wallet_links)
   const [linkedEvmAddress, setLinkedEvmAddress] = useState<string | null>(null);
   const [isResolvingLinkedEvm, setIsResolvingLinkedEvm] = useState(false);
-  const linkedEvmFetchedRef = useRef<string | null>(null); // track which profile we already fetched for
+  const linkedEvmResolverRef = useRef<string | null>(null); // dedupe by name+wallet context, not only name
+
+  const isValidEvmAddress = (address?: string | null): address is string => {
+    return !!address && /^0x[a-fA-F0-9]{40}$/i.test(address);
+  };
+
+  const normalizeIotaQuery = (value?: string | null): string | null => {
+    const normalized = value?.toLowerCase()?.trim();
+    return normalized && isIotaName(normalized) ? normalized : null;
+  };
+
+  const fetchIotaOnchainProfile = async (rawName?: string | null): Promise<any | null> => {
+    const normalizedName = normalizeIotaQuery(rawName);
+    if (!normalizedName) return null;
+
+    const { data, error } = await supabase.functions.invoke("get-iota-onchain-profile", {
+      body: { name: normalizedName },
+    });
+
+    if (error) {
+      console.warn("[SearchInterface] get-iota-onchain-profile failed", { normalizedName, error });
+      return null;
+    }
+
+    return data;
+  };
+
+  const fetchLinkedEvmFromDb = async (rawName?: string | null): Promise<any | null> => {
+    const normalizedName = normalizeIotaQuery(rawName);
+    if (!normalizedName) return null;
+
+    const { data, error } = await supabase.functions.invoke("get-iota-linked-evm", {
+      body: { iotaName: normalizedName },
+    });
+
+    if (error) {
+      console.warn("[SearchInterface] get-iota-linked-evm failed", { normalizedName, error });
+      return null;
+    }
+
+    return data;
+  };
+
   // Social icons mapping
   const socialIcons: Record<string, string> = {
     telegram: telegramIcon,
@@ -387,7 +429,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setDetailViewResult(null);
       // Reset linked EVM address
       setLinkedEvmAddress(null);
-      linkedEvmFetchedRef.current = null;
+      linkedEvmResolverRef.current = null;
     }
   }, [web3BioProfile]);
 
@@ -437,85 +479,94 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   // Resolve linked EVM address for .iota profiles
   // Priority: 1) localStorage 2) encrypted vault (owner) 3) DB via edge function (public viewers)
   useEffect(() => {
-    const name = displayQuery?.toLowerCase()?.trim();
-    if (!name || !isIotaName(name)) {
+    const name = normalizeIotaQuery(displayQuery);
+    if (!name) {
       setLinkedEvmAddress(null);
       setIsResolvingLinkedEvm(false);
-      linkedEvmFetchedRef.current = null;
+      linkedEvmResolverRef.current = null;
       return;
     }
 
-    // 1) Check localStorage fallback immediately (set when VC was issued)
     let foundLocal = false;
+
+    // 1) Check localStorage fallback immediately (set when VC was issued)
     try {
       const localEvm = localStorage.getItem(`iota-linked-evm:${name}`);
-      if (localEvm && /^0x[a-fA-F0-9]{40}$/i.test(localEvm)) {
+      if (isValidEvmAddress(localEvm)) {
         console.log(`⚡ Linked EVM from localStorage for ${name}: ${localEvm}`);
-        setLinkedEvmAddress(localEvm);
+        setLinkedEvmAddress(localEvm.toLowerCase());
         foundLocal = true;
       }
-    } catch {}
+    } catch {
+      // no-op
+    }
 
-    // Only run full resolution once per profile name
-    if (linkedEvmFetchedRef.current === name) return;
-    linkedEvmFetchedRef.current = name;
-    if (!foundLocal) setIsResolvingLinkedEvm(true);
+    // Re-resolve when wallet ownership context changes (name-only dedupe was blocking retries)
+    const resolverKey = `${name}|${iotaWalletAddress || ''}|${iotaOwnerAddress || ''}`;
+    if (linkedEvmResolverRef.current === resolverKey) return;
+    linkedEvmResolverRef.current = resolverKey;
+
+    setIsResolvingLinkedEvm(true);
+    let isCancelled = false;
 
     // 2) Try encrypted identity vault (works for profile owner with existing VCs)
     const tryVaultFallback = async () => {
-      // Candidate wallet addresses that might have a vault
-      const candidates = new Set<string>();
-      if (iotaWalletAddress) candidates.add(iotaWalletAddress);
-      if (iotaOwnerAddress) candidates.add(iotaOwnerAddress);
-      
-      for (const addr of candidates) {
+      const candidates = Array.from(new Set([iotaWalletAddress, iotaOwnerAddress].filter(Boolean) as string[]));
+
+      for (const signatureCandidate of candidates) {
         try {
-          const vaultKey = `vault-key-${addr}`;
-          const vault = await loadVaultFromStorage(vaultKey);
+          const vault = await loadVaultFromStorage(signatureCandidate);
           if (!vault?.vcList?.length) continue;
-          
-          // Find EthereumWalletOwnershipCredential matching this .iota name
-          const ethVc = vault.vcList.find(
-            (vc: any) =>
-              vc.type === 'EthereumWalletOwnershipCredential' &&
-              vc.claims?.address && /^0x[a-fA-F0-9]{40}$/i.test(vc.claims.address) &&
-              vc.claims?.name?.toLowerCase() === name
-          );
-          
-          if (ethVc) {
-            const evmAddr = ethVc.claims.address.toLowerCase();
+
+          const matchedVc = [...vault.vcList]
+            .reverse()
+            .find(
+              (vc: any) =>
+                vc?.type === 'EthereumWalletOwnershipCredential' &&
+                isValidEvmAddress(vc?.claims?.address) &&
+                vc?.claims?.name?.toLowerCase?.() === name
+            );
+
+          if (matchedVc && !isCancelled) {
+            const evmAddr = matchedVc.claims.address.toLowerCase();
             console.log(`🔓 Linked EVM from vault for ${name}: ${evmAddr}`);
             setLinkedEvmAddress(evmAddr);
-            // Cache to localStorage for instant access next time
             try { localStorage.setItem(`iota-linked-evm:${name}`, evmAddr); } catch {}
-            setIsResolvingLinkedEvm(false);
             return true;
           }
-        } catch (e) {
+        } catch {
           // Vault decryption failed for this candidate — expected for non-owner
         }
       }
+
       return false;
     };
 
-    // 3) Also query DB (for public viewers who don't have localStorage or vault)
-    const queryDb = () => {
-      callEdge('get-iota-linked-evm', { iotaName: name })
-        .then((res: any) => {
-          if (res?.success && res.evmAddress && /^0x[a-fA-F0-9]{40}$/i.test(res.evmAddress)) {
-            console.log(`✅ Linked EVM from DB for ${name}: ${res.evmAddress}`);
-            setLinkedEvmAddress(res.evmAddress);
-            try { localStorage.setItem(`iota-linked-evm:${name}`, res.evmAddress.toLowerCase()); } catch {}
-          }
-        })
-        .catch(() => {})
-        .finally(() => setIsResolvingLinkedEvm(false));
+    const resolve = async () => {
+      const fromVault = await tryVaultFallback();
+      if (isCancelled) return;
+
+      // 3) Query DB for public viewers or as final fallback
+      if (!fromVault) {
+        const res = await fetchLinkedEvmFromDb(name);
+        if (!isCancelled && res?.success && isValidEvmAddress(res?.evmAddress)) {
+          const evmAddr = res.evmAddress.toLowerCase();
+          console.log(`✅ Linked EVM from DB for ${name}: ${evmAddr}`);
+          setLinkedEvmAddress(evmAddr);
+          try { localStorage.setItem(`iota-linked-evm:${name}`, evmAddr); } catch {}
+        } else if (!isCancelled && !foundLocal) {
+          setLinkedEvmAddress(null);
+        }
+      }
+
+      if (!isCancelled) setIsResolvingLinkedEvm(false);
     };
 
-    // Run vault check first, then DB as fallback
-    tryVaultFallback().then(found => {
-      if (!found) queryDb();
-    });
+    resolve();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [displayQuery, iotaWalletAddress, iotaOwnerAddress]);
 
   // Listen for real-time 'iota-evm-linked' events (fired when VC is issued in the same session)
@@ -657,8 +708,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           // Also populate memory cache
           iotaProfileCacheRef.current.set(name, parsed);
           // Still fetch fresh data in background
-          callEdge('get-iota-onchain-profile', { name }).then(response => {
-            if (response.success) {
+          fetchIotaOnchainProfile(name).then(response => {
+            if (response?.success) {
               const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
               iotaProfileCacheRef.current.set(name, entry);
               sessionStorage.setItem(sessionKey, JSON.stringify(entry));
@@ -675,9 +726,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setIotaOnchainProfileLoading(true);
 
       try {
-        const response = await callEdge('get-iota-onchain-profile', { name });
+        const response = await fetchIotaOnchainProfile(name);
 
-        if (response.success) {
+        if (response?.success) {
           const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
           setIotaOnchainProfile(response.profile);
           setIotaNameObjectId(response.nameObjectId);
@@ -1213,7 +1264,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         if (isIotaName(normalizedQuery)) {
           const cached = iotaProfileCacheRef.current.get(normalizedQuery);
           if (!cached) {
-            iotaOnchainPromise = callEdge('get-iota-onchain-profile', { name: normalizedQuery }).catch(() => null);
+            iotaOnchainPromise = fetchIotaOnchainProfile(normalizedQuery);
           }
         }
         
@@ -1312,9 +1363,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               setEfpStats(efpData);
             }
           }).catch(err => console.log('EFP stats fetch failed:', err));
-          
-          // Fetch NFTs
-          fetchNfts(profile.address, undefined);
+
+          // Fetch OpenSea NFTs only for non-IOTA profiles with valid EVM addresses
+          if (!isIotaName(normalizedQuery) && isValidEvmAddress(profile.address)) {
+            fetchNfts(profile.address, undefined);
+          }
         }
       } catch (error: any) {
         // Check if this search is still current
@@ -1508,10 +1561,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return;
     }
     
-    console.log('Fetching NFTs with valid address:', addressString);
+    if (!isValidEvmAddress(addressString)) {
+      console.warn('Skipping OpenSea fetch for non-EVM address:', addressString);
+      setNftLoading(false);
+      return;
+    }
+
+    console.log('Fetching NFTs with valid EVM address:', addressString);
     
     try {
-      setNftLoading(true);
       
       // Final validation before API call - if this fails, abort gracefully
       if (!addressString || addressString.trim() === '' || addressString === 'undefined') {
@@ -2082,10 +2140,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 nameObjectId={iotaNameObjectId || ''}
                 currentProfile={iotaOnchainProfile}
                 onProfileUpdated={() => {
-                  // Refetch the onchain profile
-                  callEdge('get-iota-onchain-profile', { name: displayQuery })
+                  const normalizedName = normalizeIotaQuery(displayQuery);
+                  if (!normalizedName) return;
+
+                  fetchIotaOnchainProfile(normalizedName)
                     .then(response => {
-                      if (response.success) {
+                      if (response?.success) {
                         setIotaOnchainProfile(response.profile);
                         setIotaNameObjectId(response.nameObjectId);
                         setIotaOwnerAddress(response.ownerAddress);
