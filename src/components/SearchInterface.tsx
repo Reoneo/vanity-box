@@ -589,8 +589,30 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         setPoapOffset(0);
       }
     };
+    const handleEvmUnlinked = (event: Event) => {
+      const { iotaName: unlinkedName } = (event as CustomEvent).detail || {};
+      const currentName = displayQuery?.toLowerCase()?.trim();
+      if (unlinkedName === currentName) {
+        console.log(`🔓 EVM unlinked for ${unlinkedName}`);
+        setLinkedEvmAddress(null);
+        linkedEvmResolverRef.current = null;
+        setNfts([]);
+        setNftNextCursor(null);
+        setOpenseaAttempted(false);
+        setOpenseaHasErrors(false);
+        setPoapTokens([]);
+        setPoapCount(0);
+        setPoapTotalCount(0);
+        setPoapHasMore(false);
+        setPoapOffset(0);
+      }
+    };
     window.addEventListener('iota-evm-linked', handleEvmLinked);
-    return () => window.removeEventListener('iota-evm-linked', handleEvmLinked);
+    window.addEventListener('iota-evm-unlinked', handleEvmUnlinked);
+    return () => {
+      window.removeEventListener('iota-evm-linked', handleEvmLinked);
+      window.removeEventListener('iota-evm-unlinked', handleEvmUnlinked);
+    };
   }, [displayQuery]);
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)

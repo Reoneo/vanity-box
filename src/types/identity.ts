@@ -65,6 +65,7 @@ export interface IdentityActions {
   addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
   exportVault: () => Promise<string | null>;
   importVault: (encryptedData: string, walletSignature: string) => Promise<boolean>;
+  removeCredentialByType: (type: string) => Promise<void>;
   clearIdentity: () => void;
   setStep: (step: IdentityStep) => void;
 }

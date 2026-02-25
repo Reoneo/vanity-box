@@ -152,3 +152,6 @@ verify_jwt = false
 
 [functions.get-iota-linked-evm]
 verify_jwt = false
+
+[functions.delete-iota-linked-evm]
+verify_jwt = false

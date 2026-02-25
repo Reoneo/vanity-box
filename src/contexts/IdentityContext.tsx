@@ -335,6 +335,19 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
     }
   }, []);
 
+  // Remove all VCs matching a given type (e.g. 'EthereumWalletOwnershipCredential')
+  const removeCredentialByType = useCallback(async (type: string): Promise<void> => {
+    const updatedVcList = state.vcList.filter(vc => vc.type !== type);
+    setState(prev => ({ ...prev, vcList: updatedVcList }));
+    await saveVaultToStorage(
+      state.holderDid,
+      updatedVcList,
+      state.issuerDid,
+      state.verificationResult,
+      getVaultKey()
+    );
+  }, [state.holderDid, state.vcList, state.issuerDid, state.verificationResult, getVaultKey]);
+
   // Clear identity
   const clearIdentity = useCallback(() => {
     clearVaultStorage();
@@ -380,6 +393,7 @@ export function IdentityProvider({ children, walletAddress, walletSignature }: I
     createPresentationFromCredential,
     verifyPresentation,
     addExternalCredential,
+    removeCredentialByType,
     exportVault,
     importVault,
     clearIdentity,
