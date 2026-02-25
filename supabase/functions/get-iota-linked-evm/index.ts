@@ -13,7 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    const { iotaName } = await req.json();
+    let iotaName: string | undefined;
+    try {
+      const body = await req.json();
+      iotaName = body?.iotaName;
+    } catch {
+      return new Response(
+        JSON.stringify({ success: false, evmAddress: null, error: 'Invalid or empty request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!iotaName) {
       return new Response(
