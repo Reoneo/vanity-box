@@ -13,21 +13,29 @@ serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
     let iotaName: string | undefined;
+
     try {
-      const body = await req.json();
-      iotaName = body?.iotaName;
+      const rawBody = await req.text();
+      if (rawBody && rawBody.trim().length > 0) {
+        const body = JSON.parse(rawBody);
+        iotaName = body?.iotaName ?? body?.name;
+      }
     } catch {
-      return new Response(
-        JSON.stringify({ success: false, evmAddress: null, error: 'Invalid or empty request body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // ignore malformed body and continue with query params fallback
     }
+
+    if (!iotaName) {
+      iotaName = url.searchParams.get('iotaName') ?? url.searchParams.get('name') ?? undefined;
+    }
+
+    iotaName = typeof iotaName === 'string' ? iotaName.trim().toLowerCase() : undefined;
 
     if (!iotaName) {
       return new Response(
         JSON.stringify({ success: false, evmAddress: null, error: 'iotaName is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

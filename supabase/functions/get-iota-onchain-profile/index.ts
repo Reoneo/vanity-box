@@ -55,21 +55,29 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
     let name: string | undefined;
+
     try {
       const body = await req.text();
       if (body && body.trim()) {
         const parsed = JSON.parse(body);
-        name = parsed.name;
+        name = parsed?.name ?? parsed?.iotaName;
       }
     } catch {
-      // ignore parse error
+      // ignore parse error and fallback to query params
     }
 
     if (!name) {
+      name = url.searchParams.get("name") ?? url.searchParams.get("iotaName") ?? undefined;
+    }
+
+    name = typeof name === "string" ? name.trim().toLowerCase() : undefined;
+
+    if (!name) {
       return new Response(
-        JSON.stringify({ error: "Name is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, profile: null, ownerAddress: null, nameObjectId: null, error: "Name is required" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
