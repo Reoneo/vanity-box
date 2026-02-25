@@ -75,6 +75,7 @@ interface ProfileCardProps {
   onEnsureOpenSeaNfts?: () => void;
   // Linked EVM address for .iota profiles
   linkedEvmAddress?: string | null;
+  isResolvingLinkedEvm?: boolean;
   // IOTA Onchain Profile props
   iotaOnchainProfile?: OnchainProfileData | null;
   iotaNameObjectId?: string | null;
@@ -197,6 +198,7 @@ export const ProfileCard = ({
   onLoadMoreNfts,
   onEnsureOpenSeaNfts,
   linkedEvmAddress,
+  isResolvingLinkedEvm = false,
   iotaOnchainProfile,
   iotaNameObjectId,
   iotaOwnerAddress,
@@ -1232,7 +1234,7 @@ export const ProfileCard = ({
                             )}
 
                             {/* Hint for IOTA profiles without linked EVM */}
-                            {isIotaProfile && !linkedEvmAddress && poaps.length === 0 && nfts.length === 0 && (
+                            {isIotaProfile && !linkedEvmAddress && !isResolvingLinkedEvm && poaps.length === 0 && nfts.length === 0 && (
                               <div className="text-center py-6 text-muted-foreground">
                                 <p className="text-sm">No Ethereum wallet linked to this IOTA ID yet.</p>
                                 <p className="text-xs mt-1 opacity-70">Link an ETH wallet via Identity → Link Ethereum Wallet to show POAPs & NFTs.</p>

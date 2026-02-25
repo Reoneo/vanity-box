@@ -111,6 +111,7 @@ import searchLogo from "@/assets/search-logo.png";
 import { isIotaName } from "@/lib/iota/isIotaName";
 import { makeIotaDisplayProfile } from "@/lib/iota/iotaDisplayProfile";
 import { setLinkedDomain } from "@/lib/messaging/linkDomain";
+import { loadVaultFromStorage } from "@/lib/identity/vault";
 
 import noResultsGif from "@/assets/no-results.gif";
 import { PoapCarousel } from "@/components/PoapCarousel";
@@ -271,6 +272,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Linked EVM address for .iota profiles (resolved from iota_wallet_links)
   const [linkedEvmAddress, setLinkedEvmAddress] = useState<string | null>(null);
+  const [isResolvingLinkedEvm, setIsResolvingLinkedEvm] = useState(false);
   const linkedEvmFetchedRef = useRef<string | null>(null); // track which profile we already fetched for
   // Social icons mapping
   const socialIcons: Record<string, string> = {
@@ -433,41 +435,88 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   }, [web3BioProfile?.address, efpStats]);
 
   // Resolve linked EVM address for .iota profiles
-  // Priority: 1) localStorage (instant, works for owner) 2) DB via edge function (works for public viewers)
+  // Priority: 1) localStorage 2) encrypted vault (owner) 3) DB via edge function (public viewers)
   useEffect(() => {
     const name = displayQuery?.toLowerCase()?.trim();
     if (!name || !isIotaName(name)) {
       setLinkedEvmAddress(null);
+      setIsResolvingLinkedEvm(false);
       linkedEvmFetchedRef.current = null;
       return;
     }
 
     // 1) Check localStorage fallback immediately (set when VC was issued)
+    let foundLocal = false;
     try {
       const localEvm = localStorage.getItem(`iota-linked-evm:${name}`);
       if (localEvm && /^0x[a-fA-F0-9]{40}$/i.test(localEvm)) {
         console.log(`⚡ Linked EVM from localStorage for ${name}: ${localEvm}`);
         setLinkedEvmAddress(localEvm);
+        foundLocal = true;
       }
     } catch {}
 
-    // Only call edge once per profile name
+    // Only run full resolution once per profile name
     if (linkedEvmFetchedRef.current === name) return;
     linkedEvmFetchedRef.current = name;
+    if (!foundLocal) setIsResolvingLinkedEvm(true);
 
-    // 2) Also query DB (for public viewers who don't have localStorage)
-    callEdge('get-iota-linked-evm', { iotaName: name })
-      .then((res: any) => {
-        if (res?.success && res.evmAddress && /^0x[a-fA-F0-9]{40}$/i.test(res.evmAddress)) {
-          console.log(`✅ Linked EVM from DB for ${name}: ${res.evmAddress}`);
-          setLinkedEvmAddress(res.evmAddress);
-          // Also update localStorage so future loads are instant
-          try { localStorage.setItem(`iota-linked-evm:${name}`, res.evmAddress.toLowerCase()); } catch {}
+    // 2) Try encrypted identity vault (works for profile owner with existing VCs)
+    const tryVaultFallback = async () => {
+      // Candidate wallet addresses that might have a vault
+      const candidates = new Set<string>();
+      if (iotaWalletAddress) candidates.add(iotaWalletAddress);
+      if (iotaOwnerAddress) candidates.add(iotaOwnerAddress);
+      
+      for (const addr of candidates) {
+        try {
+          const vaultKey = `vault-key-${addr}`;
+          const vault = await loadVaultFromStorage(vaultKey);
+          if (!vault?.vcList?.length) continue;
+          
+          // Find EthereumWalletOwnershipCredential matching this .iota name
+          const ethVc = vault.vcList.find(
+            (vc: any) =>
+              vc.type === 'EthereumWalletOwnershipCredential' &&
+              vc.claims?.address && /^0x[a-fA-F0-9]{40}$/i.test(vc.claims.address) &&
+              vc.claims?.name?.toLowerCase() === name
+          );
+          
+          if (ethVc) {
+            const evmAddr = ethVc.claims.address.toLowerCase();
+            console.log(`🔓 Linked EVM from vault for ${name}: ${evmAddr}`);
+            setLinkedEvmAddress(evmAddr);
+            // Cache to localStorage for instant access next time
+            try { localStorage.setItem(`iota-linked-evm:${name}`, evmAddr); } catch {}
+            setIsResolvingLinkedEvm(false);
+            return true;
+          }
+        } catch (e) {
+          // Vault decryption failed for this candidate — expected for non-owner
         }
-        // Don't clear linkedEvmAddress if DB returns nothing — localStorage fallback may have set it
-      })
-      .catch(() => {});
-  }, [displayQuery]);
+      }
+      return false;
+    };
+
+    // 3) Also query DB (for public viewers who don't have localStorage or vault)
+    const queryDb = () => {
+      callEdge('get-iota-linked-evm', { iotaName: name })
+        .then((res: any) => {
+          if (res?.success && res.evmAddress && /^0x[a-fA-F0-9]{40}$/i.test(res.evmAddress)) {
+            console.log(`✅ Linked EVM from DB for ${name}: ${res.evmAddress}`);
+            setLinkedEvmAddress(res.evmAddress);
+            try { localStorage.setItem(`iota-linked-evm:${name}`, res.evmAddress.toLowerCase()); } catch {}
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsResolvingLinkedEvm(false));
+    };
+
+    // Run vault check first, then DB as fallback
+    tryVaultFallback().then(found => {
+      if (!found) queryDb();
+    });
+  }, [displayQuery, iotaWalletAddress, iotaOwnerAddress]);
 
   // Listen for real-time 'iota-evm-linked' events (fired when VC is issued in the same session)
   useEffect(() => {
@@ -1657,15 +1706,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const handleLoadMoreNfts = () => {
     if (!nftNextCursor || nftLoading) return;
     
-    // Validate we still have a valid address before loading more
-    const address = web3BioProfile?.address || walletAddress;
+    // For IOTA profiles, use linkedEvmAddress; otherwise use web3BioProfile.address
+    const isIota = isIotaName(displayQuery);
+    const address = isIota ? linkedEvmAddress : (web3BioProfile?.address || walletAddress);
     const addressString = typeof address === 'string' ? address : (address as any)?.value;
     
     if (!addressString || 
         addressString === 'undefined' || 
         addressString.trim() === '' ||
-        (typeof address === 'object' && (address as any)?._type === 'undefined')) {
-      console.warn('Cannot load more NFTs: No valid address available');
+        !/^0x[a-fA-F0-9]{40}$/i.test(addressString)) {
+      console.warn('Cannot load more NFTs: No valid EVM address available');
       return;
     }
     
@@ -2013,6 +2063,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       }
                     }}
                     linkedEvmAddress={linkedEvmAddress}
+                    isResolvingLinkedEvm={isResolvingLinkedEvm}
                     iotaOnchainProfile={iotaOnchainProfile}
                     iotaNameObjectId={iotaNameObjectId}
                     iotaOwnerAddress={iotaOwnerAddress}
