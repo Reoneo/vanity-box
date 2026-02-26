@@ -2228,9 +2228,9 @@ export const ProfileCard = ({
                                         ? 'IOTA Names'
                                         : 'Hyperliquid'}
                       </h3>
-                      {nftCategory === 'poaps' && formattedPoaps.length > 0 && (
+                      {nftCategory === 'poaps' && (poapTotalCount > 0 || formattedPoaps.length > 0) && (
                         <span className="text-sm font-medium text-purple-500">
-                          {formattedPoaps.length}
+                          {(poapTotalCount || formattedPoaps.length).toLocaleString()}
                         </span>
                       )}
                     </div>
