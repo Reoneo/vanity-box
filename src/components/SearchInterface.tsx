@@ -23,6 +23,7 @@ import {
 import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
+import { isValidIotaAddress } from '@/lib/iota/client';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { useParams, useLocation, useNavigate } from "react-router-dom";
@@ -1148,11 +1149,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // - Regular names: 12 chars
     const hasMultipleDots = trimmedQuery.split('.').filter(Boolean).length > 2;
     const isPotentialWallet = trimmedQuery.startsWith('0x') && /^0x[a-fA-F0-9]+$/i.test(trimmedQuery);
+    const isIotaAddr = isValidIotaAddress(trimmedQuery);
     const isEnsDomain = /\.(eth|box|xyz|io|com|org|net|id|world|apt|ton|hl|chain)$/i.test(trimmedQuery);
 
     let maxLength = 12; // Default for regular names
-    if (isPotentialWallet) {
-      maxLength = 50; // Allow wallet addresses (42 chars + buffer)
+    if (isPotentialWallet || isIotaAddr) {
+      maxLength = 70; // Allow wallet addresses (EVM 42 chars, IOTA 66 chars + buffer)
     } else if (hasMultipleDots || isEnsDomain) {
       maxLength = 63; // Max ENS label length per segment
     }
@@ -1193,28 +1195,31 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setHasSearched(true);
     setIsSearchActive(true);
 
-    // Check if query is a valid Ethereum wallet address (0x + 40 hex chars = 42 total)
-    const isWalletAddress = trimmedQuery && /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
+    // Check if query is a valid wallet address (EVM: 40 hex, IOTA: 64 hex)
+    const isEvmWallet = trimmedQuery && /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
+    const isWalletAddress = isEvmWallet || isIotaAddr;
 
     console.log("🔍 Query analysis:", {
       query: trimmedQuery,
       isWalletAddress,
+      isIotaAddr,
       hasDot: trimmedQuery?.includes("."),
       length: trimmedQuery?.length
     });
 
-    // Normalize wallet address to checksummed format if it's a wallet address
+    // Normalize wallet address to checksummed format if it's an EVM wallet address
     let normalizedAddress = trimmedQuery;
-    if (isWalletAddress) {
+    if (isEvmWallet) {
       try {
-        // Try to get checksummed version, but don't fail if it doesn't validate
         normalizedAddress = getAddress(trimmedQuery.toLowerCase());
         console.log("✅ Checksummed address:", normalizedAddress);
       } catch (err) {
-        // If getAddress fails, use the original - Web3.bio can handle it
         console.log("⚠️ Using original address format:", trimmedQuery);
         normalizedAddress = trimmedQuery;
       }
+    } else if (isIotaAddr) {
+      normalizedAddress = trimmedQuery.toLowerCase();
+      console.log("✅ IOTA address detected:", normalizedAddress);
     }
 
     // If query contains a dot OR is a wallet address, try fetching profile using unified resolver
@@ -1284,7 +1289,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               address: normalizedAddress,
               avatar: null,
               description: null,
-              platform: 'ethereum',
+              platform: isIotaAddr ? 'iota' : 'ethereum',
               identity: normalizedAddress,
               links: {},
             };
@@ -1324,6 +1329,28 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         if (profile.ensRecords) {
           setEnsRecords(profile.ensRecords);
         }
+
+        // For IOTA address reverse lookups: the resolver found an iotaDomain but we
+        // didn't fire the onchain profile fetch earlier (query wasn't a .iota name).
+        // Fetch it now so the profile card renders full IOTA data.
+        if (!iotaOnchainPromise && profile.iotaDomain && isIotaName(profile.iotaDomain)) {
+          setIotaOnchainProfileLoading(true);
+          fetchIotaOnchainProfile(profile.iotaDomain).then(response => {
+            if (response?.success) {
+              setIotaOnchainProfile(response.profile);
+              setIotaNameObjectId(response.nameObjectId);
+              setIotaOwnerAddress(response.ownerAddress);
+            }
+            setIotaOnchainProfileLoading(false);
+          }).catch(() => setIotaOnchainProfileLoading(false));
+
+          // Also update the URL to the .iota domain for cleaner navigation
+          const iotaPath = `/${encodeURIComponent(profile.iotaDomain)}`;
+          if (location.pathname !== iotaPath) {
+            navigate(iotaPath, { replace: true });
+          }
+          setDisplayQuery(profile.iotaDomain);
+        }
         
         // Fetch additional data for Dock (non-blocking)
         if (profile.address) {
@@ -1359,13 +1386,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             address: normalizedAddress,
             avatar: null,
             description: null,
-            platform: 'ethereum',
+            platform: isIotaAddr ? 'iota' : 'ethereum',
             identity: normalizedAddress,
             links: {},
           };
           setWeb3BioProfile(minimalProfile);
           setEnsResults([]);
-          fetchNfts(normalizedAddress, undefined);
+          if (!isIotaAddr) fetchNfts(normalizedAddress, undefined);
         } else {
           toast.error("Profile lookup timed out. Please try again.");
         }
