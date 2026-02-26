@@ -1118,7 +1118,7 @@ export const ProfileCard = ({
 
                       {/* Credentials Carousel - Talent Protocol & Polymarket */}
                       {(!isIotaProfile || (linkedEvmAddress && hasTalentData)) && (
-                        <div className="pt-2">
+                        <div className="pt-1">
                           <CredentialsCarousel
                             wallet={currentWalletAddress}
                             ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
@@ -1677,7 +1677,7 @@ export const ProfileCard = ({
 
                   {/* Credentials Carousel - Talent Protocol & Polymarket */}
                   {(!isIotaProfile || (linkedEvmAddress && hasTalentData)) && (
-                  <div className="-mt-2">
+                  <div className="-mt-3">
                     <CredentialsCarousel
                       wallet={currentWalletAddress}
                       ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
