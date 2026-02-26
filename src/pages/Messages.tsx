@@ -65,7 +65,7 @@ export default function Messages() {
   const {
     isRegistered, isLoading, conversations, activeConversation,
     messages, register, fetchConversations, startConversation,
-    sendMessage, openConversation, setActiveConversation,
+    sendMessage, openConversation, setActiveConversation, deleteConversation,
   } = useMessaging(walletAddress, domain, signMessageFn);
 
   useEffect(() => {
@@ -198,20 +198,46 @@ export default function Messages() {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">
-              {activeConversation ? "Chat" : "Messages"}
-            </h1>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              End-to-end encrypted
-            </p>
+            {activeConversation ? (() => {
+              const conv = conversations.find(c => c.conversation_id === activeConversation);
+              const other = conv?.members.find(m => m.domain_name?.toLowerCase() !== domain?.toLowerCase());
+              return (
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-[hsl(43,76%,52%)]/10 flex items-center justify-center overflow-hidden ring-1 ring-[hsl(43,76%,52%)]/30">
+                    {other?.avatar_url ? (
+                      <img src={other.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      <span className="text-[hsl(43,76%,52%)] font-bold text-xs">
+                        {(other?.domain_name || "?")[0].toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h1 className="text-sm font-bold text-foreground leading-tight">
+                      {other?.display_name || other?.domain_name || "Chat"}
+                    </h1>
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Lock className="w-2.5 h-2.5" /> Encrypted
+                    </p>
+                  </div>
+                </div>
+              );
+            })() : (
+              <div>
+                <h1 className="text-lg font-bold text-foreground">Messages</h1>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  End-to-end encrypted
+                </p>
+              </div>
+            )}
           </div>
           {!activeConversation && (
             <button
               onClick={() => setShowNewConvo(true)}
-              className="p-2 rounded-lg bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 transition-colors"
+              className="p-2 rounded-lg bg-[hsl(43,76%,52%)]/10 hover:bg-[hsl(43,76%,52%)]/20 transition-colors"
             >
-              <MessageSquarePlus className="w-5 h-5 text-[#D4AF37]" />
+              <MessageSquarePlus className="w-5 h-5 text-[hsl(43,76%,52%)]" />
             </button>
           )}
         </header>
@@ -229,6 +255,7 @@ export default function Messages() {
               <ConversationList
                 conversations={conversations}
                 onSelect={openConversation}
+                onDelete={deleteConversation}
                 domain={domain || ""}
               />
             )}
