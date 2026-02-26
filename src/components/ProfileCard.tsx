@@ -2421,11 +2421,6 @@ export const ProfileCard = ({
                                 {token.symbol?.toUpperCase() === 'IOTA' && <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full" />}
                                 {token.quantity?.toLocaleString(undefined, { maximumFractionDigits: 4 })} {token.symbol}
                               </span>
-                              {token.priceChange24h != null && !isNaN(token.priceChange24h) && token.priceChange24h !== 0 && (
-                                <span className={token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}>
-                                  {token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h * 100).toFixed(2)}%
-                                </span>
-                              )}
                             </div>
                           </div>
                         </div>
