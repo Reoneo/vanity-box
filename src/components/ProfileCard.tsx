@@ -408,15 +408,22 @@ export const ProfileCard = ({
     if (!transactionsFetched) return;
     if (evmTxForIota.length === 0) return;
 
-    // Merge and sort by timestamp descending
-    const iotaTx = transactions.filter((t: any) => !t._fromEvmMerge);
-    const merged = [...iotaTx, ...evmTxForIota.map((t: any) => ({ ...t, _fromEvmMerge: true }))];
-    merged.sort((a: any, b: any) => {
-      const ta = new Date(a.timestamp || a.mined_at || 0).getTime();
-      const tb = new Date(b.timestamp || b.mined_at || 0).getTime();
-      return tb - ta;
+    // Use functional update to avoid stale closure / infinite loops
+    setTransactions(prev => {
+      const iotaTx = prev.filter((t: any) => !t._fromEvmMerge);
+      const alreadyMerged = prev.some((t: any) => t._fromEvmMerge);
+      // Skip if already merged with same data
+      if (alreadyMerged && iotaTx.length + evmTxForIota.length === prev.length) return prev;
+      
+      const merged = [...iotaTx, ...evmTxForIota.map((t: any) => ({ ...t, _fromEvmMerge: true }))];
+      merged.sort((a: any, b: any) => {
+        const ta = new Date(a.timestamp || a.mined_at || 0).getTime();
+        const tb = new Date(b.timestamp || b.mined_at || 0).getTime();
+        return tb - ta;
+      });
+      console.log('[ProfileCard] Merged IOTA+EVM transactions:', iotaTx.length, '+', evmTxForIota.length, '=', merged.length);
+      return merged;
     });
-    setTransactions(merged);
   }, [evmTxForIota, transactionsFetched, searchedIdentity, web3BioProfile?.platform]);
 
   // Reset EVM social state when profile target changes
