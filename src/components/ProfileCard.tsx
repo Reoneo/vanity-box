@@ -258,7 +258,7 @@ export const ProfileCard = ({
   const [showHeaderPopup, setShowHeaderPopup] = useState(false);
   
   // EVM social links state for .iota profiles
-  const [evmSocialLinks, setEvmSocialLinks] = useState<Record<string, any>>({});
+  const [evmSocialLinks, setEvmSocialLinks] = useState<Array<{ platform: string; linkData: any; origin: string }>>([]);
   const [evmSocialsFetched, setEvmSocialsFetched] = useState(false);
   
   // Dedicated ENS domains for linked EVM wallet (separate from NFT ENS fetch)
@@ -366,7 +366,7 @@ export const ProfileCard = ({
 
   // Reset EVM social state when profile target changes
   useEffect(() => {
-    setEvmSocialLinks({});
+    setEvmSocialLinks([]);
     setEvmSocialsFetched(false);
     setLinkedEvmEnsDomains([]);
     setLinkedEvmEnsFetched(false);
@@ -414,43 +414,112 @@ export const ProfileCard = ({
     const fetchEvmSocials = async () => {
       try {
         console.log('[ProfileCard] Fetching Web3.bio socials for linked EVM:', linkedEvmAddress);
-        const aggregated: Record<string, any> = {};
-        
-        const aggregateProfiles = (profiles: any[]) => {
+        const aggregatedEntries: Array<{ platform: string; linkData: any; origin: string }> = [];
+        const seenEntries = new Set<string>();
+
+        const normalizeProfiles = (payload: any): any[] => {
+          if (Array.isArray(payload)) return payload;
+          if (Array.isArray(payload?.profiles)) return payload.profiles;
+          if (Array.isArray(payload?.data)) return payload.data;
+          if (Array.isArray(payload?.result)) return payload.result;
+          if (payload && typeof payload === 'object') return [payload];
+          return [];
+        };
+
+        const addEntriesFromProfiles = (profiles: any[], origin: string) => {
           for (const p of profiles) {
-            if (p.links && typeof p.links === 'object') {
-              for (const [platform, linkData] of Object.entries(p.links)) {
-                if (!aggregated[platform.toLowerCase()] && linkData) {
-                  aggregated[platform.toLowerCase()] = linkData;
-                }
-              }
+            if (!p?.links || typeof p.links !== 'object') continue;
+            for (const [platform, linkData] of Object.entries(p.links)) {
+              if (!platform || !linkData) continue;
+              const normalizedPlatform = normalizePlatformKey(platform);
+              if (normalizedPlatform === 'website' || normalizedPlatform === 'email') continue;
+
+              const comparableValue = extractComparableSocialValue(linkData);
+              const fallbackValue = typeof linkData === 'string' ? linkData : JSON.stringify(linkData);
+              const dedupeKey = `${normalizedPlatform}::${(comparableValue || fallbackValue || '').toLowerCase()}`;
+
+              if (seenEntries.has(dedupeKey)) continue;
+              seenEntries.add(dedupeKey);
+              aggregatedEntries.push({
+                platform: platform.toLowerCase(),
+                linkData,
+                origin,
+              });
             }
           }
         };
 
-        // 1. Fetch by raw address (returns Farcaster/Basenames data)
-        const res = await fetch(`https://api.web3.bio/profile/${linkedEvmAddress}`);
-        const profiles = await res.json();
-        console.log('[ProfileCard] Web3.bio EVM address profiles:', profiles);
-        if (Array.isArray(profiles)) aggregateProfiles(profiles);
-        
-        // 2. Fetch Web3.bio for each linked ENS name to get text records (GitHub, LinkedIn, Telegram, etc.)
-        for (const ensDomain of linkedEvmEnsDomains) {
-          const ensName = ensDomain?.name || ensDomain?.domain;
-          if (!ensName) continue;
-          console.log('[ProfileCard] Fetching Web3.bio socials for linked ENS name:', ensName);
+        const extractDomainCandidates = (profiles: any[]) => {
+          const candidates = new Set<string>();
+
+          const addCandidate = (rawValue: unknown) => {
+            if (typeof rawValue !== 'string') return;
+            const trimmed = rawValue.trim();
+            if (!trimmed) return;
+
+            const normalized = trimmed
+              .toLowerCase()
+              .replace(/^https?:\/\//, '')
+              .replace(/^www\./, '')
+              .split('/')[0]
+              .split('?')[0]
+              .split('#')[0]
+              .trim();
+
+            if (!normalized || normalized.includes(' ') || !normalized.includes('.')) return;
+            if (/^0x[a-fA-F0-9]{40}$/i.test(normalized)) return;
+            candidates.add(normalized);
+          };
+
+          for (const ensDomain of linkedEvmEnsDomains) {
+            addCandidate(ensDomain?.name || ensDomain?.domain);
+          }
+
+          for (const p of profiles) {
+            const maybeNames = [p?.identity, p?.displayName, p?.name];
+            maybeNames.forEach(addCandidate);
+
+            const websiteLink = p?.links?.website;
+            if (typeof websiteLink === 'string') {
+              addCandidate(websiteLink);
+            } else if (websiteLink && typeof websiteLink === 'object') {
+              addCandidate(websiteLink.handle);
+              addCandidate(websiteLink.link);
+            }
+
+            if (typeof p?.description === 'string') {
+              const domainMatches = p.description.match(/\b(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+\b/gi) || [];
+              domainMatches.forEach(addCandidate);
+            }
+          }
+
+          return Array.from(candidates);
+        };
+
+        // 1) Fetch by linked EVM address first
+        const addressRes = await fetch(`https://api.web3.bio/profile/${linkedEvmAddress}`);
+        const addressPayload = await addressRes.json();
+        const addressProfiles = normalizeProfiles(addressPayload);
+        console.log('[ProfileCard] Web3.bio EVM address profiles:', addressProfiles);
+        addEntriesFromProfiles(addressProfiles, 'address');
+
+        // 2) Fetch by ENS/domain identities discovered from ENS + Web3.bio address profiles
+        const domainCandidates = extractDomainCandidates(addressProfiles);
+        for (const domainCandidate of domainCandidates) {
+          console.log('[ProfileCard] Fetching Web3.bio socials for linked domain name:', domainCandidate);
           try {
-            const ensRes = await fetch(`https://api.web3.bio/profile/${ensName}`);
-            const ensProfiles = await ensRes.json();
-            console.log('[ProfileCard] Web3.bio ENS name profiles:', ensName, ensProfiles);
-            if (Array.isArray(ensProfiles)) aggregateProfiles(ensProfiles);
+            const domainRes = await fetch(`https://api.web3.bio/profile/${encodeURIComponent(domainCandidate)}`);
+            const domainPayload = await domainRes.json();
+            const domainProfiles = normalizeProfiles(domainPayload);
+            console.log('[ProfileCard] Web3.bio domain profiles:', domainCandidate, domainProfiles);
+            addEntriesFromProfiles(domainProfiles, domainCandidate);
           } catch (e) {
-            console.error('[ProfileCard] Web3.bio ENS name fetch error:', ensName, e);
+            console.error('[ProfileCard] Web3.bio domain fetch error:', domainCandidate, e);
           }
         }
 
-        console.log('[ProfileCard] Aggregated EVM social links:', aggregated);
-        setEvmSocialLinks(aggregated);
+        console.log('[ProfileCard] Aggregated EVM social links:', aggregatedEntries);
+        setEvmSocialLinks(aggregatedEntries);
       } catch (e) {
         console.error('[ProfileCard] Web3.bio EVM socials fetch error:', e);
       } finally {
@@ -470,16 +539,16 @@ export const ProfileCard = ({
     return lower;
   };
 
-  // Extract a comparable handle from linkData for dedup comparison
+  // Extract a comparable handle from linkData for dedup + source matching
   const extractRawHandle = (linkData: any): string => {
     if (!linkData) return '';
-    // If linkData has a handle property, use it
     if (typeof linkData === 'object' && linkData.handle) {
       return linkData.handle.replace(/^@/, '').toLowerCase().trim();
     }
-    // If linkData has a link property, extract last path segment
+
     const url = typeof linkData === 'object' ? linkData.link : (typeof linkData === 'string' ? linkData : '');
     if (!url) return '';
+
     try {
       const pathname = new URL(url).pathname;
       const segments = pathname.split('/').filter(Boolean);
@@ -488,44 +557,68 @@ export const ProfileCard = ({
       return url.replace(/^@/, '').toLowerCase().trim();
     }
   };
+
+  const extractComparableSocialValue = (linkData: any): string => {
+    const handle = extractRawHandle(linkData);
+    if (handle) return handle;
+
+    const rawLink = typeof linkData === 'object' ? linkData?.link : linkData;
+    if (typeof rawLink !== 'string') return '';
+
+    return rawLink.trim().replace(/\/+$/, '').toLowerCase();
+  };
   
   // showOriginBadges moved below isIotaProfile definition
   
   const mergedSocialLinks: MergedSocialLink[] = useMemo(() => {
-    const mergedMap: Record<string, MergedSocialLink> = {};
-    
-    // Add IOTA links
+    const merged: MergedSocialLink[] = [];
+    const iotaIndexByMatchKey = new Map<string, number>();
+
+    // Add IOTA links first
     if (web3BioProfile?.links) {
+      let iotaIndex = 0;
       for (const [platform, linkData] of Object.entries(web3BioProfile.links)) {
         const key = normalizePlatformKey(platform);
         if (key === 'website' || key === 'email' || !linkData) continue;
-        mergedMap[key] = { platform, linkData, source: 'iota', entryId: `iota_${key}` };
-      }
-    }
-    
-    // Add EVM links — compare handles to detect true duplicates vs different accounts
-    for (const [platform, linkData] of Object.entries(evmSocialLinks)) {
-      const key = normalizePlatformKey(platform);
-      if (key === 'website' || key === 'email' || !linkData) continue;
-      if (mergedMap[key]) {
-        // Same platform exists from IOTA — compare actual handles
-        const iotaHandle = extractRawHandle(mergedMap[key].linkData);
-        const evmHandle = extractRawHandle(linkData);
-        console.log(`[MergedSocials] Comparing ${key}: IOTA="${iotaHandle}" vs EVM="${evmHandle}"`);
-        if (iotaHandle && evmHandle && iotaHandle === evmHandle) {
-          // True duplicate — same account on both profiles
-          mergedMap[key].source = 'both';
-          mergedMap[key].entryId = `both_${key}`;
-        } else {
-          // Different accounts — keep both with disambiguated key
-          mergedMap[`${key}_evm`] = { platform, linkData, source: 'ethereum', entryId: `evm_${key}` };
+
+        const matchValue = extractComparableSocialValue(linkData);
+        const entryId = `iota_${key}_${matchValue || iotaIndex}`;
+        merged.push({ platform, linkData, source: 'iota', entryId });
+
+        if (matchValue) {
+          iotaIndexByMatchKey.set(`${key}::${matchValue}`, merged.length - 1);
         }
-      } else {
-        mergedMap[key] = { platform, linkData, source: 'ethereum', entryId: `evm_${key}` };
+        iotaIndex += 1;
       }
     }
+
+    // Add EVM links and mark exact platform+handle matches as "both"
+    evmSocialLinks.forEach(({ platform, linkData }, evmIndex) => {
+      const key = normalizePlatformKey(platform);
+      if (key === 'website' || key === 'email' || !linkData) return;
+
+      const matchValue = extractComparableSocialValue(linkData);
+      const matchKey = matchValue ? `${key}::${matchValue}` : '';
+      const matchedIotaIndex = matchKey ? iotaIndexByMatchKey.get(matchKey) : undefined;
+
+      if (matchedIotaIndex !== undefined) {
+        merged[matchedIotaIndex] = {
+          ...merged[matchedIotaIndex],
+          source: 'both',
+          entryId: `both_${key}_${matchValue || matchedIotaIndex}`,
+        };
+        return;
+      }
+
+      merged.push({
+        platform,
+        linkData,
+        source: 'ethereum',
+        entryId: `evm_${key}_${matchValue || evmIndex}`,
+      });
+    });
     
-    return Object.values(mergedMap);
+    return merged;
   }, [web3BioProfile?.links, evmSocialLinks]);
 
 
