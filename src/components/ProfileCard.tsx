@@ -261,6 +261,10 @@ export const ProfileCard = ({
   const [evmSocialLinks, setEvmSocialLinks] = useState<Record<string, any>>({});
   const [evmSocialsFetched, setEvmSocialsFetched] = useState(false);
   
+  // Dedicated ENS domains for linked EVM wallet (separate from NFT ENS fetch)
+  const [linkedEvmEnsDomains, setLinkedEvmEnsDomains] = useState<any[]>([]);
+  const [linkedEvmEnsFetched, setLinkedEvmEnsFetched] = useState(false);
+  
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
@@ -360,12 +364,52 @@ export const ProfileCard = ({
     }
   }, [iotaTokens, evmTokensForIota, evmTotalForIota, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
 
-  // Fetch EVM social links from Web3.bio for .iota profiles with linked Ethereum wallets
+  // Reset EVM social state when profile target changes
+  useEffect(() => {
+    setEvmSocialLinks({});
+    setEvmSocialsFetched(false);
+    setLinkedEvmEnsDomains([]);
+    setLinkedEvmEnsFetched(false);
+  }, [searchedIdentity]);
+
+  // Step A: Fetch ENS domains for the LINKED EVM wallet (not currentWalletAddress)
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota || !linkedEvmAddress || linkedEvmEnsFetched) return;
+    if (!/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
+
+    const fetchLinkedEvmEns = async () => {
+      try {
+        console.log('[ProfileCard] Fetching ENS domains for linked EVM wallet:', linkedEvmAddress);
+        const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          },
+          body: JSON.stringify({ walletAddress: linkedEvmAddress }),
+        });
+        const ensData = await ensRes.json();
+        console.log('[ProfileCard] Linked EVM ENS domains:', ensData);
+        if (ensData.domains) setLinkedEvmEnsDomains(ensData.domains);
+      } catch (e) {
+        console.error('[ProfileCard] Linked EVM ENS fetch error:', e);
+      } finally {
+        setLinkedEvmEnsFetched(true);
+      }
+    };
+    fetchLinkedEvmEns();
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, linkedEvmEnsFetched]);
+
+  // Step B: Fetch EVM social links from Web3.bio AFTER linked ENS domains are resolved
   useEffect(() => {
     const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
                    web3BioProfile?.platform === 'iota';
     if (!isIota || !linkedEvmAddress || evmSocialsFetched) return;
     if (!/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
+    // Wait for linked ENS fetch to complete before querying socials
+    if (!linkedEvmEnsFetched) return;
 
     const fetchEvmSocials = async () => {
       try {
@@ -390,22 +434,22 @@ export const ProfileCard = ({
         console.log('[ProfileCard] Web3.bio EVM address profiles:', profiles);
         if (Array.isArray(profiles)) aggregateProfiles(profiles);
         
-        // 2. Find primary ENS name from already-fetched ensDomains and fetch its text records
-        if (ensDomains.length > 0) {
-          const primaryEns = ensDomains[0]?.name || ensDomains[0]?.domain;
-          if (primaryEns) {
-            console.log('[ProfileCard] Fetching Web3.bio socials for ENS name:', primaryEns);
-            try {
-              const ensRes = await fetch(`https://api.web3.bio/profile/${primaryEns}`);
-              const ensProfiles = await ensRes.json();
-              console.log('[ProfileCard] Web3.bio ENS name profiles:', ensProfiles);
-              if (Array.isArray(ensProfiles)) aggregateProfiles(ensProfiles);
-            } catch (e) {
-              console.error('[ProfileCard] Web3.bio ENS name fetch error:', e);
-            }
+        // 2. Fetch Web3.bio for each linked ENS name to get text records (GitHub, LinkedIn, Telegram, etc.)
+        for (const ensDomain of linkedEvmEnsDomains) {
+          const ensName = ensDomain?.name || ensDomain?.domain;
+          if (!ensName) continue;
+          console.log('[ProfileCard] Fetching Web3.bio socials for linked ENS name:', ensName);
+          try {
+            const ensRes = await fetch(`https://api.web3.bio/profile/${ensName}`);
+            const ensProfiles = await ensRes.json();
+            console.log('[ProfileCard] Web3.bio ENS name profiles:', ensName, ensProfiles);
+            if (Array.isArray(ensProfiles)) aggregateProfiles(ensProfiles);
+          } catch (e) {
+            console.error('[ProfileCard] Web3.bio ENS name fetch error:', ensName, e);
           }
         }
 
+        console.log('[ProfileCard] Aggregated EVM social links:', aggregated);
         setEvmSocialLinks(aggregated);
       } catch (e) {
         console.error('[ProfileCard] Web3.bio EVM socials fetch error:', e);
@@ -414,10 +458,10 @@ export const ProfileCard = ({
       }
     };
     fetchEvmSocials();
-  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmSocialsFetched, ensDomains]);
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmSocialsFetched, linkedEvmEnsFetched, linkedEvmEnsDomains]);
 
   // Merged social links: IOTA + EVM with source attribution
-  type MergedSocialLink = { platform: string; linkData: any; source: 'iota' | 'ethereum' | 'both' };
+  type MergedSocialLink = { platform: string; linkData: any; source: 'iota' | 'ethereum' | 'both'; entryId: string };
   
   // Normalize platform aliases so e.g. IOTA's "x" and Web3.bio's "twitter" are treated as the same
   const normalizePlatformKey = (key: string): string => {
@@ -455,7 +499,7 @@ export const ProfileCard = ({
       for (const [platform, linkData] of Object.entries(web3BioProfile.links)) {
         const key = normalizePlatformKey(platform);
         if (key === 'website' || key === 'email' || !linkData) continue;
-        mergedMap[key] = { platform, linkData, source: 'iota' };
+        mergedMap[key] = { platform, linkData, source: 'iota', entryId: `iota_${key}` };
       }
     }
     
@@ -471,12 +515,13 @@ export const ProfileCard = ({
         if (iotaHandle && evmHandle && iotaHandle === evmHandle) {
           // True duplicate — same account on both profiles
           mergedMap[key].source = 'both';
+          mergedMap[key].entryId = `both_${key}`;
         } else {
           // Different accounts — keep both with disambiguated key
-          mergedMap[`${key}_evm`] = { platform, linkData, source: 'ethereum' };
+          mergedMap[`${key}_evm`] = { platform, linkData, source: 'ethereum', entryId: `evm_${key}` };
         }
       } else {
-        mergedMap[key] = { platform, linkData, source: 'ethereum' };
+        mergedMap[key] = { platform, linkData, source: 'ethereum', entryId: `evm_${key}` };
       }
     }
     
@@ -975,7 +1020,7 @@ export const ProfileCard = ({
       return (
         <div className="h-full overflow-y-auto px-6 py-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-w-2xl mx-auto">
-            {mergedSocialLinks.map(({ platform, linkData, source }) => {
+            {mergedSocialLinks.map(({ platform, linkData, source, entryId }) => {
                 const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
                 if (!rawUrl) return null;
 
@@ -987,7 +1032,7 @@ export const ProfileCard = ({
 
                 return (
                   <WrapEl 
-                    key={platform} 
+                    key={entryId} 
                     {...(wrapProps as any)}
                     className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200 border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:shadow-lg group cursor-pointer"
                   >
@@ -1907,7 +1952,7 @@ export const ProfileCard = ({
                 {/* Social Icons Grid */}
                 <div className="flex-1 overflow-y-auto px-4 py-4">
                   <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
-                    {mergedSocialLinks.map(({ platform, linkData, source }) => {
+                    {mergedSocialLinks.map(({ platform, linkData, source, entryId }) => {
                         const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
                         if (!rawUrl) return null;
 
@@ -1918,7 +1963,7 @@ export const ProfileCard = ({
 
                         return (
                           <WrapEl 
-                            key={platform} 
+                            key={entryId} 
                             {...(wrapProps as any)}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50 cursor-pointer"
                           >
@@ -2711,7 +2756,7 @@ export const ProfileCard = ({
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {mergedSocialLinks
-                .map(({ platform, linkData, source }) => {
+                .map(({ platform, linkData, source, entryId }) => {
                   const displayLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
                   const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
                   
@@ -2721,7 +2766,7 @@ export const ProfileCard = ({
                   
                   return (
                     <button
-                      key={platform}
+                      key={entryId}
                       onClick={() => {
                         if (normalized.isDiscordUsername) {
                           navigator.clipboard.writeText(normalized.displayHandle);
