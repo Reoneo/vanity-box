@@ -30,6 +30,8 @@ import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
+import ethPlusGold from '@/assets/eth-plus-gold.png';
+import ethPlusDark from '@/assets/eth-plus-dark.png';
 
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
@@ -1454,7 +1456,8 @@ export const ProfileCard = ({
                             <span className="font-bold text-[#D4AF37]">{efpStats.following_count || 0}</span>
                             <span className="text-black dark:text-white">Following</span>
                           </button>
-                          <span className="text-black/50 dark:text-white/50">·</span>
+                          <img src={ethPlusGold} alt="" className="w-4 h-4 object-contain hidden dark:inline-block" />
+                          <img src={ethPlusDark} alt="" className="w-4 h-4 object-contain dark:hidden inline-block" />
                           <button onClick={onFollowersClick} className="flex items-center gap-1.5 hover:opacity-80 transition-colors">
                             <span className="font-bold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
                             <span className="text-black dark:text-white">Followers</span>
@@ -1975,7 +1978,8 @@ export const ProfileCard = ({
                         <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
                         <span className="text-black dark:text-white">Following</span>
                       </button>
-                      <span className="text-black dark:text-white">·</span>
+                      <img src={ethPlusGold} alt="" className="w-4 h-4 object-contain hidden dark:inline-block" />
+                      <img src={ethPlusDark} alt="" className="w-4 h-4 object-contain dark:hidden inline-block" />
                       <button
                         onClick={onFollowersClick}
                         className="flex items-center gap-1 hover:opacity-80 transition-colors"
