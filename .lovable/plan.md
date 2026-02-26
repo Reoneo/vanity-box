@@ -1,61 +1,81 @@
 
+## Objective
+Fix badge attribution so `.iota` profiles show **both IOTA + Ethereum badges only when the same social handle exists on both profiles**, while keeping distinct handles as separate cards (for example, two X/Twitter cards if handles differ).
 
-# Fix Social Link Origin Badge Assignment for .iota Profiles
+## What is currently failing (root cause)
+From the current code and network behavior:
 
-## Problem
-The current merge logic uses only the platform name (e.g., `x`) as the merge key. This causes two bugs:
+1. `fetchEvmSocials` depends on `ensDomains`, but `ensDomains` is fetched using `currentWalletAddress` (the `.iota` owner address), not `linkedEvmAddress`.
+2. On `.iota` profiles, that ENS lookup returns empty, so ENS-based Web3.bio social records (GitHub/LinkedIn/Telegram text records) are never queried.
+3. `evmSocialsFetched` is set `true` before ENS data can later become available, so the social fetch doesn’t retry.
+4. EVM links are stored in a `Record<string, any>` keyed by platform, which can drop additional candidates per platform and reduce matching accuracy.
+5. Social card React keys still use `platform`, which is unsafe when same-platform entries must coexist.
 
-1. **False duplicate**: IOTA has X `@Smithdotbox` and Ethereum has Twitter `@30315eth` -- these are different accounts but get merged into one entry with `source: 'both'` because `twitter` normalizes to `x`.
-2. **Missing separate entry**: The Ethereum-only X account (`@30315eth`) disappears entirely instead of appearing as a separate card with an ETH-only badge.
+## Implementation plan
 
-## What it should look like
-- **X @Smithdotbox** -- IOTA badge only (only on .iota profile)
-- **Twitter @30315eth** -- ETH badge only (only on Ethereum profile)
-- **GitHub @ReoNeo** -- Both badges (same handle on both profiles)
-- **LinkedIn @ThirdWeb** -- Both badges (same handle on both profiles)
-- **Telegram @PortofSpain** -- Both badges (same handle on both profiles)
-- **Bluesky, YouTube, Discord, Farcaster** -- whichever source they come from
+### 1) Fetch ENS domains for the linked Ethereum wallet (not the IOTA owner wallet)
+In `src/components/ProfileCard.tsx`:
 
-## Solution
+- Add dedicated state for linked EVM ENS resolution (separate from existing NFT ENS state):
+  - `linkedEvmEnsDomains`
+  - `linkedEvmEnsFetched`
+- Add effect:
+  - Runs only for `.iota` + valid `linkedEvmAddress`
+  - Calls `get-ens-domains` with `walletAddress: linkedEvmAddress`
+  - Stores names in `linkedEvmEnsDomains`
+  - Marks `linkedEvmEnsFetched=true` even when empty (to unblock next stage)
 
-### Change the merge logic to compare handles, not just platform names
+This decouples social enrichment from unrelated ENS/NFT fetching.
 
-In the `mergedSocialLinks` useMemo in `ProfileCard.tsx`:
+### 2) Rework EVM social fetching to include all Web3.bio sources and avoid race lock
+- Reset EVM social fetch state when profile target changes:
+  - On `linkedEvmAddress` / identity change, clear previous EVM social cache and fetched flags.
+- Update EVM social effect so it runs when:
+  - `.iota` profile
+  - valid linked EVM address
+  - linked ENS fetch finished
+- Query Web3.bio for:
+  1. `profile/{linkedEvmAddress}`
+  2. each linked ENS name from `linkedEvmEnsDomains` (or at least primary + fallbacks)
+- Aggregate as a **list of social entries** (not platform map), deduping by `{normalizedPlatform + normalizedHandle}` so we keep all unique handles.
 
-1. When an EVM link has the same normalized platform key as an existing IOTA link, extract and compare the actual handle/URL values
-2. If the handles match -- mark as `source: 'both'` (true duplicate)
-3. If the handles differ -- keep both as separate entries (one `iota`, one `ethereum`), using a disambiguated key like `x` and `x_evm`
-4. Display the original platform name for each entry (so the Ethereum one shows "Twitter" and the IOTA one shows "X")
+### 3) Upgrade duplicate detection to handle-accurate matching
+- Replace single-map merge with entry-based matching:
+  - Build normalized IOTA social entry list from `.iota` links
+  - Build normalized EVM social entry list from Web3.bio results
+- Matching rule for `source: "both"`:
+  - same normalized platform (twitter→x)
+  - same normalized handle (case-insensitive, strip `@`, canonical URL path extraction)
+- If platform matches but handle differs:
+  - keep both cards (IOTA-only and ETH-only), each with correct badge.
 
-### Technical Details
+This directly enforces your rule: badges are assigned by true handle match, not platform-only match.
 
-**File: `src/components/ProfileCard.tsx`**
+### 4) Preserve badge display constraints
+- Keep origin badges visible only when:
+  - profile is `.iota`
+  - linked EVM exists
+- Badge rendering remains:
+  - `iota` only → IOTA badge
+  - `ethereum` only → ETH badge
+  - `both` → both badges
 
-- Add a `extractRawHandle` helper that pulls the handle string from linkData (either `linkData.handle`, the last segment of `linkData.link`, or the raw string)
-- Update the merge block (~lines 443-452): when `mergedMap[key]` already exists, compare handles. If different, insert the EVM link under a suffixed key (`${key}_evm`) so both appear
-- Update the rendering key from `platform` to a unique key (since we may now have two entries for the same normalized platform)
-- No changes to badge rendering logic needed -- the existing `source` flags will now be correctly assigned
+### 5) Fix rendering identity keys so duplicate-platform cards render reliably
+- Add stable unique `entryId` to merged social entries.
+- Update all social render locations to use `key={entryId}` instead of `key={platform}`.
+- This prevents React key collisions when two cards share a platform (e.g., `X` + `Twitter` or two `linkedin` variants).
 
-### Handle Extraction Pseudocode
-```text
-function extractRawHandle(platform, linkData):
-  if linkData.handle exists: return normalize(linkData.handle)
-  link = linkData.link or linkData (if string)
-  return last path segment of URL, stripped of @ prefix
-```
+## File to modify
+- `src/components/ProfileCard.tsx`
 
-### Merge Logic Pseudocode
-```text
-for each (platform, linkData) in evmLinks:
-  key = normalizePlatformKey(platform)
-  if key in mergedMap:
-    iotaHandle = extractRawHandle(mergedMap[key])
-    evmHandle = extractRawHandle(linkData)
-    if iotaHandle == evmHandle:
-      mergedMap[key].source = 'both'
-    else:
-      mergedMap[key + '_evm'] = { platform, linkData, source: 'ethereum' }
-  else:
-    mergedMap[key] = { platform, linkData, source: 'ethereum' }
-```
+## Validation checklist (end-to-end)
+1. Open `/Vanity.iota`:
+   - GitHub, LinkedIn, Telegram that exist on both sources show dual badges.
+   - X/Twitter with different handles shows separate cards, each single-source badge.
+2. Confirm no dual badge appears for non-matching same-platform handles.
+3. Confirm non-`.iota` profiles do not show origin badges.
+4. Switch between `.iota` profiles and verify old EVM social data does not leak (state reset works).
+5. Verify mobile overlay and desktop social views both reflect identical badge logic and entries.
 
+## Technical note
+This keeps your current UI style and data providers, but changes the merge model from “platform-first” to “platform+handle-first,” which is required for accurate unification signaling.
