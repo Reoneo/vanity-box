@@ -1808,16 +1808,16 @@ export const ProfileCard = ({
                             {nftCategory.startsWith('iota:') && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 {(iotaGroupedNfts[nftCategory.replace('iota:', '')] || []).map((iotaName: any, index: number) => (
-                                  <div key={iotaName.identifier || iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
-                                    <div className="flex flex-col items-center gap-2">
-                                      {iotaName.imageUrl ? (
-                                        <img src={iotaName.imageUrl} alt={iotaName.name} className="w-12 h-12 rounded-full object-cover" />
-                                      ) : (
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-lg">
-                                          {iotaName.name?.charAt(0).toUpperCase() || 'I'}
-                                        </div>
-                                      )}
-                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA NFT'}</p>
+                                  <div key={iotaName.identifier || iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all" onClick={() => setSelectedNft({ name: iotaName.name || 'IOTA NFT', image_url: iotaName.imageUrl, collection: iotaName.collection || 'IOTA NFT', description: iotaName.description || '', identifier: iotaName.identifier || iotaName.objectId, contract: iotaName.objectId })}>
+                                    {iotaName.imageUrl ? (
+                                      <img src={iotaName.imageUrl} alt={iotaName.name} className="w-full aspect-square object-cover" />
+                                    ) : (
+                                      <div className="w-full aspect-square bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-2xl">
+                                        {iotaName.name?.charAt(0).toUpperCase() || 'I'}
+                                      </div>
+                                    )}
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                      <p className="text-white text-xs font-medium truncate">{iotaName.name || 'IOTA NFT'}</p>
                                     </div>
                                   </div>
                                 ))}
@@ -2805,16 +2805,16 @@ export const ProfileCard = ({
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                           {collectionItems.map((iotaName: any, index: number) => (
-                            <div key={iotaName.identifier || iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
-                              <div className="flex flex-col items-center gap-2">
-                                {iotaName.imageUrl ? (
-                                  <img src={iotaName.imageUrl} alt={iotaName.name} className="w-12 h-12 rounded-full object-cover" />
-                                ) : (
-                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-lg">
-                                    {iotaName.name?.charAt(0).toUpperCase() || 'I'}
-                                  </div>
-                                )}
-                                <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA NFT'}</p>
+                            <div key={iotaName.identifier || iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all" onClick={() => setSelectedNft({ name: iotaName.name || 'IOTA NFT', image_url: iotaName.imageUrl, collection: iotaName.collection || 'IOTA NFT', description: iotaName.description || '', identifier: iotaName.identifier || iotaName.objectId, contract: iotaName.objectId })}>
+                              {iotaName.imageUrl ? (
+                                <img src={iotaName.imageUrl} alt={iotaName.name} className="w-full aspect-square object-cover" />
+                              ) : (
+                                <div className="w-full aspect-square bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-2xl">
+                                  {iotaName.name?.charAt(0).toUpperCase() || 'I'}
+                                </div>
+                              )}
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p className="text-white text-xs font-medium truncate">{iotaName.name || 'IOTA NFT'}</p>
                               </div>
                             </div>
                           ))}
