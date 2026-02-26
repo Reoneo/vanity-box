@@ -407,6 +407,27 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     };
   }, [connectedWalletType]);
 
+  // Reactively sync IOTA wallet hook state into SearchInterface
+  // Ensures wallet state updates immediately on connect/disconnect without event races
+  useEffect(() => {
+    if (isIotaConnected && iotaWalletAddress) {
+      if (walletAddress !== iotaWalletAddress) {
+        setWalletAddress(iotaWalletAddress);
+        setConnectedWalletType('iota');
+        callEdge<any>('resolve-iota-address', { address: iotaWalletAddress })
+          .then((data) => {
+            const name = typeof data?.name === 'string' ? data.name : null;
+            if (name) setConnectedUsername(name);
+          })
+          .catch(() => {});
+      }
+    } else if (!isIotaConnected && connectedWalletType === 'iota') {
+      setWalletAddress(undefined);
+      setConnectedUsername(undefined);
+      setConnectedWalletType(undefined);
+    }
+  }, [isIotaConnected, iotaWalletAddress]);
+
   // Reset to profile section when new profile loads
   useEffect(() => {
     if (web3BioProfile) {
