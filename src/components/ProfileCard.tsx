@@ -990,13 +990,13 @@ export const ProfileCard = ({
                       {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
                         <div className="flex items-center justify-center gap-4 flex-wrap text-sm">
                           {web3BioProfile?.email && (
-                            <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1.5 text-foreground dark:text-[#D4AF37] hover:underline">
+                            <a href={`mailto:${web3BioProfile.email}`} className="flex items-center gap-1.5 text-black dark:text-[#D4AF37] hover:underline">
                               <Mail className="w-4 h-4 text-black/60 dark:text-white/60" />
                               <span className="truncate max-w-[150px]">{web3BioProfile.email}</span>
                             </a>
                           )}
                           {(web3BioProfile?.website || web3BioProfile?.url) && (
-                            <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-foreground dark:text-[#D4AF37] hover:underline">
+                            <a href={web3BioProfile.website || web3BioProfile.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-black dark:text-[#D4AF37] hover:underline">
                               <Globe className="w-4 h-4 text-black/60 dark:text-white/60" />
                               <span className="truncate max-w-[150px]">{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
                             </a>
@@ -1046,7 +1046,7 @@ export const ProfileCard = ({
                                 className={`py-2 px-4 rounded-xl border text-sm font-medium whitespace-nowrap transition-all duration-200
                                   ${desktopActivePanel === btn.panel 
                                     ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-md' 
-                                    : 'bg-black/10 dark:bg-white/10 border-[#D4AF37]/30 hover:border-[#D4AF37]/60 hover:bg-black/20 dark:hover:bg-white/20 text-black dark:text-white'
+                                    : 'bg-[#D4AF37] border-[#D4AF37] text-black hover:bg-[#C4A030] hover:border-[#C4A030] shadow-sm'
                                   }`}
                               >
                                 {btn.title}
@@ -1600,7 +1600,7 @@ export const ProfileCard = ({
                           <button
                             key={btn.title}
                             onClick={btn.onClick}
-                            className="flex-1 max-w-[85px] py-2 px-3 rounded-xl bg-muted/60 border border-border/30 hover:border-primary/40 hover:bg-muted/90 hover:shadow-sm active:scale-95 transition-all duration-200 text-sm font-medium text-foreground/90 whitespace-nowrap"
+                            className="flex-1 max-w-[85px] py-2 px-3 rounded-xl bg-[#D4AF37] border border-[#D4AF37] hover:bg-[#C4A030] hover:border-[#C4A030] active:scale-95 transition-all duration-200 text-sm font-medium text-black whitespace-nowrap shadow-sm"
                           >
                             {btn.title}
                           </button>
