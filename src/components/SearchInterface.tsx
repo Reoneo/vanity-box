@@ -1732,6 +1732,42 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     fetchNfts(addressString, nftNextCursor);
   };
 
+  const handleLoadMorePoaps = async () => {
+    if (!poapHasMore || poapLoadingMore) return;
+    const isIota = isIotaName(displayQuery);
+    const address = isIota ? linkedEvmAddress : (web3BioProfile?.address || walletAddress);
+    if (!address || !/^0x[a-fA-F0-9]{40}$/i.test(address as string)) return;
+
+    setPoapLoadingMore(true);
+    try {
+      const { data: poapData, error } = await supabase.functions.invoke("get-poap-data", {
+        body: { walletAddress: address, offset: poapOffset, limit: 1000 },
+      });
+      if (!error && poapData?.success && poapData.poaps) {
+        const newPoaps = poapData.poaps.map((poap: any) => ({
+          eventId: poap.event?.id,
+          eventName: poap.event?.name,
+          eventDescription: poap.event?.description,
+          eventImageUrl: poap.event?.image_url,
+          eventStartDate: poap.event?.start_date,
+          eventEndDate: poap.event?.end_date,
+          eventYear: poap.event?.year,
+          tokenId: poap.tokenId,
+          owner: poap.owner,
+          chain: poap.chain,
+        }));
+        setPoapTokens(prev => [...prev, ...newPoaps]);
+        setPoapOffset(prev => prev + newPoaps.length);
+        setPoapHasMore(poapData.hasMore || false);
+        setPoapTotalCount(poapData.totalCount || poapTotalCount);
+      }
+    } catch (e) {
+      console.error('Failed to load more POAPs:', e);
+    } finally {
+      setPoapLoadingMore(false);
+    }
+  };
+
   const handleMint = (result: ENSResult) => {
     setSelectedResult(result);
     setShowMintInterface(true);
