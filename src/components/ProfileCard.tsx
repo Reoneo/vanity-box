@@ -216,7 +216,7 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
-  const [nftCategory, setNftCategory] = useState<'main' | 'poaps' | 'opensea' | 'magiceden' | 'worldchain' | 'hyperliquid' | 'ensdomains' | 'basenames' | 'iotanames'>('main');
+  const [nftCategory, setNftCategory] = useState<string>('main');
   
   // IOTA-specific state
   const [iotaTokens, setIotaTokens] = useState<any[]>([]);
@@ -716,6 +716,19 @@ export const ProfileCard = ({
 
     return merged;
   }, [web3BioProfile?.links, evmSocialLinks]);
+
+  // Group IOTA NFTs by collection
+  const iotaGroupedNfts = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    iotaNfts.forEach((nft: any) => {
+      const collection = nft.collection || 'IOTA NFT';
+      if (!groups[collection]) groups[collection] = [];
+      groups[collection].push(nft);
+    });
+    return Object.fromEntries(
+      Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
+    );
+  }, [iotaNfts]);
 
 
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -1695,17 +1708,39 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* IOTA Names Button - only for IOTA profiles */}
+                            {/* IOTA Collection Buttons - separate per collection */}
                             {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
-                              <button onClick={() => setNftCategory('iotanames')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
-                                <div className="flex items-center justify-between h-full">
-                                  <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-white text-base">IOTA Names</h4>
-                                    <p className="text-sm text-white/70">{iotaLoading ? 'Loading…' : `${iotaNfts.length} names`}</p>
+                              iotaLoading ? (
+                                <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white">
+                                  <div className="flex items-center justify-between h-full">
+                                    <div className="text-left">
+                                      <h4 className="font-medium text-white text-base">IOTA NFTs</h4>
+                                      <p className="text-sm text-white/70">Loading…</p>
+                                    </div>
                                   </div>
-                                  <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
-                                </div>
-                              </button>
+                                </button>
+                              ) : (
+                                Object.entries(iotaGroupedNfts).map(([collectionName, collectionNfts]) => (
+                                  <button key={collectionName} onClick={() => setNftCategory(`iota:${collectionName}`)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                    <div className="flex items-center justify-between h-full">
+                                      <div className="text-left flex-1 min-w-0 mr-3">
+                                        <h4 className="font-medium text-white text-base">{collectionName}</h4>
+                                        <p className="text-sm text-white/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex -space-x-2">
+                                          {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
+                                            nft.imageUrl ? (
+                                              <img key={idx} src={nft.imageUrl} alt="" className="w-5 h-5 rounded-full border border-white/20 object-cover" />
+                                            ) : null
+                                          ))}
+                                        </div>
+                                        <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))
+                              )
                             )}
 
                             {/* Hint for IOTA profiles without linked EVM */}
@@ -1769,11 +1804,11 @@ export const ProfileCard = ({
                               </div>
                             )}
 
-                            {/* IOTA Names Grid */}
-                            {nftCategory === 'iotanames' && (
+                            {/* IOTA Collection Grid */}
+                            {nftCategory.startsWith('iota:') && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {iotaNfts.map((iotaName: any, index: number) => (
-                                  <div key={iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
+                                {(iotaGroupedNfts[nftCategory.replace('iota:', '')] || []).map((iotaName: any, index: number) => (
+                                  <div key={iotaName.identifier || iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
                                     <div className="flex flex-col items-center gap-2">
                                       {iotaName.imageUrl ? (
                                         <img src={iotaName.imageUrl} alt={iotaName.name} className="w-12 h-12 rounded-full object-cover" />
@@ -1782,18 +1817,10 @@ export const ProfileCard = ({
                                           {iotaName.name?.charAt(0).toUpperCase() || 'I'}
                                         </div>
                                       )}
-                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA Name'}</p>
-                                      {iotaName.collection && (
-                                        <p className="text-foreground/60 text-xs truncate max-w-full">{iotaName.collection}</p>
-                                      )}
+                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA NFT'}</p>
                                     </div>
                                   </div>
                                 ))}
-                                {iotaNfts.length === 0 && iotaFetched && (
-                                  <div className="col-span-full text-center py-8 text-white/50">
-                                    <p className="text-sm">No IOTA Names found</p>
-                                  </div>
-                                )}
                               </div>
                             )}
 
@@ -2224,8 +2251,8 @@ export const ProfileCard = ({
                                     ? 'ENS Domains'
                                     : nftCategory === 'basenames'
                                       ? 'Basenames'
-                                      : nftCategory === 'iotanames'
-                                        ? 'IOTA Names'
+                                      : nftCategory.startsWith('iota:')
+                                        ? nftCategory.replace('iota:', '')
                                         : 'Hyperliquid'}
                       </h3>
                       {nftCategory === 'poaps' && (poapTotalCount > 0 || formattedPoaps.length > 0) && (
@@ -2437,24 +2464,39 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* IOTA Names Button - only for IOTA profiles */}
+                      {/* IOTA Collection Buttons - separate per collection */}
                       {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
-                        <button
-                          onClick={() => setNftCategory('iotanames')}
-                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                        >
-                          <div className="flex items-center justify-between h-full">
-                            <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-white text-base">IOTA Names</h4>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-white/70">
-                                  {iotaLoading ? 'Loading…' : `${iotaNfts.length} ${iotaNfts.length === 1 ? 'name' : 'names'}`}
-                                </p>
+                        iotaLoading ? (
+                          <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white">
+                            <div className="flex items-center justify-between h-full">
+                              <div className="text-left">
+                                <h4 className="font-medium text-white text-base">IOTA NFTs</h4>
+                                <p className="text-sm text-white/70">Loading…</p>
                               </div>
                             </div>
-                            <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
-                          </div>
-                        </button>
+                          </button>
+                        ) : (
+                          Object.entries(iotaGroupedNfts).map(([collectionName, collectionNfts]) => (
+                            <button key={collectionName} onClick={() => setNftCategory(`iota:${collectionName}`)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation">
+                              <div className="flex items-center justify-between h-full">
+                                <div className="text-left flex-1 min-w-0 mr-3">
+                                  <h4 className="font-medium text-white text-base">{collectionName}</h4>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm text-white/70">{(collectionNfts as any[]).length} {(collectionNfts as any[]).length === 1 ? 'item' : 'items'}</p>
+                                    <div className="flex -space-x-2">
+                                      {(collectionNfts as any[]).slice(0, 3).map((nft: any, idx: number) => (
+                                        nft.imageUrl ? (
+                                          <img key={idx} src={nft.imageUrl} alt="" className="w-5 h-5 rounded-full border border-white/20 object-cover" />
+                                        ) : null
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                                <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                              </div>
+                            </button>
+                          ))
+                        )
                       )}
 
                       {/* Empty state placeholder when no categories available - include IOTA check */}
@@ -2748,37 +2790,37 @@ export const ProfileCard = ({
                         </div>
                       </div>
                     )
-                  ) : nftCategory === 'iotanames' ? (
-                    // IOTA Names - Grid layout
+                  ) : nftCategory.startsWith('iota:') ? (
+                    // IOTA Collection - Grid layout per collection
                     iotaLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin text-[#00BFA5]" />
                       </div>
-                    ) : iotaNfts.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <p>No IOTA Names found</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {iotaNfts.map((iotaName: any, index: number) => (
-                          <div key={iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
-                            <div className="flex flex-col items-center gap-2">
-                              {iotaName.imageUrl ? (
-                                <img src={iotaName.imageUrl} alt={iotaName.name} className="w-12 h-12 rounded-full object-cover" />
-                              ) : (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-lg">
-                                  {iotaName.name?.charAt(0).toUpperCase() || 'I'}
-                                </div>
-                              )}
-                              <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA Name'}</p>
-                              {iotaName.collection && (
-                                <p className="text-foreground/60 text-xs truncate max-w-full">{iotaName.collection}</p>
-                              )}
+                    ) : (() => {
+                      const collectionItems = iotaGroupedNfts[nftCategory.replace('iota:', '')] || [];
+                      return collectionItems.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <p>No items found</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {collectionItems.map((iotaName: any, index: number) => (
+                            <div key={iotaName.identifier || iotaName.name || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#00BFA5]/30 hover:border-[#00BFA5]/60 transition-all bg-gradient-to-br from-[#00BFA5]/20 to-[#00D9C4]/20 p-3">
+                              <div className="flex flex-col items-center gap-2">
+                                {iotaName.imageUrl ? (
+                                  <img src={iotaName.imageUrl} alt={iotaName.name} className="w-12 h-12 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#00D9C4] flex items-center justify-center text-white font-bold text-lg">
+                                    {iotaName.name?.charAt(0).toUpperCase() || 'I'}
+                                  </div>
+                                )}
+                                <p className="text-foreground text-sm font-medium truncate max-w-full">{iotaName.name || 'IOTA NFT'}</p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
+                          ))}
+                        </div>
+                      );
+                    })()
                   ) : null}
                 </div>
               </div>
