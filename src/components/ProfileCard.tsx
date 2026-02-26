@@ -218,6 +218,7 @@ export const ProfileCard = ({
   
   // IOTA-specific state
   const [iotaTokens, setIotaTokens] = useState<any[]>([]);
+  const [iotaTransactions, setIotaTransactions] = useState<any[]>([]);
   const [iotaNfts, setIotaNfts] = useState<any[]>([]);
   const [iotaLoading, setIotaLoading] = useState(false);
   const [iotaFetched, setIotaFetched] = useState(false);
@@ -400,31 +401,25 @@ export const ProfileCard = ({
     fetchEvmTxForIota();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmTxFetchedForIota]);
 
-  // Merge IOTA + EVM transactions once both are available
+  // Merge IOTA + EVM transactions once both are available (mirrors token merge pattern)
   useEffect(() => {
     const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
                    web3BioProfile?.platform === 'iota';
     if (!isIota) return;
-    if (!transactionsFetched) return;
-    if (evmTxForIota.length === 0) return;
-
-    // Use functional update to avoid stale closure / infinite loops
-    setTransactions(prev => {
-      const iotaTx = prev.filter((t: any) => !t._fromEvmMerge);
-      const alreadyMerged = prev.some((t: any) => t._fromEvmMerge);
-      // Skip if already merged with same data
-      if (alreadyMerged && iotaTx.length + evmTxForIota.length === prev.length) return prev;
-      
-      const merged = [...iotaTx, ...evmTxForIota.map((t: any) => ({ ...t, _fromEvmMerge: true }))];
+    if (!iotaFetched) return;
+    
+    // Merge: always start with IOTA transactions, then add EVM if available
+    const merged = [...iotaTransactions, ...evmTxForIota.map((t: any) => ({ ...t, _fromEvmMerge: true }))];
+    if (merged.length > 0) {
       merged.sort((a: any, b: any) => {
-        const ta = new Date(a.timestamp || a.mined_at || 0).getTime();
-        const tb = new Date(b.timestamp || b.mined_at || 0).getTime();
+        const ta = new Date(a.timestamp || a.minedAt || a.mined_at || 0).getTime();
+        const tb = new Date(b.timestamp || b.minedAt || b.mined_at || 0).getTime();
         return tb - ta;
       });
-      console.log('[ProfileCard] Merged IOTA+EVM transactions:', iotaTx.length, '+', evmTxForIota.length, '=', merged.length);
-      return merged;
-    });
-  }, [evmTxForIota, transactionsFetched, searchedIdentity, web3BioProfile?.platform]);
+      console.log('[ProfileCard] Merged IOTA+EVM transactions:', iotaTransactions.length, '+', evmTxForIota.length, '=', merged.length);
+      setTransactions(merged);
+    }
+  }, [iotaTransactions, evmTxForIota, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
 
   // Reset EVM social state when profile target changes
   useEffect(() => {
@@ -1021,7 +1016,10 @@ export const ProfileCard = ({
               if (tokensData.totalValue) setPortfolioTotalValue(tokensData.totalValue);
             }
             if (nftsData.nfts) setIotaNfts(nftsData.nfts);
-            if (txData.transactions) setTransactions(txData.transactions);
+            if (txData.transactions) {
+              setIotaTransactions(txData.transactions);
+              setTransactions(txData.transactions);
+            }
           } catch (e) { 
             console.error('IOTA fetch error:', e);
           } finally {
