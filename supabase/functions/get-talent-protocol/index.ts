@@ -282,6 +282,17 @@ serve(async (req) => {
         console.log('[TalentProtocol] Profile fetched:', JSON.stringify(profile).slice(0, 500));
       } else {
         console.log('[TalentProtocol] Profile fetch failed:', profileRes.status);
+        // ENS fallback: retry with just id= (no account_source) if we used wallet
+        if (accountSource && ens) {
+          const ensParams = new URLSearchParams({ id: ens });
+          const ensUrl = `${TALENT_API_BASE}/profile?${ensParams.toString()}`;
+          console.log('[TalentProtocol] Retrying with ENS:', ensUrl);
+          const ensRes = await fetch(ensUrl, { headers });
+          if (ensRes.ok) {
+            profile = await ensRes.json();
+            console.log('[TalentProtocol] ENS profile fetched:', JSON.stringify(profile).slice(0, 500));
+          }
+        }
       }
     } catch (e) {
       console.error('[TalentProtocol] Profile fetch error:', e);
@@ -387,40 +398,40 @@ serve(async (req) => {
       sections: groupCredentialsIntoSections(credentials),
     };
     
-    // Process human checkmark if present - check for points > 0 (verified providers)
-    // API may return data in either "data_points" or "credentials" array
+    // === THREE-TIER HUMAN VERIFICATION ===
+    // 1) PRIMARY: profile.human_checkmark boolean (most reliable)
+    const profileHumanCheckmark = profile?.profile?.human_checkmark === true;
+    console.log('[TalentProtocol] profile.human_checkmark:', profileHumanCheckmark);
+
+    // 2) SECONDARY: Humanity-category credentials with points > 0
+    const humanityCredentials = credentials.filter(
+      (c: any) => c.category === 'Humanity' && (c.points > 0 || c.value === true)
+    );
+    const credProviders = humanityCredentials.map((c: any) => {
+      let name = c.data_issuer_name || c.name || 'Unknown';
+      return name.replace('Verified by ', '').replace(/ [Vv]erification/, '').trim();
+    });
+    console.log('[TalentProtocol] Humanity credential providers:', credProviders);
+
+    // 3) TERTIARY: data_points (supplementary only)
     const humanCheckmarkItems = humanCheckmarkData?.data_points || humanCheckmarkData?.credentials || [];
-    console.log('[TalentProtocol] Human checkmark items:', JSON.stringify(humanCheckmarkItems));
-    
-    if (humanCheckmarkItems.length > 0) {
-      const providers: string[] = [];
-      
-      for (const dp of humanCheckmarkItems) {
-        // A provider is verified if points > 0
-        const isVerified = dp.points > 0 || dp.value === true;
-        if (isVerified) {
-          // Use data_issuer_name for provider name (cleaner), fall back to name
-          let providerName = dp.data_issuer_name || dp.name || 'Unknown';
-          // Clean up provider name - remove common prefixes/suffixes
-          providerName = providerName
-            .replace('Verified by ', '')
-            .replace(' verification', '')
-            .replace(' Verification', '')
-            .trim();
-          providers.push(providerName);
-        }
+    const dpProviders: string[] = [];
+    for (const dp of humanCheckmarkItems) {
+      if (dp.points > 0 || dp.value === true) {
+        let name = dp.data_issuer_name || dp.name || 'Unknown';
+        dpProviders.push(name.replace('Verified by ', '').replace(/ [Vv]erification/, '').trim());
       }
-      
-      console.log('[TalentProtocol] Human Checkmark providers found:', providers);
-      
-      response.verification.humanCheckmark = {
-        isVerified: providers.length > 0,
-        providers,
-      };
-    } else if (profile?.profile?.human_checkmark) {
+    }
+    console.log('[TalentProtocol] data_points providers:', dpProviders);
+
+    // Merge & deduplicate providers
+    const allProviders = [...new Set([...credProviders, ...dpProviders])];
+    const isVerified = profileHumanCheckmark || allProviders.length > 0;
+
+    if (isVerified) {
       response.verification.humanCheckmark = {
         isVerified: true,
-        providers: [],
+        providers: allProviders,
       };
     }
     
