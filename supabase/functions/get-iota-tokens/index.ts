@@ -91,7 +91,7 @@ serve(async (req) => {
 
       const priceUsd = isNativeIota && iotaPriceUsd ? iotaPriceUsd : null;
       const value = priceUsd ? quantity * priceUsd : 0;
-      const priceChange24h = isNativeIota && iotaPriceChange24h !== null ? iotaPriceChange24h / 100 : 0;
+      const priceChange24h = isNativeIota && iotaPriceChange24h !== null ? iotaPriceChange24h : 0;
       if (value > 0) totalValue += value;
 
       return {

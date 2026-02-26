@@ -2423,7 +2423,7 @@ export const ProfileCard = ({
                               </span>
                               {token.priceChange24h != null && !isNaN(token.priceChange24h) && token.priceChange24h !== 0 && (
                                 <span className={token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}>
-                                  {token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h * 100).toFixed(2)}%
+                                  {token.priceChange24h > 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
                                 </span>
                               )}
                             </div>
