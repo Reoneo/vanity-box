@@ -34,21 +34,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
 
       // ---- EVM-only build shims ----
-      // Para's ecosystem packages can pull in Solana/Cosmos peer deps even when unused.
-      // We alias them to lightweight stubs so Rollup doesn't try to bundle those chains.
       "graz": path.resolve(__dirname, "./src/shims/graz.ts"),
-      "@getpara/cosmos-wallet-connectors": path.resolve(
-        __dirname,
-        "./src/shims/getpara-cosmos-wallet-connectors.ts"
-      ),
-      "@getpara/graz-connector": path.resolve(
-        __dirname,
-        "./src/shims/getpara-graz-connector.ts"
-      ),
-      "@getpara/solana-wallet-connectors": path.resolve(
-        __dirname,
-        "./src/shims/getpara-solana-wallet-connectors.ts"
-      ),
     },
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],

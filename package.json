@@ -17,7 +17,6 @@
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
     "@ensdomains/ensjs": "^4.2.0",
-    "@getpara/evm-wallet-connectors": "^2.4.0",
     "@getpara/react-sdk": "^2.3.0",
     "@hookform/resolvers": "^3.10.0",
     "@iota/dapp-kit": "^0.8.3",
