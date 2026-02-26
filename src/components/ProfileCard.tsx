@@ -821,7 +821,7 @@ export const ProfileCard = ({
                         {platform.charAt(0).toUpperCase() + platform.slice(1)}
                       </span>
                       <span className="text-sm text-black/60 dark:text-white/60 truncate max-w-[140px] text-center">
-                        {normalized.isDiscordUsername ? `Discord: ${normalized.displayHandle}` : normalized.displayHandle || extractHandle(platform, rawUrl)}
+                        {normalized.displayHandle || extractHandle(platform, rawUrl)}
                       </span>
                     </div>
                   </WrapEl>
@@ -2548,7 +2548,7 @@ export const ProfileCard = ({
                           {displayLabel}
                         </div>
                         <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                          {normalized.isDiscordUsername ? `Discord: ${normalized.displayHandle}` : normalized.displayHandle || extractHandle(platform, rawUrl)}
+                          {normalized.displayHandle || extractHandle(platform, rawUrl)}
                         </div>
                       </div>
                       {normalized.isDiscordUsername ? (
