@@ -1897,7 +1897,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           <div className="relative">
                             <Input
                               placeholder={t("Search for a name")}
-                              className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white pr-10"
+                              className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white px-10"
                               value={searchQuery}
                               onChange={(e) => handleSearchChange(e.target.value)}
                               onKeyDown={(e) => {
@@ -1933,7 +1933,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                               setShowSearchBar(false);
                               window.dispatchEvent(new CustomEvent('close-poap-modal'));
                             }}
-                            className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold text-base"
+                            className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold text-base flex items-center justify-center"
                             disabled={!searchQuery.trim() || isLoading}
                           >
                             <Search className="w-5 h-5 mr-2" />
