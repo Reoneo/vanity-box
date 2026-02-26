@@ -1,43 +1,53 @@
 
-# Add "Remove Linked Ethereum Wallet" Option
+# Make Talent Protocol Badge More Reliable
 
 ## Problem
-There's no way to remove a linked Ethereum wallet from an `.iota` profile. You need a hard reset option to unlink and re-link your Ethereum address to test whether POAPs and OpenSea NFTs fetch correctly.
+The verification badge relies on a deprecated `/human_checkmark/data_points` endpoint that often returns empty or errors. Meanwhile, the `/profile` endpoint already returns a `human_checkmark: boolean` field directly, and the `/credentials` endpoint returns `Humanity`-category credentials with provider details -- both are more reliable sources.
 
 ## Solution
-Add an "Unlink Wallet" button to the existing `LinkEthereumWalletModal` that appears when a linked VC is detected. This will clear the credential from all three persistence layers (vault, localStorage, database) and reset the NFT/POAP state so you can immediately re-link.
+Restructure the edge function to use a **three-tier fallback** for human verification:
+
+1. **Primary**: Use `profile.human_checkmark` boolean from `/profile` (always present, most reliable)
+2. **Secondary**: Extract `Humanity`-category credentials from `/credentials` to get individual provider names (Binance, Coinbase, Worldcoin, etc.)
+3. **Tertiary**: Keep the `/human_checkmark/data_points` call as a last resort, but don't depend on it
+
+Also improve the ProfileCard badge logic to use the profile-level `human_checkmark` flag as the primary signal, so the badge shows even when provider details aren't available.
 
 ## Changes
 
-### 1. `src/contexts/IdentityContext.tsx` -- Add `removeCredentialByType` action
-- Add a new function that filters out VCs matching a given type (e.g. `EthereumWalletOwnershipCredential`) from `vcList`
-- Re-save the vault with the updated list
-- Expose it via the context so the modal can call it
+### 1. Edge Function: `supabase/functions/get-talent-protocol/index.ts`
 
-### 2. `src/types/identity.ts` -- Extend `IdentityActions` interface
-- Add `removeCredentialByType: (type: string) => Promise<void>` to the actions interface
+**Restructure human checkmark detection:**
+- After fetching `/profile`, immediately extract `profile.human_checkmark` as the authoritative boolean
+- After fetching `/credentials`, filter for `category === "Humanity"` credentials with `points > 0` to extract provider names (these give the breakdown: Coinbase, Binance, etc.)
+- Remove dependency on `/human_checkmark/data_points` -- keep call but only use as supplementary provider list
+- Build `verification.humanCheckmark` with:
+  - `isVerified`: true if `profile.human_checkmark === true` OR any Humanity credential has `points > 0`
+  - `providers`: merged from Humanity credentials + data_points (deduplicated)
 
-### 3. `src/components/LinkEthereumWalletModal.tsx` -- Add "Unlink" button
-- When `existingEvmVc` is detected, show a red "Unlink Wallet" button next to the green "already linked" banner
-- On click:
-  1. Call `removeCredentialByType('EthereumWalletOwnershipCredential')` to purge from vault
-  2. Remove `localStorage` key `iota-linked-evm:${iotaName.toLowerCase()}`
-  3. Call edge function to delete the row from `iota_wallet_links` DB table
-  4. Dispatch a `iota-evm-unlinked` custom event so SearchInterface can clear NFT/POAP state
-  5. Reset modal to `idle` state so the "Sign & Link" button becomes active again
+**Add ENS-based lookup fallback:**
+- The `/profile` endpoint accepts ENS names directly (field: `ens` in profile response). If wallet lookup fails, retry with ENS as the identifier without `account_source`
 
-### 4. `src/components/SearchInterface.tsx` -- Listen for unlink event
-- Add listener for `iota-evm-unlinked` event
-- On receive: set `linkedEvmAddress` to `null`, clear NFT/POAP arrays, reset fetch flags
+### 2. ProfileCard: `src/components/ProfileCard.tsx`
 
-### 5. Edge function cleanup (optional but recommended)
-- The existing `get-iota-linked-evm` edge function can be reused, or a simple direct Supabase delete call from the modal via a small new edge function or inline `supabase.functions.invoke('delete-iota-linked-evm', { body: { iotaName } })`. Since the DB table requires `service_role` for deletes, we need a thin edge function.
-- Create `supabase/functions/delete-iota-linked-evm/index.ts` that accepts `{ iotaName }` and deletes the matching row from `iota_wallet_links`.
+**Simplify badge logic (minor):**
+- Current logic already checks both `isVerified` and `providers.length > 0` -- no change needed, the edge function fix ensures `isVerified` is consistently set
 
-## Flow After Implementation
-1. Open Identity panel on your `.iota` profile
-2. Tap "Link Ethereum Wallet"
-3. See "Wallet already linked" with the address and a new red "Unlink" button
-4. Tap "Unlink" -- credential removed from vault, localStorage cleared, DB row deleted
-5. Modal resets to show "Sign & Link" button
-6. Re-link your wallet -- fresh VC issued, NFTs/POAPs should load immediately
+## Technical Detail
+
+Current flow (unreliable):
+```text
+/profile --> get profile data (human_checkmark ignored for badge)
+/human_checkmark/data_points --> often empty/404
+  --> badge only shows if data_points has items with points > 0
+  --> fallback: profile.human_checkmark (but providers = [])
+```
+
+New flow (reliable):
+```text
+/profile --> human_checkmark: true/false (PRIMARY signal)
+/credentials --> filter category="Humanity" (provider names)
+/human_checkmark/data_points --> supplementary (OPTIONAL)
+  --> isVerified = profile.human_checkmark OR any Humanity cred
+  --> providers = deduplicated from credentials + data_points
+```
