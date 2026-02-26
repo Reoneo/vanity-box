@@ -1,11 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Send, Shield, ShieldCheck } from "lucide-react";
 import type { DecryptedMessage } from "@/hooks/useMessaging";
+import { format, isToday, isYesterday, isSameDay } from "date-fns";
 
 interface ChatThreadProps {
   messages: DecryptedMessage[];
   onSend: (text: string) => Promise<void>;
   domain: string;
+}
+
+function formatDateSeparator(date: Date): string {
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+  return format(date, "EEEE, d MMMM yyyy");
+}
+
+function formatTimestamp(date: Date): string {
+  return format(date, "HH:mm");
 }
 
 export function ChatThread({ messages, onSend, domain }: ChatThreadProps) {
@@ -18,6 +29,21 @@ export function ChatThread({ messages, onSend, domain }: ChatThreadProps) {
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
+  }, [messages]);
+
+  // Group messages by date
+  const groupedMessages = useMemo(() => {
+    const groups: { date: Date; messages: DecryptedMessage[] }[] = [];
+    messages.forEach((msg) => {
+      const msgDate = new Date(msg.sent_at);
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && isSameDay(lastGroup.date, msgDate)) {
+        lastGroup.messages.push(msg);
+      } else {
+        groups.push({ date: msgDate, messages: [msg] });
+      }
+    });
+    return groups;
   }, [messages]);
 
   const handleSend = async () => {
@@ -35,65 +61,88 @@ export function ChatThread({ messages, onSend, domain }: ChatThreadProps) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      {/* Messages area */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
         {messages.length === 0 && (
-          <div className="text-center text-muted-foreground/50 text-sm py-12">
-            <Shield className="w-8 h-8 mx-auto mb-2 text-[#D4AF37]/40" />
-            <p>Messages are end-to-end encrypted.</p>
-            <p className="text-xs mt-1">Only you and the recipient can read them.</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--accent))]/10 flex items-center justify-center mb-4">
+              <Shield className="w-7 h-7 text-[hsl(43,76%,52%)]" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Messages are end-to-end encrypted</p>
+            <p className="text-xs text-muted-foreground max-w-[220px]">
+              Only you and the recipient can read them. Not even vanity.box has access.
+            </p>
           </div>
         )}
-        {messages.map((msg) => (
-          <div
-            key={msg.message_id}
-            className={`flex ${msg.isOwn ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                msg.isOwn
-                  ? "bg-[#D4AF37] text-black rounded-br-md"
-                  : "bg-muted text-foreground rounded-bl-md"
-              }`}
-            >
-              {!msg.isOwn && (
-                <p className="text-[10px] font-semibold mb-0.5 opacity-70">
-                  {msg.sender_domain}
-                </p>
-              )}
-              <p className="text-sm leading-relaxed break-words">{msg.text}</p>
-              <div className="flex items-center justify-end gap-1 mt-1">
-                <span className="text-[10px] opacity-50">
-                  {new Date(msg.sent_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                {msg.notarized && (
-                  <ShieldCheck className="w-3 h-3 opacity-60" />
-                )}
-              </div>
+
+        {groupedMessages.map((group, gi) => (
+          <div key={gi}>
+            {/* Date separator */}
+            <div className="flex items-center justify-center my-4">
+              <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-[11px] font-medium tracking-wide">
+                {formatDateSeparator(group.date)}
+              </span>
+            </div>
+
+            {/* Messages in this date group */}
+            <div className="space-y-2">
+              {group.messages.map((msg, mi) => {
+                const isOwn = msg.isOwn;
+                const showSender = !isOwn && (mi === 0 || group.messages[mi - 1]?.isOwn);
+
+                return (
+                  <div
+                    key={msg.message_id}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className={`max-w-[75%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
+                      {showSender && (
+                        <span className="text-[10px] font-semibold text-muted-foreground ml-3 mb-0.5">
+                          {msg.sender_domain}
+                        </span>
+                      )}
+                      <div
+                        className={`rounded-2xl px-3.5 py-2 ${
+                          isOwn
+                            ? "bg-[hsl(43,76%,52%)] text-black rounded-br-sm"
+                            : "bg-muted text-foreground rounded-bl-sm"
+                        }`}
+                      >
+                        <p className="text-[14px] leading-relaxed break-words">{msg.text}</p>
+                      </div>
+                      <div className={`flex items-center gap-1 mt-0.5 ${isOwn ? "mr-1 justify-end" : "ml-1 justify-start"}`}>
+                        <span className="text-[10px] text-muted-foreground/60">
+                          {formatTimestamp(new Date(msg.sent_at))}
+                        </span>
+                        {msg.notarized && (
+                          <ShieldCheck className="w-2.5 h-2.5 text-muted-foreground/50" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Composer */}
-      <div className="px-4 py-3 border-t border-border/50 bg-background/80 backdrop-blur-md">
-        <div className="flex items-center gap-2">
+      {/* Composer — positioned above dock (dock is at bottom: 3rem, ~48px tall + padding) */}
+      <div className="flex-shrink-0 px-3 pb-[100px] pt-2 bg-background/90 backdrop-blur-md">
+        <div className="flex items-center gap-2 rounded-full bg-muted border border-border/50 px-1 py-1">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
             placeholder="Type a message…"
-            className="flex-1 px-4 py-2.5 rounded-full bg-muted text-foreground text-sm placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-[#D4AF37]/30 transition-all"
+            className="flex-1 px-3 py-2 bg-transparent text-foreground text-sm placeholder:text-muted-foreground/50 outline-none"
             disabled={sending}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className="p-2.5 rounded-full bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90 transition-colors disabled:opacity-40"
+            className="p-2.5 rounded-full bg-[hsl(43,76%,52%)] text-black hover:bg-[hsl(43,76%,52%)]/90 transition-colors disabled:opacity-30"
           >
             <Send className="w-4 h-4" />
           </button>
