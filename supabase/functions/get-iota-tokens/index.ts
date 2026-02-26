@@ -61,35 +61,58 @@ serve(async (req) => {
     const balances = data.result || [];
     console.log(`[get-iota-tokens] Found ${balances.length} coin types`);
 
+    // Fetch IOTA price from CoinGecko
+    let iotaPriceUsd: number | null = null;
+    let iotaPriceChange24h: number | null = null;
+    try {
+      const priceRes = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=iota&vs_currencies=usd&include_24hr_change=true"
+      );
+      if (priceRes.ok) {
+        const priceData = await priceRes.json();
+        iotaPriceUsd = priceData?.iota?.usd ?? null;
+        iotaPriceChange24h = priceData?.iota?.usd_24h_change ?? null;
+        console.log(`[get-iota-tokens] IOTA price: $${iotaPriceUsd}, 24h: ${iotaPriceChange24h}%`);
+      }
+    } catch (e) {
+      console.warn("[get-iota-tokens] Failed to fetch IOTA price:", e);
+    }
+
     // Transform to standard token format
+    let totalValue = 0;
     const tokens = balances.map((coin: any) => {
       const isNativeIota = coin.coinType === "0x2::iota::IOTA";
       const totalBalance = BigInt(coin.totalBalance || "0");
-      const decimals = 9; // IOTA uses 9 decimals
+      const decimals = 9;
       const quantity = Number(totalBalance) / Math.pow(10, decimals);
       
-      // Extract symbol from coinType (e.g., "0x2::iota::IOTA" -> "IOTA")
       const parts = (coin.coinType || "").split("::");
       const symbol = parts.length > 2 ? parts[parts.length - 1] : (isNativeIota ? "IOTA" : "UNKNOWN");
-      
+
+      const priceUsd = isNativeIota && iotaPriceUsd ? iotaPriceUsd : null;
+      const value = priceUsd ? quantity * priceUsd : 0;
+      const priceChange24h = isNativeIota && iotaPriceChange24h !== null ? iotaPriceChange24h / 100 : 0;
+      if (value > 0) totalValue += value;
+
       return {
-        symbol: symbol,
+        symbol,
         name: isNativeIota ? "IOTA" : symbol,
-        quantity: quantity,
-        decimals: decimals,
+        quantity,
+        decimals,
         coinType: coin.coinType,
         coinObjectCount: coin.coinObjectCount,
-        icon: isNativeIota ? "https://assets.coingecko.com/coins/images/34421/standard/IOTA_Logo_icon_black_circle.png" : null,
+        icon: isNativeIota ? "https://d315pvdvxi2gex.cloudfront.net/d96a337f84c5c900f31e08817.svg" : null,
         chain: "iota",
-        usdValue: null,
-        priceUsd: null,
+        value,
+        priceUsd,
+        priceChange24h,
       };
     }).filter((t: any) => t.quantity > 0);
 
     return new Response(
       JSON.stringify({
         tokens,
-        totalValue: null, // Would need price API for USD values
+        totalValue: totalValue > 0 ? totalValue : null,
         walletAddress,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
