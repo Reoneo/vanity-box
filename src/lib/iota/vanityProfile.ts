@@ -238,16 +238,8 @@ const CACHE_TTL_MS = 30000; // 30 seconds
 export async function fetchProfileCached(
   iotaName: string
 ): Promise<{ profile: OnchainProfileData | null; notarization: ProfileNotarization | null }> {
-  const cached = profileCache.get(iotaName);
-  
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return { profile: cached.data, notarization: null };
-  }
-  
-  const result = await fetchProfileFromIPFS(iotaName);
-  profileCache.set(iotaName, { data: result.profile, timestamp: Date.now() });
-  
-  return result;
+  // Always fetch fresh data - no caching to avoid sync issues
+  return fetchProfileFromIPFS(iotaName);
 }
 
 export function clearProfileCache(iotaName?: string): void {

@@ -737,43 +737,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         return;
       }
 
-      // Check in-memory cache first
-      const cached = iotaProfileCacheRef.current.get(name);
-      if (cached) {
-        console.log('⚡ IOTA profile from memory cache:', name);
-        setIotaOnchainProfile(cached.profile);
-        setIotaNameObjectId(cached.nameObjectId);
-        setIotaOwnerAddress(cached.ownerAddress);
-        return;
-      }
-
-      // Check sessionStorage cache
-      try {
-        const sessionKey = `iotaProfile:${name}`;
-        const sessionData = sessionStorage.getItem(sessionKey);
-        if (sessionData) {
-          const parsed = JSON.parse(sessionData);
-          console.log('⚡ IOTA profile from sessionStorage:', name);
-          setIotaOnchainProfile(parsed.profile);
-          setIotaNameObjectId(parsed.nameObjectId);
-          setIotaOwnerAddress(parsed.ownerAddress);
-          // Also populate memory cache
-          iotaProfileCacheRef.current.set(name, parsed);
-          // Still fetch fresh data in background
-          fetchIotaOnchainProfile(name).then(response => {
-            if (response?.success) {
-              const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
-              iotaProfileCacheRef.current.set(name, entry);
-              sessionStorage.setItem(sessionKey, JSON.stringify(entry));
-              setIotaOnchainProfile(response.profile);
-              setIotaNameObjectId(response.nameObjectId);
-              setIotaOwnerAddress(response.ownerAddress);
-            }
-          }).catch(() => {});
-          return;
-        }
-      } catch {}
-
+      // Always fetch fresh .iota profile data (no caching)
       console.log('🔄 Loading IOTA onchain profile for:', name);
       setIotaOnchainProfileLoading(true);
 
@@ -781,13 +745,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         const response = await fetchIotaOnchainProfile(name);
 
         if (response?.success) {
-          const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
           setIotaOnchainProfile(response.profile);
           setIotaNameObjectId(response.nameObjectId);
           setIotaOwnerAddress(response.ownerAddress);
-          // Cache it
-          iotaProfileCacheRef.current.set(name, entry);
-          try { sessionStorage.setItem(`iotaProfile:${name}`, JSON.stringify(entry)); } catch {}
           console.log('✅ IOTA onchain profile loaded:', response);
         } else {
           console.log('⚠️ IOTA onchain profile not found:', response.message);
@@ -807,63 +767,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     loadIotaOnchainProfile();
   }, [displayQuery]);
-  const handleLoadMorePoaps = async () => {
-    const isIota = isIotaName(displayQuery);
-    const poapAddress = isIota ? linkedEvmAddress : web3BioProfile?.address;
-    if (!poapAddress || poapLoadingMore || !poapHasMore) return;
-    
-    try {
-      setPoapLoadingMore(true);
-      console.log(`🔄 Loading more POAPs from offset ${poapOffset}...`);
-      
-      const { data: poapData, error: poapError } = await supabase.functions.invoke("get-poap-data", {
-        body: { walletAddress: poapAddress, offset: poapOffset, limit: 1000 },
-      });
-
-      if (!poapError && poapData?.success && poapData.poaps) {
-        // Append new poaps to existing ones
-        const newPoaps = poapData.poaps.map((poap: any) => ({
-          eventId: poap.event?.id,
-          eventName: poap.event?.name,
-          eventDescription: poap.event?.description,
-          eventImageUrl: poap.event?.image_url,
-          eventStartDate: poap.event?.start_date,
-          eventEndDate: poap.event?.end_date,
-          eventYear: poap.event?.year,
-          tokenId: poap.tokenId,
-          owner: poap.owner,
-          chain: poap.chain,
-          __mintDate: poap.__mintDate,
-          __bestDate: poap.__bestDate,
-          created: poap.created,
-        }));
-        
-        setPoapTokens(prev => [...prev, ...newPoaps]);
-        setPoapOffset(prev => prev + poapData.count);
-        setPoapHasMore(poapData.hasMore || false);
-        console.log(`✅ Loaded ${newPoaps.length} more POAPs (offset now: ${poapOffset + poapData.count}, hasMore: ${poapData.hasMore})`);
-      }
-    } catch (error) {
-      console.error('Error loading more POAPs:', error);
-    } finally {
-      setPoapLoadingMore(false);
-    }
-  };
-
-  // Hide search bar when profile is loaded, show when cleared
-  useEffect(() => {
-    if (web3BioProfile) {
-      setShowSearchBar(false);
-      setHadPreviousProfile(true);
-      window.dispatchEvent(new Event('profile-loaded'));
-    } else if (hadPreviousProfile) {
-      // Only show search bar after clearing a previously loaded profile
-      setShowSearchBar(true);
-      window.dispatchEvent(new Event('profile-cleared'));
-    }
-    // Do NOT set showSearchBar to true on initial mount
-  }, [web3BioProfile, hadPreviousProfile]);
-
 
   const protocols = ["DNS", "ENS"];
   const clubs = ["Crypto", "DeFi", "Dev", "Digits", "Letters", "Surname", "Startup", "Artist", "Misc", "Gaming", "Personal"];
@@ -1314,10 +1217,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         // For .iota names, fire the onchain profile fetch in parallel with resolver
         let iotaOnchainPromise: Promise<any> | null = null;
         if (isIotaName(normalizedQuery)) {
-          const cached = iotaProfileCacheRef.current.get(normalizedQuery);
-          if (!cached) {
-            iotaOnchainPromise = fetchIotaOnchainProfile(normalizedQuery);
-          }
+          // Always fetch fresh .iota profile
+          iotaOnchainPromise = fetchIotaOnchainProfile(normalizedQuery);
         }
         
         const resolverData = await Promise.race([
@@ -1329,9 +1230,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         if (iotaOnchainPromise) {
           iotaOnchainPromise.then(response => {
             if (response?.success) {
-              const entry = { profile: response.profile, nameObjectId: response.nameObjectId, ownerAddress: response.ownerAddress };
-              iotaProfileCacheRef.current.set(normalizedQuery, entry);
-              try { sessionStorage.setItem(`iotaProfile:${normalizedQuery}`, JSON.stringify(entry)); } catch {}
+              // No caching for .iota profiles
+              setIotaOnchainProfile(response.profile);
               setIotaOnchainProfile(response.profile);
               setIotaNameObjectId(response.nameObjectId);
               setIotaOwnerAddress(response.ownerAddress);
