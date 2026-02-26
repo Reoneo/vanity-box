@@ -200,25 +200,11 @@ export function IotaProfileEditModal({
           {/* Profile Tab */}
           <TabsContent value="profile" className="mt-0 flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-              <div className="p-6 pt-4 space-y-6">
-                {/* IPFS + IOTA info banner */}
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
-                  <ShieldCheck className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium">Decentralized & Tamper-Proof</p>
-                    <p className="text-xs opacity-80 mt-1">
-                      Your profile is stored on IPFS and its SHA-256 hash is notarized on the IOTA ledger for integrity verification.
-                    </p>
-                  </div>
-                </div>
-
+              <div className="p-6 pt-4 space-y-4">
                 {/* Last save result */}
                 {lastSaveResult && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
-                    <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-                      <ShieldCheck className="w-3 h-3 mr-1" />
-                      Notarized
-                    </Badge>
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                     <span className="text-xs text-muted-foreground truncate flex-1">
                       CID: {lastSaveResult.ipfsCid.slice(0, 20)}...
                     </span>
@@ -233,135 +219,111 @@ export function IotaProfileEditModal({
                   </div>
                 )}
                 
-                {/* Avatar URL */}
-                <div className="space-y-2">
-                  <Label htmlFor="avatar" className="flex items-center gap-2">
-                    <Image className="h-4 w-4" />
-                    Avatar URL
-                  </Label>
-                  <div className="flex gap-3">
-                    <Avatar className="h-16 w-16 flex-shrink-0 border-2 border-muted">
-                      <AvatarImage src={avatarUrl} alt="Avatar preview" />
-                      <AvatarFallback>?</AvatarFallback>
+                {/* Avatar */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="avatar" className="text-xs font-medium text-muted-foreground">Avatar URL</Label>
+                  <div className="flex gap-3 items-center">
+                    <Avatar className="h-12 w-12 flex-shrink-0 border border-border">
+                      <AvatarImage src={avatarUrl} alt="Avatar" />
+                      <AvatarFallback className="text-xs">?</AvatarFallback>
                     </Avatar>
                     <Input
                       id="avatar"
                       value={avatarUrl}
                       onChange={(e) => setAvatarUrl(e.target.value)}
                       placeholder="https://example.com/avatar.png"
-                      className="flex-1"
+                      className="flex-1 h-9 text-sm"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Max 512 characters</p>
                 </div>
                 
-                {/* Header URL */}
-                <div className="space-y-2">
-                  <Label htmlFor="header" className="flex items-center gap-2">
-                    <Image className="h-4 w-4" />
-                    Header Image URL
-                  </Label>
-                  {headerUrl && (
-                    <div className="w-full h-24 rounded-lg overflow-hidden bg-muted">
-                      <img 
-                        src={headerUrl} 
-                        alt="Header preview" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => (e.currentTarget.style.display = 'none')}
-                      />
-                    </div>
-                  )}
+                {/* Header */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="header" className="text-xs font-medium text-muted-foreground">Header Image URL</Label>
                   <Input
                     id="header"
                     value={headerUrl}
                     onChange={(e) => setHeaderUrl(e.target.value)}
                     placeholder="https://example.com/header.png"
+                    className="h-9 text-sm"
                   />
-                  <p className="text-xs text-muted-foreground">Max 512 characters</p>
                 </div>
                 
-                <Separator />
-                
                 {/* Bio */}
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="bio" className="text-xs font-medium text-muted-foreground">Bio</Label>
+                    <span className="text-[10px] text-muted-foreground">{bio.length}/1000</span>
+                  </div>
                   <Textarea
                     id="bio"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="Tell the world about yourself..."
-                    rows={3}
+                    rows={2}
                     maxLength={1000}
+                    className="text-sm resize-none"
                   />
-                  <p className="text-xs text-muted-foreground">{bio.length}/1000 characters</p>
                 </div>
                 
                 {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
+                    className="h-9 text-sm"
                   />
-                  <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
-                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                    <span>Email is stored on IPFS and publicly accessible.</span>
-                  </div>
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                    Stored on IPFS — publicly visible
+                  </p>
                 </div>
                 
                 {/* Website */}
-                <div className="space-y-2">
-                  <Label htmlFor="website" className="flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    Website
-                  </Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="website" className="text-xs font-medium text-muted-foreground">Website</Label>
                   <Input
                     id="website"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     placeholder="https://yoursite.com"
+                    className="h-9 text-sm"
                   />
                 </div>
                 
-                <Separator />
-                
                 {/* Social Links */}
-                <div className="space-y-3">
+                <div className="space-y-2 pt-1">
                   <div className="flex items-center justify-between">
-                    <Label className="flex items-center gap-2">
-                      <Link2 className="h-4 w-4" />
-                      Social Links
-                    </Label>
+                    <Label className="text-xs font-medium text-muted-foreground">Social Links</Label>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={handleAddLink}
                       disabled={links.length >= PLATFORM_OPTIONS.length}
+                      className="h-7 text-xs px-2 text-[#D4AF37] hover:text-[#D4AF37]"
                     >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Link
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Add
                     </Button>
                   </div>
                   
                   {links.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
+                    <p className="text-xs text-muted-foreground text-center py-3">
                       No social links added yet
                     </p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {links.map((link, index) => (
-                        <div key={index} className="flex items-center gap-2">
+                        <div key={index} className="flex items-center gap-1.5">
                           <select
                             value={link.platform}
                             onChange={(e) => handleLinkChange(index, 'platform', parseInt(e.target.value))}
-                            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="h-9 rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring min-w-[90px]"
                           >
                             {PLATFORM_OPTIONS.map((p) => (
                               <option 
@@ -377,16 +339,16 @@ export function IotaProfileEditModal({
                             value={link.url}
                             onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
                             placeholder={PLATFORM_OPTIONS.find(p => p.code === link.platform)?.placeholder}
-                            className="flex-1"
+                            className="flex-1 h-9 text-sm"
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveLink(index)}
-                            className="flex-shrink-0 text-destructive hover:text-destructive"
+                            className="flex-shrink-0 h-8 w-8 text-destructive hover:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       ))}
