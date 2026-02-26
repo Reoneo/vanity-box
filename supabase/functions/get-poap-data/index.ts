@@ -169,104 +169,27 @@ serve(async (req) => {
       );
     }
 
-    // Fetch ALL POAPs with retry logic for reliability
+    // Fetch ALL POAPs to get accurate total count
+    // The POAP API doesn't support pagination, so we fetch everything
     const apiUrl = `https://api.poap.tech/actions/scan/${walletAddress}`;
     console.log("Calling POAP API:", apiUrl);
 
-    const MAX_RETRIES = 3;
-    let poapsResponse: Response | null = null;
-    let lastError = "";
+    const poapsResponse = await fetch(apiUrl, {
+      headers: {
+        "X-API-Key": poapApiKey,
+        Accept: "application/json",
+      },
+    });
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    console.log("POAP API response status:", poapsResponse.status);
 
-        poapsResponse = await fetch(apiUrl, {
-          headers: {
-            "X-API-Key": poapApiKey,
-            Accept: "application/json",
-          },
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
+    if (!poapsResponse.ok) {
+      const errorText = await poapsResponse.text().catch(() => "");
+      console.error("POAP API error status:", poapsResponse.status);
+      console.error("POAP API error body:", errorText);
+      console.error("POAP API error headers:", JSON.stringify(Object.fromEntries(poapsResponse.headers.entries())));
 
-        if (poapsResponse.ok) break;
-
-        // Retry on 429 (rate limit) or 5xx (server errors)
-        if (poapsResponse.status === 429 || poapsResponse.status >= 500) {
-          lastError = `HTTP ${poapsResponse.status}`;
-          console.warn(`POAP API attempt ${attempt}/${MAX_RETRIES} failed: ${lastError}`);
-          if (attempt < MAX_RETRIES) {
-            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1))); // 1s, 2s, 4s
-            continue;
-          }
-        }
-        // Non-retryable error
-        break;
-      } catch (fetchErr: any) {
-        lastError = fetchErr?.message || "Network error";
-        console.warn(`POAP API attempt ${attempt}/${MAX_RETRIES} exception: ${lastError}`);
-        if (attempt < MAX_RETRIES) {
-          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
-          continue;
-        }
-      }
-    }
-
-    if (!poapsResponse || !poapsResponse.ok) {
-      const errorText = poapsResponse ? await poapsResponse.text().catch(() => "") : lastError;
-      console.error("POAP API failed after retries:", errorText);
-
-      // Fallback: try to serve from database cache
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
-      const { data: cachedPoaps, count: cachedCount } = await supabase
-        .from("poap_tokens")
-        .select("*", { count: "exact" })
-        .eq("wallet_address", walletAddress.toLowerCase())
-        .order("event_start_date", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (cachedPoaps && cachedPoaps.length > 0) {
-        const totalCached = cachedCount ?? cachedPoaps.length;
-        console.log(`Serving ${cachedPoaps.length} POAPs from cache (total: ${totalCached})`);
-        const formattedPoaps = cachedPoaps.map((p: any) => ({
-          tokenId: p.token_id,
-          owner: p.owner,
-          chain: p.chain,
-          created: p.created_at,
-          event: {
-            id: p.event_id,
-            name: p.event_name,
-            description: p.event_description,
-            image_url: p.event_image_url,
-            year: p.event_year,
-            start_date: p.event_start_date,
-            end_date: p.event_end_date,
-          },
-          __bestDate: p.event_start_date || null,
-          __fromCache: true,
-        }));
-        const groups = groupPoapsByMonth(formattedPoaps);
-        return new Response(
-          JSON.stringify({
-            success: true,
-            count: formattedPoaps.length,
-            totalCount: totalCached,
-            hasMore: offset + limit < totalCached,
-            offset,
-            limit,
-            poaps: formattedPoaps,
-            groups,
-            fromCache: true,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-
+      // Return success:false with 200 status so the UI doesn't crash
       return new Response(
         JSON.stringify({
           success: false,
@@ -277,9 +200,12 @@ serve(async (req) => {
           hasMore: false,
           error: "Failed to fetch POAPs from API",
           details: errorText,
-          status: poapsResponse?.status ?? 0,
+          status: poapsResponse.status,
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 

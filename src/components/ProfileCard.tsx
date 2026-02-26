@@ -1045,25 +1045,9 @@ export const ProfileCard = ({
     if (web3BioProfile?.hlTokens?.length > 0) setHlTokens(web3BioProfile.hlTokens);
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
-  // Special case: poap.eth always opens NFTs → POAPs on desktop (overrides default priority)
-  const [poapEthOverrideApplied, setPoapEthOverrideApplied] = useState(false);
-  useEffect(() => {
-    if (isMobile || poapEthOverrideApplied) return;
-    const isPoapEth = searchedIdentity?.toLowerCase() === 'poap.eth';
-    if (isPoapEth && (poaps.length > 0 || poapTotalCount > 0)) {
-      setDesktopActivePanel('nfts');
-      setNftCategory('poaps');
-      setPoapEthOverrideApplied(true);
-    }
-  }, [isMobile, poapEthOverrideApplied, searchedIdentity, poaps, poapTotalCount]);
-
   // Auto-select default desktop panel based on data availability (priority: Socials → Tokens → Activity → NFTs)
   useEffect(() => {
     if (isMobile || desktopActivePanel !== null) return;
-    
-    // Skip default logic for poap.eth — handled by override above
-    const isPoapEth = searchedIdentity?.toLowerCase() === 'poap.eth';
-    if (isPoapEth) return;
     
     const hasSocialsData = mergedSocialLinks.length > 0;
     const hasTokensData = portfolioTokens.length > 0;
@@ -1081,7 +1065,7 @@ export const ProfileCard = ({
       onEnsureOpenSeaNfts?.();
     }
     // If nothing available, desktopActivePanel stays null and "No Onchain Data" will show
-  }, [isMobile, desktopActivePanel, nfts, poaps, magicEdenNfts, worldchainNftCount, hlNfts, ensDomains, basenames, web3BioProfile?.links, portfolioTokens, transactions, onEnsureOpenSeaNfts, searchedIdentity, poapTotalCount]);
+  }, [isMobile, desktopActivePanel, nfts, poaps, magicEdenNfts, worldchainNftCount, hlNfts, ensDomains, basenames, web3BioProfile?.links, portfolioTokens, transactions, onEnsureOpenSeaNfts]);
 
   // Transactions are now fetched on profile load - no need for overlay-triggered fetch
 
