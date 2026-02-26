@@ -868,7 +868,12 @@ export const ProfileCard = ({
                       <span className="text-base font-bold text-black dark:text-white">{token.symbol?.slice(0, 2)}</span>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
+                    {token.chain && (
+                      <span className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40 font-medium">
+                        {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain}
+                      </span>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-black dark:text-white truncate text-base">{token.name}</span>
                       <span className="text-sm text-black/60 dark:text-white/60 font-medium flex items-center gap-1">
@@ -2412,6 +2417,11 @@ export const ProfileCard = ({
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
+                            {token.chain && (
+                              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60 font-medium">
+                                {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain}
+                              </span>
+                            )}
                             <div className="flex items-center justify-between">
                               <span className="font-medium text-foreground truncate">{token.name}</span>
                               <span className="text-sm font-semibold text-foreground">${token.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
