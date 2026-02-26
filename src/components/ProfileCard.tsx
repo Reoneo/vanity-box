@@ -871,7 +871,7 @@ export const ProfileCard = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-black dark:text-white truncate text-base">
-                        {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain || token.name}
+                        {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain === 'hyperevm' ? 'HyperEVM' : (token.chain ? token.chain.charAt(0).toUpperCase() + token.chain.slice(1) : token.name)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm text-black/50 dark:text-white/50 mt-0.5">
@@ -2412,7 +2412,7 @@ export const ProfileCard = ({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                               <span className="font-medium text-foreground truncate">
-                                {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain || token.name}
+                                {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain === 'hyperevm' ? 'HyperEVM' : (token.chain ? token.chain.charAt(0).toUpperCase() + token.chain.slice(1) : token.name)}
                               </span>
                               <span className="text-sm font-semibold text-foreground">${token.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
