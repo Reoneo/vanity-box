@@ -940,7 +940,7 @@ export const ProfileCard = ({
                       {/* Origin badge */}
                       <div className="absolute -bottom-1 -right-1 flex gap-0.5">
                         {(source === 'iota' || source === 'both') && (
-                          <img src={iotaTokenIcon} alt="IOTA" className="w-4 h-4 rounded-full border border-background" />
+                          <img src={IOTA_ICON_URL} alt="IOTA" className="w-4 h-4 rounded-full border border-background" />
                         )}
                         {(source === 'ethereum' || source === 'both') && (
                           <img src={ethLogo} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
@@ -1869,7 +1869,7 @@ export const ProfileCard = ({
                               {/* Origin badge */}
                               <div className="absolute -bottom-1 -right-1 flex gap-0.5">
                                 {(source === 'iota' || source === 'both') && (
-                                  <img src={iotaTokenIcon} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
+                                  <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
                                 )}
                                 {(source === 'ethereum' || source === 'both') && (
                                   <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
