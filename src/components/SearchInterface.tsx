@@ -441,11 +441,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Preload EFP lists in background when profile loads
   useEffect(() => {
-    if (web3BioProfile?.address && efpStats) {
+    const isIota = isIotaName(displayQuery);
+    const efpAddress = isIota ? linkedEvmAddress : web3BioProfile?.address;
+    
+    if (efpAddress && /^0x[a-fA-F0-9]{40}$/i.test(efpAddress) && efpStats) {
       // Preload following list if count > 0
       if (efpStats.following_count > 0 && followingList.length === 0) {
         console.log('🔄 Background: Preloading EFP following list...');
-        fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=10&offset=0`)
+        fetch(`https://api.ethfollow.xyz/api/v1/users/${efpAddress}/following?limit=10&offset=0`)
           .then(res => res.ok ? res.json() : null)
           .then(data => {
             if (data?.following) {
@@ -461,7 +464,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Preload followers list if count > 0
       if (efpStats.followers_count > 0 && followersList.length === 0) {
         console.log('🔄 Background: Preloading EFP followers list...');
-        fetch(`https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=10&offset=0`)
+        fetch(`https://api.ethfollow.xyz/api/v1/users/${efpAddress}/followers?limit=10&offset=0`)
           .then(res => res.ok ? res.json() : null)
           .then(data => {
             if (data?.followers) {
@@ -474,7 +477,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           .catch(err => console.log('Background: EFP followers preload failed', err));
       }
     }
-  }, [web3BioProfile?.address, efpStats]);
+  }, [web3BioProfile?.address, linkedEvmAddress, efpStats, displayQuery]);
 
   // Resolve linked EVM address for .iota profiles
   // Priority: 1) localStorage 2) encrypted vault (owner) 3) DB via edge function (public viewers)
@@ -587,6 +590,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         setPoapTotalCount(0);
         setPoapHasMore(false);
         setPoapOffset(0);
+        // Also fetch EFP stats for newly linked address
+        setEfpStats(null);
+        supabase.functions.invoke('get-efp-stats', {
+          body: { address: evmAddress }
+        }).then(({ data: efpData }) => {
+          if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+            console.log('✅ EFP stats loaded for linked EVM:', efpData);
+            setEfpStats(efpData);
+          }
+        }).catch(err => console.log('EFP stats fetch failed for linked EVM:', err));
       }
     };
     const handleEvmUnlinked = (event: Event) => {
@@ -605,6 +618,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         setPoapTotalCount(0);
         setPoapHasMore(false);
         setPoapOffset(0);
+        setEfpStats(null);
       }
     };
     window.addEventListener('iota-evm-linked', handleEvmLinked);
@@ -633,6 +647,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return () => clearTimeout(timer);
     }
   }, [web3BioProfile?.address, linkedEvmAddress, displayQuery]);
+
+  // Fetch EFP stats for .iota profiles when linkedEvmAddress resolves
+  useEffect(() => {
+    if (!isIotaName(displayQuery) || !linkedEvmAddress || !/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
+    if (efpStats) return; // Already have stats
+
+    console.log('🔄 Fetching EFP stats for linked EVM on .iota profile:', linkedEvmAddress);
+    supabase.functions.invoke('get-efp-stats', {
+      body: { address: linkedEvmAddress }
+    }).then(({ data: efpData }) => {
+      if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+        console.log('✅ EFP stats loaded for .iota linked EVM:', efpData);
+        setEfpStats(efpData);
+      }
+    }).catch(err => console.log('EFP stats fetch failed for .iota linked EVM:', err));
+  }, [linkedEvmAddress, displayQuery, efpStats]);
 
   // Preload POAPs in background when profile loads (use linkedEvmAddress for IOTA)
   useEffect(() => {
