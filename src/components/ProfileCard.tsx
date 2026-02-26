@@ -29,6 +29,7 @@ import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import wldLogo from '@/assets/wld-logo-dark.svg';
+import iotaTokenIcon from '@/assets/iota-token-icon.png';
 
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
@@ -256,6 +257,10 @@ export const ProfileCard = ({
   const [showAvatarPopup, setShowAvatarPopup] = useState(false);
   const [showHeaderPopup, setShowHeaderPopup] = useState(false);
   
+  // EVM social links state for .iota profiles
+  const [evmSocialLinks, setEvmSocialLinks] = useState<Record<string, any>>({});
+  const [evmSocialsFetched, setEvmSocialsFetched] = useState(false);
+  
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
@@ -355,8 +360,73 @@ export const ProfileCard = ({
     }
   }, [iotaTokens, evmTokensForIota, evmTotalForIota, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
 
+  // Fetch EVM social links from Web3.bio for .iota profiles with linked Ethereum wallets
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota || !linkedEvmAddress || evmSocialsFetched) return;
+    if (!/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
 
-  // Resolve ENS name for wallet address searches
+    const fetchEvmSocials = async () => {
+      try {
+        console.log('[ProfileCard] Fetching Web3.bio socials for linked EVM:', linkedEvmAddress);
+        const res = await fetch(`https://api.web3.bio/profile/${linkedEvmAddress}`);
+        const profiles = await res.json();
+        console.log('[ProfileCard] Web3.bio EVM social profiles:', profiles);
+        
+        // Aggregate links from all returned profiles
+        const aggregated: Record<string, any> = {};
+        if (Array.isArray(profiles)) {
+          for (const p of profiles) {
+            if (p.links && typeof p.links === 'object') {
+              for (const [platform, linkData] of Object.entries(p.links)) {
+                if (!aggregated[platform.toLowerCase()] && linkData) {
+                  aggregated[platform.toLowerCase()] = linkData;
+                }
+              }
+            }
+          }
+        }
+        setEvmSocialLinks(aggregated);
+      } catch (e) {
+        console.error('[ProfileCard] Web3.bio EVM socials fetch error:', e);
+      } finally {
+        setEvmSocialsFetched(true);
+      }
+    };
+    fetchEvmSocials();
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmSocialsFetched]);
+
+  // Merged social links: IOTA + EVM with source attribution
+  type MergedSocialLink = { platform: string; linkData: any; source: 'iota' | 'ethereum' | 'both' };
+  
+  const mergedSocialLinks: MergedSocialLink[] = useMemo(() => {
+    const mergedMap: Record<string, MergedSocialLink> = {};
+    
+    // Add IOTA links
+    if (web3BioProfile?.links) {
+      for (const [platform, linkData] of Object.entries(web3BioProfile.links)) {
+        const key = platform.toLowerCase();
+        if (key === 'website' || key === 'email' || !linkData) continue;
+        mergedMap[key] = { platform, linkData, source: 'iota' };
+      }
+    }
+    
+    // Add EVM links
+    for (const [platform, linkData] of Object.entries(evmSocialLinks)) {
+      const key = platform.toLowerCase();
+      if (key === 'website' || key === 'email' || !linkData) continue;
+      if (mergedMap[key]) {
+        mergedMap[key].source = 'both';
+      } else {
+        mergedMap[key] = { platform, linkData, source: 'ethereum' };
+      }
+    }
+    
+    return Object.values(mergedMap);
+  }, [web3BioProfile?.links, evmSocialLinks]);
+
+
   const { displayName: resolvedEnsName } = useDisplayName(
     currentWalletAddress as `0x${string}` | undefined
   );
@@ -682,9 +752,7 @@ export const ProfileCard = ({
   useEffect(() => {
     if (isMobile || desktopActivePanel !== null) return;
     
-    const hasSocialsData = web3BioProfile?.links && Object.entries(web3BioProfile.links)
-      .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
-      .length > 0;
+    const hasSocialsData = mergedSocialLinks.length > 0;
     const hasTokensData = portfolioTokens.length > 0;
     const hasActivityData = transactions.length > 0;
     const hasNftsData = nfts.length > 0 || poaps.length > 0 || magicEdenNfts.length > 0 || worldchainNftCount > 0 || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0;
@@ -847,9 +915,7 @@ export const ProfileCard = ({
       return (
         <div className="h-full overflow-y-auto px-6 py-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 max-w-2xl mx-auto">
-            {web3BioProfile?.links && Object.entries(web3BioProfile.links)
-              .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
-              .map(([platform, linkData]: [string, any]) => {
+            {mergedSocialLinks.map(({ platform, linkData, source }) => {
                 const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
                 if (!rawUrl) return null;
 
@@ -865,12 +931,21 @@ export const ProfileCard = ({
                     {...(wrapProps as any)}
                     className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-200 border border-[#D4AF37]/20 hover:border-[#D4AF37]/60 hover:shadow-lg group cursor-pointer"
                   >
-                    <div className="w-14 h-14 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <div className="relative w-14 h-14 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                       <SocialIcon
                         platform={platform}
                         url={rawUrl}
                         size="lg"
                       />
+                      {/* Origin badge */}
+                      <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                        {(source === 'iota' || source === 'both') && (
+                          <img src={iotaTokenIcon} alt="IOTA" className="w-4 h-4 rounded-full border border-background" />
+                        )}
+                        {(source === 'ethereum' || source === 'both') && (
+                          <img src={ethLogo} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-base text-black dark:text-white font-semibold text-center">
@@ -1119,14 +1194,10 @@ export const ProfileCard = ({
                       )}
                       {/* Desktop action pills - control right panel */}
                       {(() => {
-                        const socialLinks = web3BioProfile?.links 
-                          ? Object.entries(web3BioProfile.links).filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
-                          : [];
-                        
                         const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                         const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted || ensDomains.length > 0 || basenames.length > 0;
                         const hasTokens = portfolioTokens.length > 0 || isIotaProfile || iotaLoading || (!tokensFetched && isIotaProfile);
-                        const hasSocials = socialLinks.length > 0;
+                        const hasSocials = mergedSocialLinks.length > 0;
                         const hasTransactions = transactions.length > 0;
 
                         const buttons: { title: string; panel: 'nfts' | 'social' | 'tokens' | 'activity' }[] = [];
@@ -1657,17 +1728,12 @@ export const ProfileCard = ({
 
                   {/* Profile Action Pills - Horizontal Layout (Mobile) */}
                   {(() => {
-                    const socialLinks = web3BioProfile?.links 
-                      ? Object.entries(web3BioProfile.links)
-                          .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
-                      : [];
-                    
                     const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                     // NFTs button shows if any NFT source has data OR if any NFT source is still loading
                     // Also show if OpenSea hasn't been attempted yet (data might come when overlay opens)
                     const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted;
                     const hasTokens = portfolioTokens.length > 0 || isIotaProfile || iotaLoading || (!tokensFetched && isIotaProfile);
-                    const hasSocials = socialLinks.length > 0;
+                    const hasSocials = mergedSocialLinks.length > 0;
                     const hasTransactions = transactions.length > 0;
 
                     // Build buttons array
@@ -1779,9 +1845,7 @@ export const ProfileCard = ({
                 {/* Social Icons Grid */}
                 <div className="flex-1 overflow-y-auto px-4 py-4">
                   <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
-                    {web3BioProfile?.links && Object.entries(web3BioProfile.links)
-                      .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && platform.toLowerCase() !== 'email' && linkData)
-                      .map(([platform, linkData]: [string, any]) => {
+                    {mergedSocialLinks.map(({ platform, linkData, source }) => {
                         const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
                         if (!rawUrl) return null;
 
@@ -1796,11 +1860,22 @@ export const ProfileCard = ({
                             {...(wrapProps as any)}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/20 hover:bg-muted/40 transition-all border border-border/30 hover:border-[#D4AF37]/50 cursor-pointer"
                           >
-                            <SocialIcon
-                              platform={platform}
-                              url={rawUrl}
-                              size="lg"
-                            />
+                            <div className="relative">
+                              <SocialIcon
+                                platform={platform}
+                                url={rawUrl}
+                                size="lg"
+                              />
+                              {/* Origin badge */}
+                              <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                                {(source === 'iota' || source === 'both') && (
+                                  <img src={iotaTokenIcon} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
+                                )}
+                                {(source === 'ethereum' || source === 'both') && (
+                                  <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
+                                )}
+                              </div>
+                            </div>
                             <div className="flex flex-col items-center gap-0.5">
                               <span className="text-sm text-foreground font-medium text-center">
                                 {platform.charAt(0).toUpperCase() + platform.slice(1)}
