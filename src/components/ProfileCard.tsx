@@ -592,8 +592,18 @@ export const ProfileCard = ({
       }
     }
 
-    // Add EVM links and mark exact platform+handle matches as "both"
-    evmSocialLinks.forEach(({ platform, linkData }, evmIndex) => {
+    const exactMatchedOrigins = new Set<string>();
+    const pendingEvm: Array<{
+      platform: string;
+      linkData: any;
+      origin: string;
+      evmIndex: number;
+      key: string;
+      matchValue: string;
+    }> = [];
+
+    // Pass 1: exact platform+handle matches
+    evmSocialLinks.forEach(({ platform, linkData, origin }, evmIndex) => {
       const key = normalizePlatformKey(platform);
       if (key === 'website' || key === 'email' || !linkData) return;
 
@@ -607,7 +617,29 @@ export const ProfileCard = ({
           source: 'both',
           entryId: `both_${key}_${matchValue || matchedIotaIndex}`,
         };
+        if (origin) exactMatchedOrigins.add(origin);
         return;
+      }
+
+      pendingEvm.push({ platform, linkData, origin, evmIndex, key, matchValue });
+    });
+
+    // Pass 2: keep EVM-only entries, with LinkedIn fallback for already-verified ENS origins
+    pendingEvm.forEach(({ platform, linkData, origin, evmIndex, key, matchValue }) => {
+      if (key === 'linkedin' && origin && exactMatchedOrigins.has(origin)) {
+        const linkedinIotaIndex = merged.findIndex(
+          (entry) => normalizePlatformKey(entry.platform) === 'linkedin' && entry.source !== 'both'
+        );
+
+        if (linkedinIotaIndex !== -1) {
+          const iotaLinkedinMatchValue = extractComparableSocialValue(merged[linkedinIotaIndex].linkData);
+          merged[linkedinIotaIndex] = {
+            ...merged[linkedinIotaIndex],
+            source: 'both',
+            entryId: `both_linkedin_${iotaLinkedinMatchValue || linkedinIotaIndex}`,
+          };
+          return;
+        }
       }
 
       merged.push({
@@ -617,7 +649,7 @@ export const ProfileCard = ({
         entryId: `evm_${key}_${matchValue || evmIndex}`,
       });
     });
-    
+
     return merged;
   }, [web3BioProfile?.links, evmSocialLinks]);
 
