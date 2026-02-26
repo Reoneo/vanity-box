@@ -461,7 +461,27 @@ function TonWalletLinkSection({
     try {
       // Connect if not already
       if (!tonConnectUI.wallet) {
-        await tonConnectUI.connectWallet();
+        // openModal() shows the TON Connect UI; we wait for a wallet to connect
+        await tonConnectUI.openModal();
+        
+        // Wait for wallet connection (poll with timeout)
+        const connected = await new Promise<boolean>((resolve) => {
+          // Check immediately in case already connected
+          if (tonConnectUI.wallet) { resolve(true); return; }
+          
+          const unsub = tonConnectUI.onStatusChange((wallet) => {
+            if (wallet) { unsub(); resolve(true); }
+          });
+          
+          // Timeout after 120s
+          setTimeout(() => { unsub(); resolve(false); }, 120_000);
+        });
+        
+        if (!connected || !tonConnectUI.wallet) {
+          setStep('idle');
+          setIsLinking(false);
+          return;
+        }
       }
 
       const wallet = tonConnectUI.wallet;
