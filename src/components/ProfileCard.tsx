@@ -1111,7 +1111,7 @@ export const ProfileCard = ({
                         
                         const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                         const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted || ensDomains.length > 0 || basenames.length > 0;
-                        const hasTokens = portfolioTokens.length > 0;
+                        const hasTokens = portfolioTokens.length > 0 || isIotaProfile || iotaLoading || (!tokensFetched && isIotaProfile);
                         const hasSocials = socialLinks.length > 0;
                         const hasTransactions = transactions.length > 0;
 
@@ -1652,7 +1652,7 @@ export const ProfileCard = ({
                     // NFTs button shows if any NFT source has data OR if any NFT source is still loading
                     // Also show if OpenSea hasn't been attempted yet (data might come when overlay opens)
                     const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted;
-                    const hasTokens = portfolioTokens.length > 0;
+                    const hasTokens = portfolioTokens.length > 0 || isIotaProfile || iotaLoading || (!tokensFetched && isIotaProfile);
                     const hasSocials = socialLinks.length > 0;
                     const hasTransactions = transactions.length > 0;
 
