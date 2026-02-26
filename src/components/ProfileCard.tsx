@@ -29,7 +29,7 @@ import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import wldLogo from '@/assets/wld-logo-dark.svg';
-import iotaTokenIcon from '@/assets/iota-token-icon.png';
+
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
@@ -591,7 +591,7 @@ export const ProfileCard = ({
             if (tokensData.tokens) {
               const enrichedTokens = tokensData.tokens.map((t: any) => ({
                 ...t,
-                icon: t.icon && !t.icon.includes('coingecko') ? t.icon : (t.symbol?.toUpperCase() === 'IOTA' ? iotaTokenIcon : t.icon),
+                icon: t.icon && !t.icon.includes('coingecko') ? t.icon : (t.symbol?.toUpperCase() === 'IOTA' ? IOTA_ICON_URL : t.icon),
               }));
               setIotaTokens(enrichedTokens);
               setPortfolioTokens(enrichedTokens);
@@ -872,7 +872,7 @@ export const ProfileCard = ({
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-black dark:text-white truncate text-base">{token.name}</span>
                       <span className="text-sm text-black/60 dark:text-white/60 font-medium flex items-center gap-1">
-                        {token.symbol?.toUpperCase() === 'IOTA' && <img src={iotaTokenIcon} alt="IOTA" className="w-4 h-4 rounded-full" />}
+                        {token.symbol?.toUpperCase() === 'IOTA' && <img src={IOTA_ICON_URL} alt="IOTA" className="w-4 h-4 rounded-full" />}
                         {token.symbol}
                       </span>
                     </div>
@@ -2418,7 +2418,7 @@ export const ProfileCard = ({
                             </div>
                             <div className="flex items-center justify-between text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
-                                {token.symbol?.toUpperCase() === 'IOTA' && <img src={iotaTokenIcon} alt="IOTA" className="w-3.5 h-3.5 rounded-full" />}
+                                {token.symbol?.toUpperCase() === 'IOTA' && <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full" />}
                                 {token.quantity?.toLocaleString(undefined, { maximumFractionDigits: 4 })} {token.symbol}
                               </span>
                               {token.priceChange24h !== 0 && (
