@@ -101,17 +101,12 @@ export default function Messages() {
       },
       isActive: false,
     },
-    // Messages icon hidden on messages route
-    ...(!isMessagesRoute
-      ? [
-          {
-            icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
-            label: "Messages",
-            onClick: () => navigate("/messages"),
-            isActive: false,
-          },
-        ]
-      : []),
+    {
+      icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
+      label: "Messages",
+      onClick: () => { setActiveConversation(null); navigate("/messages"); },
+      isActive: isMessagesRoute,
+    },
     {
       icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
       label: "Search",
