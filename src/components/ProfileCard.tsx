@@ -1816,9 +1816,6 @@ export const ProfileCard = ({
                                         {iotaName.name?.charAt(0).toUpperCase() || 'I'}
                                       </div>
                                     )}
-                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                      <p className="text-white text-xs font-medium truncate">{iotaName.name || 'IOTA NFT'}</p>
-                                    </div>
                                   </div>
                                 ))}
                               </div>
