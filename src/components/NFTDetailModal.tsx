@@ -220,27 +220,16 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
 
         {/* Action Buttons */}
         <div className="p-4 sm:p-6 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            {nft.opensea_url && (
-              <Button
-                onClick={() => window.open(nft.opensea_url, '_blank')}
-                className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold active:scale-95 transition-transform touch-manipulation"
-                size="lg"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View on OpenSea
-              </Button>
-            )}
+          {nft.opensea_url && (
             <Button
-              onClick={handleMakeOffer}
-              variant="outline"
-              className="w-full border-[#D4AF37]/30 hover:bg-[#D4AF37]/10 active:scale-95 transition-transform touch-manipulation"
+              onClick={() => window.open(nft.opensea_url, '_blank')}
+              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold active:scale-95 transition-transform touch-manipulation"
               size="lg"
             >
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              Make Offer
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View on OpenSea
             </Button>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
