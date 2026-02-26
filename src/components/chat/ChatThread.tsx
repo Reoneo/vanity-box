@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Send, Shield, ShieldCheck } from "lucide-react";
 import type { DecryptedMessage } from "@/hooks/useMessaging";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 
 interface ChatThreadProps {
@@ -95,28 +96,40 @@ export function ChatThread({ messages, onSend, domain }: ChatThreadProps) {
                     key={msg.message_id}
                     className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                   >
-                    <div className={`max-w-[75%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
-                      {showSender && (
-                        <span className="text-[10px] font-semibold text-muted-foreground ml-3 mb-0.5">
-                          {msg.sender_domain}
-                        </span>
+                    <div className={`max-w-[80%] flex ${isOwn ? "flex-row-reverse" : "flex-row"} gap-2`}>
+                      {!isOwn && (
+                        <Avatar className="w-7 h-7 flex-shrink-0 mt-auto">
+                          {msg.sender_avatar ? (
+                            <AvatarImage src={msg.sender_avatar} alt={msg.sender_domain} />
+                          ) : null}
+                          <AvatarFallback className="bg-muted text-[10px] font-bold text-muted-foreground">
+                            {(msg.sender_domain || "?")[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                       )}
-                      <div
-                        className={`rounded-2xl px-3.5 py-2 ${
-                          isOwn
-                            ? "bg-[hsl(43,76%,52%)] text-black rounded-br-sm"
-                            : "bg-muted text-foreground rounded-bl-sm"
-                        }`}
-                      >
-                        <p className="text-[14px] leading-relaxed break-words">{msg.text}</p>
-                      </div>
-                      <div className={`flex items-center gap-1 mt-0.5 ${isOwn ? "mr-1 justify-end" : "ml-1 justify-start"}`}>
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {formatTimestamp(new Date(msg.sent_at))}
-                        </span>
-                        {msg.notarized && (
-                          <ShieldCheck className="w-2.5 h-2.5 text-muted-foreground/50" />
+                      <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
+                        {showSender && (
+                          <span className="text-[10px] font-semibold text-muted-foreground ml-1 mb-0.5">
+                            {msg.sender_domain}
+                          </span>
                         )}
+                        <div
+                          className={`rounded-2xl px-3.5 py-2 ${
+                            isOwn
+                              ? "bg-[hsl(43,76%,52%)] text-black rounded-br-sm"
+                              : "bg-muted text-foreground rounded-bl-sm"
+                          }`}
+                        >
+                          <p className="text-[14px] leading-relaxed break-words">{msg.text}</p>
+                        </div>
+                        <div className={`flex items-center gap-1 mt-0.5 ${isOwn ? "mr-1 justify-end" : "ml-1 justify-start"}`}>
+                          <span className="text-[10px] text-muted-foreground/60">
+                            {formatTimestamp(new Date(msg.sent_at))}
+                          </span>
+                          {msg.notarized && (
+                            <ShieldCheck className="w-2.5 h-2.5 text-muted-foreground/50" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
