@@ -1523,7 +1523,7 @@ export const ProfileCard = ({
                           {web3BioProfile?.email && (
                             <a 
                               href={`mailto:${web3BioProfile.email}`} 
-                              className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                              className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
                             >
                               <Mail className="w-4 h-4 text-black dark:text-white" />
                               {web3BioProfile.email}
@@ -1535,7 +1535,7 @@ export const ProfileCard = ({
                               href={web3BioProfile.website || web3BioProfile.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-[#D4AF37] hover:underline"
+                              className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
                             >
                               <Globe className="w-4 h-4 text-black dark:text-white" />
                               <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
