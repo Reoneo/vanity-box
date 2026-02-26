@@ -312,6 +312,10 @@ export const ProfileCard = ({
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
   const [evmTokensForIota, setEvmTokensForIota] = useState<any[]>([]);
   const [evmTotalForIota, setEvmTotalForIota] = useState(0);
+  
+  // Fetch EVM transactions for .iota profiles with linked Ethereum wallets
+  const [evmTxFetchedForIota, setEvmTxFetchedForIota] = useState(false);
+  const [evmTxForIota, setEvmTxForIota] = useState<any[]>([]);
 
   // Step 1: Fetch EVM tokens when linkedEvmAddress becomes available
   useEffect(() => {
@@ -364,12 +368,68 @@ export const ProfileCard = ({
     }
   }, [iotaTokens, evmTokensForIota, evmTotalForIota, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
 
+  // Fetch EVM transactions when linkedEvmAddress becomes available for .iota profiles
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota || !linkedEvmAddress || evmTxFetchedForIota) return;
+    if (!/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
+
+    const fetchEvmTxForIota = async () => {
+      try {
+        console.log('[ProfileCard] Fetching Zerion EVM transactions for linked wallet:', linkedEvmAddress);
+        const txRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          },
+          body: JSON.stringify({ walletAddress: linkedEvmAddress }),
+        });
+        const txData = await txRes.json();
+        console.log('[ProfileCard] Zerion EVM transactions for IOTA profile:', txData);
+        if (txData.transactions && txData.transactions.length > 0) {
+          setEvmTxForIota(txData.transactions);
+        }
+      } catch (e) {
+        console.error('[ProfileCard] Zerion EVM tx fetch for IOTA profile error:', e);
+      } finally {
+        setEvmTxFetchedForIota(true);
+      }
+    };
+    fetchEvmTxForIota();
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmTxFetchedForIota]);
+
+  // Merge IOTA + EVM transactions once both are available
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota) return;
+    if (!transactionsFetched) return;
+    if (evmTxForIota.length === 0) return;
+
+    // Merge and sort by timestamp descending
+    const iotaTx = transactions.filter((t: any) => !t._fromEvmMerge);
+    const merged = [...iotaTx, ...evmTxForIota.map((t: any) => ({ ...t, _fromEvmMerge: true }))];
+    merged.sort((a: any, b: any) => {
+      const ta = new Date(a.timestamp || a.mined_at || 0).getTime();
+      const tb = new Date(b.timestamp || b.mined_at || 0).getTime();
+      return tb - ta;
+    });
+    setTransactions(merged);
+  }, [evmTxForIota, transactionsFetched, searchedIdentity, web3BioProfile?.platform]);
+
   // Reset EVM social state when profile target changes
   useEffect(() => {
     setEvmSocialLinks([]);
     setEvmSocialsFetched(false);
     setLinkedEvmEnsDomains([]);
     setLinkedEvmEnsFetched(false);
+    setEvmTxFetchedForIota(false);
+    setEvmTxForIota([]);
+    setEvmTokensFetchedForIota(false);
+    setEvmTokensForIota([]);
+    setEvmTotalForIota(0);
   }, [searchedIdentity]);
 
   // Step A: Fetch ENS domains for the LINKED EVM wallet (not currentWalletAddress)
