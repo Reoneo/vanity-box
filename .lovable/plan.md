@@ -1,53 +1,72 @@
 
-# Make Talent Protocol Badge More Reliable
 
-## Problem
-The verification badge relies on a deprecated `/human_checkmark/data_points` endpoint that often returns empty or errors. Meanwhile, the `/profile` endpoint already returns a `human_checkmark: boolean` field directly, and the `/credentials` endpoint returns `Humanity`-category credentials with provider details -- both are more reliable sources.
+# Fetch and Display Linked Ethereum Social Links on .iota Profiles
 
-## Solution
-Restructure the edge function to use a **three-tier fallback** for human verification:
+## Overview
+When a `.iota` profile has a linked Ethereum wallet, fetch social links from Web3.bio for that Ethereum address and merge them with the existing IOTA profile social links. Each social link displays a small origin icon (IOTA or Ethereum), and duplicates show both icons.
 
-1. **Primary**: Use `profile.human_checkmark` boolean from `/profile` (always present, most reliable)
-2. **Secondary**: Extract `Humanity`-category credentials from `/credentials` to get individual provider names (Binance, Coinbase, Worldcoin, etc.)
-3. **Tertiary**: Keep the `/human_checkmark/data_points` call as a last resort, but don't depend on it
+## Current Behavior
+- `.iota` profiles only show social links from the IOTA onchain profile (IPFS data via `web3BioProfile.links`)
+- The linked Ethereum wallet address is already resolved (`linkedEvmAddress` prop) but only used for tokens, NFTs, POAPs, etc.
+- No social enrichment from the linked Ethereum wallet
 
-Also improve the ProfileCard badge logic to use the profile-level `human_checkmark` flag as the primary signal, so the badge shows even when provider details aren't available.
+## Implementation Plan
 
-## Changes
+### 1. Fetch Ethereum Social Links in ProfileCard
+Add a new `useEffect` in `ProfileCard.tsx` that:
+- Detects `.iota` profiles with a valid `linkedEvmAddress`
+- Calls the Web3.bio public API (`https://api.web3.bio/profile/{address}`) to fetch social links for the linked EVM address
+- Stores the result in a new state variable `evmSocialLinks`
 
-### 1. Edge Function: `supabase/functions/get-talent-protocol/index.ts`
+### 2. Build a Merged Social Links List
+Create a `useMemo` that produces a unified social link array with source attribution:
+- Iterate over IOTA links (from `web3BioProfile.links`) and tag each as `source: 'iota'`
+- Iterate over EVM links (from the new fetch) and tag each as `source: 'ethereum'`
+- For duplicates (same platform key), merge into a single entry with `source: 'both'`
+- Deduplicate by platform name (case-insensitive), keeping the IOTA version's URL as primary
 
-**Restructure human checkmark detection:**
-- After fetching `/profile`, immediately extract `profile.human_checkmark` as the authoritative boolean
-- After fetching `/credentials`, filter for `category === "Humanity"` credentials with `points > 0` to extract provider names (these give the breakdown: Coinbase, Binance, etc.)
-- Remove dependency on `/human_checkmark/data_points` -- keep call but only use as supplementary provider list
-- Build `verification.humanCheckmark` with:
-  - `isVerified`: true if `profile.human_checkmark === true` OR any Humanity credential has `points > 0`
-  - `providers`: merged from Humanity credentials + data_points (deduplicated)
+### 3. Add Small Origin Icons to Social Link Cards
+In all social link rendering locations (desktop panel, mobile overlay, and inline sections):
+- Replace direct iteration over `web3BioProfile.links` with iteration over the merged list
+- Add a small (16x16) origin badge in the corner of each social card:
+  - **IOTA source**: Small IOTA token icon (`src/assets/iota-token-icon.png`)
+  - **Ethereum source**: Small ETH icon (`src/assets/eth-logo-dark.svg`)
+  - **Both sources (duplicate)**: Show both icons side by side
+- The badge is positioned at the bottom-right of the social icon circle, keeping the current card design intact
 
-**Add ENS-based lookup fallback:**
-- The `/profile` endpoint accepts ENS names directly (field: `ens` in profile response). If wallet lookup fails, retry with ENS as the identifier without `account_source`
+### 4. Update Social Link Count for Button Visibility
+Update the `hasSocials` and `socialLinks` calculations (used for showing the "Social" pill button) to use the merged list length instead of only `web3BioProfile.links`.
 
-### 2. ProfileCard: `src/components/ProfileCard.tsx`
+## Technical Details
 
-**Simplify badge logic (minor):**
-- Current logic already checks both `isVerified` and `providers.length > 0` -- no change needed, the edge function fix ensures `isVerified` is consistently set
+### Files Modified
+- **`src/components/ProfileCard.tsx`**:
+  - New state: `evmSocialLinks` (Record of platform to link data)
+  - New state: `evmSocialsFetched` (boolean flag)
+  - New `useEffect`: Fetch Web3.bio profile for `linkedEvmAddress` when available
+  - New `useMemo`: `mergedSocialLinks` - array of `{ platform, linkData, url, source }` objects
+  - Update 4 rendering locations (desktop panel content, mobile overlay, desktop inline, and the `hasSocials` checks) to use `mergedSocialLinks`
+  - Add origin badge rendering (small icon overlay) to each social card
 
-## Technical Detail
+### No New Files or Dependencies Required
+- Uses existing assets (`iota-token-icon.png`, `eth-logo-dark.svg`)
+- Uses existing Web3.bio API pattern already in `useProfileResolver.ts`
+- No new edge functions needed
 
-Current flow (unreliable):
+### Merge Logic (Pseudocode)
 ```text
-/profile --> get profile data (human_checkmark ignored for badge)
-/human_checkmark/data_points --> often empty/404
-  --> badge only shows if data_points has items with points > 0
-  --> fallback: profile.human_checkmark (but providers = [])
+mergedMap = {}
+
+for each (platform, linkData) in iotaLinks:
+    mergedMap[platform] = { platform, linkData, source: 'iota' }
+
+for each (platform, linkData) in evmLinks:
+    if platform exists in mergedMap:
+        mergedMap[platform].source = 'both'
+    else:
+        mergedMap[platform] = { platform, linkData, source: 'ethereum' }
+
+return Object.values(mergedMap)
+    .filter(exclude 'website' and 'email')
 ```
 
-New flow (reliable):
-```text
-/profile --> human_checkmark: true/false (PRIMARY signal)
-/credentials --> filter category="Humanity" (provider names)
-/human_checkmark/data_points --> supplementary (OPTIONAL)
-  --> isVerified = profile.human_checkmark OR any Humanity cred
-  --> providers = deduplicated from credentials + data_points
-```
