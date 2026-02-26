@@ -10,7 +10,6 @@ import { useWalletConnect } from "@/contexts/WalletConnectContext";
 import { getLinkedDomain } from "@/lib/messaging/linkDomain";
 import { loadAllDeviceKeys } from "@/lib/crypto/keyVault";
 import { toast } from "sonner";
-import { useSignMessage, useAccount } from "wagmi";
 import { Header } from "@/components/Header";
 import Dock from "@/components/Dock";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -55,12 +54,13 @@ export default function Messages() {
     })();
   }, [iotaAddress, evmAddress]);
 
-  // Wallet signing for EVM identity registration
-  const { signMessageAsync } = useSignMessage();
-  const { address: wagmiAddress } = useAccount();
-  const signMessageFn = useCallback(async (message: string) => {
-    return signMessageAsync({ message, account: wagmiAddress! });
-  }, [signMessageAsync, wagmiAddress]);
+  // Wallet signing — only available when EVM wallet is connected via WalletConnect context
+  // We don't call wagmi hooks directly to avoid WagmiProviderNotFoundError when config isn't ready
+  const signMessageFn = useCallback(async (_message: string) => {
+    // Signing is only needed for EVM identity registration; IOTA users don't need it.
+    // If needed, the useMessaging hook handles it via wallet-specific flows.
+    throw new Error("EVM wallet signing not available in this context");
+  }, []);
 
   const {
     isRegistered, isLoading, conversations, activeConversation,
