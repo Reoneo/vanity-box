@@ -258,7 +258,46 @@ export const ProfileCard = ({
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
-  
+
+  // Re-fetch Talent Protocol for IOTA profiles once linkedEvmAddress resolves
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota || !linkedEvmAddress || hasTalentData) return;
+
+    const fetchTalentForIota = async () => {
+      setTalentLoading(true);
+      try {
+        const talentRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-talent-protocol', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          },
+          body: JSON.stringify({ wallet: linkedEvmAddress }),
+        });
+        const talentData = await talentRes.json();
+        console.log('[ProfileCard] Talent Protocol for IOTA linked EVM:', talentData);
+        if (!talentData.noData && !talentData.error && talentData.scores) {
+          const builderVal = talentData.scores.builder?.value ?? 0;
+          const creatorVal = talentData.scores.creator?.value ?? 0;
+          setHasTalentData(builderVal > 0 || creatorVal > 0);
+          setTalentScore(builderVal > 0 ? builderVal : null);
+          setTalentCreatorScore(creatorVal > 0 ? creatorVal : null);
+          const hasHumanVerification = 
+            talentData.verification?.humanCheckmark?.isVerified === true ||
+            (talentData.verification?.humanCheckmark?.providers?.length > 0);
+          setIsHumanVerified(hasHumanVerification);
+        }
+      } catch (e) {
+        console.error('Talent Protocol IOTA fetch error:', e);
+      } finally {
+        setTalentLoading(false);
+      }
+    };
+    fetchTalentForIota();
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, hasTalentData]);
+
 
   // Resolve ENS name for wallet address searches
   const { displayName: resolvedEnsName } = useDisplayName(
@@ -314,14 +353,17 @@ export const ProfileCard = ({
     if (currentWalletAddress && !dataLoaded) {
       setDataLoaded(true);
       
-      // Check if this is an IOTA profile - skip Talent Protocol for IOTA
+      // Check if this is an IOTA profile
       const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
                      web3BioProfile?.platform === 'iota';
       
-      // PRIORITY 1: Fetch Talent Protocol data IMMEDIATELY (skip for IOTA)
+      // For IOTA profiles, use linkedEvmAddress; otherwise use currentWalletAddress
+      const talentWallet = isIota ? linkedEvmAddress : currentWalletAddress;
+      
+      // PRIORITY 1: Fetch Talent Protocol data IMMEDIATELY
       const fetchTalentFirst = async () => {
-        if (isIota) {
-          console.log('Skipping Talent Protocol for IOTA profile');
+        if (!talentWallet) {
+          console.log('Skipping Talent Protocol: no EVM wallet available');
           setTalentLoading(false);
           return;
         }
@@ -335,18 +377,18 @@ export const ProfileCard = ({
               'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
             },
             body: JSON.stringify({ 
-              wallet: currentWalletAddress,
+              wallet: talentWallet,
               ens: searchedIdentity?.includes('.') ? searchedIdentity : undefined 
             }),
           });
           const talentData = await talentRes.json();
           console.log('[ProfileCard] Talent Protocol response (PRIORITY):', talentData);
           if (!talentData.noData && !talentData.error && talentData.scores) {
-            const hasBuilder = talentData.scores.builder !== null;
-            const hasCreator = talentData.scores.creator !== null;
-            setHasTalentData(hasBuilder || hasCreator);
-            setTalentScore(talentData.scores.builder?.value ?? null);
-            setTalentCreatorScore(talentData.scores.creator?.value ?? null);
+            const builderVal = talentData.scores.builder?.value ?? 0;
+            const creatorVal = talentData.scores.creator?.value ?? 0;
+            setHasTalentData(builderVal > 0 || creatorVal > 0);
+            setTalentScore(builderVal > 0 ? builderVal : null);
+            setTalentCreatorScore(creatorVal > 0 ? creatorVal : null);
             
             const hasHumanVerification = 
               talentData.verification?.humanCheckmark?.isVerified === true ||
