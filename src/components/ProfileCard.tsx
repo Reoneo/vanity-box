@@ -17,7 +17,7 @@ const isValidEvmAddress = (address?: string): boolean => {
 import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
 import { ENSDomainDetailModal } from "./ENSDomainDetailModal";
@@ -300,10 +300,11 @@ export const ProfileCard = ({
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, hasTalentData]);
 
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
-  const iotaTokensRef = useRef<any[]>([]);
-  iotaTokensRef.current = iotaTokens;
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
+  const [evmTokensForIota, setEvmTokensForIota] = useState<any[]>([]);
+  const [evmTotalForIota, setEvmTotalForIota] = useState(0);
 
+  // Step 1: Fetch EVM tokens when linkedEvmAddress becomes available
   useEffect(() => {
     const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
                    web3BioProfile?.platform === 'iota';
@@ -325,21 +326,34 @@ export const ProfileCard = ({
         console.log('[ProfileCard] Zerion EVM tokens for IOTA profile:', tokenData);
 
         if (tokenData.tokens && tokenData.tokens.length > 0) {
-          const currentIotaTokens = iotaTokensRef.current;
-          const merged = [...currentIotaTokens, ...tokenData.tokens];
-          setPortfolioTokens(merged);
-          const iotaTotal = currentIotaTokens.reduce((sum: number, t: any) => sum + (t.value || 0), 0);
-          const evmTotal = tokenData.totalValue || 0;
-          setPortfolioTotalValue(iotaTotal + evmTotal);
+          setEvmTokensForIota(tokenData.tokens);
+          setEvmTotalForIota(tokenData.totalValue || 0);
         }
-        setEvmTokensFetchedForIota(true);
       } catch (e) {
         console.error('[ProfileCard] Zerion EVM fetch for IOTA profile error:', e);
+      } finally {
         setEvmTokensFetchedForIota(true);
       }
     };
     fetchEvmTokensForIota();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmTokensFetchedForIota]);
+
+  // Step 2: Merge IOTA + EVM tokens once both are available
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota) return;
+    // Wait for IOTA tokens to be fetched
+    if (!iotaFetched) return;
+    
+    // Merge: always start with IOTA tokens, then add EVM if available
+    const merged = [...iotaTokens, ...evmTokensForIota];
+    if (merged.length > 0) {
+      setPortfolioTokens(merged);
+      const iotaTotal = iotaTokens.reduce((sum: number, t: any) => sum + (t.value || 0), 0);
+      setPortfolioTotalValue(iotaTotal + evmTotalForIota);
+    }
+  }, [iotaTokens, evmTokensForIota, evmTotalForIota, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
 
 
   // Resolve ENS name for wallet address searches
