@@ -175,19 +175,19 @@ export default function Messages() {
   }
 
   return (
-    <div className="min-h-screen h-full bg-black dark:bg-black flex flex-col relative overflow-x-hidden">
-      {/* Gold side borders — matches Index page */}
+    <div className="h-dvh bg-black dark:bg-black flex flex-col relative overflow-hidden">
+      {/* Gold side borders */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
 
-      {/* Content wrapper */}
-      <div className="min-h-dvh flex flex-col relative z-40">
-        {/* App Header */}
+      {/* Content wrapper — full viewport, no scroll */}
+      <div className="h-dvh flex flex-col relative z-40">
+        {/* App Header — fixed at top */}
         <div className="flex-shrink-0">
           <Header />
         </div>
 
-        {/* Messages Header with gold border */}
-        <header className="flex items-center gap-3 px-4 py-3 border-y-2 border-[#D4AF37] bg-background/80 backdrop-blur-md sticky top-20 z-50">
+        {/* Messages Header — no sticky, just fixed in flex flow */}
+        <header className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-y-2 border-[#D4AF37] bg-background/80 backdrop-blur-md">
           <button
             onClick={() => {
               if (activeConversation) {
@@ -221,8 +221,8 @@ export default function Messages() {
           )}
         </header>
 
-        {/* Main content — flex-1 with safe-area bottom padding */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-background pb-safe">
+        {/* Main content — fills remaining space, internal scroll only */}
+        <main className="flex-1 flex flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)]">
           <div className="flex-1 flex flex-col overflow-hidden border-x-2 border-[#D4AF37]">
             {activeConversation ? (
               <ChatThread
@@ -240,8 +240,8 @@ export default function Messages() {
           </div>
         </main>
 
-        {/* Footer — matches Index page */}
-        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] pointer-events-auto">
+        {/* Footer */}
+        <footer className="flex-shrink-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999]">
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5">
               <LanguageSelector />

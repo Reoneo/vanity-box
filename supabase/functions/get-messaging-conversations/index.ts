@@ -96,6 +96,25 @@ Deno.serve(async (req) => {
       (identities || []).map((i) => [i.id, i])
     );
 
+    // Fetch latest message per conversation
+    const lastMessages = new Map<string, { sent_at: string; preview: string }>();
+    for (const convId of convIds) {
+      const { data: msgs } = await supabase
+        .from("messaging_messages")
+        .select("sent_at, sender_identity_id")
+        .eq("conversation_id", convId)
+        .order("sent_at", { ascending: false })
+        .limit(1);
+      if (msgs && msgs.length > 0) {
+        const senderIdentity = identityMap.get(msgs[0].sender_identity_id);
+        const senderLabel = senderIdentity?.domain_name || "someone";
+        lastMessages.set(convId, {
+          sent_at: msgs[0].sent_at,
+          preview: `${senderLabel} sent a message`,
+        });
+      }
+    }
+
     const conversations = (convos || []).map((conv) => {
       const members = (allMembers || [])
         .filter((m) => m.conversation_id === conv.conversation_id)
@@ -109,7 +128,8 @@ Deno.serve(async (req) => {
           };
         });
 
-      return { ...conv, members };
+      const last_message = lastMessages.get(conv.conversation_id) || null;
+      return { ...conv, members, last_message };
     });
 
     return new Response(
