@@ -373,7 +373,7 @@ export function IotaProfileEditModal({
                     Saving to IPFS...
                   </>
                 ) : (
-                  'Save to IPFS & Notarize'
+                  'Save'
                 )}
               </Button>
             </div>
