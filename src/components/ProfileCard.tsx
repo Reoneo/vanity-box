@@ -1046,8 +1046,17 @@ export const ProfileCard = ({
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
   // Auto-select default desktop panel based on data availability (priority: Socials → Tokens → Activity → NFTs)
+  // Special case: poap.eth always opens NFTs → POAPs on desktop
   useEffect(() => {
     if (isMobile || desktopActivePanel !== null) return;
+    
+    const isPoapEth = searchedIdentity?.toLowerCase() === 'poap.eth';
+    
+    if (isPoapEth && (poaps.length > 0 || poapTotalCount > 0)) {
+      setDesktopActivePanel('nfts');
+      setNftCategory('poaps');
+      return;
+    }
     
     const hasSocialsData = mergedSocialLinks.length > 0;
     const hasTokensData = portfolioTokens.length > 0;
@@ -1065,7 +1074,7 @@ export const ProfileCard = ({
       onEnsureOpenSeaNfts?.();
     }
     // If nothing available, desktopActivePanel stays null and "No Onchain Data" will show
-  }, [isMobile, desktopActivePanel, nfts, poaps, magicEdenNfts, worldchainNftCount, hlNfts, ensDomains, basenames, web3BioProfile?.links, portfolioTokens, transactions, onEnsureOpenSeaNfts]);
+  }, [isMobile, desktopActivePanel, nfts, poaps, magicEdenNfts, worldchainNftCount, hlNfts, ensDomains, basenames, web3BioProfile?.links, portfolioTokens, transactions, onEnsureOpenSeaNfts, searchedIdentity, poapTotalCount]);
 
   // Transactions are now fetched on profile load - no need for overlay-triggered fetch
 
