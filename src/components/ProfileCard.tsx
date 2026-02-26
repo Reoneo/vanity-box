@@ -588,8 +588,12 @@ export const ProfileCard = ({
             console.log('IOTA Transactions:', txData);
             
             if (tokensData.tokens) {
-              setIotaTokens(tokensData.tokens);
-              setPortfolioTokens(tokensData.tokens);
+              const enrichedTokens = tokensData.tokens.map((t: any) => ({
+                ...t,
+                icon: t.icon || (t.symbol?.toUpperCase() === 'IOTA' ? IOTA_ICON_URL : undefined),
+              }));
+              setIotaTokens(enrichedTokens);
+              setPortfolioTokens(enrichedTokens);
               if (tokensData.totalValue) setPortfolioTotalValue(tokensData.totalValue);
             }
             if (nftsData.nfts) setIotaNfts(nftsData.nfts);
@@ -866,7 +870,10 @@ export const ProfileCard = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-black dark:text-white truncate text-base">{token.name}</span>
-                      <span className="text-sm text-black/60 dark:text-white/60 font-medium">{token.symbol}</span>
+                      <span className="text-sm text-black/60 dark:text-white/60 font-medium flex items-center gap-1">
+                        {token.symbol?.toUpperCase() === 'IOTA' && <img src={IOTA_ICON_URL} alt="IOTA" className="w-4 h-4 rounded-full" />}
+                        {token.symbol}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-sm text-black/50 dark:text-white/50 mt-0.5">
                       <span>{parseFloat(token.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
@@ -2409,7 +2416,10 @@ export const ProfileCard = ({
                               <span className="text-sm font-semibold text-foreground">${token.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm text-muted-foreground">
-                              <span>{token.quantity?.toLocaleString(undefined, { maximumFractionDigits: 4 })} {token.symbol}</span>
+                              <span className="flex items-center gap-1">
+                                {token.symbol?.toUpperCase() === 'IOTA' && <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full" />}
+                                {token.quantity?.toLocaleString(undefined, { maximumFractionDigits: 4 })} {token.symbol}
+                              </span>
                               {token.priceChange24h !== 0 && (
                                 <span className={token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}>
                                   {token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h * 100).toFixed(2)}%
