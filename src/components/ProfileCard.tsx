@@ -370,13 +370,9 @@ export const ProfileCard = ({
     const fetchEvmSocials = async () => {
       try {
         console.log('[ProfileCard] Fetching Web3.bio socials for linked EVM:', linkedEvmAddress);
-        const res = await fetch(`https://api.web3.bio/profile/${linkedEvmAddress}`);
-        const profiles = await res.json();
-        console.log('[ProfileCard] Web3.bio EVM social profiles:', profiles);
-        
-        // Aggregate links from all returned profiles
         const aggregated: Record<string, any> = {};
-        if (Array.isArray(profiles)) {
+        
+        const aggregateProfiles = (profiles: any[]) => {
           for (const p of profiles) {
             if (p.links && typeof p.links === 'object') {
               for (const [platform, linkData] of Object.entries(p.links)) {
@@ -386,7 +382,30 @@ export const ProfileCard = ({
               }
             }
           }
+        };
+
+        // 1. Fetch by raw address (returns Farcaster/Basenames data)
+        const res = await fetch(`https://api.web3.bio/profile/${linkedEvmAddress}`);
+        const profiles = await res.json();
+        console.log('[ProfileCard] Web3.bio EVM address profiles:', profiles);
+        if (Array.isArray(profiles)) aggregateProfiles(profiles);
+        
+        // 2. Find primary ENS name from already-fetched ensDomains and fetch its text records
+        if (ensDomains.length > 0) {
+          const primaryEns = ensDomains[0]?.name || ensDomains[0]?.domain;
+          if (primaryEns) {
+            console.log('[ProfileCard] Fetching Web3.bio socials for ENS name:', primaryEns);
+            try {
+              const ensRes = await fetch(`https://api.web3.bio/profile/${primaryEns}`);
+              const ensProfiles = await ensRes.json();
+              console.log('[ProfileCard] Web3.bio ENS name profiles:', ensProfiles);
+              if (Array.isArray(ensProfiles)) aggregateProfiles(ensProfiles);
+            } catch (e) {
+              console.error('[ProfileCard] Web3.bio ENS name fetch error:', e);
+            }
+          }
         }
+
         setEvmSocialLinks(aggregated);
       } catch (e) {
         console.error('[ProfileCard] Web3.bio EVM socials fetch error:', e);
@@ -395,10 +414,19 @@ export const ProfileCard = ({
       }
     };
     fetchEvmSocials();
-  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmSocialsFetched]);
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmSocialsFetched, ensDomains]);
 
   // Merged social links: IOTA + EVM with source attribution
   type MergedSocialLink = { platform: string; linkData: any; source: 'iota' | 'ethereum' | 'both' };
+  
+  // Normalize platform aliases so e.g. IOTA's "x" and Web3.bio's "twitter" are treated as the same
+  const normalizePlatformKey = (key: string): string => {
+    const lower = key.toLowerCase();
+    if (lower === 'twitter') return 'x';
+    return lower;
+  };
+  
+  // showOriginBadges moved below isIotaProfile definition
   
   const mergedSocialLinks: MergedSocialLink[] = useMemo(() => {
     const mergedMap: Record<string, MergedSocialLink> = {};
@@ -406,7 +434,7 @@ export const ProfileCard = ({
     // Add IOTA links
     if (web3BioProfile?.links) {
       for (const [platform, linkData] of Object.entries(web3BioProfile.links)) {
-        const key = platform.toLowerCase();
+        const key = normalizePlatformKey(platform);
         if (key === 'website' || key === 'email' || !linkData) continue;
         mergedMap[key] = { platform, linkData, source: 'iota' };
       }
@@ -414,7 +442,7 @@ export const ProfileCard = ({
     
     // Add EVM links
     for (const [platform, linkData] of Object.entries(evmSocialLinks)) {
-      const key = platform.toLowerCase();
+      const key = normalizePlatformKey(platform);
       if (key === 'website' || key === 'email' || !linkData) continue;
       if (mergedMap[key]) {
         mergedMap[key].source = 'both';
@@ -444,6 +472,9 @@ export const ProfileCard = ({
            web3BioProfile?.platform === 'iota' ||
            web3BioProfile?.iotaDomain;
   }, [searchedIdentity, web3BioProfile]);
+
+  // Only show origin badges for .iota profiles with a linked Ethereum wallet
+  const showOriginBadges = isIotaProfile && !!linkedEvmAddress;
 
   // Check if the connected wallet is the owner of this IOTA profile
   const isIotaProfileOwner = useMemo(() => {
@@ -937,15 +968,17 @@ export const ProfileCard = ({
                         url={rawUrl}
                         size="lg"
                       />
-                      {/* Origin badge */}
-                      <div className="absolute -bottom-1 -right-1 flex gap-0.5">
-                        {(source === 'iota' || source === 'both') && (
-                          <img src={IOTA_ICON_URL} alt="IOTA" className="w-4 h-4 rounded-full border border-background" />
-                        )}
-                        {(source === 'ethereum' || source === 'both') && (
-                          <img src={ethLogo} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
-                        )}
-                      </div>
+                      {/* Origin badge - only for .iota profiles with linked wallets */}
+                      {showOriginBadges && (
+                        <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                          {(source === 'iota' || source === 'both') && (
+                            <img src={IOTA_ICON_URL} alt="IOTA" className="w-4 h-4 rounded-full border border-background" />
+                          )}
+                          {(source === 'ethereum' || source === 'both') && (
+                            <img src={ethLogo} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-base text-black dark:text-white font-semibold text-center">
@@ -1866,15 +1899,17 @@ export const ProfileCard = ({
                                 url={rawUrl}
                                 size="lg"
                               />
-                              {/* Origin badge */}
-                              <div className="absolute -bottom-1 -right-1 flex gap-0.5">
-                                {(source === 'iota' || source === 'both') && (
-                                  <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
-                                )}
-                                {(source === 'ethereum' || source === 'both') && (
-                                  <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
-                                )}
-                              </div>
+                              {/* Origin badge - only for .iota profiles with linked wallets */}
+                              {showOriginBadges && (
+                                <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                                  {(source === 'iota' || source === 'both') && (
+                                    <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
+                                  )}
+                                  {(source === 'ethereum' || source === 'both') && (
+                                    <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-col items-center gap-0.5">
                               <span className="text-sm text-foreground font-medium text-center">
@@ -2646,9 +2681,8 @@ export const ProfileCard = ({
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {web3BioProfile?.links && Object.entries(web3BioProfile.links)
-                .filter(([platform, linkData]) => platform.toLowerCase() !== 'website' && linkData)
-                .map(([platform, linkData]: [string, any]) => {
+              {mergedSocialLinks
+                .map(({ platform, linkData, source }) => {
                   const displayLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
                   const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
                   
@@ -2669,11 +2703,24 @@ export const ProfileCard = ({
                       }}
                       className="flex items-center gap-4 p-4 rounded-2xl border border-border/30 hover:border-[#D4AF37]/50 bg-card/30 hover:bg-card/50 transition-colors active:opacity-90 group touch-action-manipulation flex-shrink-0"
                     >
-                      <SocialIcon
-                        platform={platform}
-                        url={rawUrl}
-                        size="md"
-                      />
+                      <div className="relative">
+                        <SocialIcon
+                          platform={platform}
+                          url={rawUrl}
+                          size="md"
+                        />
+                        {/* Origin badge - only for .iota profiles with linked wallets */}
+                        {showOriginBadges && (
+                          <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                            {(source === 'iota' || source === 'both') && (
+                              <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
+                            )}
+                            {(source === 'ethereum' || source === 'both') && (
+                              <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <div className="flex-1 text-left">
                         <div className="font-semibold text-base text-foreground group-hover:text-[#D4AF37] transition-colors">
                           {displayLabel}
@@ -2692,7 +2739,7 @@ export const ProfileCard = ({
                 })}
             </div>
 
-            {(!web3BioProfile?.links || Object.keys(web3BioProfile.links).length === 0) && (
+            {mergedSocialLinks.length === 0 && (
               <div className="text-center py-12 bg-gradient-to-br from-card/40 to-card/20 rounded-2xl border border-border/30">
                 <Globe className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
                 <p className="text-muted-foreground text-base">No social links configured</p>
