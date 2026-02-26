@@ -1108,8 +1108,8 @@ export const ProfileCard = ({
                         </div>
                       )}
 
-                      {/* Credentials Carousel - hide for IOTA profiles */}
-                      {!isIotaProfile && (
+                      {/* Credentials Carousel - Talent Protocol & Polymarket */}
+                      {(!isIotaProfile || hasTalentData) && (
                         <div className="pt-2">
                           <CredentialsCarousel
                             wallet={currentWalletAddress}
