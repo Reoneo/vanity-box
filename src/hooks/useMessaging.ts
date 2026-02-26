@@ -142,7 +142,7 @@ export function useMessaging(
     }
   }, [walletAddress, domain]);
 
-  // Fetch conversations
+  // Fetch conversations (with client-side dedup for direct chats)
   const fetchConversations = useCallback(async () => {
     if (!walletAddress || !domain) return;
     try {
@@ -150,11 +150,52 @@ export function useMessaging(
         "get-messaging-conversations",
         { wallet_address: walletAddress, domain_name: domain }
       );
-      setConversations(result.conversations || []);
+      // Deduplicate: for direct chats with same member set, keep the one with latest activity
+      const convos = result.conversations || [];
+      const seen = new Map<string, Conversation>();
+      for (const c of convos) {
+        if (c.conversation_type === "direct") {
+          const memberKey = c.members.map(m => m.domain_name?.toLowerCase()).sort().join("|");
+          const existing = seen.get(memberKey);
+          if (!existing) {
+            seen.set(memberKey, c);
+          } else {
+            const existingTime = new Date(existing.last_message?.sent_at || existing.updated_at || existing.created_at).getTime();
+            const newTime = new Date(c.last_message?.sent_at || c.updated_at || c.created_at).getTime();
+            if (newTime > existingTime) seen.set(memberKey, c);
+          }
+        } else {
+          seen.set(c.conversation_id, c);
+        }
+      }
+      setConversations(Array.from(seen.values()));
     } catch (err) {
       console.error("Failed to fetch conversations:", err);
     }
   }, [walletAddress, domain, signMessageFn]);
+
+  // Delete a conversation permanently
+  const deleteConversation = useCallback(
+    async (conversationId: string) => {
+      if (!walletAddress || !domain) return;
+      try {
+        await callEdge("delete-messaging-conversation", {
+          conversation_id: conversationId,
+          wallet_address: walletAddress,
+          domain_name: domain,
+        });
+        setConversations((prev) => prev.filter((c) => c.conversation_id !== conversationId));
+        if (activeConversation === conversationId) {
+          setActiveConversation(null);
+          setMessages([]);
+        }
+      } catch (err) {
+        console.error("Failed to delete conversation:", err);
+        throw err;
+      }
+    },
+    [walletAddress, domain, activeConversation]
+  );
 
   // Start a new conversation with a domain
   const startConversation = useCallback(
@@ -369,5 +410,6 @@ export function useMessaging(
     sendMessage,
     openConversation,
     setActiveConversation,
+    deleteConversation,
   };
 }

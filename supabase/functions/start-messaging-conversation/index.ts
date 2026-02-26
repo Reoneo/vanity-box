@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       recipientId = newRecipient.id;
     }
 
-    // Check if a direct conversation already exists between these two
+    // Check if ANY direct conversation already exists between these two identities
     const { data: senderConvos } = await supabase
       .from("messaging_members")
       .select("conversation_id")
@@ -90,20 +90,25 @@ Deno.serve(async (req) => {
     const senderConvIds = new Set(
       (senderConvos || []).map((m) => m.conversation_id)
     );
-    const existingConvId = (recipientConvos || []).find((m) =>
-      senderConvIds.has(m.conversation_id)
-    )?.conversation_id;
+    // Find ALL overlapping conversation IDs (not just the first)
+    const sharedConvIds = (recipientConvos || [])
+      .filter((m) => senderConvIds.has(m.conversation_id))
+      .map((m) => m.conversation_id);
 
-    if (existingConvId) {
-      const { data: conv } = await supabase
+    // Check each shared conversation to see if any is a direct chat
+    if (sharedConvIds.length > 0) {
+      const { data: sharedConvs } = await supabase
         .from("messaging_conversations")
-        .select("conversation_type")
-        .eq("conversation_id", existingConvId)
-        .single();
+        .select("conversation_id, conversation_type")
+        .in("conversation_id", sharedConvIds);
 
-      if (conv?.conversation_type === "direct") {
+      const existingDirect = (sharedConvs || []).find(
+        (c) => c.conversation_type === "direct"
+      );
+
+      if (existingDirect) {
         return new Response(
-          JSON.stringify({ conversation_id: existingConvId }),
+          JSON.stringify({ conversation_id: existingDirect.conversation_id }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
