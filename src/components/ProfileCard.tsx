@@ -449,52 +449,7 @@ export const ProfileCard = ({
           }
         };
 
-        const extractDomainCandidates = (profiles: any[]) => {
-          const candidates = new Set<string>();
-
-          const addCandidate = (rawValue: unknown) => {
-            if (typeof rawValue !== 'string') return;
-            const trimmed = rawValue.trim();
-            if (!trimmed) return;
-
-            const normalized = trimmed
-              .toLowerCase()
-              .replace(/^https?:\/\//, '')
-              .replace(/^www\./, '')
-              .split('/')[0]
-              .split('?')[0]
-              .split('#')[0]
-              .trim();
-
-            if (!normalized || normalized.includes(' ') || !normalized.includes('.')) return;
-            if (/^0x[a-fA-F0-9]{40}$/i.test(normalized)) return;
-            candidates.add(normalized);
-          };
-
-          for (const ensDomain of linkedEvmEnsDomains) {
-            addCandidate(ensDomain?.name || ensDomain?.domain);
-          }
-
-          for (const p of profiles) {
-            const maybeNames = [p?.identity, p?.displayName, p?.name];
-            maybeNames.forEach(addCandidate);
-
-            const websiteLink = p?.links?.website;
-            if (typeof websiteLink === 'string') {
-              addCandidate(websiteLink);
-            } else if (websiteLink && typeof websiteLink === 'object') {
-              addCandidate(websiteLink.handle);
-              addCandidate(websiteLink.link);
-            }
-
-            if (typeof p?.description === 'string') {
-              const domainMatches = p.description.match(/\b(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+\b/gi) || [];
-              domainMatches.forEach(addCandidate);
-            }
-          }
-
-          return Array.from(candidates);
-        };
+        // Only primary ENS is used for social enrichment
 
         // 1) Fetch by linked EVM address first
         const addressRes = await fetch(`https://api.web3.bio/profile/${linkedEvmAddress}`);
@@ -503,18 +458,20 @@ export const ProfileCard = ({
         console.log('[ProfileCard] Web3.bio EVM address profiles:', addressProfiles);
         addEntriesFromProfiles(addressProfiles, 'address');
 
-        // 2) Fetch by ENS/domain identities discovered from ENS + Web3.bio address profiles
-        const domainCandidates = extractDomainCandidates(addressProfiles);
-        for (const domainCandidate of domainCandidates) {
-          console.log('[ProfileCard] Fetching Web3.bio socials for linked domain name:', domainCandidate);
+        // 2) Fetch by PRIMARY ENS domain only (first/primary from linked ENS domains)
+        const primaryEns = linkedEvmEnsDomains.find((d: any) => d?.isPrimary)?.name
+          || linkedEvmEnsDomains[0]?.name
+          || linkedEvmEnsDomains[0]?.domain;
+        if (primaryEns) {
+          console.log('[ProfileCard] Fetching Web3.bio socials for primary ENS:', primaryEns);
           try {
-            const domainRes = await fetch(`https://api.web3.bio/profile/${encodeURIComponent(domainCandidate)}`);
+            const domainRes = await fetch(`https://api.web3.bio/profile/${encodeURIComponent(primaryEns)}`);
             const domainPayload = await domainRes.json();
             const domainProfiles = normalizeProfiles(domainPayload);
-            console.log('[ProfileCard] Web3.bio domain profiles:', domainCandidate, domainProfiles);
-            addEntriesFromProfiles(domainProfiles, domainCandidate);
+            console.log('[ProfileCard] Web3.bio primary ENS profiles:', primaryEns, domainProfiles);
+            addEntriesFromProfiles(domainProfiles, primaryEns);
           } catch (e) {
-            console.error('[ProfileCard] Web3.bio domain fetch error:', domainCandidate, e);
+            console.error('[ProfileCard] Web3.bio primary ENS fetch error:', primaryEns, e);
           }
         }
 
