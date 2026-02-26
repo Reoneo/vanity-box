@@ -1,4 +1,7 @@
 import { useState, useCallback } from 'react';
+import { createPublicClient, http } from 'viem';
+import { mainnet } from 'viem/chains';
+import { normalize } from 'viem/ens';
 import { iotaJsonRpc, isValidIotaAddress } from '@/lib/iota/client';
 
 /**
@@ -89,6 +92,72 @@ async function fetchWithRetry(
     }
   }
   return null;
+}
+
+/**
+ * Viem public client for direct ENS resolution on Ethereum mainnet
+ */
+const ensClient = createPublicClient({
+  chain: mainnet,
+  transport: http('https://eth.llamarpc.com'),
+});
+
+/**
+ * Resolve .eth domain directly via viem (Universal Resolver on-chain)
+ * Returns rich profile data: address, avatar, text records, etc.
+ */
+async function fetchEnsDirectProfile(name: string): Promise<any | null> {
+  console.log(`🔍 [Client] Direct ENS resolution for: ${name}`);
+
+  try {
+    const normalizedName = normalize(name);
+
+    // Batch all calls in parallel for speed
+    const [address, avatar, description, url, twitter, github, discord, email, displayName] =
+      await Promise.all([
+        ensClient.getEnsAddress({ name: normalizedName }).catch(() => null),
+        ensClient.getEnsAvatar({ name: normalizedName }).catch(() => null),
+        ensClient.getEnsText({ name: normalizedName, key: 'description' }).catch(() => null),
+        ensClient.getEnsText({ name: normalizedName, key: 'url' }).catch(() => null),
+        ensClient.getEnsText({ name: normalizedName, key: 'com.twitter' }).catch(() => null),
+        ensClient.getEnsText({ name: normalizedName, key: 'com.github' }).catch(() => null),
+        ensClient.getEnsText({ name: normalizedName, key: 'com.discord' }).catch(() => null),
+        ensClient.getEnsText({ name: normalizedName, key: 'email' }).catch(() => null),
+        ensClient.getEnsText({ name: normalizedName, key: 'name' }).catch(() => null),
+      ]);
+
+    if (!address) {
+      console.log('⚠️ Direct ENS: No address resolved for', name);
+      return null;
+    }
+
+    console.log(`✅ Direct ENS resolved: ${name} -> ${address}`);
+
+    // Build links object from text records
+    const links: Record<string, any> = {};
+    if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
+    if (github) links.github = { link: `https://github.com/${github}`, handle: github };
+    if (discord) links.discord = { link: discord, handle: discord };
+    if (url) links.website = { link: url };
+
+    return {
+      address,
+      identity: name,
+      platform: 'ens',
+      displayName: displayName || name,
+      avatar: avatar || null,
+      description: description || null,
+      header: null,
+      website: url || null,
+      url: url || null,
+      links,
+      email: email || null,
+      location: null,
+    };
+  } catch (err: any) {
+    console.error('❌ Direct ENS resolution error:', err.message);
+    return null;
+  }
 }
 
 /**
@@ -336,8 +405,11 @@ export function useProfileResolver() {
       const isVetDomain = normalized.endsWith('.vet');
       const isIotaDomain = normalized.endsWith('.iota');
 
-      // Web3.bio-compatible TLDs (public API)
-      const web3BioTLDs = ['.eth', '.box', '.sol', '.world.id', '.base.eth'];
+      const isEthDomain = normalized.endsWith('.eth') && !normalized.endsWith('.base.eth');
+      const isBoxDomain = /\.box$/i.test(normalized);
+
+      // Web3.bio-compatible TLDs (public API) — .eth handled separately via direct resolution
+      const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
@@ -390,7 +462,30 @@ export function useProfileResolver() {
           resolverResult = { ok: false, source: 'vet', profile: null, notFound: true };
         }
       }
-      // Route 3: Web3.bio-compatible TLDs and wallet addresses
+      // Route 3: .eth domains — direct ENS resolution via viem, web3.bio as fallback
+      else if (isEthDomain) {
+        debug.tried.push('ens-direct');
+        const ensStart = Date.now();
+        const ensProfile = await fetchEnsDirectProfile(normalized);
+        debug.timingsMs.ensDirect = Date.now() - ensStart;
+
+        if (ensProfile) {
+          resolverResult = { ok: true, source: 'web3bio', profile: ensProfile };
+        } else {
+          // Fallback to web3.bio
+          debug.tried.push('web3bio');
+          const w3Start = Date.now();
+          const web3Profile = await fetchWeb3BioProfile(normalized);
+          debug.timingsMs.web3bio = Date.now() - w3Start;
+
+          if (web3Profile && !web3Profile.notFound) {
+            resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
+          } else {
+            resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+          }
+        }
+      }
+      // Route 4: Web3.bio-compatible TLDs (.box, .sol, etc.) and wallet addresses
       else if (isWeb3BioCompatible || isWalletAddress) {
         debug.tried.push('web3bio');
         const w3Start = Date.now();
@@ -606,8 +701,11 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
     const isVetDomain = normalized.endsWith('.vet');
     const isIotaDomain = normalized.endsWith('.iota');
 
-    // Web3.bio-compatible TLDs (public API)
-    const web3BioTLDs = ['.eth', '.box', '.sol', '.world.id', '.base.eth'];
+    const isEthDomain = normalized.endsWith('.eth') && !normalized.endsWith('.base.eth');
+    const isBoxDomain = /\.box$/i.test(normalized);
+
+    // Web3.bio-compatible TLDs (public API) — .eth handled separately via direct resolution
+    const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
     const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
     let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
@@ -661,7 +759,30 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
         resolverResult = { ok: false, source: 'vet', profile: null, notFound: true };
       }
     }
-    // Route 3: Web3.bio-compatible TLDs and wallet addresses
+    // Route 3: .eth domains — direct ENS resolution via viem, web3.bio as fallback
+    else if (isEthDomain) {
+      debug.tried.push('ens-direct');
+      const ensStart = Date.now();
+      const ensProfile = await fetchEnsDirectProfile(normalized);
+      debug.timingsMs.ensDirect = Date.now() - ensStart;
+
+      if (ensProfile) {
+        resolverResult = { ok: true, source: 'web3bio', profile: ensProfile };
+      } else {
+        // Fallback to web3.bio
+        debug.tried.push('web3bio');
+        const w3Start = Date.now();
+        const web3Profile = await fetchWeb3BioProfile(normalized);
+        debug.timingsMs.web3bio = Date.now() - w3Start;
+
+        if (web3Profile && !web3Profile.notFound) {
+          resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
+        } else {
+          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+        }
+      }
+    }
+    // Route 4: Web3.bio-compatible TLDs (.box, .sol, etc.) and wallet addresses
     else if (isWeb3BioCompatible || isWalletAddress) {
       debug.tried.push('web3bio');
       const w3Start = Date.now();
