@@ -1,72 +1,59 @@
 
 
-# Fetch and Display Linked Ethereum Social Links on .iota Profiles
+# Fix Social Link Origin Badges for .iota Profiles with Linked Ethereum Wallets
 
-## Overview
-When a `.iota` profile has a linked Ethereum wallet, fetch social links from Web3.bio for that Ethereum address and merge them with the existing IOTA profile social links. Each social link displays a small origin icon (IOTA or Ethereum), and duplicates show both icons.
+## Problem
+The current implementation fetches EVM social links via Web3.bio using the raw Ethereum address, which only returns Farcaster and Basenames data -- not ENS text records (github, linkedin, telegram, etc.). This means duplicates like GitHub, LinkedIn, and Telegram that exist on BOTH the IOTA onchain profile AND the ENS profile are not detected as duplicates and don't show the dual origin badges.
 
-## Current Behavior
-- `.iota` profiles only show social links from the IOTA onchain profile (IPFS data via `web3BioProfile.links`)
-- The linked Ethereum wallet address is already resolved (`linkedEvmAddress` prop) but only used for tokens, NFTs, POAPs, etc.
-- No social enrichment from the linked Ethereum wallet
+Additionally, the platform key `x` (IOTA) and `twitter` (Web3.bio) are not treated as the same platform during deduplication.
 
-## Implementation Plan
+## Solution
 
-### 1. Fetch Ethereum Social Links in ProfileCard
-Add a new `useEffect` in `ProfileCard.tsx` that:
-- Detects `.iota` profiles with a valid `linkedEvmAddress`
-- Calls the Web3.bio public API (`https://api.web3.bio/profile/{address}`) to fetch social links for the linked EVM address
-- Stores the result in a new state variable `evmSocialLinks`
+### 1. Enhance EVM Social Fetch to Include ENS Text Records
+In `ProfileCard.tsx`, update the `fetchEvmSocials` function to:
+- First fetch `https://api.web3.bio/profile/{address}` (existing -- returns Farcaster/Basenames data)
+- Then resolve ENS name(s) from the `ensDomains` data already fetched for the linked EVM address
+- For the primary ENS name found, also call `https://api.web3.bio/profile/{ensName}` to get ENS text records (github, twitter, telegram, linkedin, etc.)
+- Aggregate ALL links from all profiles into the `evmSocialLinks` state
 
-### 2. Build a Merged Social Links List
-Create a `useMemo` that produces a unified social link array with source attribution:
-- Iterate over IOTA links (from `web3BioProfile.links`) and tag each as `source: 'iota'`
-- Iterate over EVM links (from the new fetch) and tag each as `source: 'ethereum'`
-- For duplicates (same platform key), merge into a single entry with `source: 'both'`
-- Deduplicate by platform name (case-insensitive), keeping the IOTA version's URL as primary
+### 2. Normalize Platform Aliases During Merge
+Update the `mergedSocialLinks` useMemo to treat `x` and `twitter` as the same platform:
+- Add a `normalizePlatformKey` helper: `twitter` maps to `x`, everything else stays the same
+- Apply this normalization when building the merge map so IOTA's `x` and EVM's `twitter` produce `source: 'both'`
 
-### 3. Add Small Origin Icons to Social Link Cards
-In all social link rendering locations (desktop panel, mobile overlay, and inline sections):
-- Replace direct iteration over `web3BioProfile.links` with iteration over the merged list
-- Add a small (16x16) origin badge in the corner of each social card:
-  - **IOTA source**: Small IOTA token icon (`src/assets/iota-token-icon.png`)
-  - **Ethereum source**: Small ETH icon (`src/assets/eth-logo-dark.svg`)
-  - **Both sources (duplicate)**: Show both icons side by side
-- The badge is positioned at the bottom-right of the social icon circle, keeping the current card design intact
+### 3. Only Show Origin Badges for .iota Profiles with Linked Wallets
+Wrap the origin badge rendering in a condition: only render the badge icons when `isIotaProfile && linkedEvmAddress` is truthy. For profiles without a linked wallet, no badges appear.
 
-### 4. Update Social Link Count for Button Visibility
-Update the `hasSocials` and `socialLinks` calculations (used for showing the "Social" pill button) to use the merged list length instead of only `web3BioProfile.links`.
+### 4. Fix Remaining Raw Link Rendering
+Line ~2649 in the mobile overlay still iterates over raw `web3BioProfile.links` instead of `mergedSocialLinks`. Update it to use the merged list.
 
 ## Technical Details
 
 ### Files Modified
 - **`src/components/ProfileCard.tsx`**:
-  - New state: `evmSocialLinks` (Record of platform to link data)
-  - New state: `evmSocialsFetched` (boolean flag)
-  - New `useEffect`: Fetch Web3.bio profile for `linkedEvmAddress` when available
-  - New `useMemo`: `mergedSocialLinks` - array of `{ platform, linkData, url, source }` objects
-  - Update 4 rendering locations (desktop panel content, mobile overlay, desktop inline, and the `hasSocials` checks) to use `mergedSocialLinks`
-  - Add origin badge rendering (small icon overlay) to each social card
+  - Add `normalizePlatformKey()` helper that maps `twitter` to `x`
+  - Update `fetchEvmSocials` to also fetch by primary ENS name when available (use already-fetched `ensDomains` for the linked address, or do a reverse lookup)
+  - Update `mergedSocialLinks` useMemo to use normalized keys
+  - Add `const showOriginBadges = isIotaProfile && !!linkedEvmAddress` flag
+  - Wrap all 4 origin badge rendering locations with `showOriginBadges` condition
+  - Update the remaining mobile overlay social rendering (line ~2649) to use `mergedSocialLinks`
 
-### No New Files or Dependencies Required
-- Uses existing assets (`iota-token-icon.png`, `eth-logo-dark.svg`)
-- Uses existing Web3.bio API pattern already in `useProfileResolver.ts`
-- No new edge functions needed
-
-### Merge Logic (Pseudocode)
+### Platform Key Normalization Map
 ```text
-mergedMap = {}
-
-for each (platform, linkData) in iotaLinks:
-    mergedMap[platform] = { platform, linkData, source: 'iota' }
-
-for each (platform, linkData) in evmLinks:
-    if platform exists in mergedMap:
-        mergedMap[platform].source = 'both'
-    else:
-        mergedMap[platform] = { platform, linkData, source: 'ethereum' }
-
-return Object.values(mergedMap)
-    .filter(exclude 'website' and 'email')
+twitter -> x
+All others -> unchanged (lowercase)
 ```
 
+### Enhanced Fetch Flow
+```text
+1. Fetch Web3.bio by address -> Farcaster/Basenames links
+2. Reverse-resolve ENS primary name for address (via existing ENS domains fetch)
+3. Fetch Web3.bio by ENS name -> ENS text records (github, linkedin, telegram, etc.)
+4. Aggregate all links into evmSocialLinks
+5. Merge with IOTA links using normalized keys
+6. Duplicates get source: 'both', showing both IOTA + ETH badges
+```
+
+### No New Dependencies or Edge Functions Required
+- Reuses existing Web3.bio API calls (direct client-side fetch)
+- Uses existing `ensDomains` state already fetched for linked EVM addresses
