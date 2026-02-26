@@ -425,6 +425,25 @@ export const ProfileCard = ({
     if (lower === 'twitter') return 'x';
     return lower;
   };
+
+  // Extract a comparable handle from linkData for dedup comparison
+  const extractRawHandle = (linkData: any): string => {
+    if (!linkData) return '';
+    // If linkData has a handle property, use it
+    if (typeof linkData === 'object' && linkData.handle) {
+      return linkData.handle.replace(/^@/, '').toLowerCase().trim();
+    }
+    // If linkData has a link property, extract last path segment
+    const url = typeof linkData === 'object' ? linkData.link : (typeof linkData === 'string' ? linkData : '');
+    if (!url) return '';
+    try {
+      const pathname = new URL(url).pathname;
+      const segments = pathname.split('/').filter(Boolean);
+      return (segments[segments.length - 1] || '').replace(/^@/, '').toLowerCase().trim();
+    } catch {
+      return url.replace(/^@/, '').toLowerCase().trim();
+    }
+  };
   
   // showOriginBadges moved below isIotaProfile definition
   
@@ -440,12 +459,22 @@ export const ProfileCard = ({
       }
     }
     
-    // Add EVM links
+    // Add EVM links — compare handles to detect true duplicates vs different accounts
     for (const [platform, linkData] of Object.entries(evmSocialLinks)) {
       const key = normalizePlatformKey(platform);
       if (key === 'website' || key === 'email' || !linkData) continue;
       if (mergedMap[key]) {
-        mergedMap[key].source = 'both';
+        // Same platform exists from IOTA — compare actual handles
+        const iotaHandle = extractRawHandle(mergedMap[key].linkData);
+        const evmHandle = extractRawHandle(linkData);
+        console.log(`[MergedSocials] Comparing ${key}: IOTA="${iotaHandle}" vs EVM="${evmHandle}"`);
+        if (iotaHandle && evmHandle && iotaHandle === evmHandle) {
+          // True duplicate — same account on both profiles
+          mergedMap[key].source = 'both';
+        } else {
+          // Different accounts — keep both with disambiguated key
+          mergedMap[`${key}_evm`] = { platform, linkData, source: 'ethereum' };
+        }
       } else {
         mergedMap[key] = { platform, linkData, source: 'ethereum' };
       }
