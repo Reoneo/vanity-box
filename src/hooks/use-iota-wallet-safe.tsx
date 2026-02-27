@@ -1,4 +1,4 @@
-import { useCurrentAccount, useDisconnectWallet, useSignAndExecuteTransaction } from '@iota/dapp-kit';
+import { useCurrentAccount, useDisconnectWallet, useSignAndExecuteTransaction, useSignPersonalMessage } from '@iota/dapp-kit';
 
 // Check if we're in a special app environment (Telegram, World App)
 // These have their own wallet flows, so IOTA wallet is not available there
@@ -42,4 +42,12 @@ export function useSignAndExecuteTransactionSafe() {
   }
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return useSignAndExecuteTransaction();
+}
+
+export function useSignPersonalMessageSafe() {
+  if (!isIotaAvailable) {
+    return { mutate: (() => {}) as any, mutateAsync: (async () => {}) as any, isPending: false };
+  }
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useSignPersonalMessage();
 }
