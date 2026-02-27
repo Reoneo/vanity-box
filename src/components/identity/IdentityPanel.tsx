@@ -619,23 +619,33 @@ function AptosWalletLinkSection({
 
   const petra = usePetraWallet();
 
-  const isLikelyMobileDevice = () => {
+  const isLikelyMobileDevice = useCallback(() => {
     const ua = navigator.userAgent || '';
     const isClassicMobileUa = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
     const isIPadDesktopMode = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
     const isTouchCoarse = navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches;
     return isClassicMobileUa || isIPadDesktopMode || isTouchCoarse;
-  };
+  }, []);
 
-  const openPetraApp = () => {
+  const openPetraApp = useCallback(() => {
     const deepLink = `https://petra.app/explore?link=${encodeURIComponent(window.location.href)}`;
     window.location.assign(deepLink);
-  };
+  }, []);
 
-  const resolveRuntimeAddress = async (): Promise<string | null> => {
+  const waitForRuntimeWallet = useCallback(async (timeoutMs = 5000): Promise<any | null> => {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      const runtimeWallet = (window as any).aptos;
+      if (runtimeWallet) return runtimeWallet;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    return null;
+  }, []);
+
+  const resolveRuntimeAddress = useCallback(async (): Promise<string | null> => {
     if (petra.account?.address) return petra.account.address;
 
-    const runtimeWallet = (window as any).aptos;
+    const runtimeWallet = await waitForRuntimeWallet(2000);
     if (!runtimeWallet?.account) return null;
 
     try {
@@ -644,7 +654,28 @@ function AptosWalletLinkSection({
     } catch {
       return null;
     }
-  };
+  }, [petra.account?.address, waitForRuntimeWallet]);
+
+  const signMessageWithFallback = useCallback(async (payload: any) => {
+    try {
+      return await petra.signMessage(payload);
+    } catch (primaryError) {
+      const runtimeWallet = await waitForRuntimeWallet(2500);
+      if (!runtimeWallet?.signMessage) {
+        throw primaryError;
+      }
+
+      const isRuntimeConnected = runtimeWallet.isConnected
+        ? await runtimeWallet.isConnected().catch(() => false)
+        : true;
+
+      if (!isRuntimeConnected && runtimeWallet.connect) {
+        await runtimeWallet.connect();
+      }
+
+      return await runtimeWallet.signMessage(payload);
+    }
+  }, [petra, waitForRuntimeWallet]);
 
   const handleLinkAptos = useCallback(async () => {
     setIsLinking(true);
@@ -652,15 +683,14 @@ function AptosWalletLinkSection({
     setErrorMsg('');
 
     try {
-      const runtimeWallet = (window as any).aptos;
-      const hasRuntimeWallet = !!runtimeWallet;
-      const hasPetraProvider = petra.isInstalled || hasRuntimeWallet;
+      let runtimeWallet = await waitForRuntimeWallet(1200);
+      const hasPetraProvider = petra.isInstalled || !!runtimeWallet;
 
       // No injected wallet available in this browser context.
       // On mobile/tablet, open Petra app's dApp browser via official deep link.
       if (!hasPetraProvider) {
         if (isLikelyMobileDevice()) {
-          toast.info('Opening Petra app…');
+          toast.info('Opening Petra app. After it opens, tap "Link Aptos Wallet" again.');
           setStep('idle');
           setIsLinking(false);
           openPetraApp();
@@ -674,8 +704,16 @@ function AptosWalletLinkSection({
         return;
       }
 
-      if (!petra.isConnected) {
+      if (!petra.isConnected || !petra.account?.address) {
         await petra.connect();
+      }
+
+      runtimeWallet = runtimeWallet ?? await waitForRuntimeWallet(3500);
+      if (runtimeWallet?.isConnected) {
+        const runtimeConnected = await runtimeWallet.isConnected().catch(() => false);
+        if (!runtimeConnected && runtimeWallet.connect) {
+          await runtimeWallet.connect();
+        }
       }
 
       const address = await resolveRuntimeAddress();
@@ -699,7 +737,7 @@ function AptosWalletLinkSection({
 
       // Petra docs: include address/application/chainId for stronger signed context.
       const nonce = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const signResult = await petra.signMessage({
+      const signResult = await signMessageWithFallback({
         address: true,
         application: true,
         chainId: true,
@@ -765,6 +803,8 @@ function AptosWalletLinkSection({
         setErrorMsg('Wallet is not authorized for this site. Please reconnect Petra.');
       } else if (code === '4000') {
         setErrorMsg('No Aptos account found in Petra wallet.');
+      } else if (msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('not available')) {
+        setErrorMsg('Petra provider not detected. Open this page inside Petra app browser and try again.');
       } else {
         setErrorMsg(msg);
       }
@@ -773,7 +813,17 @@ function AptosWalletLinkSection({
     } finally {
       setIsLinking(false);
     }
-  }, [petra, holderDid, iotaName, addExternalCredential, isLikelyMobileDevice, openPetraApp, resolveRuntimeAddress]);
+  }, [
+    petra,
+    holderDid,
+    iotaName,
+    addExternalCredential,
+    isLikelyMobileDevice,
+    openPetraApp,
+    waitForRuntimeWallet,
+    resolveRuntimeAddress,
+    signMessageWithFallback,
+  ]);
 
   return (
     <WalletLinkSection
@@ -796,6 +846,11 @@ function AptosWalletLinkSection({
             <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
             <p className="text-xs text-destructive">{errorMsg}</p>
           </div>
+          {isLikelyMobileDevice() && (
+            <Button size="sm" variant="outline" onClick={openPetraApp} className="w-full">
+              Open in Petra App
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => setStep('idle')} className="w-full">
             Try Again
           </Button>

@@ -68,14 +68,62 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isConnected, setIsConnected] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
+  const getAptosProvider = useCallback(() => {
+    return (window as unknown as AptosWindow).aptos ?? null;
+  }, []);
+
+  const waitForAptosProvider = useCallback(async (timeoutMs = 7000) => {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const provider = getAptosProvider();
+      if (provider) return provider;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    return null;
+  }, [getAptosProvider]);
+
+  const checkConnection = useCallback(async () => {
+    const windowAptos = getAptosProvider();
+    if (!windowAptos) {
+      setIsInstalled(false);
+      setIsConnected(false);
+      setAccount(null);
+      setNetwork(null);
+      return;
+    }
+
+    setIsInstalled(true);
+
+    try {
+      const connected = await windowAptos.isConnected();
+      if (!connected) {
+        setIsConnected(false);
+        setAccount(null);
+        setNetwork(null);
+        return;
+      }
+
+      const [currentAccount, currentNetwork] = await Promise.all([
+        windowAptos.account(),
+        windowAptos.network(),
+      ]);
+      setAccount(currentAccount);
+      setNetwork(currentNetwork);
+      setIsConnected(true);
+    } catch (error) {
+      console.error('Error checking connection:', error);
+    }
+  }, [getAptosProvider]);
+
   // Check if Petra is installed (browser extension or mobile in-app browser)
   useEffect(() => {
+    let mounted = true;
+
     const checkPetraInstalled = () => {
-      const windowAptos = (window as unknown as AptosWindow).aptos;
-      // Also check for Petra mobile via petrewallet deeplink capability
-      const hasPetra = !!windowAptos;
+      if (!mounted) return;
+      const hasPetra = !!getAptosProvider();
       setIsInstalled(hasPetra);
-      
+
       if (!hasPetra) {
         console.log('Petra wallet not detected in browser context');
       } else {
@@ -84,17 +132,34 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
 
     checkPetraInstalled();
-    // Check again after a longer delay for mobile wallets that inject slowly
-    const timeout1 = setTimeout(checkPetraInstalled, 1000);
-    const timeout2 = setTimeout(checkPetraInstalled, 2500);
-    
-    return () => { clearTimeout(timeout1); clearTimeout(timeout2); };
-  }, []);
+
+    // Re-check for delayed mobile injection and app foregrounding
+    const timeouts = [500, 1500, 3000, 5000, 8000].map((ms) =>
+      setTimeout(checkPetraInstalled, ms)
+    );
+
+    const handleVisibilityOrFocus = () => {
+      checkPetraInstalled();
+      checkConnection();
+    };
+
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    return () => {
+      mounted = false;
+      timeouts.forEach(clearTimeout);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
+  }, [getAptosProvider, checkConnection]);
 
   // Set up event listeners
   useEffect(() => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
+    const windowAptos = getAptosProvider();
     if (!windowAptos) return;
+
+    setIsInstalled(true);
 
     // Listen for account changes
     const handleAccountChange = (newAccount: AptosAccount | null) => {
@@ -103,8 +168,8 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setAccount(newAccount);
         setIsConnected(true);
       } else {
-        // User switched to a new account that hasn't connected yet
-        connect();
+        setAccount(null);
+        setIsConnected(false);
       }
     };
 
@@ -128,59 +193,53 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     // Check if already connected
     checkConnection();
-  }, [isInstalled]);
-
-  const checkConnection = async () => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
-    if (!windowAptos) return;
-
-    try {
-      const connected = await windowAptos.isConnected();
-      if (connected) {
-        const currentAccount = await windowAptos.account();
-        const currentNetwork = await windowAptos.network();
-        setAccount(currentAccount);
-        setNetwork(currentNetwork);
-        setIsConnected(true);
-      }
-    } catch (error) {
-      console.error('Error checking connection:', error);
-    }
-  };
+  }, [isInstalled, getAptosProvider, checkConnection]);
 
   const connect = useCallback(async () => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
-    
+    const windowAptos = await waitForAptosProvider();
+
     if (!windowAptos) {
-      toast.error('Petra wallet not found. Please install Petra wallet extension.');
+      setIsInstalled(false);
+      setIsConnected(false);
+      setAccount(null);
+      setNetwork(null);
+      toast.error('Petra wallet not found. Open this page in Petra app or install Petra extension.');
       return;
     }
 
+    setIsInstalled(true);
+
     try {
-      const response = await windowAptos.connect();
-      console.log('Connected to Petra:', response);
-      
-      const currentAccount = await windowAptos.account();
-      const currentNetwork = await windowAptos.network();
-      
+      const alreadyConnected = await windowAptos.isConnected().catch(() => false);
+      if (!alreadyConnected) {
+        await windowAptos.connect();
+      }
+
+      const [currentAccount, currentNetwork] = await Promise.all([
+        windowAptos.account(),
+        windowAptos.network(),
+      ]);
+
       setAccount(currentAccount);
       setNetwork(currentNetwork);
       setIsConnected(true);
-      
+
       toast.success('Successfully connected to Petra wallet');
     } catch (error: any) {
       console.error('Error connecting to Petra:', error);
-      
-      if (error.code === 4001) {
+
+      if (error?.code === 4001) {
         toast.error('Connection rejected by user');
       } else {
         toast.error('Failed to connect to Petra wallet');
       }
+
+      throw error;
     }
-  }, []);
+  }, [waitForAptosProvider]);
 
   const disconnect = useCallback(async () => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
+    const windowAptos = getAptosProvider();
     
     if (!windowAptos) return;
 
@@ -195,14 +254,40 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
       console.error('Error disconnecting from Petra:', error);
       toast.error('Failed to disconnect from Petra wallet');
     }
-  }, []);
+  }, [getAptosProvider]);
 
-  const signAndSubmitTransaction = useCallback(async (transaction: any) => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
-    
-    if (!windowAptos || !isConnected) {
+  const ensureConnectedProvider = useCallback(async () => {
+    const windowAptos = await waitForAptosProvider();
+
+    if (!windowAptos) {
+      throw new Error('Petra wallet not found. Open this page in Petra app or install Petra extension.');
+    }
+
+    let connected = await windowAptos.isConnected().catch(() => false);
+    if (!connected) {
+      await windowAptos.connect();
+      connected = await windowAptos.isConnected().catch(() => false);
+    }
+
+    if (!connected) {
       throw new Error('Petra wallet not connected');
     }
+
+    const [currentAccount, currentNetwork] = await Promise.all([
+      windowAptos.account(),
+      windowAptos.network(),
+    ]);
+
+    setAccount(currentAccount);
+    setNetwork(currentNetwork);
+    setIsConnected(true);
+    setIsInstalled(true);
+
+    return windowAptos;
+  }, [waitForAptosProvider]);
+
+  const signAndSubmitTransaction = useCallback(async (transaction: any) => {
+    const windowAptos = await ensureConnectedProvider();
 
     try {
       const pendingTransaction = await windowAptos.signAndSubmitTransaction(transaction);
@@ -216,14 +301,10 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       throw error;
     }
-  }, [isConnected]);
+  }, [ensureConnectedProvider]);
 
   const signTransaction = useCallback(async (transaction: any) => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
-    
-    if (!windowAptos || !isConnected) {
-      throw new Error('Petra wallet not connected');
-    }
+    const windowAptos = await ensureConnectedProvider();
 
     try {
       const signedTransaction = await windowAptos.signTransaction(transaction);
@@ -237,14 +318,10 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       throw error;
     }
-  }, [isConnected]);
+  }, [ensureConnectedProvider]);
 
   const signMessage = useCallback(async (payload: SignMessagePayload) => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
-    
-    if (!windowAptos || !isConnected) {
-      throw new Error('Petra wallet not connected');
-    }
+    const windowAptos = await ensureConnectedProvider();
 
     try {
       const response = await windowAptos.signMessage(payload);
@@ -258,7 +335,7 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       throw error;
     }
-  }, [isConnected]);
+  }, [ensureConnectedProvider]);
 
   const value: PetraWalletContextType = {
     account,
