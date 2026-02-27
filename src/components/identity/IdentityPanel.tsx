@@ -619,65 +619,114 @@ function AptosWalletLinkSection({
 
   const petra = usePetraWallet();
 
+  const isLikelyMobileDevice = () => {
+    const ua = navigator.userAgent || '';
+    const isClassicMobileUa = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const isIPadDesktopMode = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    const isTouchCoarse = navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches;
+    return isClassicMobileUa || isIPadDesktopMode || isTouchCoarse;
+  };
+
+  const openPetraApp = () => {
+    const deepLink = `https://petra.app/explore?link=${encodeURIComponent(window.location.href)}`;
+    window.location.assign(deepLink);
+  };
+
+  const resolveRuntimeAddress = async (): Promise<string | null> => {
+    if (petra.account?.address) return petra.account.address;
+
+    const runtimeWallet = (window as any).aptos;
+    if (!runtimeWallet?.account) return null;
+
+    try {
+      const runtimeAccount = await runtimeWallet.account();
+      return runtimeAccount?.address ?? null;
+    } catch {
+      return null;
+    }
+  };
+
   const handleLinkAptos = useCallback(async () => {
     setIsLinking(true);
     setStep('connecting');
     setErrorMsg('');
 
     try {
-      // Connect if not already
-      if (!petra.isConnected) {
-        if (!petra.isInstalled) {
-          // On mobile, try opening Petra via deeplink
-          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-          if (isMobile) {
-            // Open Petra app deeplink - it will redirect back to this page
-            const currentUrl = encodeURIComponent(window.location.href);
-            window.location.href = `https://petra.app/explore?link=${currentUrl}`;
-            setStep('idle');
-            setIsLinking(false);
-            return;
-          }
-          toast.error('Petra wallet not installed. Please install the Petra browser extension.');
-          setStep('error');
-          setErrorMsg('Petra wallet not installed');
+      const runtimeWallet = (window as any).aptos;
+      const hasRuntimeWallet = !!runtimeWallet;
+      const hasPetraProvider = petra.isInstalled || hasRuntimeWallet;
+
+      // No injected wallet available in this browser context.
+      // On mobile/tablet, open Petra app's dApp browser via official deep link.
+      if (!hasPetraProvider) {
+        if (isLikelyMobileDevice()) {
+          toast.info('Opening Petra app…');
+          setStep('idle');
           setIsLinking(false);
+          openPetraApp();
           return;
         }
+
+        toast.error('Petra wallet not found. Install Petra extension or open this page in Petra app.');
+        setStep('error');
+        setErrorMsg('Petra wallet not available in this browser');
+        setIsLinking(false);
+        return;
+      }
+
+      if (!petra.isConnected) {
         await petra.connect();
       }
 
-      const address = petra.account?.address;
+      const address = await resolveRuntimeAddress();
       if (!address) {
-        throw new Error('No Aptos account found');
+        throw new Error('No Aptos account found after wallet connection');
       }
 
       setStep('signing');
 
-      // Create proof message
       const timestamp = new Date().toISOString();
       const message = [
-        `vanity.box wants you to verify your Aptos wallet:`,
+        'vanity.box wants you to verify your Aptos wallet:',
         address,
         '',
         `Link Aptos wallet to IOTA identity ${iotaName}`,
         '',
         `DID: ${holderDid}`,
-        `URI: https://vanity.box`,
+        'URI: https://vanity.box',
         `Issued At: ${timestamp}`,
       ].join('\n');
 
-      // Sign message with Petra
+      // Petra docs: include address/application/chainId for stronger signed context.
+      const nonce = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const signResult = await petra.signMessage({
+        address: true,
+        application: true,
+        chainId: true,
         message,
-        nonce: Date.now().toString(),
+        nonce,
       });
+
+      if (!signResult?.signature) {
+        throw new Error('Petra returned an empty signature');
+      }
+
+      if (signResult.address?.toLowerCase() !== address.toLowerCase()) {
+        throw new Error('Signed address does not match connected wallet address');
+      }
 
       setStep('issuing');
 
       const response = await callEdge<{ vcJwt: string; issuerDid: string; issuedAt: string; vcType: string }>(
         'issue-wallet-vc',
-        { holderDid, address, message, signature: signResult.signature, iotaName, chain: 'aptos' }
+        {
+          holderDid,
+          address,
+          message,
+          signature: signResult.signature,
+          iotaName,
+          chain: 'aptos',
+        }
       );
 
       if (response?.vcJwt) {
@@ -689,7 +738,7 @@ function AptosWalletLinkSection({
           claims: {
             name: iotaName,
             chain: 'Aptos',
-            address: address,
+            address,
           },
         };
 
@@ -697,24 +746,34 @@ function AptosWalletLinkSection({
         setStep('done');
         toast.success('Aptos wallet linked successfully');
 
-        // Disconnect Petra after linking
-        try { await petra.disconnect(); } catch {}
+        try {
+          await petra.disconnect();
+        } catch {
+          // Best-effort disconnect
+        }
       } else {
         throw new Error('Invalid response from credential issuance');
       }
     } catch (error: any) {
       console.error('Aptos link error:', error);
+      const code = String(error?.code ?? '');
       const msg = error?.message || 'Failed to link Aptos wallet';
-      if (msg.includes('rejected') || msg.includes('denied') || msg.includes('4001')) {
-        setErrorMsg('Connection was rejected');
+
+      if (code === '4001' || msg.includes('rejected') || msg.includes('denied')) {
+        setErrorMsg('Connection/signature request was rejected');
+      } else if (code === '4100') {
+        setErrorMsg('Wallet is not authorized for this site. Please reconnect Petra.');
+      } else if (code === '4000') {
+        setErrorMsg('No Aptos account found in Petra wallet.');
       } else {
         setErrorMsg(msg);
       }
+
       setStep('error');
     } finally {
       setIsLinking(false);
     }
-  }, [petra, holderDid, iotaName, addExternalCredential]);
+  }, [petra, holderDid, iotaName, addExternalCredential, isLikelyMobileDevice, openPetraApp, resolveRuntimeAddress]);
 
   return (
     <WalletLinkSection
