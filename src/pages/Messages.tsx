@@ -256,6 +256,7 @@ export default function Messages() {
                 conversations={conversations}
                 onSelect={openConversation}
                 onDelete={deleteConversation}
+                onNewMessage={() => setShowNewConvo(true)}
                 domain={domain || ""}
               />
             )}
