@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, ChevronDown, Globe, KeyRound, Fingerprint } from 'lucide-react';
+import { LogOut, ChevronDown, Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
@@ -22,7 +22,6 @@ import { toast } from 'sonner';
 import { useWalletConnect } from '@/contexts/WalletConnectContext';
 import { ConnectModal } from '@iota/dapp-kit';
 import { useIotaAccountSafe, useIotaDisconnectSafe } from '@/hooks/use-iota-wallet-safe';
-import { isWebAuthnSupported, loginWithPasskey } from '@/lib/passkey';
 
 interface User {
   walletAddress?: string;
@@ -59,8 +58,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   const [ensName, setEnsName] = useState<string | null>(null);
   const [ensLoading, setEnsLoading] = useState(false);
   const [showIotaModal, setShowIotaModal] = useState(false);
-  const [passKeyLoading, setPassKeyLoading] = useState(false);
-  const passkeysSupported = isWebAuthnSupported();
 
   // Check if we're in a special app (Telegram, World App) - these have their own wallet flows
   // Mobile browsers now support IOTA wallet connection
@@ -298,32 +295,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       toast.error('Wallet connection is initializing. Please try again.');
     }
   };
-
-  const handlePasskeyLogin = useCallback(async () => {
-    setPassKeyLoading(true);
-    try {
-      const result = await loginWithPasskey();
-      if (result.success && result.iotaWalletAddress) {
-        // Dispatch a custom event so SearchInterface can pick up the passkey-resolved wallet
-        window.dispatchEvent(new CustomEvent('passkey-login', {
-          detail: { iotaWalletAddress: result.iotaWalletAddress }
-        }));
-        toast.success('Signed in with passkey!');
-      } else {
-        throw new Error('Passkey login failed');
-      }
-    } catch (err: any) {
-      console.error('Passkey login error:', err);
-      const msg = err?.message || 'Passkey login failed';
-      if (msg.includes('cancelled') || msg.includes('AbortError') || msg.includes('NotAllowedError')) {
-        toast.error('Passkey authentication was cancelled');
-      } else {
-        toast.error(msg);
-      }
-    } finally {
-      setPassKeyLoading(false);
-    }
-  }, []);
 
   const handleConnect = async () => {
     if (petraConnected) return;
@@ -571,25 +542,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Not connected - show connect button
   if (!user && !petraConnected && !walletConnectConnected && !iotaConnected) {
     return (
-      <div className="flex items-center gap-2">
-        {/* Passkey login button (only if WebAuthn supported and not in special apps) */}
-        {passkeysSupported && !isInSpecialApp && (
-          <Button
-            onClick={handlePasskeyLogin}
-            disabled={passKeyLoading}
-            variant="outline"
-            size="sm"
-            className={cn("h-10 font-semibold", className)}
-            title="Sign in with Passkey"
-          >
-            {passKeyLoading ? (
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Fingerprint className="w-4 h-4" />
-            )}
-          </Button>
-        )}
-
+      <>
         <Button
           onClick={() => {
             console.log('🔍 Checking environment...');
@@ -640,7 +593,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             }}
           />
         )}
-      </div>
+      </>
     );
   }
 
