@@ -161,3 +161,6 @@ verify_jwt = false
 
 [functions.get-iota-linked-ton]
 verify_jwt = false
+
+[functions.get-ton-tokens]
+verify_jwt = false

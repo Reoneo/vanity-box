@@ -37,6 +37,7 @@ import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
+import { useTonTokens } from "@/hooks/useTonTokens";
 import tonIconBlue from "@/assets/ton-icon-blue.png";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
@@ -359,7 +360,10 @@ export const ProfileCard = ({
     fetchEvmTokensForIota();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmTokensFetchedForIota]);
 
-  // Step 2: Merge IOTA + EVM tokens once both are available
+  // TON tokens for .iota profiles with linked TON wallet
+  const { tokens: tonTokens, totalValue: tonTotalValue, isLoading: tonTokensLoading, fetched: tonTokensFetched } = useTonTokens(linkedTonAddress);
+
+  // Step 2: Merge IOTA + EVM + TON tokens once all are available
   useEffect(() => {
     const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
                    web3BioProfile?.platform === 'iota';
@@ -367,14 +371,14 @@ export const ProfileCard = ({
     // Wait for IOTA tokens to be fetched
     if (!iotaFetched) return;
     
-    // Merge: always start with IOTA tokens, then add EVM if available
-    const merged = [...iotaTokens, ...evmTokensForIota];
+    // Merge: always start with IOTA tokens, then add EVM + TON if available
+    const merged = [...iotaTokens, ...evmTokensForIota, ...tonTokens];
     if (merged.length > 0) {
       setPortfolioTokens(merged);
       const iotaTotal = iotaTokens.reduce((sum: number, t: any) => sum + (t.value || 0), 0);
-      setPortfolioTotalValue(iotaTotal + evmTotalForIota);
+      setPortfolioTotalValue(iotaTotal + evmTotalForIota + tonTotalValue);
     }
-  }, [iotaTokens, evmTokensForIota, evmTotalForIota, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
+  }, [iotaTokens, evmTokensForIota, evmTotalForIota, tonTokens, tonTotalValue, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
 
   // Fetch EVM transactions when linkedEvmAddress becomes available for .iota profiles
   useEffect(() => {
@@ -1323,7 +1327,7 @@ export const ProfileCard = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-black dark:text-white truncate text-base">
-                        {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain === 'hyperevm' ? 'HyperEVM' : (token.chain ? token.chain.charAt(0).toUpperCase() + token.chain.slice(1) : token.name)}
+                        {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain === 'hyperevm' ? 'HyperEVM' : token.chain === 'ton' ? 'TON' : (token.chain ? token.chain.charAt(0).toUpperCase() + token.chain.slice(1) : token.name)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm text-black/50 dark:text-white/50 mt-0.5">
@@ -3028,7 +3032,7 @@ export const ProfileCard = ({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                               <span className="font-medium text-foreground truncate">
-                                {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain === 'hyperevm' ? 'HyperEVM' : (token.chain ? token.chain.charAt(0).toUpperCase() + token.chain.slice(1) : token.name)}
+                                {token.chain === 'iota' ? 'IOTA' : token.chain === 'eth' ? 'Ethereum' : token.chain === 'worldchain' ? 'Worldchain' : token.chain === 'base' ? 'Base' : token.chain === 'polygon' ? 'Polygon' : token.chain === 'arbitrum' ? 'Arbitrum' : token.chain === 'optimism' ? 'Optimism' : token.chain === 'hyperevm' ? 'HyperEVM' : token.chain === 'ton' ? 'TON' : (token.chain ? token.chain.charAt(0).toUpperCase() + token.chain.slice(1) : token.name)}
                               </span>
                               <span className="text-sm font-semibold text-foreground">${token.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
