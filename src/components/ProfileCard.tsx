@@ -32,6 +32,7 @@ import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
 import ethPlusDark from '@/assets/eth-plus-dark.png';
+import tonIconBlue from '@/assets/ton-icon-blue.png';
 
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
@@ -80,6 +81,8 @@ interface ProfileCardProps {
   // Linked EVM address for .iota profiles
   linkedEvmAddress?: string | null;
   isResolvingLinkedEvm?: boolean;
+  // Linked TON address for .iota profiles
+  linkedTonAddress?: string | null;
   // IOTA Onchain Profile props
   iotaOnchainProfile?: OnchainProfileData | null;
   iotaNameObjectId?: string | null;
@@ -203,6 +206,7 @@ export const ProfileCard = ({
   onEnsureOpenSeaNfts,
   linkedEvmAddress,
   isResolvingLinkedEvm = false,
+  linkedTonAddress,
   iotaOnchainProfile,
   iotaNameObjectId,
   iotaOwnerAddress,
@@ -234,6 +238,9 @@ export const ProfileCard = ({
   const [selectedBasename, setSelectedBasename] = useState<any>(null);
   const [magicEdenNfts, setMagicEdenNfts] = useState<any[]>([]);
   const [magicEdenLoading, setMagicEdenLoading] = useState(false);
+  const [tonNfts, setTonNfts] = useState<any[]>([]);
+  const [tonNftsLoading, setTonNftsLoading] = useState(false);
+  const [tonNftsFetched, setTonNftsFetched] = useState(false);
   const [hlNfts, setHlNfts] = useState<any[]>([]);
   const [hlTokens, setHlTokens] = useState<any[]>([]);
   const [hlLoading, setHlLoading] = useState(false);
@@ -730,6 +737,19 @@ export const ProfileCard = ({
     );
   }, [iotaNfts]);
 
+  // Group TON NFTs by collection
+  const tonGroupedNfts = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    tonNfts.forEach((nft: any) => {
+      const collection = nft.collection || 'TON Collection';
+      if (!groups[collection]) groups[collection] = [];
+      groups[collection].push(nft);
+    });
+    return Object.fromEntries(
+      Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
+    );
+  }, [tonNfts]);
+
 
   const { displayName: resolvedEnsName } = useDisplayName(
     currentWalletAddress as `0x${string}` | undefined
@@ -1058,6 +1078,31 @@ export const ProfileCard = ({
     if (web3BioProfile?.hlTokens?.length > 0) setHlTokens(web3BioProfile.hlTokens);
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
+  // Fetch TON NFTs when linked TON address is available
+  useEffect(() => {
+    if (!linkedTonAddress || tonNftsFetched) return;
+    
+    setTonNftsLoading(true);
+    fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ton-nfts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+      },
+      body: JSON.stringify({ tonAddress: linkedTonAddress }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log('TON NFTs response:', data);
+        if (data.nfts) setTonNfts(data.nfts);
+      })
+      .catch(e => console.error('TON NFTs fetch error:', e))
+      .finally(() => {
+        setTonNftsLoading(false);
+        setTonNftsFetched(true);
+      });
+  }, [linkedTonAddress, tonNftsFetched]);
+
   // Auto-select default desktop panel based on data availability (priority: Socials → Tokens → Activity → NFTs)
   useEffect(() => {
     if (isMobile || desktopActivePanel !== null) return;
@@ -1065,7 +1110,7 @@ export const ProfileCard = ({
     const hasSocialsData = mergedSocialLinks.length > 0;
     const hasTokensData = portfolioTokens.length > 0;
     const hasActivityData = transactions.length > 0;
-    const hasNftsData = nfts.length > 0 || poaps.length > 0 || magicEdenNfts.length > 0 || worldchainNftCount > 0 || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0;
+    const hasNftsData = nfts.length > 0 || poaps.length > 0 || magicEdenNfts.length > 0 || worldchainNftCount > 0 || hlNfts.length > 0 || tonNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0;
     
     if (hasSocialsData) {
       setDesktopActivePanel('social');
@@ -1508,7 +1553,7 @@ export const ProfileCard = ({
                       {/* Desktop action pills - control right panel */}
                       {(() => {
                         const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
-                        const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted || ensDomains.length > 0 || basenames.length > 0;
+                        const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || tonNfts.length > 0 || !openseaAttempted || ensDomains.length > 0 || basenames.length > 0;
                         const hasTokens = portfolioTokens.length > 0 || isIotaProfile || iotaLoading || (!tokensFetched && isIotaProfile);
                         const hasSocials = mergedSocialLinks.length > 0;
                         const hasTransactions = transactions.length > 0;
@@ -1743,6 +1788,33 @@ export const ProfileCard = ({
                               )
                             )}
 
+                            {/* TON NFTs Button */}
+                            {(tonNftsLoading || tonNfts.length > 0) && (
+                              <button onClick={() => setNftCategory('ton')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0098EA] to-[#45AEF5] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-white text-base flex items-center gap-2">
+                                      <img src={tonIconBlue} alt="TON" className="w-5 h-5 rounded-full" />
+                                      TON NFTs
+                                    </h4>
+                                    <p className="text-sm text-white/70">{tonNftsLoading ? 'Loading…' : `${tonNfts.length} items`}</p>
+                                  </div>
+                                  {tonNfts.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex -space-x-2">
+                                        {tonNfts.slice(0, 3).map((nft: any, idx: number) => (
+                                          nft.image_url ? (
+                                            <img key={idx} src={nft.image_url} alt="" className="w-5 h-5 rounded-full border border-white/20 object-cover" />
+                                          ) : null
+                                        ))}
+                                      </div>
+                                      <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                                    </div>
+                                  )}
+                                </div>
+                              </button>
+                            )}
+
                             {/* Hint for IOTA profiles without linked EVM */}
                             {isIotaProfile && !linkedEvmAddress && !isResolvingLinkedEvm && poaps.length === 0 && nfts.length === 0 && (
                               <div className="text-center py-6 text-muted-foreground">
@@ -1752,7 +1824,7 @@ export const ProfileCard = ({
                             )}
 
                             {/* Empty state - updated to include IOTA check */}
-                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && iotaNfts.length === 0 && iotaFetched && !isIotaProfile && (
+                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && tonNfts.length === 0 && !tonNftsLoading && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && iotaNfts.length === 0 && iotaFetched && !isIotaProfile && (
                               <div className="text-center py-8 text-white/50">
                                 <p className="text-sm">No NFTs found for this wallet</p>
                               </div>
@@ -1894,6 +1966,60 @@ export const ProfileCard = ({
                                   </div>
                                 ))}
                               </div>
+                            )}
+
+                            {nftCategory === 'ton' && (
+                              expandedCollection ? (
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {(tonGroupedNfts[expandedCollection] || []).map((nft: any, index: number) => (
+                                      <div key={`ton-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#0098EA]/30 hover:border-[#0098EA]/60 transition-all" onClick={() => setSelectedNft(nft)}>
+                                        {nft.image_url ? (
+                                          <img src={nft.image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                        ) : (
+                                          <div className="w-full aspect-square bg-gradient-to-br from-[#0098EA] to-[#45AEF5] flex items-center justify-center text-white font-bold text-2xl">
+                                            {nft.name?.charAt(0).toUpperCase() || 'T'}
+                                          </div>
+                                        )}
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : Object.keys(tonGroupedNfts).length === 1 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  {tonNfts.map((nft: any, index: number) => (
+                                    <div key={`ton-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#0098EA]/30 hover:border-[#0098EA]/60 transition-all" onClick={() => setSelectedNft(nft)}>
+                                      {nft.image_url ? (
+                                        <img src={nft.image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                      ) : (
+                                        <div className="w-full aspect-square bg-gradient-to-br from-[#0098EA] to-[#45AEF5] flex items-center justify-center text-white font-bold text-2xl">
+                                          {nft.name?.charAt(0).toUpperCase() || 'T'}
+                                        </div>
+                                      )}
+                                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                        <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {Object.entries(tonGroupedNfts).map(([collection, collectionNfts]: [string, any[]]) => (
+                                    <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0098EA] to-[#45AEF5] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                      <div className="flex items-center justify-between h-full">
+                                        <div className="text-left flex-1 min-w-0 mr-3">
+                                          <h4 className="font-medium text-white text-base truncate">{formatCollectionName(collection)}</h4>
+                                          <p className="text-sm text-white/70">{collectionNfts.length} items</p>
+                                        </div>
+                                        <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              )
                             )}
                           </div>
                         )}
@@ -2496,7 +2622,39 @@ export const ProfileCard = ({
                         )
                       )}
 
-                      {/* Empty state placeholder when no categories available - include IOTA check */}
+                      {/* TON NFTs Button */}
+                      {(tonNftsLoading || tonNfts.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('ton')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0098EA] to-[#45AEF5] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-white text-base flex items-center gap-2">
+                                <img src={tonIconBlue} alt="TON" className="w-5 h-5 rounded-full" />
+                                TON NFTs
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-white/70">
+                                  {tonNftsLoading ? 'Loading…' : `${tonNfts.length} ${tonNfts.length === 1 ? 'item' : 'items'}`}
+                                </p>
+                                {tonNfts.length > 0 && (
+                                  <div className="flex -space-x-2">
+                                    {tonNfts.slice(0, 3).map((nft, idx) => (
+                                      nft.image_url ? (
+                                        <img key={idx} src={nft.image_url} alt="" className="w-5 h-5 rounded-full border border-white/20 object-cover" />
+                                      ) : null
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Empty state placeholder when no categories available - include IOTA + TON check */}
                       {poaps.length === 0 && 
                        nfts.length === 0 && 
                        openseaAttempted && 
@@ -2506,6 +2664,8 @@ export const ProfileCard = ({
                        worldchainNftCount === 0 &&
                        !worldchainNftsLoading &&
                        hlNfts.length === 0 &&
+                       tonNfts.length === 0 &&
+                       !tonNftsLoading &&
                        ensDomains.length === 0 &&
                        ensDomainsFetched &&
                        basenames.length === 0 &&
@@ -2818,6 +2978,33 @@ export const ProfileCard = ({
                         </div>
                       );
                     })()
+                  ) : nftCategory === 'ton' ? (
+                    tonNftsLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#0098EA]" />
+                      </div>
+                    ) : tonNfts.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>No TON NFTs found</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {tonNfts.map((nft: any, index: number) => (
+                          <div key={`ton-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#0098EA]/30 hover:border-[#0098EA]/60 transition-all" onClick={() => setSelectedNft(nft)}>
+                            {nft.image_url ? (
+                              <img src={nft.image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                            ) : (
+                              <div className="w-full aspect-square bg-gradient-to-br from-[#0098EA] to-[#45AEF5] flex items-center justify-center text-white font-bold text-2xl">
+                                {nft.name?.charAt(0).toUpperCase() || 'T'}
+                              </div>
+                            )}
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                              <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
                   ) : null}
                 </div>
               </div>
