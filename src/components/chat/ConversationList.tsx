@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { MessageSquare, Trash2 } from "lucide-react";
+import { MessageSquare, MessageSquarePlus, Trash2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type { Conversation } from "@/hooks/useMessaging";
 import { toast } from "sonner";
@@ -8,18 +8,28 @@ interface ConversationListProps {
   conversations: Conversation[];
   onSelect: (id: string) => void;
   onDelete: (id: string) => Promise<void>;
+  onNewMessage?: () => void;
   domain: string;
 }
 
-export function ConversationList({ conversations, onSelect, onDelete, domain }: ConversationListProps) {
+export function ConversationList({ conversations, onSelect, onDelete, onNewMessage, domain }: ConversationListProps) {
   if (conversations.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <MessageSquare className="w-12 h-12 text-muted-foreground/30 mb-4" />
         <p className="text-muted-foreground text-sm">No conversations yet</p>
-        <p className="text-muted-foreground/60 text-xs mt-1">
-          Start a new conversation using the + button
+        <p className="text-muted-foreground/60 text-xs mt-1 mb-5">
+          Start a new conversation using the button below
         </p>
+        {onNewMessage && (
+          <button
+            onClick={onNewMessage}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[hsl(43,76%,52%)] text-black font-semibold rounded-xl hover:bg-[hsl(43,76%,52%)]/90 transition-colors"
+          >
+            <MessageSquarePlus className="w-4 h-4" />
+            New Message
+          </button>
+        )}
       </div>
     );
   }
