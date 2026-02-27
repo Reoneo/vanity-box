@@ -17,7 +17,6 @@ const IOTA_NAMES_REGISTRATION_TYPES = [
   "::subdomain_registration::SubdomainRegistration",
   "iota_names::registration",
   "iota_names::subdomain",
-  "::name_registration::",
 ];
 
 // Helper to check if a type indicates an IOTA Names NFT
