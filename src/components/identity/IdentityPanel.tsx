@@ -31,8 +31,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { usePetraWallet } from '@/hooks/use-petra-wallet';
 import type { VerifiableCredential } from '@/types/identity';
-import ethLogoDark from '@/assets/eth-logo-dark.png';
-import tonLogoDark from '@/assets/ton-logo.png';
+import ethLogoDark from '@/assets/eth-logo-dark.svg';
+import tonIconBlue from '@/assets/ton-icon-blue.png';
 import aptosLogo from '@/assets/aptos-logo.png';
 
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
@@ -557,7 +557,7 @@ function TonWalletLinkSection({
     <WalletLinkSection
       label="Link TON Wallet"
       subtitle="Connect via Telegram wallet"
-      icon={<img src={tonLogoDark} alt="TON" className="w-4 h-4 flex-shrink-0" />}
+      icon={<img src={tonIconBlue} alt="TON" className="w-4 h-4 flex-shrink-0 rounded-full" />}
       expanded={expanded}
       onToggle={onToggle}
       linkedVcs={linkedVcs}
@@ -628,6 +628,16 @@ function AptosWalletLinkSection({
       // Connect if not already
       if (!petra.isConnected) {
         if (!petra.isInstalled) {
+          // On mobile, try opening Petra via deeplink
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          if (isMobile) {
+            // Open Petra app deeplink - it will redirect back to this page
+            const currentUrl = encodeURIComponent(window.location.href);
+            window.location.href = `https://petra.app/explore?link=${currentUrl}`;
+            setStep('idle');
+            setIsLinking(false);
+            return;
+          }
           toast.error('Petra wallet not installed. Please install the Petra browser extension.');
           setStep('error');
           setErrorMsg('Petra wallet not installed');
