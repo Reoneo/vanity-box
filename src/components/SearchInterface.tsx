@@ -276,6 +276,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [isResolvingLinkedEvm, setIsResolvingLinkedEvm] = useState(false);
   const linkedEvmResolverRef = useRef<string | null>(null); // dedupe by name+wallet context, not only name
 
+  // Linked TON address for .iota profiles (resolved from iota_wallet_links)
+  const [linkedTonAddress, setLinkedTonAddress] = useState<string | null>(null);
+  const linkedTonResolverRef = useRef<string | null>(null);
+
   const isValidEvmAddress = (address?: string | null): address is string => {
     return !!address && /^0x[a-fA-F0-9]{40}$/i.test(address);
   };
@@ -452,6 +456,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Reset linked EVM address
       setLinkedEvmAddress(null);
       linkedEvmResolverRef.current = null;
+      // Reset linked TON address
+      setLinkedTonAddress(null);
+      linkedTonResolverRef.current = null;
     }
   }, [web3BioProfile]);
 
@@ -649,6 +656,64 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       window.removeEventListener('iota-evm-linked', handleEvmLinked);
       window.removeEventListener('iota-evm-unlinked', handleEvmUnlinked);
     };
+  }, [displayQuery]);
+
+  // Resolve linked TON address for .iota profiles
+  useEffect(() => {
+    const name = normalizeIotaQuery(displayQuery);
+    if (!name) {
+      setLinkedTonAddress(null);
+      linkedTonResolverRef.current = null;
+      return;
+    }
+
+    const resolverKey = `${name}|ton`;
+    if (linkedTonResolverRef.current === resolverKey) return;
+    linkedTonResolverRef.current = resolverKey;
+
+    let isCancelled = false;
+
+    const resolve = async () => {
+      try {
+        // Check localStorage first
+        const localTon = localStorage.getItem(`iota-linked-ton:${name}`);
+        if (localTon) {
+          setLinkedTonAddress(localTon);
+        }
+
+        // Query DB
+        const { data, error } = await supabase.functions.invoke('get-iota-linked-ton', {
+          body: { iotaName: name },
+        });
+
+        if (!isCancelled && data?.success && data?.tonAddress) {
+          console.log(`✅ Linked TON from DB for ${name}: ${data.tonAddress}`);
+          setLinkedTonAddress(data.tonAddress);
+          try { localStorage.setItem(`iota-linked-ton:${name}`, data.tonAddress); } catch {}
+        } else if (!isCancelled && !localTon) {
+          setLinkedTonAddress(null);
+        }
+      } catch (err) {
+        console.warn('[SearchInterface] TON link resolution failed:', err);
+      }
+    };
+
+    resolve();
+    return () => { isCancelled = true; };
+  }, [displayQuery]);
+
+  // Listen for real-time 'iota-ton-linked' events
+  useEffect(() => {
+    const handleTonLinked = (event: Event) => {
+      const { iotaName: linkedName, tonAddress } = (event as CustomEvent).detail || {};
+      const currentName = displayQuery?.toLowerCase()?.trim();
+      if (linkedName === currentName && tonAddress) {
+        console.log(`🔗 Real-time TON link event for ${linkedName}: ${tonAddress}`);
+        setLinkedTonAddress(tonAddress);
+      }
+    };
+    window.addEventListener('iota-ton-linked', handleTonLinked);
+    return () => window.removeEventListener('iota-ton-linked', handleTonLinked);
   }, [displayQuery]);
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
@@ -2078,6 +2143,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     }}
                     linkedEvmAddress={linkedEvmAddress}
                     isResolvingLinkedEvm={isResolvingLinkedEvm}
+                    linkedTonAddress={linkedTonAddress}
                     iotaOnchainProfile={iotaOnchainProfile}
                     iotaNameObjectId={iotaNameObjectId}
                     iotaOwnerAddress={iotaOwnerAddress}
