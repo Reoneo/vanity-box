@@ -18,14 +18,17 @@ import {
   Unplug,
   AlertTriangle,
   Link2,
+  KeyRound,
 } from 'lucide-react';
 import { useIdentity, IdentityProvider } from '@/contexts/IdentityContext';
 import { CredentialList } from './CredentialList';
 import { VerificationResultCard } from './VerificationResultCard';
 import { PresentationModal } from './PresentationModal';
 import { LinkEthereumWalletModal } from '@/components/LinkEthereumWalletModal';
+import { BindIotaPasskeyModal } from '@/components/BindIotaPasskeyModal';
 import { generateNonce, calculateExpiry } from '@/lib/identity/vault';
 import { setLinkedDomain } from '@/lib/messaging/linkDomain';
+import { isWebAuthnSupported, getPasskeyStatus } from '@/lib/passkey';
 import { callEdge } from '@/lib/supaInvoke';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -36,6 +39,7 @@ import tonIconBlue from '@/assets/ton-icon-blue.png';
 import aptosLogo from '@/assets/aptos-logo.png';
 
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
+import { useSignPersonalMessageSafe } from '@/hooks/use-iota-wallet-safe';
 
 interface IdentityPanelContentProps {
   iotaName: string;
@@ -63,14 +67,19 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     setStep,
   } = useIdentity();
 
+  const { mutateAsync: signPersonalMessage } = useSignPersonalMessageSafe();
+
   const [showPresentationModal, setShowPresentationModal] = useState(false);
   const [showLinkEthModal, setShowLinkEthModal] = useState(false);
+  const [showBindPasskeyModal, setShowBindPasskeyModal] = useState(false);
   const [currentNonce, setCurrentNonce] = useState<string>('');
   const [vpExpiresAt, setVpExpiresAt] = useState<string>('');
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [webAuthnAvailable, setWebAuthnAvailable] = useState(false);
 
   // Wallet link section expansion state
-  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | null>(null);
+  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'passkey' | null>(null);
 
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
@@ -113,6 +122,28 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
       setLinkedDomain(iotaName);
     }
   }, [verificationResult?.valid, iotaName]);
+
+  // Check WebAuthn support + passkey status
+  useEffect(() => {
+    setWebAuthnAvailable(isWebAuthnSupported());
+  }, []);
+
+  useEffect(() => {
+    if (!holderDid) return;
+    // We use the iotaName to look up wallet address for passkey status
+    // The walletAddress is available through the IdentityProvider
+  }, [holderDid]);
+
+  // Sign message callback for passkey binding (uses IOTA wallet)
+  const handleSignForPasskey = useCallback(async (message: string): Promise<string> => {
+    const msgBytes = new TextEncoder().encode(message);
+    const result = await signPersonalMessage({ message: msgBytes });
+    // result contains signature
+    if (!result?.signature) {
+      throw new Error('IOTA wallet signature failed');
+    }
+    return result.signature;
+  }, [signPersonalMessage]);
 
   // Get linked wallets from vcList
   const ethVcs = vcList.filter(vc => vc.type === 'EthereumWalletOwnershipCredential');
@@ -288,6 +319,53 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
       {/* ── Wallet Linking Sections ── */}
       {holderDid && (
         <>
+          {/* Bind Passkey to IOTA Wallet */}
+          {webAuthnAvailable && (
+            <div className="rounded-lg border border-border bg-muted/5">
+              <button
+                onClick={() => setExpandedWallet(expandedWallet === 'passkey' ? null : 'passkey')}
+                className="w-full flex items-center justify-between px-3 py-2.5 text-left"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <KeyRound className="w-4 h-4 flex-shrink-0 text-primary" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Bind Passkey</p>
+                    <p className="text-[11px] text-muted-foreground">Sign in without extension</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {hasPasskey && (
+                    <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                      Bound
+                    </Badge>
+                  )}
+                  <ChevronDown className={cn(
+                    'w-4 h-4 text-muted-foreground transition-transform',
+                    expandedWallet === 'passkey' && 'rotate-180'
+                  )} />
+                </div>
+              </button>
+              {expandedWallet === 'passkey' && (
+                <div className="px-3 pb-3 space-y-2">
+                  {hasPasskey && (
+                    <div className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-emerald-500/5 border border-emerald-500/20">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                      <span className="text-xs text-muted-foreground">Passkey is bound to this wallet</span>
+                    </div>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => setShowBindPasskeyModal(true)}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                  >
+                    <Fingerprint className="w-3.5 h-3.5 mr-1.5" />
+                    {hasPasskey ? 'Rebind Passkey' : 'Bind Passkey'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Link Ethereum Wallet */}
           <WalletLinkSection
             label="Link Ethereum Wallet"
@@ -356,6 +434,18 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         open={showLinkEthModal}
         onClose={() => setShowLinkEthModal(false)}
         iotaName={iotaName}
+      />
+      <BindIotaPasskeyModal
+        open={showBindPasskeyModal}
+        onClose={() => {
+          setShowBindPasskeyModal(false);
+          // Refresh passkey status after binding
+          if (holderDid) {
+            getPasskeyStatus(holderDid).then(s => setHasPasskey(s.hasBoundPasskey)).catch(() => {});
+          }
+        }}
+        iotaWalletAddress={holderDid || ''}
+        signMessage={handleSignForPasskey}
       />
     </div>
   );
