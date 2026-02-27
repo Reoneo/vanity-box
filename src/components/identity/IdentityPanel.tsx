@@ -619,11 +619,37 @@ function AptosWalletLinkSection({
 
   const petra = usePetraWallet();
 
+  // Keep a ref to always have the latest account (solves stale closure after connect)
+  const accountRef = useRef(petra.account);
+  useEffect(() => { accountRef.current = petra.account; }, [petra.account]);
+
   const normalizeAptosAddress = (value?: string | null): string => {
     if (!value) return '';
     const hex = value.toLowerCase().replace(/^0x/, '').replace(/^0+/, '');
     return `0x${hex.padStart(64, '0')}`;
   };
+
+  // Wait for adapter state to propagate after connect()
+  const waitForAccount = useCallback((): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      // Check immediately
+      if (accountRef.current?.address) {
+        resolve(accountRef.current.address);
+        return;
+      }
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        reject(new Error('Timed out waiting for Aptos account. Please try again.'));
+      }, 12000);
+      const interval = setInterval(() => {
+        if (accountRef.current?.address) {
+          clearInterval(interval);
+          clearTimeout(timeout);
+          resolve(accountRef.current.address);
+        }
+      }, 200);
+    });
+  }, []);
 
   const handleLinkAptos = useCallback(async () => {
     setIsLinking(true);
@@ -636,7 +662,8 @@ function AptosWalletLinkSection({
         await petra.connect('Petra');
       }
 
-      const rawAddress = petra.account?.address;
+      // Wait for account to be available (adapter state propagation)
+      const rawAddress = await waitForAccount();
       if (!rawAddress) {
         throw new Error('No Aptos account found after wallet connection');
       }
@@ -739,7 +766,7 @@ function AptosWalletLinkSection({
     } finally {
       setIsLinking(false);
     }
-  }, [petra, holderDid, iotaName, addExternalCredential]);
+  }, [petra, holderDid, iotaName, addExternalCredential, waitForAccount]);
 
   return (
     <WalletLinkSection
