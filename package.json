@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": "^5.1.4",
+    "@aptos-labs/wallet-adapter-react": "^3.8.0",
     "@capacitor/android": "^7.4.3",
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
