@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
           chain: 'ton',
           name: 'Toncoin',
           symbol: 'TON',
-          icon: 'https://ton.org/download/ton_symbol.png',
+          icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/11419.png',
           quantity: balanceTon,
           value: tonUsdValue,
           decimals: 9,
