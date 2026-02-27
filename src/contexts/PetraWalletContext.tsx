@@ -159,10 +159,10 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       const response = await windowAptos.connect();
       console.log('Connected to Petra:', response);
-      
+
       const currentAccount = await windowAptos.account();
       const currentNetwork = await windowAptos.network();
-      
+
       setAccount(currentAccount);
       setNetwork(currentNetwork);
       setIsConnected(true);
@@ -197,14 +197,24 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
-  const signAndSubmitTransaction = useCallback(async (transaction: any) => {
+  const ensureConnectedProvider = useCallback(async () => {
     const windowAptos = (window as unknown as AptosWindow).aptos;
-    
-    if (!windowAptos || !isConnected) {
+
+    if (!windowAptos) {
+      throw new Error('Petra wallet not found');
+    }
+
+    const runtimeConnected = await windowAptos.isConnected().catch(() => false);
+    if (!runtimeConnected) {
       throw new Error('Petra wallet not connected');
     }
 
+    return windowAptos;
+  }, []);
+
+  const signAndSubmitTransaction = useCallback(async (transaction: any) => {
     try {
+      const windowAptos = await ensureConnectedProvider();
       const pendingTransaction = await windowAptos.signAndSubmitTransaction(transaction);
       console.log('Transaction submitted:', pendingTransaction);
       return pendingTransaction;
@@ -216,16 +226,11 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       throw error;
     }
-  }, [isConnected]);
+  }, [ensureConnectedProvider]);
 
   const signTransaction = useCallback(async (transaction: any) => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
-    
-    if (!windowAptos || !isConnected) {
-      throw new Error('Petra wallet not connected');
-    }
-
     try {
+      const windowAptos = await ensureConnectedProvider();
       const signedTransaction = await windowAptos.signTransaction(transaction);
       console.log('Transaction signed:', signedTransaction);
       return signedTransaction;
@@ -237,16 +242,11 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       throw error;
     }
-  }, [isConnected]);
+  }, [ensureConnectedProvider]);
 
   const signMessage = useCallback(async (payload: SignMessagePayload) => {
-    const windowAptos = (window as unknown as AptosWindow).aptos;
-    
-    if (!windowAptos || !isConnected) {
-      throw new Error('Petra wallet not connected');
-    }
-
     try {
+      const windowAptos = await ensureConnectedProvider();
       const response = await windowAptos.signMessage(payload);
       console.log('Message signed:', response);
       return response;
@@ -258,7 +258,7 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       throw error;
     }
-  }, [isConnected]);
+  }, [ensureConnectedProvider]);
 
   const value: PetraWalletContextType = {
     account,
