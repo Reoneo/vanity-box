@@ -68,24 +68,27 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isConnected, setIsConnected] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
-  // Check if Petra is installed
+  // Check if Petra is installed (browser extension or mobile in-app browser)
   useEffect(() => {
     const checkPetraInstalled = () => {
       const windowAptos = (window as unknown as AptosWindow).aptos;
-      setIsInstalled(!!windowAptos);
+      // Also check for Petra mobile via petrewallet deeplink capability
+      const hasPetra = !!windowAptos;
+      setIsInstalled(hasPetra);
       
-      if (!windowAptos) {
-        console.log('Petra wallet not detected');
+      if (!hasPetra) {
+        console.log('Petra wallet not detected in browser context');
       } else {
         console.log('Petra wallet detected');
       }
     };
 
     checkPetraInstalled();
-    // Check again after a short delay in case the extension loads slowly
-    const timeout = setTimeout(checkPetraInstalled, 1000);
+    // Check again after a longer delay for mobile wallets that inject slowly
+    const timeout1 = setTimeout(checkPetraInstalled, 1000);
+    const timeout2 = setTimeout(checkPetraInstalled, 2500);
     
-    return () => clearTimeout(timeout);
+    return () => { clearTimeout(timeout1); clearTimeout(timeout2); };
   }, []);
 
   // Set up event listeners
