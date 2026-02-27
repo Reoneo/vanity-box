@@ -528,6 +528,36 @@ export type Database = {
         }
         Relationships: []
       }
+      passkey_challenges: {
+        Row: {
+          challenge: string
+          challenge_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          iota_wallet_address: string | null
+          used: boolean
+        }
+        Insert: {
+          challenge: string
+          challenge_type: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          iota_wallet_address?: string | null
+          used?: boolean
+        }
+        Update: {
+          challenge?: string
+          challenge_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          iota_wallet_address?: string | null
+          used?: boolean
+        }
+        Relationships: []
+      }
       payment_references: {
         Row: {
           created_at: string
@@ -678,6 +708,51 @@ export type Database = {
           updated_at?: string
           version?: number
           wallet_address?: string
+        }
+        Relationships: []
+      }
+      wallet_passkey_bindings: {
+        Row: {
+          created_at: string
+          credential_id: string
+          id: string
+          iota_wallet_address: string
+          last_used_at: string | null
+          public_key: string
+          rp_id: string
+          sign_count: number
+          status: string
+          updated_at: string
+          wallet_proof_message: string
+          wallet_proof_signature: string
+        }
+        Insert: {
+          created_at?: string
+          credential_id: string
+          id?: string
+          iota_wallet_address: string
+          last_used_at?: string | null
+          public_key: string
+          rp_id?: string
+          sign_count?: number
+          status?: string
+          updated_at?: string
+          wallet_proof_message: string
+          wallet_proof_signature: string
+        }
+        Update: {
+          created_at?: string
+          credential_id?: string
+          id?: string
+          iota_wallet_address?: string
+          last_used_at?: string | null
+          public_key?: string
+          rp_id?: string
+          sign_count?: number
+          status?: string
+          updated_at?: string
+          wallet_proof_message?: string
+          wallet_proof_signature?: string
         }
         Relationships: []
       }
