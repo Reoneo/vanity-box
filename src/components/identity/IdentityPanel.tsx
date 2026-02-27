@@ -534,6 +534,11 @@ function TonWalletLinkSection({
         setStep('done');
         toast.success('TON wallet linked successfully');
 
+        // Notify SearchInterface so TON NFTs load immediately
+        window.dispatchEvent(new CustomEvent('iota-ton-linked', {
+          detail: { iotaName: iotaName.toLowerCase(), tonAddress: tonAddress },
+        }));
+
         // Disconnect TON wallet after linking
         try { await tonConnectUI.disconnect(); } catch {}
       } else {
