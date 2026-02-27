@@ -619,6 +619,13 @@ function AptosWalletLinkSection({
 
   const petra = usePetraWallet();
 
+  // Live ref so async polling always sees latest adapter state
+  const accountRef = useRef(petra.account);
+  useEffect(() => { accountRef.current = petra.account; }, [petra.account]);
+
+  const connectedRef = useRef(petra.isConnected);
+  useEffect(() => { connectedRef.current = petra.isConnected; }, [petra.isConnected]);
+
   const normalizeAptosAddress = (value?: string | null): string => {
     if (!value) return '';
     const hex = value.toLowerCase().replace(/^0x/, '').replace(/^0+/, '');
@@ -626,62 +633,82 @@ function AptosWalletLinkSection({
   };
 
   /**
-   * Dual-path Aptos connect:
-   * 1. If window.aptos exists (Petra in-app browser on mobile), use it directly
-   * 2. Otherwise fall back to the wallet adapter (desktop extension / AIP-62)
+   * Triple-path Aptos connect:
+   * 1. window.aptos — available inside Petra's in-app browser (mobile) or extension
+   * 2. Wallet adapter — AIP-62 desktop extension detection
+   * 3. Mobile deeplink — redirect to open page inside Petra's in-app browser
    */
   const connectAndGetAccount = useCallback(async (): Promise<{
     address: string;
     signMessage: (payload: any) => Promise<any>;
     disconnect: () => Promise<void>;
   }> => {
-    // Path 1: Direct window.aptos (Petra in-app browser)
-    const petraGlobal = (window as any).aptos;
+    // Path 1: Direct window.aptos (Petra in-app browser OR extension injected)
+    const petraGlobal = (window as any).aptos ?? (window as any).petra;
     if (petraGlobal) {
-      console.log('[Aptos] Using window.aptos (Petra in-app browser)');
-      const response = await petraGlobal.connect();
-      const addr = response?.address;
-      if (!addr) throw new Error('Petra did not return an address');
-      return {
-        address: addr,
-        signMessage: (payload: any) => petraGlobal.signMessage(payload),
-        disconnect: () => petraGlobal.disconnect(),
-      };
+      console.log('[Aptos] Using window.aptos / window.petra (injected)');
+      try {
+        const response = await petraGlobal.connect();
+        const addr = response?.address;
+        if (addr) {
+          return {
+            address: addr,
+            signMessage: (payload: any) => petraGlobal.signMessage(payload),
+            disconnect: () => petraGlobal.disconnect(),
+          };
+        }
+      } catch (e: any) {
+        console.warn('[Aptos] window.aptos.connect() failed:', e);
+        // Fall through to other paths
+      }
     }
 
     // Path 2: Wallet adapter (desktop extension / AIP-62)
-    console.log('[Aptos] Using wallet adapter');
-    if (!petra.isConnected) {
-      await petra.connect('Petra');
+    // Only attempt if the adapter actually detected an installed wallet
+    if (petra.isInstalled) {
+      console.log('[Aptos] Using wallet adapter (extension detected)');
+      if (!connectedRef.current) {
+        await petra.connect('Petra');
+      }
+
+      // Poll the ref (not the closure) for account state
+      const address = await new Promise<string>((resolve, reject) => {
+        if (accountRef.current?.address) {
+          resolve(accountRef.current.address);
+          return;
+        }
+        let elapsed = 0;
+        const iv = setInterval(() => {
+          elapsed += 200;
+          if (accountRef.current?.address) {
+            clearInterval(iv);
+            resolve(accountRef.current.address);
+          } else if (elapsed >= 10000) {
+            clearInterval(iv);
+            reject(new Error('Adapter did not return an account'));
+          }
+        }, 200);
+      });
+
+      return {
+        address,
+        signMessage: (payload: any) => petra.signMessage(payload),
+        disconnect: () => petra.disconnect(),
+      };
     }
 
-    // Wait for adapter state propagation (React re-render lag)
-    const address = await new Promise<string>((resolve, reject) => {
-      // The adapter may already have the account
-      if (petra.account?.address) {
-        resolve(petra.account.address);
-        return;
-      }
-      // Poll — the adapter updates state asynchronously
-      let elapsed = 0;
-      const iv = setInterval(() => {
-        elapsed += 250;
-        if (petra.account?.address) {
-          clearInterval(iv);
-          resolve(petra.account.address);
-        } else if (elapsed >= 15000) {
-          clearInterval(iv);
-          reject(new Error('Timed out waiting for Aptos account. Please ensure Petra is installed and try again.'));
-        }
-      }, 250);
-    });
+    // Path 3: Mobile / tablet — open this page inside Petra's in-app browser
+    const isMobile = /iPhone|iPad|iPod|Android|webOS/i.test(navigator.userAgent);
+    if (isMobile) {
+      console.log('[Aptos] Redirecting to Petra deeplink');
+      const currentUrl = window.location.href;
+      const deeplink = `https://petra.app/explore?link=${encodeURIComponent(currentUrl)}`;
+      window.open(deeplink, '_blank');
+      throw new Error('Opening Petra app… Once it opens, please tap "Link Aptos Wallet" again inside Petra\'s browser.');
+    }
 
-    return {
-      address,
-      signMessage: (payload: any) => petra.signMessage(payload),
-      disconnect: () => petra.disconnect(),
-    };
-  }, [petra]);
+    throw new Error('Petra wallet not detected. Please install the Petra browser extension or open this page in the Petra mobile app.');
+  }, [petra.isInstalled, petra.connect, petra.signMessage, petra.disconnect]);
 
   const handleLinkAptos = useCallback(async () => {
     setIsLinking(true);
