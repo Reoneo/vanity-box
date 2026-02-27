@@ -1,81 +1,92 @@
 
-## Objective
-Fix badge attribution so `.iota` profiles show **both IOTA + Ethereum badges only when the same social handle exists on both profiles**, while keeping distinct handles as separate cards (for example, two X/Twitter cards if handles differ).
+# Fix "Link Aptos Wallet" -- Migrate to Official Aptos Wallet Adapter
 
-## What is currently failing (root cause)
-From the current code and network behavior:
+## Problem
 
-1. `fetchEvmSocials` depends on `ensDomains`, but `ensDomains` is fetched using `currentWalletAddress` (the `.iota` owner address), not `linkedEvmAddress`.
-2. On `.iota` profiles, that ENS lookup returns empty, so ENS-based Web3.bio social records (GitHub/LinkedIn/Telegram text records) are never queried.
-3. `evmSocialsFetched` is set `true` before ENS data can later become available, so the social fetch doesn’t retry.
-4. EVM links are stored in a `Record<string, any>` keyed by platform, which can drop additional candidates per platform and reduce matching accuracy.
-5. Social card React keys still use `platform`, which is unsafe when same-platform entries must coexist.
+The current Petra integration uses the legacy `window.aptos` global object, which:
+- Is not injected on mobile browsers (even inside Petra's in-app browser it can be unreliable)
+- Does not support AIP-62 (the modern Aptos wallet standard)
+- Fails silently when Petra is installed as a mobile app but the site is opened in Safari/Chrome
+- The deeplink workaround (`https://petra.app/explore?link=...`) opens Petra's Explore page but doesn't reliably inject `window.aptos` back into the webview
 
-## Implementation plan
+## Solution
 
-### 1) Fetch ENS domains for the linked Ethereum wallet (not the IOTA owner wallet)
-In `src/components/ProfileCard.tsx`:
+Replace the custom `PetraWalletContext` with the official `@aptos-labs/wallet-adapter-react`, which:
+- Handles Petra detection on desktop AND mobile natively
+- Supports mobile deeplink flows via `deeplinkProvider` (built into the adapter)
+- Uses AIP-62 standard wallet registration
+- Provides `signMessage` that works across all contexts
+- Shows Petra as an available wallet even when the extension isn't detected (mobile-aware)
 
-- Add dedicated state for linked EVM ENS resolution (separate from existing NFT ENS state):
-  - `linkedEvmEnsDomains`
-  - `linkedEvmEnsFetched`
-- Add effect:
-  - Runs only for `.iota` + valid `linkedEvmAddress`
-  - Calls `get-ens-domains` with `walletAddress: linkedEvmAddress`
-  - Stores names in `linkedEvmEnsDomains`
-  - Marks `linkedEvmEnsFetched=true` even when empty (to unblock next stage)
+## Implementation Steps
 
-This decouples social enrichment from unrelated ENS/NFT fetching.
+### 1. Install the Aptos Wallet Adapter packages
 
-### 2) Rework EVM social fetching to include all Web3.bio sources and avoid race lock
-- Reset EVM social fetch state when profile target changes:
-  - On `linkedEvmAddress` / identity change, clear previous EVM social cache and fetched flags.
-- Update EVM social effect so it runs when:
-  - `.iota` profile
-  - valid linked EVM address
-  - linked ENS fetch finished
-- Query Web3.bio for:
-  1. `profile/{linkedEvmAddress}`
-  2. each linked ENS name from `linkedEvmEnsDomains` (or at least primary + fallbacks)
-- Aggregate as a **list of social entries** (not platform map), deduping by `{normalizedPlatform + normalizedHandle}` so we keep all unique handles.
+Add `@aptos-labs/wallet-adapter-react` (the adapter already bundles Petra support via AIP-62 auto-detection; no separate wallet plugin package needed for Petra).
 
-### 3) Upgrade duplicate detection to handle-accurate matching
-- Replace single-map merge with entry-based matching:
-  - Build normalized IOTA social entry list from `.iota` links
-  - Build normalized EVM social entry list from Web3.bio results
-- Matching rule for `source: "both"`:
-  - same normalized platform (twitter→x)
-  - same normalized handle (case-insensitive, strip `@`, canonical URL path extraction)
-- If platform matches but handle differs:
-  - keep both cards (IOTA-only and ETH-only), each with correct badge.
+### 2. Replace `PetraWalletContext.tsx` with Aptos Wallet Adapter provider
 
-This directly enforces your rule: badges are assigned by true handle match, not platform-only match.
+Rewrite `src/contexts/PetraWalletContext.tsx` to:
+- Wrap the `AptosWalletAdapterProvider` with `dappInfo` config (name: "Vanity.box", image)
+- Set `optInWallets: ["Petra"]` to always show Petra even on mobile
+- Set `autoConnect: false` (we only connect when the user explicitly links)
+- Export context values that match the existing `PetraWalletContextType` interface so downstream code doesn't break
 
-### 4) Preserve badge display constraints
-- Keep origin badges visible only when:
-  - profile is `.iota`
-  - linked EVM exists
-- Badge rendering remains:
-  - `iota` only → IOTA badge
-  - `ethereum` only → ETH badge
-  - `both` → both badges
+### 3. Update `AptosWalletLinkSection` in `IdentityPanel.tsx`
 
-### 5) Fix rendering identity keys so duplicate-platform cards render reliably
-- Add stable unique `entryId` to merged social entries.
-- Update all social render locations to use `key={entryId}` instead of `key={platform}`.
-- This prevents React key collisions when two cards share a platform (e.g., `X` + `Twitter` or two `linkedin` variants).
+Refactor `handleLinkAptos` to:
+- Use `useWallet()` from the adapter instead of the custom `usePetraWallet()` hook
+- Call `connect("Petra")` which the adapter resolves via extension OR deeplink
+- Remove all manual `window.aptos` checks, `isPetraInjected()`, `waitForPetraInjection()`, `ensurePetraContext()`, and `openPetraApp()` helpers -- the adapter handles all of this
+- Keep the existing `signMessage` flow (message construction, nonce, VC issuance) but use the adapter's `signMessage` method
+- Keep address normalization and VC issuance logic unchanged
 
-## File to modify
-- `src/components/ProfileCard.tsx`
+### 4. Keep `usePetraWallet` hook working
 
-## Validation checklist (end-to-end)
-1. Open `/Vanity.iota`:
-   - GitHub, LinkedIn, Telegram that exist on both sources show dual badges.
-   - X/Twitter with different handles shows separate cards, each single-source badge.
-2. Confirm no dual badge appears for non-matching same-platform handles.
-3. Confirm non-`.iota` profiles do not show origin badges.
-4. Switch between `.iota` profiles and verify old EVM social data does not leak (state reset works).
-5. Verify mobile overlay and desktop social views both reflect identical badge logic and entries.
+Update `src/hooks/use-petra-wallet.tsx` to re-export from the adapter-based context so any other consumers still work.
 
-## Technical note
-This keeps your current UI style and data providers, but changes the merge model from “platform-first” to “platform+handle-first,” which is required for accurate unification signaling.
+### 5. No changes needed to backend
+
+The `issue-wallet-vc` edge function receives `{ holderDid, address, message, signature, iotaName, chain: 'aptos' }` -- this contract stays the same.
+
+## Technical Details
+
+```text
+Before:
+  PetraWalletContext -> window.aptos (legacy global)
+  Mobile: manual deeplink -> unreliable injection polling
+
+After:
+  AptosWalletAdapterProvider -> AIP-62 standard detection
+  Mobile: adapter handles deeplink/redirect automatically
+  connect("Petra") works on desktop (extension) and mobile (deeplink)
+```
+
+Key adapter usage in the link flow:
+```tsx
+const { connect, disconnect, account, signMessage, connected } = useWallet();
+
+// Connect (adapter handles mobile deeplink automatically)
+await connect("Petra");
+
+// Sign the linking message
+const signResult = await signMessage({ message, nonce });
+
+// Send to backend for VC issuance (same as before)
+await callEdge('issue-wallet-vc', { ... });
+```
+
+## Files Changed
+
+| File | Change |
+|---|---|
+| `src/contexts/PetraWalletContext.tsx` | Rewrite to wrap `AptosWalletAdapterProvider`; export compatible context interface |
+| `src/components/identity/IdentityPanel.tsx` | Replace `usePetraWallet()` with `useWallet()` from adapter; remove manual injection/deeplink helpers; simplify `handleLinkAptos` |
+| `src/hooks/use-petra-wallet.tsx` | Update to re-export from new adapter context |
+| `src/App.tsx` | No change needed (still imports `PetraWalletProvider`) |
+
+## Risks & Mitigations
+
+- **Adapter version compatibility**: The `@aptos-labs/wallet-adapter-react` v3+ uses AIP-62 auto-detection. Petra is a first-class supported wallet.
+- **"Site not recognized" warning**: This is Petra's own security prompt and cannot be suppressed from dApp code. The flow will continue cleanly after the user taps OK.
+- **signMessage response format**: The adapter's `signMessage` returns a slightly different shape than the legacy `window.aptos.signMessage`. The code will need to extract `signature` and `fullMessage` fields from the adapter response format.
