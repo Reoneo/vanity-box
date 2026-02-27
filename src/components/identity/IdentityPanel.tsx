@@ -619,73 +619,10 @@ function AptosWalletLinkSection({
 
   const petra = usePetraWallet();
 
-  const isMobileBrowser = () => {
-    const ua = navigator.userAgent || '';
-    const isClassicMobileUa = /Android|iPhone|iPad|iPod/i.test(ua);
-    const isIPadDesktopMode = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-    return isClassicMobileUa || isIPadDesktopMode;
-  };
-
-  const isPetraInjected = () => !!(window as any).aptos;
-
-  const isLikelyInsidePetraBrowser = () => {
-    const ua = navigator.userAgent || '';
-    return /Petra/i.test(ua) || isPetraInjected();
-  };
-
-  const waitForPetraInjection = async (timeoutMs = 4000, intervalMs = 200): Promise<boolean> => {
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < timeoutMs) {
-      if (isPetraInjected()) return true;
-      await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    }
-    return isPetraInjected();
-  };
-
-  const openPetraApp = () => {
-    const deepLink = `https://petra.app/explore?link=${encodeURIComponent(window.location.href)}`;
-    window.location.assign(deepLink);
-  };
-
-  const resolveRuntimeAddress = async (runtimeWallet?: any): Promise<string | null> => {
-    if (petra.account?.address) return petra.account.address;
-
-    const wallet = runtimeWallet ?? (window as any).aptos;
-    if (!wallet?.account) return null;
-
-    try {
-      const runtimeAccount = await wallet.account();
-      return runtimeAccount?.address ?? null;
-    } catch {
-      return null;
-    }
-  };
-
   const normalizeAptosAddress = (value?: string | null): string => {
     if (!value) return '';
     const hex = value.toLowerCase().replace(/^0x/, '').replace(/^0+/, '');
     return `0x${hex.padStart(64, '0')}`;
-  };
-
-  const ensurePetraContext = async (): Promise<boolean> => {
-    if (isMobileBrowser() && !isPetraInjected() && !isLikelyInsidePetraBrowser()) {
-      toast.info('Opening Petra app…');
-      setStep('idle');
-      setIsLinking(false);
-      openPetraApp();
-      return false;
-    }
-
-    if (isMobileBrowser() && !isPetraInjected() && isLikelyInsidePetraBrowser()) {
-      const injected = await waitForPetraInjection();
-      if (!injected) {
-        setStep('error');
-        setErrorMsg('Petra is still loading. Please wait a few seconds and try again.');
-        return false;
-      }
-    }
-
-    return true;
   };
 
   const handleLinkAptos = useCallback(async () => {
@@ -694,29 +631,12 @@ function AptosWalletLinkSection({
     setErrorMsg('');
 
     try {
-      const canProceed = await ensurePetraContext();
-      if (!canProceed) return;
-
-      let runtimeWallet = (window as any).aptos;
-      const hasPetraProvider = petra.isInstalled || !!runtimeWallet;
-
-      if (!hasPetraProvider) {
-        throw new Error('Petra wallet not available in this browser');
-      }
-
+      // Connect via the Aptos Wallet Adapter (handles desktop extension + mobile deeplink)
       if (!petra.isConnected) {
-        await petra.connect();
+        await petra.connect('Petra');
       }
 
-      runtimeWallet = (window as any).aptos;
-      const runtimeConnected = runtimeWallet?.isConnected
-        ? await runtimeWallet.isConnected().catch(() => false)
-        : false;
-      if (!runtimeConnected) {
-        throw new Error('Petra wallet did not finish connecting. Please try again.');
-      }
-
-      const rawAddress = await resolveRuntimeAddress(runtimeWallet);
+      const rawAddress = petra.account?.address;
       if (!rawAddress) {
         throw new Error('No Aptos account found after wallet connection');
       }
@@ -746,11 +666,18 @@ function AptosWalletLinkSection({
         nonce,
       });
 
-      if (!signResult?.signature) {
+      // Extract signature from adapter response (may be nested)
+      const signature = signResult?.signature
+        ?? (signResult as any)?.result?.signature
+        ?? (typeof signResult === 'string' ? signResult : null);
+
+      if (!signature) {
         throw new Error('Petra returned an empty signature');
       }
 
-      if (normalizeAptosAddress(signResult.address) !== address) {
+      // Verify address match if adapter returned the signer address
+      const signedAddr = signResult?.address ?? (signResult as any)?.result?.address;
+      if (signedAddr && normalizeAptosAddress(signedAddr) !== address) {
         throw new Error('Signed address does not match connected wallet address');
       }
 
@@ -762,7 +689,7 @@ function AptosWalletLinkSection({
           holderDid,
           address,
           message,
-          signature: signResult.signature,
+          signature,
           iotaName,
           chain: 'aptos',
         }
@@ -812,7 +739,7 @@ function AptosWalletLinkSection({
     } finally {
       setIsLinking(false);
     }
-  }, [petra, holderDid, iotaName, addExternalCredential, resolveRuntimeAddress]);
+  }, [petra, holderDid, iotaName, addExternalCredential]);
 
   return (
     <WalletLinkSection
