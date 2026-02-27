@@ -190,7 +190,8 @@ serve(async (req) => {
         let nftName = display.name || content.name || "Unknown NFT";
         if (collection === "IOTA Names") {
           // Try to get the actual domain name from content fields
-          const domainName = content.domain_name || content.name || content.label;
+          const rawDomain = content.domain_name || content.name || content.label;
+          const domainName = typeof rawDomain === 'string' ? rawDomain : String(rawDomain || '');
           if (domainName && !domainName.endsWith('.iota')) {
             nftName = `${domainName}.iota`;
           } else if (domainName) {
