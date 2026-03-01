@@ -51,6 +51,7 @@ import { NameSearchCarousel } from "@/components/NameSearchCarousel";
 import { HomeFeatureShowcase } from "@/components/HomeFeatureShowcase";
 import { IotaProfileEditModal } from "@/components/IotaProfileEditModal";
 import { useIotaWallet } from "@/contexts/IotaWalletContext";
+import { useSignPersonalMessageSafe } from "@/hooks/use-iota-wallet-safe";
 import { MessageCircle, Repeat2, Heart, Fingerprint } from "lucide-react";
 
 import {
@@ -195,6 +196,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   
   // Get IOTA wallet state
   const { address: iotaWalletAddress, isConnected: isIotaConnected } = useIotaWallet();
+  const signPersonalMessageHook = useSignPersonalMessageSafe();
+
+  // Create the onSignPersonalMessage callback for passkey modal
+  const iotaSignPersonalMessage = React.useCallback(async (message: Uint8Array) => {
+    const result = await signPersonalMessageHook.mutateAsync({ message });
+    return { signature: result.signature };
+  }, [signPersonalMessageHook.mutateAsync]);
 
   // Function to remove underscores from input
   const handleSearchChange = (value: string) => {
@@ -2639,6 +2647,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               open={showPasskeyModal}
               onClose={() => setShowPasskeyModal(false)}
               walletAddress={iotaWalletAddress || walletAddress}
+              onSignPersonalMessage={iotaSignPersonalMessage}
             />
 
             {/* Results container - Row-based layout with 60fps optimization */}
