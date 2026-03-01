@@ -1,6 +1,7 @@
 // Passkey Wallet Modal - Create passkey wallet or bind existing wallet
+// Supports IOTA Wallet extension detection (Chrome/Chromium only)
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,11 +22,24 @@ import {
   KeyRound,
   Trash2,
   ChevronRight,
+  Globe,
 } from 'lucide-react';
 import { usePasskeyWallet } from '@/hooks/usePasskeyWallet';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { PasskeyBinding } from '@/types/passkey';
+
+// Extend Window for IOTA wallet extension
+declare global {
+  interface Window {
+    iota?: {
+      connect: () => Promise<boolean>;
+      disconnect: () => Promise<void>;
+      request: (params: { method: string; params?: any }) => Promise<any>;
+      getAccounts?: () => Promise<string[]>;
+    };
+  }
+}
 
 interface PasskeyWalletModalProps {
   open: boolean;
@@ -58,11 +72,87 @@ export function PasskeyWalletModal({
 
   const [confirmUnbind, setConfirmUnbind] = useState<string | null>(null);
 
+  // IOTA extension detection state
+  const [hasIotaExtension, setHasIotaExtension] = useState(false);
+  const [iotaDetecting, setIotaDetecting] = useState(true);
+  const [iotaConnecting, setIotaConnecting] = useState(false);
+  const [iotaExtAddress, setIotaExtAddress] = useState<string | null>(null);
+
+  // Poll for window.iota injection (extension may load after page)
   useEffect(() => {
-    if (open && walletAddress) {
+    if (!open) return;
+    setIotaDetecting(true);
+
+    let attempts = 0;
+    const interval = setInterval(() => {
+      if (window.iota) {
+        setHasIotaExtension(true);
+        setIotaDetecting(false);
+        clearInterval(interval);
+        return;
+      }
+      attempts++;
+      if (attempts > 10) {
+        setHasIotaExtension(false);
+        setIotaDetecting(false);
+        clearInterval(interval);
+      }
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, [open]);
+
+  // Explicit connect to IOTA extension
+  const handleIotaConnect = useCallback(async () => {
+    if (!window.iota) {
+      toast.error('IOTA Wallet extension not found. Please use Chrome with the extension installed.');
+      return;
+    }
+
+    setIotaConnecting(true);
+    try {
+      const isConnected = await window.iota.connect();
+      if (isConnected) {
+        // Try to get accounts
+        let accounts: string[] = [];
+        if (window.iota.getAccounts) {
+          accounts = await window.iota.getAccounts();
+        } else {
+          // Fallback: use request method
+          try {
+            const result = await window.iota.request({ method: 'standard:connect' });
+            if (result && Array.isArray(result)) {
+              accounts = result;
+            } else if (result?.accounts) {
+              accounts = result.accounts.map((a: any) => a.address || a);
+            }
+          } catch {
+            // connect() was enough
+          }
+        }
+
+        if (accounts.length > 0) {
+          setIotaExtAddress(accounts[0]);
+          toast.success('IOTA wallet connected');
+        } else {
+          toast.info('Connected but no accounts found');
+        }
+      }
+    } catch (err: any) {
+      console.error('IOTA extension connect error:', err);
+      toast.error(err.message || 'Failed to connect IOTA wallet');
+    } finally {
+      setIotaConnecting(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open && (walletAddress || iotaExtAddress)) {
       loadBindings();
     }
-  }, [open, walletAddress, loadBindings]);
+  }, [open, walletAddress, iotaExtAddress, loadBindings]);
+
+  const effectiveWalletAddress = iotaExtAddress || walletAddress;
 
   const handleCreateWallet = async () => {
     const success = await createPasskeyWallet();
@@ -93,7 +183,7 @@ export function PasskeyWalletModal({
   if (!isAvailable) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md mx-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Fingerprint className="w-5 h-5 text-primary" />
@@ -114,7 +204,7 @@ export function PasskeyWalletModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto mx-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Fingerprint className="w-5 h-5 text-primary" />
@@ -124,6 +214,51 @@ export function PasskeyWalletModal({
             Create a passkey-backed wallet or link your existing wallet for passwordless sign-in.
           </DialogDescription>
         </DialogHeader>
+
+        {/* IOTA Extension Status */}
+        <div className="p-3 rounded-lg border border-border bg-muted/20">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              {iotaDetecting ? (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Detecting IOTA Wallet extension…
+                </p>
+              ) : hasIotaExtension ? (
+                iotaExtAddress ? (
+                  <p className="text-xs text-foreground">
+                    <span className="text-emerald-500 font-medium">Connected:</span>{' '}
+                    <span className="font-mono">{iotaExtAddress.slice(0, 10)}…{iotaExtAddress.slice(-6)}</span>
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    IOTA Wallet extension detected
+                  </p>
+                )
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  No IOTA Wallet extension found. Use a Chromium browser with the extension installed, or create a passkey wallet below.
+                </p>
+              )}
+            </div>
+            {hasIotaExtension && !iotaExtAddress && !iotaDetecting && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-3 border-primary/50 text-primary"
+                onClick={handleIotaConnect}
+                disabled={iotaConnecting}
+              >
+                {iotaConnecting ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  'Connect'
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
 
         {/* Active bindings */}
         {bindings.length > 0 && (
@@ -219,10 +354,20 @@ export function PasskeyWalletModal({
             <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-2">
               <p className="text-sm font-medium">Link Existing Wallet</p>
               <p className="text-xs text-muted-foreground">
-                Sign a proof message with your connected IOTA wallet, then create a passkey
-                for passwordless access. Your extension wallet remains the signing authority.
+                {hasIotaExtension
+                  ? 'Connect your IOTA Wallet extension, sign a proof message, then create a passkey for passwordless access.'
+                  : 'Requires the IOTA Wallet extension on a Chromium-based browser (Chrome, Brave, Edge).'}
               </p>
             </div>
+
+            {!hasIotaExtension && !iotaDetecting && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  IOTA Wallet extension not detected. Please install it from the Chrome Web Store and reload.
+                </p>
+              </div>
+            )}
 
             {/* Step indicator for binding flow */}
             {isBinding && (
@@ -237,7 +382,7 @@ export function PasskeyWalletModal({
 
             <Button
               onClick={handleBindWallet}
-              disabled={isCreating || isBinding || !onSignPersonalMessage}
+              disabled={isCreating || isBinding || !hasIotaExtension || (!onSignPersonalMessage && !iotaExtAddress)}
               variant="outline"
               className="w-full border-primary/50 text-primary hover:bg-primary/10 font-semibold"
             >
@@ -261,9 +406,9 @@ export function PasskeyWalletModal({
               )}
             </Button>
 
-            {!onSignPersonalMessage && (
+            {!hasIotaExtension && !iotaDetecting && (
               <p className="text-xs text-muted-foreground text-center">
-                Connect your IOTA wallet extension to enable linking.
+                Or use the <strong>Create Wallet</strong> tab to create a passkey wallet without an extension.
               </p>
             )}
           </TabsContent>
