@@ -24,6 +24,7 @@ import { CredentialList } from './CredentialList';
 import { VerificationResultCard } from './VerificationResultCard';
 import { PresentationModal } from './PresentationModal';
 import { LinkEthereumWalletModal } from '@/components/LinkEthereumWalletModal';
+import { PasskeyWalletModal } from '@/components/PasskeyWalletModal';
 import { generateNonce, calculateExpiry } from '@/lib/identity/vault';
 import { setLinkedDomain } from '@/lib/messaging/linkDomain';
 import { callEdge } from '@/lib/supaInvoke';
@@ -65,6 +66,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
 
   const [showPresentationModal, setShowPresentationModal] = useState(false);
   const [showLinkEthModal, setShowLinkEthModal] = useState(false);
+  const [showPasskeyModal, setShowPasskeyModal] = useState(false);
   const [currentNonce, setCurrentNonce] = useState<string>('');
   const [vpExpiresAt, setVpExpiresAt] = useState<string>('');
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
@@ -327,6 +329,26 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
             addExternalCredential={addExternalCredential}
           />
+
+          {/* Passkey Wallet */}
+          <WalletLinkSection
+            label="Passkey Wallet"
+            subtitle="Passwordless sign-in via biometrics"
+            icon={<Fingerprint className="w-4 h-4 flex-shrink-0 text-primary" />}
+            expanded={false}
+            onToggle={() => setShowPasskeyModal(true)}
+            linkedVcs={[]}
+            badgeLabel="Passkey"
+          >
+            <Button
+              size="sm"
+              onClick={() => setShowPasskeyModal(true)}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            >
+              <Fingerprint className="w-3.5 h-3.5 mr-1.5" />
+              Manage Passkeys
+            </Button>
+          </WalletLinkSection>
         </>
       )}
 
@@ -356,6 +378,11 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         open={showLinkEthModal}
         onClose={() => setShowLinkEthModal(false)}
         iotaName={iotaName}
+      />
+      <PasskeyWalletModal
+        open={showPasskeyModal}
+        onClose={() => setShowPasskeyModal(false)}
+        walletAddress={iotaName}
       />
     </div>
   );

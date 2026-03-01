@@ -164,3 +164,24 @@ verify_jwt = false
 
 [functions.get-ton-tokens]
 verify_jwt = false
+
+[functions.passkey-bind-challenge]
+verify_jwt = false
+
+[functions.passkey-verify-wallet]
+verify_jwt = false
+
+[functions.passkey-register-challenge]
+verify_jwt = false
+
+[functions.passkey-register-verify]
+verify_jwt = false
+
+[functions.passkey-login-challenge]
+verify_jwt = false
+
+[functions.passkey-login-verify]
+verify_jwt = false
+
+[functions.passkey-unbind]
+verify_jwt = false

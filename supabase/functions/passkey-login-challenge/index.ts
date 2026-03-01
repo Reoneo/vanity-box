@@ -28,9 +28,9 @@ Deno.serve(async (req) => {
   try {
     const { walletAddress, origin, rpId } = await req.json();
 
-    if (!walletAddress || !origin || !rpId) {
+    if (!origin || !rpId) {
       return new Response(
-        JSON.stringify({ error: "walletAddress, origin, and rpId are required" }),
+        JSON.stringify({ error: "origin and rpId are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -39,57 +39,62 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const nonce = crypto.getRandomValues(new Uint8Array(32));
-    const nonceB64u = b64urlEncode(nonce);
-    const challengeHash = await sha256(nonce);
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const challengeB64u = b64urlEncode(challenge);
+    const challengeHash = await sha256(challenge);
 
-    const bindSessionId = crypto.randomUUID();
-    const issuedAt = new Date();
-    const expiresAt = new Date(issuedAt.getTime() + 5 * 60_000);
+    const challengeSessionId = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 5 * 60_000);
 
-    const message = [
-      `vanity.box wants you to link your IOTA account:`,
-      walletAddress,
-      ``,
-      `Purpose: Bind this wallet to a passkey for passwordless sign-in.`,
-      `URI: https://vanity.box`,
-      `Version: 1`,
-      `Nonce: ${nonceB64u}`,
-      `Issued At: ${issuedAt.toISOString()}`,
-      `Expiration Time: ${expiresAt.toISOString()}`,
-      `Request ID: ${bindSessionId}`,
-      `Resources:`,
-      `- urn:vanity.box:wallet-passkey-bind:v1`,
-      `- rpId=${rpId}`,
-      `- origin=${origin}`,
-      `- binding_level=existing_wallet_link`,
-    ].join("\n");
-
-    // Store hashed challenge via RPC
+    // Store challenge
     const { error: rpcError } = await supabase.rpc("passkey_insert_challenge", {
-      p_bind_session_id: bindSessionId,
+      p_bind_session_id: challengeSessionId,
       p_challenge_hash: `\\x${hexFromBytes(challengeHash)}`,
-      p_challenge_type: "wallet_bind",
-      p_iota_wallet_address: walletAddress,
+      p_challenge_type: "webauthn_login",
+      p_iota_wallet_address: walletAddress || null,
       p_expected_origin: origin,
       p_expected_rp_id: rpId,
       p_expires_at: expiresAt.toISOString(),
     });
 
     if (rpcError) {
-      console.error("Insert challenge error:", rpcError);
+      console.error("Insert login challenge error:", rpcError);
       return new Response(
-        JSON.stringify({ error: "Failed to create challenge" }),
+        JSON.stringify({ error: "Failed to create login challenge" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Build allowCredentials if wallet address provided
+    let allowCredentials: any[] = [];
+    if (walletAddress) {
+      const { data: bindings } = await supabase.rpc("passkey_get_bindings", {
+        p_iota_wallet_address: walletAddress,
+      });
+      if (bindings && Array.isArray(bindings)) {
+        allowCredentials = bindings.map((b: any) => ({
+          id: b.credential_id,
+          type: "public-key",
+          transports: ["internal", "hybrid"],
+        }));
+      }
+    }
+
+    // Anti-enumeration: always return same response shape
+    const publicKeyOptions = {
+      challenge: challengeB64u,
+      rpId,
+      allowCredentials: allowCredentials.length > 0 ? allowCredentials : undefined,
+      userVerification: "required",
+      timeout: 60_000,
+    };
+
     return new Response(
-      JSON.stringify({ bindSessionId, nonce: nonceB64u, message, expiresAt: expiresAt.toISOString() }),
+      JSON.stringify({ challengeSessionId, publicKeyOptions }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    console.error("passkey-bind-challenge error:", err);
+    console.error("passkey-login-challenge error:", err);
     return new Response(
       JSON.stringify({ error: err.message || "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
