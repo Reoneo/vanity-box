@@ -22,9 +22,22 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
 } from '@/types/passkey';
 
+/** Returns true if `value` looks like a real on-chain address (not a placeholder). */
+export function isValidIotaAddress(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const v = value.trim();
+  // Reject known placeholders
+  if (/^passkey/i.test(v) || /^wallet$/i.test(v) || /^user$/i.test(v) || /^unknown$/i.test(v)) return false;
+  // Accept 0x-prefixed hex (≥ 20 chars) or iota1/smr1 bech32 (≥ 20 chars)
+  if (/^0x[0-9a-fA-F]{8,}$/.test(v)) return true;
+  if (/^(iota1|smr1)[a-z0-9]{10,}$/.test(v)) return true;
+  // Accept any string ≥ 20 chars as a likely address
+  if (v.length >= 20) return true;
+  return false;
+}
+
 function getRpConfig() {
   const origin = window.location.origin;
-  // Use the hostname as RP ID (registrable domain)
   const rpId = window.location.hostname;
   return { origin, rpId };
 }

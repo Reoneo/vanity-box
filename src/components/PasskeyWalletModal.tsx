@@ -26,7 +26,7 @@ import {
   LogIn,
   Monitor,
 } from 'lucide-react';
-import { usePasskeyWallet } from '@/hooks/usePasskeyWallet';
+import { usePasskeyWallet, isValidIotaAddress } from '@/hooks/usePasskeyWallet';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { PasskeyBinding } from '@/types/passkey';
@@ -86,6 +86,10 @@ function isExtensionCapableBrowser(): boolean {
 
 /* ─────────── Emit passkey wallet connection ─────────── */
 function emitPasskeyWalletConnected(address: string) {
+  if (!isValidIotaAddress(address)) {
+    console.warn('[PasskeyWallet] Refusing to emit invalid address:', address);
+    return;
+  }
   sessionStorage.setItem(PASSKEY_IOTA_SESSION_KEY, address);
   window.dispatchEvent(new CustomEvent('wallet-connected', {
     detail: {

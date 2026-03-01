@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { useWalletConnect } from '@/contexts/WalletConnectContext';
 import { ConnectModal } from '@iota/dapp-kit';
 import { useIotaAccountSafe, useIotaDisconnectSafe } from '@/hooks/use-iota-wallet-safe';
+import { isValidIotaAddress } from '@/hooks/usePasskeyWallet';
 
 interface User {
   walletAddress?: string;
@@ -199,12 +200,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     const handlePasskeyConnect = (event: Event) => {
       const detail = (event as CustomEvent)?.detail;
       if (detail?.walletType === 'iota' && detail?.source === 'passkey' && detail?.walletAddress) {
-        console.log('[WalletConnection] Passkey IOTA wallet connected:', detail.walletAddress);
+        const addr = detail.walletAddress;
+        if (!isValidIotaAddress(addr)) {
+          console.warn('[WalletConnection] Ignoring invalid passkey address:', addr);
+          return;
+        }
+        console.log('[WalletConnection] Passkey IOTA wallet connected:', addr);
         setWalletType('iota');
         setIotaConnectionSource('passkey');
         setUser({
-          walletAddress: detail.walletAddress,
-          username: detail.username || formatAddress(detail.walletAddress),
+          walletAddress: addr,
+          username: formatAddress(addr),
         });
         setIsLoading(false);
       }
@@ -217,7 +223,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   useEffect(() => {
     if (user || petraConnected || walletConnectConnected || iotaConnected) return;
     const savedAddr = sessionStorage.getItem(PASSKEY_IOTA_SESSION_KEY);
-    if (savedAddr) {
+    if (savedAddr && isValidIotaAddress(savedAddr)) {
       console.log('[WalletConnection] Restoring passkey IOTA session:', savedAddr);
       setWalletType('iota');
       setIotaConnectionSource('passkey');
@@ -225,6 +231,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         walletAddress: savedAddr,
         username: formatAddress(savedAddr),
       });
+    } else if (savedAddr) {
+      console.warn('[WalletConnection] Clearing invalid passkey session:', savedAddr);
+      sessionStorage.removeItem(PASSKEY_IOTA_SESSION_KEY);
     }
   }, []);
 
@@ -651,13 +660,15 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     : walletType === 'iota' && iotaAccount?.address
     ? iotaAccount.address
     : user?.walletAddress || '';
-  const displayUsername = walletType === 'petra' 
+  // Ensure display never shows "passkey" as address
+  const rawDisplayUsername = walletType === 'petra' 
     ? formatAddress(petraAccount?.address || '')
     : walletType === 'walletconnect' && walletConnectAddress
     ? ensName || formatAddress(walletConnectAddress)
     : walletType === 'iota' && iotaAccount?.address
     ? formatAddress(iotaAccount.address)
     : user?.username || formatAddress(user?.walletAddress || '');
+  const displayUsername = /^passke/i.test(rawDisplayUsername) ? formatAddress(user?.walletAddress || displayAddress) : rawDisplayUsername;
   const walletIcon = walletType === 'petra' ? petraIcon : walletType === 'iota' ? iotaLogo : wldLogo;
 
   return (
