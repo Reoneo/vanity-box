@@ -1,7 +1,7 @@
-// Passkey Wallet Modal - Create passkey wallet or bind existing wallet
-// Supports IOTA Wallet extension detection (Chrome/Chromium only)
+// Passkey Wallet Modal - Create / Sign In / Link Existing
+// 3-tab design with isolated state per tab
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,13 +23,28 @@ import {
   Trash2,
   ChevronRight,
   Globe,
+  LogIn,
+  Monitor,
 } from 'lucide-react';
 import { usePasskeyWallet } from '@/hooks/usePasskeyWallet';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { PasskeyBinding } from '@/types/passkey';
 
-// Extend Window for IOTA wallet extension
+/* ─────────── Wallet Standard types ─────────── */
+interface WalletStandardWallet {
+  name: string;
+  icon?: string;
+  accounts: Array<{ address: string }>;
+  features: Record<string, unknown>;
+  connect?: () => Promise<void>;
+}
+
+interface WalletStandardAPI {
+  get: () => WalletStandardWallet[];
+  on: (event: string, cb: () => void) => (() => void);
+}
+
 declare global {
   interface Window {
     iota?: {
@@ -38,16 +53,207 @@ declare global {
       request: (params: { method: string; params?: any }) => Promise<any>;
       getAccounts?: () => Promise<string[]>;
     };
+    nightly?: { iota?: Window['iota'] };
+    __iotaWalletStandard?: WalletStandardAPI;
   }
 }
 
+/* ─────────── Environment detection ─────────── */
+function isChromiumDesktop(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  const isChromium = /Chrome|Chromium|CriOS/.test(ua) && !/Edg/.test(ua) || /Edg/.test(ua) || /Brave/.test(ua);
+  const isMobile = /Android|iPhone|iPad|iPod/.test(ua);
+  return isChromium && !isMobile;
+}
+
+/* ─────────── Wallet detection hook ─────────── */
+type WalletConnectStatus = 'idle' | 'detecting' | 'detected' | 'connecting' | 'connected' | 'error';
+
+interface WalletDetectionState {
+  envSupported: boolean;
+  providerDetected: boolean;
+  providerName: string | null;
+  connectStatus: WalletConnectStatus;
+  connectedAddress: string | null;
+  error: string | null;
+  connectWallet: () => Promise<void>;
+  reset: () => void;
+}
+
+function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
+  const [envSupported] = useState(isChromiumDesktop);
+  const [providerDetected, setProviderDetected] = useState(false);
+  const [providerName, setProviderName] = useState<string | null>(null);
+  const [connectStatus, setConnectStatus] = useState<WalletConnectStatus>('idle');
+  const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const providerRef = useRef<any>(null);
+
+  // Detect wallet providers
+  useEffect(() => {
+    if (!modalOpen) return;
+    setConnectStatus('detecting');
+    setProviderDetected(false);
+    setProviderName(null);
+    setError(null);
+
+    let cancelled = false;
+    let attempts = 0;
+    let unsubWS: (() => void) | null = null;
+
+    const checkProviders = () => {
+      // 1) Wallet Standard
+      try {
+        const ws = (globalThis as any).__iotaWalletStandard as WalletStandardAPI | undefined;
+        if (ws) {
+          const wallets = ws.get();
+          const iotaWallet = wallets.find(
+            (w) => w.features?.['standard:connect'] && (
+              w.name.toLowerCase().includes('iota') ||
+              w.name.toLowerCase().includes('nightly')
+            )
+          );
+          if (iotaWallet) {
+            providerRef.current = iotaWallet;
+            if (!cancelled) {
+              setProviderDetected(true);
+              setProviderName(iotaWallet.name);
+              setConnectStatus('detected');
+            }
+            return true;
+          }
+          // Register listener for late wallet registration
+          unsubWS = ws.on('register', () => {
+            if (!cancelled) checkProviders();
+          });
+        }
+      } catch { /* ignore */ }
+
+      // 2) Nightly injected
+      if (window.nightly?.iota) {
+        providerRef.current = { type: 'nightly-injected', provider: window.nightly.iota };
+        if (!cancelled) {
+          setProviderDetected(true);
+          setProviderName('Nightly');
+          setConnectStatus('detected');
+        }
+        return true;
+      }
+
+      // 3) Legacy window.iota
+      if (window.iota) {
+        providerRef.current = { type: 'legacy-injected', provider: window.iota };
+        if (!cancelled) {
+          setProviderDetected(true);
+          setProviderName('IOTA Wallet');
+          setConnectStatus('detected');
+        }
+        return true;
+      }
+
+      return false;
+    };
+
+    if (checkProviders()) return;
+
+    // Poll for late injection
+    const interval = setInterval(() => {
+      if (cancelled) return;
+      if (checkProviders()) {
+        clearInterval(interval);
+        return;
+      }
+      attempts++;
+      if (attempts > 10) {
+        clearInterval(interval);
+        if (!cancelled) {
+          setConnectStatus('idle');
+        }
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      unsubWS?.();
+    };
+  }, [modalOpen]);
+
+  const connectWallet = useCallback(async () => {
+    const provider = providerRef.current;
+    if (!provider) {
+      setError('No wallet provider detected');
+      return;
+    }
+
+    setConnectStatus('connecting');
+    setError(null);
+
+    try {
+      // Wallet Standard provider
+      if (provider.features?.['standard:connect']) {
+        const connectFeature = provider.features['standard:connect'] as { connect: () => Promise<any> };
+        await connectFeature.connect();
+        const accounts = provider.accounts || [];
+        if (accounts.length > 0) {
+          setConnectedAddress(accounts[0].address);
+          setConnectStatus('connected');
+          return;
+        }
+        throw new Error('No accounts returned after connect');
+      }
+
+      // Injected provider (nightly or legacy)
+      const injected = provider.provider || provider;
+      if (injected?.connect) {
+        const result = await injected.connect();
+        if (result === true || result) {
+          let accounts: string[] = [];
+          if (injected.getAccounts) {
+            accounts = await injected.getAccounts();
+          } else {
+            try {
+              const reqResult = await injected.request({ method: 'standard:connect' });
+              if (Array.isArray(reqResult)) accounts = reqResult;
+              else if (reqResult?.accounts) accounts = reqResult.accounts.map((a: any) => a.address || a);
+            } catch { /* connect was enough */ }
+          }
+          if (accounts.length > 0) {
+            setConnectedAddress(accounts[0]);
+            setConnectStatus('connected');
+            return;
+          }
+        }
+        throw new Error('Failed to connect');
+      }
+
+      throw new Error('Provider does not support connect');
+    } catch (err: any) {
+      console.error('Wallet connect error:', err);
+      setError(err.message || 'Failed to connect wallet');
+      setConnectStatus('error');
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    setConnectedAddress(null);
+    setConnectStatus('idle');
+    setError(null);
+  }, []);
+
+  return { envSupported, providerDetected, providerName, connectStatus, connectedAddress, error, connectWallet, reset };
+}
+
+/* ─────────── Props ─────────── */
 interface PasskeyWalletModalProps {
   open: boolean;
   onClose: () => void;
-  walletAddress: string;
+  walletAddress?: string;
   onSignPersonalMessage?: (message: Uint8Array) => Promise<{ signature: string }>;
 }
 
+/* ─────────── Main Modal ─────────── */
 export function PasskeyWalletModal({
   open,
   onClose,
@@ -61,114 +267,78 @@ export function PasskeyWalletModal({
     isCreating,
     isBinding,
     isAuthenticating,
-    error,
+    error: hookError,
     currentStep,
     createPasskeyWallet,
     bindExistingWallet,
+    loginWithPasskey,
     unbindPasskey,
     loadBindings,
-    resetError,
-  } = usePasskeyWallet(walletAddress);
+    resetError: resetHookError,
+  } = usePasskeyWallet(walletAddress || undefined);
 
+  const wallet = useIotaWalletDetection(open);
+
+  const [activeTab, setActiveTab] = useState('create');
   const [confirmUnbind, setConfirmUnbind] = useState<string | null>(null);
 
-  // IOTA extension detection state
-  const [hasIotaExtension, setHasIotaExtension] = useState(false);
-  const [iotaDetecting, setIotaDetecting] = useState(true);
-  const [iotaConnecting, setIotaConnecting] = useState(false);
-  const [iotaExtAddress, setIotaExtAddress] = useState<string | null>(null);
+  // Per-tab errors (isolated)
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [signInError, setSignInError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
-  // Poll for window.iota injection (extension may load after page)
+  // Clear tab errors when switching
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setCreateError(null);
+    setSignInError(null);
+    setLinkError(null);
+    resetHookError();
+  };
+
+  // Load bindings when modal opens with a wallet
   useEffect(() => {
-    if (!open) return;
-    setIotaDetecting(true);
+    if (open && walletAddress) loadBindings();
+  }, [open, walletAddress, loadBindings]);
 
-    let attempts = 0;
-    const interval = setInterval(() => {
-      if (window.iota) {
-        setHasIotaExtension(true);
-        setIotaDetecting(false);
-        clearInterval(interval);
-        return;
-      }
-      attempts++;
-      if (attempts > 10) {
-        setHasIotaExtension(false);
-        setIotaDetecting(false);
-        clearInterval(interval);
-      }
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, [open]);
-
-  // Explicit connect to IOTA extension
-  const handleIotaConnect = useCallback(async () => {
-    if (!window.iota) {
-      toast.error('IOTA Wallet extension not found. Please use Chrome with the extension installed.');
-      return;
-    }
-
-    setIotaConnecting(true);
-    try {
-      const isConnected = await window.iota.connect();
-      if (isConnected) {
-        // Try to get accounts
-        let accounts: string[] = [];
-        if (window.iota.getAccounts) {
-          accounts = await window.iota.getAccounts();
-        } else {
-          // Fallback: use request method
-          try {
-            const result = await window.iota.request({ method: 'standard:connect' });
-            if (result && Array.isArray(result)) {
-              accounts = result;
-            } else if (result?.accounts) {
-              accounts = result.accounts.map((a: any) => a.address || a);
-            }
-          } catch {
-            // connect() was enough
-          }
-        }
-
-        if (accounts.length > 0) {
-          setIotaExtAddress(accounts[0]);
-          toast.success('IOTA wallet connected');
-        } else {
-          toast.info('Connected but no accounts found');
-        }
-      }
-    } catch (err: any) {
-      console.error('IOTA extension connect error:', err);
-      toast.error(err.message || 'Failed to connect IOTA wallet');
-    } finally {
-      setIotaConnecting(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (open && (walletAddress || iotaExtAddress)) {
-      loadBindings();
-    }
-  }, [open, walletAddress, iotaExtAddress, loadBindings]);
-
-  const effectiveWalletAddress = iotaExtAddress || walletAddress;
-
+  /* ── Create Wallet Handler ── */
   const handleCreateWallet = async () => {
+    setCreateError(null);
     const success = await createPasskeyWallet();
     if (success) {
       toast.success('Passkey wallet created successfully');
+    } else if (hookError) {
+      setCreateError(hookError);
     }
   };
 
+  /* ── Sign In Handler ── */
+  const handleSignIn = async () => {
+    setSignInError(null);
+    const binding = await loginWithPasskey();
+    if (binding) {
+      toast.success('Signed in with passkey');
+    } else if (hookError) {
+      setSignInError(hookError);
+    }
+  };
+
+  /* ── Link Existing Handler ── */
   const handleBindWallet = async () => {
+    setLinkError(null);
+    if (!wallet.connectedAddress && !walletAddress) {
+      setLinkError('Connect your IOTA wallet extension first');
+      return;
+    }
     if (!onSignPersonalMessage) {
-      toast.error('Wallet signing not available');
+      setLinkError('Wallet signing not available. Connect your extension wallet first.');
       return;
     }
     const success = await bindExistingWallet(onSignPersonalMessage);
     if (success) {
-      toast.success('Wallet bound to passkey successfully');
+      toast.success('Wallet bound to passkey');
+    } else if (hookError) {
+      setLinkError(hookError);
     }
   };
 
@@ -180,10 +350,12 @@ export function PasskeyWalletModal({
     }
   };
 
+  const currentTabError = activeTab === 'create' ? createError : activeTab === 'signin' ? signInError : linkError;
+
   if (!isAvailable) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md mx-4">
+        <DialogContent className="sm:max-w-md mx-4 max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Fingerprint className="w-5 h-5 text-primary" />
@@ -211,54 +383,9 @@ export function PasskeyWalletModal({
             Passkey Wallet
           </DialogTitle>
           <DialogDescription>
-            Create a passkey-backed wallet or link your existing wallet for passwordless sign-in.
+            Create, sign in, or link a passkey-backed IOTA wallet.
           </DialogDescription>
         </DialogHeader>
-
-        {/* IOTA Extension Status */}
-        <div className="p-3 rounded-lg border border-border bg-muted/20">
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              {iotaDetecting ? (
-                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Detecting IOTA Wallet extension…
-                </p>
-              ) : hasIotaExtension ? (
-                iotaExtAddress ? (
-                  <p className="text-xs text-foreground">
-                    <span className="text-emerald-500 font-medium">Connected:</span>{' '}
-                    <span className="font-mono">{iotaExtAddress.slice(0, 10)}…{iotaExtAddress.slice(-6)}</span>
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    IOTA Wallet extension detected
-                  </p>
-                )
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  No IOTA Wallet extension found. Use a Chromium browser with the extension installed, or create a passkey wallet below.
-                </p>
-              )}
-            </div>
-            {hasIotaExtension && !iotaExtAddress && !iotaDetecting && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-3 border-primary/50 text-primary"
-                onClick={handleIotaConnect}
-                disabled={iotaConnecting}
-              >
-                {iotaConnecting ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  'Connect'
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
 
         {/* Active bindings */}
         {bindings.length > 0 && (
@@ -278,18 +405,28 @@ export function PasskeyWalletModal({
           </div>
         )}
 
-        {/* Error display */}
-        {error && (
+        {/* Tab-scoped error */}
+        {currentTabError && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
             <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-            <p className="text-xs text-destructive">{error}</p>
-            <Button variant="ghost" size="sm" onClick={resetError} className="ml-auto text-xs h-6">
+            <p className="text-xs text-destructive">{currentTabError}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (activeTab === 'create') setCreateError(null);
+                else if (activeTab === 'signin') setSignInError(null);
+                else setLinkError(null);
+                resetHookError();
+              }}
+              className="ml-auto text-xs h-6"
+            >
               Dismiss
             </Button>
           </div>
         )}
 
-        {/* Success state */}
+        {/* Success */}
         {currentStep === 'complete' && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
@@ -299,19 +436,24 @@ export function PasskeyWalletModal({
           </div>
         )}
 
-        {/* Create/Bind tabs */}
-        <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="create" className="text-xs">
-              <KeyRound className="w-3.5 h-3.5 mr-1.5" />
-              Create Wallet
+        {/* 3 Tabs */}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="create" className="text-[10px] sm:text-xs px-1">
+              <KeyRound className="w-3 h-3 mr-1" />
+              Create
             </TabsTrigger>
-            <TabsTrigger value="link" className="text-xs">
-              <Wallet className="w-3.5 h-3.5 mr-1.5" />
-              Link Existing
+            <TabsTrigger value="signin" className="text-[10px] sm:text-xs px-1">
+              <LogIn className="w-3 h-3 mr-1" />
+              Sign In
+            </TabsTrigger>
+            <TabsTrigger value="link" className="text-[10px] sm:text-xs px-1">
+              <Wallet className="w-3 h-3 mr-1" />
+              Link
             </TabsTrigger>
           </TabsList>
 
+          {/* ── CREATE TAB ── */}
           <TabsContent value="create" className="space-y-3 mt-3">
             <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-2">
               <p className="text-sm font-medium">New Passkey Wallet</p>
@@ -328,7 +470,7 @@ export function PasskeyWalletModal({
 
             <Button
               onClick={handleCreateWallet}
-              disabled={isCreating || isBinding}
+              disabled={isCreating}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
             >
               {isCreating ? (
@@ -350,26 +492,98 @@ export function PasskeyWalletModal({
             </Button>
           </TabsContent>
 
+          {/* ── SIGN IN TAB ── */}
+          <TabsContent value="signin" className="space-y-3 mt-3">
+            <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-2">
+              <p className="text-sm font-medium">Sign In with Passkey</p>
+              <p className="text-xs text-muted-foreground">
+                Authenticate with an existing passkey credential. No extension required — 
+                use your device biometric or PIN to connect your passkey wallet.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleSignIn}
+              disabled={isAuthenticating}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            >
+              {isAuthenticating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Authenticating…
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In with Passkey
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </>
+              )}
+            </Button>
+          </TabsContent>
+
+          {/* ── LINK EXISTING TAB ── */}
           <TabsContent value="link" className="space-y-3 mt-3">
             <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-2">
               <p className="text-sm font-medium">Link Existing Wallet</p>
               <p className="text-xs text-muted-foreground">
-                {hasIotaExtension
-                  ? 'Connect your IOTA Wallet extension, sign a proof message, then create a passkey for passwordless access.'
-                  : 'Requires the IOTA Wallet extension on a Chromium-based browser (Chrome, Brave, Edge).'}
+                {wallet.envSupported
+                  ? 'Connect your IOTA wallet extension, sign a proof, then create a passkey for passwordless access.'
+                  : 'Extension-based wallet linking requires a compatible browser with a wallet extension. You can still create or sign in with a passkey on this device.'}
               </p>
             </div>
 
-            {!hasIotaExtension && !iotaDetecting && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  IOTA Wallet extension not detected. Please install it from the Chrome Web Store and reload.
-                </p>
+            {/* Wallet detection status */}
+            <div className="p-3 rounded-lg border border-border bg-muted/20">
+              <div className="flex items-center gap-2">
+                <Monitor className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {!wallet.envSupported ? (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Extension linking is available on desktop Chromium browsers (Chrome, Brave, Edge).
+                    </p>
+                  ) : wallet.connectStatus === 'detecting' ? (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Detecting wallet extension…
+                    </p>
+                  ) : wallet.connectedAddress ? (
+                    <p className="text-xs text-foreground">
+                      <span className="text-emerald-500 font-medium">Connected:</span>{' '}
+                      <span className="font-mono">{wallet.connectedAddress.slice(0, 10)}…{wallet.connectedAddress.slice(-6)}</span>
+                    </p>
+                  ) : wallet.providerDetected ? (
+                    <p className="text-xs text-muted-foreground">
+                      {wallet.providerName || 'IOTA Wallet'} detected
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      No compatible wallet extension found.
+                    </p>
+                  )}
+                </div>
+                {wallet.envSupported && wallet.providerDetected && !wallet.connectedAddress && wallet.connectStatus !== 'detecting' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-3 border-primary/50 text-primary"
+                    onClick={wallet.connectWallet}
+                    disabled={wallet.connectStatus === 'connecting'}
+                  >
+                    {wallet.connectStatus === 'connecting' ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      'Connect'
+                    )}
+                  </Button>
+                )}
               </div>
-            )}
+              {wallet.error && (
+                <p className="text-xs text-destructive mt-1.5">{wallet.error}</p>
+              )}
+            </div>
 
-            {/* Step indicator for binding flow */}
+            {/* Binding step indicator */}
             {isBinding && (
               <div className="flex items-center gap-2 py-2">
                 <StepDot active={currentStep === 'wallet_proof'} complete={currentStep !== 'wallet_proof' && currentStep !== 'idle'} label="1. Sign" />
@@ -382,7 +596,7 @@ export function PasskeyWalletModal({
 
             <Button
               onClick={handleBindWallet}
-              disabled={isCreating || isBinding || !hasIotaExtension || (!onSignPersonalMessage && !iotaExtAddress)}
+              disabled={isBinding || !wallet.envSupported || (!wallet.connectedAddress && !walletAddress) || !onSignPersonalMessage}
               variant="outline"
               className="w-full border-primary/50 text-primary hover:bg-primary/10 font-semibold"
             >
@@ -400,15 +614,15 @@ export function PasskeyWalletModal({
               ) : (
                 <>
                   <Wallet className="w-4 h-4 mr-2" />
-                  Link & Create Passkey
+                  Link &amp; Create Passkey
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </>
               )}
             </Button>
 
-            {!hasIotaExtension && !iotaDetecting && (
+            {!wallet.envSupported && (
               <p className="text-xs text-muted-foreground text-center">
-                Or use the <strong>Create Wallet</strong> tab to create a passkey wallet without an extension.
+                Use the <strong>Create</strong> or <strong>Sign In</strong> tabs instead.
               </p>
             )}
           </TabsContent>
@@ -417,6 +631,8 @@ export function PasskeyWalletModal({
     </Dialog>
   );
 }
+
+/* ─────────── Sub-components ─────────── */
 
 function BindingCard({
   binding,
