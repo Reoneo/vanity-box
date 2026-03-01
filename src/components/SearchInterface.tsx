@@ -2632,7 +2632,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             <PasskeyWalletModal
               open={showPasskeyModal}
               onClose={() => setShowPasskeyModal(false)}
-              walletAddress={iotaWalletAddress || walletAddress || ''}
+              walletAddress={iotaWalletAddress || walletAddress}
             />
 
             {/* Results container - Row-based layout with 60fps optimization */}

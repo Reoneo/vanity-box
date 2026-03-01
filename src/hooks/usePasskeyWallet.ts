@@ -83,6 +83,7 @@ export function usePasskeyWallet(walletAddress?: string | null) {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<PasskeyFlowStep>('idle');
+  const [createdWalletAddress, setCreatedWalletAddress] = useState<string | null>(null);
 
   // Check WebAuthn availability
   useEffect(() => {
@@ -99,11 +100,12 @@ export function usePasskeyWallet(walletAddress?: string | null) {
 
   // Load existing bindings
   const loadBindings = useCallback(async () => {
-    if (!walletAddress) return;
+    const addr = walletAddress || createdWalletAddress;
+    if (!addr) return;
     setIsLoading(true);
     try {
       const result = await callEdge<PasskeyBinding[]>('passkey-get-bindings', {
-        walletAddress,
+        walletAddress: addr,
       });
       if (result && Array.isArray(result)) {
         setBindings(result);
@@ -113,18 +115,14 @@ export function usePasskeyWallet(walletAddress?: string | null) {
     } finally {
       setIsLoading(false);
     }
-  }, [walletAddress]);
+  }, [walletAddress, createdWalletAddress]);
 
   /**
    * Create a new passkey-backed IOTA wallet.
    * Flow: register-challenge → WebAuthn create → register-verify
+   * Does NOT require an existing wallet address.
    */
   const createPasskeyWallet = useCallback(async (): Promise<boolean> => {
-    if (!walletAddress) {
-      setError('Wallet address required');
-      return false;
-    }
-
     setIsCreating(true);
     setError(null);
     setCurrentStep('passkey_create');
@@ -132,11 +130,14 @@ export function usePasskeyWallet(walletAddress?: string | null) {
     try {
       const { origin, rpId } = getRpConfig();
 
+      // For new passkey wallets, use a temporary identifier if no wallet connected
+      const effectiveAddress = walletAddress || `passkey:${crypto.randomUUID()}`;
+
       // 1) Get registration challenge
       const challengeResponse = await callEdge<RegisterChallengeResponse>(
         'passkey-register-challenge',
         {
-          walletAddress,
+          walletAddress: effectiveAddress,
           origin,
           rpId,
           bindingLevel: 'passkey_wallet',
@@ -155,7 +156,7 @@ export function usePasskeyWallet(walletAddress?: string | null) {
       setCurrentStep('verifying');
 
       // 3) Verify with server
-      const verifyResponse = await callEdge<{ ok: boolean; bindingId: string }>(
+      const verifyResponse = await callEdge<{ ok: boolean; bindingId: string; walletAddress?: string }>(
         'passkey-register-verify',
         {
           bindSessionId: challengeResponse.bindSessionId,
@@ -164,7 +165,7 @@ export function usePasskeyWallet(walletAddress?: string | null) {
           rpId,
           credential: serialized,
           bindingLevel: 'passkey_wallet',
-          walletAddress,
+          walletAddress: effectiveAddress,
         }
       );
 
@@ -172,18 +173,23 @@ export function usePasskeyWallet(walletAddress?: string | null) {
         throw new Error('Server verification failed');
       }
 
+      // Store the created wallet address for display
+      setCreatedWalletAddress(verifyResponse.walletAddress || effectiveAddress);
       setCurrentStep('complete');
-      await loadBindings();
       return true;
     } catch (err: any) {
       console.error('Passkey wallet creation error:', err);
-      setError(err.message || 'Failed to create passkey wallet');
+      if (err.name === 'NotAllowedError') {
+        setError('Passkey creation was cancelled');
+      } else {
+        setError(err.message || 'Failed to create passkey wallet');
+      }
       setCurrentStep('error');
       return false;
     } finally {
       setIsCreating(false);
     }
-  }, [walletAddress, loadBindings]);
+  }, [walletAddress]);
 
   /**
    * Bind an existing extension wallet to a passkey.
@@ -192,7 +198,7 @@ export function usePasskeyWallet(walletAddress?: string | null) {
   const bindExistingWallet = useCallback(
     async (signPersonalMessage: (message: Uint8Array) => Promise<{ signature: string }>): Promise<boolean> => {
       if (!walletAddress) {
-        setError('Wallet address required');
+        setError('Connect your IOTA wallet extension first');
         return false;
       }
 
@@ -389,6 +395,7 @@ export function usePasskeyWallet(walletAddress?: string | null) {
     isAuthenticating,
     error,
     currentStep,
+    createdWalletAddress,
     createPasskeyWallet,
     bindExistingWallet,
     loginWithPasskey,
