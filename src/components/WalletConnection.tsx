@@ -50,7 +50,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     isReady: walletConnectReady
   } = useWalletConnect();
   
+  const PASSKEY_IOTA_SESSION_KEY = 'vanity_passkey_iota_address';
   const [walletType, setWalletType] = useState<'worldchain' | 'petra' | 'walletconnect' | 'iota' | null>(null);
+  const [iotaConnectionSource, setIotaConnectionSource] = useState<'extension' | 'passkey' | null>(null);
   const [aptBalance, setAptBalance] = useState<number>(0);
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
   const [balanceLoading, setBalanceLoading] = useState(false);
@@ -86,8 +88,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Handle WalletConnect connection — but don't override IOTA wallet
   useEffect(() => {
     if (walletConnectConnected && walletConnectAddress) {
-      // If IOTA is already the active wallet OR EVM linking is in progress, don't switch
-      if ((walletType === 'iota' && iotaConnected) || (window as any).__VANITY_EVM_LINKING) {
+      // If IOTA is already the active wallet (extension or passkey) OR EVM linking is in progress, don't switch
+      if ((walletType === 'iota') || (window as any).__VANITY_EVM_LINKING) {
         console.log('[WalletConnection] Ignoring WalletConnect — IOTA wallet is active or EVM linking in progress');
         return;
       }
@@ -136,11 +138,13 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     }
   }, [petraConnected, petraAccount, petraNetwork]);
 
-  // Handle IOTA wallet connection (web only)
+  // Handle IOTA wallet connection (web only — extension)
   useEffect(() => {
     if (iotaConnected && iotaAccount?.address) {
       console.log('[WalletConnection] IOTA wallet connected:', iotaAccount.address);
       setWalletType('iota');
+      setIotaConnectionSource('extension');
+      sessionStorage.removeItem(PASSKEY_IOTA_SESSION_KEY);
       setIsLoading(true);
       
       // Resolve IOTA address to .iota name
@@ -150,7 +154,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
             address: iotaAccount.address,
           });
 
-          const iotaName = typeof data?.name === 'string' ? data.name : null; // e.g., "vanity.iota"
+          const iotaName = typeof data?.name === 'string' ? data.name : null;
           console.log('[WalletConnection] Resolved IOTA name:', iotaName);
 
           setUser({
@@ -163,7 +167,7 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
               detail: {
                 walletAddress: iotaAccount.address,
                 walletType: 'iota',
-                username: iotaName, // used by Profile dock button
+                username: iotaName,
               },
             })
           );
@@ -189,6 +193,40 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       resolveIotaName();
     }
   }, [iotaConnected, iotaAccount?.address]);
+
+  // Listen for passkey wallet connection events
+  useEffect(() => {
+    const handlePasskeyConnect = (event: Event) => {
+      const detail = (event as CustomEvent)?.detail;
+      if (detail?.walletType === 'iota' && detail?.source === 'passkey' && detail?.walletAddress) {
+        console.log('[WalletConnection] Passkey IOTA wallet connected:', detail.walletAddress);
+        setWalletType('iota');
+        setIotaConnectionSource('passkey');
+        setUser({
+          walletAddress: detail.walletAddress,
+          username: detail.username || formatAddress(detail.walletAddress),
+        });
+        setIsLoading(false);
+      }
+    };
+    window.addEventListener('wallet-connected', handlePasskeyConnect as EventListener);
+    return () => window.removeEventListener('wallet-connected', handlePasskeyConnect as EventListener);
+  }, []);
+
+  // Restore passkey IOTA session from sessionStorage on load
+  useEffect(() => {
+    if (user || petraConnected || walletConnectConnected || iotaConnected) return;
+    const savedAddr = sessionStorage.getItem(PASSKEY_IOTA_SESSION_KEY);
+    if (savedAddr) {
+      console.log('[WalletConnection] Restoring passkey IOTA session:', savedAddr);
+      setWalletType('iota');
+      setIotaConnectionSource('passkey');
+      setUser({
+        walletAddress: savedAddr,
+        username: formatAddress(savedAddr),
+      });
+    }
+  }, []);
 
   useEffect(() => {
     console.log('🌍 Environment check on mount:');
@@ -425,11 +463,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
       setEnsName(null);
       window.dispatchEvent(new CustomEvent('wallet-disconnected'));
     } else if (walletType === 'iota') {
-      disconnectIota();
+      // Only call extension disconnect if connected via extension
+      if (iotaConnectionSource === 'extension') {
+        disconnectIota();
+      }
+      // Always clear passkey session
+      sessionStorage.removeItem(PASSKEY_IOTA_SESSION_KEY);
       setUser(null);
       setWalletType(null);
+      setIotaConnectionSource(null);
       setEnsName(null);
-      window.dispatchEvent(new CustomEvent('wallet-disconnected'));
+      window.dispatchEvent(new CustomEvent('wallet-disconnected', { detail: { walletType: 'iota' } }));
     } else if (walletType === 'worldchain') {
       setUser(null);
       setWalletType(null);
@@ -540,7 +584,9 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   };
 
   // Not connected - show connect button
-  if (!user && !petraConnected && !walletConnectConnected && !iotaConnected) {
+  // Check for passkey session too
+  const hasPasskeySession = !!sessionStorage.getItem(PASSKEY_IOTA_SESSION_KEY);
+  if (!user && !petraConnected && !walletConnectConnected && !iotaConnected && !hasPasskeySession) {
     return (
       <>
         <Button
