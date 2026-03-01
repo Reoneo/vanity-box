@@ -31,6 +31,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { PasskeyBinding } from '@/types/passkey';
 
+/* ─────────── Session storage key ─────────── */
+const PASSKEY_IOTA_SESSION_KEY = 'vanity_passkey_iota_address';
+
 /* ─────────── Wallet Standard types ─────────── */
 interface WalletStandardWallet {
   name: string;
@@ -59,12 +62,39 @@ declare global {
 }
 
 /* ─────────── Environment detection ─────────── */
-function isChromiumDesktop(): boolean {
+function isExtensionCapableBrowser(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent;
-  const isChromium = /Chrome|Chromium|CriOS/.test(ua) && !/Edg/.test(ua) || /Edg/.test(ua) || /Brave/.test(ua);
-  const isMobile = /Android|iPhone|iPad|iPod/.test(ua);
-  return isChromium && !isMobile;
+
+  // Chromium desktop (Chrome, Brave, Edge, Opera)
+  const isChromium = /Chrome|Chromium|CriOS/.test(ua) || /Edg/.test(ua) || /Brave/.test(ua);
+  // Safari detection – exclude Chrome/Edge/Firefox/Opera
+  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|Edg|Firefox|OPR|Opera/.test(ua);
+  // iPad Safari: "Macintosh" + touch or explicit "iPad"
+  const isIPadSafari = isSafari && (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1));
+  const isMacSafari = isSafari && /Macintosh/.test(ua) && !isIPadSafari;
+
+  // Mobile phones are excluded for extension linking
+  const isMobilePhone = /Android|iPhone|iPod/.test(ua);
+
+  if (isMobilePhone) return false;
+  if (isChromium) return true;
+  if (isMacSafari || isIPadSafari) return true;
+
+  return false;
+}
+
+/* ─────────── Emit passkey wallet connection ─────────── */
+function emitPasskeyWalletConnected(address: string) {
+  sessionStorage.setItem(PASSKEY_IOTA_SESSION_KEY, address);
+  window.dispatchEvent(new CustomEvent('wallet-connected', {
+    detail: {
+      walletAddress: address,
+      walletType: 'iota',
+      username: null,
+      source: 'passkey',
+    },
+  }));
 }
 
 /* ─────────── Wallet detection hook ─────────── */
@@ -82,13 +112,18 @@ interface WalletDetectionState {
 }
 
 function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
-  const [envSupported] = useState(isChromiumDesktop);
+  const [envSupported, setEnvSupported] = useState(isExtensionCapableBrowser);
   const [providerDetected, setProviderDetected] = useState(false);
   const [providerName, setProviderName] = useState<string | null>(null);
   const [connectStatus, setConnectStatus] = useState<WalletConnectStatus>('idle');
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const providerRef = useRef<any>(null);
+
+  // Re-evaluate env support when modal opens
+  useEffect(() => {
+    if (modalOpen) setEnvSupported(isExtensionCapableBrowser());
+  }, [modalOpen]);
 
   // Detect wallet providers
   useEffect(() => {
@@ -120,6 +155,7 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
               setProviderDetected(true);
               setProviderName(iotaWallet.name);
               setConnectStatus('detected');
+              setEnvSupported(true); // override if provider actually found
             }
             return true;
           }
@@ -137,6 +173,7 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
           setProviderDetected(true);
           setProviderName('Nightly');
           setConnectStatus('detected');
+          setEnvSupported(true);
         }
         return true;
       }
@@ -148,6 +185,7 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
           setProviderDetected(true);
           setProviderName('IOTA Wallet');
           setConnectStatus('detected');
+          setEnvSupported(true);
         }
         return true;
       }
@@ -157,7 +195,7 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
 
     if (checkProviders()) return;
 
-    // Poll for late injection
+    // Poll for late injection — increased to 40 attempts for Safari/slow extensions
     const interval = setInterval(() => {
       if (cancelled) return;
       if (checkProviders()) {
@@ -165,7 +203,7 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
         return;
       }
       attempts++;
-      if (attempts > 10) {
+      if (attempts > 40) {
         clearInterval(interval);
         if (!cancelled) {
           setConnectStatus('idle');
@@ -194,10 +232,12 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
       // Wallet Standard provider
       if (provider.features?.['standard:connect']) {
         const connectFeature = provider.features['standard:connect'] as { connect: () => Promise<any> };
-        await connectFeature.connect();
-        const accounts = provider.accounts || [];
+        const connectResult = await connectFeature.connect();
+        // connectResult may have { accounts: [...] } or provider.accounts may be populated
+        const accounts = connectResult?.accounts || provider.accounts || [];
         if (accounts.length > 0) {
-          setConnectedAddress(accounts[0].address);
+          const addr = accounts[0]?.address || accounts[0];
+          setConnectedAddress(addr);
           setConnectStatus('connected');
           return;
         }
@@ -208,22 +248,37 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
       const injected = provider.provider || provider;
       if (injected?.connect) {
         const result = await injected.connect();
-        if (result === true || result) {
-          let accounts: string[] = [];
-          if (injected.getAccounts) {
-            accounts = await injected.getAccounts();
-          } else {
-            try {
-              const reqResult = await injected.request({ method: 'standard:connect' });
-              if (Array.isArray(reqResult)) accounts = reqResult;
-              else if (reqResult?.accounts) accounts = reqResult.accounts.map((a: any) => a.address || a);
-            } catch { /* connect was enough */ }
-          }
-          if (accounts.length > 0) {
-            setConnectedAddress(accounts[0]);
-            setConnectStatus('connected');
-            return;
-          }
+        let address: string | null = null;
+
+        // Parse diverse result shapes
+        if (typeof result === 'object' && result !== null) {
+          if (result.address) address = result.address;
+          else if (Array.isArray(result.accounts)) address = result.accounts[0]?.address || result.accounts[0];
+          else if (Array.isArray(result)) address = result[0]?.address || result[0];
+        }
+
+        // Fallback: try getAccounts or request
+        if (!address && injected.getAccounts) {
+          const accts = await injected.getAccounts();
+          if (accts?.length) address = accts[0];
+        }
+        if (!address) {
+          try {
+            const reqResult = await injected.request({ method: 'standard:connect' });
+            if (Array.isArray(reqResult)) address = reqResult[0];
+            else if (reqResult?.accounts) address = reqResult.accounts[0]?.address || reqResult.accounts[0];
+            else if (reqResult?.address) address = reqResult.address;
+          } catch { /* connect was enough */ }
+        }
+        // Fallback: provider.accounts
+        if (!address && injected.accounts?.length) {
+          address = injected.accounts[0]?.address || injected.accounts[0];
+        }
+
+        if (address) {
+          setConnectedAddress(address);
+          setConnectStatus('connected');
+          return;
         }
         throw new Error('Failed to connect');
       }
@@ -275,6 +330,7 @@ export function PasskeyWalletModal({
     unbindPasskey,
     loadBindings,
     resetError: resetHookError,
+    createdWalletAddress,
   } = usePasskeyWallet(walletAddress || undefined);
 
   const wallet = useIotaWalletDetection(open);
@@ -301,6 +357,13 @@ export function PasskeyWalletModal({
     if (open && walletAddress) loadBindings();
   }, [open, walletAddress, loadBindings]);
 
+  // Emit passkey wallet connection when createdWalletAddress changes
+  useEffect(() => {
+    if (createdWalletAddress && currentStep === 'complete') {
+      emitPasskeyWalletConnected(createdWalletAddress);
+    }
+  }, [createdWalletAddress, currentStep]);
+
   /* ── Create Wallet Handler ── */
   const handleCreateWallet = async () => {
     setCreateError(null);
@@ -317,6 +380,10 @@ export function PasskeyWalletModal({
     setSignInError(null);
     const binding = await loginWithPasskey();
     if (binding) {
+      const addr = (binding as any)?.iotaWalletAddress || (binding as any)?.walletAddress;
+      if (addr) {
+        emitPasskeyWalletConnected(addr);
+      }
       toast.success('Signed in with passkey');
     } else if (hookError) {
       setSignInError(hookError);
@@ -527,9 +594,9 @@ export function PasskeyWalletModal({
             <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-2">
               <p className="text-sm font-medium">Link Existing Wallet</p>
               <p className="text-xs text-muted-foreground">
-                {wallet.envSupported
-                  ? 'Connect your IOTA wallet extension, sign a proof, then create a passkey for passwordless access.'
-                  : 'Extension-based wallet linking requires a compatible browser with a wallet extension. You can still create or sign in with a passkey on this device.'}
+                {wallet.envSupported || wallet.providerDetected
+                  ? 'Connect your IOTA wallet extension (including Safari/Nightly), sign a proof, then create a passkey for passwordless access.'
+                  : 'Extension-based wallet linking requires a compatible browser with a wallet extension (Chrome, Brave, Edge, Safari). You can still create or sign in with a passkey on this device.'}
               </p>
             </div>
 
@@ -538,9 +605,9 @@ export function PasskeyWalletModal({
               <div className="flex items-center gap-2">
                 <Monitor className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  {!wallet.envSupported ? (
+                  {!wallet.envSupported && !wallet.providerDetected ? (
                     <p className="text-xs text-amber-600 dark:text-amber-400">
-                      Extension linking is available on desktop Chromium browsers (Chrome, Brave, Edge).
+                      Extension linking is available on desktop browsers with a compatible wallet extension (Chrome, Brave, Edge, Safari + Nightly).
                     </p>
                   ) : wallet.connectStatus === 'detecting' ? (
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -562,7 +629,8 @@ export function PasskeyWalletModal({
                     </p>
                   )}
                 </div>
-                {wallet.envSupported && wallet.providerDetected && !wallet.connectedAddress && wallet.connectStatus !== 'detecting' && (
+                {/* Show connect button when provider is detected, even if envSupported was initially false */}
+                {wallet.providerDetected && !wallet.connectedAddress && wallet.connectStatus !== 'detecting' && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -596,7 +664,7 @@ export function PasskeyWalletModal({
 
             <Button
               onClick={handleBindWallet}
-              disabled={isBinding || !wallet.envSupported || (!wallet.connectedAddress && !walletAddress) || !onSignPersonalMessage}
+              disabled={isBinding || (!wallet.connectedAddress && !walletAddress) || !onSignPersonalMessage}
               variant="outline"
               className="w-full border-primary/50 text-primary hover:bg-primary/10 font-semibold"
             >
@@ -620,7 +688,7 @@ export function PasskeyWalletModal({
               )}
             </Button>
 
-            {!wallet.envSupported && (
+            {!wallet.envSupported && !wallet.providerDetected && (
               <p className="text-xs text-muted-foreground text-center">
                 Use the <strong>Create</strong> or <strong>Sign In</strong> tabs instead.
               </p>
