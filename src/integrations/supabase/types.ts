@@ -686,7 +686,69 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      passkey_audit: {
+        Args: {
+          p_bind_session_id?: string
+          p_credential_id?: string
+          p_event_type: string
+          p_iota_wallet_address?: string
+          p_metadata?: Json
+          p_success: boolean
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
+      passkey_consume_challenge: {
+        Args: {
+          p_bind_session_id: string
+          p_challenge_hash: string
+          p_challenge_type: string
+          p_expected_origin: string
+          p_expected_rp_id: string
+        }
+        Returns: Json
+      }
+      passkey_get_bindings: {
+        Args: { p_iota_wallet_address: string }
+        Returns: Json
+      }
+      passkey_insert_binding: {
+        Args: {
+          p_aaguid?: string
+          p_binding_level: string
+          p_credential_id: string
+          p_iota_wallet_address: string
+          p_origin: string
+          p_public_key: string
+          p_rp_id: string
+          p_sign_count: number
+          p_transports?: string[]
+          p_user_id: string
+          p_wallet_proof_hashes?: Json
+        }
+        Returns: string
+      }
+      passkey_insert_challenge: {
+        Args: {
+          p_bind_session_id: string
+          p_challenge_hash: string
+          p_challenge_type: string
+          p_expected_origin: string
+          p_expected_rp_id: string
+          p_expires_at: string
+          p_iota_wallet_address: string
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
+      passkey_revoke_binding: {
+        Args: { p_actor?: Json; p_binding_id: string; p_reason: string }
+        Returns: undefined
+      }
+      passkey_update_sign_count: {
+        Args: { p_credential_id: string; p_new_sign_count: number }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
