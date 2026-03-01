@@ -44,13 +44,14 @@ import { UserDomainsDisplay } from "@/components/UserDomainsDisplay";
 import { SpotifyPlayerModal } from "@/components/SpotifyPlayerModal";
 import Dock from "@/components/Dock";
 import { ProfileCard } from "@/components/ProfileCard";
+import { PasskeyWalletModal } from "@/components/PasskeyWalletModal";
 import { VanityBundleCard } from "@/components/VanityBundleCard";
 import { ENSRegistrationCard } from "@/components/ENSRegistrationCard";
 import { NameSearchCarousel } from "@/components/NameSearchCarousel";
 import { HomeFeatureShowcase } from "@/components/HomeFeatureShowcase";
 import { IotaProfileEditModal } from "@/components/IotaProfileEditModal";
 import { useIotaWallet } from "@/contexts/IotaWalletContext";
-import { MessageCircle, Repeat2, Heart } from "lucide-react";
+import { MessageCircle, Repeat2, Heart, Fingerprint } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -269,6 +270,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [iotaOwnerAddress, setIotaOwnerAddress] = useState<string | null>(null);
   const [iotaOnchainProfileLoading, setIotaOnchainProfileLoading] = useState(false);
   const [showIotaEditModal, setShowIotaEditModal] = useState(false);
+  const [showPasskeyModal, setShowPasskeyModal] = useState(false);
   const iotaProfileCacheRef = useRef<Map<string, { profile: any; nameObjectId: string | null; ownerAddress: string | null }>>(new Map());
 
   // Linked EVM address for .iota profiles (resolved from iota_wallet_links)
@@ -2615,10 +2617,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       isActive: showSearchBar,
                     },
+                    {
+                      icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Passkey',
+                      onClick: () => setShowPasskeyModal(true),
+                      isActive: showPasskeyModal,
+                    },
                   ]}
                 />
               </div>
             )}
+
+            {/* Passkey Wallet Modal */}
+            <PasskeyWalletModal
+              open={showPasskeyModal}
+              onClose={() => setShowPasskeyModal(false)}
+              walletAddress={iotaWalletAddress || walletAddress || ''}
+            />
 
             {/* Results container - Row-based layout with 60fps optimization */}
             {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && !showSearchBar && (
