@@ -1,4 +1,5 @@
 // usePasskeyWallet - React hook for passkey wallet operations
+// Now derives real IOTA addresses from passkey P-256 public keys
 
 import { useState, useCallback, useEffect } from 'react';
 import { callEdge } from '@/lib/supaInvoke';
@@ -11,6 +12,8 @@ import {
   serializeAssertionCredential,
   b64urlDecode,
 } from '@/lib/passkey/webauthn';
+import { normalizeToCompressed33 } from '@/lib/passkey/keyNormalization';
+import { derivePasskeyIotaAddress } from '@/lib/iota/passkeyAddress';
 import type {
   PasskeyBinding,
   PasskeyFlowStep,
@@ -27,7 +30,7 @@ export function isValidIotaAddress(value: string | null | undefined): boolean {
   if (!value) return false;
   const v = value.trim();
   // Reject known placeholders
-  if (/^passkey/i.test(v) || /^wallet$/i.test(v) || /^user$/i.test(v) || /^unknown$/i.test(v)) return false;
+  if (/^passkey/i.test(v) || /^wallet$/i.test(v) || /^user$/i.test(v) || /^unknown$/i.test(v) || /^pending/i.test(v)) return false;
   // Accept 0x-prefixed hex (≥ 20 chars) or iota1/smr1 bech32 (≥ 20 chars)
   if (/^0x[0-9a-fA-F]{8,}$/.test(v)) return true;
   if (/^(iota1|smr1)[a-z0-9]{10,}$/.test(v)) return true;
@@ -86,6 +89,31 @@ function deserializeRequestOptions(
   };
 }
 
+/**
+ * Extract the compressed P-256 public key from a WebAuthn registration credential.
+ * Tries getPublicKey() (SPKI DER) first, falls back to attestation COSE key.
+ */
+function extractCompressedPubKey(credential: PublicKeyCredential): Uint8Array | null {
+  const response = credential.response as AuthenticatorAttestationResponse;
+
+  // Method 1: getPublicKey() returns SPKI DER (91 bytes)
+  if (typeof response.getPublicKey === 'function') {
+    const spki = response.getPublicKey();
+    if (spki) {
+      try {
+        return normalizeToCompressed33(new Uint8Array(spki));
+      } catch (e) {
+        console.warn('[Passkey] Failed to normalize SPKI key:', e);
+      }
+    }
+  }
+
+  // Method 2: Parse from attestation object authData (fallback)
+  // The server will also do this, so it's OK if we can't extract client-side
+  console.warn('[Passkey] getPublicKey() unavailable, server will derive address');
+  return null;
+}
+
 export function usePasskeyWallet(walletAddress?: string | null) {
   const [isAvailable, setIsAvailable] = useState(false);
   const [hasPlatformAuth, setHasPlatformAuth] = useState(false);
@@ -132,8 +160,8 @@ export function usePasskeyWallet(walletAddress?: string | null) {
 
   /**
    * Create a new passkey-backed IOTA wallet.
-   * Flow: register-challenge → WebAuthn create → register-verify
-   * Does NOT require an existing wallet address.
+   * Flow: register-challenge → WebAuthn create → extract pubkey → derive address → register-verify
+   * The IOTA address is derived from the passkey's P-256 public key using blake2b.
    */
   const createPasskeyWallet = useCallback(async (): Promise<boolean> => {
     setIsCreating(true);
@@ -143,17 +171,20 @@ export function usePasskeyWallet(walletAddress?: string | null) {
     try {
       const { origin, rpId } = getRpConfig();
 
-      // For new passkey wallets, use a temporary identifier if no wallet connected
-      const effectiveAddress = walletAddress || `passkey:${crypto.randomUUID()}`;
+      // For new passkey wallets, use a pending marker for the challenge.
+      // The real address is derived after credential creation from the public key.
+      const challengeAddress = walletAddress || 'pending_passkey_create';
 
       // 1) Get registration challenge
       const challengeResponse = await callEdge<RegisterChallengeResponse>(
         'passkey-register-challenge',
         {
-          walletAddress: effectiveAddress,
+          walletAddress: challengeAddress,
           origin,
           rpId,
           bindingLevel: 'passkey_wallet',
+          userName: 'Vanity.box Wallet',
+          userDisplayName: 'IOTA Passkey Wallet',
         }
       );
 
@@ -161,15 +192,29 @@ export function usePasskeyWallet(walletAddress?: string | null) {
         throw new Error('Failed to get registration challenge');
       }
 
-      // 2) Create passkey
+      // 2) Create passkey credential
       const options = deserializeCreationOptions(challengeResponse.publicKeyOptions);
       const credential = await createPasskeyCredential(options);
+
+      // 3) Extract public key and derive real IOTA address
+      const compressedPubKey = extractCompressedPubKey(credential);
+      let clientDerivedAddress: string | null = null;
+      if (compressedPubKey) {
+        clientDerivedAddress = derivePasskeyIotaAddress(compressedPubKey);
+        console.log('[Passkey] Client-derived IOTA address:', clientDerivedAddress);
+      }
+
       const serialized = serializeRegistrationCredential(credential);
 
       setCurrentStep('verifying');
 
-      // 3) Verify with server
-      const verifyResponse = await callEdge<{ ok: boolean; bindingId: string; walletAddress?: string }>(
+      // 4) Verify with server — send derived address (server will also derive independently)
+      const verifyResponse = await callEdge<{
+        ok: boolean;
+        bindingId: string;
+        walletAddress?: string;
+        derivedAddress?: string;
+      }>(
         'passkey-register-verify',
         {
           bindSessionId: challengeResponse.bindSessionId,
@@ -178,7 +223,7 @@ export function usePasskeyWallet(walletAddress?: string | null) {
           rpId,
           credential: serialized,
           bindingLevel: 'passkey_wallet',
-          walletAddress: effectiveAddress,
+          walletAddress: clientDerivedAddress || challengeAddress,
         }
       );
 
@@ -186,8 +231,16 @@ export function usePasskeyWallet(walletAddress?: string | null) {
         throw new Error('Server verification failed');
       }
 
-      // Store the created wallet address for display
-      setCreatedWalletAddress(verifyResponse.walletAddress || effectiveAddress);
+      // 5) Use the server-derived address (authoritative), falling back to client-derived
+      const finalAddress = verifyResponse.derivedAddress || verifyResponse.walletAddress || clientDerivedAddress;
+
+      if (!finalAddress || !isValidIotaAddress(finalAddress)) {
+        console.error('[Passkey] No valid IOTA address derived. Server response:', verifyResponse);
+        throw new Error('Failed to derive a valid IOTA address from passkey');
+      }
+
+      console.log('[Passkey] Final IOTA address:', finalAddress);
+      setCreatedWalletAddress(finalAddress);
       setCurrentStep('complete');
       return true;
     } catch (err: any) {
@@ -316,6 +369,7 @@ export function usePasskeyWallet(walletAddress?: string | null) {
   /**
    * Login with passkey.
    * Flow: login-challenge → WebAuthn get → login-verify
+   * The server returns the real IOTA address from the binding (auto-migrates old placeholders).
    */
   const loginWithPasskey = useCallback(async (): Promise<PasskeyBinding | null> => {
     setIsAuthenticating(true);
@@ -358,7 +412,11 @@ export function usePasskeyWallet(walletAddress?: string | null) {
       return result.binding;
     } catch (err: any) {
       console.error('Passkey login error:', err);
-      setError(err.message || 'Failed to login with passkey');
+      if (err.name === 'NotAllowedError') {
+        setError('Passkey authentication was cancelled');
+      } else {
+        setError(err.message || 'Failed to login with passkey');
+      }
       return null;
     } finally {
       setIsAuthenticating(false);

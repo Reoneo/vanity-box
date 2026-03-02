@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { blake2b } from "https://esm.sh/@noble/hashes@1.7.1/blake2b";
+import { bytesToHex } from "https://esm.sh/@noble/hashes@1.7.1/utils";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +21,15 @@ function hexFromBytes(buf: Uint8Array): string {
   return Array.from(buf).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function hexToBytes(hex: string): Uint8Array {
+  const clean = hex.replace(/^\\x|^0x/, "");
+  const arr = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < arr.length; i++) {
+    arr[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+  }
+  return arr;
+}
+
 async function sha256(data: Uint8Array): Promise<Uint8Array> {
   const hash = await crypto.subtle.digest("SHA-256", data);
   return new Uint8Array(hash);
@@ -30,50 +41,30 @@ const ALLOWED_ORIGINS = [
   "https://id-preview--7531083c-c70e-4d19-bd87-5efe8beff8c5.lovable.app",
 ];
 
-// Verify P-256 ECDSA signature using Web Crypto
-async function verifyP256Signature(
-  publicKeyCompressed: Uint8Array,
-  signedData: Uint8Array,
-  derSignature: Uint8Array
-): Promise<boolean> {
-  // Decompress public key to uncompressed format for Web Crypto
-  // Web Crypto requires uncompressed or raw format
-  // For compressed keys we need the full point, but Web Crypto SPKI import
-  // requires specific DER wrapping
+// ──── IOTA Address Derivation ────
+const PASSKEY_FLAG = 0x06;
+const IOTA_ADDRESS_LENGTH = 32;
 
-  // Build SPKI DER from compressed key
-  // First, we need to decompress. Since we can't easily decompress in pure JS
-  // without a math library, we'll import as raw (uncompressed) if we have it,
-  // or use the SPKI format.
-
-  // For now, we'll use a simplified verification approach:
-  // Store uncompressed keys alongside compressed for verification purposes
-  // This is a limitation we'll document
-
-  try {
-    // Try to import and verify
-    const key = await crypto.subtle.importKey(
-      "raw",
-      publicKeyCompressed.length === 33
-        ? publicKeyCompressed // Some implementations accept compressed
-        : publicKeyCompressed,
-      { name: "ECDSA", namedCurve: "P-256" },
-      false,
-      ["verify"]
-    );
-
-    return await crypto.subtle.verify(
-      { name: "ECDSA", hash: "SHA-256" },
-      key,
-      derSignature,
-      signedData
-    );
-  } catch {
-    // Web Crypto may not support compressed keys directly
-    // In production, use a library like @noble/curves for this
-    console.warn("P-256 signature verification not fully implemented in edge runtime");
-    return true; // Accept for now, full verification in Phase 5
+function derivePasskeyIotaAddress(compressedPubKey: Uint8Array): string {
+  if (compressedPubKey.length !== 33) {
+    throw new Error(`Expected 33-byte compressed P-256 key, got ${compressedPubKey.length}`);
   }
+  const input = new Uint8Array(1 + compressedPubKey.length);
+  input[0] = PASSKEY_FLAG;
+  input.set(compressedPubKey, 1);
+  const hash = blake2b(input, { dkLen: 32 });
+  const hex = bytesToHex(hash).slice(0, IOTA_ADDRESS_LENGTH * 2);
+  return "0x" + hex.padStart(IOTA_ADDRESS_LENGTH * 2, "0");
+}
+
+/** Check if an address looks like a placeholder (not a real on-chain address) */
+function isPlaceholderAddress(addr: string | null): boolean {
+  if (!addr) return true;
+  if (/^passkey/i.test(addr)) return true;
+  if (/^pending/i.test(addr)) return true;
+  if (/^wallet$/i.test(addr)) return true;
+  if (/^unknown$/i.test(addr)) return true;
+  return false;
 }
 
 Deno.serve(async (req) => {
@@ -91,7 +82,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate origin
     if (!ALLOWED_ORIGINS.includes(origin)) {
       return new Response(
         JSON.stringify({ error: "Origin not allowed" }),
@@ -202,12 +192,39 @@ Deno.serve(async (req) => {
       );
     }
 
+    let iotaWalletAddress = updateResult?.iota_wallet_address;
+
+    // 7) Auto-migrate: if the stored address is a placeholder, derive the real address
+    //    from the stored public key using the Passkey scheme
+    if (isPlaceholderAddress(iotaWalletAddress) && updateResult?.public_key) {
+      try {
+        // public_key is stored as base64 in the RPC response
+        const pubKeyBytes = typeof updateResult.public_key === "string"
+          ? b64urlDecode(updateResult.public_key.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, ""))
+          : null;
+
+        if (pubKeyBytes && pubKeyBytes.length === 33) {
+          const derivedAddress = derivePasskeyIotaAddress(pubKeyBytes);
+          console.log(
+            "[passkey-login-verify] Auto-migrating placeholder address:",
+            iotaWalletAddress, "→", derivedAddress
+          );
+          iotaWalletAddress = derivedAddress;
+
+          // Note: Updating the binding's wallet address in the DB would require a new RPC
+          // For now, return the derived address and the client will use it
+        }
+      } catch (e) {
+        console.error("[passkey-login-verify] Failed to auto-migrate address:", e);
+      }
+    }
+
     // Audit success
     await supabase.rpc("passkey_audit", {
       p_event_type: "passkey_login",
       p_success: true,
       p_user_id: updateResult?.user_id,
-      p_iota_wallet_address: updateResult?.iota_wallet_address,
+      p_iota_wallet_address: iotaWalletAddress,
       p_credential_id: `\\x${hexFromBytes(credentialId)}`,
       p_bind_session_id: challengeSessionId,
       p_metadata: { signCount, bindingLevel: updateResult?.binding_level },
@@ -219,7 +236,7 @@ Deno.serve(async (req) => {
         binding: {
           id: updateResult?.id,
           userId: updateResult?.user_id,
-          iotaWalletAddress: updateResult?.iota_wallet_address,
+          iotaWalletAddress,
           signCount: updateResult?.sign_count,
           bindingLevel: updateResult?.binding_level,
         },
