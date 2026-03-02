@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { blake2b } from "https://esm.sh/@noble/hashes@1.7.1/blake2b";
+import { bytesToHex } from "https://esm.sh/@noble/hashes@1.7.1/utils";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +32,23 @@ const ALLOWED_ORIGINS = [
   "https://id-preview--7531083c-c70e-4d19-bd87-5efe8beff8c5.lovable.app",
 ];
 
+// ──── IOTA Address Derivation ────
+// Passkey flag = 0x06, address = normalizeIotaAddress(hex(blake2b(flag || compressed_pubkey, 32)))
+const PASSKEY_FLAG = 0x06;
+const IOTA_ADDRESS_LENGTH = 32;
+
+function derivePasskeyIotaAddress(compressedPubKey: Uint8Array): string {
+  if (compressedPubKey.length !== 33) {
+    throw new Error(`Expected 33-byte compressed P-256 key, got ${compressedPubKey.length}`);
+  }
+  const input = new Uint8Array(1 + compressedPubKey.length);
+  input[0] = PASSKEY_FLAG;
+  input.set(compressedPubKey, 1);
+  const hash = blake2b(input, { dkLen: 32 });
+  const hex = bytesToHex(hash).slice(0, IOTA_ADDRESS_LENGTH * 2);
+  return "0x" + hex.padStart(IOTA_ADDRESS_LENGTH * 2, "0");
+}
+
 // P-256 SPKI header (26 bytes)
 const SPKI_HEADER_HEX = "3059301306072a8648ce3d020106082a8648ce3d030107034200";
 
@@ -51,7 +70,6 @@ function parseSpkiToCompressed(spkiB64u: string): Uint8Array {
   if (der.length !== 91) {
     throw new Error(`Unexpected SPKI length: ${der.length}`);
   }
-  // Verify header
   const headerHex = hexFromBytes(der.subarray(0, 26));
   if (headerHex !== SPKI_HEADER_HEX) {
     throw new Error("Unexpected SPKI header");
@@ -88,49 +106,44 @@ function parseCoseKeyFromAuthData(authData: Uint8Array): {
   const credentialId = authData.slice(offset, offset + credIdLen);
   offset += credIdLen;
 
-  // Parse COSE key - find x (-2) and y (-3)
+  // Parse COSE key
   const coseData = authData.slice(offset);
   let x: Uint8Array | null = null;
   let y: Uint8Array | null = null;
 
-  // Simple CBOR map parser
   let pos = 0;
   const initial = coseData[pos++];
   let mapLen = initial & 0x1f;
   if (mapLen === 24) mapLen = coseData[pos++];
 
   for (let i = 0; i < mapLen; i++) {
-    // Read key
     const keyByte = coseData[pos++];
     const keyMajor = (keyByte >> 5) & 0x07;
     let keyVal = keyByte & 0x1f;
     if (keyVal === 24) keyVal = coseData[pos++];
     if (keyMajor === 1) keyVal = -1 - keyVal;
 
-    // Read value
     const valByte = coseData[pos];
     const valMajor = (valByte >> 5) & 0x07;
 
     if (valMajor === 2) {
-      // Byte string
       pos++;
       let bLen = valByte & 0x1f;
       if (bLen === 24) bLen = coseData[pos++];
       const bData = coseData.slice(pos, pos + bLen);
       pos += bLen;
-
       if (keyVal === -2) x = bData;
       if (keyVal === -3) y = bData;
     } else if (valMajor === 0) {
       pos++;
-      let vv = valByte & 0x1f;
-      if (vv === 24) { pos++; }
-      else if (vv === 25) { pos += 2; }
+      const vv = valByte & 0x1f;
+      if (vv === 24) pos++;
+      else if (vv === 25) pos += 2;
     } else if (valMajor === 1) {
       pos++;
-      let vv = valByte & 0x1f;
-      if (vv === 24) { pos++; }
-      else if (vv === 25) { pos += 2; }
+      const vv = valByte & 0x1f;
+      if (vv === 24) pos++;
+      else if (vv === 25) pos += 2;
     } else {
       pos++;
     }
@@ -155,15 +168,12 @@ function parseCoseKeyFromAuthData(authData: Uint8Array): {
 
 // Minimal CBOR decoder for attestation object
 function decodeAttestationObject(data: Uint8Array): { authData: Uint8Array } {
-  // The attestation object is a CBOR map with keys like "fmt", "attStmt", "authData"
-  // We need to find "authData" which is a byte string
   let pos = 0;
   const initial = data[pos++];
   let mapLen = initial & 0x1f;
   if (mapLen === 24) mapLen = data[pos++];
 
   for (let i = 0; i < mapLen; i++) {
-    // Read text key
     const keyByte = data[pos++];
     const keyMajor = (keyByte >> 5) & 0x07;
     let keyLen = keyByte & 0x1f;
@@ -175,7 +185,6 @@ function decodeAttestationObject(data: Uint8Array): { authData: Uint8Array } {
       pos += keyLen;
     }
 
-    // Read value
     const valByte = data[pos];
     const valMajor = (valByte >> 5) & 0x07;
 
@@ -190,7 +199,6 @@ function decodeAttestationObject(data: Uint8Array): { authData: Uint8Array } {
       }
       return { authData: data.slice(pos, pos + vLen) };
     } else {
-      // Skip value
       pos = skipCborValue(data, pos);
     }
   }
@@ -207,20 +215,20 @@ function skipCborValue(data: Uint8Array, pos: number): number {
   else if (info === 25) { info = (data[pos] << 8) | data[pos + 1]; pos += 2; }
   else if (info === 26) { info = (data[pos] << 24) | (data[pos + 1] << 16) | (data[pos + 2] << 8) | data[pos + 3]; pos += 4; }
 
-  if (major === 0 || major === 1) return pos; // integer
-  if (major === 2 || major === 3) return pos + info; // byte/text string
-  if (major === 4) { // array
+  if (major === 0 || major === 1) return pos;
+  if (major === 2 || major === 3) return pos + info;
+  if (major === 4) {
     for (let i = 0; i < info; i++) pos = skipCborValue(data, pos);
     return pos;
   }
-  if (major === 5) { // map
+  if (major === 5) {
     for (let i = 0; i < info; i++) {
-      pos = skipCborValue(data, pos); // key
-      pos = skipCborValue(data, pos); // value
+      pos = skipCborValue(data, pos);
+      pos = skipCborValue(data, pos);
     }
     return pos;
   }
-  if (major === 7) return pos; // simple/float
+  if (major === 7) return pos;
   return pos;
 }
 
@@ -236,7 +244,7 @@ Deno.serve(async (req) => {
       walletProofHashes,
     } = await req.json();
 
-    if (!bindSessionId || !userId || !origin || !rpId || !credential || !walletAddress) {
+    if (!bindSessionId || !userId || !origin || !rpId || !credential) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -260,7 +268,6 @@ Deno.serve(async (req) => {
       new TextDecoder().decode(b64urlDecode(credential.response.clientDataJSON))
     );
 
-    // Verify type
     if (clientDataJSON.type !== "webauthn.create") {
       return new Response(
         JSON.stringify({ error: "Invalid clientDataJSON type" }),
@@ -268,13 +275,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify origin
     if (clientDataJSON.origin !== origin) {
       await supabase.rpc("passkey_audit", {
         p_event_type: "register_origin_mismatch",
         p_success: false,
         p_user_id: userId,
-        p_iota_wallet_address: walletAddress,
+        p_iota_wallet_address: walletAddress || "unknown",
         p_bind_session_id: bindSessionId,
         p_metadata: { expected: origin, received: clientDataJSON.origin },
       });
@@ -326,17 +332,13 @@ Deno.serve(async (req) => {
 
     // Verify UP and UV flags
     const flags = authData[32];
-    const upFlag = (flags & 0x01) !== 0;
-    const uvFlag = (flags & 0x04) !== 0;
-
-    if (!upFlag) {
+    if (!(flags & 0x01)) {
       return new Response(
         JSON.stringify({ error: "User presence not verified" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    if (!uvFlag) {
+    if (!(flags & 0x04)) {
       return new Response(
         JSON.stringify({ error: "User verification not performed" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -349,18 +351,15 @@ Deno.serve(async (req) => {
     let aaguid = "00000000-0000-0000-0000-000000000000";
     let signCount = 0;
 
-    // Try getPublicKey() result first (SPKI DER)
     if (credential.response.publicKey) {
       compressedPubKey = parseSpkiToCompressed(credential.response.publicKey);
       credentialId = b64urlDecode(credential.rawId);
-      // Still parse authData for aaguid and signCount
       try {
         const parsed = parseCoseKeyFromAuthData(authData);
         aaguid = parsed.aaguid;
         signCount = parsed.signCount;
       } catch {}
     } else {
-      // Fallback: parse from attestation authData COSE key
       const parsed = parseCoseKeyFromAuthData(authData);
       compressedPubKey = parsed.compressedPubKey;
       credentialId = parsed.credentialId;
@@ -368,10 +367,30 @@ Deno.serve(async (req) => {
       signCount = parsed.signCount;
     }
 
-    // 5) Insert binding
+    // 5) Derive real IOTA address from the public key
+    const derivedAddress = derivePasskeyIotaAddress(compressedPubKey);
+    console.log("[passkey-register-verify] Derived IOTA address:", derivedAddress);
+
+    // For passkey_wallet creation, always use the derived address.
+    // For existing_wallet_link, use the provided wallet address (real extension address).
+    const isNewWallet = bindingLevel === "passkey_wallet";
+    const canonicalAddress = isNewWallet ? derivedAddress : (walletAddress || derivedAddress);
+
+    // If client sent a derived address, verify it matches (optional safety check)
+    if (walletAddress && walletAddress.startsWith("0x") && walletAddress.length > 20 && isNewWallet) {
+      if (walletAddress.toLowerCase() !== derivedAddress.toLowerCase()) {
+        console.warn(
+          "[passkey-register-verify] Client/server address mismatch:",
+          { client: walletAddress, server: derivedAddress }
+        );
+        // Use server-derived address (authoritative)
+      }
+    }
+
+    // 6) Insert binding with the canonical (real) address
     const { data: bindingId, error: bindError } = await supabase.rpc("passkey_insert_binding", {
       p_user_id: userId,
-      p_iota_wallet_address: walletAddress,
+      p_iota_wallet_address: canonicalAddress,
       p_credential_id: `\\x${hexFromBytes(credentialId)}`,
       p_public_key: `\\x${hexFromBytes(compressedPubKey)}`,
       p_sign_count: signCount,
@@ -395,7 +414,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         bindingId,
-        walletAddress,
+        walletAddress: canonicalAddress,
+        derivedAddress,
         bindingLevel: bindingLevel || "passkey_wallet",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

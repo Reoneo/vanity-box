@@ -34,9 +34,9 @@ Deno.serve(async (req) => {
   try {
     const { walletAddress, origin, rpId, bindSessionId, userName, userDisplayName, bindingLevel } = await req.json();
 
-    if (!walletAddress || !origin || !rpId) {
+    if (!origin || !rpId) {
       return new Response(
-        JSON.stringify({ error: "walletAddress, origin, and rpId are required" }),
+        JSON.stringify({ error: "origin and rpId are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -59,15 +59,19 @@ Deno.serve(async (req) => {
     const challengeHash = await sha256(challenge);
 
     const sessionId = bindSessionId || crypto.randomUUID();
-    const userId = crypto.randomUUID(); // Generate a stable user ID for this wallet
+    const userId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 5 * 60_000);
+
+    // For passkey_wallet creation, walletAddress may be a temp marker or null.
+    // The real IOTA address is derived from the public key during register-verify.
+    const effectiveAddress = walletAddress || "pending_passkey_create";
 
     // Store hashed challenge
     const { error: rpcError } = await supabase.rpc("passkey_insert_challenge", {
       p_bind_session_id: sessionId,
       p_challenge_hash: `\\x${hexFromBytes(challengeHash)}`,
       p_challenge_type: "webauthn_register",
-      p_iota_wallet_address: walletAddress,
+      p_iota_wallet_address: effectiveAddress,
       p_expected_origin: origin,
       p_expected_rp_id: rpId,
       p_expires_at: expiresAt.toISOString(),
@@ -83,27 +87,39 @@ Deno.serve(async (req) => {
     }
 
     // Generate user handle (stable bytes for WebAuthn user.id)
-    const userHandleBytes = new TextEncoder().encode(walletAddress);
+    const userHandleBytes = new TextEncoder().encode(effectiveAddress + ":" + sessionId);
     const userHandle = b64urlEncode(await sha256(userHandleBytes));
 
-    // Get existing credentials to exclude
-    const { data: existingBindings } = await supabase.rpc("passkey_get_bindings", {
-      p_iota_wallet_address: walletAddress,
-    });
+    // Get existing credentials to exclude (only for real wallet addresses)
+    let excludeCredentials: any[] = [];
+    if (walletAddress && !walletAddress.startsWith("pending")) {
+      const { data: existingBindings } = await supabase.rpc("passkey_get_bindings", {
+        p_iota_wallet_address: walletAddress,
+      });
+      excludeCredentials = (existingBindings || []).map((b: any) => ({
+        id: b.credential_id,
+        type: "public-key",
+        transports: ["internal", "hybrid"],
+      }));
+    }
 
-    const excludeCredentials = (existingBindings || []).map((b: any) => ({
-      id: b.credential_id, // Already base64
-      type: "public-key",
-      transports: ["internal", "hybrid"],
-    }));
+    // For passkey_wallet creation, show a friendly name in the passkey prompt
+    // (not a placeholder address or UUID)
+    const isNewWallet = bindingLevel === "passkey_wallet";
+    const displayName = isNewWallet
+      ? (userName || "Vanity.box Wallet")
+      : (userName || (walletAddress ? `${walletAddress.slice(0, 12)}...` : "IOTA Wallet"));
+    const displayFullName = isNewWallet
+      ? (userDisplayName || "IOTA Passkey Wallet")
+      : (userDisplayName || `IOTA Wallet ${walletAddress ? walletAddress.slice(0, 8) : ""}`);
 
     const publicKeyOptions = {
       challenge: challengeB64u,
       rp: { id: rpId, name: "Vanity.box" },
       user: {
         id: userHandle,
-        name: userName || walletAddress.slice(0, 20) + "...",
-        displayName: userDisplayName || `IOTA Wallet ${walletAddress.slice(0, 8)}`,
+        name: displayName,
+        displayName: displayFullName,
       },
       pubKeyCredParams: [{ type: "public-key", alg: -7 }], // ES256 P-256
       authenticatorSelection: {
