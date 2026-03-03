@@ -231,6 +231,23 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         walletAddress: savedAddr,
         username: formatAddress(savedAddr),
       });
+      // Dispatch wallet-connected so SearchInterface picks up the restored session
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('wallet-connected', {
+          detail: {
+            walletAddress: savedAddr,
+            walletType: 'iota',
+            source: 'passkey',
+            username: undefined,
+          },
+        }));
+        // Also trigger profile load for the restored session
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('load-direct-profile', {
+            detail: { identifier: savedAddr, skipSearch: true },
+          }));
+        }, 200);
+      }, 50);
     } else if (savedAddr) {
       console.warn('[WalletConnection] Clearing invalid passkey session:', savedAddr);
       sessionStorage.removeItem(PASSKEY_IOTA_SESSION_KEY);

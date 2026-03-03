@@ -2255,8 +2255,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     isActive: activeDockSection === 'profile',
                   },
                   // Only show Edit pencil when viewing own profile
-                  ...(walletAddress && web3BioProfile?.address && 
-                     walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase() ? [{
+                  // For .iota profiles, also compare against iotaOwnerAddress since web3BioProfile.address may differ
+                  ...((walletAddress && web3BioProfile?.address && 
+                     walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase()) ||
+                     (walletAddress && iotaOwnerAddress && isIotaName(displayQuery) &&
+                     walletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase()) ? [{
                     icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
                     label: 'Edit',
                     onClick: () => {
