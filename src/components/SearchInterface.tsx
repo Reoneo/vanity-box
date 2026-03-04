@@ -345,12 +345,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Get wallet address from MiniKit
   useEffect(() => {
-    const checkWallet = () => {
+    // Only check MiniKit on initial mount or when no wallet type is set yet.
+    // When connectedWalletType is already 'iota' (or another type), the walletAddress
+    // is managed by the reactive sync effect below — calling checkWallet() here would
+    // reset it to undefined and cause the "double sign-in" bug.
+    if (!connectedWalletType) {
       const address = MiniKit.user?.walletAddress;
       setWalletAddress(address);
-    };
-
-    checkWallet();
+    }
 
     // Listen for wallet connection events — ignore walletconnect if IOTA is primary
     const handleWalletChange = (event: CustomEvent) => {
@@ -2608,14 +2610,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     {
                       icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Profile',
-                      onClick: () => {
+                      onClick: async () => {
                         if (!walletAddress) {
                           toast.error('Please connect your wallet first');
-                        } else {
-                          // Use ENS name if available, otherwise fall back to wallet address
-                          const searchIdentifier = connectedUsername || walletAddress;
-                          handleSearch(searchIdentifier);
+                          return;
                         }
+                        // For IOTA wallets, resolve .iota name first (same as profile dock)
+                        let searchIdentifier = connectedUsername || walletAddress;
+                        if (!connectedUsername && connectedWalletType === 'iota') {
+                          try {
+                            const data = await callEdge<any>('resolve-iota-address', { address: walletAddress });
+                            const maybeName = typeof data?.name === 'string' ? data.name : null;
+                            if (maybeName) searchIdentifier = maybeName;
+                          } catch (e) {
+                            console.warn('Failed to resolve .iota name on-demand; falling back to address', e);
+                          }
+                        }
+                        if (searchIdentifier) handleSearch(searchIdentifier);
                       },
                       isActive: false,
                     },
