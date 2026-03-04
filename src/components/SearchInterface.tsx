@@ -437,12 +437,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           .catch(() => {});
       }
     } else if (!isIotaConnected && connectedWalletType === 'iota') {
-      // Don't wipe state if there's a passkey session for this address
-      const passkeyAddr = sessionStorage.getItem('vanity_passkey_iota_address');
-      if (passkeyAddr && passkeyAddr === walletAddress) {
-        // Passkey session active — keep wallet state
-        return;
-      }
+      // Context handles passkey session — if context says disconnected, trust it
       setWalletAddress(undefined);
       setConnectedUsername(undefined);
       setConnectedWalletType(undefined);
