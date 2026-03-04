@@ -2,6 +2,7 @@
 // Redesigned with improved UX, auto-close, and profile loading
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useIotaWallet } from '@/contexts/IotaWalletContext';
 import {
   Dialog,
   DialogContent,
@@ -77,26 +78,14 @@ function isExtensionCapableBrowser(): boolean {
 }
 
 /* ─────────── Emit passkey wallet connection + load profile ─────────── */
-function emitPasskeyWalletConnected(address: string) {
+// Now a thin wrapper — the real work is done by IotaWalletContext.setPasskeyConnected
+// kept for backward compat with the modal's internal usage
+function emitPasskeyWalletConnected(address: string, ctxSet: (addr: string) => void) {
   if (!isValidIotaAddress(address)) {
     console.warn('[PasskeyWallet] Refusing to emit invalid address:', address);
     return;
   }
-  sessionStorage.setItem(PASSKEY_IOTA_SESSION_KEY, address);
-  window.dispatchEvent(new CustomEvent('wallet-connected', {
-    detail: {
-      walletAddress: address,
-      walletType: 'iota',
-      username: null,
-      source: 'passkey',
-    },
-  }));
-  // Trigger profile load after a short delay to let wallet state propagate
-  setTimeout(() => {
-    window.dispatchEvent(new CustomEvent('load-direct-profile', {
-      detail: { identifier: address, skipSearch: true },
-    }));
-  }, 300);
+  ctxSet(address); // sets context state, persists to sessionStorage, dispatches events + profile load
 }
 
 /* ─────────── Wallet detection hook ─────────── */
@@ -293,6 +282,7 @@ export function PasskeyWalletModal({
     createdWalletAddress,
   } = usePasskeyWallet(walletAddress || undefined);
 
+  const { setPasskeyConnected } = useIotaWallet();
   const wallet = useIotaWalletDetection(open);
 
   const [activeTab, setActiveTab] = useState<'create' | 'signin' | 'link'>('create');
@@ -315,7 +305,7 @@ export function PasskeyWalletModal({
   // Emit + auto-close when createdWalletAddress is set after create
   useEffect(() => {
     if (createdWalletAddress && currentStep === 'complete') {
-      emitPasskeyWalletConnected(createdWalletAddress);
+      emitPasskeyWalletConnected(createdWalletAddress, setPasskeyConnected);
       toast.success('Passkey wallet created!');
       // Close modal after brief success flash
       const timer = setTimeout(() => onClose(), 600);
@@ -343,7 +333,7 @@ export function PasskeyWalletModal({
     if (binding) {
       const addr = (binding as any)?.iotaWalletAddress || (binding as any)?.walletAddress;
       if (addr && isValidIotaAddress(addr)) {
-        emitPasskeyWalletConnected(addr);
+        emitPasskeyWalletConnected(addr, setPasskeyConnected);
         toast.success('Signed in with passkey');
         setTimeout(() => onClose(), 600);
       } else {
