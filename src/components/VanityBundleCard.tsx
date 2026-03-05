@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Import chain logos
-import vanityBoxAvatar from "@/assets/vanity-box-hex-black.png";
+import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
 import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import vanityIotaAvatar from "@/assets/vanity-iota-avatar.png";
-import tonLogoBlue from "@/assets/ton-logo-blue.png";
+import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 import vanityVetAvatar from "@/assets/vanity-vet-avatar.png";
+import suiLogo from "@/assets/sui-logo.png";
 
 interface VanityBundleCardProps {
   subdomain?: string;
@@ -22,12 +23,13 @@ type BundleItem = {
 };
 
 const bundleItems: BundleItem[] = [
-  { id: "iota", avatar: vanityIotaAvatar, base: "vanity.iota" },
-  { id: "box", avatar: vanityBoxAvatar, base: "vanity.box" },
-  { id: "apt", avatar: vanityAptAvatar, base: "vanity.apt" },
-  { id: "hl", avatar: vanityHlAvatar, base: "vanity.hl" },
-  { id: "ton", avatar: tonLogoBlue, base: "vanity.ton" },
-  { id: "vet", avatar: vanityVetAvatar, base: "vanity.vet" },
+  { id: "iota", avatar: vanityIotaAvatar, base: "Vanity.iota" },
+  { id: "box", avatar: vanityBoxAvatar, base: "Vanity.box" },
+  { id: "ton", avatar: vanityTonAvatar, base: "Vanity.ton" },
+  { id: "vet", avatar: vanityVetAvatar, base: "Vanity.vet" },
+  { id: "sui", avatar: suiLogo, base: "Vanity.sui" },
+  { id: "apt", avatar: vanityAptAvatar, base: "Vanity.apt" },
+  { id: "hl", avatar: vanityHlAvatar, base: "Vanity.hl" },
 ];
 
 export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = "you" }) => {
@@ -44,9 +46,10 @@ export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = 
         </div>
 
         {/* Chain Icons Grid – 3 columns on desktop, 2 on mobile */}
-        <div className={`grid gap-4 md:gap-6 mb-5 md:mb-6 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div className={`grid gap-4 md:gap-6 mb-5 md:mb-6 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
           {bundleItems.map((item) => {
-            const fullName = `${sub}.${item.base}`;
+            const displaySub = sub.charAt(0).toUpperCase() + sub.slice(1);
+            const fullName = `${displaySub}.${item.base}`;
 
             return (
               <div key={item.id} className="flex flex-col items-center">
