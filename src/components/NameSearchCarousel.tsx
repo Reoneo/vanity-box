@@ -16,12 +16,13 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import chain logos
-import vanityBoxAvatar from '@/assets/vanity-box-hex-black.png';
+import vanityBoxAvatar from '@/assets/vanity-box-avatar.png';
 import vanityAptAvatar from '@/assets/vanity-apt-avatar.jpeg';
 import vanityHlAvatar from '@/assets/vanity-hl-avatar.png';
 import vanityIotaAvatar from '@/assets/vanity-iota-avatar.png';
-import tonLogoBlue from '@/assets/ton-logo-blue.png';
+import vanityTonAvatar from '@/assets/vanity-ton-avatar.png';
 import vanityVetAvatar from '@/assets/vanity-vet-avatar.png';
+import suiLogo from '@/assets/sui-logo.png';
 
 interface NameSearchCarouselProps {
   searchQuery: string;
@@ -36,7 +37,12 @@ type BundleItem = {
 
 const bundleItems: BundleItem[] = [
   { id: 'iota', avatar: vanityIotaAvatar, base: 'Vanity.iota', isActive: true },
-  { id: 'box', avatar: vanityBoxAvatar, base: 'vanity.box', isActive: false },
+  { id: 'box', avatar: vanityBoxAvatar, base: 'Vanity.box', isActive: true },
+  { id: 'ton', avatar: vanityTonAvatar, base: 'Vanity.ton', isActive: false },
+  { id: 'vet', avatar: vanityVetAvatar, base: 'Vanity.vet', isActive: false },
+  { id: 'sui', avatar: suiLogo, base: 'Vanity.sui', isActive: false },
+  { id: 'apt', avatar: vanityAptAvatar, base: 'Vanity.apt', isActive: false },
+  { id: 'hl', avatar: vanityHlAvatar, base: 'Vanity.hl', isActive: false },
 ];
 
 export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
@@ -95,36 +101,33 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
           </div>
         </div>
 
-        {/* Chain Icons Grid */}
-        <div className="grid grid-cols-2 gap-4 md:gap-6 mb-5 max-w-xs mx-auto">
+        {/* Chain Icons Grid – 2 cols mobile, 4 cols desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 mb-5 max-w-md mx-auto">
           {bundleItems.map((item) => {
             const displayLabel = cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1);
             const fullName = `${displayLabel}.${item.base}`;
-            const isIota = item.id === 'iota';
-            const isBox = item.id === 'box';
-            // box and iota should not be greyed out
-            const shouldGrey = !item.isActive && !isBox;
+            const shouldGrey = !item.isActive;
 
             return (
               <div 
                 key={item.id} 
                 className={`flex flex-col items-center ${shouldGrey ? 'opacity-50' : ''}`}
               >
-                {/* Avatar with active indicator */}
                 <div className={`
-                  relative w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 bg-background shadow-sm
-                  ${isIota ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30' : isBox ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30' : 'border-border/40'}
+                  relative w-11 h-11 md:w-13 md:h-13 rounded-full overflow-hidden border-2 bg-background shadow-sm
+                  ${item.isActive ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30' : 'border-border/40'}
                 `}>
                   <img src={item.avatar} alt={fullName} className="w-full h-full object-cover" />
                 </div>
-
-                {/* Subdomain label */}
                 <span className={`
-                  text-[9px] md:text-[10px] mt-1.5 text-center break-all max-w-[80px]
-                  ${isIota ? 'text-[#D4AF37] font-medium' : isBox ? 'text-[#D4AF37] font-bold' : 'text-black dark:text-gray-300'}
+                  text-[9px] md:text-[10px] mt-1.5 text-center break-all max-w-[90px]
+                  ${item.isActive ? 'text-[#D4AF37] font-medium' : 'text-muted-foreground'}
                 `}>
                   {fullName}
                 </span>
+                {!item.isActive && (
+                  <span className="text-[7px] md:text-[8px] text-muted-foreground/60 mt-0.5">Coming Soon</span>
+                )}
               </div>
             );
           })}
@@ -196,7 +199,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
           {/* What you get */}
           <div className="bg-background/50 rounded-lg p-3 mb-3">
-            <p className="text-xs font-medium text-foreground mb-2">Mint {cleanLabel}.vanity.iota and instantly get:</p>
+            <p className="text-xs font-medium text-foreground mb-2">Register {cleanLabel}.Vanity.iota and instantly get:</p>
             <ul className="space-y-1.5">
               <li className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Check className="w-3 h-3 text-[#D4AF37] flex-shrink-0" />
@@ -204,7 +207,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               </li>
               <li className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Check className="w-3 h-3 text-[#D4AF37] flex-shrink-0" />
-                <span><strong>{cleanLabel}.vanity.box</strong> DNS redirect to your profile</span>
+                <span><strong>{cleanLabel}.Vanity.box</strong> DNS redirect to your profile</span>
               </li>
             </ul>
           </div>
@@ -223,7 +226,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
               className="w-full bg-[#D4AF37] hover:bg-[#C9A030] text-black font-semibold shadow-md"
               onClick={() => setIotaModalOpen(true)}
             >
-              Mint
+              Register
             </Button>
           ) : iotaResult.status === 'taken' ? (
             <Button 
