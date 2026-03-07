@@ -151,8 +151,8 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
   const displaySub = cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1);
   const selected = bundleItems[selectedIdx];
-  const ext = selected.name.split(".")[1];
-  const fullName = `${displaySub}.${ext}`;
+  /* Build Vanity ID */
+  const fullName = `${displaySub}.Vanity.${selected.chain}`;
   const perChainPrice = getSubdomainPrice(cleanLabel);
   const totalBundlePrice = perChainPrice * bundleItems.length;
 
