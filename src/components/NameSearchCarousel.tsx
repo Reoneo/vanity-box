@@ -149,7 +149,6 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
   if (!cleanLabel || cleanLabel.length < 1) return null;
 
-  const displaySub = cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1);
   const selected = bundleItems[selectedIdx];
   const fullName = `${displaySub}.${ext}`;
   const perChainPrice = getSubdomainPrice(cleanLabel);
