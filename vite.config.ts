@@ -42,4 +42,14 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: ["@tanstack/react-query", "@iota/dapp-kit"],
   },
+  build: {
+    rollupOptions: {
+      external: ['aptos'],
+      output: {
+        globals: {
+          aptos: 'aptos',
+        },
+      },
+    },
+  },
 }));
