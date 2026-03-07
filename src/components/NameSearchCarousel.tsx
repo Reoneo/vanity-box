@@ -5,25 +5,25 @@
  * Desktop: vertical thumbnails | large image | details panel on right.
  */
 
-import { useState, useMemo, useRef } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Check, X, Sparkles } from 'lucide-react';
-import { useIotaSubdomainAvailability, getSubdomainPricing } from '@/hooks/useIotaSubdomainAvailability';
-import { useCryptoPrices } from '@/contexts/CryptoPriceContext';
-import { IotaSubdomainMintModal } from '@/components/IotaSubdomainMintModal';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo, useRef } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Check, X, Sparkles } from "lucide-react";
+import { useIotaSubdomainAvailability, getSubdomainPricing } from "@/hooks/useIotaSubdomainAvailability";
+import { useCryptoPrices } from "@/contexts/CryptoPriceContext";
+import { IotaSubdomainMintModal } from "@/components/IotaSubdomainMintModal";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Import chain logos
-import vanityBoxAvatar from '@/assets/vanity-box-avatar.png';
-import vanityAptAvatar from '@/assets/vanity-apt-avatar.jpeg';
-import vanityHlAvatar from '@/assets/vanity-hl-avatar.png';
-import vanityIotaAvatar from '@/assets/vanity-iota-avatar.png';
-import vanityTonAvatar from '@/assets/vanity-ton-avatar.png';
-import vanityVetAvatar from '@/assets/vanity-vet-avatar.png';
-import suiLogo from '@/assets/sui-logo.png';
+import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
+import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
+import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
+import vanityIotaAvatar from "@/assets/vanity-iota-avatar.png";
+import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
+import vanityVetAvatar from "@/assets/vanity-vet-avatar.png";
+import suiLogo from "@/assets/sui-logo.png";
 
 interface NameSearchCarouselProps {
   searchQuery: string;
@@ -41,73 +41,73 @@ type BundleItem = {
 
 const bundleItems: BundleItem[] = [
   {
-    id: 'box',
+    id: "Vanity.box",
     avatar: vanityBoxAvatar,
-    name: 'Vanity.Box',
-    registry: 'my.box',
-    website: 'https://my.box',
+    name: "Vanity.Box",
+    registry: "my.box",
+    website: "https://my.box",
     description:
       "Vanity.box is the primary identity within the Vanity ecosystem. It acts as the root profile for a user's multi-chain Web3 identity, allowing individuals to maintain a consistent name across multiple blockchain networks and digital platforms. EVM wallet support coming soon!",
     isActive: true,
   },
   {
-    id: 'ton',
+    id: "ton",
     avatar: vanityTonAvatar,
-    name: 'Vanity.Ton',
-    registry: 'DNS.Ton.org',
-    website: 'https://dns.ton.org',
+    name: "Vanity.Ton",
+    registry: "DNS.Ton.org",
+    website: "https://dns.ton.org",
     description:
-      'Vanity.ton enables users to extend their Vanity identity into the TON ecosystem. This ensures consistent naming across Telegram-native Web3 services and TON blockchain applications.',
+      "Vanity.ton enables users to extend their Vanity identity into the TON ecosystem. This ensures consistent naming across Telegram-native Web3 services and TON blockchain applications.",
     isActive: false,
   },
   {
-    id: 'sui',
+    id: "sui",
     avatar: suiLogo,
-    name: 'Vanity.Sui',
-    registry: 'suins.io',
-    website: 'https://suins.io',
+    name: "Vanity.Sui",
+    registry: "suins.io",
+    website: "https://suins.io",
     description:
-      'Vanity.sui allows your identity to exist within the Sui ecosystem. By matching your Vanity.box name, users can maintain a unified digital presence across high-performance Web3 infrastructure.',
+      "Vanity.sui allows your identity to exist within the Sui ecosystem. By matching your Vanity.box name, users can maintain a unified digital presence across high-performance Web3 infrastructure.",
     isActive: false,
   },
   {
-    id: 'iota',
+    id: "iota",
     avatar: vanityIotaAvatar,
-    name: 'Vanity.Iota',
-    registry: 'IOTANames.com',
-    website: 'https://iotanames.com',
+    name: "Vanity.Iota",
+    registry: "IOTANames.com",
+    website: "https://iotanames.com",
     description:
-      'Vanity.iota integrates identity within the IOTA ecosystem, enabling consistent naming for wallets, decentralized applications, and digital identity infrastructure.',
+      "Vanity.iota integrates identity within the IOTA ecosystem, enabling consistent naming for wallets, decentralized applications, and digital identity infrastructure.",
     isActive: true,
   },
   {
-    id: 'hl',
+    id: "hl",
     avatar: vanityHlAvatar,
-    name: 'Vanity.Hl',
-    registry: 'hlNames.xyz',
-    website: 'https://hlnames.xyz',
+    name: "Vanity.Hl",
+    registry: "hlNames.xyz",
+    website: "https://hlnames.xyz",
     description:
-      'Vanity.hl brings your consistent identity into the HL ecosystem, reinforcing the concept of cross-chain identity continuity through the Vanity naming system.',
+      "Vanity.hl brings your consistent identity into the HL ecosystem, reinforcing the concept of cross-chain identity continuity through the Vanity naming system.",
     isActive: false,
   },
   {
-    id: 'vet',
+    id: "vet",
     avatar: vanityVetAvatar,
-    name: 'Vanity.Vet',
-    registry: 'vet.domains',
-    website: 'https://vet.domains',
+    name: "Vanity.Vet",
+    registry: "vet.domains",
+    website: "https://vet.domains",
     description:
-      'Vanity.vet ensures your identity is represented across the VeChain ecosystem, enabling recognizable Web3 naming for users participating in enterprise blockchain environments.',
+      "Vanity.vet ensures your identity is represented across the VeChain ecosystem, enabling recognizable Web3 naming for users participating in enterprise blockchain environments.",
     isActive: false,
   },
   {
-    id: 'apt',
+    id: "apt",
     avatar: vanityAptAvatar,
-    name: 'Vanity.Apt',
-    registry: 'AptosNames.com',
-    website: 'https://www.aptosnames.com',
+    name: "Vanity.Apt",
+    registry: "AptosNames.com",
+    website: "https://www.aptosnames.com",
     description:
-      'Vanity.aptos extends your Vanity identity into the Aptos blockchain network, ensuring that your Web3 identity remains consistent across emerging blockchain ecosystems.',
+      "Vanity.aptos extends your Vanity identity into the Aptos blockchain network, ensuring that your Web3 identity remains consistent across emerging blockchain ecosystems.",
     isActive: false,
   },
 ];
@@ -133,14 +133,14 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
   const thumbsRef = useRef<HTMLDivElement>(null);
 
   const cleanLabel = useMemo(() => {
-    const raw = (searchQuery || '').trim().toLowerCase();
-    if (raw.endsWith('.eth')) return raw.slice(0, -4);
-    if (raw.endsWith('.base.eth')) return raw.slice(0, -9);
-    if (raw.endsWith('.vanity.iota')) return raw.slice(0, -12);
-    if (raw.endsWith('.iota')) return raw.slice(0, -5);
-    if (raw.endsWith('.vanity.box')) return raw.slice(0, -11);
-    if (raw.endsWith('.box')) return raw.slice(0, -4);
-    if (raw.includes('.')) return '';
+    const raw = (searchQuery || "").trim().toLowerCase();
+    if (raw.endsWith(".eth")) return raw.slice(0, -4);
+    if (raw.endsWith(".base.eth")) return raw.slice(0, -9);
+    if (raw.endsWith(".vanity.iota")) return raw.slice(0, -12);
+    if (raw.endsWith(".iota")) return raw.slice(0, -5);
+    if (raw.endsWith(".vanity.box")) return raw.slice(0, -11);
+    if (raw.endsWith(".box")) return raw.slice(0, -4);
+    if (raw.includes(".")) return "";
     return raw;
   }, [searchQuery]);
 
@@ -151,7 +151,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
   const displaySub = cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1);
   const selected = bundleItems[selectedIdx];
-  const ext = selected.name.split('.')[1];
+  const ext = selected.name.split(".")[1];
   const fullName = `${displaySub}.${ext}`;
   const perChainPrice = getSubdomainPrice(cleanLabel);
   const totalBundlePrice = perChainPrice * bundleItems.length;
@@ -186,16 +186,14 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
           <div
             ref={thumbsRef}
             className="flex items-center gap-2 px-3 py-3 overflow-x-auto border-t border-border/30"
-            style={{ WebkitOverflowScrolling: 'touch' }}
+            style={{ WebkitOverflowScrolling: "touch" }}
           >
             {bundleItems.map((item, idx) => (
               <button
                 key={item.id}
                 onClick={() => setSelectedIdx(idx)}
                 className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                  idx === selectedIdx
-                    ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]/40'
-                    : 'border-border/40 opacity-50'
+                  idx === selectedIdx ? "border-[#D4AF37] ring-1 ring-[#D4AF37]/40" : "border-border/40 opacity-50"
                 }`}
               >
                 <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
@@ -220,24 +218,22 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
             {/* Description */}
             <div className="pt-3 border-t border-border/30">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {selected.description}
-              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{selected.description}</p>
             </div>
 
             {/* Register button */}
             <Button
               className="w-full bg-[#D4AF37] hover:bg-[#C9A030] text-black font-semibold shadow-md mt-3"
               onClick={() => setIotaModalOpen(true)}
-              disabled={iotaResult.status === 'loading'}
+              disabled={iotaResult.status === "loading"}
             >
-              {iotaResult.status === 'loading' ? (
+              {iotaResult.status === "loading" ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Checking…
                 </>
               ) : (
-                'Register'
+                "Register"
               )}
             </Button>
           </div>
@@ -261,8 +257,8 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                 onClick={() => setSelectedIdx(idx)}
                 className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                   idx === selectedIdx
-                    ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]/40'
-                    : 'border-border/40 opacity-50 hover:opacity-75'
+                    ? "border-[#D4AF37] ring-1 ring-[#D4AF37]/40"
+                    : "border-border/40 opacity-50 hover:opacity-75"
                 }`}
               >
                 <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
@@ -308,9 +304,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
                   Description
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                {selected.description}
-              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">{selected.description}</p>
               <p className="text-xs text-muted-foreground/60 leading-relaxed whitespace-pre-line">
                 {globalDescription}
               </p>
@@ -325,15 +319,15 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
             <Button
               className="w-full bg-[#D4AF37] hover:bg-[#C9A030] text-black font-semibold shadow-md mt-auto"
               onClick={() => setIotaModalOpen(true)}
-              disabled={iotaResult.status === 'loading'}
+              disabled={iotaResult.status === "loading"}
             >
-              {iotaResult.status === 'loading' ? (
+              {iotaResult.status === "loading" ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Checking…
                 </>
               ) : (
-                'Register'
+                "Register"
               )}
             </Button>
           </div>
