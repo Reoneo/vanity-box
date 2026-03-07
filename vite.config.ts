@@ -45,16 +45,5 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: ["@tanstack/react-query", "@iota/dapp-kit"],
   },
-  build: {
-    rollupOptions: {
-      external: ['aptos', '@mizuwallet-sdk/core', '@telegram-apps/bridge'],
-      output: {
-        globals: {
-          aptos: 'aptos',
-          '@mizuwallet-sdk/core': 'MizuWalletCore',
-          '@telegram-apps/bridge': 'TelegramAppsBridge',
-        },
-      },
-    },
-  },
+  build: {},
 }));
