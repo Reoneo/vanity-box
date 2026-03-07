@@ -41,7 +41,7 @@ type BundleItem = {
 
 const bundleItems: BundleItem[] = [
   {
-    id: "box",
+    id: "Vanity.box",
     avatar: vanityBoxAvatar,
     name: "Vanity.Box",
     registry: "my.box",
