@@ -44,10 +44,11 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['aptos'],
+      external: ['aptos', '@mizuwallet-sdk/core'],
       output: {
         globals: {
           aptos: 'aptos',
+          '@mizuwallet-sdk/core': 'MizuWalletCore',
         },
       },
     },
