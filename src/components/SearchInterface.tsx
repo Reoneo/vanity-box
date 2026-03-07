@@ -2289,13 +2289,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: showSearchBar,
                   },
-                  // Passkey button when no wallet connected
-                  ...(!walletAddress ? [{
-                    icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
-                    label: 'Passkey',
-                    onClick: () => setShowPasskeyModal(true),
-                    isActive: showPasskeyModal,
-                  }] : []),
                 ]}
               />
             )}
@@ -2647,12 +2640,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       isActive: showSearchBar,
                     },
-                    ...(!walletAddress ? [{
+                    {
                       icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Passkey',
                       onClick: () => setShowPasskeyModal(true),
                       isActive: showPasskeyModal,
-                    }] : []),
+                    },
                   ]}
                 />
               </div>
@@ -2676,8 +2669,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   bottom: '0' 
                 }}
               >
-                <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-6 md:pt-10 pb-40">
-                  <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex-1 overflow-y-auto px-4 md:px-8 pt-6 md:pt-10 pb-40">
+                  <div className="max-w-4xl mx-auto space-y-6">
                     {/* Vanity ID Bundle with IOTA Early Access */}
                     <NameSearchCarousel searchQuery={displayQuery || ''} />
                   </div>
