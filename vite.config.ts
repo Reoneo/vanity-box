@@ -44,11 +44,12 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['aptos', '@mizuwallet-sdk/core'],
+      external: ['aptos', '@mizuwallet-sdk/core', '@telegram-apps/bridge'],
       output: {
         globals: {
           aptos: 'aptos',
           '@mizuwallet-sdk/core': 'MizuWalletCore',
+          '@telegram-apps/bridge': 'TelegramAppsBridge',
         },
       },
     },
