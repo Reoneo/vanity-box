@@ -2647,12 +2647,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       isActive: showSearchBar,
                     },
-                    {
+                    ...(!walletAddress ? [{
                       icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Passkey',
                       onClick: () => setShowPasskeyModal(true),
                       isActive: showPasskeyModal,
-                    },
+                    }] : []),
                   ]}
                 />
               </div>
