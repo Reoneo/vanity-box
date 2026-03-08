@@ -33,8 +33,9 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
 
-      // ---- EVM-only build shims ----
+      // ---- Build shims for missing peer deps ----
       "graz": path.resolve(__dirname, "./src/shims/graz.ts"),
+      "aptos": path.resolve(__dirname, "./src/shims/aptos.ts"),
     },
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
