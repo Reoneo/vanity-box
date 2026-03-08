@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 export const HomeFeatureShowcase: React.FC = () => {
   return (
-    <div className="relative w-full flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+    <div className="relative w-full h-full flex items-center justify-center min-h-[60vh]">
       <motion.h1
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
