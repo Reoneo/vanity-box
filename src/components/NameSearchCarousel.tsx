@@ -41,7 +41,7 @@ type BundleItem = {
 
 const bundleItems: BundleItem[] = [
   {
-    id: 'box',
+    id: 'Vanity.box',
     avatar: vanityBoxAvatar,
     name: 'Vanity.Box',
     registry: 'my.box',
@@ -51,7 +51,7 @@ const bundleItems: BundleItem[] = [
     isActive: true,
   },
   {
-    id: 'ton',
+    id: 'Vanity.ton',
     avatar: vanityTonAvatar,
     name: 'Vanity.Ton',
     registry: 'DNS.Ton.org',
@@ -61,7 +61,7 @@ const bundleItems: BundleItem[] = [
     isActive: false,
   },
   {
-    id: 'sui',
+    id: 'Vanity.sui',
     avatar: suiLogo,
     name: 'Vanity.Sui',
     registry: 'suins.io',
@@ -71,7 +71,7 @@ const bundleItems: BundleItem[] = [
     isActive: false,
   },
   {
-    id: 'iota',
+    id: 'Vanity.iota',
     avatar: vanityIotaAvatar,
     name: 'Vanity.Iota',
     registry: 'IOTANames.com',
@@ -81,7 +81,7 @@ const bundleItems: BundleItem[] = [
     isActive: true,
   },
   {
-    id: 'hl',
+    id: 'Vanity.hl',
     avatar: vanityHlAvatar,
     name: 'Vanity.Hl',
     registry: 'hlNames.xyz',
@@ -91,7 +91,7 @@ const bundleItems: BundleItem[] = [
     isActive: false,
   },
   {
-    id: 'vet',
+    id: 'Vanity.vet',
     avatar: vanityVetAvatar,
     name: 'Vanity.Vet',
     registry: 'vet.domains',
@@ -101,13 +101,13 @@ const bundleItems: BundleItem[] = [
     isActive: false,
   },
   {
-    id: 'apt',
+    id: 'Vanity.apt',
     avatar: vanityAptAvatar,
     name: 'Vanity.Apt',
     registry: 'AptosNames.com',
     website: 'https://www.aptosnames.com',
     description:
-      'Vanity.aptos extends your Vanity identity into the Aptos blockchain network, ensuring that your Web3 identity remains consistent across emerging blockchain ecosystems.',
+      'Vanity.apt extends your Vanity identity into the Aptos blockchain network, ensuring that your Web3 identity remains consistent across emerging blockchain ecosystems.',
     isActive: false,
   },
 ];
@@ -151,8 +151,7 @@ export function NameSearchCarousel({ searchQuery }: NameSearchCarouselProps) {
 
   const displaySub = cleanLabel.charAt(0).toUpperCase() + cleanLabel.slice(1);
   const selected = bundleItems[selectedIdx];
-  const ext = selected.name.split('.')[1];
-  const fullName = `${displaySub}.${ext}`;
+  const fullName = `${displaySub}.${selected.id}`;
   const perChainPrice = getSubdomainPrice(cleanLabel);
   const totalBundlePrice = perChainPrice * bundleItems.length;
 
