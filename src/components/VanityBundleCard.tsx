@@ -112,7 +112,10 @@ function getBundlePrice(subdomain: string): number {
   return perChain * bundleItems.length;
 }
 
-export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = "you", onRegister }) => {
+export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({
+  subdomain = "you",
+  onRegister,
+}) => {
   const sub = subdomain.trim().toLowerCase();
   const displaySub = sub.charAt(0).toUpperCase() + sub.slice(1);
   const isMobile = useIsMobile();
@@ -162,7 +165,11 @@ export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = 
                     : "border-border/40 opacity-60"
                 }`}
               >
-                <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
+                <img
+                  src={item.avatar}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                />
               </button>
             ))}
           </div>
@@ -171,24 +178,39 @@ export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = 
           <div className="p-5 space-y-3">
             <h3 className="text-xl font-bold text-foreground">{fullName}</h3>
             <p className="text-sm text-muted-foreground">
-              By <span className="text-foreground font-medium">{selected.registry}</span>
+              By{" "}
+              <span className="text-foreground font-medium">
+                {selected.registry}
+              </span>
             </p>
 
             {/* Description */}
             <div className="pt-3 border-t border-border/30">
-              <h4 className="text-sm font-semibold text-foreground mb-1.5">Description</h4>
-              <p className="text-sm text-muted-foreground leading-relaxed">{selected.description}</p>
+              <h4 className="text-sm font-semibold text-foreground mb-1.5">
+                Description
+              </h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {selected.description}
+              </p>
             </div>
 
             {/* Bundle Price */}
             <div className="pt-3 border-t border-border/30">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-muted-foreground">Per chain ({sub.length} chars)</span>
-                <span className="text-sm font-semibold text-foreground">${perChainPrice}</span>
+                <span className="text-sm text-muted-foreground">
+                  Per chain ({sub.length} chars)
+                </span>
+                <span className="text-sm font-semibold text-foreground">
+                  ${perChainPrice}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">Bundle ({bundleItems.length} chains)</span>
-                <span className="text-lg font-bold text-[#D4AF37]">${totalBundlePrice}</span>
+                <span className="text-sm font-medium text-foreground">
+                  Bundle ({bundleItems.length} chains)
+                </span>
+                <span className="text-lg font-bold text-[#D4AF37]">
+                  ${totalBundlePrice}
+                </span>
               </div>
             </div>
 
@@ -222,7 +244,11 @@ export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = 
                     : "border-border/40 opacity-60 hover:opacity-80"
                 }`}
               >
-                <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
+                <img
+                  src={item.avatar}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                />
               </button>
             ))}
           </div>
@@ -247,7 +273,10 @@ export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = 
           <div className="flex-1 p-6 space-y-3 overflow-y-auto">
             <h3 className="text-2xl font-bold text-foreground">{fullName}</h3>
             <p className="text-sm text-muted-foreground">
-              By <span className="text-foreground font-medium">{selected.registry}</span>
+              By{" "}
+              <span className="text-foreground font-medium">
+                {selected.registry}
+              </span>
             </p>
 
             {/* Description tab */}
@@ -257,28 +286,41 @@ export const VanityBundleCard: React.FC<VanityBundleCardProps> = ({ subdomain = 
                   Description
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">{selected.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {selected.description}
+              </p>
             </div>
 
             {/* Visit website */}
             <p className="text-xs text-muted-foreground/70 pt-1">
-              Visit website: <span className="text-foreground">{selected.registry}</span>
+              Visit website:{" "}
+              <span className="text-foreground">{selected.registry}</span>
             </p>
 
             {/* Global description */}
             <div className="pt-3 border-t border-border/30">
-              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{globalDescription}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+                {globalDescription}
+              </p>
             </div>
 
             {/* Bundle Price */}
             <div className="pt-3 border-t border-border/30">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-muted-foreground">Per chain ({sub.length} chars)</span>
-                <span className="text-sm font-semibold text-foreground">${perChainPrice}</span>
+                <span className="text-sm text-muted-foreground">
+                  Per chain ({sub.length} chars)
+                </span>
+                <span className="text-sm font-semibold text-foreground">
+                  ${perChainPrice}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">Bundle ({bundleItems.length} chains)</span>
-                <span className="text-lg font-bold text-[#D4AF37]">${totalBundlePrice}</span>
+                <span className="text-sm font-medium text-foreground">
+                  Bundle ({bundleItems.length} chains)
+                </span>
+                <span className="text-lg font-bold text-[#D4AF37]">
+                  ${totalBundlePrice}
+                </span>
               </div>
             </div>
 
