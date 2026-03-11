@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => ({
       "graz": path.resolve(__dirname, "./src/shims/graz.ts"),
       "aptos": path.resolve(__dirname, "./src/shims/aptos.ts"),
       "@mizuwallet-sdk/core": path.resolve(__dirname, "./src/shims/mizuwallet-sdk-core.ts"),
+      "@telegram-apps/bridge": path.resolve(__dirname, "./src/shims/telegram-apps-bridge.ts"),
     },
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
