@@ -64,7 +64,6 @@
     "@tonconnect/ui-react": "^2.3.1",
     "@types/chrome": "^0.1.37",
     "@worldcoin/minikit-js": "^1.9.6",
-    "aptos": "^1.22.1",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
