@@ -185,3 +185,6 @@ verify_jwt = false
 
 [functions.passkey-unbind]
 verify_jwt = false
+
+[functions.get-ud-profile]
+verify_jwt = false
