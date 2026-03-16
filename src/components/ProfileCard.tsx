@@ -1940,6 +1940,45 @@ export const ProfileCard = ({
                               );
                             })()}
 
+                            {/* Unstoppable Domains Grid */}
+                            {nftCategory === 'uddomains' && (
+                              udDomainsLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                  <Loader2 className="w-8 h-8 animate-spin text-[#4C47F7]" />
+                                </div>
+                              ) : udDomains.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground"><p>No Unstoppable Domains found</p></div>
+                              ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                  {udDomains.map((domain: any, index: number) => (
+                                    <div
+                                      key={`ud-${domain.name}-${index}`}
+                                      className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#4C47F7]/30 hover:border-[#4C47F7]/60 transition-all"
+                                      onClick={() => window.open(`https://ud.me/${domain.name}`, '_blank')}
+                                    >
+                                      <div className="aspect-square bg-gradient-to-br from-[#4C47F7]/10 to-[#7B76FF]/10 overflow-hidden">
+                                        <img
+                                          src={domain.image_url}
+                                          alt={domain.name}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                            if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.classList.remove('hidden');
+                                          }}
+                                        />
+                                        <div className="hidden w-full h-full bg-gradient-to-br from-[#4C47F7] to-[#7B76FF] flex items-center justify-center">
+                                          <span className="text-white font-bold text-xl">UD</span>
+                                        </div>
+                                      </div>
+                                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                        <p className="text-white text-xs font-medium truncate">{domain.name}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )
+                            )}
+
                             {nftCategory === 'opensea' && (
                               expandedCollection ? (
                                 <div className="space-y-4">
