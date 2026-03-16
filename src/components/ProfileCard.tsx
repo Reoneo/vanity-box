@@ -2583,6 +2583,26 @@ export const ProfileCard = ({
                         </button>
                       )}
 
+                      {/* Unstoppable Domains Button */}
+                      {(udDomainsLoading || udDomains.length > 0) && !(udDomainsFetched && udDomains.length === 0) && (
+                        <button
+                          onClick={() => setNftCategory('uddomains')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4C47F7] to-[#7B76FF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-white text-base">Unstoppable Domains</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-white/70">
+                                  {udDomainsLoading ? 'Loading…' : `${udDomains.length} ${udDomains.length === 1 ? 'domain' : 'domains'}`}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
                       {/* IOTA Collection Buttons - separate per collection */}
                       {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
                         iotaLoading ? (
