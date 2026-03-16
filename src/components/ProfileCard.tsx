@@ -2732,7 +2732,9 @@ export const ProfileCard = ({
                        iotaNfts.length === 0 &&
                        iotaFetched &&
                        tonNftCount === 0 &&
-                       tonNftsFetched && (
+                       tonNftsFetched &&
+                       udDomains.length === 0 &&
+                       udDomainsFetched && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p className="text-sm">No NFTs found for this wallet</p>
                         </div>
