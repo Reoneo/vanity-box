@@ -2372,7 +2372,9 @@ export const ProfileCard = ({
                                         ? nftCategory.replace('iota:', '')
                                         : nftCategory.startsWith('ton:')
                                           ? nftCategory.replace('ton:', '')
-                                          : 'Hyperliquid'}
+                                          : nftCategory === 'uddomains'
+                                            ? 'Unstoppable Domains'
+                                            : 'Hyperliquid'}
                       </h3>
                       {nftCategory === 'poaps' && (poapTotalCount > 0 || formattedPoaps.length > 0) && (
                         <span className="text-sm font-medium text-purple-500">
