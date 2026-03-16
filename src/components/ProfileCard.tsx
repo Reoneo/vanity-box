@@ -966,6 +966,35 @@ export const ProfileCard = ({
           setBasenamesFetched(true);
         }
 
+        // Fetch Unstoppable Domains (UD) for this wallet
+        if (isEvm) {
+          setUdDomainsLoading(true);
+          try {
+            const udRes = await fetch(`https://resolve.unstoppabledomains.com/reverse/${currentWalletAddress}`, {
+              headers: { 'Accept': 'application/json' },
+            });
+            if (udRes.ok) {
+              const udData = await udRes.json();
+              console.log('[ProfileCard] UD reverse resolve:', udData);
+              if (udData?.meta?.domain) {
+                setUdDomains([{
+                  name: udData.meta.domain,
+                  blockchain: udData.meta.blockchain || 'ETH',
+                  owner: udData.meta.owner || currentWalletAddress,
+                  image_url: `https://resolve.unstoppabledomains.com/image-src/${udData.meta.domain}`,
+                  records: udData.records || {},
+                  type: 'primary',
+                }]);
+              }
+            }
+          } catch (e) {
+            console.error('[ProfileCard] UD fetch error:', e);
+          } finally {
+            setUdDomainsLoading(false);
+            setUdDomainsFetched(true);
+          }
+        }
+
         // Fetch Polymarket data (skip for IOTA profiles)
         if (!isIota && isEvm) {
           try {
