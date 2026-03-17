@@ -185,3 +185,6 @@ verify_jwt = false
 
 [functions.passkey-unbind]
 verify_jwt = false
+
+[functions.resolve-ud-domain]
+verify_jwt = false

@@ -966,25 +966,23 @@ export const ProfileCard = ({
           setBasenamesFetched(true);
         }
 
-        // Fetch Unstoppable Domains (UD) for this wallet
+        // Fetch Unstoppable Domains (UD) for this wallet via edge function
         if (isEvm) {
           setUdDomainsLoading(true);
           try {
-            const udRes = await fetch(`https://resolve.unstoppabledomains.com/reverse/${currentWalletAddress}`, {
-              headers: { 'Accept': 'application/json' },
+            const udRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/resolve-ud-domain', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
             });
             if (udRes.ok) {
               const udData = await udRes.json();
-              console.log('[ProfileCard] UD reverse resolve:', udData);
-              if (udData?.meta?.domain) {
-                setUdDomains([{
-                  name: udData.meta.domain,
-                  blockchain: udData.meta.blockchain || 'ETH',
-                  owner: udData.meta.owner || currentWalletAddress,
-                  image_url: `https://resolve.unstoppabledomains.com/image-src/${udData.meta.domain}`,
-                  records: udData.records || {},
-                  type: 'primary',
-                }]);
+              console.log('[ProfileCard] UD domains:', udData);
+              if (udData?.domains && udData.domains.length > 0) {
+                setUdDomains(udData.domains);
               }
             }
           } catch (e) {
