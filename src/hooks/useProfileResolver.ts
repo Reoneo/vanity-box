@@ -355,22 +355,15 @@ function isUdDomain(name: string): boolean {
 }
 
 /**
- * Resolve Unstoppable Domain via edge function
+ * Resolve Unstoppable Domain via public resolution API
  */
 async function fetchUdProfile(domain: string): Promise<any | null> {
   console.log(`🔍 [Client] Fetching UD profile for: ${domain}`);
 
   try {
     const res = await fetchWithRetry(
-      'https://gdjjboorqviobvvygpca.supabase.co/functions/v1/resolve-ud-domain',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-        },
-        body: JSON.stringify({ domain }),
-      },
+      `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
+      { headers: { Accept: 'application/json' } },
       2,
       12000
     );
@@ -381,30 +374,33 @@ async function fetchUdProfile(domain: string): Promise<any | null> {
     }
 
     const data = await res.json();
+    const ownerAddress = data?.meta?.owner || data?.records?.['crypto.ETH.address'] || null;
 
-    if (!data.ownerAddress) {
+    if (!ownerAddress) {
       console.log('⚠️ UD: Domain not found or no owner');
       return null;
     }
 
-    console.log(`✅ UD resolved: ${domain} -> ${data.ownerAddress}`);
+    console.log(`✅ UD resolved: ${domain} -> ${ownerAddress}`);
 
     const links: Record<string, any> = {};
-    if (data.twitter) links.twitter = { link: `https://twitter.com/${data.twitter}`, handle: data.twitter };
-    if (data.url) links.website = { link: data.url };
+    const twitter = data?.records?.['social.twitter.username'];
+    if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
+    const url = data?.records?.['ipfs.redirect_domain.value'] || data?.records?.['browser.redirect_url'];
+    if (url) links.website = { link: url };
 
     return {
-      address: data.ownerAddress,
+      address: ownerAddress,
       identity: domain,
       platform: 'unstoppabledomains',
-      displayName: data.displayName || domain,
-      avatar: data.avatar || `https://resolve.unstoppabledomains.com/image-src/${domain}`,
-      description: data.description || null,
+      displayName: data?.records?.['profile.name'] || domain,
+      avatar: data?.records?.['social.picture.value'] || `https://resolve.unstoppabledomains.com/image-src/${domain}`,
+      description: data?.records?.['whois.description'] || null,
       header: null,
-      website: data.url || null,
-      url: data.url || null,
+      website: url || null,
+      url: url || null,
       links,
-      email: data.email || null,
+      email: data?.records?.['whois.email.value'] || null,
       location: null,
       udDomain: domain,
     };
