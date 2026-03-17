@@ -35,6 +35,7 @@ export default defineConfig(({ mode }) => ({
 
       // ---- EVM-only build shims ----
       "graz": path.resolve(__dirname, "./src/shims/graz.ts"),
+      "@mizuwallet-sdk/core": path.resolve(__dirname, "./src/shims/mizuwallet.ts"),
     },
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
