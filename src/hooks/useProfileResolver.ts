@@ -346,6 +346,75 @@ async function fetchVetProfile(domain: string): Promise<any | null> {
 }
 
 /**
+ * Known Unstoppable Domains TLDs
+ */
+const UD_TLDS = ['.crypto', '.nft', '.x', '.wallet', '.bitcoin', '.dao', '.888', '.zil', '.blockchain', '.go', '.klever', '.hi', '.kresus', '.polygon', '.anime', '.manga', '.binanceus'];
+
+function isUdDomain(name: string): boolean {
+  return UD_TLDS.some(tld => name.endsWith(tld));
+}
+
+/**
+ * Resolve Unstoppable Domain via edge function
+ */
+async function fetchUdProfile(domain: string): Promise<any | null> {
+  console.log(`🔍 [Client] Fetching UD profile for: ${domain}`);
+
+  try {
+    const res = await fetchWithRetry(
+      'https://gdjjboorqviobvvygpca.supabase.co/functions/v1/resolve-ud-domain',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+        },
+        body: JSON.stringify({ domain }),
+      },
+      2,
+      12000
+    );
+
+    if (!res || !res.ok) {
+      console.log(`❌ UD resolve: HTTP ${res?.status || 'failed'}`);
+      return null;
+    }
+
+    const data = await res.json();
+
+    if (!data.ownerAddress) {
+      console.log('⚠️ UD: Domain not found or no owner');
+      return null;
+    }
+
+    console.log(`✅ UD resolved: ${domain} -> ${data.ownerAddress}`);
+
+    const links: Record<string, any> = {};
+    if (data.twitter) links.twitter = { link: `https://twitter.com/${data.twitter}`, handle: data.twitter };
+    if (data.url) links.website = { link: data.url };
+
+    return {
+      address: data.ownerAddress,
+      identity: domain,
+      platform: 'unstoppabledomains',
+      displayName: data.displayName || domain,
+      avatar: data.avatar || `https://resolve.unstoppabledomains.com/image-src/${domain}`,
+      description: data.description || null,
+      header: null,
+      website: data.url || null,
+      url: data.url || null,
+      links,
+      email: data.email || null,
+      location: null,
+      udDomain: domain,
+    };
+  } catch (err: any) {
+    console.error('❌ UD fetch error:', err.message);
+    return null;
+  }
+}
+
+/**
  * Reverse resolution for vet.domains: address -> primary name
  */
 async function fetchVetReverseProfile(address: string): Promise<any | null> {
