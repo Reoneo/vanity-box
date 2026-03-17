@@ -482,10 +482,48 @@ export function useProfileResolver() {
       const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
+      const isUd = isUdDomain(normalized);
+
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
+      // Route 0: Unstoppable Domains TLDs
+      if (isUd) {
+        debug.tried.push('ud');
+        const udStart = Date.now();
+        const udProfile = await fetchUdProfile(normalized);
+        debug.timingsMs.ud = Date.now() - udStart;
+
+        if (udProfile) {
+          // Enrich with Web3.bio if we have an address
+          if (udProfile.address) {
+            debug.tried.push('web3bio');
+            const w3Start = Date.now();
+            const web3Profile = await fetchWeb3BioProfile(udProfile.address);
+            debug.timingsMs.web3bio = Date.now() - w3Start;
+
+            if (web3Profile && !web3Profile.notFound) {
+              resolverResult = {
+                ok: true,
+                source: 'ud',
+                profile: {
+                  ...web3Profile,
+                  udDomain: udProfile.udDomain,
+                  avatar: udProfile.avatar || web3Profile.avatar,
+                  displayName: udProfile.displayName || web3Profile.displayName,
+                },
+              };
+            } else {
+              resolverResult = { ok: true, source: 'ud', profile: udProfile };
+            }
+          } else {
+            resolverResult = { ok: true, source: 'ud', profile: udProfile };
+          }
+        } else {
+          resolverResult = { ok: false, source: 'ud', profile: null, notFound: true };
+        }
+      }
       // Route 1: .iota domains — skip Web3.bio for instant loading
-      if (isIotaDomain) {
+      else if (isIotaDomain) {
         debug.tried.push('iota');
         const iotaStart = Date.now();
         const iotaProfile = await fetchIotaProfile(normalized);
