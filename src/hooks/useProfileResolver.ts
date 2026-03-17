@@ -27,11 +27,12 @@ export interface ResolvedProfile {
   farcaster?: any;
   location?: string | null;
   email?: string | null;
+  udDomain?: string;
 }
 
 export interface ResolverResult {
   ok: boolean;
-  source: 'web3bio' | 'iota' | 'vet' | 'fallback';
+  source: 'web3bio' | 'iota' | 'vet' | 'ud' | 'fallback';
   profile: ResolvedProfile | null;
   notFound?: boolean;
   error?: string;
