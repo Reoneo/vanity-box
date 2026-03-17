@@ -346,12 +346,41 @@ async function fetchVetProfile(domain: string): Promise<any | null> {
 }
 
 /**
- * Known Unstoppable Domains TLDs
+ * Known Unstoppable Domains TLDs — comprehensive list
  */
-const UD_TLDS = ['.crypto', '.nft', '.x', '.wallet', '.bitcoin', '.dao', '.888', '.zil', '.blockchain', '.go', '.klever', '.hi', '.kresus', '.polygon', '.anime', '.manga', '.binanceus'];
+const UD_TLDS = [
+  '.crypto', '.nft', '.x', '.wallet', '.bitcoin', '.dao', '.888', '.zil',
+  '.blockchain', '.go', '.klever', '.hi', '.kresus', '.polygon', '.anime',
+  '.manga', '.binanceus', '.smobler', '.wrkx', '.ethermail', '.wif', '.u',
+  '.pudgy', '.austin', '.lfg', '.dream', '.secret', '.ubu', '.xmr', '.wifi',
+  '.retardio', '.unstoppable', '.raiin', '.mumu', '.witg', '.boomer', '.tball',
+  '.dfz', '.propykeys', '.metropolis', '.clay', '.pog', '.bald', '.chomp',
+  '.stepn', '.tea', '.brave', '.vanity', '.lunar',
+  // Additional known UD TLDs
+  '.altimist', '.farms', '.kryptic', '.spartan', '.benji',
+];
+
+/**
+ * TLDs handled by other resolvers — never send these to UD
+ */
+const NON_UD_TLDS = ['.eth', '.sol', '.iota', '.vet', '.box', '.bnb', '.arb', '.avax', '.apt', '.ton', '.com', '.org', '.net', '.io', '.id'];
 
 function isUdDomain(name: string): boolean {
-  return UD_TLDS.some(tld => name.endsWith(tld));
+  if (!name.includes('.')) return false;
+  // Explicit UD TLD match
+  if (UD_TLDS.some(tld => name.endsWith(tld))) return true;
+  return false;
+}
+
+/**
+ * Check if a domain could be a UD domain (unknown TLD fallback)
+ */
+function couldBeUdDomain(name: string): boolean {
+  if (!name.includes('.')) return false;
+  // Not a known non-UD TLD and not a wallet address
+  if (NON_UD_TLDS.some(tld => name.endsWith(tld))) return false;
+  if (/^0x[a-fA-F0-9]{40}$/i.test(name)) return false;
+  return true;
 }
 
 /**
