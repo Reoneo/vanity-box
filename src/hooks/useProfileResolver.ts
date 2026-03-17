@@ -761,17 +761,55 @@ export function useProfileResolver() {
           resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
         }
       }
-      // Route 4: Unknown format - try Web3.bio as a catch-all
+      // Route 4: Unknown format - try UD first for unknown web3 TLDs, then Web3.bio as catch-all
       else {
-        debug.tried.push('web3bio');
-        const w3Start = Date.now();
-        const web3Profile = await fetchWeb3BioProfile(normalized);
-        debug.timingsMs.web3bio = Date.now() - w3Start;
+        const maybeUd = couldBeUdDomain(normalized);
 
-        if (web3Profile && !web3Profile.notFound) {
-          resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
-        } else {
-          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+        if (maybeUd) {
+          debug.tried.push('ud-fallback');
+          const udStart = Date.now();
+          const udProfile = await fetchUdProfile(normalized);
+          debug.timingsMs['ud-fallback'] = Date.now() - udStart;
+
+          if (udProfile) {
+            if (udProfile.address) {
+              debug.tried.push('web3bio');
+              const w3Start = Date.now();
+              const web3Profile = await fetchWeb3BioProfile(udProfile.address);
+              debug.timingsMs.web3bio = Date.now() - w3Start;
+
+              if (web3Profile && !web3Profile.notFound) {
+                resolverResult = {
+                  ok: true,
+                  source: 'ud',
+                  profile: {
+                    ...web3Profile,
+                    udDomain: udProfile.udDomain,
+                    avatar: udProfile.avatar || web3Profile.avatar,
+                    displayName: udProfile.displayName || web3Profile.displayName,
+                  },
+                };
+              } else {
+                resolverResult = { ok: true, source: 'ud', profile: udProfile };
+              }
+            } else {
+              resolverResult = { ok: true, source: 'ud', profile: udProfile };
+            }
+          }
+        }
+
+        // If UD didn't resolve, try Web3.bio
+        if (!resolverResult.ok) {
+          debug.tried.push('web3bio');
+          const w3Start = Date.now();
+          const web3Profile = await fetchWeb3BioProfile(normalized);
+          debug.timingsMs.web3bio = Date.now() - w3Start;
+
+          if (web3Profile && !web3Profile.notFound) {
+            resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
+          } else {
+            resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+          }
         }
       }
 
