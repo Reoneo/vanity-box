@@ -27,11 +27,12 @@ export interface ResolvedProfile {
   farcaster?: any;
   location?: string | null;
   email?: string | null;
+  udDomain?: string;
 }
 
 export interface ResolverResult {
   ok: boolean;
-  source: 'web3bio' | 'iota' | 'vet' | 'fallback';
+  source: 'web3bio' | 'iota' | 'vet' | 'ud' | 'fallback';
   profile: ResolvedProfile | null;
   notFound?: boolean;
   error?: string;
@@ -345,6 +346,71 @@ async function fetchVetProfile(domain: string): Promise<any | null> {
 }
 
 /**
+ * Known Unstoppable Domains TLDs
+ */
+const UD_TLDS = ['.crypto', '.nft', '.x', '.wallet', '.bitcoin', '.dao', '.888', '.zil', '.blockchain', '.go', '.klever', '.hi', '.kresus', '.polygon', '.anime', '.manga', '.binanceus'];
+
+function isUdDomain(name: string): boolean {
+  return UD_TLDS.some(tld => name.endsWith(tld));
+}
+
+/**
+ * Resolve Unstoppable Domain via public resolution API
+ */
+async function fetchUdProfile(domain: string): Promise<any | null> {
+  console.log(`🔍 [Client] Fetching UD profile for: ${domain}`);
+
+  try {
+    const res = await fetchWithRetry(
+      `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
+      { headers: { Accept: 'application/json' } },
+      2,
+      12000
+    );
+
+    if (!res || !res.ok) {
+      console.log(`❌ UD resolve: HTTP ${res?.status || 'failed'}`);
+      return null;
+    }
+
+    const data = await res.json();
+    const ownerAddress = data?.meta?.owner || data?.records?.['crypto.ETH.address'] || null;
+
+    if (!ownerAddress) {
+      console.log('⚠️ UD: Domain not found or no owner');
+      return null;
+    }
+
+    console.log(`✅ UD resolved: ${domain} -> ${ownerAddress}`);
+
+    const links: Record<string, any> = {};
+    const twitter = data?.records?.['social.twitter.username'];
+    if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
+    const url = data?.records?.['ipfs.redirect_domain.value'] || data?.records?.['browser.redirect_url'];
+    if (url) links.website = { link: url };
+
+    return {
+      address: ownerAddress,
+      identity: domain,
+      platform: 'unstoppabledomains',
+      displayName: data?.records?.['profile.name'] || domain,
+      avatar: data?.records?.['social.picture.value'] || `https://resolve.unstoppabledomains.com/image-src/${domain}`,
+      description: data?.records?.['whois.description'] || null,
+      header: null,
+      website: url || null,
+      url: url || null,
+      links,
+      email: data?.records?.['whois.email.value'] || null,
+      location: null,
+      udDomain: domain,
+    };
+  } catch (err: any) {
+    console.error('❌ UD fetch error:', err.message);
+    return null;
+  }
+}
+
+/**
  * Reverse resolution for vet.domains: address -> primary name
  */
 async function fetchVetReverseProfile(address: string): Promise<any | null> {
@@ -412,10 +478,48 @@ export function useProfileResolver() {
       const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
+      const isUd = isUdDomain(normalized);
+
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
+      // Route 0: Unstoppable Domains TLDs
+      if (isUd) {
+        debug.tried.push('ud');
+        const udStart = Date.now();
+        const udProfile = await fetchUdProfile(normalized);
+        debug.timingsMs.ud = Date.now() - udStart;
+
+        if (udProfile) {
+          // Enrich with Web3.bio if we have an address
+          if (udProfile.address) {
+            debug.tried.push('web3bio');
+            const w3Start = Date.now();
+            const web3Profile = await fetchWeb3BioProfile(udProfile.address);
+            debug.timingsMs.web3bio = Date.now() - w3Start;
+
+            if (web3Profile && !web3Profile.notFound) {
+              resolverResult = {
+                ok: true,
+                source: 'ud',
+                profile: {
+                  ...web3Profile,
+                  udDomain: udProfile.udDomain,
+                  avatar: udProfile.avatar || web3Profile.avatar,
+                  displayName: udProfile.displayName || web3Profile.displayName,
+                },
+              };
+            } else {
+              resolverResult = { ok: true, source: 'ud', profile: udProfile };
+            }
+          } else {
+            resolverResult = { ok: true, source: 'ud', profile: udProfile };
+          }
+        } else {
+          resolverResult = { ok: false, source: 'ud', profile: null, notFound: true };
+        }
+      }
       // Route 1: .iota domains — skip Web3.bio for instant loading
-      if (isIotaDomain) {
+      else if (isIotaDomain) {
         debug.tried.push('iota');
         const iotaStart = Date.now();
         const iotaProfile = await fetchIotaProfile(normalized);
@@ -708,10 +812,47 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
     const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
     const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
+    const isUd = isUdDomain(normalized);
+
     let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
+    // Route 0: Unstoppable Domains TLDs
+    if (isUd) {
+      debug.tried.push('ud');
+      const udStart = Date.now();
+      const udProfile = await fetchUdProfile(normalized);
+      debug.timingsMs.ud = Date.now() - udStart;
+
+      if (udProfile) {
+        if (udProfile.address) {
+          debug.tried.push('web3bio');
+          const w3Start = Date.now();
+          const web3Profile = await fetchWeb3BioProfile(udProfile.address);
+          debug.timingsMs.web3bio = Date.now() - w3Start;
+
+          if (web3Profile && !web3Profile.notFound) {
+            resolverResult = {
+              ok: true,
+              source: 'ud',
+              profile: {
+                ...web3Profile,
+                udDomain: udProfile.udDomain,
+                avatar: udProfile.avatar || web3Profile.avatar,
+                displayName: udProfile.displayName || web3Profile.displayName,
+              },
+            };
+          } else {
+            resolverResult = { ok: true, source: 'ud', profile: udProfile };
+          }
+        } else {
+          resolverResult = { ok: true, source: 'ud', profile: udProfile };
+        }
+      } else {
+        resolverResult = { ok: false, source: 'ud', profile: null, notFound: true };
+      }
+    }
     // Route 1: .iota domains — skip Web3.bio for instant loading
-    if (isIotaDomain) {
+    else if (isIotaDomain) {
       debug.tried.push('iota');
       const iotaStart = Date.now();
       const iotaProfile = await fetchIotaProfile(normalized);

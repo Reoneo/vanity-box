@@ -39,6 +39,11 @@ export default defineConfig(({ mode }) => ({
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
   },
+  build: {
+    rollupOptions: {
+      external: ["aptos"],
+    },
+  },
   optimizeDeps: {
     include: ["@tanstack/react-query", "@iota/dapp-kit"],
   },
