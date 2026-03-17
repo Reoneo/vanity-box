@@ -346,12 +346,41 @@ async function fetchVetProfile(domain: string): Promise<any | null> {
 }
 
 /**
- * Known Unstoppable Domains TLDs
+ * Known Unstoppable Domains TLDs — comprehensive list
  */
-const UD_TLDS = ['.crypto', '.nft', '.x', '.wallet', '.bitcoin', '.dao', '.888', '.zil', '.blockchain', '.go', '.klever', '.hi', '.kresus', '.polygon', '.anime', '.manga', '.binanceus'];
+const UD_TLDS = [
+  '.crypto', '.nft', '.x', '.wallet', '.bitcoin', '.dao', '.888', '.zil',
+  '.blockchain', '.go', '.klever', '.hi', '.kresus', '.polygon', '.anime',
+  '.manga', '.binanceus', '.smobler', '.wrkx', '.ethermail', '.wif', '.u',
+  '.pudgy', '.austin', '.lfg', '.dream', '.secret', '.ubu', '.xmr', '.wifi',
+  '.retardio', '.unstoppable', '.raiin', '.mumu', '.witg', '.boomer', '.tball',
+  '.dfz', '.propykeys', '.metropolis', '.clay', '.pog', '.bald', '.chomp',
+  '.stepn', '.tea', '.brave', '.vanity', '.lunar',
+  // Additional known UD TLDs
+  '.altimist', '.farms', '.kryptic', '.spartan', '.benji',
+];
+
+/**
+ * TLDs handled by other resolvers — never send these to UD
+ */
+const NON_UD_TLDS = ['.eth', '.sol', '.iota', '.vet', '.box', '.bnb', '.arb', '.avax', '.apt', '.ton', '.com', '.org', '.net', '.io', '.id'];
 
 function isUdDomain(name: string): boolean {
-  return UD_TLDS.some(tld => name.endsWith(tld));
+  if (!name.includes('.')) return false;
+  // Explicit UD TLD match
+  if (UD_TLDS.some(tld => name.endsWith(tld))) return true;
+  return false;
+}
+
+/**
+ * Check if a domain could be a UD domain (unknown TLD fallback)
+ */
+function couldBeUdDomain(name: string): boolean {
+  if (!name.includes('.')) return false;
+  // Not a known non-UD TLD and not a wallet address
+  if (NON_UD_TLDS.some(tld => name.endsWith(tld))) return false;
+  if (/^0x[a-fA-F0-9]{40}$/i.test(name)) return false;
+  return true;
 }
 
 /**
@@ -732,17 +761,55 @@ export function useProfileResolver() {
           resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
         }
       }
-      // Route 4: Unknown format - try Web3.bio as a catch-all
+      // Route 4: Unknown format - try UD first for unknown web3 TLDs, then Web3.bio as catch-all
       else {
-        debug.tried.push('web3bio');
-        const w3Start = Date.now();
-        const web3Profile = await fetchWeb3BioProfile(normalized);
-        debug.timingsMs.web3bio = Date.now() - w3Start;
+        const maybeUd = couldBeUdDomain(normalized);
 
-        if (web3Profile && !web3Profile.notFound) {
-          resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
-        } else {
-          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+        if (maybeUd) {
+          debug.tried.push('ud-fallback');
+          const udStart = Date.now();
+          const udProfile = await fetchUdProfile(normalized);
+          debug.timingsMs['ud-fallback'] = Date.now() - udStart;
+
+          if (udProfile) {
+            if (udProfile.address) {
+              debug.tried.push('web3bio');
+              const w3Start = Date.now();
+              const web3Profile = await fetchWeb3BioProfile(udProfile.address);
+              debug.timingsMs.web3bio = Date.now() - w3Start;
+
+              if (web3Profile && !web3Profile.notFound) {
+                resolverResult = {
+                  ok: true,
+                  source: 'ud',
+                  profile: {
+                    ...web3Profile,
+                    udDomain: udProfile.udDomain,
+                    avatar: udProfile.avatar || web3Profile.avatar,
+                    displayName: udProfile.displayName || web3Profile.displayName,
+                  },
+                };
+              } else {
+                resolverResult = { ok: true, source: 'ud', profile: udProfile };
+              }
+            } else {
+              resolverResult = { ok: true, source: 'ud', profile: udProfile };
+            }
+          }
+        }
+
+        // If UD didn't resolve, try Web3.bio
+        if (!resolverResult.ok) {
+          debug.tried.push('web3bio');
+          const w3Start = Date.now();
+          const web3Profile = await fetchWeb3BioProfile(normalized);
+          debug.timingsMs.web3bio = Date.now() - w3Start;
+
+          if (web3Profile && !web3Profile.notFound) {
+            resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
+          } else {
+            resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+          }
         }
       }
 
