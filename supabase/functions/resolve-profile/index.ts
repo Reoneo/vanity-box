@@ -614,13 +614,26 @@ serve(async (req) => {
 
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
     
+    // Route 0: Unstoppable Domains (official UD APIs via backend)
+    if (forceUd || isUd) {
+      debug.tried.push("ud");
+      const udStart = Date.now();
+      const udProfile = await fetchUdProfile(normalized);
+      debug.timingsMs.ud = Date.now() - udStart;
+
+      if (udProfile) {
+        result = { ok: true, source: "ud", profile: udProfile };
+      } else {
+        result = { ok: false, source: "ud", profile: null, notFound: true };
+      }
+    }
     // Route 1: .hl domains
-    if (isHlDomain) {
+    else if (isHlDomain) {
       debug.tried.push("hl");
       const hlStart = Date.now();
       const hlProfile = await fetchHlProfile(normalized, supabaseUrl, supabaseKey);
       debug.timingsMs.hl = Date.now() - hlStart;
-      
+
       if (hlProfile) {
         // Optionally enrich with Web3.bio using the resolved address
         if (hlProfile.address) {
@@ -628,7 +641,7 @@ serve(async (req) => {
           const w3Start = Date.now();
           const web3Profile = await fetchWeb3BioProfile(hlProfile.address);
           debug.timingsMs.web3bio = Date.now() - w3Start;
-          
+
           if (web3Profile && !web3Profile.notFound) {
             // Merge, keeping HL-specific data
             result = {
