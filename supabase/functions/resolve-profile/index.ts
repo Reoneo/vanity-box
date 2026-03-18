@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface ProfileResult {
   ok: boolean;
-  source: "web3bio" | "namestone" | "hl" | "vet" | "iota" | "fallback";
+  source: "web3bio" | "namestone" | "hl" | "vet" | "iota" | "ud" | "fallback";
   profile: {
     address: string | null;
     identity: string;
@@ -28,6 +28,7 @@ interface ProfileResult {
     hlTokens?: any[];
     vetDomain?: string;
     iotaDomain?: string;
+    udDomain?: string;
     farcaster?: any;
     location?: string | null;
     email?: string | null;
