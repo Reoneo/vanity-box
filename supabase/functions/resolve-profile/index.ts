@@ -566,22 +566,23 @@ serve(async (req) => {
   const debug: { tried: string[]; timingsMs: Record<string, number> } = { tried: [], timingsMs: {} };
   
   try {
-    const { identity } = await req.json();
-    
+    const { identity, resolver } = await req.json();
+
     if (!identity || typeof identity !== "string") {
       return new Response(
         JSON.stringify({ ok: false, error: "identity is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
+
     const normalized = identity.trim().toLowerCase();
-    console.log(`\n🚀 resolve-profile called for: ${normalized}`);
-    
+    const forceUd = resolver === "ud";
+    console.log(`\n🚀 resolve-profile called for: ${normalized}`, { forceUd });
+
     // Get Supabase config for internal edge function calls
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    
+
     // Determine identity type
     // EVM wallet addresses are 40 hex chars (0x + 40)
     const isEvmWalletAddress = /^0x[a-fA-F0-9]{40}$/i.test(normalized);
@@ -591,25 +592,26 @@ serve(async (req) => {
     const isHlDomain = normalized.endsWith(".hl");
     const isVetDomain = normalized.endsWith(".vet");
     const isIotaDomain = normalized.endsWith(".iota");
-    
+    const isUd = isUdDomain(normalized);
+
     // Web3.bio-compatible TLDs
     const web3BioTLDs = [".eth", ".box", ".world.id"];
     const isWeb3BioCompatible = web3BioTLDs.some(tld => normalized.endsWith(tld));
-    
+
     // Special handling for base.eth subdomains (e.g., guy.base.eth)
     const isBaseEthSubdomain = normalized.endsWith(".base.eth") && normalized !== "base.eth";
-    
+
     // Namestone-only TLDs (not indexed by Web3.bio)
     const namestoneTLDs = [".world", ".cash", ".apt", ".ton", ".flirtad", ".mexipay", ".guavapay", ".termux", ".spyda", ".mith", ".30315", ".teamxrp"];
     const isNamestoneTLD = namestoneTLDs.some(tld => normalized.endsWith(tld)) && !normalized.endsWith(".world.id");
-    
+
     // Check for subdomains (2+ dots)
     const dotCount = normalized.split('.').filter(Boolean).length - 1;
     const isSubdomain = dotCount >= 2;
     const isL2EnsSubdomain = isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id")) && !isBaseEthSubdomain;
-    
-    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, iota=${isIotaDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
-    
+
+    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, iota=${isIotaDomain}, ud=${isUd || forceUd}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
+
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
     
     // Route 1: .hl domains
