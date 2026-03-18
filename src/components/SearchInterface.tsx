@@ -1977,7 +1977,72 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           </>
         ) : (
           <>
-...
+            <DynamicMetaTags
+              username={web3BioProfile?.identity || displayQuery}
+              displayName={web3BioProfile?.displayName}
+              description={web3BioProfile?.description}
+              avatar={web3BioProfile?.avatar}
+              banner={web3BioProfile?.header}
+            />
+
+            <LoadingProgress isLoading={isLoading && !web3BioProfile} />
+
+            {/* Profile Dock */}
+            {web3BioProfile && !showMyIDs && (
+              <Dock
+                items={[
+                  {
+                    icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Home',
+                    onClick: (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setShowSearchBar(false);
+                      setHadPreviousProfile(false);
+                      setWeb3BioProfile(null);
+                      setEfpStats(null);
+                      setEnsRecords(null);
+                      setIsSearchActive(false);
+                      setHasSearched(false);
+                      setSearchQuery('');
+                      setDisplayQuery('');
+                      setEnsResults([]);
+                      setNfts([]);
+                      setPoapTokens([]);
+                      setPoapTotalCount(0);
+                      setPoapHasMore(false);
+                      setPoapOffset(0);
+                      setActiveDockSection('profile');
+                      setIsHomepage(true);
+                      setShowDetailView(false);
+                      setDetailViewResult(null);
+                      navigate('/', { replace: false });
+                    },
+                    isActive: false,
+                  },
+                  {
+                    icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                    label: t('profile'),
+                    onClick: async () => {
+                      if (!walletAddress) {
+                        toast.error('Please connect your wallet first');
+                        return;
+                      }
+
+                      let searchIdentifier = connectedUsername || walletAddress;
+                      if (!connectedUsername && connectedWalletType === 'iota') {
+                        try {
+                          const data = await callEdge<any>('resolve-iota-address', { address: walletAddress });
+                          const maybeName = typeof data?.name === 'string' ? data.name : null;
+                          if (maybeName) searchIdentifier = maybeName;
+                        } catch (e) {
+                          console.warn('Failed to resolve .iota name on-demand; falling back to address', e);
+                        }
+                      }
+
+                      if (searchIdentifier) handleSearch(searchIdentifier);
+                    },
+                    isActive: activeDockSection === 'profile',
+                  },
                   {
                     icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Messages',
@@ -1992,12 +2057,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onClick: () => setShowPasskeyModal(true),
                     isActive: showPasskeyModal,
                   }] : []),
-                  // Search icon on far right
                   {
                     icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Search',
                     onClick: () => {
-                      // Toggle modal search overlay
                       setShowSearchBar(prev => !prev);
                     },
                     isActive: showSearchBar,
@@ -2005,12 +2068,64 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 ]}
               />
             )}
-...
+
+            {/* My ID's Section */}
+            {walletAddress && showMyIDs && (
+              <div className="fixed left-0 right-0 flex flex-col z-[9997] top-[80px] bottom-[140px] px-0 pt-0">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+                  <UserDomainsDisplay walletAddress={walletAddress} />
+                </div>
+              </div>
+            )}
+
+            {/* Home Screen Dock */}
+            {!web3BioProfile && !showMyIDs && (
+              <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
+                <Dock
+                  items={[
+                    ...(!isHomepage ? [{
+                      icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Home',
+                      onClick: () => {
+                        setShowSearchBar(false);
+                        setIsSearchActive(false);
+                        setEnsResults([]);
+                        setHasSearched(false);
+                        setDisplayQuery('');
+                        setSearchQuery('');
+                        setIsHomepage(true);
+                        setShowDetailView(false);
+                        setDetailViewResult(null);
+                        navigate('/', { replace: false });
+                      },
+                      isActive: false,
+                    }] : []),
+                    {
+                      icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Profile',
+                      onClick: async () => {
+                        if (!walletAddress) {
+                          toast.error('Please connect your wallet first');
+                          return;
+                        }
+                        let searchIdentifier = connectedUsername || walletAddress;
+                        if (!connectedUsername && connectedWalletType === 'iota') {
+                          try {
+                            const data = await callEdge<any>('resolve-iota-address', { address: walletAddress });
+                            const maybeName = typeof data?.name === 'string' ? data.name : null;
+                            if (maybeName) searchIdentifier = maybeName;
+                          } catch (e) {
+                            console.warn('Failed to resolve .iota name on-demand; falling back to address', e);
+                          }
+                        }
+                        if (searchIdentifier) handleSearch(searchIdentifier);
+                      },
+                      isActive: false,
+                    },
                     {
                       icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Search',
                       onClick: () => {
-                        // Reset isSearchActive to show the modal-style search overlay
                         setIsSearchActive(false);
                         setShowSearchBar(prev => !prev);
                       },
