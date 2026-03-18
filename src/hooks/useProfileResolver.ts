@@ -488,30 +488,7 @@ export function useProfileResolver() {
         debug.timingsMs.ud = Date.now() - udStart;
 
         if (udProfile) {
-          // Enrich with Web3.bio if we have an address
-          if (udProfile.address) {
-            debug.tried.push('web3bio');
-            const w3Start = Date.now();
-            const web3Profile = await fetchWeb3BioProfile(udProfile.address);
-            debug.timingsMs.web3bio = Date.now() - w3Start;
-
-            if (web3Profile && !web3Profile.notFound) {
-              resolverResult = {
-                ok: true,
-                source: 'ud',
-                profile: {
-                  ...web3Profile,
-                  udDomain: udProfile.udDomain,
-                  avatar: udProfile.avatar || web3Profile.avatar,
-                  displayName: udProfile.displayName || web3Profile.displayName,
-                },
-              };
-            } else {
-              resolverResult = { ok: true, source: 'ud', profile: udProfile };
-            }
-          } else {
-            resolverResult = { ok: true, source: 'ud', profile: udProfile };
-          }
+          resolverResult = { ok: true, source: 'ud', profile: udProfile };
         } else {
           resolverResult = { ok: false, source: 'ud', profile: null, notFound: true };
         }
