@@ -388,54 +388,22 @@ function couldBeUdDomain(name: string): boolean {
  * Resolve Unstoppable Domain via public resolution API
  */
 async function fetchUdProfile(domain: string): Promise<any | null> {
-  console.log(`🔍 [Client] Fetching UD profile for: ${domain}`);
+  console.log(`🔍 [Client] Fetching UD profile (official API via edge) for: ${domain}`);
 
   try {
-    const res = await fetchWithRetry(
-      `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
-      { headers: { Accept: 'application/json' } },
-      2,
-      12000
-    );
+    const data = await callEdge<any>('resolve-profile', { identity: domain, resolver: 'ud' });
 
-    if (!res || !res.ok) {
-      console.log(`❌ UD resolve: HTTP ${res?.status || 'failed'}`);
+    if (!data?.ok || !data?.profile) {
+      console.log('⚠️ UD edge resolver: not found');
       return null;
     }
-
-    const data = await res.json();
-    const ownerAddress = data?.meta?.owner || data?.records?.['crypto.ETH.address'] || null;
-
-    if (!ownerAddress) {
-      console.log('⚠️ UD: Domain not found or no owner');
-      return null;
-    }
-
-    console.log(`✅ UD resolved: ${domain} -> ${ownerAddress}`);
-
-    const links: Record<string, any> = {};
-    const twitter = data?.records?.['social.twitter.username'];
-    if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
-    const url = data?.records?.['ipfs.redirect_domain.value'] || data?.records?.['browser.redirect_url'];
-    if (url) links.website = { link: url };
 
     return {
-      address: ownerAddress,
-      identity: domain,
-      platform: 'unstoppabledomains',
-      displayName: data?.records?.['profile.name'] || domain,
-      avatar: data?.records?.['social.picture.value'] || `https://resolve.unstoppabledomains.com/image-src/${domain}`,
-      description: data?.records?.['whois.description'] || null,
-      header: null,
-      website: url || null,
-      url: url || null,
-      links,
-      email: data?.records?.['whois.email.value'] || null,
-      location: null,
-      udDomain: domain,
+      ...data.profile,
+      udDomain: data.profile.udDomain || domain,
     };
   } catch (err: any) {
-    console.error('❌ UD fetch error:', err.message);
+    console.error('❌ UD edge fetch error:', err.message);
     return null;
   }
 }
