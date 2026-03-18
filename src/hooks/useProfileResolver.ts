@@ -353,7 +353,7 @@ const UD_TLDS = [
   '.crypto', '.nft', '.x', '.wallet', '.bitcoin', '.dao', '.888', '.zil',
   '.blockchain', '.go', '.klever', '.hi', '.kresus', '.polygon', '.anime',
   '.manga', '.binanceus', '.smobler', '.wrkx', '.ethermail', '.wif', '.u',
-  '.pudgy', '.austin', '.lfg', '.dream', '.secret', '.ubu', '.xmr', '.wifi',
+  '.pudgy', '.austin', '.ifg', '.lfg', '.dream', '.secret', '.ubu', '.xmr', '.wifi',
   '.retardio', '.unstoppable', '.raiin', '.mumu', '.witg', '.boomer', '.tball',
   '.dfz', '.propykeys', '.metropolis', '.clay', '.pog', '.bald', '.chomp',
   '.stepn', '.tea', '.brave', '.vanity', '.lunar',
