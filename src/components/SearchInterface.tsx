@@ -1965,6 +1965,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onClick: handleBackToResults,
                     isActive: false,
                   },
+                  ...(!walletAddress ? [{
+                    icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Passkey',
+                    onClick: () => setShowPasskeyModal(true),
+                    isActive: showPasskeyModal,
+                  }] : []),
                 ]}
               />
             </div>
@@ -1978,231 +1984,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               avatar={web3BioProfile?.avatar}
               banner={web3BioProfile?.header}
             />
-            
-            {/* Loading Progress Bar */}
+
             <LoadingProgress isLoading={isLoading && !web3BioProfile} />
-            
-            {/* Search bar and header - conditional rendering based on search state */}
-            {!showMyIDs && !isLoading && (
-              <>
-                {/* Modal Search Overlay - works for both homepage and profile views */}
-                {showSearchBar && (
-                  <>
-                    {/* Dim overlay - above profile content */}
-        <div 
-          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9998] animate-fade-in"
-          onClick={() => setShowSearchBar(false)}
-        />
-                    
-                    {/* Centered search modal - above overlay */}
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
-                      <div className="w-full max-w-md pointer-events-auto animate-scale-in">
-                        {/* Search bar */}
-                        <div className="space-y-3">
-                          <div className="relative">
-                            <Input
-                              placeholder={t("Search for a name")}
-                              className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white px-10"
-                              value={searchQuery}
-                              onChange={(e) => handleSearchChange(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  handleSearch();
-                                  setIsSearchActive(true);
-                                  onSearchClick?.();
-                                  setShowSearchBar(false);
-                                }
-                              }}
-                              onFocus={() => {
-                                setShowFilterDropdown(false);
-                              }}
-                            />
-                            {searchQuery && (
-                              <button
-                                onClick={() => {
-                                  setSearchQuery("");
-                                  setIsAvailable(null);
-                                }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                aria-label="Clear search"
-                              >
-                                <X className="w-4 h-4 text-black dark:text-white" />
-                              </button>
-                            )}
-                          </div>
-                          <Button
-                            onClick={() => {
-                              handleSearch();
-                              setIsSearchActive(true);
-                              onSearchClick?.();
-                              setShowSearchBar(false);
-                              window.dispatchEvent(new CustomEvent('close-poap-modal'));
-                            }}
-                            className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold text-base flex items-center justify-center"
-                            disabled={!searchQuery.trim() || isLoading}
-                          >
-                            <Search className="w-5 h-5 mr-2" />
-                            {t('search') || 'Search'}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
 
-                {!isSearchActive ? (
-                  <>
-                    {/* Feature Showcase - Only show when on homepage */}
-                    {isHomepage && !web3BioProfile && !showSearchBar && (
-                      <div 
-                        className="fixed left-0 right-0 z-[9996] overflow-y-auto bg-background"
-                        style={{ 
-                          top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
-                         bottom: 0
-                        }}
-                      >
-                        <HomeFeatureShowcase />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {/* Remove h1 header when showing user profile */}
-                    {!web3BioProfile && (
-                      <div className="mt-2">
-                        {isLoading ? (
-                          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                            <span className="text-black dark:text-white animate-pulse">{t('loading')}</span>
-                          </h1>
-                        ) : null}
-                      </div>
-                    )}
-                   </>
-                )}
-              </>
-            )}
-
-            {/* Loading progress bar for .iota profiles while IPFS data loads */}
-            {isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile && web3BioProfile && !showMyIDs && (
-              <LoadingProgress isLoading={true} />
-            )}
-
-            {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs && !(isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile) ? (
-              <div
-                className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
-              >
-                {/* Profile Card - no scroll within profile */}
-                <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-                  <ProfileCard
-                    activeSection={activeDockSection}
-                    web3BioProfile={
-                      isIotaName(displayQuery) && iotaOnchainProfile
-                        ? makeIotaDisplayProfile({
-                            base: web3BioProfile,
-                            iotaOnchainProfile,
-                            identity: displayQuery,
-                            ownerAddress: iotaOwnerAddress,
-                          })
-                        : web3BioProfile
-                    }
-                    currentWalletAddress={
-                      isIotaName(displayQuery) && iotaOnchainProfile
-                        ? (iotaOwnerAddress || web3BioProfile.address)
-                        : web3BioProfile.address
-                    }
-                    connectedWalletAddress={
-                      isIotaName(displayQuery) && isIotaConnected && iotaWalletAddress
-                        ? iotaWalletAddress
-                        : walletAddress
-                    }
-                    efpStats={efpStats || undefined}
-                    poaps={poapTokens}
-                    poapTotalCount={poapTotalCount}
-                    poapHasMore={poapHasMore}
-                    poapLoadingMore={poapLoadingMore}
-                    onLoadMorePoaps={handleLoadMorePoaps}
-                    socialIcons={socialIcons}
-                    nfts={nfts}
-                    nftLoading={nftLoading}
-                    nftNextCursor={nftNextCursor}
-                    openseaAttempted={openseaAttempted}
-                    openseaHasErrors={openseaHasErrors}
-                    latestCast={latestCast}
-                    castLoading={castLoading}
-                    firstTransactionDate={firstTransactionDate}
-                    searchedIdentity={displayQuery}
-                    onFollowingClick={handleFollowingClick}
-                    onFollowersClick={handleFollowersClick}
-                    onLoadMoreNfts={handleLoadMoreNfts}
-                    onEnsureOpenSeaNfts={() => {
-                      const isIota = isIotaName(displayQuery);
-
-                      // For IOTA profiles, use linkedEvmAddress if available
-                      if (isIota && linkedEvmAddress && !openseaAttempted && !nftLoading) {
-                        console.log('🔄 On-demand: Fetching OpenSea NFTs for linked EVM:', linkedEvmAddress);
-                        fetchNfts(linkedEvmAddress);
-                        return;
-                      }
-
-                      const isEvmAddr =
-                        typeof web3BioProfile?.address === 'string' &&
-                        /^0x[a-fA-F0-9]{40}$/.test(web3BioProfile.address);
-
-                      if (!isIota && isEvmAddr && !openseaAttempted && !nftLoading) {
-                        console.log('🔄 On-demand: Fetching OpenSea NFTs for:', web3BioProfile.address);
-                        fetchNfts(web3BioProfile.address);
-                      }
-                    }}
-                    linkedEvmAddress={linkedEvmAddress}
-                    isResolvingLinkedEvm={isResolvingLinkedEvm}
-                    linkedTonAddress={linkedTonAddress}
-                    iotaOnchainProfile={iotaOnchainProfile}
-                    iotaNameObjectId={iotaNameObjectId}
-                    iotaOwnerAddress={iotaOwnerAddress}
-                    onEditIotaProfile={() => setShowIotaEditModal(true)}
-                  />
-                </div>
-              </div>
-            ) : null}
-
-            {/* IOTA Profile Edit Modal */}
-            {showIotaEditModal && isIotaName(displayQuery) && (
-              <IotaProfileEditModal
-                open={showIotaEditModal}
-                onClose={() => setShowIotaEditModal(false)}
-                iotaName={displayQuery}
-                nameObjectId={iotaNameObjectId || ''}
-                currentProfile={iotaOnchainProfile}
-                onProfileUpdated={() => {
-                  const normalizedName = normalizeIotaQuery(displayQuery);
-                  if (!normalizedName) return;
-
-                  fetchIotaOnchainProfile(normalizedName)
-                    .then(response => {
-                      if (response?.success) {
-                        setIotaOnchainProfile(response.profile);
-                        setIotaNameObjectId(response.nameObjectId);
-                        setIotaOwnerAddress(response.ownerAddress);
-                      }
-                    })
-                    .catch(console.error);
-                }}
-              />
-            )}
-
-            {/* Profile Dock - separate from profile container for proper z-index stacking */}
+            {/* Profile Dock */}
             {web3BioProfile && !showMyIDs && (
               <Dock
                 items={[
-                  // Only show Home button when viewing a profile (not on home page)
-                  ...(web3BioProfile ? [{
+                  {
                     icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Home',
                     onClick: (e: React.MouseEvent) => {
                       e.stopPropagation();
                       setShowSearchBar(false);
-                      setHadPreviousProfile(false); // Prevent useEffect from re-enabling search
+                      setHadPreviousProfile(false);
                       setWeb3BioProfile(null);
                       setEfpStats(null);
                       setEnsRecords(null);
@@ -2218,13 +2013,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       setPoapOffset(0);
                       setActiveDockSection('profile');
                       setIsHomepage(true);
-                      // Reset detail view state to fix glitch
                       setShowDetailView(false);
                       setDetailViewResult(null);
                       navigate('/', { replace: false });
                     },
                     isActive: false,
-                  }] : []),
+                  },
                   {
                     icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                     label: t('profile'),
@@ -2234,8 +2028,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         return;
                       }
 
-                      // Load the connected user's own profile.
-                      // For IOTA wallets, a raw address lookup often returns no results — prefer the resolved .iota name.
                       let searchIdentifier = connectedUsername || walletAddress;
                       if (!connectedUsername && connectedWalletType === 'iota') {
                         try {
@@ -2251,26 +2043,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: activeDockSection === 'profile',
                   },
-                  // Only show Edit pencil when viewing own profile
-                  // For .iota profiles, also compare against iotaOwnerAddress since web3BioProfile.address may differ
-                  ...((walletAddress && web3BioProfile?.address && 
-                     walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase()) ||
-                     (walletAddress && iotaOwnerAddress && isIotaName(displayQuery) &&
-                     walletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase()) ? [{
-                    icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
-                    label: 'Edit',
-                    onClick: () => {
-                      if (isIotaName(displayQuery)) {
-                        // For .iota profiles, open edit onchain profile modal directly
-                        setShowIotaEditModal(true);
-                      } else {
-                        setShowMyIDs(true);
-                        setActiveDockSection('profile');
-                      }
-                    },
-                    isActive: false,
-                  }] : []),
-                  // Messages icon
                   {
                     icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Messages',
@@ -2279,234 +2051,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: false,
                   },
-                  // Search icon on far right
+                  ...(!walletAddress ? [{
+                    icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Passkey',
+                    onClick: () => setShowPasskeyModal(true),
+                    isActive: showPasskeyModal,
+                  }] : []),
                   {
                     icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Search',
                     onClick: () => {
-                      // Toggle modal search overlay
                       setShowSearchBar(prev => !prev);
                     },
                     isActive: showSearchBar,
                   },
                 ]}
               />
-            )}
-
-            {/* Loading Indicator */}
-            {isLoadingEFP && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                <div className="bg-gray-900/90 border-2 border-[#D4AF37] rounded-lg p-6 flex flex-col items-center gap-3">
-                  <Hourglass className="w-12 h-12 text-[#D4AF37] animate-pulse" />
-                  <p className="text-white font-medium">{t('loading')}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Followers List Modal */}
-            {showFollowersList && (
-              <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col">
-                  <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">{t('followers')} ({totalFollowers})</h3>
-                    <button
-                      onClick={() => setShowFollowersList(false)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="p-4 border-b border-[#D4AF37]/30">
-                    <div className="relative">
-                      <Input
-                        placeholder={t('search_followers')}
-                        value={followersSearchQuery}
-                        onChange={(e) => setFollowersSearchQuery(e.target.value)}
-                        className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
-                      />
-                      {followersSearchQuery && (
-                        <button
-                          onClick={() => setFollowersSearchQuery("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="overflow-y-auto p-4 space-y-2 flex-1">
-                    {followersList
-                      .filter((user) => {
-                        if (!followersSearchQuery) return true;
-                        const query = followersSearchQuery.toLowerCase();
-                        return (
-                          user.address.toLowerCase().includes(query) ||
-                          user.ens?.name?.toLowerCase().includes(query) ||
-                          user.web3bio?.displayName?.toLowerCase().includes(query) ||
-                          user.web3bio?.identity?.toLowerCase().includes(query)
-                        );
-                      })
-                      .map((user, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/40 hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-white/60 rounded-lg transition-colors"
-                        >
-                          <div className="flex flex-col">
-                            {(user.web3bio?.displayName || user.ens?.name) && (
-                              <span className="text-white dark:text-white light:text-black font-medium">
-                                {user.web3bio?.displayName || user.ens?.name}
-                              </span>
-                            )}
-                            <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 text-sm font-mono">
-                              {user.address.slice(0, 6)}...{user.address.slice(-4)}
-                            </span>
-                          </div>
-                          <a
-                            href={`https://vanity.box/${user.ens?.name || user.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View
-                          </a>
-                        </div>
-                      ))}
-                  </div>
-                  {followersList.length < totalFollowers && (
-                    <div className="p-4 border-t border-[#D4AF37]/30">
-                      <Button
-                        onClick={async () => {
-                          if (!web3BioProfile?.address || isLoadingMore) return;
-                          setIsLoadingMore(true);
-                          try {
-                            const nextPage = followersPage + 1;
-                            const response = await fetch(
-                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=5&offset=${nextPage * 5}`,
-                            );
-                            if (response.ok) {
-                              const data = await response.json();
-                              const newFollowers = data.followers || [];
-                              setFollowersList([...followersList, ...newFollowers]);
-                              setFollowersPage(nextPage);
-                            }
-                          } catch (error) {
-                            console.error("Error loading more followers:", error);
-                          }
-                          setIsLoadingMore(false);
-                        }}
-                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-                        disabled={isLoadingMore}
-                      >
-                        {isLoadingMore ? t('loading') : t('load_more')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Following List Modal */}
-            {showFollowingList && (
-              <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col">
-                  <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
-                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">{t('following')} ({totalFollowing})</h3>
-                    <button
-                      onClick={() => setShowFollowingList(false)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="p-4 border-b border-[#D4AF37]/30">
-                    <div className="relative">
-                      <Input
-                        placeholder={t('search_following')}
-                        value={followingSearchQuery}
-                        onChange={(e) => setFollowingSearchQuery(e.target.value)}
-                        className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
-                      />
-                      {followingSearchQuery && (
-                        <button
-                          onClick={() => setFollowingSearchQuery("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="overflow-y-auto p-4 space-y-2 flex-1">
-                    {followingList
-                      .filter((user) => {
-                        if (!followingSearchQuery) return true;
-                        const query = followingSearchQuery.toLowerCase();
-                        return (
-                          user.address.toLowerCase().includes(query) ||
-                          user.ens?.name?.toLowerCase().includes(query) ||
-                          user.web3bio?.displayName?.toLowerCase().includes(query) ||
-                          user.web3bio?.identity?.toLowerCase().includes(query)
-                        );
-                      })
-                      .map((user, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/40 hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-white/60 rounded-lg transition-colors"
-                        >
-                          <div className="flex flex-col">
-                            {(user.web3bio?.displayName || user.ens?.name) && (
-                              <span className="text-white dark:text-white light:text-black font-medium">
-                                {user.web3bio?.displayName || user.ens?.name}
-                              </span>
-                            )}
-                            <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 text-sm font-mono">
-                              {user.address.slice(0, 6)}...{user.address.slice(-4)}
-                            </span>
-                          </div>
-                          <a
-                            href={`https://vanity.box/${user.ens?.name || user.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View
-                          </a>
-                        </div>
-                      ))}
-                  </div>
-                  {followingList.length < totalFollowing && (
-                    <div className="p-4 border-t border-[#D4AF37]/30">
-                      <Button
-                        onClick={async () => {
-                          if (!web3BioProfile?.address || isLoadingMore) return;
-                          setIsLoadingMore(true);
-                          try {
-                            const nextPage = followingPage + 1;
-                            const response = await fetch(
-                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=5&offset=${nextPage * 5}`,
-                            );
-                            if (response.ok) {
-                              const data = await response.json();
-                              const newFollowing = data.following || [];
-                              setFollowingList([...followingList, ...newFollowing]);
-                              setFollowingPage(nextPage);
-                            }
-                          } catch (error) {
-                            console.error("Error loading more following:", error);
-                          }
-                          setIsLoadingMore(false);
-                        }}
-                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
-                        disabled={isLoadingMore}
-                      >
-                        {isLoadingMore ? t('loading') : t('load_more')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
             )}
 
             {/* My ID's Section */}
@@ -2518,81 +2078,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               </div>
             )}
 
-            {/* My ID's Dock - Outside container with proper z-index */}
-            {walletAddress && showMyIDs && (
-              <div className="fixed bottom-0 left-0 right-0 z-[10000] flex items-center justify-center pb-4 pt-4 pointer-events-none">
-                <div className="pointer-events-auto">
-                  <Dock
-                    items={[
-                      {
-                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
-                        label: 'Home',
-                      onClick: () => {
-                          // Clear all data when returning home from My IDs
-                          setShowMyIDs(false);
-                          setWeb3BioProfile(null);
-                          setEfpStats(null);
-                          setEnsRecords(null);
-                          setIsSearchActive(false);
-                          setHasSearched(false);
-                          setSearchQuery('');
-                          setDisplayQuery('');
-                          setEnsResults([]); // Clear subdomain results
-                          setNfts([]);
-                          setPoapTokens([]);
-                          setActiveDockSection('profile');
-                          setShowSearchBar(false);
-                          setIsHomepage(true);
-                          navigate('/', { replace: false });
-                        },
-                        isActive: false,
-                      },
-                      {
-                        icon: <User className="w-6 h-6 text-[#D4AF37]" />,
-                        label: 'Profile',
-                        onClick: () => {
-                          if (!walletAddress) {
-                            toast.error('Please connect your wallet first');
-                            return;
-                          }
-                          // Load user's profile and exit My IDs
-                          setShowMyIDs(false);
-                          handleSearch(walletAddress);
-                        },
-                        isActive: true,
-                      },
-                      {
-                        icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
-                        label: 'Search',
-                        onClick: () => {
-                          if (!walletAddress) {
-                            toast.error('Please connect your wallet first');
-                            return;
-                          }
-                          // Exit My IDs to show search on main page
-                          setShowMyIDs(false);
-                          setIsSearchActive(false);
-                          setShowSearchBar(prev => !prev);
-                        },
-                        isActive: showSearchBar,
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Home Screen Dock - Show when no profile and not My ID's (including when results are shown) */}
+            {/* Home Screen Dock */}
             {!web3BioProfile && !showMyIDs && (
               <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
                 <Dock
                   items={[
-                    // Only show Home button when NOT on homepage
                     ...(!isHomepage ? [{
                       icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Home',
                       onClick: () => {
-                        // Clear search results and return to homepage
                         setShowSearchBar(false);
                         setIsSearchActive(false);
                         setEnsResults([]);
@@ -2600,7 +2094,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         setDisplayQuery('');
                         setSearchQuery('');
                         setIsHomepage(true);
-                        // Reset detail view state to fix glitch
                         setShowDetailView(false);
                         setDetailViewResult(null);
                         navigate('/', { replace: false });
@@ -2615,7 +2108,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           toast.error('Please connect your wallet first');
                           return;
                         }
-                        // For IOTA wallets, resolve .iota name first (same as profile dock)
                         let searchIdentifier = connectedUsername || walletAddress;
                         if (!connectedUsername && connectedWalletType === 'iota') {
                           try {
@@ -2634,18 +2126,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Search',
                       onClick: () => {
-                        // Reset isSearchActive to show the modal-style search overlay
                         setIsSearchActive(false);
                         setShowSearchBar(prev => !prev);
                       },
                       isActive: showSearchBar,
                     },
-                    {
+                    ...(!walletAddress ? [{
                       icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Passkey',
                       onClick: () => setShowPasskeyModal(true),
                       isActive: showPasskeyModal,
-                    },
+                    }] : []),
                   ]}
                 />
               </div>

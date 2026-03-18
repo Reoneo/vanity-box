@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface ProfileResult {
   ok: boolean;
-  source: "web3bio" | "namestone" | "hl" | "vet" | "iota" | "fallback";
+  source: "web3bio" | "namestone" | "hl" | "vet" | "iota" | "ud" | "fallback";
   profile: {
     address: string | null;
     identity: string;
@@ -28,6 +28,7 @@ interface ProfileResult {
     hlTokens?: any[];
     vetDomain?: string;
     iotaDomain?: string;
+    udDomain?: string;
     farcaster?: any;
     location?: string | null;
     email?: string | null;
@@ -78,6 +79,147 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries
     }
   }
   return null;
+}
+
+const UD_TLDS = new Set([
+  ".888", ".polygon", ".zil", ".bitcoin", ".smobler", ".wrkx", ".ethermail", ".wif", ".u",
+  ".pudgy", ".austin", ".ifg", ".lfg", ".dream", ".secret", ".ubu", ".xmr", ".wifi",
+  ".retardio", ".unstoppable", ".raiin", ".mumu", ".witg", ".boomer", ".crypto", ".dao",
+  ".tball", ".dfz", ".propykeys", ".metropolis", ".clay", ".nft", ".wallet", ".blockchain",
+  ".pog", ".bald", ".chomp", ".stepn", ".tea", ".go", ".brave", ".vanity", ".lunar", ".x",
+  ".binanceus", ".hi", ".klever", ".kresus", ".anime", ".manga",
+]);
+
+function isUdDomain(identity: string): boolean {
+  const dotIndex = identity.lastIndexOf(".");
+  if (dotIndex < 0) return false;
+  return UD_TLDS.has(identity.slice(dotIndex).toLowerCase());
+}
+
+function isEvmAddress(value: unknown): value is string {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function resolveUdEthAddress(records: Record<string, unknown>, owner: unknown): string | null {
+  const preferred = [
+    "crypto.ETH.address",
+    "token.ETH.address",
+    "wallet.ETH.address",
+  ];
+
+  for (const key of preferred) {
+    const value = records[key];
+    if (isEvmAddress(value)) return value;
+  }
+
+  for (const [key, value] of Object.entries(records)) {
+    if (!isEvmAddress(value)) continue;
+    const normalized = key.toLowerCase();
+    if (normalized.includes("eth") && normalized.endsWith(".address")) return value;
+  }
+
+  if (isEvmAddress(owner)) return owner;
+  return null;
+}
+
+async function fetchUdDomainSearch(domain: string, apiKey: string): Promise<any | null> {
+  const response = await fetchWithRetry(
+    "https://api.unstoppabledomains.com/mcp/v1/actions/ud_domains_search",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ query: domain, limit: 5, offset: 0 }),
+    },
+    1,
+    10000,
+  );
+
+  if (!response || !response.ok) return null;
+  const data = await response.json();
+  if (!Array.isArray(data?.results)) return null;
+  return data.results.find((item: any) => String(item?.name || "").toLowerCase() === domain) || null;
+}
+
+async function fetchUdProfile(domain: string): Promise<any | null> {
+  const apiKey = Deno.env.get("UD_API_KEY");
+  if (!apiKey) {
+    console.error("❌ UD_API_KEY not configured");
+    return null;
+  }
+
+  const searchHit = await fetchUdDomainSearch(domain, apiKey);
+  if (searchHit?.available === true) {
+    console.log(`⚠️ UD domain is available (not minted): ${domain}`);
+    return null;
+  }
+
+  const response = await fetchWithRetry(
+    `https://api.unstoppabledomains.com/resolve/domains/${encodeURIComponent(domain)}`,
+    {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+    },
+    2,
+    12000,
+  );
+
+  const fallbackResponse = !response || !response.ok
+    ? await fetchWithRetry(
+        `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
+        { headers: { Accept: "application/json" } },
+        1,
+        12000,
+      )
+    : null;
+
+  const resolved = response && response.ok ? response : fallbackResponse;
+  if (!resolved || !resolved.ok) {
+    console.log(`❌ UD resolution failed for ${domain}`);
+    return null;
+  }
+
+  const data = await resolved.json();
+  const records = (data?.records && typeof data.records === "object") ? data.records as Record<string, unknown> : {};
+  const owner = data?.meta?.owner ?? data?.owner ?? null;
+  const address = resolveUdEthAddress(records, owner);
+
+  const website =
+    (typeof records["browser.redirect_url"] === "string" && records["browser.redirect_url"]) ||
+    (typeof records["ipfs.redirect_domain.value"] === "string" && records["ipfs.redirect_domain.value"]) ||
+    null;
+
+  const twitter = typeof records["social.twitter.username"] === "string"
+    ? records["social.twitter.username"]
+    : null;
+
+  const links: Record<string, any> = {};
+  if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
+  if (website) links.website = { link: website };
+
+  if (!address && !isEvmAddress(owner)) return null;
+
+  return {
+    address: address || (isEvmAddress(owner) ? owner : null),
+    identity: domain,
+    platform: "unstoppabledomains",
+    displayName: (typeof records["profile.name"] === "string" && records["profile.name"]) || domain,
+    avatar:
+      (typeof records["social.picture.value"] === "string" && records["social.picture.value"]) ||
+      `https://resolve.unstoppabledomains.com/image-src/${domain}`,
+    description: (typeof records["whois.description"] === "string" && records["whois.description"]) || null,
+    header: null,
+    website,
+    url: website,
+    links,
+    email: (typeof records["whois.email.value"] === "string" && records["whois.email.value"]) || null,
+    location: null,
+    udDomain: domain,
+  };
 }
 
 // Call Web3.bio API
@@ -424,22 +566,23 @@ serve(async (req) => {
   const debug: { tried: string[]; timingsMs: Record<string, number> } = { tried: [], timingsMs: {} };
   
   try {
-    const { identity } = await req.json();
-    
+    const { identity, resolver } = await req.json();
+
     if (!identity || typeof identity !== "string") {
       return new Response(
         JSON.stringify({ ok: false, error: "identity is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
+
     const normalized = identity.trim().toLowerCase();
-    console.log(`\n🚀 resolve-profile called for: ${normalized}`);
-    
+    const forceUd = resolver === "ud";
+    console.log(`\n🚀 resolve-profile called for: ${normalized}`, { forceUd });
+
     // Get Supabase config for internal edge function calls
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    
+
     // Determine identity type
     // EVM wallet addresses are 40 hex chars (0x + 40)
     const isEvmWalletAddress = /^0x[a-fA-F0-9]{40}$/i.test(normalized);
@@ -449,34 +592,48 @@ serve(async (req) => {
     const isHlDomain = normalized.endsWith(".hl");
     const isVetDomain = normalized.endsWith(".vet");
     const isIotaDomain = normalized.endsWith(".iota");
-    
+    const isUd = isUdDomain(normalized);
+
     // Web3.bio-compatible TLDs
     const web3BioTLDs = [".eth", ".box", ".world.id"];
     const isWeb3BioCompatible = web3BioTLDs.some(tld => normalized.endsWith(tld));
-    
+
     // Special handling for base.eth subdomains (e.g., guy.base.eth)
     const isBaseEthSubdomain = normalized.endsWith(".base.eth") && normalized !== "base.eth";
-    
+
     // Namestone-only TLDs (not indexed by Web3.bio)
     const namestoneTLDs = [".world", ".cash", ".apt", ".ton", ".flirtad", ".mexipay", ".guavapay", ".termux", ".spyda", ".mith", ".30315", ".teamxrp"];
     const isNamestoneTLD = namestoneTLDs.some(tld => normalized.endsWith(tld)) && !normalized.endsWith(".world.id");
-    
+
     // Check for subdomains (2+ dots)
     const dotCount = normalized.split('.').filter(Boolean).length - 1;
     const isSubdomain = dotCount >= 2;
     const isL2EnsSubdomain = isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id")) && !isBaseEthSubdomain;
-    
-    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, iota=${isIotaDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
-    
+
+    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, iota=${isIotaDomain}, ud=${isUd || forceUd}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
+
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
     
+    // Route 0: Unstoppable Domains (official UD APIs via backend)
+    if (forceUd || isUd) {
+      debug.tried.push("ud");
+      const udStart = Date.now();
+      const udProfile = await fetchUdProfile(normalized);
+      debug.timingsMs.ud = Date.now() - udStart;
+
+      if (udProfile) {
+        result = { ok: true, source: "ud", profile: udProfile };
+      } else {
+        result = { ok: false, source: "ud", profile: null, notFound: true };
+      }
+    }
     // Route 1: .hl domains
-    if (isHlDomain) {
+    else if (isHlDomain) {
       debug.tried.push("hl");
       const hlStart = Date.now();
       const hlProfile = await fetchHlProfile(normalized, supabaseUrl, supabaseKey);
       debug.timingsMs.hl = Date.now() - hlStart;
-      
+
       if (hlProfile) {
         // Optionally enrich with Web3.bio using the resolved address
         if (hlProfile.address) {
@@ -484,7 +641,7 @@ serve(async (req) => {
           const w3Start = Date.now();
           const web3Profile = await fetchWeb3BioProfile(hlProfile.address);
           debug.timingsMs.web3bio = Date.now() - w3Start;
-          
+
           if (web3Profile && !web3Profile.notFound) {
             // Merge, keeping HL-specific data
             result = {
