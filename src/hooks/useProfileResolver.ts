@@ -3,6 +3,7 @@ import { createPublicClient, http } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { iotaJsonRpc, isValidIotaAddress } from '@/lib/iota/client';
+import { callEdge } from '@/lib/supaInvoke';
 
 /**
  * Profile data structure returned by the resolver
