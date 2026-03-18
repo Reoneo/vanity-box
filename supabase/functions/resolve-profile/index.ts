@@ -81,6 +81,147 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries
   return null;
 }
 
+const UD_TLDS = new Set([
+  ".888", ".polygon", ".zil", ".bitcoin", ".smobler", ".wrkx", ".ethermail", ".wif", ".u",
+  ".pudgy", ".austin", ".ifg", ".lfg", ".dream", ".secret", ".ubu", ".xmr", ".wifi",
+  ".retardio", ".unstoppable", ".raiin", ".mumu", ".witg", ".boomer", ".crypto", ".dao",
+  ".tball", ".dfz", ".propykeys", ".metropolis", ".clay", ".nft", ".wallet", ".blockchain",
+  ".pog", ".bald", ".chomp", ".stepn", ".tea", ".go", ".brave", ".vanity", ".lunar", ".x",
+  ".binanceus", ".hi", ".klever", ".kresus", ".anime", ".manga",
+]);
+
+function isUdDomain(identity: string): boolean {
+  const dotIndex = identity.lastIndexOf(".");
+  if (dotIndex < 0) return false;
+  return UD_TLDS.has(identity.slice(dotIndex).toLowerCase());
+}
+
+function isEvmAddress(value: unknown): value is string {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function resolveUdEthAddress(records: Record<string, unknown>, owner: unknown): string | null {
+  const preferred = [
+    "crypto.ETH.address",
+    "token.ETH.address",
+    "wallet.ETH.address",
+  ];
+
+  for (const key of preferred) {
+    const value = records[key];
+    if (isEvmAddress(value)) return value;
+  }
+
+  for (const [key, value] of Object.entries(records)) {
+    if (!isEvmAddress(value)) continue;
+    const normalized = key.toLowerCase();
+    if (normalized.includes("eth") && normalized.endsWith(".address")) return value;
+  }
+
+  if (isEvmAddress(owner)) return owner;
+  return null;
+}
+
+async function fetchUdDomainSearch(domain: string, apiKey: string): Promise<any | null> {
+  const response = await fetchWithRetry(
+    "https://api.unstoppabledomains.com/mcp/v1/actions/ud_domains_search",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ query: domain, limit: 5, offset: 0 }),
+    },
+    1,
+    10000,
+  );
+
+  if (!response || !response.ok) return null;
+  const data = await response.json();
+  if (!Array.isArray(data?.results)) return null;
+  return data.results.find((item: any) => String(item?.name || "").toLowerCase() === domain) || null;
+}
+
+async function fetchUdProfile(domain: string): Promise<any | null> {
+  const apiKey = Deno.env.get("UD_API_KEY");
+  if (!apiKey) {
+    console.error("❌ UD_API_KEY not configured");
+    return null;
+  }
+
+  const searchHit = await fetchUdDomainSearch(domain, apiKey);
+  if (searchHit?.available === true) {
+    console.log(`⚠️ UD domain is available (not minted): ${domain}`);
+    return null;
+  }
+
+  const response = await fetchWithRetry(
+    `https://api.unstoppabledomains.com/resolve/domains/${encodeURIComponent(domain)}`,
+    {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+    },
+    2,
+    12000,
+  );
+
+  const fallbackResponse = !response || !response.ok
+    ? await fetchWithRetry(
+        `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
+        { headers: { Accept: "application/json" } },
+        1,
+        12000,
+      )
+    : null;
+
+  const resolved = response && response.ok ? response : fallbackResponse;
+  if (!resolved || !resolved.ok) {
+    console.log(`❌ UD resolution failed for ${domain}`);
+    return null;
+  }
+
+  const data = await resolved.json();
+  const records = (data?.records && typeof data.records === "object") ? data.records as Record<string, unknown> : {};
+  const owner = data?.meta?.owner ?? data?.owner ?? null;
+  const address = resolveUdEthAddress(records, owner);
+
+  const website =
+    (typeof records["browser.redirect_url"] === "string" && records["browser.redirect_url"]) ||
+    (typeof records["ipfs.redirect_domain.value"] === "string" && records["ipfs.redirect_domain.value"]) ||
+    null;
+
+  const twitter = typeof records["social.twitter.username"] === "string"
+    ? records["social.twitter.username"]
+    : null;
+
+  const links: Record<string, any> = {};
+  if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
+  if (website) links.website = { link: website };
+
+  if (!address && !isEvmAddress(owner)) return null;
+
+  return {
+    address: address || (isEvmAddress(owner) ? owner : null),
+    identity: domain,
+    platform: "unstoppabledomains",
+    displayName: (typeof records["profile.name"] === "string" && records["profile.name"]) || domain,
+    avatar:
+      (typeof records["social.picture.value"] === "string" && records["social.picture.value"]) ||
+      `https://resolve.unstoppabledomains.com/image-src/${domain}`,
+    description: (typeof records["whois.description"] === "string" && records["whois.description"]) || null,
+    header: null,
+    website,
+    url: website,
+    links,
+    email: (typeof records["whois.email.value"] === "string" && records["whois.email.value"]) || null,
+    location: null,
+    udDomain: domain,
+  };
+}
+
 // Call Web3.bio API
 async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
   const apiKey = Deno.env.get("WEB3BIO_API_KEY");
