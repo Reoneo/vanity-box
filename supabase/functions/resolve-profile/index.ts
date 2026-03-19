@@ -375,8 +375,8 @@ async function ethCall(rpcUrl: string, to: string, data: string): Promise<string
 function buildUdProfileFromRecords(domain: string, records: Record<string, string>, owner: string | null): any | null {
   const address = resolveUdEthAddress(records, owner);
 
-  const website =
-    records["browser.redirect_url"] || records["ipfs.redirect_domain.value"] || null;
+  const validUrl = (v: string | undefined) => v && v !== "undefined" && v.length > 1 ? v : null;
+  const website = validUrl(records["browser.redirect_url"]) || validUrl(records["ipfs.redirect_domain.value"]);
 
   const twitter = records["social.twitter.username"] || null;
 
