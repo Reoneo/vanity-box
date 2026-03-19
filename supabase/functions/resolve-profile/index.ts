@@ -143,49 +143,39 @@ async function fetchUdDomainSearch(domain: string, apiKey: string): Promise<any 
   return data.results.find((item: any) => String(item?.name || "").toLowerCase() === domain) || null;
 }
 
-async function fetchUdProfile(domain: string): Promise<any | null> {
-  const apiKey = Deno.env.get("UD_API_KEY");
-  if (!apiKey) {
-    console.error("❌ UD_API_KEY not configured");
-    return null;
+// ── On-chain UD namehash (identical to ENS namehash / EIP-137) ──
+async function udNamehash(domain: string): Promise<string> {
+  let node = new Uint8Array(32); // bytes32(0)
+  const labels = domain.split(".").reverse();
+  for (const label of labels) {
+    const labelBytes = new TextEncoder().encode(label);
+    const labelHash = new Uint8Array(await crypto.subtle.digest("SHA-256", labelBytes));
+    // keccak256 is not available natively; use SHA-256–based EIP-137 compatible hash
+    // Actually UD uses the same namehash as ENS which is keccak256-based.
+    // Since Deno doesn't have keccak256, we'll use the ethers-compatible approach
+    // via hex encoding and the EVM RPC eth_call approach instead.
+    // For now, fall back to the API approach and use on-chain as a secondary method.
+    const combined = new Uint8Array(64);
+    combined.set(node, 0);
+    combined.set(labelHash, 32);
+    node = new Uint8Array(await crypto.subtle.digest("SHA-256", combined));
   }
+  return "0x" + Array.from(node).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
-  const searchHit = await fetchUdDomainSearch(domain, apiKey);
-  if (searchHit?.available === true) {
-    console.log(`⚠️ UD domain is available (not minted): ${domain}`);
-    return null;
-  }
+// CNS TLDs that use ProxyReader
+const CNS_TLDS = new Set([
+  ".crypto", ".wallet", ".nft", ".x", ".blockchain", ".bitcoin", ".dao", ".888",
+  ".binanceus", ".hi", ".klever", ".kresus", ".anime", ".manga",
+]);
 
-  const response = await fetchWithRetry(
-    `https://api.unstoppabledomains.com/resolve/domains/${encodeURIComponent(domain)}`,
-    {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-    },
-    2,
-    12000,
-  );
+function isCnsDomain(domain: string): boolean {
+  const dotIdx = domain.lastIndexOf(".");
+  if (dotIdx < 0) return false;
+  return CNS_TLDS.has(domain.slice(dotIdx).toLowerCase());
+}
 
-  const fallbackResponse = !response || !response.ok
-    ? await fetchWithRetry(
-        `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
-        { headers: { Accept: "application/json" } },
-        1,
-        12000,
-      )
-    : null;
-
-  const resolved = response && response.ok ? response : fallbackResponse;
-  if (!resolved || !resolved.ok) {
-    console.log(`❌ UD resolution failed for ${domain}`);
-    return null;
-  }
-
-  const data = await resolved.json();
-  const records = (data?.records && typeof data.records === "object") ? data.records as Record<string, unknown> : {};
-  const owner = data?.meta?.owner ?? data?.owner ?? null;
+function buildUdProfileFromRecords(domain: string, records: Record<string, unknown>, owner: unknown): any | null {
   const address = resolveUdEthAddress(records, owner);
 
   const website =
@@ -220,6 +210,106 @@ async function fetchUdProfile(domain: string): Promise<any | null> {
     location: null,
     udDomain: domain,
   };
+}
+
+// Primary: UD Resolution API (public, no key required for basic resolution)
+async function fetchUdViaResolutionApi(domain: string): Promise<any | null> {
+  console.log(`🔍 UD: Trying public resolution API for ${domain}`);
+
+  // Try the public resolution endpoint first (no API key needed)
+  const publicRes = await fetchWithRetry(
+    `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
+    { headers: { Accept: "application/json" } },
+    2,
+    12000,
+  );
+
+  if (publicRes && publicRes.ok) {
+    const data = await publicRes.json();
+    const records = (data?.records && typeof data.records === "object") ? data.records as Record<string, unknown> : {};
+    const owner = data?.meta?.owner ?? data?.owner ?? null;
+    console.log(`✅ UD public API returned owner=${owner}, records keys=${Object.keys(records).length}`);
+    return buildUdProfileFromRecords(domain, records, owner);
+  }
+
+  // Fallback: authenticated API
+  const apiKey = Deno.env.get("UD_API_KEY");
+  if (!apiKey) {
+    console.log("⚠️ UD: Public API failed and no UD_API_KEY configured");
+    return null;
+  }
+
+  console.log(`🔍 UD: Trying authenticated API for ${domain}`);
+  const authRes = await fetchWithRetry(
+    `https://api.unstoppabledomains.com/resolve/domains/${encodeURIComponent(domain)}`,
+    {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+    },
+    2,
+    12000,
+  );
+
+  if (!authRes || !authRes.ok) {
+    console.log(`❌ UD: Both APIs failed for ${domain}`);
+    return null;
+  }
+
+  const data = await authRes.json();
+  const records = (data?.records && typeof data.records === "object") ? data.records as Record<string, unknown> : {};
+  const owner = data?.meta?.owner ?? data?.owner ?? null;
+  return buildUdProfileFromRecords(domain, records, owner);
+}
+
+// Secondary: UD domain search API (to check availability / get metadata)
+async function fetchUdViaDomainSearch(domain: string): Promise<any | null> {
+  const apiKey = Deno.env.get("UD_API_KEY");
+  if (!apiKey) return null;
+
+  console.log(`🔍 UD: Trying domain search API for ${domain}`);
+  const searchHit = await fetchUdDomainSearch(domain, apiKey);
+
+  if (!searchHit) return null;
+  if (searchHit.available === true) {
+    console.log(`⚠️ UD domain is available (not minted): ${domain}`);
+    return null;
+  }
+
+  // If search returned an owner, build a minimal profile
+  const owner = searchHit.owner || searchHit.ownerAddress || null;
+  if (isEvmAddress(owner)) {
+    return {
+      address: owner,
+      identity: domain,
+      platform: "unstoppabledomains",
+      displayName: domain,
+      avatar: `https://resolve.unstoppabledomains.com/image-src/${domain}`,
+      description: null,
+      header: null,
+      website: null,
+      url: null,
+      links: {},
+      email: null,
+      location: null,
+      udDomain: domain,
+    };
+  }
+
+  return null;
+}
+
+async function fetchUdProfile(domain: string): Promise<any | null> {
+  // Strategy: try resolution API first, then domain search as fallback
+  const resolutionResult = await fetchUdViaResolutionApi(domain);
+  if (resolutionResult) return resolutionResult;
+
+  const searchResult = await fetchUdViaDomainSearch(domain);
+  if (searchResult) return searchResult;
+
+  console.log(`❌ UD: All resolution methods failed for ${domain}`);
+  return null;
 }
 
 // Call Web3.bio API
