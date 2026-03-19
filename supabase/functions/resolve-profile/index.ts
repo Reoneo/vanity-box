@@ -243,81 +243,81 @@ function encodeString(s: string): string {
   return lenHex + Array.from(padded).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Decode ABI returned string array
-function decodeStringArray(hex: string): string[] {
+// Decode ABI: getMany returns string[]
+function decodeGetManyResult(hex: string): string[] {
   const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
   if (clean.length < 128) return [];
+  try {
+    // Return: offset(word0) -> array
+    // word0 = offset to array (should be 0x20 = 32)
+    const arrByteOffset = parseInt(clean.slice(0, 64), 16);
+    const arrWordStart = arrByteOffset * 2; // convert to hex chars offset
+    const arrLen = parseInt(clean.slice(arrWordStart, arrWordStart + 64), 16);
+    if (arrLen === 0 || arrLen > 100) return [];
 
-  // For getMany: returns string[]
-  // For getData: returns (address, address, string[])
-  // We handle both by finding the array
-
-  const words = [];
-  for (let i = 0; i < clean.length; i += 64) {
-    words.push(clean.slice(i, i + 64));
-  }
-
-  if (words.length < 2) return [];
-
-  // Try to find array length - for getMany, offset is at word 0
-  // For getData, first two words are addresses, offset at word 2
-  let arrayStart: number;
-  const firstWord = BigInt("0x" + words[0]);
-
-  if (firstWord <= 256) {
-    // Likely this IS the length directly (simple array)
-    arrayStart = 0;
-  } else {
-    // It's an offset
-    const offset = Number(firstWord) / 32;
-    if (offset < words.length) {
-      arrayStart = offset;
-    } else {
-      // getData format: skip resolver(word0) + owner(word1), offset at word2
-      const offset2 = Number(BigInt("0x" + words[2])) / 32 + 2; // relative to after the two addresses
-      // Actually for getData, the return is (address resolver, address owner, string[] values)
-      // ABI: word0=resolver, word1=owner, word2=offset_to_array
-      const arrOffset = Number(BigInt("0x" + words[2]));
-      arrayStart = (arrOffset / 32) + 2; // +2 because offset is relative to after resolver,owner but they're in same tuple... 
-      // Actually in ABI, offset is from start of return data for dynamic types in tuples
-      // word0 = resolver, word1 = owner, word2 = offset to string[] from start = 96 (0x60)
-      // So array starts at word 96/32 = 3
-      arrayStart = arrOffset / 32;
+    // Read string offsets (relative to array data start = arrWordStart + 64)
+    const dataStart = arrWordStart + 64; // after array length
+    const results: string[] = [];
+    for (let i = 0; i < arrLen; i++) {
+      const offsetPos = dataStart + i * 64;
+      if (offsetPos + 64 > clean.length) break;
+      const strByteOffset = parseInt(clean.slice(offsetPos, offsetPos + 64), 16);
+      // strByteOffset is relative to dataStart (in bytes), convert to hex chars
+      const strLenPos = dataStart + strByteOffset * 2;
+      if (strLenPos + 64 > clean.length) { results.push(""); continue; }
+      const strLen = parseInt(clean.slice(strLenPos, strLenPos + 64), 16);
+      if (strLen === 0) { results.push(""); continue; }
+      const strDataPos = strLenPos + 64;
+      if (strDataPos + strLen * 2 > clean.length) { results.push(""); continue; }
+      const strHex = clean.slice(strDataPos, strDataPos + strLen * 2);
+      results.push(new TextDecoder().decode(hexToBytes(strHex)));
     }
+    return results;
+  } catch (e) {
+    console.log(`⚠️ decodeGetManyResult error: ${e}`);
+    return [];
   }
-
-  if (arrayStart >= words.length) return [];
-  const arrLen = Number(BigInt("0x" + words[arrayStart]));
-  if (arrLen === 0 || arrLen > 100) return [];
-
-  // String offsets start at arrayStart + 1
-  const results: string[] = [];
-  for (let i = 0; i < arrLen; i++) {
-    const strOffsetWord = arrayStart + 1 + i;
-    if (strOffsetWord >= words.length) break;
-    const strOffset = Number(BigInt("0x" + words[strOffsetWord]));
-    // strOffset is relative to the start of the array data (arrayStart + 1) in bytes
-    const strStartWord = arrayStart + 1 + strOffset / 32;
-    if (strStartWord >= words.length) break;
-    const strLen = Number(BigInt("0x" + words[strStartWord]));
-    if (strLen === 0) {
-      results.push("");
-      continue;
-    }
-    // Read string bytes
-    const strDataStart = (strStartWord + 1) * 64;
-    const strHex = clean.slice(strDataStart, strDataStart + strLen * 2);
-    const strBytes = hexToBytes(strHex);
-    results.push(new TextDecoder().decode(strBytes));
-  }
-  return results;
 }
 
-// Extract owner from getData return (address resolver, address owner, string[] values)
-function decodeGetDataOwner(hex: string): string | null {
+// Decode ABI: getData returns (address resolver, address owner, string[] values)
+function decodeGetDataResult(hex: string): { resolver: string; owner: string; values: string[] } {
   const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
-  if (clean.length < 128) return null;
-  // word1 = owner address (right-aligned in 32 bytes)
+  const empty = { resolver: "0x0000000000000000000000000000000000000000", owner: "0x0000000000000000000000000000000000000000", values: [] };
+  if (clean.length < 192) return empty;
+  try {
+    // word0 = resolver (address, right-aligned in 32 bytes)
+    const resolver = "0x" + clean.slice(24, 64);
+    // word1 = owner
+    const owner = "0x" + clean.slice(88, 128);
+    // word2 = offset to string[] (from start of return data, in bytes)
+    const arrByteOffset = parseInt(clean.slice(128, 192), 16);
+    const arrHexOffset = arrByteOffset * 2;
+
+    if (arrHexOffset + 64 > clean.length) return { resolver, owner, values: [] };
+    const arrLen = parseInt(clean.slice(arrHexOffset, arrHexOffset + 64), 16);
+    if (arrLen === 0 || arrLen > 100) return { resolver, owner, values: [] };
+
+    const dataStart = arrHexOffset + 64;
+    const values: string[] = [];
+    for (let i = 0; i < arrLen; i++) {
+      const offsetPos = dataStart + i * 64;
+      if (offsetPos + 64 > clean.length) break;
+      const strByteOffset = parseInt(clean.slice(offsetPos, offsetPos + 64), 16);
+      const strLenPos = dataStart + strByteOffset * 2;
+      if (strLenPos + 64 > clean.length) { values.push(""); continue; }
+      const strLen = parseInt(clean.slice(strLenPos, strLenPos + 64), 16);
+      if (strLen === 0) { values.push(""); continue; }
+      const strDataPos = strLenPos + 64;
+      if (strDataPos + strLen * 2 > clean.length) { values.push(""); continue; }
+      const strHex = clean.slice(strDataPos, strDataPos + strLen * 2);
+      values.push(new TextDecoder().decode(hexToBytes(strHex)));
+    }
+    return { resolver, owner, values };
+  } catch (e) {
+    console.log(`⚠️ decodeGetDataResult error: ${e}`);
+    return empty;
+  }
+}
   const ownerWord = clean.slice(64, 128);
   const addr = "0x" + ownerWord.slice(24);
   if (addr === "0x0000000000000000000000000000000000000000") return null;
