@@ -393,29 +393,30 @@ async function fetchUdProfile(domain: string): Promise<any | null> {
   for (const [chainName, rpcUrl] of [["Polygon", polyRpc], ["Ethereum", ethRpc]]) {
     console.log(`🔗 UD: Trying ${chainName} for ${domain}`);
 
-    let rawResult: string | null = null;
+    let values: string[] = [];
     let owner: string | null = null;
 
     if (isCns) {
-      // ProxyReader.getMany(keys, tokenId)
       const calldata = encodeGetMany(RECORD_KEYS, tokenId);
-      rawResult = await ethCall(rpcUrl, PROXY_READER, calldata);
-    } else {
-      // UNSRegistry.getData(keys, tokenId)
-      const calldata = encodeGetData(RECORD_KEYS, tokenId);
-      rawResult = await ethCall(rpcUrl, UNS_REGISTRY, calldata);
-      if (rawResult && rawResult !== "0x") {
-        owner = decodeGetDataOwner(rawResult);
+      const rawResult = await ethCall(rpcUrl, PROXY_READER, calldata);
+      if (!rawResult || rawResult === "0x" || rawResult.length < 10) {
+        console.log(`⚠️ UD ${chainName}: empty result`);
+        continue;
       }
+      values = decodeGetManyResult(rawResult);
+    } else {
+      const calldata = encodeGetData(RECORD_KEYS, tokenId);
+      const rawResult = await ethCall(rpcUrl, UNS_REGISTRY, calldata);
+      if (!rawResult || rawResult === "0x" || rawResult.length < 10) {
+        console.log(`⚠️ UD ${chainName}: empty result`);
+        continue;
+      }
+      const decoded = decodeGetDataResult(rawResult);
+      owner = decoded.owner === "0x0000000000000000000000000000000000000000" ? null : decoded.owner;
+      values = decoded.values;
     }
 
-    if (!rawResult || rawResult === "0x" || rawResult.length < 10) {
-      console.log(`⚠️ UD ${chainName}: empty result`);
-      continue;
-    }
-
-    const values = decodeStringArray(rawResult);
-    console.log(`📋 UD ${chainName} values: ${JSON.stringify(values)}`);
+    console.log(`📋 UD ${chainName} values: ${JSON.stringify(values)}, owner: ${owner}`);
 
     // Build records map
     const records: Record<string, string> = {};
