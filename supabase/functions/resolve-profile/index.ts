@@ -318,11 +318,8 @@ function decodeGetDataResult(hex: string): { resolver: string; owner: string; va
     return empty;
   }
 }
-  const ownerWord = clean.slice(64, 128);
-  const addr = "0x" + ownerWord.slice(24);
-  if (addr === "0x0000000000000000000000000000000000000000") return null;
-  return addr;
-}
+
+
 
 const PROXY_READER = "0x1BDC0fD4fbABeed3E611fd6195fCd5d41dcEF393";
 const UNS_REGISTRY = "0x049aba7510f45BA5b64ea9E658E342F904DB358D";
