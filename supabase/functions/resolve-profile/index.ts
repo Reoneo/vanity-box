@@ -372,6 +372,37 @@ async function ethCall(rpcUrl: string, to: string, data: string): Promise<string
   }
 }
 
+function buildUdProfileFromRecords(domain: string, records: Record<string, string>, owner: string | null): any | null {
+  const address = resolveUdEthAddress(records, owner);
+
+  const website =
+    records["browser.redirect_url"] || records["ipfs.redirect_domain.value"] || null;
+
+  const twitter = records["social.twitter.username"] || null;
+
+  const links: Record<string, any> = {};
+  if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
+  if (website) links.website = { link: website };
+
+  if (!address && !isEvmAddress(owner)) return null;
+
+  return {
+    address: address || owner,
+    identity: domain,
+    platform: "unstoppabledomains",
+    displayName: records["profile.name"] || domain,
+    avatar: records["social.picture.value"] || `https://metadata.unstoppabledomains.com/image-src/${domain}`,
+    description: records["whois.description"] || null,
+    header: null,
+    website,
+    url: website,
+    links,
+    email: records["whois.email.value"] || null,
+    location: null,
+    udDomain: domain,
+  };
+}
+
 async function fetchUdProfile(domain: string): Promise<any | null> {
   const alchemyKey = Deno.env.get("ALCHEMY_API_KEY");
   const ethRpc = alchemyKey
