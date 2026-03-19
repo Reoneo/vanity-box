@@ -143,25 +143,201 @@ async function fetchUdDomainSearch(domain: string, apiKey: string): Promise<any 
   return data.results.find((item: any) => String(item?.name || "").toLowerCase() === domain) || null;
 }
 
-// ── On-chain UD namehash (identical to ENS namehash / EIP-137) ──
-async function udNamehash(domain: string): Promise<string> {
+// ── keccak256 via @noble/hashes ──
+import { keccak_256 } from "https://esm.sh/@noble/hashes@1.7.1/sha3";
+
+function keccak256(data: Uint8Array): Uint8Array {
+  return keccak_256(data);
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+  const bytes = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(clean.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return "0x" + Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// EIP-137 namehash using keccak256
+function udNamehash(domain: string): string {
   let node = new Uint8Array(32); // bytes32(0)
-  const labels = domain.split(".").reverse();
-  for (const label of labels) {
-    const labelBytes = new TextEncoder().encode(label);
-    const labelHash = new Uint8Array(await crypto.subtle.digest("SHA-256", labelBytes));
-    // keccak256 is not available natively; use SHA-256–based EIP-137 compatible hash
-    // Actually UD uses the same namehash as ENS which is keccak256-based.
-    // Since Deno doesn't have keccak256, we'll use the ethers-compatible approach
-    // via hex encoding and the EVM RPC eth_call approach instead.
-    // For now, fall back to the API approach and use on-chain as a secondary method.
+  if (!domain) return bytesToHex(node);
+  const labels = domain.split(".");
+  for (let i = labels.length - 1; i >= 0; i--) {
+    const labelHash = keccak256(new TextEncoder().encode(labels[i]));
     const combined = new Uint8Array(64);
     combined.set(node, 0);
     combined.set(labelHash, 32);
-    node = new Uint8Array(await crypto.subtle.digest("SHA-256", combined));
+    node = keccak256(combined);
   }
-  return "0x" + Array.from(node).map(b => b.toString(16).padStart(2, "0")).join("");
+  return bytesToHex(node);
 }
+
+// ABI encode getMany(string[], uint256)
+function encodeGetMany(keys: string[], tokenId: string): string {
+  // selector = keccak256("getMany(string[],uint256)") first 4 bytes
+  const selector = keccak256(new TextEncoder().encode("getMany(string[],uint256)")).slice(0, 4);
+
+  // Encode: offset for keys array (64), tokenId, then array
+  const tokenIdBn = BigInt(tokenId);
+  const tokenIdHex = tokenIdBn.toString(16).padStart(64, "0");
+
+  // Dynamic array offset = 64 (0x40)
+  const offsetHex = "0000000000000000000000000000000000000000000000000000000000000040";
+
+  // Array: length + each string offset + each string data
+  const arrLenHex = keys.length.toString(16).padStart(64, "0");
+
+  // Calculate string offsets (relative to start of array data after length)
+  const stringParts: string[] = [];
+  const offsets: number[] = [];
+  let currentOffset = keys.length * 32; // after all offset slots
+  for (const key of keys) {
+    offsets.push(currentOffset);
+    const encoded = encodeString(key);
+    stringParts.push(encoded);
+    currentOffset += encoded.length / 2; // in bytes
+  }
+
+  const offsetsHex = offsets.map(o => o.toString(16).padStart(64, "0")).join("");
+  const stringsHex = stringParts.join("");
+
+  return bytesToHex(selector) + offsetHex + tokenIdHex + arrLenHex + offsetsHex + stringsHex;
+}
+
+// ABI encode getData(string[], uint256) - same signature structure
+function encodeGetData(keys: string[], tokenId: string): string {
+  const selector = keccak256(new TextEncoder().encode("getData(string[],uint256)")).slice(0, 4);
+  const tokenIdBn = BigInt(tokenId);
+  const tokenIdHex = tokenIdBn.toString(16).padStart(64, "0");
+  const offsetHex = "0000000000000000000000000000000000000000000000000000000000000040";
+  const arrLenHex = keys.length.toString(16).padStart(64, "0");
+
+  const stringParts: string[] = [];
+  const offsets: number[] = [];
+  let currentOffset = keys.length * 32;
+  for (const key of keys) {
+    offsets.push(currentOffset);
+    const encoded = encodeString(key);
+    stringParts.push(encoded);
+    currentOffset += encoded.length / 2;
+  }
+
+  const offsetsHex = offsets.map(o => o.toString(16).padStart(64, "0")).join("");
+  const stringsHex = stringParts.join("");
+
+  return bytesToHex(selector) + offsetHex + tokenIdHex + arrLenHex + offsetsHex + stringsHex;
+}
+
+function encodeString(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  const lenHex = bytes.length.toString(16).padStart(64, "0");
+  const paddedLen = Math.ceil(bytes.length / 32) * 32;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(bytes);
+  return lenHex + Array.from(padded).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Decode ABI returned string array
+function decodeStringArray(hex: string): string[] {
+  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+  if (clean.length < 128) return [];
+
+  // For getMany: returns string[]
+  // For getData: returns (address, address, string[])
+  // We handle both by finding the array
+
+  const words = [];
+  for (let i = 0; i < clean.length; i += 64) {
+    words.push(clean.slice(i, i + 64));
+  }
+
+  if (words.length < 2) return [];
+
+  // Try to find array length - for getMany, offset is at word 0
+  // For getData, first two words are addresses, offset at word 2
+  let arrayStart: number;
+  const firstWord = BigInt("0x" + words[0]);
+
+  if (firstWord <= 256) {
+    // Likely this IS the length directly (simple array)
+    arrayStart = 0;
+  } else {
+    // It's an offset
+    const offset = Number(firstWord) / 32;
+    if (offset < words.length) {
+      arrayStart = offset;
+    } else {
+      // getData format: skip resolver(word0) + owner(word1), offset at word2
+      const offset2 = Number(BigInt("0x" + words[2])) / 32 + 2; // relative to after the two addresses
+      // Actually for getData, the return is (address resolver, address owner, string[] values)
+      // ABI: word0=resolver, word1=owner, word2=offset_to_array
+      const arrOffset = Number(BigInt("0x" + words[2]));
+      arrayStart = (arrOffset / 32) + 2; // +2 because offset is relative to after resolver,owner but they're in same tuple... 
+      // Actually in ABI, offset is from start of return data for dynamic types in tuples
+      // word0 = resolver, word1 = owner, word2 = offset to string[] from start = 96 (0x60)
+      // So array starts at word 96/32 = 3
+      arrayStart = arrOffset / 32;
+    }
+  }
+
+  if (arrayStart >= words.length) return [];
+  const arrLen = Number(BigInt("0x" + words[arrayStart]));
+  if (arrLen === 0 || arrLen > 100) return [];
+
+  // String offsets start at arrayStart + 1
+  const results: string[] = [];
+  for (let i = 0; i < arrLen; i++) {
+    const strOffsetWord = arrayStart + 1 + i;
+    if (strOffsetWord >= words.length) break;
+    const strOffset = Number(BigInt("0x" + words[strOffsetWord]));
+    // strOffset is relative to the start of the array data (arrayStart + 1) in bytes
+    const strStartWord = arrayStart + 1 + strOffset / 32;
+    if (strStartWord >= words.length) break;
+    const strLen = Number(BigInt("0x" + words[strStartWord]));
+    if (strLen === 0) {
+      results.push("");
+      continue;
+    }
+    // Read string bytes
+    const strDataStart = (strStartWord + 1) * 64;
+    const strHex = clean.slice(strDataStart, strDataStart + strLen * 2);
+    const strBytes = hexToBytes(strHex);
+    results.push(new TextDecoder().decode(strBytes));
+  }
+  return results;
+}
+
+// Extract owner from getData return (address resolver, address owner, string[] values)
+function decodeGetDataOwner(hex: string): string | null {
+  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+  if (clean.length < 128) return null;
+  // word1 = owner address (right-aligned in 32 bytes)
+  const ownerWord = clean.slice(64, 128);
+  const addr = "0x" + ownerWord.slice(24);
+  if (addr === "0x0000000000000000000000000000000000000000") return null;
+  return addr;
+}
+
+const PROXY_READER = "0x1BDC0fD4fbABeed3E611fd6195fCd5d41dcEF393";
+const UNS_REGISTRY = "0x049aba7510f45BA5b64ea9E658E342F904DB358D";
+
+const RECORD_KEYS = [
+  "crypto.ETH.address",
+  "crypto.BTC.address",
+  "social.twitter.username",
+  "social.picture.value",
+  "profile.name",
+  "whois.description",
+  "whois.email.value",
+  "browser.redirect_url",
+  "ipfs.redirect_domain.value",
+];
 
 // CNS TLDs that use ProxyReader
 const CNS_TLDS = new Set([
@@ -175,140 +351,106 @@ function isCnsDomain(domain: string): boolean {
   return CNS_TLDS.has(domain.slice(dotIdx).toLowerCase());
 }
 
-function buildUdProfileFromRecords(domain: string, records: Record<string, unknown>, owner: unknown): any | null {
-  const address = resolveUdEthAddress(records, owner);
-
-  const website =
-    (typeof records["browser.redirect_url"] === "string" && records["browser.redirect_url"]) ||
-    (typeof records["ipfs.redirect_domain.value"] === "string" && records["ipfs.redirect_domain.value"]) ||
-    null;
-
-  const twitter = typeof records["social.twitter.username"] === "string"
-    ? records["social.twitter.username"]
-    : null;
-
-  const links: Record<string, any> = {};
-  if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
-  if (website) links.website = { link: website };
-
-  if (!address && !isEvmAddress(owner)) return null;
-
-  return {
-    address: address || (isEvmAddress(owner) ? owner : null),
-    identity: domain,
-    platform: "unstoppabledomains",
-    displayName: (typeof records["profile.name"] === "string" && records["profile.name"]) || domain,
-    avatar:
-      (typeof records["social.picture.value"] === "string" && records["social.picture.value"]) ||
-      `https://resolve.unstoppabledomains.com/image-src/${domain}`,
-    description: (typeof records["whois.description"] === "string" && records["whois.description"]) || null,
-    header: null,
-    website,
-    url: website,
-    links,
-    email: (typeof records["whois.email.value"] === "string" && records["whois.email.value"]) || null,
-    location: null,
-    udDomain: domain,
-  };
-}
-
-// Primary: UD Resolution API (public, no key required for basic resolution)
-async function fetchUdViaResolutionApi(domain: string): Promise<any | null> {
-  console.log(`🔍 UD: Trying public resolution API for ${domain}`);
-
-  // Try the public resolution endpoint first (no API key needed)
-  const publicRes = await fetchWithRetry(
-    `https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`,
-    { headers: { Accept: "application/json" } },
-    2,
-    12000,
-  );
-
-  if (publicRes && publicRes.ok) {
-    const data = await publicRes.json();
-    const records = (data?.records && typeof data.records === "object") ? data.records as Record<string, unknown> : {};
-    const owner = data?.meta?.owner ?? data?.owner ?? null;
-    console.log(`✅ UD public API returned owner=${owner}, records keys=${Object.keys(records).length}`);
-    return buildUdProfileFromRecords(domain, records, owner);
-  }
-
-  // Fallback: authenticated API
-  const apiKey = Deno.env.get("UD_API_KEY");
-  if (!apiKey) {
-    console.log("⚠️ UD: Public API failed and no UD_API_KEY configured");
+async function ethCall(rpcUrl: string, to: string, data: string): Promise<string | null> {
+  try {
+    const res = await fetchWithTimeout(rpcUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_call",
+        params: [{ to, data }, "latest"],
+      }),
+    }, 15000);
+    const json = await res.json();
+    if (json.error) {
+      console.log(`⚠️ eth_call error: ${JSON.stringify(json.error)}`);
+      return null;
+    }
+    return json.result || null;
+  } catch (e: any) {
+    console.log(`❌ eth_call exception: ${e.message}`);
     return null;
   }
-
-  console.log(`🔍 UD: Trying authenticated API for ${domain}`);
-  const authRes = await fetchWithRetry(
-    `https://api.unstoppabledomains.com/resolve/domains/${encodeURIComponent(domain)}`,
-    {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-    },
-    2,
-    12000,
-  );
-
-  if (!authRes || !authRes.ok) {
-    console.log(`❌ UD: Both APIs failed for ${domain}`);
-    return null;
-  }
-
-  const data = await authRes.json();
-  const records = (data?.records && typeof data.records === "object") ? data.records as Record<string, unknown> : {};
-  const owner = data?.meta?.owner ?? data?.owner ?? null;
-  return buildUdProfileFromRecords(domain, records, owner);
-}
-
-// Secondary: UD domain search API (to check availability / get metadata)
-async function fetchUdViaDomainSearch(domain: string): Promise<any | null> {
-  const apiKey = Deno.env.get("UD_API_KEY");
-  if (!apiKey) return null;
-
-  console.log(`🔍 UD: Trying domain search API for ${domain}`);
-  const searchHit = await fetchUdDomainSearch(domain, apiKey);
-
-  if (!searchHit) return null;
-  if (searchHit.available === true) {
-    console.log(`⚠️ UD domain is available (not minted): ${domain}`);
-    return null;
-  }
-
-  // If search returned an owner, build a minimal profile
-  const owner = searchHit.owner || searchHit.ownerAddress || null;
-  if (isEvmAddress(owner)) {
-    return {
-      address: owner,
-      identity: domain,
-      platform: "unstoppabledomains",
-      displayName: domain,
-      avatar: `https://resolve.unstoppabledomains.com/image-src/${domain}`,
-      description: null,
-      header: null,
-      website: null,
-      url: null,
-      links: {},
-      email: null,
-      location: null,
-      udDomain: domain,
-    };
-  }
-
-  return null;
 }
 
 async function fetchUdProfile(domain: string): Promise<any | null> {
-  // Strategy: try resolution API first, then domain search as fallback
-  const resolutionResult = await fetchUdViaResolutionApi(domain);
-  if (resolutionResult) return resolutionResult;
+  const alchemyKey = Deno.env.get("ALCHEMY_API_KEY");
+  const ethRpc = alchemyKey
+    ? `https://eth-mainnet.g.alchemy.com/v2/${alchemyKey}`
+    : "https://cloudflare-eth.com";
+  const polyRpc = alchemyKey
+    ? `https://polygon-mainnet.g.alchemy.com/v2/${alchemyKey}`
+    : "https://polygon-rpc.com";
 
-  const searchResult = await fetchUdViaDomainSearch(domain);
-  if (searchResult) return searchResult;
+  const tokenId = udNamehash(domain);
+  const isCns = isCnsDomain(domain);
 
-  console.log(`❌ UD: All resolution methods failed for ${domain}`);
+  console.log(`🔍 UD on-chain: resolving ${domain}, tokenId=${tokenId}, cns=${isCns}`);
+
+  // Try Polygon first, then Ethereum (per UD recommendation)
+  for (const [chainName, rpcUrl] of [["Polygon", polyRpc], ["Ethereum", ethRpc]]) {
+    console.log(`🔗 UD: Trying ${chainName} for ${domain}`);
+
+    let rawResult: string | null = null;
+    let owner: string | null = null;
+
+    if (isCns) {
+      // ProxyReader.getMany(keys, tokenId)
+      const calldata = encodeGetMany(RECORD_KEYS, tokenId);
+      rawResult = await ethCall(rpcUrl, PROXY_READER, calldata);
+    } else {
+      // UNSRegistry.getData(keys, tokenId)
+      const calldata = encodeGetData(RECORD_KEYS, tokenId);
+      rawResult = await ethCall(rpcUrl, UNS_REGISTRY, calldata);
+      if (rawResult && rawResult !== "0x") {
+        owner = decodeGetDataOwner(rawResult);
+      }
+    }
+
+    if (!rawResult || rawResult === "0x" || rawResult.length < 10) {
+      console.log(`⚠️ UD ${chainName}: empty result`);
+      continue;
+    }
+
+    const values = decodeStringArray(rawResult);
+    console.log(`📋 UD ${chainName} values: ${JSON.stringify(values)}`);
+
+    // Build records map
+    const records: Record<string, string> = {};
+    for (let i = 0; i < RECORD_KEYS.length && i < values.length; i++) {
+      if (values[i]) records[RECORD_KEYS[i]] = values[i];
+    }
+
+    const profile = buildUdProfileFromRecords(domain, records, owner);
+    if (profile) {
+      console.log(`✅ UD ${chainName}: resolved ${domain} -> ${profile.address}`);
+      return profile;
+    }
+
+    // If we got owner but no ETH address record, still build minimal profile
+    if (owner && isEvmAddress(owner)) {
+      console.log(`✅ UD ${chainName}: resolved ${domain} via owner -> ${owner}`);
+      return {
+        address: owner,
+        identity: domain,
+        platform: "unstoppabledomains",
+        displayName: records["profile.name"] || domain,
+        avatar: records["social.picture.value"] || `https://metadata.unstoppabledomains.com/image-src/${domain}`,
+        description: records["whois.description"] || null,
+        header: null,
+        website: records["browser.redirect_url"] || null,
+        url: records["browser.redirect_url"] || null,
+        links: {},
+        email: records["whois.email.value"] || null,
+        location: null,
+        udDomain: domain,
+      };
+    }
+  }
+
+  console.log(`❌ UD: On-chain resolution failed for ${domain}`);
   return null;
 }
 
