@@ -1300,6 +1300,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       console.log("✅ IOTA address detected:", normalizedAddress);
     }
 
+    // If query has no dot and is not a wallet address, redirect to Unstoppable Domains
+    if (trimmedQuery && !trimmedQuery.includes(".") && !isWalletAddress) {
+      window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}&searchRef=vanitybox`, '_blank');
+      setIsLoading(false);
+      setIsHomepage(true);
+      setIsSearchActive(false);
+      return;
+    }
+
     // If query contains a dot OR is a wallet address, try fetching profile using unified resolver
     if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
       const normalizedQuery = trimmedQuery.toLowerCase();
