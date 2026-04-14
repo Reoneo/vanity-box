@@ -132,7 +132,7 @@ export const Header: React.FC = () => {
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-24 w-auto object-contain"
+                    className="h-12 w-12 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -215,7 +215,7 @@ export const Header: React.FC = () => {
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-24 w-auto object-contain"
+                    className="h-12 w-12 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -265,7 +265,7 @@ export const Header: React.FC = () => {
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-24 w-auto object-contain"
+                className="h-12 w-12 object-cover rounded-lg"
                 loading="eager"
                 fetchPriority="high"
               />
