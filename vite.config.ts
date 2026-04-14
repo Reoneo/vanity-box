@@ -35,16 +35,9 @@ export default defineConfig(({ mode }) => ({
 
       // ---- EVM-only build shims ----
       "graz": path.resolve(__dirname, "./src/shims/graz.ts"),
-      "@mizuwallet-sdk/core": path.resolve(__dirname, "./src/shims/mizuwallet.ts"),
-      "@telegram-apps/bridge": path.resolve(__dirname, "./src/shims/telegram-bridge.ts"),
     },
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
-  },
-  build: {
-    rollupOptions: {
-      external: ["aptos"],
-    },
   },
   optimizeDeps: {
     include: ["@tanstack/react-query", "@iota/dapp-kit"],

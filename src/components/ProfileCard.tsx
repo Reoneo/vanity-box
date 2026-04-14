@@ -243,9 +243,6 @@ export const ProfileCard = ({
   const [hlNfts, setHlNfts] = useState<any[]>([]);
   const [hlTokens, setHlTokens] = useState<any[]>([]);
   const [hlLoading, setHlLoading] = useState(false);
-  const [udDomains, setUdDomains] = useState<any[]>([]);
-  const [udDomainsLoading, setUdDomainsLoading] = useState(false);
-  const [udDomainsFetched, setUdDomainsFetched] = useState(false);
   const [portfolioTokens, setPortfolioTokens] = useState<any[]>([]);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [portfolioTotalValue, setPortfolioTotalValue] = useState<number>(0);
@@ -964,35 +961,6 @@ export const ProfileCard = ({
         } finally {
           setBasenamesLoading(false);
           setBasenamesFetched(true);
-        }
-
-        // Fetch Unstoppable Domains (UD) for this wallet
-        if (isEvm) {
-          setUdDomainsLoading(true);
-          try {
-            const udRes = await fetch(`https://resolve.unstoppabledomains.com/reverse/${currentWalletAddress}`, {
-              headers: { 'Accept': 'application/json' },
-            });
-            if (udRes.ok) {
-              const udData = await udRes.json();
-              console.log('[ProfileCard] UD reverse resolve:', udData);
-              if (udData?.meta?.domain) {
-                setUdDomains([{
-                  name: udData.meta.domain,
-                  blockchain: udData.meta.blockchain || 'ETH',
-                  owner: udData.meta.owner || currentWalletAddress,
-                  image_url: `https://resolve.unstoppabledomains.com/image-src/${udData.meta.domain}`,
-                  records: udData.records || {},
-                  type: 'primary',
-                }]);
-              }
-            }
-          } catch (e) {
-            console.error('[ProfileCard] UD fetch error:', e);
-          } finally {
-            setUdDomainsLoading(false);
-            setUdDomainsFetched(true);
-          }
         }
 
         // Fetch Polymarket data (skip for IOTA profiles)
@@ -1754,19 +1722,6 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* Unstoppable Domains Button */}
-                            {(udDomainsLoading || udDomains.length > 0) && !(udDomainsFetched && udDomains.length === 0) && (
-                              <button onClick={() => setNftCategory('uddomains')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4C47F7] to-[#7B76FF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
-                                <div className="flex items-center justify-between h-full">
-                                  <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-white text-base">Unstoppable Domains</h4>
-                                    <p className="text-sm text-white/70">{udDomainsLoading ? 'Loading…' : `${udDomains.length} ${udDomains.length === 1 ? 'domain' : 'domains'}`}</p>
-                                  </div>
-                                  <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
-                                </div>
-                              </button>
-                            )}
-
                             {/* IOTA Collection Buttons - separate per collection */}
                             {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
                               iotaLoading ? (
@@ -1847,7 +1802,7 @@ export const ProfileCard = ({
                             )}
 
                             {/* Empty state - updated to include IOTA check */}
-                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && iotaNfts.length === 0 && iotaFetched && tonNftCount === 0 && tonNftsFetched && udDomains.length === 0 && udDomainsFetched && !isIotaProfile && (
+                            {poaps.length === 0 && nfts.length === 0 && openseaAttempted && !nftLoading && magicEdenNfts.length === 0 && !magicEdenLoading && worldchainNftCount === 0 && !worldchainNftsLoading && hlNfts.length === 0 && ensDomains.length === 0 && ensDomainsFetched && basenames.length === 0 && basenamesFetched && iotaNfts.length === 0 && iotaFetched && tonNftCount === 0 && tonNftsFetched && !isIotaProfile && (
                               <div className="text-center py-8 text-white/50">
                                 <p className="text-sm">No NFTs found for this wallet</p>
                               </div>
@@ -1939,45 +1894,6 @@ export const ProfileCard = ({
                                 </div>
                               );
                             })()}
-
-                            {/* Unstoppable Domains Grid */}
-                            {nftCategory === 'uddomains' && (
-                              udDomainsLoading ? (
-                                <div className="flex items-center justify-center py-12">
-                                  <Loader2 className="w-8 h-8 animate-spin text-[#4C47F7]" />
-                                </div>
-                              ) : udDomains.length === 0 ? (
-                                <div className="text-center py-12 text-muted-foreground"><p>No Unstoppable Domains found</p></div>
-                              ) : (
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                  {udDomains.map((domain: any, index: number) => (
-                                    <div
-                                      key={`ud-${domain.name}-${index}`}
-                                      className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#4C47F7]/30 hover:border-[#4C47F7]/60 transition-all"
-                                      onClick={() => window.open(`https://ud.me/${domain.name}`, '_blank')}
-                                    >
-                                      <div className="aspect-square bg-gradient-to-br from-[#4C47F7]/10 to-[#7B76FF]/10 overflow-hidden">
-                                        <img
-                                          src={domain.image_url}
-                                          alt={domain.name}
-                                          className="w-full h-full object-cover"
-                                          onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.classList.remove('hidden');
-                                          }}
-                                        />
-                                        <div className="hidden w-full h-full bg-gradient-to-br from-[#4C47F7] to-[#7B76FF] flex items-center justify-center">
-                                          <span className="text-white font-bold text-xl">UD</span>
-                                        </div>
-                                      </div>
-                                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                        <p className="text-white text-xs font-medium truncate">{domain.name}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )
-                            )}
 
                             {nftCategory === 'opensea' && (
                               expandedCollection ? (
@@ -2411,9 +2327,7 @@ export const ProfileCard = ({
                                         ? nftCategory.replace('iota:', '')
                                         : nftCategory.startsWith('ton:')
                                           ? nftCategory.replace('ton:', '')
-                                          : nftCategory === 'uddomains'
-                                            ? 'Unstoppable Domains'
-                                            : 'Hyperliquid'}
+                                          : 'Hyperliquid'}
                       </h3>
                       {nftCategory === 'poaps' && (poapTotalCount > 0 || formattedPoaps.length > 0) && (
                         <span className="text-sm font-medium text-purple-500">
@@ -2624,26 +2538,6 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* Unstoppable Domains Button */}
-                      {(udDomainsLoading || udDomains.length > 0) && !(udDomainsFetched && udDomains.length === 0) && (
-                        <button
-                          onClick={() => setNftCategory('uddomains')}
-                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4C47F7] to-[#7B76FF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                        >
-                          <div className="flex items-center justify-between h-full">
-                            <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-white text-base">Unstoppable Domains</h4>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-white/70">
-                                  {udDomainsLoading ? 'Loading…' : `${udDomains.length} ${udDomains.length === 1 ? 'domain' : 'domains'}`}
-                                </p>
-                              </div>
-                            </div>
-                            <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
-                          </div>
-                        </button>
-                      )}
-
                       {/* IOTA Collection Buttons - separate per collection */}
                       {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
                         iotaLoading ? (
@@ -2732,9 +2626,7 @@ export const ProfileCard = ({
                        iotaNfts.length === 0 &&
                        iotaFetched &&
                        tonNftCount === 0 &&
-                       tonNftsFetched &&
-                       udDomains.length === 0 &&
-                       udDomainsFetched && (
+                       tonNftsFetched && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p className="text-sm">No NFTs found for this wallet</p>
                         </div>
@@ -3073,56 +2965,6 @@ export const ProfileCard = ({
                         </div>
                       );
                     })()
-                  ) : nftCategory === 'uddomains' ? (
-                    udDomainsLoading ? (
-                      <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-[#4C47F7]" />
-                      </div>
-                    ) : udDomains.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <p>No Unstoppable Domains found</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 max-w-2xl mx-auto">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {udDomains.map((domain: any, index: number) => (
-                            <div
-                              key={`ud-${domain.name}-${index}`}
-                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#4C47F7]/20 hover:border-[#4C47F7]/50 transition-all w-full"
-                              onClick={() => window.open(`https://ud.me/${domain.name}`, '_blank')}
-                            >
-                              <div className="aspect-square bg-gradient-to-br from-[#4C47F7]/10 to-[#7B76FF]/10 overflow-hidden">
-                                <img
-                                  src={domain.image_url}
-                                  alt={domain.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                    if (e.currentTarget.nextElementSibling) {
-                                      e.currentTarget.nextElementSibling.classList.remove('hidden');
-                                    }
-                                  }}
-                                />
-                                <div className="hidden w-full h-full bg-gradient-to-br from-[#4C47F7] to-[#7B76FF] flex items-center justify-center">
-                                  <span className="text-white font-bold text-xl">UD</span>
-                                </div>
-                              </div>
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{domain.name}</p>
-                                <p className="text-white/60 text-[10px] capitalize">{domain.type || 'owned'}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        {udDomains.length > 0 && (
-                          <Button asChild className="w-full bg-[#4C47F7]/10 hover:bg-[#4C47F7]/20 text-[#4C47F7] border border-[#4C47F7]/30 mt-3">
-                            <a href={`https://ud.me/${udDomains[0].name}`} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="w-4 h-4 mr-2" />View on UD
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    )
                   ) : null}
                 </div>
               </div>

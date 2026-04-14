@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface ProfileResult {
   ok: boolean;
-  source: "web3bio" | "namestone" | "hl" | "vet" | "iota" | "ud" | "fallback";
+  source: "web3bio" | "namestone" | "hl" | "vet" | "iota" | "fallback";
   profile: {
     address: string | null;
     identity: string;
@@ -28,7 +28,6 @@ interface ProfileResult {
     hlTokens?: any[];
     vetDomain?: string;
     iotaDomain?: string;
-    udDomain?: string;
     farcaster?: any;
     location?: string | null;
     email?: string | null;
@@ -78,408 +77,6 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries
       return null;
     }
   }
-  return null;
-}
-
-const UD_TLDS = new Set([
-  ".888", ".polygon", ".zil", ".bitcoin", ".smobler", ".wrkx", ".ethermail", ".wif", ".u",
-  ".pudgy", ".austin", ".ifg", ".lfg", ".dream", ".secret", ".ubu", ".xmr", ".wifi",
-  ".retardio", ".unstoppable", ".raiin", ".mumu", ".witg", ".boomer", ".crypto", ".dao",
-  ".tball", ".dfz", ".propykeys", ".metropolis", ".clay", ".nft", ".wallet", ".blockchain",
-  ".pog", ".bald", ".chomp", ".stepn", ".tea", ".go", ".brave", ".vanity", ".lunar", ".x",
-  ".binanceus", ".hi", ".klever", ".kresus", ".anime", ".manga",
-]);
-
-function isUdDomain(identity: string): boolean {
-  const dotIndex = identity.lastIndexOf(".");
-  if (dotIndex < 0) return false;
-  return UD_TLDS.has(identity.slice(dotIndex).toLowerCase());
-}
-
-function isEvmAddress(value: unknown): value is string {
-  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
-}
-
-function resolveUdEthAddress(records: Record<string, unknown>, owner: unknown): string | null {
-  const preferred = [
-    "crypto.ETH.address",
-    "token.ETH.address",
-    "wallet.ETH.address",
-  ];
-
-  for (const key of preferred) {
-    const value = records[key];
-    if (isEvmAddress(value)) return value;
-  }
-
-  for (const [key, value] of Object.entries(records)) {
-    if (!isEvmAddress(value)) continue;
-    const normalized = key.toLowerCase();
-    if (normalized.includes("eth") && normalized.endsWith(".address")) return value;
-  }
-
-  if (isEvmAddress(owner)) return owner;
-  return null;
-}
-
-async function fetchUdDomainSearch(domain: string, apiKey: string): Promise<any | null> {
-  const response = await fetchWithRetry(
-    "https://api.unstoppabledomains.com/mcp/v1/actions/ud_domains_search",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({ query: domain, limit: 5, offset: 0 }),
-    },
-    1,
-    10000,
-  );
-
-  if (!response || !response.ok) return null;
-  const data = await response.json();
-  if (!Array.isArray(data?.results)) return null;
-  return data.results.find((item: any) => String(item?.name || "").toLowerCase() === domain) || null;
-}
-
-// ── keccak256 via @noble/hashes ──
-import { keccak_256 } from "https://esm.sh/@noble/hashes@1.7.1/sha3";
-
-function keccak256(data: Uint8Array): Uint8Array {
-  return keccak_256(data);
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
-  const bytes = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(clean.substr(i * 2, 2), 16);
-  }
-  return bytes;
-}
-
-function bytesToHex(bytes: Uint8Array): string {
-  return "0x" + Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-// EIP-137 namehash using keccak256
-function udNamehash(domain: string): string {
-  let node = new Uint8Array(32); // bytes32(0)
-  if (!domain) return bytesToHex(node);
-  const labels = domain.split(".");
-  for (let i = labels.length - 1; i >= 0; i--) {
-    const labelHash = keccak256(new TextEncoder().encode(labels[i]));
-    const combined = new Uint8Array(64);
-    combined.set(node, 0);
-    combined.set(labelHash, 32);
-    node = keccak256(combined);
-  }
-  return bytesToHex(node);
-}
-
-// ABI encode getMany(string[], uint256)
-function encodeGetMany(keys: string[], tokenId: string): string {
-  // selector = keccak256("getMany(string[],uint256)") first 4 bytes
-  const selector = keccak256(new TextEncoder().encode("getMany(string[],uint256)")).slice(0, 4);
-
-  // Encode: offset for keys array (64), tokenId, then array
-  const tokenIdBn = BigInt(tokenId);
-  const tokenIdHex = tokenIdBn.toString(16).padStart(64, "0");
-
-  // Dynamic array offset = 64 (0x40)
-  const offsetHex = "0000000000000000000000000000000000000000000000000000000000000040";
-
-  // Array: length + each string offset + each string data
-  const arrLenHex = keys.length.toString(16).padStart(64, "0");
-
-  // Calculate string offsets (relative to start of array data after length)
-  const stringParts: string[] = [];
-  const offsets: number[] = [];
-  let currentOffset = keys.length * 32; // after all offset slots
-  for (const key of keys) {
-    offsets.push(currentOffset);
-    const encoded = encodeString(key);
-    stringParts.push(encoded);
-    currentOffset += encoded.length / 2; // in bytes
-  }
-
-  const offsetsHex = offsets.map(o => o.toString(16).padStart(64, "0")).join("");
-  const stringsHex = stringParts.join("");
-
-  return bytesToHex(selector) + offsetHex + tokenIdHex + arrLenHex + offsetsHex + stringsHex;
-}
-
-// ABI encode getData(string[], uint256) - same signature structure
-function encodeGetData(keys: string[], tokenId: string): string {
-  const selector = keccak256(new TextEncoder().encode("getData(string[],uint256)")).slice(0, 4);
-  const tokenIdBn = BigInt(tokenId);
-  const tokenIdHex = tokenIdBn.toString(16).padStart(64, "0");
-  const offsetHex = "0000000000000000000000000000000000000000000000000000000000000040";
-  const arrLenHex = keys.length.toString(16).padStart(64, "0");
-
-  const stringParts: string[] = [];
-  const offsets: number[] = [];
-  let currentOffset = keys.length * 32;
-  for (const key of keys) {
-    offsets.push(currentOffset);
-    const encoded = encodeString(key);
-    stringParts.push(encoded);
-    currentOffset += encoded.length / 2;
-  }
-
-  const offsetsHex = offsets.map(o => o.toString(16).padStart(64, "0")).join("");
-  const stringsHex = stringParts.join("");
-
-  return bytesToHex(selector) + offsetHex + tokenIdHex + arrLenHex + offsetsHex + stringsHex;
-}
-
-function encodeString(s: string): string {
-  const bytes = new TextEncoder().encode(s);
-  const lenHex = bytes.length.toString(16).padStart(64, "0");
-  const paddedLen = Math.ceil(bytes.length / 32) * 32;
-  const padded = new Uint8Array(paddedLen);
-  padded.set(bytes);
-  return lenHex + Array.from(padded).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-// Decode ABI: getMany returns string[]
-function decodeGetManyResult(hex: string): string[] {
-  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
-  if (clean.length < 128) return [];
-  try {
-    // Return: offset(word0) -> array
-    // word0 = offset to array (should be 0x20 = 32)
-    const arrByteOffset = parseInt(clean.slice(0, 64), 16);
-    const arrWordStart = arrByteOffset * 2; // convert to hex chars offset
-    const arrLen = parseInt(clean.slice(arrWordStart, arrWordStart + 64), 16);
-    if (arrLen === 0 || arrLen > 100) return [];
-
-    // Read string offsets (relative to array data start = arrWordStart + 64)
-    const dataStart = arrWordStart + 64; // after array length
-    const results: string[] = [];
-    for (let i = 0; i < arrLen; i++) {
-      const offsetPos = dataStart + i * 64;
-      if (offsetPos + 64 > clean.length) break;
-      const strByteOffset = parseInt(clean.slice(offsetPos, offsetPos + 64), 16);
-      // strByteOffset is relative to dataStart (in bytes), convert to hex chars
-      const strLenPos = dataStart + strByteOffset * 2;
-      if (strLenPos + 64 > clean.length) { results.push(""); continue; }
-      const strLen = parseInt(clean.slice(strLenPos, strLenPos + 64), 16);
-      if (strLen === 0) { results.push(""); continue; }
-      const strDataPos = strLenPos + 64;
-      if (strDataPos + strLen * 2 > clean.length) { results.push(""); continue; }
-      const strHex = clean.slice(strDataPos, strDataPos + strLen * 2);
-      results.push(new TextDecoder().decode(hexToBytes(strHex)));
-    }
-    return results;
-  } catch (e) {
-    console.log(`⚠️ decodeGetManyResult error: ${e}`);
-    return [];
-  }
-}
-
-// Decode ABI: getData returns (address resolver, address owner, string[] values)
-function decodeGetDataResult(hex: string): { resolver: string; owner: string; values: string[] } {
-  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
-  const empty = { resolver: "0x0000000000000000000000000000000000000000", owner: "0x0000000000000000000000000000000000000000", values: [] };
-  if (clean.length < 192) return empty;
-  try {
-    // word0 = resolver (address, right-aligned in 32 bytes)
-    const resolver = "0x" + clean.slice(24, 64);
-    // word1 = owner
-    const owner = "0x" + clean.slice(88, 128);
-    // word2 = offset to string[] (from start of return data, in bytes)
-    const arrByteOffset = parseInt(clean.slice(128, 192), 16);
-    const arrHexOffset = arrByteOffset * 2;
-
-    if (arrHexOffset + 64 > clean.length) return { resolver, owner, values: [] };
-    const arrLen = parseInt(clean.slice(arrHexOffset, arrHexOffset + 64), 16);
-    if (arrLen === 0 || arrLen > 100) return { resolver, owner, values: [] };
-
-    const dataStart = arrHexOffset + 64;
-    const values: string[] = [];
-    for (let i = 0; i < arrLen; i++) {
-      const offsetPos = dataStart + i * 64;
-      if (offsetPos + 64 > clean.length) break;
-      const strByteOffset = parseInt(clean.slice(offsetPos, offsetPos + 64), 16);
-      const strLenPos = dataStart + strByteOffset * 2;
-      if (strLenPos + 64 > clean.length) { values.push(""); continue; }
-      const strLen = parseInt(clean.slice(strLenPos, strLenPos + 64), 16);
-      if (strLen === 0) { values.push(""); continue; }
-      const strDataPos = strLenPos + 64;
-      if (strDataPos + strLen * 2 > clean.length) { values.push(""); continue; }
-      const strHex = clean.slice(strDataPos, strDataPos + strLen * 2);
-      values.push(new TextDecoder().decode(hexToBytes(strHex)));
-    }
-    return { resolver, owner, values };
-  } catch (e) {
-    console.log(`⚠️ decodeGetDataResult error: ${e}`);
-    return empty;
-  }
-}
-
-
-
-const PROXY_READER = "0x1BDC0fD4fbABeed3E611fd6195fCd5d41dcEF393";
-const UNS_REGISTRY = "0x049aba7510f45BA5b64ea9E658E342F904DB358D";
-
-const RECORD_KEYS = [
-  "crypto.ETH.address",
-  "crypto.BTC.address",
-  "social.twitter.username",
-  "social.picture.value",
-  "profile.name",
-  "whois.description",
-  "whois.email.value",
-  "browser.redirect_url",
-  "ipfs.redirect_domain.value",
-];
-
-// CNS TLDs that use ProxyReader
-const CNS_TLDS = new Set([
-  ".crypto", ".wallet", ".nft", ".x", ".blockchain", ".bitcoin", ".dao", ".888",
-  ".binanceus", ".hi", ".klever", ".kresus", ".anime", ".manga",
-]);
-
-function isCnsDomain(domain: string): boolean {
-  const dotIdx = domain.lastIndexOf(".");
-  if (dotIdx < 0) return false;
-  return CNS_TLDS.has(domain.slice(dotIdx).toLowerCase());
-}
-
-async function ethCall(rpcUrl: string, to: string, data: string): Promise<string | null> {
-  try {
-    const res = await fetchWithTimeout(rpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "eth_call",
-        params: [{ to, data }, "latest"],
-      }),
-    }, 15000);
-    const json = await res.json();
-    if (json.error) {
-      console.log(`⚠️ eth_call error: ${JSON.stringify(json.error)}`);
-      return null;
-    }
-    return json.result || null;
-  } catch (e: any) {
-    console.log(`❌ eth_call exception: ${e.message}`);
-    return null;
-  }
-}
-
-function buildUdProfileFromRecords(domain: string, records: Record<string, string>, owner: string | null): any | null {
-  const address = resolveUdEthAddress(records, owner);
-
-  const validUrl = (v: string | undefined) => v && v !== "undefined" && v.length > 1 ? v : null;
-  const website = validUrl(records["browser.redirect_url"]) || validUrl(records["ipfs.redirect_domain.value"]);
-
-  const twitter = records["social.twitter.username"] || null;
-
-  const links: Record<string, any> = {};
-  if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
-  if (website) links.website = { link: website };
-
-  if (!address && !isEvmAddress(owner)) return null;
-
-  return {
-    address: address || owner,
-    identity: domain,
-    platform: "unstoppabledomains",
-    displayName: records["profile.name"] || domain,
-    avatar: records["social.picture.value"] || `https://metadata.unstoppabledomains.com/image-src/${domain}`,
-    description: records["whois.description"] || null,
-    header: null,
-    website,
-    url: website,
-    links,
-    email: records["whois.email.value"] || null,
-    location: null,
-    udDomain: domain,
-  };
-}
-
-async function fetchUdProfile(domain: string): Promise<any | null> {
-  const alchemyKey = Deno.env.get("ALCHEMY_API_KEY");
-  const ethRpc = alchemyKey
-    ? `https://eth-mainnet.g.alchemy.com/v2/${alchemyKey}`
-    : "https://cloudflare-eth.com";
-  const polyRpc = alchemyKey
-    ? `https://polygon-mainnet.g.alchemy.com/v2/${alchemyKey}`
-    : "https://polygon-rpc.com";
-
-  const tokenId = udNamehash(domain);
-  const isCns = isCnsDomain(domain);
-
-  console.log(`🔍 UD on-chain: resolving ${domain}, tokenId=${tokenId}, cns=${isCns}`);
-
-  // Try Polygon first, then Ethereum (per UD recommendation)
-  for (const [chainName, rpcUrl] of [["Polygon", polyRpc], ["Ethereum", ethRpc]]) {
-    console.log(`🔗 UD: Trying ${chainName} for ${domain}`);
-
-    let values: string[] = [];
-    let owner: string | null = null;
-
-    if (isCns) {
-      const calldata = encodeGetMany(RECORD_KEYS, tokenId);
-      const rawResult = await ethCall(rpcUrl, PROXY_READER, calldata);
-      if (!rawResult || rawResult === "0x" || rawResult.length < 10) {
-        console.log(`⚠️ UD ${chainName}: empty result`);
-        continue;
-      }
-      values = decodeGetManyResult(rawResult);
-    } else {
-      const calldata = encodeGetData(RECORD_KEYS, tokenId);
-      const rawResult = await ethCall(rpcUrl, UNS_REGISTRY, calldata);
-      if (!rawResult || rawResult === "0x" || rawResult.length < 10) {
-        console.log(`⚠️ UD ${chainName}: empty result`);
-        continue;
-      }
-      const decoded = decodeGetDataResult(rawResult);
-      owner = decoded.owner === "0x0000000000000000000000000000000000000000" ? null : decoded.owner;
-      values = decoded.values;
-    }
-
-    console.log(`📋 UD ${chainName} values: ${JSON.stringify(values)}, owner: ${owner}`);
-
-    // Build records map
-    const records: Record<string, string> = {};
-    for (let i = 0; i < RECORD_KEYS.length && i < values.length; i++) {
-      if (values[i]) records[RECORD_KEYS[i]] = values[i];
-    }
-
-    const profile = buildUdProfileFromRecords(domain, records, owner);
-    if (profile) {
-      console.log(`✅ UD ${chainName}: resolved ${domain} -> ${profile.address}`);
-      return profile;
-    }
-
-    // If we got owner but no ETH address record, still build minimal profile
-    if (owner && isEvmAddress(owner)) {
-      console.log(`✅ UD ${chainName}: resolved ${domain} via owner -> ${owner}`);
-      return {
-        address: owner,
-        identity: domain,
-        platform: "unstoppabledomains",
-        displayName: records["profile.name"] || domain,
-        avatar: records["social.picture.value"] || `https://metadata.unstoppabledomains.com/image-src/${domain}`,
-        description: records["whois.description"] || null,
-        header: null,
-        website: records["browser.redirect_url"] || null,
-        url: records["browser.redirect_url"] || null,
-        links: {},
-        email: records["whois.email.value"] || null,
-        location: null,
-        udDomain: domain,
-      };
-    }
-  }
-
-  console.log(`❌ UD: On-chain resolution failed for ${domain}`);
   return null;
 }
 
@@ -827,23 +424,22 @@ serve(async (req) => {
   const debug: { tried: string[]; timingsMs: Record<string, number> } = { tried: [], timingsMs: {} };
   
   try {
-    const { identity, resolver } = await req.json();
-
+    const { identity } = await req.json();
+    
     if (!identity || typeof identity !== "string") {
       return new Response(
         JSON.stringify({ ok: false, error: "identity is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
+    
     const normalized = identity.trim().toLowerCase();
-    const forceUd = resolver === "ud";
-    console.log(`\n🚀 resolve-profile called for: ${normalized}`, { forceUd });
-
+    console.log(`\n🚀 resolve-profile called for: ${normalized}`);
+    
     // Get Supabase config for internal edge function calls
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-
+    
     // Determine identity type
     // EVM wallet addresses are 40 hex chars (0x + 40)
     const isEvmWalletAddress = /^0x[a-fA-F0-9]{40}$/i.test(normalized);
@@ -853,48 +449,34 @@ serve(async (req) => {
     const isHlDomain = normalized.endsWith(".hl");
     const isVetDomain = normalized.endsWith(".vet");
     const isIotaDomain = normalized.endsWith(".iota");
-    const isUd = isUdDomain(normalized);
-
+    
     // Web3.bio-compatible TLDs
     const web3BioTLDs = [".eth", ".box", ".world.id"];
     const isWeb3BioCompatible = web3BioTLDs.some(tld => normalized.endsWith(tld));
-
+    
     // Special handling for base.eth subdomains (e.g., guy.base.eth)
     const isBaseEthSubdomain = normalized.endsWith(".base.eth") && normalized !== "base.eth";
-
+    
     // Namestone-only TLDs (not indexed by Web3.bio)
     const namestoneTLDs = [".world", ".cash", ".apt", ".ton", ".flirtad", ".mexipay", ".guavapay", ".termux", ".spyda", ".mith", ".30315", ".teamxrp"];
     const isNamestoneTLD = namestoneTLDs.some(tld => normalized.endsWith(tld)) && !normalized.endsWith(".world.id");
-
+    
     // Check for subdomains (2+ dots)
     const dotCount = normalized.split('.').filter(Boolean).length - 1;
     const isSubdomain = dotCount >= 2;
     const isL2EnsSubdomain = isSubdomain && (normalized.endsWith(".eth") || normalized.endsWith(".world.id")) && !isBaseEthSubdomain;
-
-    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, iota=${isIotaDomain}, ud=${isUd || forceUd}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
-
+    
+    console.log(`📊 Identity analysis: wallet=${isWalletAddress}, hl=${isHlDomain}, vet=${isVetDomain}, iota=${isIotaDomain}, web3bio=${isWeb3BioCompatible}, namestone=${isNamestoneTLD}, l2subdomain=${isL2EnsSubdomain}, baseEthSubdomain=${isBaseEthSubdomain}`);
+    
     let result: ProfileResult = { ok: false, source: "fallback", profile: null };
     
-    // Route 0: Unstoppable Domains (official UD APIs via backend)
-    if (forceUd || isUd) {
-      debug.tried.push("ud");
-      const udStart = Date.now();
-      const udProfile = await fetchUdProfile(normalized);
-      debug.timingsMs.ud = Date.now() - udStart;
-
-      if (udProfile) {
-        result = { ok: true, source: "ud", profile: udProfile };
-      } else {
-        result = { ok: false, source: "ud", profile: null, notFound: true };
-      }
-    }
     // Route 1: .hl domains
-    else if (isHlDomain) {
+    if (isHlDomain) {
       debug.tried.push("hl");
       const hlStart = Date.now();
       const hlProfile = await fetchHlProfile(normalized, supabaseUrl, supabaseKey);
       debug.timingsMs.hl = Date.now() - hlStart;
-
+      
       if (hlProfile) {
         // Optionally enrich with Web3.bio using the resolved address
         if (hlProfile.address) {
@@ -902,7 +484,7 @@ serve(async (req) => {
           const w3Start = Date.now();
           const web3Profile = await fetchWeb3BioProfile(hlProfile.address);
           debug.timingsMs.web3bio = Date.now() - w3Start;
-
+          
           if (web3Profile && !web3Profile.notFound) {
             // Merge, keeping HL-specific data
             result = {
