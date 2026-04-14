@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { WalletConnection } from "./WalletConnection";
 import { SpotifyPauseButton } from "./SpotifyPauseButton";
-import vanityLogo from "../assets/vanity-box-logo-v.png";
+import vanityLogo from "../assets/vanity-v-wallet-logo.jpeg";
 import vanityContactIcon from "../assets/vanity-contact-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import telegramIcon from "@/assets/telegram-icon.png";
@@ -132,7 +132,7 @@ export const Header: React.FC = () => {
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-24 w-auto object-contain"
+                    className="h-12 w-12 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -215,7 +215,7 @@ export const Header: React.FC = () => {
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-24 w-auto object-contain"
+                    className="h-12 w-12 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -265,7 +265,7 @@ export const Header: React.FC = () => {
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-24 w-auto object-contain"
+                className="h-12 w-12 object-cover rounded-lg"
                 loading="eager"
                 fetchPriority="high"
               />
