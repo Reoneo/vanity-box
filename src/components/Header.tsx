@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { WalletConnection } from "./WalletConnection";
 import { SpotifyPauseButton } from "./SpotifyPauseButton";
-import vanityLogo from "../assets/vanity-box-logo-v.png";
+import vanityLogo from "../assets/vanity-v-wallet-logo.jpeg";
 import vanityContactIcon from "../assets/vanity-contact-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import telegramIcon from "@/assets/telegram-icon.png";
