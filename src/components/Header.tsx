@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { WalletConnection } from "./WalletConnection";
 import { SpotifyPauseButton } from "./SpotifyPauseButton";
-import vanityLogo from "../assets/vanity-v-wallet-logo.jpeg";
+import vanityLogo from "../assets/vanity-v-wallet-logo.png";
 import vanityContactIcon from "../assets/vanity-contact-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import telegramIcon from "@/assets/telegram-icon.png";
@@ -285,70 +285,6 @@ export const Header: React.FC = () => {
         className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-6 overflow-y-auto"
       >
         <nav className="space-y-6">
-          {/* Supported Wallets - at top of menu */}
-          <div className="space-y-3">
-            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Supported Wallets</h3>
-            <div className="flex items-center justify-center gap-6">
-              {/* World App Icon */}
-              <button
-                onClick={() => {
-                  if (!MiniKit.isInstalled()) {
-                    window.open("https://world.org/ecosystem/app_ed7e61cb0c52630464178eed59e3fbdd", "_blank");
-                  }
-                  setMenuOpen(false);
-                }}
-                className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
-                aria-label="World App"
-              >
-                <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
-                  <img
-                    src={worldAppIcon}
-                    alt="World App"
-                    className="w-16 h-16 object-contain transition-transform group-hover:scale-110"
-                  />
-                </div>
-              </button>
-
-              {/* Telegram Icon */}
-              <button
-                onClick={() => {
-                  if (!isTelegramWebView()) {
-                    window.open("https://t.me/vanitybox_bot/vanity", "_blank");
-                  }
-                  setMenuOpen(false);
-                }}
-                className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
-                aria-label="Telegram"
-              >
-                <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
-                  <img
-                    src={telegramIcon}
-                    alt="Telegram"
-                    className="w-16 h-16 object-contain transition-transform group-hover:scale-110"
-                  />
-                </div>
-              </button>
-
-              {/* Petra Icon */}
-              <button
-                onClick={() => {
-                  window.location.href = "https://petra.app/explore?link=https://vanity.box";
-                  setMenuOpen(false);
-                }}
-                className="group relative flex items-center justify-center transition-all duration-300 hover:opacity-80"
-                aria-label="Petra"
-              >
-                <div className="rounded-full border border-[#D4AF37] p-1 bg-black">
-                  <img
-                    src={petraIcon}
-                    alt="Petra"
-                    className="w-16 h-16 object-contain transition-transform group-hover:scale-110"
-                  />
-                </div>
-              </button>
-            </div>
-          </div>
-
           {/* Legal Links */}
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Legal</h3>
