@@ -291,6 +291,50 @@ async function ensureWwwCNAMEs(
   return { created, existed, errors };
 }
 
+/** Order an Advanced Certificate covering *.*.vanity.box for www subdomain HTTPS */
+async function ensureAdvancedCert(token: string, zoneId: string): Promise<string> {
+  const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  // Check existing certificate packs
+  const listRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs?status=active`,
+    { headers: authHeaders }
+  );
+  if (listRes.ok) {
+    const listJson = await listRes.json();
+    for (const pack of listJson.result ?? []) {
+      const hosts: string[] = pack.hosts ?? [];
+      if (hosts.includes("*.*.vanity.box")) {
+        return "exists";
+      }
+    }
+  }
+
+  // Order advanced certificate
+  const orderRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs/order`,
+    {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        type: "advanced",
+        hosts: ["vanity.box", "*.vanity.box", "*.*.vanity.box"],
+        validation_method: "txt",
+        validity_days: 365,
+        certificate_authority: "lets_encrypt",
+      }),
+    }
+  );
+  const orderJson = await orderRes.json();
+  if (!orderJson.success) {
+    const err = orderJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
+    console.error("Advanced cert order error:", err);
+    return `error: ${err}`;
+  }
+  console.log("Advanced certificate ordered for *.*.vanity.box");
+  return "ordered";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
