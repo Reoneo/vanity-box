@@ -317,7 +317,9 @@ Deno.serve(async (req) => {
           if (
             rec.name?.endsWith(".vanity.box") &&
             rec.name !== "vanity.box" &&
-            rec.name !== "*.vanity.box"
+            rec.name !== "*.vanity.box" &&
+            rec.name !== "*.*.vanity.box" &&
+            !rec.name.startsWith("www.")  // preserve www CNAMEs managed by sync
           ) {
             toDelete.push({ id: rec.id, name: rec.name, type: rec.type });
           }
