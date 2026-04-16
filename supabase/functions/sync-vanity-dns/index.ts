@@ -5,15 +5,9 @@ const corsHeaders = {
 
 const CF_BASE = "https://api.cloudflare.com/client/v4";
 
-interface DuneRow {
-  name?: string;
-  domain?: string;
-  label?: string;
-}
-
+/** Fetch all .vanity domains from Dune query 7320928 */
 async function fetchDuneResults(apiKey: string): Promise<string[]> {
-  // Fetch all rows with pagination
-  const allRows: DuneRow[] = [];
+  const allRows: any[] = [];
   let offset = 0;
   const limit = 1000;
   while (true) {
@@ -21,92 +15,170 @@ async function fetchDuneResults(apiKey: string): Promise<string[]> {
       `https://api.dune.com/api/v1/query/7320928/results?limit=${limit}&offset=${offset}`,
       { headers: { "X-Dune-API-Key": apiKey } }
     );
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Dune API error [${res.status}]: ${text}`);
-    }
+    if (!res.ok) throw new Error(`Dune API error [${res.status}]: ${await res.text()}`);
     const data = await res.json();
-    const rows: DuneRow[] = data?.result?.rows ?? [];
-    if (rows.length > 0) {
-      console.log(`Dune page offset=${offset}: ${rows.length} rows`);
-    }
+    const rows = data?.result?.rows ?? [];
+    console.log(`Dune offset=${offset}: ${rows.length} rows`);
     allRows.push(...rows);
     if (rows.length < limit) break;
     offset += limit;
   }
-  console.log(`Dune total rows: ${allRows.length}`);
-  // Debug: log first row to see actual column names
-  if (allRows.length > 0) {
-    console.log("Dune first row keys:", Object.keys(allRows[0]));
-    console.log("Dune sample:", JSON.stringify(allRows[0]));
-  }
+  console.log(`Dune total: ${allRows.length}`);
+  if (allRows.length > 0) console.log("Sample row:", JSON.stringify(allRows[0]));
+
+  // Column is "domain" with values like "afrobeat.vanity"
   return allRows
-    .map((r: any) => {
-      const raw = r.name || r.domain || r.label || r.token_name || r.tld || r.vanity_name || Object.values(r).find(v => typeof v === 'string' && v.length > 0) || "";
-      return String(raw).replace(/\.vanity$/i, "").trim().toLowerCase();
+    .map((r) => {
+      const raw = String(r.domain || r.name || "");
+      return raw.replace(/\.vanity$/i, "").trim().toLowerCase();
     })
     .filter((d) => d.length > 0);
 }
 
-async function listExistingRecords(
-  token: string,
-  zoneId: string
-): Promise<Set<string>> {
-  const existing = new Set<string>();
+/** List existing DNS A records under *.vanity.box */
+async function listExistingRecords(token: string, zoneId: string): Promise<Map<string, string>> {
+  const existing = new Map<string, string>(); // name -> record_id
   let page = 1;
   while (true) {
     const res = await fetch(
-      `${CF_BASE}/zones/${zoneId}/dns_records?per_page=100&page=${page}&type=CNAME`,
+      `${CF_BASE}/zones/${zoneId}/dns_records?per_page=100&page=${page}`,
       { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
     );
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Cloudflare list error [${res.status}]: ${text}`);
-    }
+    if (!res.ok) throw new Error(`CF list error [${res.status}]: ${await res.text()}`);
     const json = await res.json();
-    const records = json.result ?? [];
-    for (const rec of records) {
-      const match = rec.name?.match(/^www\.(.+)\.vanity\.box$/i);
-      if (match) existing.add(match[1].toLowerCase());
+    for (const rec of json.result ?? []) {
+      // Match records like "afrobeat.vanity.box"
+      const m = rec.name?.match(/^([^.]+)\.vanity\.box$/i);
+      if (m) existing.set(m[1].toLowerCase(), rec.id);
     }
-    const totalPages = json.result_info?.total_pages ?? 1;
-    if (page >= totalPages) break;
+    if (page >= (json.result_info?.total_pages ?? 1)) break;
     page++;
   }
   return existing;
 }
 
-async function createCNAME(
-  token: string,
-  zoneId: string,
-  domain: string
-): Promise<{ domain: string; success: boolean; error?: string }> {
+/** Create a proxied A record for {name}.vanity.box */
+async function createARecord(
+  token: string, zoneId: string, name: string
+): Promise<{ name: string; success: boolean; error?: string }> {
   const res = await fetch(`${CF_BASE}/zones/${zoneId}/dns_records`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      type: "CNAME",
-      name: `www.${domain}.vanity.box`,
-      content: "ud.me",
-      ttl: 3600,
+      type: "A",
+      name: `${name}.vanity.box`,
+      content: "192.0.2.1", // RFC 5737 dummy IP, Cloudflare proxied handles it
+      ttl: 1, // Auto
       proxied: true,
     }),
   });
-
-  if (res.status === 429) {
-    const retryAfter = parseInt(res.headers.get("Retry-After") || "60", 10);
-    return { domain, success: false, error: `rate-limited, retry after ${retryAfter}s` };
-  }
-
+  if (res.status === 429) return { name, success: false, error: "rate-limited" };
   const json = await res.json();
   if (!json.success) {
     const errMsg = json.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
-    return { domain, success: false, error: errMsg };
+    return { name, success: false, error: errMsg };
   }
-  return { domain, success: true };
+  return { name, success: true };
+}
+
+/** Ensure a dynamic redirect rule exists: *.vanity.box → ud.me/{name}.vanity */
+async function ensureRedirectRule(token: string, zoneId: string): Promise<string> {
+  // Check existing rulesets for a matching rule
+  const listRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/rulesets?phase=http_request_dynamic_redirect`,
+    { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+  );
+
+  let rulesetId: string | null = null;
+  let existingRules: any[] = [];
+
+  if (listRes.ok) {
+    const listJson = await listRes.json();
+    const rulesets = listJson.result ?? [];
+    for (const rs of rulesets) {
+      if (rs.phase === "http_request_dynamic_redirect") {
+        rulesetId = rs.id;
+        // Fetch full ruleset to see rules
+        const fullRes = await fetch(
+          `${CF_BASE}/zones/${zoneId}/rulesets/${rs.id}`,
+          { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+        );
+        if (fullRes.ok) {
+          const fullJson = await fullRes.json();
+          existingRules = fullJson.result?.rules ?? [];
+        }
+        break;
+      }
+    }
+  }
+
+  // Check if our vanity redirect rule already exists
+  const vanityRule = existingRules.find((r: any) =>
+    r.description === "Vanity Box to UD redirect"
+  );
+
+  if (vanityRule) {
+    console.log("Redirect rule already exists:", vanityRule.id);
+    return "exists";
+  }
+
+  const newRule = {
+    expression: '(http.host matches "^[^.]+\\.vanity\\.box$")',
+    description: "Vanity Box to UD redirect",
+    action: "redirect",
+    action_parameters: {
+      from_value: {
+        status_code: 301,
+        target_url: {
+          expression: 'concat("https://ud.me/", regex_replace(http.host, "\\.box$", ""))',
+        },
+        preserve_query_string: false,
+      },
+    },
+  };
+
+  if (rulesetId) {
+    // Add rule to existing ruleset
+    const addRes = await fetch(
+      `${CF_BASE}/zones/${zoneId}/rulesets/${rulesetId}/rules`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(newRule),
+      }
+    );
+    const addJson = await addRes.json();
+    if (!addJson.success) {
+      const err = JSON.stringify(addJson.errors);
+      console.error("Failed to add redirect rule:", err);
+      return `error: ${err}`;
+    }
+    console.log("Added redirect rule to existing ruleset");
+    return "created";
+  } else {
+    // Create new ruleset with the rule
+    const createRes = await fetch(
+      `${CF_BASE}/zones/${zoneId}/rulesets`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Vanity Box Redirects",
+          kind: "zone",
+          phase: "http_request_dynamic_redirect",
+          rules: [newRule],
+        }),
+      }
+    );
+    const createJson = await createRes.json();
+    if (!createJson.success) {
+      const err = JSON.stringify(createJson.errors);
+      console.error("Failed to create redirect ruleset:", err);
+      return `error: ${err}`;
+    }
+    console.log("Created new redirect ruleset");
+    return "created";
+  }
 }
 
 function sleep(ms: number) {
@@ -121,38 +193,41 @@ Deno.serve(async (req) => {
   try {
     const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
     if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
-
     const CF_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
     if (!CF_API_TOKEN) throw new Error("CLOUDFLARE_API_TOKEN not configured");
-
     const ZONE_ID = Deno.env.get("CLOUDFLARE_ZONE_ID");
     if (!ZONE_ID) throw new Error("CLOUDFLARE_ZONE_ID not configured");
 
-    // Optional: only sync a single domain (for search-triggered use)
     let body: any = {};
     try { body = await req.json(); } catch { /* no body */ }
     const singleDomain = body?.domain?.replace(/\.vanity$/i, "").trim().toLowerCase();
 
     // 1. Fetch domains from Dune
     const allDomains = await fetchDuneResults(DUNE_API_KEY);
+    console.log(`Fetched ${allDomains.length} domains from Dune`);
 
-    // 2. If single domain requested, check it exists in Dune
     const domainsToProcess = singleDomain
       ? allDomains.filter((d) => d === singleDomain)
       : allDomains;
 
     if (singleDomain && domainsToProcess.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Domain not found in purchased .vanity list", found: false }),
+        JSON.stringify({ error: "Domain not found in Dune query", found: false }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // 2. Ensure the Cloudflare dynamic redirect rule exists
+    const redirectStatus = await ensureRedirectRule(CF_API_TOKEN, ZONE_ID);
+    console.log("Redirect rule status:", redirectStatus);
+
     // 3. Check existing DNS records
     const existing = await listExistingRecords(CF_API_TOKEN, ZONE_ID);
+    console.log(`Existing DNS records: ${existing.size}`);
 
-    // 4. Filter to only new domains
+    // 4. Create missing DNS A records
     const missing = domainsToProcess.filter((d) => !existing.has(d));
+    console.log(`Missing DNS records: ${missing.length}`);
 
     if (missing.length === 0) {
       return new Response(
@@ -161,27 +236,22 @@ Deno.serve(async (req) => {
           total: domainsToProcess.length,
           existing: domainsToProcess.length,
           created: 0,
-          found: singleDomain ? true : undefined,
+          redirectRule: redirectStatus,
           redirectUrl: singleDomain ? `https://ud.me/${singleDomain}.vanity` : undefined,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 5. Create records with rate limiting (batch of 20, 2s delay)
-    const results: Array<{ domain: string; success: boolean; error?: string }> = [];
+    const results: Array<{ name: string; success: boolean; error?: string }> = [];
     for (let i = 0; i < missing.length; i++) {
-      const result = await createCNAME(CF_API_TOKEN, ZONE_ID, missing[i]);
-      results.push(result);
-
-      if (result.error?.includes("rate-limited")) {
+      let result = await createARecord(CF_API_TOKEN, ZONE_ID, missing[i]);
+      if (result.error === "rate-limited") {
+        console.log("Rate limited, waiting 60s...");
         await sleep(60_000);
-        // Retry once
-        const retry = await createCNAME(CF_API_TOKEN, ZONE_ID, missing[i]);
-        results[results.length - 1] = retry;
+        result = await createARecord(CF_API_TOKEN, ZONE_ID, missing[i]);
       }
-
-      // Throttle: pause every 20 records
+      results.push(result);
       if ((i + 1) % 20 === 0) await sleep(2000);
     }
 
@@ -195,7 +265,7 @@ Deno.serve(async (req) => {
         created,
         failed: failed.length,
         failures: failed.length > 0 ? failed : undefined,
-        found: singleDomain ? true : undefined,
+        redirectRule: redirectStatus,
         redirectUrl: singleDomain ? `https://ud.me/${singleDomain}.vanity` : undefined,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
