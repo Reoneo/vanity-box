@@ -146,84 +146,40 @@ async function ensureWorkerRoute(token: string, zoneId: string): Promise<string>
   return "created";
 }
 
-/** Ensure a Cloudflare Redirect Rule strips www. from *.vanity.box requests */
-async function ensureWwwRedirectRule(token: string, zoneId: string): Promise<string> {
+/** Ensure a Cloudflare Page Rule redirects www.*.vanity.box → *.vanity.box */
+async function ensureWwwPageRule(token: string, zoneId: string): Promise<string> {
   const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-  const RULESET_PHASE = "http_request_dynamic_redirect";
+  const TARGET_URL = "www.*.vanity.box/*";
 
-  // Check existing rulesets for this phase
+  // Check existing page rules
   const listRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/rulesets/phases/${RULESET_PHASE}/entrypoint`,
+    `${CF_BASE}/zones/${zoneId}/pagerules`,
     { headers: authHeaders }
   );
-
   if (listRes.ok) {
     const listJson = await listRes.json();
-    const rules = listJson.result?.rules ?? [];
-    const existing = rules.find((r: any) => r.description === "Strip www from vanity.box subdomains");
-    if (existing) return "exists";
-
-    // Add rule to existing ruleset
-    const rulesetId = listJson.result?.id;
-    const updateRes = await fetch(
-      `${CF_BASE}/zones/${zoneId}/rulesets/${rulesetId}`,
-      {
-        method: "PUT",
-        headers: authHeaders,
-        body: JSON.stringify({
-          rules: [
-            ...rules,
-            {
-              expression: '(http.host matches "^www\\\\.[^.]+\\\\.vanity\\\\.box$")',
-              description: "Strip www from vanity.box subdomains",
-              action: "redirect",
-              action_parameters: {
-                from_value: {
-                  status_code: 301,
-                  target_url: {
-                    expression: 'concat("https://", substring(http.host, 4), http.request.uri.path)',
-                  },
-                  preserve_query_string: true,
-                },
-              },
-            },
-          ],
-        }),
-      }
+    const existing = (listJson.result ?? []).find((r: any) =>
+      r.targets?.[0]?.constraint?.value === TARGET_URL
     );
-    const updateJson = await updateRes.json();
-    if (!updateJson.success) {
-      return `error: ${updateJson.errors?.map((e: any) => e.message).join("; ")}`;
-    }
-    return "created";
+    if (existing) return "exists";
   }
 
-  // Create new ruleset
+  // Create page rule: www.*.vanity.box/* → https://$1.vanity.box/$2
   const createRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/rulesets`,
+    `${CF_BASE}/zones/${zoneId}/pagerules`,
     {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({
-        name: "Vanity Box Redirects",
-        kind: "zone",
-        phase: RULESET_PHASE,
-        rules: [
+        targets: [{ target: "url", constraint: { operator: "matches", value: TARGET_URL } }],
+        actions: [
           {
-            expression: '(http.host matches "^www\\\\.[^.]+\\\\.vanity\\\\.box$")',
-            description: "Strip www from vanity.box subdomains",
-            action: "redirect",
-            action_parameters: {
-              from_value: {
-                status_code: 301,
-                target_url: {
-                  expression: 'concat("https://", substring(http.host, 4), http.request.uri.path)',
-                },
-                preserve_query_string: true,
-              },
-            },
+            id: "forwarding_url",
+            value: { url: "https://$1.vanity.box/$2", status_code: 301 },
           },
         ],
+        status: "active",
+        priority: 1,
       }),
     }
   );
