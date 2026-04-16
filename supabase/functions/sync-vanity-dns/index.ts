@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
 
     // 3. Ensure Worker Route
     const routeStatus = await ensureWorkerRoute(CF_API_TOKEN, ZONE_ID);
-    console.log("Routes:", JSON.stringify(routeStatus));
+    console.log("Route:", routeStatus);
 
     // 4. Ensure www page rule (www.X.vanity.box → X.vanity.box)
     const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
