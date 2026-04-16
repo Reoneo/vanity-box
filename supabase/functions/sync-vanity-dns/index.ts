@@ -217,6 +217,115 @@ async function ensureWwwPageRule(token: string, zoneId: string): Promise<string>
   return "created";
 }
 
+/** Check & attempt to enable Total TLS / Advanced Cert for deep subdomains */
+async function checkAndEnableTotalTLS(token: string, zoneId: string): Promise<{
+  status: string;
+  wwwHttpsSupported: boolean;
+  details: string;
+}> {
+  const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  // 1. Check current Total TLS setting
+  const ttsRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/acm/total_tls`,
+    { headers: authHeaders }
+  );
+  if (ttsRes.ok) {
+    const ttsJson = await ttsRes.json();
+    const enabled = ttsJson.result?.enabled === true;
+    console.log("Total TLS current state:", JSON.stringify(ttsJson.result));
+
+    if (enabled) {
+      return {
+        status: "total_tls_enabled",
+        wwwHttpsSupported: true,
+        details: "Total TLS is active — HTTPS works for www.*.vanity.box",
+      };
+    }
+
+    // Try to enable Total TLS
+    const enableRes = await fetch(
+      `${CF_BASE}/zones/${zoneId}/acm/total_tls`,
+      {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ enabled: true }),
+      }
+    );
+    const enableJson = await enableRes.json();
+    console.log("Total TLS enable response:", JSON.stringify(enableJson));
+
+    if (enableJson.success && enableJson.result?.enabled) {
+      return {
+        status: "total_tls_just_enabled",
+        wwwHttpsSupported: true,
+        details: "Total TLS was just enabled — HTTPS for www.*.vanity.box will work once certs propagate (a few minutes)",
+      };
+    }
+
+    // If enabling failed, check if it's a plan limitation
+    const errMsg = enableJson.errors?.map((e: any) => e.message).join("; ") || "unknown";
+    console.warn("Total TLS enable failed:", errMsg);
+  } else {
+    console.warn("Total TLS check failed:", ttsRes.status, await ttsRes.text());
+  }
+
+  // 2. Fallback: check if there's an Advanced Certificate covering *.*.vanity.box
+  const certRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs?status=active`,
+    { headers: authHeaders }
+  );
+  if (certRes.ok) {
+    const certJson = await certRes.json();
+    const packs = certJson.result ?? [];
+    for (const pack of packs) {
+      const hosts: string[] = pack.hosts ?? [];
+      if (hosts.some((h: string) => h === "*.*.vanity.box" || h === "*.vanity.box" && pack.type === "advanced")) {
+        return {
+          status: "advanced_cert_found",
+          wwwHttpsSupported: true,
+          details: `Advanced certificate pack covers deep subdomains (pack ${pack.id})`,
+        };
+      }
+    }
+  }
+
+  // 3. Try ordering an Advanced Certificate if ACM is available
+  const orderRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs/order`,
+    {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        type: "advanced",
+        hosts: ["vanity.box", "*.vanity.box", "*.*.vanity.box"],
+        validation_method: "txt",
+        validity_days: 365,
+        certificate_authority: "lets_encrypt",
+      }),
+    }
+  );
+  const orderJson = await orderRes.json();
+  console.log("ACM order response:", JSON.stringify(orderJson));
+
+  if (orderJson.success) {
+    return {
+      status: "advanced_cert_ordered",
+      wwwHttpsSupported: true,
+      details: `Advanced certificate ordered (pack ${orderJson.result?.id}) — HTTPS for www.*.vanity.box will work once validated`,
+    };
+  }
+
+  const orderErr = orderJson.errors?.map((e: any) => e.message).join("; ") || "unknown";
+  return {
+    status: "www_https_unavailable",
+    wwwHttpsSupported: false,
+    details: `Cannot enable deep-subdomain HTTPS: Total TLS and ACM both unavailable. Error: ${orderErr}. ` +
+      `Enable Advanced Certificate Manager in Cloudflare dashboard (SSL/TLS → Edge Certificates → Total TLS) ` +
+      `or upgrade your plan. HTTP www.*.vanity.box redirects work, but HTTPS will fail at TLS handshake.`,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -275,7 +384,6 @@ Deno.serve(async (req) => {
 
       let deleted = 0;
       const errors: string[] = [];
-      // Delete in parallel batches of 20
       for (let i = 0; i < toDelete.length; i += 20) {
         const batch = toDelete.slice(i, i + 20);
         const results = await Promise.all(
@@ -317,13 +425,22 @@ Deno.serve(async (req) => {
     const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
     console.log("WWW page rule:", wwwStatus);
 
+    // 5. Check & enable TLS for deep subdomains (www.*.vanity.box)
+    const tlsStatus = await checkAndEnableTotalTLS(CF_API_TOKEN, ZONE_ID);
+    console.log("TLS status:", JSON.stringify(tlsStatus));
+
+    const message = tlsStatus.wwwHttpsSupported
+      ? "All *.vanity.box and www.*.vanity.box subdomains now redirect to ud.me/{name}.vanity (HTTPS included)"
+      : "*.vanity.box redirects work. www.*.vanity.box works over HTTP only — HTTPS requires Advanced Certificate Manager (see tlsCertificate.details)";
+
     return new Response(
       JSON.stringify({
         wildcardDns: dnsStatus,
         worker: workerStatus,
         workerRoute: routeStatus,
         wwwRedirectRule: wwwStatus,
-        message: "All *.vanity.box and www.*.vanity.box subdomains now redirect to ud.me/{name}.vanity",
+        tlsCertificate: tlsStatus,
+        message,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
