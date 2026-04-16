@@ -106,6 +106,31 @@ Deno.serve(async (req) => {
       console.log(`[Cloudflare] DNS record created: ${dnsResult.result?.id}`);
     }
 
+    // Step 1b: Create www CNAME so Total TLS auto-issues cert for www.<name>.vanity.box
+    console.log(`[Cloudflare] Creating www CNAME for www.${cleanSubdomain}.vanity.box`);
+    const wwwDnsResponse = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records`,
+      {
+        method: "POST",
+        headers: cfHeaders,
+        body: JSON.stringify({
+          type: "CNAME",
+          name: `www.${cleanSubdomain}`,
+          content: "vanity.box",
+          proxied: true,
+          comment: `WWW redirect for ${cleanSubdomain}.vanity.box`,
+        }),
+      }
+    );
+    const wwwDnsResult = await wwwDnsResponse.json() as CloudflareResponse;
+    if (wwwDnsResult.success) {
+      console.log(`[Cloudflare] www CNAME created for www.${cleanSubdomain}.vanity.box`);
+    } else {
+      const isDup = wwwDnsResult.errors?.some(e => e.message.includes("already exists"));
+      if (isDup) console.log(`[Cloudflare] www CNAME already exists`);
+      else console.error(`[Cloudflare] www CNAME error:`, wwwDnsResult.errors);
+    }
+
     // Step 2: Create/update redirect rule via Cloudflare Bulk Redirects
     // We use a Page Rule for simpler setup (redirect rule requires Bulk Redirects API)
     console.log(`[Cloudflare] Creating page rule redirect for ${cleanSubdomain}.vanity.box`);
