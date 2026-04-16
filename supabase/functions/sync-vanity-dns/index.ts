@@ -52,20 +52,15 @@ async function ensureWildcardDNS(token: string, zoneId: string): Promise<string>
   return "created";
 }
 
-/** Build the Cloudflare Worker script with the domain allowlist baked in */
-function buildWorkerScript(domains: string[]): string {
-  const domainSet = JSON.stringify(domains);
-  // ES module format for Cloudflare Workers
-  return `const ALLOWED = new Set(${domainSet});
-
-export default {
+/** Build the Cloudflare Worker script — redirects ANY *.vanity.box to ud.me */
+function buildWorkerScript(): string {
+  return `export default {
   async fetch(request) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
     const match = host.match(/^([^.]+)\\.vanity\\.box$/);
     if (!match) return new Response("Not found", { status: 404 });
     const name = match[1];
-    if (!ALLOWED.has(name)) return new Response("Domain not registered", { status: 404 });
     return Response.redirect("https://ud.me/" + name + ".vanity", 301);
   }
 };
