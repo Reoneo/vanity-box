@@ -148,8 +148,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
-    if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
     const CF_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
     if (!CF_API_TOKEN) throw new Error("CLOUDFLARE_API_TOKEN not configured");
     const ZONE_ID = Deno.env.get("CLOUDFLARE_ZONE_ID");
