@@ -1,66 +1,29 @@
 
 
-## Problem
+User wants:
+1. Click header logo to trigger a sync (Dune → Cloudflare DNS/redirects/www CNAMEs).
+2. Know if there's a Cloudflare limit on how many they can add.
 
-The `create-vanity-box-redirect` function creates a Page Rule that only matches `{name}.vanity.box/*`. When someone visits `www.{name}.vanity.box`, the DNS resolves (via the www CNAME), but there's **no Page Rule** to redirect that traffic — so Cloudflare serves nothing useful.
+Looking at Header.tsx and sync-vanity-dns to plan minimally.
 
-## Fix
+## Plan
 
-In `supabase/functions/create-vanity-box-redirect/index.ts`, add a **second Page Rule** (or modify the existing one) to also redirect `www.{name}.vanity.box/*` → `https://vanity.box/{name}.vanity.iota`.
+### 1. Make header logo click trigger sync
+In `src/components/Header.tsx`, wrap the V wallet logo in a button (or add onClick to the existing logo element). On click:
+- Call `sync-vanity-dns` edge function with `{ action: "sync-quick" }` (lightweight: Dune fetch + DNS CNAMEs + www CNAMEs + Total TLS check).
+- Show toast feedback: "Syncing…" → "Synced N names (X new www records)" or error.
+- Throttle: skip if last manual click was <30s ago (prevent accidental double-clicks). Different from the existing 6h auto-throttle in Index.tsx — manual click should bypass that.
+- Optional: hold Shift+click for full `action: "sync"` (re-deploys Worker + everything). Keep simple — just use `sync-quick` for now.
 
-### Changes to `create-vanity-box-redirect/index.ts`
+### 2. Cloudflare limits (answer in chat after approval)
+- **DNS records**: Free/Pro/Biz/Enterprise all allow effectively unlimited records per zone (soft cap ~3,500 proxied; thousands of unproxied). 136 names × 2 (apex + www) = 272 records — well within limits.
+- **Total TLS / Advanced Certificate Manager**: ACM cert pack covers up to 100 hostnames per pack; Cloudflare auto-creates additional packs as needed. Effectively unlimited for our scale.
+- **Page Rules**: Free = 3, Pro = 20. We are NOT using per-name Page Rules — we use a single Worker route `*.vanity.box/*`, so this limit doesn't apply.
+- **Workers requests**: Free = 100k req/day, Paid = 10M included. Plenty of headroom.
+- **Bottom line**: No practical limit at our scale. Safe to keep adding.
 
-After the existing page rule creation (line ~166), add a second page rule:
+### Files to change
+- `src/components/Header.tsx` — add onClick on logo, useState for syncing, useToast feedback.
 
-```typescript
-// Step 2b: Create page rule for www variant
-const wwwPageRuleResponse = await fetch(
-  `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/pagerules`,
-  {
-    method: "POST",
-    headers: cfHeaders,
-    body: JSON.stringify({
-      targets: [{
-        target: "url",
-        constraint: {
-          operator: "matches",
-          value: `www.${cleanSubdomain}.vanity.box/*`,
-        },
-      }],
-      actions: [{
-        id: "forwarding_url",
-        value: {
-          url: `https://vanity.box/${cleanSubdomain}.vanity.iota`,
-          status_code: 301,
-        },
-      }],
-      priority: 1,
-      status: "active",
-    }),
-  }
-);
-```
-
-**Note:** Cloudflare Free plans have a **3 Page Rule limit**. If you're already at the limit, this approach won't scale. In that case, the alternative is to use a **single wildcard Page Rule** like `www.*.vanity.box/*` → redirect, or switch to **Cloudflare Bulk Redirects** (free, up to 20 lists of 500 rules each), or handle the redirect at the application/worker level.
-
-### Recommended approach: Cloudflare Worker (most scalable)
-
-Instead of per-name Page Rules (which have hard limits), create a single **Cloudflare Worker** or use the existing wildcard DNS + a catch-all redirect rule:
-
-1. Add one Page Rule: `www.*.vanity.box/*` → `https://$1.vanity.box/$2` (strips www)
-2. The existing `*.vanity.box/*` rule then handles the redirect
-
-However — `www.*.vanity.box` is a double-wildcard which may not work in Page Rules on Free plans.
-
-**Simplest fix**: Update the existing Page Rule pattern from `${name}.vanity.box/*` to also handle the www case by creating a second rule per domain, **and** run a one-time backfill for existing domains.
-
-### Also needed: backfill existing domains
-
-Call `sync-vanity-dns` with a new action to create www Page Rules for all ~118 existing names that are missing them.
-
-### Summary of work
-1. Add www Page Rule creation in `create-vanity-box-redirect` (for new purchases)
-2. Add www Page Rule backfill in `sync-vanity-dns` (for existing names)
-3. Deploy both functions
-4. Test with `www.ava.vanity.box`
+That's it — minimal, single-file change.
 
