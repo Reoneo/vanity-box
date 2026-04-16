@@ -52,20 +52,15 @@ async function ensureWildcardDNS(token: string, zoneId: string): Promise<string>
   return "created";
 }
 
-/** Build the Cloudflare Worker script with the domain allowlist baked in */
-function buildWorkerScript(domains: string[]): string {
-  const domainSet = JSON.stringify(domains);
-  // ES module format for Cloudflare Workers
-  return `const ALLOWED = new Set(${domainSet});
-
-export default {
+/** Build the Cloudflare Worker script — redirects ANY *.vanity.box to ud.me */
+function buildWorkerScript(): string {
+  return `export default {
   async fetch(request) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
     const match = host.match(/^([^.]+)\\.vanity\\.box$/);
     if (!match) return new Response("Not found", { status: 404 });
     const name = match[1];
-    if (!ALLOWED.has(name)) return new Response("Domain not registered", { status: 404 });
     return Response.redirect("https://ud.me/" + name + ".vanity", 301);
   }
 };
@@ -153,8 +148,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
-    if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
     const CF_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
     if (!CF_API_TOKEN) throw new Error("CLOUDFLARE_API_TOKEN not configured");
     const ZONE_ID = Deno.env.get("CLOUDFLARE_ZONE_ID");
@@ -232,40 +225,25 @@ Deno.serve(async (req) => {
     }
 
     // === SYNC ACTION (default) ===
-    const singleDomain = body?.domain?.replace(/\.vanity$/i, "").trim().toLowerCase();
-
-    // 1. Fetch all domains from Dune
-    const allDomains = await fetchDuneResults(DUNE_API_KEY);
-    console.log(`Fetched ${allDomains.length} domains from Dune`);
-
-    if (singleDomain && !allDomains.includes(singleDomain)) {
-      return new Response(
-        JSON.stringify({ error: "Domain not found in Dune query", found: false }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // 2. Ensure wildcard DNS record
+    // 1. Ensure wildcard DNS record
     const dnsStatus = await ensureWildcardDNS(CF_API_TOKEN, ZONE_ID);
     console.log("Wildcard DNS:", dnsStatus);
 
-    // 3. Deploy Worker with all domains baked in
-    const script = buildWorkerScript(allDomains);
+    // 2. Deploy Worker (redirects ANY *.vanity.box — no allowlist needed)
+    const script = buildWorkerScript();
     const workerStatus = await deployWorker(CF_API_TOKEN, ACCOUNT_ID, script);
     console.log("Worker:", workerStatus);
 
-    // 4. Ensure Worker Route
+    // 3. Ensure Worker Route
     const routeStatus = await ensureWorkerRoute(CF_API_TOKEN, ZONE_ID);
     console.log("Route:", routeStatus);
 
     return new Response(
       JSON.stringify({
-        total: allDomains.length,
-        domains: singleDomain ? [singleDomain] : allDomains,
         wildcardDns: dnsStatus,
         worker: workerStatus,
         workerRoute: routeStatus,
-        redirectUrl: singleDomain ? `https://ud.me/${singleDomain}.vanity` : undefined,
+        message: "All *.vanity.box subdomains now redirect to ud.me/{name}.vanity",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
