@@ -464,14 +464,17 @@ Deno.serve(async (req) => {
     const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
     console.log("WWW page rule:", wwwStatus);
 
-    // 5. Fetch all vanity names from Dune and create www CNAME records
-    //    so Total TLS auto-issues certs for each www.<name>.vanity.box
+    // 5. Ensure Advanced Certificate covers *.*.vanity.box for HTTPS on www subdomains
+    const certStatus = await ensureAdvancedCert(CF_API_TOKEN, ZONE_ID);
+    console.log("Advanced cert:", certStatus);
+
+    // 6. Fetch all vanity names from Dune and create www CNAME records
     const names = await fetchDuneResults(DUNE_API_KEY);
     console.log(`Fetched ${names.length} names from Dune`);
     const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
     console.log("WWW CNAMEs:", JSON.stringify(wwwCnames));
 
-    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAME records (${wwwCnames.existed} existed). Total TLS will auto-issue certs for each.`;
+    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAME records (${wwwCnames.existed} existed). Cert: ${certStatus}.`;
 
     return new Response(
       JSON.stringify({
@@ -479,6 +482,7 @@ Deno.serve(async (req) => {
         worker: workerStatus,
         workerRoute: routeStatus,
         wwwRedirectRule: wwwStatus,
+        advancedCert: certStatus,
         wwwCnames,
         namesCount: names.length,
         message,
