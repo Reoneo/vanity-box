@@ -218,14 +218,23 @@ Deno.serve(async (req) => {
 
       let deleted = 0;
       const errors: string[] = [];
-      for (const rec of toDelete) {
-        const res = await fetch(
-          `${CF_BASE}/zones/${ZONE_ID}/dns_records/${rec.id}`,
-          { method: "DELETE", headers: authHeaders }
+      // Delete in parallel batches of 20
+      for (let i = 0; i < toDelete.length; i += 20) {
+        const batch = toDelete.slice(i, i + 20);
+        const results = await Promise.all(
+          batch.map(async (rec) => {
+            const res = await fetch(
+              `${CF_BASE}/zones/${ZONE_ID}/dns_records/${rec.id}`,
+              { method: "DELETE", headers: authHeaders }
+            );
+            const json = await res.json();
+            return { rec, success: json.success, errors: json.errors };
+          })
         );
-        const json = await res.json();
-        if (json.success) deleted++;
-        else errors.push(`${rec.name}: ${json.errors?.map((e: any) => e.message).join("; ")}`);
+        for (const r of results) {
+          if (r.success) deleted++;
+          else errors.push(`${r.rec.name}: ${r.errors?.map((e: any) => e.message).join("; ")}`);
+        }
       }
       return new Response(
         JSON.stringify({ deleted, errors: errors.length > 0 ? errors : undefined, total: toDelete.length }),
