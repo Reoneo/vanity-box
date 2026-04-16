@@ -130,7 +130,7 @@ async function ensureRedirectRule(token: string, zoneId: string): Promise<string
       from_value: {
         status_code: 301,
         target_url: {
-          expression: 'concat("https://ud.me/", regex_replace(http.host, "\\.box$", ""))',
+          expression: 'concat("https://ud.me/", regex_replace(http.host, "\\\\.box$", ""))',
         },
         preserve_query_string: false,
       },
