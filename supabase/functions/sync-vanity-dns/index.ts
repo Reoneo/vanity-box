@@ -366,6 +366,31 @@ Deno.serve(async (req) => {
       );
     }
 
+    // === SYNC-SINGLE ACTION: manually create www CNAME for a specific name ===
+    if (action === "sync-single") {
+      const name = String(body?.name || "").replace(/\.vanity$/i, "").trim().toLowerCase();
+      if (!name) {
+        return new Response(
+          JSON.stringify({ error: "name is required (e.g. remotelyproduction)" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const wwwResult = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, [name]);
+      return new Response(
+        JSON.stringify({
+          name,
+          fqdn: `www.${name}.vanity.box`,
+          ...wwwResult,
+          message: wwwResult.created > 0
+            ? `Created www.${name}.vanity.box CNAME. Total TLS will auto-issue a cert (5-15 min).`
+            : wwwResult.existed > 0
+            ? `www.${name}.vanity.box already exists. If HTTPS isn't working, wait for Total TLS to issue the cert.`
+            : `Error creating CNAME: ${wwwResult.errors.join("; ")}`,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // === SYNC ACTION (default) ===
     const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
     if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
