@@ -55,30 +55,20 @@ async function ensureWildcardDNS(token: string, zoneId: string): Promise<string>
 /** Build the Cloudflare Worker script with the domain allowlist baked in */
 function buildWorkerScript(domains: string[]): string {
   const domainSet = JSON.stringify(domains);
-  return `
-const ALLOWED = new Set(${domainSet});
+  // ES module format for Cloudflare Workers
+  return `const ALLOWED = new Set(${domainSet});
 
-addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event.request));
-});
-
-async function handleRequest(request) {
-  const url = new URL(request.url);
-  const host = url.hostname.toLowerCase();
-
-  // Match {name}.vanity.box
-  const match = host.match(/^([^.]+)\\.vanity\\.box$/);
-  if (!match) {
-    return new Response("Not found", { status: 404 });
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const host = url.hostname.toLowerCase();
+    const match = host.match(/^([^.]+)\\.vanity\\.box$/);
+    if (!match) return new Response("Not found", { status: 404 });
+    const name = match[1];
+    if (!ALLOWED.has(name)) return new Response("Domain not registered", { status: 404 });
+    return Response.redirect("https://ud.me/" + name + ".vanity", 301);
   }
-
-  const name = match[1];
-  if (!ALLOWED.has(name)) {
-    return new Response("Domain not registered", { status: 404 });
-  }
-
-  return Response.redirect("https://ud.me/" + name + ".vanity", 301);
-}
+};
 `;
 }
 
@@ -86,20 +76,19 @@ async function handleRequest(request) {
 async function deployWorker(token: string, accountId: string, script: string): Promise<string> {
   const WORKER_NAME = "vanity-box-redirect";
 
-  // Upload worker script
   const form = new FormData();
   form.append(
     "metadata",
     new Blob(
-      [JSON.stringify({ main_module: "worker.js", compatibility_date: "2024-01-01" })],
+      [JSON.stringify({ main_module: "worker.mjs", compatibility_date: "2024-01-01" })],
       { type: "application/json" }
     ),
     "metadata"
   );
   form.append(
-    "worker.js",
+    "worker.mjs",
     new Blob([script], { type: "application/javascript+module" }),
-    "worker.js"
+    "worker.mjs"
   );
 
   const res = await fetch(
