@@ -283,90 +283,162 @@ async function ensureWwwCNAMEs(
   return { created, existed, errors };
 }
 
+async function parseJsonSafe(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
+
+function getCloudflareError(payload: any): string {
+  const errors = Array.isArray(payload?.errors)
+    ? payload.errors.map((e: any) => e?.message).filter(Boolean)
+    : [];
+  if (errors.length > 0) return errors.join("; ");
+  if (typeof payload?.message === "string" && payload.message) return payload.message;
+  if (typeof payload?.error === "string" && payload.error) return payload.error;
+  if (typeof payload?.raw === "string" && payload.raw) return payload.raw;
+  return "unknown";
+}
+
+async function listWwwCnameHosts(token: string, zoneId: string): Promise<string[]> {
+  const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const hosts = new Set<string>();
+  let page = 1;
+
+  while (true) {
+    const res = await fetch(
+      `${CF_BASE}/zones/${zoneId}/dns_records?per_page=100&page=${page}&type=CNAME`,
+      { headers: authHeaders }
+    );
+    if (!res.ok) break;
+
+    const json = await parseJsonSafe(res);
+    for (const rec of json.result ?? []) {
+      const name = String(rec?.name ?? "").toLowerCase();
+      if (name.startsWith("www.") && name.endsWith(".vanity.box") && rec?.proxied) {
+        hosts.add(name);
+      }
+    }
+
+    if (page >= (json.result_info?.total_pages ?? 1)) break;
+    page++;
+  }
+
+  return Array.from(hosts).sort();
+}
+
 /** Inspect SSL certificate packs and report which hostnames are covered */
 async function getCertStatus(token: string, zoneId: string): Promise<{
   totalTlsEnabled: boolean;
+  totalTlsCertificateAuthority: string | null;
   packs: Array<{ id: string; status: string; type: string; hosts: string[] }>;
   coversWwwWildcard: boolean;
   coversApex: boolean;
+  wwwDnsCount: number;
+  activeWwwCertCount: number;
+  missingWwwHostsCount: number;
+  missingWwwHostsSample: string[];
 }> {
   const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  // Total TLS setting
   let totalTlsEnabled = false;
+  let totalTlsCertificateAuthority: string | null = null;
   try {
     const tlsRes = await fetch(`${CF_BASE}/zones/${zoneId}/acm/total_tls`, { headers: authHeaders });
     if (tlsRes.ok) {
-      const j = await tlsRes.json();
+      const j = await parseJsonSafe(tlsRes);
       totalTlsEnabled = !!j?.result?.enabled;
+      totalTlsCertificateAuthority = j?.result?.certificate_authority ?? null;
     }
-  } catch { /* ignore */ }
+  } catch {
+    // ignore status read failures here, reported elsewhere if enable call fails
+  }
 
   const packs: Array<{ id: string; status: string; type: string; hosts: string[] }> = [];
   let coversWwwWildcard = false;
   let coversApex = false;
+  const activeWwwCertHosts = new Set<string>();
 
   const listRes = await fetch(
     `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs?per_page=50`,
     { headers: authHeaders }
   );
   if (listRes.ok) {
-    const listJson = await listRes.json();
+    const listJson = await parseJsonSafe(listRes);
     for (const pack of listJson.result ?? []) {
-      const hosts: string[] = pack.hosts ?? [];
+      const hosts: string[] = (pack.hosts ?? []).map((host: any) => String(host).toLowerCase());
       packs.push({ id: pack.id, status: pack.status, type: pack.type, hosts });
       if (pack.status === "active") {
         if (hosts.includes("*.*.vanity.box")) coversWwwWildcard = true;
         if (hosts.includes("vanity.box") || hosts.includes("*.vanity.box")) coversApex = true;
+        for (const host of hosts) {
+          if (host.startsWith("www.") && host.endsWith(".vanity.box")) {
+            activeWwwCertHosts.add(host);
+          }
+        }
       }
     }
   }
 
-  return { totalTlsEnabled, packs, coversWwwWildcard, coversApex };
+  const wwwHosts = await listWwwCnameHosts(token, zoneId);
+  const missingWwwHosts = coversWwwWildcard
+    ? []
+    : wwwHosts.filter((host) => !activeWwwCertHosts.has(host));
+
+  return {
+    totalTlsEnabled,
+    totalTlsCertificateAuthority,
+    packs,
+    coversWwwWildcard,
+    coversApex,
+    wwwDnsCount: wwwHosts.length,
+    activeWwwCertCount: coversWwwWildcard ? wwwHosts.length : activeWwwCertHosts.size,
+    missingWwwHostsCount: missingWwwHosts.length,
+    missingWwwHostsSample: missingWwwHosts.slice(0, 50),
+  };
 }
 
-/** Order an Advanced Certificate covering *.*.vanity.box for www subdomain HTTPS */
-async function ensureAdvancedCert(token: string, zoneId: string): Promise<string> {
+/** Enable Total TLS so every proxied www.<name>.vanity.box CNAME gets its own certificate automatically */
+async function ensureTotalTlsEnabled(token: string, zoneId: string): Promise<string> {
   const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const url = `${CF_BASE}/zones/${zoneId}/acm/total_tls`;
 
-  // Check existing certificate packs
-  const listRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs?status=active`,
-    { headers: authHeaders }
-  );
-  if (listRes.ok) {
-    const listJson = await listRes.json();
-    for (const pack of listJson.result ?? []) {
-      const hosts: string[] = pack.hosts ?? [];
-      if (hosts.includes("*.*.vanity.box")) {
-        return "exists";
-      }
+  try {
+    const currentRes = await fetch(url, { headers: authHeaders });
+    if (currentRes.ok) {
+      const currentJson = await parseJsonSafe(currentRes);
+      if (currentJson?.result?.enabled) return "exists";
     }
+  } catch {
+    // continue to write attempt
   }
 
-  // Order advanced certificate
-  const orderRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs/order`,
-    {
-      method: "POST",
+  const payload = JSON.stringify({ enabled: true, certificate_authority: "lets_encrypt" });
+  let lastError = "unknown";
+
+  for (const method of ["PATCH", "POST"]) {
+    const res = await fetch(url, {
+      method,
       headers: authHeaders,
-      body: JSON.stringify({
-        type: "advanced",
-        hosts: ["vanity.box", "*.vanity.box", "*.*.vanity.box"],
-        validation_method: "txt",
-        validity_days: 365,
-        certificate_authority: "lets_encrypt",
-      }),
+      body: payload,
+    });
+    const json = await parseJsonSafe(res);
+
+    if (res.ok && json?.success !== false) {
+      return "enabled";
     }
-  );
-  const orderJson = await orderRes.json();
-  if (!orderJson.success) {
-    const err = orderJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
-    console.error("Advanced cert order error:", err);
-    return `error: ${err}`;
+
+    lastError = getCloudflareError(json);
+    if (![404, 405].includes(res.status)) {
+      break;
+    }
   }
-  console.log("Advanced certificate ordered for *.*.vanity.box");
-  return "ordered";
+
+  return `error: ${lastError}`;
 }
 
 Deno.serve(async (req) => {
@@ -389,14 +461,17 @@ Deno.serve(async (req) => {
     // === CERT-STATUS ACTION: read-only check of SSL cert coverage ===
     if (action === "cert-status") {
       const status = await getCertStatus(CF_API_TOKEN, ZONE_ID);
+      const message = status.coversWwwWildcard
+        ? "✓ *.*.vanity.box is covered by an active certificate."
+        : status.totalTlsEnabled
+        ? status.missingWwwHostsCount > 0
+          ? `Total TLS is enabled; ${status.missingWwwHostsCount} of ${status.wwwDnsCount} www hostnames are still waiting for certificate issuance.`
+          : "✓ Total TLS is enabled and all current www vanity hostnames are covered."
+        : "⚠ Total TLS is disabled — new www vanity hostnames will not get HTTPS automatically.";
       return new Response(
         JSON.stringify({
           ...status,
-          message: status.coversWwwWildcard
-            ? "✓ *.*.vanity.box covered — www subdomains have HTTPS"
-            : status.totalTlsEnabled
-            ? "Total TLS enabled — per-hostname certs auto-issued for each www CNAME (5-15 min after DNS create)"
-            : "⚠ No *.*.vanity.box cert and Total TLS disabled — www subdomains will fail SSL handshake",
+          message,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -407,14 +482,18 @@ Deno.serve(async (req) => {
     if (action === "sync-quick") {
       const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
       if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
+      const totalTls = await ensureTotalTlsEnabled(CF_API_TOKEN, ZONE_ID);
       const names = await fetchDuneResults(DUNE_API_KEY);
       const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
+      const certStatus = await getCertStatus(CF_API_TOKEN, ZONE_ID);
       return new Response(
         JSON.stringify({
           mode: "quick",
+          totalTls,
+          certStatus,
           namesCount: names.length,
           wwwCnames,
-          message: `Quick sync: ${wwwCnames.created} new www CNAMEs created (${wwwCnames.existed} existed).`,
+          message: `Quick sync: ${wwwCnames.created} new www CNAMEs created (${wwwCnames.existed} existed). Total TLS: ${totalTls}. Missing active certs: ${certStatus.missingWwwHostsCount}.`,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -532,13 +611,9 @@ Deno.serve(async (req) => {
     const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
     console.log("WWW page rule:", wwwStatus);
 
-    // 5. Ensure Advanced Certificate covers *.*.vanity.box for HTTPS on www subdomains
-    const certOrderStatus = await ensureAdvancedCert(CF_API_TOKEN, ZONE_ID);
-    console.log("Advanced cert order:", certOrderStatus);
-
-    // 5b. Read back actual cert status (which hostnames are active)
-    const certStatus = await getCertStatus(CF_API_TOKEN, ZONE_ID);
-    console.log("Cert status:", JSON.stringify({ totalTls: certStatus.totalTlsEnabled, wwwWildcard: certStatus.coversWwwWildcard }));
+    // 5. Ensure Total TLS automation is enabled for proxied www CNAMEs
+    const totalTlsStatus = await ensureTotalTlsEnabled(CF_API_TOKEN, ZONE_ID);
+    console.log("Total TLS:", totalTlsStatus);
 
     // 6. Fetch all vanity names from Dune and create www CNAME records
     const names = await fetchDuneResults(DUNE_API_KEY);
@@ -546,10 +621,20 @@ Deno.serve(async (req) => {
     const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
     console.log("WWW CNAMEs:", JSON.stringify(wwwCnames));
 
-    const sslWarning = !certStatus.coversWwwWildcard && !certStatus.totalTlsEnabled
-      ? " ⚠ WARNING: No *.*.vanity.box cert and Total TLS disabled — www HTTPS will fail!"
+    // 7. Read back actual cert status (which hostnames are active)
+    const certStatus = await getCertStatus(CF_API_TOKEN, ZONE_ID);
+    console.log("Cert status:", JSON.stringify({
+      totalTls: certStatus.totalTlsEnabled,
+      missingWwwHostsCount: certStatus.missingWwwHostsCount,
+      coversWwwWildcard: certStatus.coversWwwWildcard,
+    }));
+
+    const sslWarning = !certStatus.totalTlsEnabled
+      ? " ⚠ WARNING: Total TLS is still disabled, so new www hostnames will not get HTTPS automatically."
+      : certStatus.missingWwwHostsCount > 0
+      ? ` ${certStatus.missingWwwHostsCount} hostnames are still waiting for Cloudflare certificate issuance.`
       : "";
-    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAMEs (${wwwCnames.existed} existed). Cert order: ${certOrderStatus}.${sslWarning}`;
+    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAMEs (${wwwCnames.existed} existed). Total TLS: ${totalTlsStatus}.${sslWarning}`;
 
     return new Response(
       JSON.stringify({
@@ -557,7 +642,7 @@ Deno.serve(async (req) => {
         worker: workerStatus,
         workerRoute: routeStatus,
         wwwRedirectRule: wwwStatus,
-        certOrder: certOrderStatus,
+        totalTls: totalTlsStatus,
         certStatus,
         wwwCnames,
         namesCount: names.length,
