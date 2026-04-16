@@ -175,6 +175,65 @@ Deno.serve(async (req) => {
 
     let body: any = {};
     try { body = await req.json(); } catch { /* no body */ }
+    const action = body?.action || "sync";
+
+    // === CLEANUP ACTION: list/delete old individual DNS records ===
+    if (action === "cleanup") {
+      const dryRun = body?.dryRun !== false;
+      const authHeaders = { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "application/json" };
+      const toDelete: { id: string; name: string; type: string }[] = [];
+      let page = 1;
+      while (true) {
+        const res = await fetch(
+          `${CF_BASE}/zones/${ZONE_ID}/dns_records?per_page=100&page=${page}`,
+          { headers: authHeaders }
+        );
+        if (!res.ok) throw new Error(`CF list error: ${await res.text()}`);
+        const json = await res.json();
+        for (const rec of json.result ?? []) {
+          if (
+            rec.name?.endsWith(".vanity.box") &&
+            rec.name !== "vanity.box" &&
+            rec.name !== "*.vanity.box"
+          ) {
+            toDelete.push({ id: rec.id, name: rec.name, type: rec.type });
+          }
+        }
+        if (page >= (json.result_info?.total_pages ?? 1)) break;
+        page++;
+      }
+      console.log(`Found ${toDelete.length} records to delete`);
+
+      if (dryRun) {
+        return new Response(
+          JSON.stringify({
+            mode: "dry_run",
+            count: toDelete.length,
+            records: toDelete.map(r => `${r.type} ${r.name}`),
+            message: 'Send {"action":"cleanup","dryRun":false} to delete',
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      let deleted = 0;
+      const errors: string[] = [];
+      for (const rec of toDelete) {
+        const res = await fetch(
+          `${CF_BASE}/zones/${ZONE_ID}/dns_records/${rec.id}`,
+          { method: "DELETE", headers: authHeaders }
+        );
+        const json = await res.json();
+        if (json.success) deleted++;
+        else errors.push(`${rec.name}: ${json.errors?.map((e: any) => e.message).join("; ")}`);
+      }
+      return new Response(
+        JSON.stringify({ deleted, errors: errors.length > 0 ? errors : undefined, total: toDelete.length }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // === SYNC ACTION (default) ===
     const singleDomain = body?.domain?.replace(/\.vanity$/i, "").trim().toLowerCase();
 
     // 1. Fetch all domains from Dune
