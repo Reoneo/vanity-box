@@ -114,44 +114,36 @@ async function deployWorker(token: string, accountId: string, script: string): P
   return "deployed";
 }
 
-/** Ensure Worker Routes exist for *.vanity.box/* AND www.*.vanity.box/* */
-async function ensureWorkerRoute(token: string, zoneId: string): Promise<Record<string, string>> {
+/** Ensure Worker Route exists for *.vanity.box/* */
+async function ensureWorkerRoute(token: string, zoneId: string): Promise<string> {
   const WORKER_NAME = "vanity-box-redirect";
-  const PATTERNS = ["*.vanity.box/*", "www.*.vanity.box/*"];
+  const ROUTE_PATTERN = "*.vanity.box/*";
   const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
   const listRes = await fetch(
     `${CF_BASE}/zones/${zoneId}/workers/routes`,
     { headers: authHeaders }
   );
-  const existingPatterns = new Set<string>();
   if (listRes.ok) {
     const listJson = await listRes.json();
-    for (const r of listJson.result ?? []) existingPatterns.add(r.pattern);
+    if ((listJson.result ?? []).find((r: any) => r.pattern === ROUTE_PATTERN)) {
+      return "exists";
+    }
   }
 
-  const results: Record<string, string> = {};
-  for (const pattern of PATTERNS) {
-    if (existingPatterns.has(pattern)) {
-      results[pattern] = "exists";
-      continue;
+  const createRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/workers/routes`,
+    {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ pattern: ROUTE_PATTERN, script: WORKER_NAME }),
     }
-    const createRes = await fetch(
-      `${CF_BASE}/zones/${zoneId}/workers/routes`,
-      {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({ pattern, script: WORKER_NAME }),
-      }
-    );
-    const createJson = await createRes.json();
-    if (!createJson.success) {
-      results[pattern] = `error: ${createJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown"}`;
-    } else {
-      results[pattern] = "created";
-    }
+  );
+  const createJson = await createRes.json();
+  if (!createJson.success) {
+    return `error: ${createJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown"}`;
   }
-  return results;
+  return "created";
 }
 
 /** Ensure a Cloudflare Redirect Rule strips www. from *.vanity.box requests */
