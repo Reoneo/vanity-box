@@ -12,10 +12,29 @@ interface DuneRow {
 }
 
 async function fetchDuneResults(apiKey: string): Promise<string[]> {
-  const res = await fetch(
-    "https://api.dune.com/api/v1/query/7320928/results?limit=1000",
-    { headers: { "X-Dune-API-Key": apiKey } }
-  );
+  // Fetch all rows with pagination
+  const allRows: DuneRow[] = [];
+  let offset = 0;
+  const limit = 1000;
+  while (true) {
+    const res = await fetch(
+      `https://api.dune.com/api/v1/query/7320928/results?limit=${limit}&offset=${offset}`,
+      { headers: { "X-Dune-API-Key": apiKey } }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Dune API error [${res.status}]: ${text}`);
+    }
+    const data = await res.json();
+    const rows: DuneRow[] = data?.result?.rows ?? [];
+    if (rows.length > 0) {
+      console.log(`Dune page offset=${offset}: ${rows.length} rows`);
+    }
+    allRows.push(...rows);
+    if (rows.length < limit) break;
+    offset += limit;
+  }
+  console.log(`Dune total rows: ${allRows.length}`);
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Dune API error [${res.status}]: ${text}`);
