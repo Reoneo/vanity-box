@@ -242,16 +242,16 @@ Deno.serve(async (req) => {
     const workerStatus = await deployWorker(CF_API_TOKEN, ACCOUNT_ID, script);
     console.log("Worker:", workerStatus);
 
-    // 3. Ensure Worker Route
-    const routeStatus = await ensureWorkerRoute(CF_API_TOKEN, ZONE_ID);
-    console.log("Route:", routeStatus);
+    // 3. Ensure Worker Routes (both single and double wildcard)
+    const routeStatus = await ensureWorkerRoutes(CF_API_TOKEN, ZONE_ID);
+    console.log("Routes:", routeStatus);
 
     return new Response(
       JSON.stringify({
         wildcardDns: dnsStatus,
         worker: workerStatus,
-        workerRoute: routeStatus,
-        message: "All *.vanity.box subdomains now redirect to ud.me/{name}.vanity",
+        workerRoutes: routeStatus,
+        message: "All *.vanity.box and www.*.vanity.box subdomains now redirect to ud.me/{name}.vanity",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
