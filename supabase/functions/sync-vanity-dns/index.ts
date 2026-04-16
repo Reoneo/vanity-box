@@ -217,113 +217,70 @@ async function ensureWwwPageRule(token: string, zoneId: string): Promise<string>
   return "created";
 }
 
-/** Check & attempt to enable Total TLS / Advanced Cert for deep subdomains */
-async function checkAndEnableTotalTLS(token: string, zoneId: string): Promise<{
-  status: string;
-  wwwHttpsSupported: boolean;
-  details: string;
-}> {
+/** Create individual www.<name>.vanity.box CNAME records so Total TLS auto-issues certs */
+async function ensureWwwCNAMEs(
+  token: string,
+  zoneId: string,
+  names: string[]
+): Promise<{ created: number; existed: number; errors: string[] }> {
   const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  // 1. Check current Total TLS setting
-  const ttsRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/acm/total_tls`,
-    { headers: authHeaders }
-  );
-  if (ttsRes.ok) {
-    const ttsJson = await ttsRes.json();
-    const enabled = ttsJson.result?.enabled === true;
-    console.log("Total TLS current state:", JSON.stringify(ttsJson.result));
-
-    if (enabled) {
-      return {
-        status: "total_tls_enabled",
-        wwwHttpsSupported: true,
-        details: "Total TLS is active — HTTPS works for www.*.vanity.box",
-      };
-    }
-
-    // Try to enable Total TLS
-    const enableRes = await fetch(
-      `${CF_BASE}/zones/${zoneId}/acm/total_tls`,
-      {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({ enabled: true }),
-      }
+  // Fetch all existing DNS records in the zone that match www.*.vanity.box
+  const existing = new Set<string>();
+  let page = 1;
+  while (true) {
+    const res = await fetch(
+      `${CF_BASE}/zones/${zoneId}/dns_records?per_page=100&page=${page}&type=CNAME`,
+      { headers: authHeaders }
     );
-    const enableJson = await enableRes.json();
-    console.log("Total TLS enable response:", JSON.stringify(enableJson));
-
-    if (enableJson.success && enableJson.result?.enabled) {
-      return {
-        status: "total_tls_just_enabled",
-        wwwHttpsSupported: true,
-        details: "Total TLS was just enabled — HTTPS for www.*.vanity.box will work once certs propagate (a few minutes)",
-      };
-    }
-
-    // If enabling failed, check if it's a plan limitation
-    const errMsg = enableJson.errors?.map((e: any) => e.message).join("; ") || "unknown";
-    console.warn("Total TLS enable failed:", errMsg);
-  } else {
-    console.warn("Total TLS check failed:", ttsRes.status, await ttsRes.text());
-  }
-
-  // 2. Fallback: check if there's an Advanced Certificate covering *.*.vanity.box
-  const certRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs?status=active`,
-    { headers: authHeaders }
-  );
-  if (certRes.ok) {
-    const certJson = await certRes.json();
-    const packs = certJson.result ?? [];
-    for (const pack of packs) {
-      const hosts: string[] = pack.hosts ?? [];
-      if (hosts.some((h: string) => h === "*.*.vanity.box" || h === "*.vanity.box" && pack.type === "advanced")) {
-        return {
-          status: "advanced_cert_found",
-          wwwHttpsSupported: true,
-          details: `Advanced certificate pack covers deep subdomains (pack ${pack.id})`,
-        };
+    if (!res.ok) break;
+    const json = await res.json();
+    for (const rec of json.result ?? []) {
+      if (rec.name?.startsWith("www.") && rec.name?.endsWith(".vanity.box")) {
+        existing.add(rec.name);
       }
     }
+    if (page >= (json.result_info?.total_pages ?? 1)) break;
+    page++;
   }
+  console.log(`Existing www CNAME records: ${existing.size}`);
 
-  // 3. Try ordering an Advanced Certificate if ACM is available
-  const orderRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs/order`,
-    {
-      method: "POST",
-      headers: authHeaders,
-      body: JSON.stringify({
-        type: "advanced",
-        hosts: ["vanity.box", "*.vanity.box", "*.*.vanity.box"],
-        validation_method: "txt",
-        validity_days: 365,
-        certificate_authority: "lets_encrypt",
-      }),
+  let created = 0;
+  let existed = 0;
+  const errors: string[] = [];
+
+  // Process in batches of 20
+  for (let i = 0; i < names.length; i += 20) {
+    const batch = names.slice(i, i + 20);
+    const results = await Promise.all(
+      batch.map(async (name) => {
+        const fqdn = `www.${name}.vanity.box`;
+        if (existing.has(fqdn)) return { name, status: "exists" as const };
+
+        const res = await fetch(`${CF_BASE}/zones/${zoneId}/dns_records`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({
+            type: "CNAME",
+            name: fqdn,
+            content: "vanity.box",
+            ttl: 1,
+            proxied: true,
+          }),
+        });
+        const json = await res.json();
+        if (json.success) return { name, status: "created" as const };
+        const err = json.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
+        return { name, status: "error" as const, error: err };
+      })
+    );
+    for (const r of results) {
+      if (r.status === "exists") existed++;
+      else if (r.status === "created") created++;
+      else errors.push(`${r.name}: ${r.error}`);
     }
-  );
-  const orderJson = await orderRes.json();
-  console.log("ACM order response:", JSON.stringify(orderJson));
-
-  if (orderJson.success) {
-    return {
-      status: "advanced_cert_ordered",
-      wwwHttpsSupported: true,
-      details: `Advanced certificate ordered (pack ${orderJson.result?.id}) — HTTPS for www.*.vanity.box will work once validated`,
-    };
   }
-
-  const orderErr = orderJson.errors?.map((e: any) => e.message).join("; ") || "unknown";
-  return {
-    status: "www_https_unavailable",
-    wwwHttpsSupported: false,
-    details: `Cannot enable deep-subdomain HTTPS: Total TLS and ACM both unavailable. Error: ${orderErr}. ` +
-      `Enable Advanced Certificate Manager in Cloudflare dashboard (SSL/TLS → Edge Certificates → Total TLS) ` +
-      `or upgrade your plan. HTTP www.*.vanity.box redirects work, but HTTPS will fail at TLS handshake.`,
-  };
+  return { created, existed, errors };
 }
 
 Deno.serve(async (req) => {
@@ -360,7 +317,9 @@ Deno.serve(async (req) => {
           if (
             rec.name?.endsWith(".vanity.box") &&
             rec.name !== "vanity.box" &&
-            rec.name !== "*.vanity.box"
+            rec.name !== "*.vanity.box" &&
+            rec.name !== "*.*.vanity.box" &&
+            !rec.name.startsWith("www.")  // preserve www CNAMEs managed by sync
           ) {
             toDelete.push({ id: rec.id, name: rec.name, type: rec.type });
           }
@@ -408,6 +367,9 @@ Deno.serve(async (req) => {
     }
 
     // === SYNC ACTION (default) ===
+    const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
+    if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
+
     // 1. Ensure wildcard DNS record
     const dnsStatus = await ensureWildcardDNS(CF_API_TOKEN, ZONE_ID);
     console.log("Wildcard DNS:", dnsStatus);
@@ -425,13 +387,14 @@ Deno.serve(async (req) => {
     const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
     console.log("WWW page rule:", wwwStatus);
 
-    // 5. Check & enable TLS for deep subdomains (www.*.vanity.box)
-    const tlsStatus = await checkAndEnableTotalTLS(CF_API_TOKEN, ZONE_ID);
-    console.log("TLS status:", JSON.stringify(tlsStatus));
+    // 5. Fetch all vanity names from Dune and create www CNAME records
+    //    so Total TLS auto-issues certs for each www.<name>.vanity.box
+    const names = await fetchDuneResults(DUNE_API_KEY);
+    console.log(`Fetched ${names.length} names from Dune`);
+    const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
+    console.log("WWW CNAMEs:", JSON.stringify(wwwCnames));
 
-    const message = tlsStatus.wwwHttpsSupported
-      ? "All *.vanity.box and www.*.vanity.box subdomains now redirect to ud.me/{name}.vanity (HTTPS included)"
-      : "*.vanity.box redirects work. www.*.vanity.box works over HTTP only — HTTPS requires Advanced Certificate Manager (see tlsCertificate.details)";
+    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAME records (${wwwCnames.existed} existed). Total TLS will auto-issue certs for each.`;
 
     return new Response(
       JSON.stringify({
@@ -439,7 +402,8 @@ Deno.serve(async (req) => {
         worker: workerStatus,
         workerRoute: routeStatus,
         wwwRedirectRule: wwwStatus,
-        tlsCertificate: tlsStatus,
+        wwwCnames,
+        namesCount: names.length,
         message,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
