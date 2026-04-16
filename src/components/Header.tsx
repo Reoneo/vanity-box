@@ -321,18 +321,29 @@ export const Header: React.FC = () => {
             {!showSearchIcon && <SpotifyPauseButton />}
           </div>
 
-          {/* Desktop/Tablet: Centered Logo - NO CLICK */}
+          {/* Desktop/Tablet: Centered Logo */}
           <div className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <div className="relative flex items-center justify-center h-20">
+            <button
+              type="button"
+              onClick={handleLogoSync}
+              disabled={isSyncing}
+              aria-label="Sync vanity domains"
+              title="Click to sync purchased .vanity domains"
+              className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+            >
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                className={cn(
+                  "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
+                  isSyncing && "animate-spin",
+                )}
                 loading="eager"
                 fetchPriority="high"
               />
-            </div>
+            </button>
           </div>
+
 
           {/* Wallet Connection - Right Side */}
           <div className="flex items-center">
