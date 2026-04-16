@@ -15,9 +15,49 @@ import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { isTelegramWebView } from "@/lib/telegram";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const lastSyncClickRef = React.useRef<number>(0);
+
+  const handleLogoSync = async () => {
+    const now = Date.now();
+    if (now - lastSyncClickRef.current < 30_000) {
+      toast.info("Sync recently triggered — wait a moment before retrying.");
+      return;
+    }
+    if (isSyncing) return;
+    lastSyncClickRef.current = now;
+    setIsSyncing(true);
+    const t = toast.loading("Syncing vanity domains from Dune → Cloudflare…");
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-vanity-dns", {
+        body: { action: "sync-quick" },
+      });
+      if (error) throw error;
+      const total = data?.total ?? data?.names?.length ?? 0;
+      const wwwCreated = data?.wwwCnames?.created ?? data?.wwwCreated ?? 0;
+      const apexCreated = data?.cnames?.created ?? data?.apexCreated ?? 0;
+      const missingCerts = data?.cert?.missing ?? data?.missingCerts;
+      const certNote =
+        typeof missingCerts === "number" && missingCerts > 0
+          ? ` · ${missingCerts} awaiting SSL`
+          : "";
+      toast.success(
+        `Synced ${total} names (+${apexCreated} apex, +${wwwCreated} www)${certNote}`,
+        { id: t }
+      );
+    } catch (e: any) {
+      console.error("[logo-sync] error", e);
+      toast.error(e?.message || "Sync failed", { id: t });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
@@ -128,15 +168,26 @@ export const Header: React.FC = () => {
                   isPetraConnected && "animate-[wiggle_0.5s_ease-in-out]",
                 )}
               >
-                <div className="relative flex items-center justify-center h-20">
+                <button
+                  type="button"
+                  onClick={handleLogoSync}
+                  disabled={isSyncing}
+                  aria-label="Sync vanity domains"
+                  title="Click to sync purchased .vanity domains"
+                  className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+                >
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                    className={cn(
+                      "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
+                      isSyncing && "animate-spin",
+                    )}
                     loading="eager"
                     fetchPriority="high"
                   />
-                </div>
+                </button>
+
               </div>
 
               {/* Menu Button */}
@@ -209,18 +260,29 @@ export const Header: React.FC = () => {
                 {!showSearchIcon && <SpotifyPauseButton />}
               </div>
 
-              {/* Centered Logo (Mobile when wallet disconnected) - NO CLICK */}
+              {/* Centered Logo (Mobile when wallet disconnected) */}
               <div className="flex items-center absolute left-1/2 transform -translate-x-1/2 md:hidden">
-                <div className="relative flex items-center justify-center h-20">
+                <button
+                  type="button"
+                  onClick={handleLogoSync}
+                  disabled={isSyncing}
+                  aria-label="Sync vanity domains"
+                  title="Click to sync purchased .vanity domains"
+                  className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+                >
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                    className={cn(
+                      "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
+                      isSyncing && "animate-spin",
+                    )}
                     loading="eager"
                     fetchPriority="high"
                   />
-                </div>
+                </button>
               </div>
+
             </>
           )}
 
@@ -259,18 +321,29 @@ export const Header: React.FC = () => {
             {!showSearchIcon && <SpotifyPauseButton />}
           </div>
 
-          {/* Desktop/Tablet: Centered Logo - NO CLICK */}
+          {/* Desktop/Tablet: Centered Logo */}
           <div className="hidden md:flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <div className="relative flex items-center justify-center h-20">
+            <button
+              type="button"
+              onClick={handleLogoSync}
+              disabled={isSyncing}
+              aria-label="Sync vanity domains"
+              title="Click to sync purchased .vanity domains"
+              className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+            >
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                className={cn(
+                  "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
+                  isSyncing && "animate-spin",
+                )}
                 loading="eager"
                 fetchPriority="high"
               />
-            </div>
+            </button>
           </div>
+
 
           {/* Wallet Connection - Right Side */}
           <div className="flex items-center">
