@@ -22,10 +22,18 @@ async function fetchDuneResults(apiKey: string): Promise<string[]> {
   }
   const data = await res.json();
   const rows: DuneRow[] = data?.result?.rows ?? [];
+  // Debug: log first row to see actual column names
+  if (rows.length > 0) {
+    console.log("Dune first row keys:", Object.keys(rows[0]));
+    console.log("Dune first row:", JSON.stringify(rows[0]));
+  } else {
+    console.log("Dune returned 0 rows");
+  }
   return rows
-    .map((r) => {
-      const raw = r.name || r.domain || r.label || "";
-      return raw.replace(/\.vanity$/i, "").trim().toLowerCase();
+    .map((r: any) => {
+      // Try all possible column names from Dune
+      const raw = r.name || r.domain || r.label || r.token_name || r.tld || r.vanity_name || Object.values(r).find(v => typeof v === 'string' && v.length > 0) || "";
+      return String(raw).replace(/\.vanity$/i, "").trim().toLowerCase();
     })
     .filter((d) => d.length > 0);
 }
