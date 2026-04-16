@@ -57,7 +57,9 @@ function buildWorkerScript(): string {
   return `export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const host = url.hostname.toLowerCase();
+    let host = url.hostname.toLowerCase();
+    // Strip www. prefix so www.build.vanity.box works like build.vanity.box
+    if (host.startsWith("www.")) host = host.slice(4);
     const match = host.match(/^([^.]+)\\.vanity\\.box$/);
     if (!match) return new Response("Not found", { status: 404 });
     const name = match[1];
