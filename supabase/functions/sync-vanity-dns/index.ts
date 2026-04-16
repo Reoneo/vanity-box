@@ -286,9 +286,9 @@ Deno.serve(async (req) => {
     const routeStatus = await ensureWorkerRoute(CF_API_TOKEN, ZONE_ID);
     console.log("Route:", routeStatus);
 
-    // 4. Ensure www redirect rule (www.X.vanity.box → X.vanity.box)
-    const wwwStatus = await ensureWwwRedirectRule(CF_API_TOKEN, ZONE_ID);
-    console.log("WWW redirect rule:", wwwStatus);
+    // 4. Ensure www page rule (www.X.vanity.box → X.vanity.box)
+    const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
+    console.log("WWW page rule:", wwwStatus);
 
     return new Response(
       JSON.stringify({
