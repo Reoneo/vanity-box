@@ -365,6 +365,9 @@ Deno.serve(async (req) => {
     }
 
     // === SYNC ACTION (default) ===
+    const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
+    if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
+
     // 1. Ensure wildcard DNS record
     const dnsStatus = await ensureWildcardDNS(CF_API_TOKEN, ZONE_ID);
     console.log("Wildcard DNS:", dnsStatus);
@@ -382,13 +385,14 @@ Deno.serve(async (req) => {
     const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
     console.log("WWW page rule:", wwwStatus);
 
-    // 5. Check & enable TLS for deep subdomains (www.*.vanity.box)
-    const tlsStatus = await checkAndEnableTotalTLS(CF_API_TOKEN, ZONE_ID);
-    console.log("TLS status:", JSON.stringify(tlsStatus));
+    // 5. Fetch all vanity names from Dune and create www CNAME records
+    //    so Total TLS auto-issues certs for each www.<name>.vanity.box
+    const names = await fetchDuneResults(DUNE_API_KEY);
+    console.log(`Fetched ${names.length} names from Dune`);
+    const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
+    console.log("WWW CNAMEs:", JSON.stringify(wwwCnames));
 
-    const message = tlsStatus.wwwHttpsSupported
-      ? "All *.vanity.box and www.*.vanity.box subdomains now redirect to ud.me/{name}.vanity (HTTPS included)"
-      : "*.vanity.box redirects work. www.*.vanity.box works over HTTP only — HTTPS requires Advanced Certificate Manager (see tlsCertificate.details)";
+    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAME records (${wwwCnames.existed} existed). Total TLS will auto-issue certs for each.`;
 
     return new Response(
       JSON.stringify({
@@ -396,7 +400,8 @@ Deno.serve(async (req) => {
         worker: workerStatus,
         workerRoute: routeStatus,
         wwwRedirectRule: wwwStatus,
-        tlsCertificate: tlsStatus,
+        wwwCnames,
+        namesCount: names.length,
         message,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
