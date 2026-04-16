@@ -283,6 +283,50 @@ async function ensureWwwCNAMEs(
   return { created, existed, errors };
 }
 
+/** Order an Advanced Certificate covering *.*.vanity.box for www subdomain HTTPS */
+async function ensureAdvancedCert(token: string, zoneId: string): Promise<string> {
+  const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+  // Check existing certificate packs
+  const listRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs?status=active`,
+    { headers: authHeaders }
+  );
+  if (listRes.ok) {
+    const listJson = await listRes.json();
+    for (const pack of listJson.result ?? []) {
+      const hosts: string[] = pack.hosts ?? [];
+      if (hosts.includes("*.*.vanity.box")) {
+        return "exists";
+      }
+    }
+  }
+
+  // Order advanced certificate
+  const orderRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/ssl/certificate_packs/order`,
+    {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        type: "advanced",
+        hosts: ["vanity.box", "*.vanity.box", "*.*.vanity.box"],
+        validation_method: "txt",
+        validity_days: 365,
+        certificate_authority: "lets_encrypt",
+      }),
+    }
+  );
+  const orderJson = await orderRes.json();
+  if (!orderJson.success) {
+    const err = orderJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
+    console.error("Advanced cert order error:", err);
+    return `error: ${err}`;
+  }
+  console.log("Advanced certificate ordered for *.*.vanity.box");
+  return "ordered";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -412,14 +456,17 @@ Deno.serve(async (req) => {
     const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
     console.log("WWW page rule:", wwwStatus);
 
-    // 5. Fetch all vanity names from Dune and create www CNAME records
-    //    so Total TLS auto-issues certs for each www.<name>.vanity.box
+    // 5. Ensure Advanced Certificate covers *.*.vanity.box for HTTPS on www subdomains
+    const certStatus = await ensureAdvancedCert(CF_API_TOKEN, ZONE_ID);
+    console.log("Advanced cert:", certStatus);
+
+    // 6. Fetch all vanity names from Dune and create www CNAME records
     const names = await fetchDuneResults(DUNE_API_KEY);
     console.log(`Fetched ${names.length} names from Dune`);
     const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
     console.log("WWW CNAMEs:", JSON.stringify(wwwCnames));
 
-    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAME records (${wwwCnames.existed} existed). Total TLS will auto-issue certs for each.`;
+    const message = `Synced ${names.length} names. Created ${wwwCnames.created} www CNAME records (${wwwCnames.existed} existed). Cert: ${certStatus}.`;
 
     return new Response(
       JSON.stringify({
@@ -427,6 +474,7 @@ Deno.serve(async (req) => {
         worker: workerStatus,
         workerRoute: routeStatus,
         wwwRedirectRule: wwwStatus,
+        advancedCert: certStatus,
         wwwCnames,
         namesCount: names.length,
         message,
