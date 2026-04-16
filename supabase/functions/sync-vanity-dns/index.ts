@@ -227,40 +227,25 @@ Deno.serve(async (req) => {
     }
 
     // === SYNC ACTION (default) ===
-    const singleDomain = body?.domain?.replace(/\.vanity$/i, "").trim().toLowerCase();
-
-    // 1. Fetch all domains from Dune
-    const allDomains = await fetchDuneResults(DUNE_API_KEY);
-    console.log(`Fetched ${allDomains.length} domains from Dune`);
-
-    if (singleDomain && !allDomains.includes(singleDomain)) {
-      return new Response(
-        JSON.stringify({ error: "Domain not found in Dune query", found: false }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // 2. Ensure wildcard DNS record
+    // 1. Ensure wildcard DNS record
     const dnsStatus = await ensureWildcardDNS(CF_API_TOKEN, ZONE_ID);
     console.log("Wildcard DNS:", dnsStatus);
 
-    // 3. Deploy Worker with all domains baked in
-    const script = buildWorkerScript(allDomains);
+    // 2. Deploy Worker (redirects ANY *.vanity.box — no allowlist needed)
+    const script = buildWorkerScript();
     const workerStatus = await deployWorker(CF_API_TOKEN, ACCOUNT_ID, script);
     console.log("Worker:", workerStatus);
 
-    // 4. Ensure Worker Route
+    // 3. Ensure Worker Route
     const routeStatus = await ensureWorkerRoute(CF_API_TOKEN, ZONE_ID);
     console.log("Route:", routeStatus);
 
     return new Response(
       JSON.stringify({
-        total: allDomains.length,
-        domains: singleDomain ? [singleDomain] : allDomains,
         wildcardDns: dnsStatus,
         worker: workerStatus,
         workerRoute: routeStatus,
-        redirectUrl: singleDomain ? `https://ud.me/${singleDomain}.vanity` : undefined,
+        message: "All *.vanity.box subdomains now redirect to ud.me/{name}.vanity",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
