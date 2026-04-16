@@ -28,28 +28,36 @@ async function fetchDuneResults(apiKey: string): Promise<string[]> {
     .filter((d) => d.length > 0);
 }
 
-/** Ensure a wildcard *.vanity.box A record exists (proxied) */
-async function ensureWildcardDNS(token: string, zoneId: string): Promise<string> {
-  const listRes = await fetch(
-    `${CF_BASE}/zones/${zoneId}/dns_records?type=A&name=*.vanity.box`,
-    { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
-  );
-  if (listRes.ok) {
-    const listJson = await listRes.json();
-    const wildcard = (listJson.result ?? []).find((r: any) => r.name === "*.vanity.box");
-    if (wildcard) return "exists";
-  }
+/** Ensure wildcard DNS records exist (proxied) for both *.vanity.box and *.*.vanity.box */
+async function ensureWildcardDNS(token: string, zoneId: string): Promise<Record<string, string>> {
+  const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const wildcards = ["*.vanity.box", "*.*.vanity.box"];
+  const results: Record<string, string> = {};
 
-  const createRes = await fetch(`${CF_BASE}/zones/${zoneId}/dns_records`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ type: "A", name: "*.vanity.box", content: "192.0.2.1", ttl: 1, proxied: true }),
-  });
-  const createJson = await createRes.json();
-  if (!createJson.success) {
-    return `error: ${createJson.errors?.map((e: any) => e.message).join("; ")}`;
+  for (const wc of wildcards) {
+    const listRes = await fetch(
+      `${CF_BASE}/zones/${zoneId}/dns_records?type=A&name=${wc}`,
+      { headers: authHeaders }
+    );
+    if (listRes.ok) {
+      const listJson = await listRes.json();
+      const found = (listJson.result ?? []).find((r: any) => r.name === wc);
+      if (found) { results[wc] = "exists"; continue; }
+    }
+
+    const createRes = await fetch(`${CF_BASE}/zones/${zoneId}/dns_records`, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ type: "A", name: wc, content: "192.0.2.1", ttl: 1, proxied: true }),
+    });
+    const createJson = await createRes.json();
+    if (!createJson.success) {
+      results[wc] = `error: ${createJson.errors?.map((e: any) => e.message).join("; ")}`;
+    } else {
+      results[wc] = "created";
+    }
   }
-  return "created";
+  return results;
 }
 
 /** Build the Cloudflare Worker script — redirects ANY *.vanity.box to ud.me */
@@ -106,41 +114,106 @@ async function deployWorker(token: string, accountId: string, script: string): P
   return "deployed";
 }
 
-/** Ensure a Worker Route exists for *.vanity.box/* */
+/** Ensure Worker Route exists for *.vanity.box/* */
 async function ensureWorkerRoute(token: string, zoneId: string): Promise<string> {
   const WORKER_NAME = "vanity-box-redirect";
   const ROUTE_PATTERN = "*.vanity.box/*";
+  const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  // List existing routes
   const listRes = await fetch(
     `${CF_BASE}/zones/${zoneId}/workers/routes`,
-    { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+    { headers: authHeaders }
   );
   if (listRes.ok) {
     const listJson = await listRes.json();
-    const existing = (listJson.result ?? []).find((r: any) => r.pattern === ROUTE_PATTERN);
-    if (existing) {
-      console.log("Worker route already exists:", existing.id);
+    if ((listJson.result ?? []).find((r: any) => r.pattern === ROUTE_PATTERN)) {
       return "exists";
     }
   }
 
-  // Create route
   const createRes = await fetch(
     `${CF_BASE}/zones/${zoneId}/workers/routes`,
     {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: authHeaders,
       body: JSON.stringify({ pattern: ROUTE_PATTERN, script: WORKER_NAME }),
     }
   );
   const createJson = await createRes.json();
   if (!createJson.success) {
-    const err = createJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
-    console.error("Worker route error:", err);
-    return `error: ${err}`;
+    return `error: ${createJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown"}`;
   }
-  console.log("Worker route created");
+  return "created";
+}
+
+/** Ensure a Cloudflare Redirect Rule strips www. from *.vanity.box requests */
+async function ensureWwwPageRule(token: string, zoneId: string): Promise<string> {
+  const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const RULESET_PHASE = "http_request_dynamic_redirect";
+  const RULE_DESC = "Strip www from vanity.box subdomains";
+  // Free-plan compatible: no regex/matches needed
+  const expression = '(starts_with(http.host, "www.") and ends_with(http.host, ".vanity.box"))';
+
+  const ruleBody = {
+    expression,
+    description: RULE_DESC,
+    action: "redirect",
+    action_parameters: {
+      from_value: {
+        status_code: 301,
+        target_url: {
+          expression: 'concat("https://", substring(http.host, 4), http.request.uri.path)',
+        },
+        preserve_query_string: true,
+      },
+    },
+  };
+
+  // Check existing rulesets for this phase
+  const listRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/rulesets/phases/${RULESET_PHASE}/entrypoint`,
+    { headers: authHeaders }
+  );
+
+  if (listRes.ok) {
+    const listJson = await listRes.json();
+    const rules = listJson.result?.rules ?? [];
+    if (rules.find((r: any) => r.description === RULE_DESC)) return "exists";
+
+    const rulesetId = listJson.result?.id;
+    const updateRes = await fetch(
+      `${CF_BASE}/zones/${zoneId}/rulesets/${rulesetId}`,
+      {
+        method: "PUT",
+        headers: authHeaders,
+        body: JSON.stringify({ rules: [...rules, ruleBody] }),
+      }
+    );
+    const updateJson = await updateRes.json();
+    if (!updateJson.success) {
+      return `error: ${updateJson.errors?.map((e: any) => e.message).join("; ")}`;
+    }
+    return "created";
+  }
+
+  // Create new ruleset
+  const createRes = await fetch(
+    `${CF_BASE}/zones/${zoneId}/rulesets`,
+    {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({
+        name: "Vanity Box Redirects",
+        kind: "zone",
+        phase: RULESET_PHASE,
+        rules: [ruleBody],
+      }),
+    }
+  );
+  const createJson = await createRes.json();
+  if (!createJson.success) {
+    return `error: ${createJson.errors?.map((e: any) => e.message).join("; ")}`;
+  }
   return "created";
 }
 
@@ -240,12 +313,17 @@ Deno.serve(async (req) => {
     const routeStatus = await ensureWorkerRoute(CF_API_TOKEN, ZONE_ID);
     console.log("Route:", routeStatus);
 
+    // 4. Ensure www page rule (www.X.vanity.box → X.vanity.box)
+    const wwwStatus = await ensureWwwPageRule(CF_API_TOKEN, ZONE_ID);
+    console.log("WWW page rule:", wwwStatus);
+
     return new Response(
       JSON.stringify({
         wildcardDns: dnsStatus,
         worker: workerStatus,
         workerRoute: routeStatus,
-        message: "All *.vanity.box subdomains now redirect to ud.me/{name}.vanity",
+        wwwRedirectRule: wwwStatus,
+        message: "All *.vanity.box and www.*.vanity.box subdomains now redirect to ud.me/{name}.vanity",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
