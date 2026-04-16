@@ -190,21 +190,30 @@ Deno.serve(async (req) => {
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       
       if (supabaseKey) {
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        
-        await supabase.from("iota_minted_subdomains").insert({
-          subdomain: cleanSubdomain,
-          full_name: `${cleanSubdomain}.vanity.iota`,
-          wallet_address: walletAddress,
-          mint_tx_digest: txDigest || null,
-          cloudflare_dns_record_id: dnsResult.result?.id || null,
-          cloudflare_page_rule_id: pageRuleResult.result?.id || null,
-        });
-        
-        console.log("[Supabase] Minted subdomain record saved");
+        const insertRes = await fetch(
+          `${supabaseUrl}/rest/v1/iota_minted_subdomains`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({
+              subdomain: cleanSubdomain,
+              full_name: `${cleanSubdomain}.vanity.iota`,
+              wallet_address: walletAddress,
+              mint_tx_digest: txDigest || null,
+              cloudflare_dns_record_id: dnsResult.result?.id || null,
+              cloudflare_page_rule_id: pageRuleResult.result?.id || null,
+            }),
+          }
+        );
+        if (insertRes.ok) console.log("[Supabase] Minted subdomain record saved");
+        else console.error("[Supabase] Insert failed:", insertRes.status, await insertRes.text());
       }
     } catch (dbError) {
-      // Don't fail the request if DB insert fails
       console.error("[Supabase] Failed to save record:", dbError);
     }
 
