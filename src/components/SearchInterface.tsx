@@ -116,7 +116,7 @@ import { makeIotaDisplayProfile } from "@/lib/iota/iotaDisplayProfile";
 import { setLinkedDomain } from "@/lib/messaging/linkDomain";
 import { loadVaultFromStorage } from "@/lib/identity/vault";
 
-import noResultsGif from "@/assets/no-results.gif";
+
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { LoadingProgress } from "@/components/LoadingProgress";
 
