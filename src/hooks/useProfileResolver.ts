@@ -496,10 +496,24 @@ export function useProfileResolver() {
       const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
+      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
+
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
+      // Route 0: Unstoppable Domains (.vanity, .crypto, .x, .nft, etc.) — UD public Profile API
+      if (isUdDomain) {
+        debug.tried.push('unstoppable');
+        const udStart = Date.now();
+        const udProfile = await fetchUnstoppableProfile(normalized);
+        debug.timingsMs.unstoppable = Date.now() - udStart;
+        if (udProfile && !udProfile.notFound) {
+          resolverResult = { ok: true, source: 'web3bio', profile: udProfile };
+        } else {
+          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+        }
+      }
       // Route 1: .iota domains — skip Web3.bio for instant loading
-      if (isIotaDomain) {
+      else if (isIotaDomain) {
         debug.tried.push('iota');
         const iotaStart = Date.now();
         const iotaProfile = await fetchIotaProfile(normalized);
