@@ -2088,15 +2088,22 @@ export const ProfileCard = ({
                             )}
 
                             {nftCategory === 'hyperliquid' && (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {hlNfts.map((nft: any, index: number) => (
-                                  <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                                    <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                      <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  {hlNfts.slice(0, displayLimit).map((nft: any, index: number) => (
+                                    <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                      <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                      {!isDomainLikeCollection(nft.collection) && (
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
+                                {hlNfts.length > displayLimit && (
+                                  <Button onClick={() => setDisplayLimit(d => d + 25)} className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">Load 25 more</Button>
+                                )}
                               </div>
                             )}
                           </div>
