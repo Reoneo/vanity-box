@@ -1080,3 +1080,139 @@ export function IdentityPanel({ iotaName, walletAddress }: IdentityPanelProps) {
     </IdentityProvider>
   );
 }
+
+// ── Sui Wallet Link Section ──
+
+function SuiWalletLinkSection({
+  iotaName,
+  holderDid,
+  linkedVcs,
+  expanded,
+  onToggle,
+  addExternalCredential,
+}: {
+  iotaName: string;
+  holderDid: string;
+  linkedVcs: VerifiableCredential[];
+  expanded: boolean;
+  onToggle: () => void;
+  addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+}) {
+  const [isLinking, setIsLinking] = useState(false);
+  const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const account = useSuiCurrentAccount();
+  const { mutateAsync: connectWallet } = useSuiConnectWallet();
+  const { mutateAsync: disconnectWallet } = useSuiDisconnectWallet();
+  const { mutateAsync: signPersonalMessage } = useSuiSignPersonalMessage();
+  const wallets = useSuiWallets();
+
+  const handleLink = useCallback(async () => {
+    setIsLinking(true);
+    setErrorMsg('');
+    try {
+      // Connect if needed
+      let addr = account?.address;
+      if (!addr) {
+        setStep('connecting');
+        if (!wallets || wallets.length === 0) {
+          throw new Error('No Sui wallet detected. Install Sui Wallet or Suiet to continue.');
+        }
+        const result = await connectWallet({ wallet: wallets[0] });
+        addr = result?.accounts?.[0]?.address;
+        if (!addr) throw new Error('Failed to get Sui address');
+      }
+
+      // Sign nonce message
+      setStep('signing');
+      const timestamp = new Date().toISOString();
+      const message = [
+        'vanity.box wants you to verify your Sui wallet:',
+        addr,
+        '',
+        `Link Sui wallet to IOTA identity ${iotaName}`,
+        '',
+        `DID: ${holderDid}`,
+        'URI: https://vanity.box',
+        `Issued At: ${timestamp}`,
+      ].join('\n');
+
+      const messageBytes = new TextEncoder().encode(message);
+      const sigResult = await signPersonalMessage({ message: messageBytes });
+      const signature = sigResult?.signature || '';
+
+      setStep('issuing');
+      const { data, error } = await supabase.functions.invoke('issue-wallet-vc', {
+        body: { holderDid, address: addr, message, signature, iotaName, chain: 'sui' },
+      });
+      if (error) throw error;
+      const resp = data as any;
+      if (!resp?.vcJwt) throw new Error('Invalid response from credential issuance');
+
+      const newVc: VerifiableCredential = {
+        vcJwt: resp.vcJwt,
+        issuerDid: resp.issuerDid,
+        type: 'SuiWalletOwnershipCredential',
+        issuedAt: resp.issuedAt || new Date().toISOString(),
+        claims: { name: iotaName, chain: 'Sui', address: addr },
+      };
+      await addExternalCredential(newVc);
+      setStep('done');
+      toast.success('Sui wallet linked successfully');
+
+      window.dispatchEvent(new CustomEvent('iota-sui-linked', {
+        detail: { iotaName: iotaName.toLowerCase(), suiAddress: addr },
+      }));
+
+      try { await disconnectWallet(); } catch {}
+    } catch (e: any) {
+      console.error('Sui link error:', e);
+      const msg = e?.message || 'Failed to link Sui wallet';
+      setErrorMsg(msg.includes('reject') || msg.includes('cancel') ? 'Connection was rejected' : msg);
+      setStep('error');
+    } finally {
+      setIsLinking(false);
+    }
+  }, [account, wallets, connectWallet, disconnectWallet, signPersonalMessage, iotaName, holderDid, addExternalCredential]);
+
+  return (
+    <WalletLinkSection
+      label="Link Sui Wallet"
+      subtitle="Connect Sui Wallet or Suiet"
+      icon={<img src={suiLogo} alt="SUI" className="w-4 h-4 flex-shrink-0 rounded-full" />}
+      expanded={expanded}
+      onToggle={onToggle}
+      linkedVcs={linkedVcs}
+      badgeLabel="SUI"
+    >
+      {step === 'done' ? (
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Sui wallet linked</p>
+        </div>
+      ) : step === 'error' ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/30">
+            <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+            <p className="text-xs text-destructive">{errorMsg}</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setStep('idle')} className="w-full">Try Again</Button>
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          onClick={handleLink}
+          disabled={isLinking}
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+        >
+          {isLinking ? (
+            <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {step === 'connecting' ? 'Connecting…' : step === 'signing' ? 'Signing…' : 'Issuing…'}</>
+          ) : (
+            <><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link Sui Wallet</>
+          )}
+        </Button>
+      )}
+    </WalletLinkSection>
+  );
+}
