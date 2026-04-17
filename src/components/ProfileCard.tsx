@@ -2419,19 +2419,66 @@ export const ProfileCard = ({
             {/* NFTs Overlay - Fits within gold borders */}
             {showNftsOverlay && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
-                {/* Floating close button — always closes the NFTs overlay */}
-                <button
-                  onClick={() => {
-                    setShowNftsOverlay(false);
-                    setNftCategory('main');
-                    setExpandedCollection(null);
-                  }}
-                  className="absolute right-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
-                  style={{ top: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}
-                  aria-label="Close NFTs"
+                {/* Header — mirrors Activity overlay style */}
+                <div
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
                 >
-                  <X className="w-4 h-4 text-black" />
-                </button>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+                    {/* Back button when inside a sub-view, otherwise spacer */}
+                    {nftCategory !== 'main' ? (
+                      <button
+                        onClick={() => {
+                          setNftCategory('main');
+                          setExpandedCollection(null);
+                        }}
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                        aria-label="Back to NFT collections"
+                      >
+                        <ChevronDown className="w-4 h-4 text-black rotate-90" />
+                      </button>
+                    ) : (
+                      <div className="w-9" />
+                    )}
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
+                      <h3 className="text-lg font-bold text-black dark:text-white truncate">
+                        {nftCategory === 'main'
+                          ? 'NFTs'
+                          : expandedCollection
+                            ? formatCollectionName(expandedCollection)
+                            : nftCategory === 'poaps'
+                              ? 'POAPs'
+                              : nftCategory === 'magiceden'
+                                ? 'Magic Eden'
+                                : nftCategory === 'hyperliquid'
+                                  ? 'Hyperliquid'
+                                  : nftCategory === 'worldchain'
+                                    ? 'World Chain'
+                                    : nftCategory === 'ensdomains'
+                                      ? 'ENS Domains'
+                                      : nftCategory === 'basenames'
+                                        ? 'Basenames'
+                                        : nftCategory.startsWith('iota:')
+                                          ? formatCollectionName(nftCategory.slice(5))
+                                          : nftCategory.startsWith('ton:')
+                                            ? formatCollectionName(nftCategory.slice(4))
+                                            : 'NFTs'}
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowNftsOverlay(false);
+                        setNftCategory('main');
+                        setExpandedCollection(null);
+                      }}
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      aria-label="Close NFTs"
+                    >
+                      <X className="w-4 h-4 text-black" />
+                    </button>
+                  </div>
+                </div>
 
                 {/* NFTs Content */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
