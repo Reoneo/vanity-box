@@ -19,8 +19,8 @@ import { createNetworkConfig, SuiClientProvider, WalletProvider as SuiWalletProv
 import { JsonRpcHTTPTransport, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
 
 const { networkConfig: suiNetworkConfig } = createNetworkConfig({
-  mainnet: { transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('mainnet') }) },
-  testnet: { transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('testnet') }) },
+  mainnet: { network: 'mainnet', transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('mainnet') }) },
+  testnet: { network: 'testnet', transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('testnet') }) },
 });
 
 // Lazy load SplashCursor for desktop only
