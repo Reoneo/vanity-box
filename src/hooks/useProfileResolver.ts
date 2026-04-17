@@ -392,8 +392,20 @@ const UD_TLDS = [
   '.smart', '.raiin', '.altimist', '.ubu', '.pudgy', '.clay', '.lfg', '.com.cw',
 ];
 
+// Legacy TLDs supported by UD's Resolution Partner API (for unclaimed-but-registered fallback).
+// Newer TLDs like .vanity ONLY live in the Profile API, so the Partner fallback is skipped for them.
+const UD_LEGACY_RESOLUTION_TLDS = [
+  '.crypto', '.x', '.nft', '.wallet', '.bitcoin', '.dao', '.888',
+  '.blockchain', '.zil', '.klever', '.hi', '.kresus', '.polygon',
+  '.anime', '.manga', '.binanceus', '.go',
+];
+
 function isUnstoppableDomain(normalized: string): boolean {
   return UD_TLDS.some((tld) => normalized.endsWith(tld));
+}
+
+function isUdLegacyResolutionTld(normalized: string): boolean {
+  return UD_LEGACY_RESOLUTION_TLDS.some((tld) => normalized.endsWith(tld));
 }
 
 /**
