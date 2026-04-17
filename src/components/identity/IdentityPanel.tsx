@@ -853,16 +853,23 @@ function AptosWalletLinkSection({
     }
   }, [connectAndGetAccount, holderDid, iotaName, addExternalCredential]);
 
-  // Sort: installed first, then by name. Always offer Petra as a fallback option.
+  // Only show social sign-in options: Google and Apple (via Aptos Connect)
   const walletOptions = (() => {
-    const list = [...petra.wallets];
-    if (!list.some((w) => w.name.toLowerCase().includes('petra'))) {
-      list.push({ name: 'Petra', url: 'https://petra.app/', isInstalled: false });
+    const allowed = ['continue with google', 'continue with apple'];
+    const list = petra.wallets.filter((w) =>
+      allowed.includes(w.name.toLowerCase())
+    );
+    // Ensure both options are always shown, even if adapter hasn't surfaced them yet
+    if (!list.some((w) => w.name.toLowerCase() === 'continue with google')) {
+      list.push({ name: 'Continue with Google', isInstalled: true });
     }
-    return list.sort((a, b) => {
-      if (a.isInstalled !== b.isInstalled) return a.isInstalled ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
+    if (!list.some((w) => w.name.toLowerCase() === 'continue with apple')) {
+      list.push({ name: 'Continue with Apple', isInstalled: true });
+    }
+    // Google first, then Apple
+    return list.sort((a, b) =>
+      a.name.toLowerCase() === 'continue with google' ? -1 : 1
+    );
   })();
 
   return (
