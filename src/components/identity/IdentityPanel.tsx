@@ -747,13 +747,14 @@ function AptosWalletLinkSection({
     throw new Error(`${walletName} not detected. Please install it and try again.`);
   }, [petra.wallets, petra.connect, petra.signMessage, petra.disconnect]);
 
-  const handleLinkAptos = useCallback(async () => {
+  const handleLinkAptos = useCallback(async (walletName: string) => {
+    setSelectedWallet(walletName);
     setIsLinking(true);
     setStep('connecting');
     setErrorMsg('');
 
     try {
-      const wallet = await connectAndGetAccount();
+      const wallet = await connectAndGetAccount(walletName);
       const address = normalizeAptosAddress(wallet.address);
 
       setStep('signing');
@@ -779,16 +780,14 @@ function AptosWalletLinkSection({
         nonce,
       });
 
-      // Extract signature from response (shape varies between direct API and adapter)
       const signature = signResult?.signature
         ?? (signResult as any)?.result?.signature
         ?? (typeof signResult === 'string' ? signResult : null);
 
       if (!signature) {
-        throw new Error('Petra returned an empty signature');
+        throw new Error('Wallet returned an empty signature');
       }
 
-      // Verify address match if returned
       const signedAddr = signResult?.address ?? (signResult as any)?.result?.address;
       if (signedAddr && normalizeAptosAddress(signedAddr) !== address) {
         throw new Error('Signed address does not match connected wallet address');
@@ -823,7 +822,7 @@ function AptosWalletLinkSection({
 
         await addExternalCredential(newVc);
         setStep('done');
-        toast.success('Aptos wallet linked successfully');
+        toast.success(`${walletName} linked successfully`);
 
         try {
           await wallet.disconnect();
@@ -836,14 +835,14 @@ function AptosWalletLinkSection({
     } catch (error: any) {
       console.error('Aptos link error:', error);
       const code = String(error?.code ?? '');
-      const msg = error?.message || 'Failed to link Aptos wallet';
+      const msg = error?.message || `Failed to link ${walletName}`;
 
       if (code === '4001' || msg.includes('rejected') || msg.includes('denied')) {
         setErrorMsg('Connection/signature request was rejected');
       } else if (code === '4100') {
-        setErrorMsg('Wallet is not authorized for this site. Please reconnect Petra.');
+        setErrorMsg(`Wallet is not authorized for this site. Please reconnect ${walletName}.`);
       } else if (code === '4000') {
-        setErrorMsg('No Aptos account found in Petra wallet.');
+        setErrorMsg(`No Aptos account found in ${walletName}.`);
       } else {
         setErrorMsg(msg);
       }
