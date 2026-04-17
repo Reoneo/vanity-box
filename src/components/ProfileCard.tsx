@@ -923,6 +923,29 @@ export const ProfileCard = ({
           } catch (e) { console.error('Magic Eden fetch error:', e); }
         }
 
+        // Fetch Hyperliquid (HLN) NFTs + tokens (EVM only) — direct fetch, independent of Web3.bio
+        if (isEvm) {
+          setHlLoading(true);
+          try {
+            const hlRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-hl-tokens', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            });
+            const hlData = await hlRes.json();
+            console.log('Hyperliquid (HLN) response:', { nfts: hlData?.nfts?.length, tokens: hlData?.tokens?.length });
+            if (Array.isArray(hlData?.nfts) && hlData.nfts.length > 0) setHlNfts(hlData.nfts);
+            if (Array.isArray(hlData?.tokens) && hlData.tokens.length > 0) setHlTokens(hlData.tokens);
+          } catch (e) {
+            console.error('Hyperliquid fetch error:', e);
+          } finally {
+            setHlLoading(false);
+          }
+        }
+
         // Fetch ENS Domains from The Graph
         try {
           const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
