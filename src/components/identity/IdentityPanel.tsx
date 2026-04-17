@@ -408,6 +408,37 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   );
 }
 
+// ── Coming Soon Wallet Section (disabled placeholder) ──
+
+function ComingSoonWalletSection({
+  label,
+  subtitle,
+  icon,
+  badgeLabel,
+}: {
+  label: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  badgeLabel: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-muted/5 opacity-60">
+      <div className="w-full flex items-center justify-between px-3 py-2.5 text-left cursor-not-allowed">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {icon}
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{label}</p>
+            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="text-[10px] bg-muted/40 text-muted-foreground border-border">
+          Coming soon
+        </Badge>
+      </div>
+    </div>
+  );
+}
+
 // ── Reusable Expandable Wallet Link Section ──
 
 function WalletLinkSection({
