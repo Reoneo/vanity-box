@@ -2428,32 +2428,31 @@ export const ProfileCard = ({
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-black dark:text-white">
-                        {nftCategory === 'main'
-                          ? 'NFTs'
-                          : nftCategory === 'poaps'
-                            ? 'POAPs'
-                            : nftCategory === 'opensea'
-                              ? 'OpenSea'
-                              : nftCategory === 'magiceden'
-                                ? 'EVM'
-                                : nftCategory === 'worldchain'
-                                  ? 'World Chain'
-                                  : nftCategory === 'ensdomains'
-                                    ? 'ENS Domains'
-                                    : nftCategory === 'basenames'
-                                      ? 'Basenames'
-                                      : nftCategory.startsWith('iota:')
-                                        ? nftCategory.replace('iota:', '')
-                                        : nftCategory.startsWith('ton:')
-                                          ? nftCategory.replace('ton:', '')
-                                          : 'Hyperliquid'}
-                      </h3>
-                      {nftCategory === 'poaps' && (poapTotalCount > 0 || formattedPoaps.length > 0) && (
-                        <span className="text-sm font-medium text-purple-500">
-                          {(poapTotalCount || formattedPoaps.length).toLocaleString()}
-                        </span>
-                      )}
+                      {(() => {
+                        let title = 'NFTs';
+                        let total: number | null = null;
+                        if (nftCategory === 'poaps') { title = 'POAPs'; total = poapTotalCount || formattedPoaps.length; }
+                        else if (nftCategory === 'opensea') {
+                          if (expandedCollection) { title = formatCollectionName(expandedCollection); total = openSeaGroupedNfts[expandedCollection]?.length || 0; }
+                          else { title = 'OpenSea'; total = filteredNfts.length; }
+                        }
+                        else if (nftCategory === 'magiceden') {
+                          if (expandedCollection) { title = formatCollectionName(expandedCollection); total = magicEdenGroupedNfts[expandedCollection]?.length || 0; }
+                          else { title = 'EVM'; total = magicEdenNfts.length; }
+                        }
+                        else if (nftCategory === 'worldchain') { title = 'World Chain'; }
+                        else if (nftCategory === 'ensdomains') { title = 'ENS Domains'; total = ensDomains.length; }
+                        else if (nftCategory === 'basenames') { title = 'Basenames'; total = basenames.length; }
+                        else if (nftCategory === 'hyperliquid') { title = 'Hyperliquid'; total = hlNfts.length; }
+                        else if (nftCategory.startsWith('iota:')) { const c = nftCategory.replace('iota:',''); title = formatCollectionName(c); total = (iotaGroupedNfts[c] || []).length; }
+                        else if (nftCategory.startsWith('ton:')) { const c = nftCategory.replace('ton:',''); title = formatCollectionName(c); total = (tonCollections.find(x=>x.collectionName===c)?.nfts || []).length; }
+                        return (
+                          <>
+                            <h3 className="text-lg font-bold text-black dark:text-white truncate max-w-[40vw]">{title}</h3>
+                            {total !== null && <span className="text-xs font-medium text-muted-foreground">{total.toLocaleString()} NFTs</span>}
+                          </>
+                        );
+                      })()}
                     </div>
                     <button
                       onClick={() => {
