@@ -1653,9 +1653,67 @@ export const ProfileCard = ({
                             <span className="text-sm font-medium">Back</span>
                           </button>
                         )}
-                        <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
-                          {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
-                        </h3>
+                        {(() => {
+                          if (desktopActivePanel !== 'nfts') {
+                            return (
+                              <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
+                                {desktopActivePanel || 'Select a category'}
+                              </h3>
+                            );
+                          }
+                          // NFTs header: dynamic title + total count
+                          let title = 'NFTs';
+                          let total: number | null = null;
+                          if (nftCategory === 'main') {
+                            title = 'NFTs';
+                          } else if (nftCategory === 'poaps') {
+                            title = 'POAPs';
+                            total = poapTotalCount || formattedPoaps.length;
+                          } else if (nftCategory === 'opensea') {
+                            if (expandedCollection) {
+                              title = formatCollectionName(expandedCollection);
+                              total = openSeaGroupedNfts[expandedCollection]?.length || 0;
+                            } else {
+                              title = 'OpenSea';
+                              total = filteredNfts.length;
+                            }
+                          } else if (nftCategory === 'magiceden') {
+                            if (expandedCollection) {
+                              title = formatCollectionName(expandedCollection);
+                              total = magicEdenGroupedNfts[expandedCollection]?.length || 0;
+                            } else {
+                              title = 'EVM';
+                              total = magicEdenNfts.length;
+                            }
+                          } else if (nftCategory === 'hyperliquid') {
+                            title = 'Hyperliquid';
+                            total = hlNfts.length;
+                          } else if (nftCategory === 'worldchain') {
+                            title = 'World Chain';
+                          } else if (nftCategory === 'ensdomains') {
+                            title = 'ENS Domains';
+                            total = ensDomains.length;
+                          } else if (nftCategory === 'basenames') {
+                            title = 'Basenames';
+                            total = basenames.length;
+                          } else if (nftCategory.startsWith('iota:')) {
+                            const col = nftCategory.replace('iota:', '');
+                            title = formatCollectionName(col);
+                            total = (iotaGroupedNfts[col] || []).length;
+                          } else if (nftCategory.startsWith('ton:')) {
+                            const col = nftCategory.replace('ton:', '');
+                            title = formatCollectionName(col);
+                            total = (tonCollections.find(c => c.collectionName === col)?.nfts || []).length;
+                          }
+                          return (
+                            <div className="flex flex-col items-center">
+                              <h3 className="text-xl font-bold text-[#D4AF37] truncate max-w-[60vw]">{title}</h3>
+                              {total !== null && (
+                                <p className="text-xs text-muted-foreground">{total.toLocaleString()} NFTs</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     
