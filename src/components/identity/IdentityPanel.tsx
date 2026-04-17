@@ -74,7 +74,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   // Wallet link section expansion state
-  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | null>(null);
+  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | null>(null);
 
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
@@ -122,6 +122,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const ethVcs = vcList.filter(vc => vc.type === 'EthereumWalletOwnershipCredential');
   const tonVcs = vcList.filter(vc => vc.type === 'TonWalletOwnershipCredential');
   const aptosVcs = vcList.filter(vc => vc.type === 'AptosWalletOwnershipCredential');
+  const suiVcs = vcList.filter(vc => vc.type === 'SuiWalletOwnershipCredential');
 
   if (!isInitialized) {
     return (
@@ -342,12 +343,14 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             badgeLabel="VET"
           />
 
-          {/* Link Sui Wallet — coming soon */}
-          <ComingSoonWalletSection
-            label="Link Sui Wallet"
-            subtitle="Coming soon — Sui & Suiet wallets"
-            icon={<img src={suiLogo} alt="SUI" className="w-4 h-4 flex-shrink-0 rounded-full" />}
-            badgeLabel="SUI"
+          {/* Link Sui Wallet */}
+          <SuiWalletLinkSection
+            iotaName={iotaName}
+            holderDid={holderDid}
+            linkedVcs={suiVcs}
+            expanded={expandedWallet === 'sui'}
+            onToggle={() => setExpandedWallet(expandedWallet === 'sui' ? null : 'sui')}
+            addExternalCredential={addExternalCredential}
           />
 
           {/* Passkey Wallet */}
