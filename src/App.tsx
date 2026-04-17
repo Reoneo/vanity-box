@@ -105,6 +105,26 @@ const AppContent = () => {
 };
 
 const App = () => {
+  return (
+    <ErrorBoundary>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <SuiClientProvider networks={suiNetworkConfig} defaultNetwork="mainnet">
+            <SuiWalletProvider
+              autoConnect={false}
+              preferredWallets={['Nightly', 'Slush', 'Sui Wallet', 'Suiet', 'Phantom']}
+              slushWallet={{
+                name: 'Vanity.box',
+              }}
+            >
+              <AppContent />
+            </SuiWalletProvider>
+          </SuiClientProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
+  );
+};
   const [wcProjectId, setWcProjectId] = useState<string | null>(null);
 
   useEffect(() => {
