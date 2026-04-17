@@ -35,6 +35,8 @@ import type { VerifiableCredential } from '@/types/identity';
 import ethLogoDark from '@/assets/eth-logo-dark.svg';
 import tonIconBlue from '@/assets/ton-icon-blue.png';
 import aptosLogo from '@/assets/aptos-logo.png';
+import suiLogo from '@/assets/sui-logo.png';
+import vechainLogo from '@/assets/vanity-vet-avatar.png';
 
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 
@@ -320,14 +322,32 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             addExternalCredential={addExternalCredential}
           />
 
-          {/* Link Aptos Wallet */}
-          <AptosWalletLinkSection
-            iotaName={iotaName}
-            holderDid={holderDid}
-            linkedVcs={aptosVcs}
-            expanded={expandedWallet === 'aptos'}
-            onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
-            addExternalCredential={addExternalCredential}
+          {/* Link Aptos Wallet — gated on Aptos Connect dappId */}
+          {!!(import.meta.env.VITE_APTOS_CONNECT_DAPP_ID as string | undefined)?.trim() && (
+            <AptosWalletLinkSection
+              iotaName={iotaName}
+              holderDid={holderDid}
+              linkedVcs={aptosVcs}
+              expanded={expandedWallet === 'aptos'}
+              onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
+              addExternalCredential={addExternalCredential}
+            />
+          )}
+
+          {/* Link Vechain Wallet — coming soon */}
+          <ComingSoonWalletSection
+            label="Link Vechain Wallet"
+            subtitle="Coming soon — VeWorld integration"
+            icon={<img src={vechainLogo} alt="VET" className="w-4 h-4 flex-shrink-0 rounded-full" />}
+            badgeLabel="VET"
+          />
+
+          {/* Link Sui Wallet — coming soon */}
+          <ComingSoonWalletSection
+            label="Link Sui Wallet"
+            subtitle="Coming soon — Sui & Suiet wallets"
+            icon={<img src={suiLogo} alt="SUI" className="w-4 h-4 flex-shrink-0 rounded-full" />}
+            badgeLabel="SUI"
           />
 
           {/* Passkey Wallet */}
