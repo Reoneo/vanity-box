@@ -109,7 +109,13 @@ const App = () => {
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <SuiClientProvider networks={suiNetworkConfig} defaultNetwork="mainnet">
-            <SuiWalletProvider autoConnect={false}>
+            <SuiWalletProvider
+              autoConnect={false}
+              preferredWallets={['Nightly', 'Slush', 'Sui Wallet', 'Suiet', 'Phantom']}
+              slushWallet={{
+                name: 'Vanity.box',
+              }}
+            >
               <AppContent />
             </SuiWalletProvider>
           </SuiClientProvider>
