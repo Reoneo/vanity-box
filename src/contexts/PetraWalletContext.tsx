@@ -3,6 +3,7 @@ import {
   AptosWalletAdapterProvider,
   useWallet,
 } from '@aptos-labs/wallet-adapter-react';
+import { Network } from '@aptos-labs/ts-sdk';
 
 // Re-export the adapter's useWallet as our context value
 export interface AptosAdapterWallet {
@@ -84,16 +85,16 @@ function PetraWalletBridge({ children }: { children: React.ReactNode }) {
 }
 
 export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const dappId = (import.meta.env.VITE_APTOS_CONNECT_DAPP_ID as string | undefined)?.trim();
+  const dappConfig: any = {
+    network: Network.MAINNET,
+    ...(dappId ? { aptosConnect: { dappId } } : {}),
+  };
   return (
     <AptosWalletAdapterProvider
       autoConnect={false}
       optInWallets={['Continue with Google', 'Continue with Apple'] as any}
-      dappConfig={{
-        network: 'mainnet' as any,
-        aptosConnect: {
-          dappId: 'vanity-box',
-        },
-      }}
+      dappConfig={dappConfig}
       onError={(error) => console.error('Aptos wallet adapter error:', error)}
     >
       <PetraWalletBridge>{children}</PetraWalletBridge>

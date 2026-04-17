@@ -854,18 +854,12 @@ function AptosWalletLinkSection({
   }, [connectAndGetAccount, holderDid, iotaName, addExternalCredential]);
 
   // Only show social sign-in options: Google and Apple (via Aptos Connect)
+  const aptosConnectConfigured = !!(import.meta.env.VITE_APTOS_CONNECT_DAPP_ID as string | undefined)?.trim();
   const walletOptions = (() => {
     const allowed = ['continue with google', 'continue with apple'];
     const list = petra.wallets.filter((w) =>
       allowed.includes(w.name.toLowerCase())
     );
-    // Ensure both options are always shown, even if adapter hasn't surfaced them yet
-    if (!list.some((w) => w.name.toLowerCase() === 'continue with google')) {
-      list.push({ name: 'Continue with Google', isInstalled: true });
-    }
-    if (!list.some((w) => w.name.toLowerCase() === 'continue with apple')) {
-      list.push({ name: 'Continue with Apple', isInstalled: true });
-    }
     // Google first, then Apple
     return list.sort((a, b) =>
       a.name.toLowerCase() === 'continue with google' ? -1 : 1
@@ -904,6 +898,13 @@ function AptosWalletLinkSection({
             {step === 'connecting' ? `Connecting to ${selectedWallet}…`
               : step === 'signing' ? `Awaiting signature from ${selectedWallet}…`
               : 'Issuing credential…'}
+          </p>
+        </div>
+      ) : !aptosConnectConfigured || walletOptions.length === 0 ? (
+        <div className="flex items-start gap-2 p-2.5 rounded-lg bg-muted/40 border border-border">
+          <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground">
+            Aptos Connect (Google / Apple sign-in) is not configured. Add <code className="font-mono">VITE_APTOS_CONNECT_DAPP_ID</code> to enable it.
           </p>
         </div>
       ) : (
