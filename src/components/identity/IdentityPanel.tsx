@@ -854,18 +854,12 @@ function AptosWalletLinkSection({
   }, [connectAndGetAccount, holderDid, iotaName, addExternalCredential]);
 
   // Only show social sign-in options: Google and Apple (via Aptos Connect)
+  const aptosConnectConfigured = !!(import.meta.env.VITE_APTOS_CONNECT_DAPP_ID as string | undefined)?.trim();
   const walletOptions = (() => {
     const allowed = ['continue with google', 'continue with apple'];
     const list = petra.wallets.filter((w) =>
       allowed.includes(w.name.toLowerCase())
     );
-    // Ensure both options are always shown, even if adapter hasn't surfaced them yet
-    if (!list.some((w) => w.name.toLowerCase() === 'continue with google')) {
-      list.push({ name: 'Continue with Google', isInstalled: true });
-    }
-    if (!list.some((w) => w.name.toLowerCase() === 'continue with apple')) {
-      list.push({ name: 'Continue with Apple', isInstalled: true });
-    }
     // Google first, then Apple
     return list.sort((a, b) =>
       a.name.toLowerCase() === 'continue with google' ? -1 : 1
