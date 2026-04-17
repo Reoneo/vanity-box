@@ -1,51 +1,86 @@
 
-## Problem
 
-Clicking "Continue with Google" or "Continue with Apple" on the Aptos linking section opens `https://web.petra.app/prompt/` and stalls. The Aptos Connect (keyless) flow is misconfigured.
+## Plan
 
-## Root cause
+### 1. NFT collection headers — replace "OpenSea" header with collection name + total count
 
-In `src/contexts/PetraWalletContext.tsx`:
+In `src/components/ProfileCard.tsx` (desktop NFT panel header, ~line 1644):
+- When `nftCategory === 'opensea' | 'magiceden'` AND `expandedCollection` is set, the header should show the **collection name** (formatted) instead of `"NFTs"`.
+- Show total count as `"{n} NFTs"` (no cap, no "items").
+- Apply same treatment to all sub-categories: `poaps`, `worldchain`, `hyperliquid`, `ensdomains`, `basenames`, `iota:*`, `ton:*`, `magiceden`. The header text becomes the collection name; subtitle below or inline shows total count.
 
-```ts
-dappConfig={{
-  network: 'mainnet' as any,                  // ❌ string, not Network enum
-  aptosConnect: { dappId: 'vanity-box' },     // ❌ not a real registered dappId
-}}
+### 2. Pagination — show 25, "Load more" button, no 1000 cap
+
+- Add local state `displayLimit` (default 25) per category in `ProfileCard.tsx`. Reset on `expandedCollection` change.
+- All grid renders (`opensea`, `magiceden`, `hyperliquid`, `ensdomains`, `basenames`, `iota:*`, `ton:*`, `worldchain`) slice items to `displayLimit` and render a `"Load 25 more"` button at the bottom when `total > displayLimit`.
+- **Edge function `supabase/functions/get-opensea-nfts/index.ts`**: raise `MAX_TOTAL_NFTS` from `1000` → `Number.MAX_SAFE_INTEGER` (effectively uncapped) and `MAX_PAGES_PER_CHAIN` from `10` → `100` so all NFTs are fetched. Total count returned is then accurate.
+
+### 3. Remove NFT titles from domain thumbnails
+
+In `ProfileCard.tsx` opensea/magiceden grid (~line 1955, 1986):
+- Detect domain-like NFTs via `isDomainLike(nft.collection)` (reuse existing helper).
+- When domain-like, drop the `<div className="absolute inset-x-0 bottom-0 ...">` overlay so the image renders edge-to-edge with no name caption.
+- Same treatment for `ensdomains` and `basenames` grids: remove the `<p>{domain.name}</p>` caption.
+
+### 4. Add real Sui wallet linking section
+
+**Dependencies (auto-added on first build):**
 ```
+@mysten/dapp-kit @mysten/sui @tanstack/react-query
+```
+(`@tanstack/react-query` is already installed.)
 
-The `AptosConnectGoogleWallet` / `AptosConnectAppleWallet` plugins (auto-injected by `@aptos-labs/wallet-adapter-core` when `dappConfig` is present) **require**:
-1. A real `Network` enum value imported from `@aptos-labs/ts-sdk` (not the string `'mainnet'`).
-2. A valid `dappId` (UUID) registered at the Aptos Connect dashboard (https://aptosconnect.app). Without it, the keyless OAuth redirect fails and the adapter falls back to a generic Petra prompt URL.
+**`src/main.tsx`** — wrap with Sui providers:
+```tsx
+import '@mysten/dapp-kit/dist/index.css';
+import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
+import { getFullnodeUrl } from '@mysten/sui/client';
 
-Additionally, in `src/components/identity/IdentityPanel.tsx`, when the adapter doesn't surface Google/Apple options, we **stub** them with `isInstalled: true`. That stub then triggers `petra.connect('Continue with Google')` against a wallet name the adapter doesn't know — which currently leaks into the Petra mobile redirect path.
+const { networkConfig } = createNetworkConfig({
+  mainnet: { url: getFullnodeUrl('mainnet') },
+  testnet: { url: getFullnodeUrl('testnet') },
+});
+```
+Wrap inside the existing `QueryClientProvider`:
+```tsx
+<SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">
+  <WalletProvider autoConnect={false}>
+    <App />
+  </WalletProvider>
+</SuiClientProvider>
+```
+The provided snippet in the user message is correct in shape. Adjusted minor details:
+- `WalletProvider` accepts `autoConnect={false}` to keep wallet idle until user opts in.
+- Providers nest **inside** `QueryClientProvider` (already exists in `App.tsx`) — so we mount Sui providers in `App.tsx` between `QueryClientProvider` and `AppContent`, not in `main.tsx`, to align with the project's provider layout.
 
-## Fix plan
+**`src/components/identity/IdentityPanel.tsx`**:
+- Replace the `ComingSoonWalletSection` for Sui with a new `SuiWalletLinkSection` mirroring `TonWalletLinkSection`:
+  - Uses `useCurrentAccount`, `useConnectWallet`, `useWallets`, `useSignPersonalMessage` from `@mysten/dapp-kit`.
+  - Flow: connect → sign nonce message → call `callEdge('issue-wallet-vc', { chain: 'sui', address, signature, message, holderDid, iotaName })` → store as `SuiWalletOwnershipCredential` VC.
+  - On link, write `linked_sui_address` to `iota_wallet_links` table for downstream NFT/token/activity fetches.
+- Vechain section stays as `ComingSoonWalletSection` for now.
 
-### 1. `src/contexts/PetraWalletContext.tsx`
-- Import `Network` from `@aptos-labs/ts-sdk`.
-- Use `network: Network.MAINNET`.
-- Replace the placeholder `dappId` with a real Aptos Connect dappId. Until the user registers one, fall back gracefully:
-  - Read from `import.meta.env.VITE_APTOS_CONNECT_DAPP_ID`.
-  - If absent, **omit** the `aptosConnect` block entirely so the adapter doesn't half-initialize broken keyless wallets.
-- Keep `optInWallets={['Continue with Google', 'Continue with Apple']}`.
+**Sui asset display (NFTs/Tokens/Activity)**:
+- New edge functions `get-sui-nfts`, `get-sui-tokens`, `get-sui-transactions` calling Sui fullnode RPC (`suix_getOwnedObjects`, `suix_getAllBalances`, `suix_queryTransactionBlocks`).
+- New hook `useSuiAssets(suiAddress)` in `src/hooks/`.
+- In `ProfileCard.tsx`, add a Sui NFT category button (gradient: Sui cyan `#4DA2FF`) and Sui tokens merged into portfolio list, mirroring TON integration.
 
-### 2. `src/components/identity/IdentityPanel.tsx`
-- Stop stubbing missing Google/Apple wallet entries. Only render the actual wallets exposed by `petra.wallets`.
-- If neither is present (no dappId configured), show an inline notice:  
-  *"Aptos Connect (Google / Apple sign-in) is not configured. Add `VITE_APTOS_CONNECT_DAPP_ID` to enable it."*
-- This prevents the broken Petra prompt redirect entirely.
+### 5. Hyperliquid OpenSea collection visibility
 
-### 3. Need from the user
-A real Aptos Connect `dappId`. To obtain one:
-1. Go to https://aptosconnect.app and register the dapp (`vanity.box`, redirect URLs: `https://vanity.box`, `https://www.vanity.box`, `https://*.lovable.app`).
-2. Copy the issued dappId UUID.
-3. Add it as `VITE_APTOS_CONNECT_DAPP_ID` in project env.
+The user's HL OpenSea collection is fetched by `get-opensea-nfts` (already covers Arbitrum/Base). Currently it's bucketed as just another OpenSea collection. With change #1 (per-collection top-level buttons — already in place from last task) it will appear. Two reinforcements:
+- Confirm the OpenSea edge function returns the collection regardless of name (no filter) — already true except for POAP v2.
+- After the fetch, log `console.log('OpenSea collections:', Object.keys(openSeaGroupedNfts))` to verify in console (temporary debug log left in place during this fix).
+
+If after lifting the cap (change #2) the HL collection still doesn't appear, the issue is upstream OpenSea returning it under a chain we don't query. We will then add `"hyperevm"` to the `chains` array in the edge function as a follow-up if OpenSea ever supports it.
 
 ## Files touched
-- `src/contexts/PetraWalletContext.tsx` — fix dappConfig
-- `src/components/identity/IdentityPanel.tsx` — remove stubbed wallet entries, add config-missing notice
+- `src/components/ProfileCard.tsx` — header rename, per-category pagination state + load-more, drop domain captions
+- `supabase/functions/get-opensea-nfts/index.ts` — uncap MAX_TOTAL_NFTS / MAX_PAGES_PER_CHAIN
+- `src/App.tsx` — add `SuiClientProvider` + `WalletProvider`
+- `src/components/identity/IdentityPanel.tsx` — replace Sui placeholder with real `SuiWalletLinkSection`
+- `src/hooks/useSuiAssets.ts` — new
+- `supabase/functions/get-sui-nfts/index.ts` — new
+- `supabase/functions/get-sui-tokens/index.ts` — new
+- `supabase/functions/get-sui-transactions/index.ts` — new
+- `src/integrations/supabase/types.ts` — extend `iota_wallet_links` with `linked_sui_address` (migration required)
 
-## Question for you
-
-Before I implement, do you already have an Aptos Connect dappId registered, or should I ship the fix with the graceful "not configured" notice so you can register one and add the env var afterward?
