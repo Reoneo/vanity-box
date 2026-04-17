@@ -14,6 +14,12 @@ const isValidEvmAddress = (address?: string): boolean => {
   if (!address) return false;
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 };
+
+// Detect domain-like collection names (so we can hide title overlays on the thumbnails)
+const isDomainLikeCollection = (name?: string): boolean => {
+  const n = (name || '').toLowerCase();
+  return /domain|name|\.eth|\.box|ens|basenam|\.iota/.test(n);
+};
 import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
