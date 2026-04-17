@@ -900,6 +900,13 @@ function AptosWalletLinkSection({
               : 'Issuing credential…'}
           </p>
         </div>
+      ) : !aptosConnectConfigured || walletOptions.length === 0 ? (
+        <div className="flex items-start gap-2 p-2.5 rounded-lg bg-muted/40 border border-border">
+          <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground">
+            Aptos Connect (Google / Apple sign-in) is not configured. Add <code className="font-mono">VITE_APTOS_CONNECT_DAPP_ID</code> to enable it.
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-1.5">
           {walletOptions.map((w) => (
