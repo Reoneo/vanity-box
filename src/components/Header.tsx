@@ -25,34 +25,16 @@ export const Header: React.FC = () => {
 
   const handleLogoSync = async () => {
     const now = Date.now();
-    if (now - lastSyncClickRef.current < 30_000) {
-      toast.info("Sync recently triggered — wait a moment before retrying.");
-      return;
-    }
+    if (now - lastSyncClickRef.current < 30_000) return;
     if (isSyncing) return;
     lastSyncClickRef.current = now;
     setIsSyncing(true);
-    const t = toast.loading("Syncing vanity domains from Dune → Cloudflare…");
     try {
-      const { data, error } = await supabase.functions.invoke("sync-vanity-dns", {
+      await supabase.functions.invoke("sync-vanity-dns", {
         body: { action: "sync-quick" },
       });
-      if (error) throw error;
-      const total = data?.total ?? data?.names?.length ?? 0;
-      const wwwCreated = data?.wwwCnames?.created ?? data?.wwwCreated ?? 0;
-      const apexCreated = data?.cnames?.created ?? data?.apexCreated ?? 0;
-      const missingCerts = data?.cert?.missing ?? data?.missingCerts;
-      const certNote =
-        typeof missingCerts === "number" && missingCerts > 0
-          ? ` · ${missingCerts} awaiting SSL`
-          : "";
-      toast.success(
-        `Synced ${total} names (+${apexCreated} apex, +${wwwCreated} www)${certNote}`,
-        { id: t }
-      );
-    } catch (e: any) {
+    } catch (e) {
       console.error("[logo-sync] error", e);
-      toast.error(e?.message || "Sync failed", { id: t });
     } finally {
       setIsSyncing(false);
     }
@@ -171,18 +153,13 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleLogoSync}
-                  disabled={isSyncing}
-                  aria-label="Sync vanity domains"
-                  title="Click to sync purchased .vanity domains"
-                  className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+                  aria-label="Vanity.box"
+                  className="relative flex items-center justify-center h-20 bg-transparent"
                 >
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className={cn(
-                      "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
-                      isSyncing && "animate-spin",
-                    )}
+                    className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -265,18 +242,13 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleLogoSync}
-                  disabled={isSyncing}
-                  aria-label="Sync vanity domains"
-                  title="Click to sync purchased .vanity domains"
-                  className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+                  aria-label="Vanity.box"
+                  className="relative flex items-center justify-center h-20 bg-transparent"
                 >
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className={cn(
-                      "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
-                      isSyncing && "animate-spin",
-                    )}
+                    className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -326,18 +298,13 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={handleLogoSync}
-              disabled={isSyncing}
-              aria-label="Sync vanity domains"
-              title="Click to sync purchased .vanity domains"
-              className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+              aria-label="Vanity.box"
+              className="relative flex items-center justify-center h-20 bg-transparent"
             >
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className={cn(
-                  "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
-                  isSyncing && "animate-spin",
-                )}
+                className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
                 loading="eager"
                 fetchPriority="high"
               />
