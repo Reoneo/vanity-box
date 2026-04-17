@@ -219,6 +219,7 @@ export const ProfileCard = ({
   const [selectedNft, setSelectedNft] = useState<any>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
+  const [displayLimit, setDisplayLimit] = useState<number>(25);
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
