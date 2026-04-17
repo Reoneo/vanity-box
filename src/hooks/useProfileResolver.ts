@@ -520,9 +520,9 @@ export function useProfileResolver() {
         debug.timingsMs.unstoppable = Date.now() - udStart;
         if (udProfile && !udProfile.notFound) {
           resolverResult = { ok: true, source: 'web3bio', profile: udProfile };
-        } else {
+        } else if (isUdLegacyResolutionTld(normalized)) {
           // Fallback: UD authoritative resolve via resolve-profile edge function (UD Partner API).
-          // Handles registered-but-unclaimed domains where the public Profile API returns 404.
+          // Only for legacy TLDs (.crypto/.x/.nft/etc.) — newer TLDs like .vanity aren't supported there.
           debug.tried.push('ud-resolve');
           const udResolveStart = Date.now();
           try {
@@ -540,6 +540,9 @@ export function useProfileResolver() {
             console.error('❌ UD edge resolve error:', e?.message || e);
             resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
           }
+        } else {
+          // Newer UD TLDs (.vanity, etc.): public Profile API is authoritative — domain genuinely not registered.
+          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
         }
       }
       // Route 1: .iota domains — skip Web3.bio for instant loading
