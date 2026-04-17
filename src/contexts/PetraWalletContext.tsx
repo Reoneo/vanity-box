@@ -46,8 +46,14 @@ function PetraWalletBridge({ children }: { children: React.ReactNode }) {
       : null,
     isConnected: wallet.connected,
     isInstalled: wallet.wallets.some(
-      (w) => w.name.toLowerCase().includes('petra') && ('readyState' in w ? (w as any).readyState === 'Installed' : true)
+      (w) => 'readyState' in w ? (w as any).readyState === 'Installed' : true
     ),
+    wallets: wallet.wallets.map((w: any) => ({
+      name: w.name,
+      icon: w.icon,
+      url: w.url,
+      isInstalled: 'readyState' in w ? w.readyState === 'Installed' : true,
+    })),
     connect: async (walletName?: string) => {
       const name = walletName ?? 'Petra';
       await wallet.connect(name as any);
