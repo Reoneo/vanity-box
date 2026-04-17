@@ -1156,6 +1156,20 @@ export const ProfileCard = ({
     );
   }, [filteredNfts]);
 
+  // Promoted top-level OpenSea collection buttons — domain-like collections first
+  const openSeaTopLevelEntries = useMemo<[string, any[]][]>(() => {
+    const isDomainLike = (name: string) => {
+      const n = (name || '').toLowerCase();
+      return /domain|name|\.eth|\.box|ens|basenam/.test(n);
+    };
+    return Object.entries(openSeaGroupedNfts).sort(([a, aArr], [b, bArr]) => {
+      const aDom = isDomainLike(a) ? 0 : 1;
+      const bDom = isDomainLike(b) ? 0 : 1;
+      if (aDom !== bDom) return aDom - bDom;
+      return bArr.length - aArr.length;
+    });
+  }, [openSeaGroupedNfts]);
+
   // Group Magic Eden NFTs by collection
   const magicEdenGroupedNfts = useMemo(() => {
     const groups: Record<string, any[]> = {};
