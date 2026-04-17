@@ -2277,15 +2277,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: false,
                   }] : []),
-                  // Messages icon
-                  {
+                  // Messages icon — only for users connected with a .iota subdomain
+                  ...(connectedUsername && isIotaName(connectedUsername) ? [{
                     icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Messages',
                     onClick: () => {
                       navigate('/messages');
                     },
                     isActive: false,
-                  },
+                  }] : []),
                   // Search icon on far right
                   {
                     icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
