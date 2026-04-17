@@ -438,22 +438,30 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
   const maticAddr = verifications.find((v) => v.symbol === 'MATIC')?.address;
   const address = ethAddr || maticAddr || data.metadata?.owner || null;
 
-  // Normalize social links (UD only returns location/handle when set)
+  // Normalize social links from socialAccounts AND records (UD stores in either)
   const sa = data.socialAccounts || {};
+  const records = data.records || {};
   const links: Record<string, any> = {};
-  const addLink = (platform: string, builder: (h: string) => string) => {
-    const handle = sa[platform]?.location;
+  const addLink = (platform: string, recordKeys: string[], builder: (h: string) => string) => {
+    let handle = sa[platform]?.location;
+    if (!handle || typeof handle !== 'string' || !handle.trim()) {
+      for (const key of recordKeys) {
+        const v = records[key];
+        if (v && typeof v === 'string' && v.trim()) { handle = v; break; }
+      }
+    }
     if (handle && typeof handle === 'string' && handle.trim()) {
-      links[platform] = { link: builder(handle), handle };
+      links[platform] = { link: builder(handle.trim()), handle: handle.trim() };
     }
   };
-  addLink('twitter', (h) => `https://twitter.com/${h.replace(/^@/, '')}`);
-  addLink('github', (h) => `https://github.com/${h.replace(/^@/, '')}`);
-  addLink('telegram', (h) => `https://t.me/${h.replace(/^@/, '')}`);
-  addLink('discord', (h) => h);
-  addLink('reddit', (h) => `https://reddit.com/user/${h.replace(/^@/, '')}`);
-  addLink('linkedin', (h) => h.startsWith('http') ? h : `https://linkedin.com/in/${h}`);
-  addLink('youtube', (h) => h.startsWith('http') ? h : `https://youtube.com/@${h.replace(/^@/, '')}`);
+  addLink('twitter', ['social.twitter.username'], (h) => `https://twitter.com/${h.replace(/^@/, '')}`);
+  addLink('github', ['social.github.username'], (h) => `https://github.com/${h.replace(/^@/, '')}`);
+  addLink('telegram', ['social.telegram.username'], (h) => `https://t.me/${h.replace(/^@/, '')}`);
+  addLink('discord', ['social.discord.username'], (h) => h);
+  addLink('reddit', ['social.reddit.username'], (h) => `https://reddit.com/user/${h.replace(/^@/, '')}`);
+  addLink('linkedin', ['social.linkedin.username'], (h) => h.startsWith('http') ? h : `https://linkedin.com/in/${h}`);
+  addLink('youtube', ['social.youtube.channel', 'social.youtube.username'], (h) => h.startsWith('http') ? h : `https://youtube.com/@${h.replace(/^@/, '')}`);
+  addLink('instagram', ['social.instagram.username'], (h) => `https://instagram.com/${h.replace(/^@/, '')}`);
 
   const profile = data.profile || {};
   const avatar = profile.imagePath || null;
