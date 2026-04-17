@@ -2999,9 +2999,6 @@ export const ProfileCard = ({
                                   {nft.name?.charAt(0)?.toUpperCase() || 'T'}
                                 </div>
                               )}
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{nft.name || 'TON NFT'}</p>
-                              </div>
                             </div>
                           ))}
                         </div>
