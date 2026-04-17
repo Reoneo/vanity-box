@@ -35,6 +35,8 @@ import type { VerifiableCredential } from '@/types/identity';
 import ethLogoDark from '@/assets/eth-logo-dark.svg';
 import tonIconBlue from '@/assets/ton-icon-blue.png';
 import aptosLogo from '@/assets/aptos-logo.png';
+import suiLogo from '@/assets/sui-logo.png';
+import vechainLogo from '@/assets/vanity-vet-avatar.png';
 
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 
@@ -320,14 +322,32 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             addExternalCredential={addExternalCredential}
           />
 
-          {/* Link Aptos Wallet */}
-          <AptosWalletLinkSection
-            iotaName={iotaName}
-            holderDid={holderDid}
-            linkedVcs={aptosVcs}
-            expanded={expandedWallet === 'aptos'}
-            onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
-            addExternalCredential={addExternalCredential}
+          {/* Link Aptos Wallet — gated on Aptos Connect dappId */}
+          {!!(import.meta.env.VITE_APTOS_CONNECT_DAPP_ID as string | undefined)?.trim() && (
+            <AptosWalletLinkSection
+              iotaName={iotaName}
+              holderDid={holderDid}
+              linkedVcs={aptosVcs}
+              expanded={expandedWallet === 'aptos'}
+              onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
+              addExternalCredential={addExternalCredential}
+            />
+          )}
+
+          {/* Link Vechain Wallet — coming soon */}
+          <ComingSoonWalletSection
+            label="Link Vechain Wallet"
+            subtitle="Coming soon — VeWorld integration"
+            icon={<img src={vechainLogo} alt="VET" className="w-4 h-4 flex-shrink-0 rounded-full" />}
+            badgeLabel="VET"
+          />
+
+          {/* Link Sui Wallet — coming soon */}
+          <ComingSoonWalletSection
+            label="Link Sui Wallet"
+            subtitle="Coming soon — Sui & Suiet wallets"
+            icon={<img src={suiLogo} alt="SUI" className="w-4 h-4 flex-shrink-0 rounded-full" />}
+            badgeLabel="SUI"
           />
 
           {/* Passkey Wallet */}
@@ -384,6 +404,37 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         onClose={() => setShowPasskeyModal(false)}
         walletAddress={iotaName}
       />
+    </div>
+  );
+}
+
+// ── Coming Soon Wallet Section (disabled placeholder) ──
+
+function ComingSoonWalletSection({
+  label,
+  subtitle,
+  icon,
+  badgeLabel,
+}: {
+  label: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  badgeLabel: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-muted/5 opacity-60">
+      <div className="w-full flex items-center justify-between px-3 py-2.5 text-left cursor-not-allowed">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {icon}
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{label}</p>
+            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="text-[10px] bg-muted/40 text-muted-foreground border-border">
+          Coming soon
+        </Badge>
+      </div>
     </div>
   );
 }

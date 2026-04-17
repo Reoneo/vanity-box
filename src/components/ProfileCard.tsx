@@ -923,6 +923,29 @@ export const ProfileCard = ({
           } catch (e) { console.error('Magic Eden fetch error:', e); }
         }
 
+        // Fetch Hyperliquid (HLN) NFTs + tokens (EVM only) — direct fetch, independent of Web3.bio
+        if (isEvm) {
+          setHlLoading(true);
+          try {
+            const hlRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-hl-tokens', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+            });
+            const hlData = await hlRes.json();
+            console.log('Hyperliquid (HLN) response:', { nfts: hlData?.nfts?.length, tokens: hlData?.tokens?.length });
+            if (Array.isArray(hlData?.nfts) && hlData.nfts.length > 0) setHlNfts(hlData.nfts);
+            if (Array.isArray(hlData?.tokens) && hlData.tokens.length > 0) setHlTokens(hlData.tokens);
+          } catch (e) {
+            console.error('Hyperliquid fetch error:', e);
+          } finally {
+            setHlLoading(false);
+          }
+        }
+
         // Fetch ENS Domains from The Graph
         try {
           const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
@@ -1132,6 +1155,20 @@ export const ProfileCard = ({
       Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
     );
   }, [filteredNfts]);
+
+  // Promoted top-level OpenSea collection buttons — domain-like collections first
+  const openSeaTopLevelEntries = useMemo<[string, any[]][]>(() => {
+    const isDomainLike = (name: string) => {
+      const n = (name || '').toLowerCase();
+      return /domain|name|\.eth|\.box|ens|basenam/.test(n);
+    };
+    return Object.entries(openSeaGroupedNfts).sort(([a, aArr], [b, bArr]) => {
+      const aDom = isDomainLike(a) ? 0 : 1;
+      const bDom = isDomainLike(b) ? 0 : 1;
+      if (aDom !== bDom) return aDom - bDom;
+      return bArr.length - aArr.length;
+    });
+  }, [openSeaGroupedNfts]);
 
   // Group Magic Eden NFTs by collection
   const magicEdenGroupedNfts = useMemo(() => {
@@ -1640,22 +1677,35 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* OpenSea Button - show for IOTA profiles with linked EVM */}
-                            {(!isIotaProfile || !!linkedEvmAddress) && ((nfts.length > 0) || (nftLoading && !openseaAttempted)) && (
-                              <button onClick={() => setNftCategory('opensea')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                            {/* OpenSea collections — promoted as individual top-level buttons (domain collections first) */}
+                            {(!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
+                              <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between">
+                                <span className="text-sm font-medium">OpenSea — Loading…</span>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              </div>
+                            )}
+                            {(!isIotaProfile || !!linkedEvmAddress) && openSeaTopLevelEntries.map(([collection, collectionNfts]) => (
+                              <button
+                                key={`os-${collection}`}
+                                onClick={() => { setNftCategory('opensea'); setExpandedCollection(collection); }}
+                                className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]"
+                              >
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-black text-base">OpenSea</h4>
+                                    <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
                                     <div className="flex items-center gap-2">
-                                      <p className="text-sm text-black/70">
-                                        {nftLoading ? 'Loading…' : nfts.length === 0 && openseaHasErrors ? 'Unavailable' : `${nfts.length} ${nfts.length === 1 ? 'item' : 'items'}`}
-                                      </p>
+                                      <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
+                                      <div className="flex -space-x-2">
+                                        {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
+                                          <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                        ))}
+                                      </div>
                                     </div>
                                   </div>
                                   <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                                 </div>
                               </button>
-                            )}
+                            ))}
 
                             {/* Magic Eden Button - show for IOTA profiles with linked EVM */}
                             {(!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
@@ -2381,38 +2431,44 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* OpenSea Button - show for IOTA profiles with linked EVM */}
-                      {(!isIotaProfile || !!linkedEvmAddress) && (nftLoading || nfts.length > 0 || !openseaAttempted) && (
+                      {/* OpenSea collections — promoted as individual top-level buttons (domain collections first) */}
+                      {(!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
+                        <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between">
+                          <span className="text-sm font-medium">OpenSea — Loading…</span>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        </div>
+                      )}
+                      {(!isIotaProfile || !!linkedEvmAddress) && openseaAttempted && nfts.length === 0 && openseaHasErrors && (
+                        <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-center">
+                          <span className="text-sm text-black/70">OpenSea unavailable</span>
+                        </div>
+                      )}
+                      {(!isIotaProfile || !!linkedEvmAddress) && openSeaTopLevelEntries.map(([collection, collectionNfts]) => (
                         <button
+                          key={`os-mob-${collection}`}
                           onClick={() => {
                             setNftCategory('opensea');
+                            setExpandedCollection(collection);
                             onEnsureOpenSeaNfts?.();
                           }}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
                         >
                           <div className="flex items-center justify-between h-full">
                             <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-black text-base">OpenSea</h4>
+                              <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
                               <div className="flex items-center gap-2">
-                                <p className="text-sm text-black/70">
-                                  {nftLoading ? 'Loading…' : openseaHasErrors && nfts.length === 0 ? 'Unavailable' : `${nfts.length} ${nfts.length === 1 ? 'item' : 'items'}`}
-                                </p>
-                                {nfts.length > 0 && (
-                                  <div className="flex -space-x-2">
-                                    {nfts.slice(0, 3).map((nft, idx) => (
-                                      <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
-                                    ))}
-                                  </div>
-                                )}
+                                <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
+                                <div className="flex -space-x-2">
+                                  {collectionNfts.slice(0, 3).map((nft: any, idx: number) => (
+                                    <img key={idx} src={nft.image_url || nft.display_image_url} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                  ))}
+                                </div>
                               </div>
                             </div>
                             <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
                           </div>
                         </button>
-                      )}
-
-                      {/* Hide OpenSea button if attempted, no items, and no errors */}
-                      {openseaAttempted && nfts.length === 0 && !openseaHasErrors && !nftLoading && null}
+                      ))}
 
                       {/* Magic Eden (EVM) Button - show for IOTA profiles with linked EVM */}
                       {(!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
