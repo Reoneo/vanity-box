@@ -16,11 +16,11 @@ import { IotaWalletProvider } from "@/contexts/IotaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import '@mysten/dapp-kit/dist/index.css';
 import { createNetworkConfig, SuiClientProvider, WalletProvider as SuiWalletProvider } from '@mysten/dapp-kit';
-import { getFullnodeUrl } from '@mysten/sui/client';
+import { JsonRpcHTTPTransport, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
 
 const { networkConfig: suiNetworkConfig } = createNetworkConfig({
-  mainnet: { url: getFullnodeUrl('mainnet') },
-  testnet: { url: getFullnodeUrl('testnet') },
+  mainnet: { transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('mainnet') }) },
+  testnet: { transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('testnet') }) },
 });
 
 // Lazy load SplashCursor for desktop only
