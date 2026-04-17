@@ -1246,7 +1246,1445 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setIsSearchActive(true);
       return;
     }
-...
+
+    // Auto-select all filters when searching, unless user has manually adjusted them
+    if (!hasManuallyAdjustedFilters) {
+      setFilters({ protocol: [], club: clubs });
+    }
+
+    // Only show search results and clear previous data when actually searching
+    // Instantly clear previous results
+    setEnsResults([]);
+    setWeb3BioProfile(null);
+    setEfpStats(null);
+    setEnsRecords(null);
+
+    // Update the display query to match what's being searched
+    setDisplayQuery(trimmedQuery);
+
+    // Update URL to reflect the current search
+    const urlPath = `/${encodeURIComponent(trimmedQuery)}`;
+    if (location.pathname !== urlPath) {
+      navigate(urlPath, { replace: false });
+    }
+    setIsLoading(true);
+    setHasSearched(true);
+    setIsSearchActive(true);
+
+    // Check if query is a valid wallet address (EVM: 40 hex, IOTA: 64 hex)
+    const isEvmWallet = trimmedQuery && /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
+    const isWalletAddress = isEvmWallet || isIotaAddr;
+
+    console.log("🔍 Query analysis:", {
+      query: trimmedQuery,
+      isWalletAddress,
+      isIotaAddr,
+      hasDot: trimmedQuery?.includes("."),
+      length: trimmedQuery?.length
+    });
+
+    // Normalize wallet address to checksummed format if it's an EVM wallet address
+    let normalizedAddress = trimmedQuery;
+    if (isEvmWallet) {
+      try {
+        normalizedAddress = getAddress(trimmedQuery.toLowerCase());
+        console.log("✅ Checksummed address:", normalizedAddress);
+      } catch (err) {
+        console.log("⚠️ Using original address format:", trimmedQuery);
+        normalizedAddress = trimmedQuery;
+      }
+    } else if (isIotaAddr) {
+      normalizedAddress = trimmedQuery.toLowerCase();
+      console.log("✅ IOTA address detected:", normalizedAddress);
+    }
+
+    // If query has no dot and is not a wallet address, redirect to Unstoppable Domains
+    if (trimmedQuery && !trimmedQuery.includes(".") && !isWalletAddress) {
+      window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}&searchRef=vanitybox`, '_blank');
+      setIsLoading(false);
+      setIsHomepage(true);
+      setIsSearchActive(false);
+      return;
+    }
+
+    // If query contains a dot OR is a wallet address, try fetching profile using unified resolver
+    if (trimmedQuery && (trimmedQuery.includes(".") || isWalletAddress)) {
+      const normalizedQuery = trimmedQuery.toLowerCase();
+      const currentSearchId = ++searchIdRef.current;
+      
+      console.log(`🔍 Using client-side profile resolver for: ${isWalletAddress ? normalizedAddress : normalizedQuery}`);
+      
+      try {
+        // Use client-side profile resolution with public APIs (no edge function needed)
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Profile lookup timed out')), 20000)
+        );
+        
+        // Import the resolver functions inline to avoid circular dependencies
+        const { resolveProfileDirect } = await import('@/hooks/useProfileResolver');
+        
+        const resolverPromise = resolveProfileDirect(isWalletAddress ? normalizedAddress : normalizedQuery);
+
+        // For .iota names, fire the onchain profile fetch in parallel with resolver
+        let iotaOnchainPromise: Promise<any> | null = null;
+        if (isIotaName(normalizedQuery)) {
+          // Always fetch fresh .iota profile
+          iotaOnchainPromise = fetchIotaOnchainProfile(normalizedQuery);
+        }
+        
+        const resolverData = await Promise.race([
+          resolverPromise,
+          timeoutPromise.then(() => { throw new Error('timeout'); })
+        ]);
+
+        // If we started a parallel IOTA onchain fetch, apply results now
+        if (iotaOnchainPromise) {
+          iotaOnchainPromise.then(response => {
+            if (response?.success) {
+              // No caching for .iota profiles
+              setIotaOnchainProfile(response.profile);
+              setIotaOnchainProfile(response.profile);
+              setIotaNameObjectId(response.nameObjectId);
+              setIotaOwnerAddress(response.ownerAddress);
+              setIotaOnchainProfileLoading(false);
+            }
+          });
+        }
+        
+        // Check if this search is still current
+        if (searchIdRef.current !== currentSearchId) {
+          console.log('🚫 Search result discarded - newer search started');
+          return;
+        }
+        
+        console.log('📥 Client resolver response:', { 
+          ok: resolverData?.ok, 
+          source: resolverData?.source, 
+          debug: resolverData?.debug 
+        });
+        
+        if (!resolverData?.ok || !resolverData?.profile) {
+          console.log('⚠️ No profile found:', resolverData?.notFound ? 'not found' : 'unknown error');
+          
+          // For wallet addresses, create minimal profile even if resolver fails
+          if (isWalletAddress && normalizedAddress) {
+            console.log('🔄 Creating minimal profile for wallet address:', normalizedAddress);
+            const minimalProfile = {
+              displayName: null,
+              address: normalizedAddress,
+              avatar: null,
+              description: null,
+              platform: isIotaAddr ? 'iota' : 'ethereum',
+              identity: normalizedAddress,
+              links: {},
+            };
+            setWeb3BioProfile(minimalProfile);
+            setEnsResults([]);
+            
+            // Fetch EFP stats and NFTs
+            supabase.functions.invoke('get-efp-stats', {
+              body: { address: normalizedAddress }
+            }).then(({ data: efpData }) => {
+              if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+                setEfpStats(efpData);
+              }
+            }).catch(() => {});
+            
+            fetchNfts(normalizedAddress, undefined);
+          } else if (!resolverData?.notFound) {
+            toast.error("Profile lookup failed. Please try again.");
+          }
+
+          // Not found (or other non-profile response) — stop the blocking loader.
+          if (searchIdRef.current === currentSearchId) setIsLoading(false);
+          return;
+        }
+        
+        // Profile found - set it
+        const profile = resolverData.profile;
+        console.log('✅ Profile loaded:', { 
+          source: resolverData.source, 
+          identity: profile.identity,
+          address: profile.address 
+        });
+        
+        setWeb3BioProfile(profile);
+        setEnsResults([]);
+        
+        if (profile.ensRecords) {
+          setEnsRecords(profile.ensRecords);
+        }
+
+        // For IOTA address reverse lookups: the resolver found an iotaDomain but we
+        // didn't fire the onchain profile fetch earlier (query wasn't a .iota name).
+        // Fetch it now so the profile card renders full IOTA data.
+        if (!iotaOnchainPromise && profile.iotaDomain && isIotaName(profile.iotaDomain)) {
+          setIotaOnchainProfileLoading(true);
+          fetchIotaOnchainProfile(profile.iotaDomain).then(response => {
+            if (response?.success) {
+              setIotaOnchainProfile(response.profile);
+              setIotaNameObjectId(response.nameObjectId);
+              setIotaOwnerAddress(response.ownerAddress);
+            }
+            setIotaOnchainProfileLoading(false);
+          }).catch(() => setIotaOnchainProfileLoading(false));
+
+          // Also update the URL to the .iota domain for cleaner navigation
+          const iotaPath = `/${encodeURIComponent(profile.iotaDomain)}`;
+          if (location.pathname !== iotaPath) {
+            navigate(iotaPath, { replace: true });
+          }
+          setDisplayQuery(profile.iotaDomain);
+        }
+        
+        // Fetch additional data for Dock (non-blocking)
+        if (profile.address) {
+          // Fetch EFP stats
+          supabase.functions.invoke('get-efp-stats', {
+            body: { address: profile.address }
+          }).then(({ data: efpData }) => {
+            if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+              console.log('✅ EFP stats loaded:', efpData);
+              setEfpStats(efpData);
+            }
+          }).catch(err => console.log('EFP stats fetch failed:', err));
+
+          // Fetch OpenSea NFTs only for non-IOTA profiles with valid EVM addresses
+          if (!isIotaName(normalizedQuery) && isValidEvmAddress(profile.address)) {
+            fetchNfts(profile.address, undefined);
+          }
+        }
+      } catch (error: any) {
+        // Check if this search is still current
+        if (searchIdRef.current !== currentSearchId) {
+          console.log('🚫 Error discarded - newer search started');
+          return;
+        }
+        
+        console.log("❌ Profile lookup failed:", error?.message || error);
+        
+        // For wallet addresses, create minimal profile on timeout/error
+        if (isWalletAddress && normalizedAddress) {
+          console.log('🔄 Timeout/error fallback: Creating minimal profile for wallet');
+          const minimalProfile = {
+            displayName: null,
+            address: normalizedAddress,
+            avatar: null,
+            description: null,
+            platform: isIotaAddr ? 'iota' : 'ethereum',
+            identity: normalizedAddress,
+            links: {},
+          };
+          setWeb3BioProfile(minimalProfile);
+          setEnsResults([]);
+          if (!isIotaAddr) fetchNfts(normalizedAddress, undefined);
+        } else {
+          toast.error("Profile lookup timed out. Please try again.");
+        }
+
+        // Prevent the loading progress from getting stuck at 98%
+        if (searchIdRef.current === currentSearchId) setIsLoading(false);
+        return;
+      } finally {
+        // Always set loading to false when profile resolution completes or fails
+        if (searchIdRef.current === currentSearchId) {
+          // Profile resolution done - continue to subdomain checks if needed
+        }
+      }
+    }
+
+
+    // Fetch user's domains if wallet is connected
+    if (walletAddress) {
+      try {
+        const { data: domainsData } = await supabase.functions.invoke("get-user-domains", {
+          body: { walletAddress },
+        });
+        if (domainsData?.domains) {
+          setUserDomains(domainsData.domains.map((d: any) => `${d.name}.${d.domain}`.toLowerCase()));
+        }
+      } catch (error) {
+        console.error("Error fetching user domains:", error);
+      }
+    }
+
+    // Check which subdomains are already taken on Namestone (only if there's a query)
+    let allResults = getAllResults();
+    const checkFailedDomains = new Set<string>();
+    
+    // Show results now that user has searched
+    setShowInitialResults(true);
+    
+    if (trimmedQuery) {
+      const checkPromises = allResults.map(async (result) => {
+        const domain = result.name.toLowerCase();
+        
+        // Skip ENS domains (.eth, .box) and vanity.ton - they don't use Namestone
+        const ensOrSpecialDomains = ['vanity.ton', 'vanity.eth', 'vape.box', 'smith.box', 'vanity.box'];
+        const isEnsCompatible = domain.endsWith('.eth') || domain.endsWith('.box');
+        
+        if (ensOrSpecialDomains.includes(domain) || isEnsCompatible) {
+          return null;
+        }
+        
+        try {
+          const { data, error } = await supabase.functions.invoke("check-namestone-subdomain", {
+            body: { subdomain: trimmedQuery, domain },
+          });
+          
+          // If check failed (error or no success), mark as check_failed
+          if (error || !data?.success) {
+            console.error(`Check failed for ${domain}:`, error || data);
+            return { domain, status: 'check_failed' };
+          }
+          
+          if (data?.exists) {
+            return { domain, status: 'taken' };
+          }
+        } catch (error) {
+          console.error(`Error checking ${domain}:`, error);
+          return { domain, status: 'check_failed' };
+        }
+        
+        return null;
+      });
+
+      const checkResults = await Promise.all(checkPromises);
+      const taken = new Set<string>();
+      
+      checkResults.forEach((result) => {
+        if (result) {
+          if (result.status === 'taken') {
+            taken.add(result.domain);
+          } else if (result.status === 'check_failed') {
+            checkFailedDomains.add(result.domain);
+          }
+        }
+      });
+      
+      setTakenSubdomains(taken);
+      
+      // Store check_failed domains in a state or pass to render
+      // For now, we'll use a window variable to communicate with render
+      (window as any).__checkFailedDomains = checkFailedDomains;
+    } else {
+      setTakenSubdomains(new Set());
+      (window as any).__checkFailedDomains = new Set();
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    // Filter results
+    let filteredResults = allResults;
+
+    // Apply protocol and club filters if any are selected
+    // Check if all clubs are selected
+    const allClubsSelected = filters.club.length === clubs.length && 
+      clubs.every(c => filters.club.includes(c));
+    
+    if (filters.protocol.length > 0 || (filters.club.length > 0 && !allClubsSelected)) {
+      filteredResults = allResults.filter((result) => {
+        const categories = Array.isArray(result.category) ? result.category : [result.category];
+        const resultClubs = Array.isArray(result.club) ? result.club : [result.club];
+
+        const protocolMatch = filters.protocol.length === 0 || filters.protocol.some((p) => categories.includes(p));
+        const clubMatch = allClubsSelected || filters.club.length === 0 || filters.club.some((c) => resultClubs.includes(c));
+        return protocolMatch && clubMatch;
+      });
+    } else {
+      // If no filters are applied or all clubs selected, show all available subdomains
+      filteredResults = allResults;
+    }
+
+    // Sort results alphabetically by name
+    filteredResults.sort((a, b) => a.name.localeCompare(b.name));
+
+    setEnsResults(filteredResults);
+    console.log("Results set", filteredResults.length);
+
+    if (searchQuery) {
+      setIsAvailable(!searchQuery.toLowerCase().includes("taken"));
+    }
+    setIsLoading(false);
+  };
+
+
+  // Fetch functions for dock sections
+  const fetchNfts = async (addressOverride?: string, next?: string) => {
+    const address = addressOverride || web3BioProfile?.address || walletAddress;
+    
+    // Sanitize the next parameter to handle MiniKit undefined objects
+    const sanitizedNext = (next && typeof next === 'string' && next !== 'undefined') 
+      ? next 
+      : (next && typeof next === 'object' && (next as any)?._type === 'undefined')
+        ? undefined
+        : next;
+    
+    console.log('fetchNfts called with:', { 
+      address, 
+      addressOverride,
+      web3BioProfile: web3BioProfile?.address, 
+      walletAddress, 
+      next,
+      sanitizedNext 
+    });
+    
+    // Check for undefined, null, empty string, or MiniKit's undefined object format
+    if (!address || 
+        address === 'undefined' || 
+        (typeof address === 'object' && (address as any)?._type === 'undefined') ||
+        (typeof address === 'string' && address.trim() === '')) {
+      console.warn('Cannot fetch NFTs: No valid wallet address available', { address });
+      setNftLoading(false);
+      return;
+    }
+    
+    const addressString = typeof address === 'string' ? address : (address as any)?.value;
+    if (!addressString || addressString === 'undefined' || addressString.trim() === '') {
+      console.warn('Cannot fetch NFTs: Invalid address format', { address, addressString });
+      setNftLoading(false);
+      return;
+    }
+    
+    if (!isValidEvmAddress(addressString)) {
+      console.warn('Skipping OpenSea fetch for non-EVM address:', addressString);
+      setNftLoading(false);
+      return;
+    }
+
+    console.log('Fetching NFTs with valid EVM address:', addressString);
+    
+    try {
+      
+      // Final validation before API call - if this fails, abort gracefully
+      if (!addressString || addressString.trim() === '' || addressString === 'undefined') {
+        console.error('Cannot call API: Invalid addressString', addressString);
+        setNftLoading(false);
+        return;
+      }
+      
+      // Build request body with sanitized next parameter
+      const requestBody: any = {
+        walletAddress: addressString,
+        limit: 20,
+      };
+      
+      // Only add next if it's a valid string
+      if (sanitizedNext && typeof sanitizedNext === 'string') {
+        requestBody.next = sanitizedNext;
+      }
+      
+      console.log('Calling get-opensea-nfts with body:', requestBody);
+      
+      // Double-check walletAddress is valid before making the call
+      if (!requestBody.walletAddress || typeof requestBody.walletAddress !== 'string' || requestBody.walletAddress.trim() === '') {
+        console.error('Aborting API call: requestBody.walletAddress is invalid', requestBody.walletAddress);
+        setNftLoading(false);
+        return;
+      }
+      
+      // Use direct fetch instead of callEdge to fix body serialization issues
+      const response = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-opensea-nfts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenSea API error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Sanitize the next cursor from the response
+      const responseNext = data.next;
+      const sanitizedResponseNext = 
+        responseNext && 
+        typeof responseNext === 'object' && 
+        (responseNext as any)?._type === 'undefined'
+          ? undefined
+          : typeof responseNext === 'string' && 
+            responseNext !== 'undefined' && 
+            responseNext.trim() !== ''
+          ? responseNext
+          : undefined;
+      
+      if (next) {
+        setNfts((prev) => [...prev, ...data.nfts]);
+      } else {
+        setNfts(data.nfts || []);
+      }
+      setNftNextCursor(sanitizedResponseNext || null);
+      
+      // Track that OpenSea was attempted and if there were errors
+      if (data.attempted) {
+        setOpenseaAttempted(true);
+      }
+      if (data.errorsByChain && Object.keys(data.errorsByChain).length > 0) {
+        setOpenseaHasErrors(true);
+        console.warn('OpenSea had errors on some chains:', data.errorsByChain);
+      } else {
+        setOpenseaHasErrors(false);
+      }
+    } catch (err: any) {
+      console.error("Error fetching NFTs:", err);
+      setOpenseaAttempted(true);
+      setOpenseaHasErrors(true);
+      // Don't show error toast if address is invalid - this is expected
+      if (!err?.message?.includes('walletAddress is required')) {
+        console.error('Unexpected NFT fetch error:', err);
+      }
+    } finally {
+      setNftLoading(false);
+    }
+  };
+
+  const fetchLatestCast = async () => {
+    // Check if we have any valid Farcaster identifier
+    const hasFarcasterData = web3BioProfile?.links?.farcaster?.fid || 
+                            web3BioProfile?.links?.farcaster?.handle ||
+                            web3BioProfile?.identity;
+    const address = web3BioProfile?.address || walletAddress;
+    
+    // Validate address format (handle MiniKit's undefined object)
+    const addressString = typeof address === 'string' ? address : (address as any)?.value;
+    const hasValidAddress = addressString && 
+                           addressString !== 'undefined' && 
+                           addressString.trim() !== '' &&
+                           !(typeof address === 'object' && (address as any)?._type === 'undefined');
+    
+    if (!hasFarcasterData && !hasValidAddress) {
+      console.warn('Cannot fetch Farcaster casts: No valid identifier available');
+      return;
+    }
+
+    // Prepare request body, only including defined values
+    const requestBody: any = { limit: 1 };
+    
+    if (web3BioProfile?.links?.farcaster?.handle) {
+      requestBody.username = web3BioProfile.links.farcaster.handle;
+    } else if (web3BioProfile?.identity && typeof web3BioProfile.identity === 'string') {
+      requestBody.username = web3BioProfile.identity;
+    }
+    
+    if (web3BioProfile?.links?.farcaster?.fid) {
+      requestBody.fid = web3BioProfile.links.farcaster.fid;
+    }
+    
+    if (hasValidAddress) {
+      requestBody.walletAddress = addressString;
+    }
+    
+    // Final check: ensure we have at least one valid identifier
+    if (!requestBody.username && !requestBody.fid && !requestBody.walletAddress) {
+      console.warn('Cannot call get-farcaster-casts: No valid identifier in request body');
+      return;
+    }
+
+    try {
+      setCastLoading(true);
+      console.log('Calling get-farcaster-casts with:', requestBody);
+      const data = await callEdge("get-farcaster-casts", requestBody);
+      setLatestCast(data.casts?.[0] || null);
+    } catch (err) {
+      console.error("Error fetching Farcaster cast:", err);
+    } finally {
+      setCastLoading(false);
+    }
+  };
+
+  const handleFollowingClick = async () => {
+    setShowFollowingList(true);
+    
+    // Preload following list if not already loaded
+    if (followingList.length === 0 && web3BioProfile?.address) {
+      setIsLoadingMore(true);
+      try {
+        const response = await fetch(
+          `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=10&offset=0`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const following = data.following || [];
+          setFollowingList(following);
+          setTotalFollowing(data.following_count || efpStats?.following_count || 0);
+          setFollowingPage(0);
+        }
+      } catch (error) {
+        console.error("Error loading following list:", error);
+      }
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleFollowersClick = async () => {
+    setShowFollowersList(true);
+    
+    // Preload followers list if not already loaded
+    if (followersList.length === 0 && web3BioProfile?.address) {
+      setIsLoadingMore(true);
+      try {
+        const response = await fetch(
+          `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=10&offset=0`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const followers = data.followers || [];
+          setFollowersList(followers);
+          setTotalFollowers(data.followers_count || efpStats?.followers_count || 0);
+          setFollowersPage(0);
+        }
+      } catch (error) {
+        console.error("Error loading followers list:", error);
+      }
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleLoadMoreNfts = () => {
+    if (!nftNextCursor || nftLoading) return;
+    
+    // For IOTA profiles, use linkedEvmAddress; otherwise use web3BioProfile.address
+    const isIota = isIotaName(displayQuery);
+    const address = isIota ? linkedEvmAddress : (web3BioProfile?.address || walletAddress);
+    const addressString = typeof address === 'string' ? address : (address as any)?.value;
+    
+    if (!addressString || 
+        addressString === 'undefined' || 
+        addressString.trim() === '' ||
+        !/^0x[a-fA-F0-9]{40}$/i.test(addressString)) {
+      console.warn('Cannot load more NFTs: No valid EVM address available');
+      return;
+    }
+    
+    fetchNfts(addressString, nftNextCursor);
+  };
+
+  const handleLoadMorePoaps = async () => {
+    if (!poapHasMore || poapLoadingMore) return;
+    const isIota = isIotaName(displayQuery);
+    const address = isIota ? linkedEvmAddress : (web3BioProfile?.address || walletAddress);
+    if (!address || !/^0x[a-fA-F0-9]{40}$/i.test(address as string)) return;
+
+    setPoapLoadingMore(true);
+    try {
+      const { data: poapData, error } = await supabase.functions.invoke("get-poap-data", {
+        body: { walletAddress: address, offset: poapOffset, limit: 1000 },
+      });
+      if (!error && poapData?.success && poapData.poaps) {
+        const newPoaps = poapData.poaps.map((poap: any) => ({
+          eventId: poap.event?.id,
+          eventName: poap.event?.name,
+          eventDescription: poap.event?.description,
+          eventImageUrl: poap.event?.image_url,
+          eventStartDate: poap.event?.start_date,
+          eventEndDate: poap.event?.end_date,
+          eventYear: poap.event?.year,
+          tokenId: poap.tokenId,
+          owner: poap.owner,
+          chain: poap.chain,
+        }));
+        setPoapTokens(prev => [...prev, ...newPoaps]);
+        setPoapOffset(prev => prev + newPoaps.length);
+        setPoapHasMore(poapData.hasMore || false);
+        setPoapTotalCount(poapData.totalCount || poapTotalCount);
+      }
+    } catch (e) {
+      console.error('Failed to load more POAPs:', e);
+    } finally {
+      setPoapLoadingMore(false);
+    }
+  };
+
+  const handleMint = (result: ENSResult) => {
+    setSelectedResult(result);
+    setShowMintInterface(true);
+  };
+
+  const handleBackToResults = () => {
+    setShowMintInterface(false);
+    setSelectedResult(null);
+  };
+
+  const handleFlipCard = (index: number) => {
+    setFlippedCards((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  const searchResults = searchQuery && !isLoading && isAvailable !== null;
+  const price = displayQuery ? getSubdomainPrice(displayQuery) : 0;
+  const hasFilters = filters.protocol.length > 0 || filters.club.length > 0;
+  const totalFilters = filters.protocol.length + filters.club.length;
+
+  return (
+    <>
+      {showFilterDropdown && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" />}
+
+      <div className="w-full h-full relative">
+        {/* Show mint interface when a result is selected */}
+        {showMintInterface && selectedResult ? (
+          <>
+            <SubdomainMintModal
+              isOpen={true}
+              onClose={handleBackToResults}
+              subdomain={displayQuery ? `${displayQuery}.${selectedResult.name}` : selectedResult.name}
+              price={price}
+              resultAvatar={selectedResult.imageUrl}
+              domain={selectedResult.name.trim().toLowerCase()}
+            />
+            {/* Dock for mint modal */}
+            <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
+              <Dock
+                items={[
+                  {
+                    icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Home',
+                    onClick: () => {
+                      // Clear everything and go home
+                      setShowMintInterface(false);
+                      setSelectedResult(null);
+                      setShowSearchBar(false);
+                      setIsSearchActive(false);
+                      setEnsResults([]);
+                      setHasSearched(false);
+                      setDisplayQuery('');
+                      setSearchQuery('');
+                      setIsHomepage(true);
+                      navigate('/', { replace: false });
+                    },
+                    isActive: false,
+                  },
+                  {
+                    icon: <ArrowLeft className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Back',
+                    onClick: handleBackToResults,
+                    isActive: false,
+                  },
+                ]}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <DynamicMetaTags
+              username={web3BioProfile?.identity || displayQuery}
+              displayName={web3BioProfile?.displayName}
+              description={web3BioProfile?.description}
+              avatar={web3BioProfile?.avatar}
+              banner={web3BioProfile?.header}
+            />
+            
+            {/* Loading Progress Bar */}
+            <LoadingProgress isLoading={isLoading && !web3BioProfile} />
+            
+            {/* Search bar and header - conditional rendering based on search state */}
+            {!showMyIDs && !isLoading && (
+              <>
+                {/* Modal Search Overlay - works for both homepage and profile views */}
+                {showSearchBar && (
+                  <>
+                    {/* Dim overlay - above profile content */}
+        <div 
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9998] animate-fade-in"
+          onClick={() => setShowSearchBar(false)}
+        />
+                    
+                    {/* Centered search modal - above overlay */}
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
+                      <div className="w-full max-w-md pointer-events-auto animate-scale-in">
+                        {/* Search bar */}
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <Input
+                              placeholder={t("Search for a name")}
+                              className="h-12 text-sm text-center bg-white dark:bg-gray-900 border-[#D4AF37] focus:border-[#D4AF37] text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white px-10"
+                              value={searchQuery}
+                              onChange={(e) => handleSearchChange(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  handleSearch();
+                                  setIsSearchActive(true);
+                                  onSearchClick?.();
+                                  setShowSearchBar(false);
+                                }
+                              }}
+                              onFocus={() => {
+                                setShowFilterDropdown(false);
+                              }}
+                            />
+                            {searchQuery && (
+                              <button
+                                onClick={() => {
+                                  setSearchQuery("");
+                                  setIsAvailable(null);
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                aria-label="Clear search"
+                              >
+                                <X className="w-4 h-4 text-black dark:text-white" />
+                              </button>
+                            )}
+                          </div>
+                          <Button
+                            onClick={() => {
+                              handleSearch();
+                              setIsSearchActive(true);
+                              onSearchClick?.();
+                              setShowSearchBar(false);
+                              window.dispatchEvent(new CustomEvent('close-poap-modal'));
+                            }}
+                            className="w-full h-12 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold text-base flex items-center justify-center"
+                            disabled={!searchQuery.trim() || isLoading}
+                          >
+                            <Search className="w-5 h-5 mr-2" />
+                            {t('search') || 'Search'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!isSearchActive ? (
+                  <>
+                    {/* Feature Showcase - Only show when on homepage */}
+                    {isHomepage && !web3BioProfile && !showSearchBar && (
+                      <div 
+                        className="fixed left-0 right-0 z-[9996] overflow-y-auto bg-background"
+                        style={{ 
+                          top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
+                         bottom: 0
+                        }}
+                      >
+                        <HomeFeatureShowcase />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Remove h1 header when showing user profile */}
+                    {!web3BioProfile && (
+                      <div className="mt-2">
+                        {isLoading ? (
+                          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
+                            <span className="text-black dark:text-white animate-pulse">{t('loading')}</span>
+                          </h1>
+                        ) : null}
+                      </div>
+                    )}
+                   </>
+                )}
+              </>
+            )}
+
+            {/* Loading progress bar for .iota profiles while IPFS data loads */}
+            {isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile && web3BioProfile && !showMyIDs && (
+              <LoadingProgress isLoading={true} />
+            )}
+
+            {/* Profile Card - fixed positioning regardless of search bar */}
+            {web3BioProfile && !showMyIDs && !(isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile) ? (
+              <div
+                className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
+              >
+                {/* Profile Card - no scroll within profile */}
+                <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+                  <ProfileCard
+                    activeSection={activeDockSection}
+                    web3BioProfile={
+                      isIotaName(displayQuery) && iotaOnchainProfile
+                        ? makeIotaDisplayProfile({
+                            base: web3BioProfile,
+                            iotaOnchainProfile,
+                            identity: displayQuery,
+                            ownerAddress: iotaOwnerAddress,
+                          })
+                        : web3BioProfile
+                    }
+                    currentWalletAddress={
+                      isIotaName(displayQuery) && iotaOnchainProfile
+                        ? (iotaOwnerAddress || web3BioProfile.address)
+                        : web3BioProfile.address
+                    }
+                    connectedWalletAddress={
+                      isIotaName(displayQuery) && isIotaConnected && iotaWalletAddress
+                        ? iotaWalletAddress
+                        : walletAddress
+                    }
+                    efpStats={efpStats || undefined}
+                    poaps={poapTokens}
+                    poapTotalCount={poapTotalCount}
+                    poapHasMore={poapHasMore}
+                    poapLoadingMore={poapLoadingMore}
+                    onLoadMorePoaps={handleLoadMorePoaps}
+                    socialIcons={socialIcons}
+                    nfts={nfts}
+                    nftLoading={nftLoading}
+                    nftNextCursor={nftNextCursor}
+                    openseaAttempted={openseaAttempted}
+                    openseaHasErrors={openseaHasErrors}
+                    latestCast={latestCast}
+                    castLoading={castLoading}
+                    firstTransactionDate={firstTransactionDate}
+                    searchedIdentity={displayQuery}
+                    onFollowingClick={handleFollowingClick}
+                    onFollowersClick={handleFollowersClick}
+                    onLoadMoreNfts={handleLoadMoreNfts}
+                    onEnsureOpenSeaNfts={() => {
+                      const isIota = isIotaName(displayQuery);
+
+                      // For IOTA profiles, use linkedEvmAddress if available
+                      if (isIota && linkedEvmAddress && !openseaAttempted && !nftLoading) {
+                        console.log('🔄 On-demand: Fetching OpenSea NFTs for linked EVM:', linkedEvmAddress);
+                        fetchNfts(linkedEvmAddress);
+                        return;
+                      }
+
+                      const isEvmAddr =
+                        typeof web3BioProfile?.address === 'string' &&
+                        /^0x[a-fA-F0-9]{40}$/.test(web3BioProfile.address);
+
+                      if (!isIota && isEvmAddr && !openseaAttempted && !nftLoading) {
+                        console.log('🔄 On-demand: Fetching OpenSea NFTs for:', web3BioProfile.address);
+                        fetchNfts(web3BioProfile.address);
+                      }
+                    }}
+                    linkedEvmAddress={linkedEvmAddress}
+                    isResolvingLinkedEvm={isResolvingLinkedEvm}
+                    linkedTonAddress={linkedTonAddress}
+                    iotaOnchainProfile={iotaOnchainProfile}
+                    iotaNameObjectId={iotaNameObjectId}
+                    iotaOwnerAddress={iotaOwnerAddress}
+                    onEditIotaProfile={() => setShowIotaEditModal(true)}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {/* IOTA Profile Edit Modal */}
+            {showIotaEditModal && isIotaName(displayQuery) && (
+              <IotaProfileEditModal
+                open={showIotaEditModal}
+                onClose={() => setShowIotaEditModal(false)}
+                iotaName={displayQuery}
+                nameObjectId={iotaNameObjectId || ''}
+                currentProfile={iotaOnchainProfile}
+                onProfileUpdated={() => {
+                  const normalizedName = normalizeIotaQuery(displayQuery);
+                  if (!normalizedName) return;
+
+                  fetchIotaOnchainProfile(normalizedName)
+                    .then(response => {
+                      if (response?.success) {
+                        setIotaOnchainProfile(response.profile);
+                        setIotaNameObjectId(response.nameObjectId);
+                        setIotaOwnerAddress(response.ownerAddress);
+                      }
+                    })
+                    .catch(console.error);
+                }}
+              />
+            )}
+
+            {/* Profile Dock - separate from profile container for proper z-index stacking */}
+            {web3BioProfile && !showMyIDs && (
+              <Dock
+                items={[
+                  // Only show Home button when viewing a profile (not on home page)
+                  ...(web3BioProfile ? [{
+                    icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Home',
+                    onClick: (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setShowSearchBar(false);
+                      setHadPreviousProfile(false); // Prevent useEffect from re-enabling search
+                      setWeb3BioProfile(null);
+                      setEfpStats(null);
+                      setEnsRecords(null);
+                      setIsSearchActive(false);
+                      setHasSearched(false);
+                      setSearchQuery('');
+                      setDisplayQuery('');
+                      setEnsResults([]);
+                      setNfts([]);
+                      setPoapTokens([]);
+                      setPoapTotalCount(0);
+                      setPoapHasMore(false);
+                      setPoapOffset(0);
+                      setActiveDockSection('profile');
+                      setIsHomepage(true);
+                      // Reset detail view state to fix glitch
+                      setShowDetailView(false);
+                      setDetailViewResult(null);
+                      navigate('/', { replace: false });
+                    },
+                    isActive: false,
+                  }] : []),
+                  {
+                    icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                    label: t('profile'),
+                    onClick: async () => {
+                      if (!walletAddress) {
+                        toast.error('Please connect your wallet first');
+                        return;
+                      }
+
+                      // Load the connected user's own profile.
+                      // For IOTA wallets, a raw address lookup often returns no results — prefer the resolved .iota name.
+                      let searchIdentifier = connectedUsername || walletAddress;
+                      if (!connectedUsername && connectedWalletType === 'iota') {
+                        try {
+                          const data = await callEdge<any>('resolve-iota-address', { address: walletAddress });
+                          const maybeName = typeof data?.name === 'string' ? data.name : null;
+                          if (maybeName) searchIdentifier = maybeName;
+                        } catch (e) {
+                          console.warn('Failed to resolve .iota name on-demand; falling back to address', e);
+                        }
+                      }
+
+                      if (searchIdentifier) handleSearch(searchIdentifier);
+                    },
+                    isActive: activeDockSection === 'profile',
+                  },
+                  // Only show Edit pencil when viewing own profile
+                  // For .iota profiles, also compare against iotaOwnerAddress since web3BioProfile.address may differ
+                  ...((walletAddress && web3BioProfile?.address && 
+                     walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase()) ||
+                     (walletAddress && iotaOwnerAddress && isIotaName(displayQuery) &&
+                     walletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase()) ? [{
+                    icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
+                    label: 'Edit',
+                    onClick: () => {
+                      if (isIotaName(displayQuery)) {
+                        // For .iota profiles, open edit onchain profile modal directly
+                        setShowIotaEditModal(true);
+                      } else {
+                        setShowMyIDs(true);
+                        setActiveDockSection('profile');
+                      }
+                    },
+                    isActive: false,
+                  }] : []),
+                  // Messages icon
+                  {
+                    icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Messages',
+                    onClick: () => {
+                      navigate('/messages');
+                    },
+                    isActive: false,
+                  },
+                  // Search icon on far right
+                  {
+                    icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Search',
+                    onClick: () => {
+                      // Toggle modal search overlay
+                      setShowSearchBar(prev => !prev);
+                    },
+                    isActive: showSearchBar,
+                  },
+                ]}
+              />
+            )}
+
+            {/* Loading Indicator */}
+            {isLoadingEFP && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                <div className="bg-gray-900/90 border-2 border-[#D4AF37] rounded-lg p-6 flex flex-col items-center gap-3">
+                  <Hourglass className="w-12 h-12 text-[#D4AF37] animate-pulse" />
+                  <p className="text-white font-medium">{t('loading')}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Followers List Modal */}
+            {showFollowersList && (
+              <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
+                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">{t('followers')} ({totalFollowers})</h3>
+                    <button
+                      onClick={() => setShowFollowersList(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-4 border-b border-[#D4AF37]/30">
+                    <div className="relative">
+                      <Input
+                        placeholder={t('search_followers')}
+                        value={followersSearchQuery}
+                        onChange={(e) => setFollowersSearchQuery(e.target.value)}
+                        className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
+                      />
+                      {followersSearchQuery && (
+                        <button
+                          onClick={() => setFollowersSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto p-4 space-y-2 flex-1">
+                    {followersList
+                      .filter((user) => {
+                        if (!followersSearchQuery) return true;
+                        const query = followersSearchQuery.toLowerCase();
+                        return (
+                          user.address.toLowerCase().includes(query) ||
+                          user.ens?.name?.toLowerCase().includes(query) ||
+                          user.web3bio?.displayName?.toLowerCase().includes(query) ||
+                          user.web3bio?.identity?.toLowerCase().includes(query)
+                        );
+                      })
+                      .map((user, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/40 hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-white/60 rounded-lg transition-colors"
+                        >
+                          <div className="flex flex-col">
+                            {(user.web3bio?.displayName || user.ens?.name) && (
+                              <span className="text-white dark:text-white light:text-black font-medium">
+                                {user.web3bio?.displayName || user.ens?.name}
+                              </span>
+                            )}
+                            <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 text-sm font-mono">
+                              {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                            </span>
+                          </div>
+                          <a
+                            href={`https://vanity.box/${user.ens?.name || user.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View
+                          </a>
+                        </div>
+                      ))}
+                  </div>
+                  {followersList.length < totalFollowers && (
+                    <div className="p-4 border-t border-[#D4AF37]/30">
+                      <Button
+                        onClick={async () => {
+                          if (!web3BioProfile?.address || isLoadingMore) return;
+                          setIsLoadingMore(true);
+                          try {
+                            const nextPage = followersPage + 1;
+                            const response = await fetch(
+                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/followers?limit=5&offset=${nextPage * 5}`,
+                            );
+                            if (response.ok) {
+                              const data = await response.json();
+                              const newFollowers = data.followers || [];
+                              setFollowersList([...followersList, ...newFollowers]);
+                              setFollowersPage(nextPage);
+                            }
+                          } catch (error) {
+                            console.error("Error loading more followers:", error);
+                          }
+                          setIsLoadingMore(false);
+                        }}
+                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                        disabled={isLoadingMore}
+                      >
+                        {isLoadingMore ? t('loading') : t('load_more')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Following List Modal */}
+            {showFollowingList && (
+              <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:bg-white/70 light:backdrop-blur-md border-2 border-[#D4AF37]/30 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-sm max-h-[60vh] overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between p-4 border-b border-[#D4AF37]/30">
+                    <h3 className="text-lg font-bold text-white dark:text-white light:text-black">{t('following')} ({totalFollowing})</h3>
+                    <button
+                      onClick={() => setShowFollowingList(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-4 border-b border-[#D4AF37]/30">
+                    <div className="relative">
+                      <Input
+                        placeholder={t('search_following')}
+                        value={followingSearchQuery}
+                        onChange={(e) => setFollowingSearchQuery(e.target.value)}
+                        className="bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/50 border-[#D4AF37]/30 text-white dark:text-white light:text-black placeholder:text-gray-500 dark:placeholder:text-gray-500 light:placeholder:text-gray-600 pr-10"
+                      />
+                      {followingSearchQuery && (
+                        <button
+                          onClick={() => setFollowingSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto p-4 space-y-2 flex-1">
+                    {followingList
+                      .filter((user) => {
+                        if (!followingSearchQuery) return true;
+                        const query = followingSearchQuery.toLowerCase();
+                        return (
+                          user.address.toLowerCase().includes(query) ||
+                          user.ens?.name?.toLowerCase().includes(query) ||
+                          user.web3bio?.displayName?.toLowerCase().includes(query) ||
+                          user.web3bio?.identity?.toLowerCase().includes(query)
+                        );
+                      })
+                      .map((user, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white/40 hover:bg-gray-700/50 dark:hover:bg-gray-700/50 light:hover:bg-white/60 rounded-lg transition-colors"
+                        >
+                          <div className="flex flex-col">
+                            {(user.web3bio?.displayName || user.ens?.name) && (
+                              <span className="text-white dark:text-white light:text-black font-medium">
+                                {user.web3bio?.displayName || user.ens?.name}
+                              </span>
+                            )}
+                            <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 text-sm font-mono">
+                              {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                            </span>
+                          </div>
+                          <a
+                            href={`https://vanity.box/${user.ens?.name || user.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View
+                          </a>
+                        </div>
+                      ))}
+                  </div>
+                  {followingList.length < totalFollowing && (
+                    <div className="p-4 border-t border-[#D4AF37]/30">
+                      <Button
+                        onClick={async () => {
+                          if (!web3BioProfile?.address || isLoadingMore) return;
+                          setIsLoadingMore(true);
+                          try {
+                            const nextPage = followingPage + 1;
+                            const response = await fetch(
+                              `https://api.ethfollow.xyz/api/v1/users/${web3BioProfile.address}/following?limit=5&offset=${nextPage * 5}`,
+                            );
+                            if (response.ok) {
+                              const data = await response.json();
+                              const newFollowing = data.following || [];
+                              setFollowingList([...followingList, ...newFollowing]);
+                              setFollowingPage(nextPage);
+                            }
+                          } catch (error) {
+                            console.error("Error loading more following:", error);
+                          }
+                          setIsLoadingMore(false);
+                        }}
+                        className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold"
+                        disabled={isLoadingMore}
+                      >
+                        {isLoadingMore ? t('loading') : t('load_more')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* My ID's Section */}
+            {walletAddress && showMyIDs && (
+              <div className="fixed left-0 right-0 flex flex-col z-[9997] top-[80px] bottom-[140px] px-0 pt-0">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+                  <UserDomainsDisplay walletAddress={walletAddress} />
+                </div>
+              </div>
+            )}
+
+            {/* My ID's Dock - Outside container with proper z-index */}
+            {walletAddress && showMyIDs && (
+              <div className="fixed bottom-0 left-0 right-0 z-[10000] flex items-center justify-center pb-4 pt-4 pointer-events-none">
+                <div className="pointer-events-auto">
+                  <Dock
+                    items={[
+                      {
+                        icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Home',
+                      onClick: () => {
+                          // Clear all data when returning home from My IDs
+                          setShowMyIDs(false);
+                          setWeb3BioProfile(null);
+                          setEfpStats(null);
+                          setEnsRecords(null);
+                          setIsSearchActive(false);
+                          setHasSearched(false);
+                          setSearchQuery('');
+                          setDisplayQuery('');
+                          setEnsResults([]); // Clear subdomain results
+                          setNfts([]);
+                          setPoapTokens([]);
+                          setActiveDockSection('profile');
+                          setShowSearchBar(false);
+                          setIsHomepage(true);
+                          navigate('/', { replace: false });
+                        },
+                        isActive: false,
+                      },
+                      {
+                        icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Profile',
+                        onClick: () => {
+                          if (!walletAddress) {
+                            toast.error('Please connect your wallet first');
+                            return;
+                          }
+                          // Load user's profile and exit My IDs
+                          setShowMyIDs(false);
+                          handleSearch(walletAddress);
+                        },
+                        isActive: true,
+                      },
+                      {
+                        icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
+                        label: 'Search',
+                        onClick: () => {
+                          if (!walletAddress) {
+                            toast.error('Please connect your wallet first');
+                            return;
+                          }
+                          // Exit My IDs to show search on main page
+                          setShowMyIDs(false);
+                          setIsSearchActive(false);
+                          setShowSearchBar(prev => !prev);
+                        },
+                        isActive: showSearchBar,
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Home Screen Dock - Show when no profile and not My ID's (including when results are shown) */}
+            {!web3BioProfile && !showMyIDs && (
+              <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
+                <Dock
+                  items={[
+                    // Only show Home button when NOT on homepage
+                    ...(!isHomepage ? [{
+                      icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Home',
+                      onClick: () => {
+                        // Clear search results and return to homepage
+                        setShowSearchBar(false);
+                        setIsSearchActive(false);
+                        setEnsResults([]);
+                        setHasSearched(false);
+                        setDisplayQuery('');
+                        setSearchQuery('');
+                        setIsHomepage(true);
+                        // Reset detail view state to fix glitch
+                        setShowDetailView(false);
+                        setDetailViewResult(null);
+                        navigate('/', { replace: false });
+                      },
+                      isActive: false,
+                    }] : []),
+                    {
+                      icon: <User className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Profile',
+                      onClick: async () => {
+                        if (!walletAddress) {
+                          toast.error('Please connect your wallet first');
+                          return;
+                        }
+                        // For IOTA wallets, resolve .iota name first (same as profile dock)
+                        let searchIdentifier = connectedUsername || walletAddress;
+                        if (!connectedUsername && connectedWalletType === 'iota') {
+                          try {
+                            const data = await callEdge<any>('resolve-iota-address', { address: walletAddress });
+                            const maybeName = typeof data?.name === 'string' ? data.name : null;
+                            if (maybeName) searchIdentifier = maybeName;
+                          } catch (e) {
+                            console.warn('Failed to resolve .iota name on-demand; falling back to address', e);
+                          }
+                        }
+                        if (searchIdentifier) handleSearch(searchIdentifier);
+                      },
+                      isActive: false,
+                    },
+                    {
+                      icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Search',
+                      onClick: () => {
+                        // Reset isSearchActive to show the modal-style search overlay
+                        setIsSearchActive(false);
+                        setShowSearchBar(prev => !prev);
+                      },
+                      isActive: showSearchBar,
+                    },
+                    {
+                      icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
+                      label: 'Passkey',
+                      onClick: () => setShowPasskeyModal(true),
+                      isActive: showPasskeyModal,
+                    },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Passkey Wallet Modal */}
+            <PasskeyWalletModal
+              open={showPasskeyModal}
+              onClose={() => setShowPasskeyModal(false)}
+              walletAddress={iotaWalletAddress || walletAddress}
+              onSignPersonalMessage={iotaSignPersonalMessage}
+            />
+
+            {/* Results container - Row-based layout with 60fps optimization */}
+            {showInitialResults && hasSearched && ensResults.length > 0 && !web3BioProfile && !showMyIDs && !showSearchBar && (
+              <div 
+                className="fixed left-0 right-0 bg-transparent z-[9997] animate-fade-in flex flex-col" 
+                style={{ 
+                  backfaceVisibility: 'hidden', 
+                  top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
+                  bottom: '0' 
+                }}
+              >
+                <div className="flex-1 overflow-y-auto px-4 md:px-8 pt-6 md:pt-10 pb-40">
+                  <div className="max-w-4xl mx-auto space-y-6">
+                    {/* No-TLD searches now redirect to Unstoppable Domains */}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* No Results State */}
             <div className="w-full sm:max-w-3xl sm:mx-auto px-4">
               {!isHomepage && hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
                 <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-500">
