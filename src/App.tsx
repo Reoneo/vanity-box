@@ -108,7 +108,11 @@ const App = () => {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <AppContent />
+          <SuiClientProvider networks={suiNetworkConfig} defaultNetwork="mainnet">
+            <SuiWalletProvider autoConnect={false}>
+              <AppContent />
+            </SuiWalletProvider>
+          </SuiClientProvider>
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>
