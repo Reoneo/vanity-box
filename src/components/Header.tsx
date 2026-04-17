@@ -298,18 +298,13 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={handleLogoSync}
-              disabled={isSyncing}
-              aria-label="Sync vanity domains"
-              title="Click to sync purchased .vanity domains"
-              className="relative flex items-center justify-center h-20 bg-transparent disabled:opacity-60"
+              aria-label="Vanity.box"
+              className="relative flex items-center justify-center h-20 bg-transparent"
             >
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className={cn(
-                  "h-[4.5rem] w-[4.5rem] object-cover rounded-lg transition-transform",
-                  isSyncing && "animate-spin",
-                )}
+                className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
                 loading="eager"
                 fetchPriority="high"
               />
