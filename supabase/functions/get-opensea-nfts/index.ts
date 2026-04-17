@@ -116,8 +116,8 @@ serve(async (req) => {
     const errorsByChain: Record<string, string> = {};
     const fetchedChains: string[] = [];
 
-    const MAX_TOTAL_NFTS = 1000; // Safety limit
-    const MAX_PAGES_PER_CHAIN = 10; // Safety limit per chain
+    const MAX_TOTAL_NFTS = Number.MAX_SAFE_INTEGER; // Effectively uncapped per user request
+    const MAX_PAGES_PER_CHAIN = 100; // Allow large collections to fully paginate
     const LIMIT_PER_REQUEST = 200; // OpenSea max
     const INTER_CHAIN_DELAY = 150;
 
