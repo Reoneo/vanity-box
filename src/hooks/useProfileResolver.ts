@@ -509,13 +509,14 @@ export function useProfileResolver() {
         if (udProfile && !udProfile.notFound) {
           resolverResult = { ok: true, source: 'web3bio', profile: udProfile };
         } else {
-          // Fallback: UD authoritative resolve via edge function (handles unclaimed-but-registered domains)
+          // Fallback: UD authoritative resolve via resolve-profile edge function (UD Partner API).
+          // Handles registered-but-unclaimed domains where the public Profile API returns 404.
           debug.tried.push('ud-resolve');
           const udResolveStart = Date.now();
           try {
             const { supabase } = await import('@/integrations/supabase/client');
-            const { data: udResolved } = await supabase.functions.invoke('resolve-ud-domain', {
-              body: { domain: normalized },
+            const { data: udResolved } = await supabase.functions.invoke('resolve-profile', {
+              body: { action: 'ud-resolve', domain: normalized },
             });
             debug.timingsMs.udResolve = Date.now() - udResolveStart;
             if (udResolved?.ok && udResolved.profile?.address) {

@@ -424,8 +424,96 @@ serve(async (req) => {
   const debug: { tried: string[]; timingsMs: Record<string, number> } = { tried: [], timingsMs: {} };
   
   try {
-    const { identity } = await req.json();
-    
+    const body = await req.json();
+    const { identity, action, domain } = body || {};
+
+    // Sub-action: authoritative Unstoppable Domains resolution via UD Partner API.
+    // Used as a fallback when the public Profile API returns 404 (unclaimed-but-registered domains).
+    if (action === "ud-resolve") {
+      const d = String(domain || "").trim().toLowerCase();
+      if (!d || !d.includes(".")) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing or invalid domain" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const apiKey = Deno.env.get("UD_API_KEY");
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "UD_API_KEY not configured" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      try {
+        const udUrl = `https://api.unstoppabledomains.com/resolve/domains/${encodeURIComponent(d)}`;
+        const res = await fetch(udUrl, {
+          headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+        });
+        if (res.status === 404) {
+          return new Response(
+            JSON.stringify({ ok: false, notFound: true, domain: d }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        if (!res.ok) {
+          const text = await res.text();
+          console.error(`[ud-resolve] UD HTTP ${res.status}:`, text.slice(0, 200));
+          return new Response(
+            JSON.stringify({ ok: false, error: `UD HTTP ${res.status}` }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        const data = await res.json();
+        const records = data?.records || {};
+        const meta = data?.meta || {};
+        const ethAddress = records["crypto.ETH.address"] || records["token.EVM.ETH.ETH.address"] || "";
+        const maticAddress = records["crypto.MATIC.version.MATIC.address"] || records["crypto.MATIC.version.ERC20.address"] || "";
+        const owner = meta?.owner || "";
+        const address = ethAddress || maticAddress || owner || null;
+
+        const links: Record<string, { link: string; handle: string }> = {};
+        const addLink = (platform: string, handle: string | undefined, builder: (h: string) => string) => {
+          if (handle && typeof handle === "string" && handle.trim()) {
+            const h = handle.trim();
+            links[platform] = { link: builder(h), handle: h };
+          }
+        };
+        addLink("twitter", records["social.twitter.username"], (h) => `https://twitter.com/${h.replace(/^@/, "")}`);
+        addLink("github", records["social.github.username"], (h) => `https://github.com/${h.replace(/^@/, "")}`);
+        addLink("telegram", records["social.telegram.username"], (h) => `https://t.me/${h.replace(/^@/, "")}`);
+        addLink("discord", records["social.discord.username"], (h) => h);
+        addLink("reddit", records["social.reddit.username"], (h) => `https://reddit.com/user/${h.replace(/^@/, "")}`);
+        addLink("linkedin", records["social.linkedin.username"], (h) => h.startsWith("http") ? h : `https://linkedin.com/in/${h}`);
+        addLink("youtube", records["social.youtube.channel"], (h) => h.startsWith("http") ? h : `https://youtube.com/@${h.replace(/^@/, "")}`);
+
+        const profile = {
+          address,
+          identity: d,
+          platform: "unstoppabledomains",
+          displayName: records["profile.displayName"] || d,
+          avatar: null,
+          description: records["profile.description"] || null,
+          header: null,
+          website: records["whois.website.value"] || null,
+          url: records["whois.website.value"] || null,
+          links,
+          location: records["profile.location"] || null,
+          email: records["whois.email.value"] || null,
+        };
+
+        return new Response(
+          JSON.stringify({ ok: true, profile, recordsCount: Object.keys(records).length }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      } catch (err: any) {
+        console.error("[ud-resolve] error:", err?.message || err);
+        return new Response(
+          JSON.stringify({ ok: false, error: err?.message || "Unknown error" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     if (!identity || typeof identity !== "string") {
       return new Response(
         JSON.stringify({ ok: false, error: "identity is required" }),
