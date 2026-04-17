@@ -500,7 +500,7 @@ export function useProfileResolver() {
 
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
-      // Route 0: Unstoppable Domains (.vanity, .crypto, .x, .nft, etc.) — UD public Profile API
+      // Route 0: Unstoppable Domains (.vanity, .crypto, .x, .nft, etc.)
       if (isUdDomain) {
         debug.tried.push('unstoppable');
         const udStart = Date.now();
@@ -509,7 +509,24 @@ export function useProfileResolver() {
         if (udProfile && !udProfile.notFound) {
           resolverResult = { ok: true, source: 'web3bio', profile: udProfile };
         } else {
-          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+          // Fallback: UD authoritative resolve via edge function (handles unclaimed-but-registered domains)
+          debug.tried.push('ud-resolve');
+          const udResolveStart = Date.now();
+          try {
+            const { supabase } = await import('@/integrations/supabase/client');
+            const { data: udResolved } = await supabase.functions.invoke('resolve-ud-domain', {
+              body: { domain: normalized },
+            });
+            debug.timingsMs.udResolve = Date.now() - udResolveStart;
+            if (udResolved?.ok && udResolved.profile?.address) {
+              resolverResult = { ok: true, source: 'web3bio', profile: udResolved.profile };
+            } else {
+              resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+            }
+          } catch (e: any) {
+            console.error('❌ UD edge resolve error:', e?.message || e);
+            resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+          }
         }
       }
       // Route 1: .iota domains — skip Web3.bio for instant loading
