@@ -105,12 +105,46 @@ const AppContent = () => {
 };
 
 const App = () => {
+  const [wcProjectId, setWcProjectId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke('get-walletconnect-config');
+        if (mounted && data?.projectId) setWcProjectId(data.projectId);
+      } catch (e) {
+        console.warn('[App] Failed to load WalletConnect projectId for Sui', e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const suiWalletConfig = useMemo(() => {
+    if (!wcProjectId) return undefined;
+    return {
+      walletConnect: {
+        projectId: wcProjectId,
+        metadata: {
+          name: 'Vanity.box',
+          description: 'Premium Web3 Identity',
+          url: typeof window !== 'undefined' ? window.location.origin : 'https://vanity.box',
+          icons: ['https://vanity.box/favicon.ico'],
+        },
+      },
+    } as const;
+  }, [wcProjectId]);
+
   return (
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <SuiClientProvider networks={suiNetworkConfig} defaultNetwork="mainnet">
-            <SuiWalletProvider autoConnect={false}>
+            <SuiWalletProvider
+              autoConnect={false}
+              walletConnect={suiWalletConfig?.walletConnect}
+              preferredWallets={['Nightly', 'Sui Wallet', 'Suiet', 'Slush']}
+            >
               <AppContent />
             </SuiWalletProvider>
           </SuiClientProvider>
