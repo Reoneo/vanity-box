@@ -39,6 +39,14 @@ import suiLogo from '@/assets/sui-logo.png';
 import vechainLogo from '@/assets/vanity-vet-avatar.png';
 
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
+import {
+  useCurrentAccount as useSuiCurrentAccount,
+  useConnectWallet as useSuiConnectWallet,
+  useDisconnectWallet as useSuiDisconnectWallet,
+  useWallets as useSuiWallets,
+  useSignPersonalMessage as useSuiSignPersonalMessage,
+} from '@mysten/dapp-kit';
+import { supabase } from '@/integrations/supabase/client';
 
 interface IdentityPanelContentProps {
   iotaName: string;
