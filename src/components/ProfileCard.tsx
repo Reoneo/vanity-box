@@ -230,7 +230,12 @@ export const ProfileCard = ({
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
-  
+
+  // Reset visible-NFT pagination whenever the user changes category or expanded collection
+  useEffect(() => {
+    setDisplayLimit(25);
+  }, [nftCategory, expandedCollection]);
+
   // IOTA-specific state
   const [iotaTokens, setIotaTokens] = useState<any[]>([]);
   const [iotaTransactions, setIotaTransactions] = useState<any[]>([]);
