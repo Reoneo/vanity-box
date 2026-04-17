@@ -2699,11 +2699,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">{t('no_results_found')}</h3>
                   <p className="text-sm text-muted-foreground max-w-xs mb-4">{t('try_different_query')}</p>
-                  <div className="px-4 py-2 rounded-lg bg-muted/50 border border-border">
-                    <p className="text-xs text-muted-foreground">
-                      Tip: Check for typos like <span className="text-amber-500">.ioa</span> → <span className="text-emerald-500">.iota</span>
-                    </p>
-                  </div>
                 </div>
               )}
             </div>
