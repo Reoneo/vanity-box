@@ -2022,11 +2022,6 @@ export const ProfileCard = ({
                                     {(openSeaGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
                                         <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                        {!isDomainLikeCollection(nft.collection || expandedCollection) && (
-                                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                            <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                                          </div>
-                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -2058,11 +2053,6 @@ export const ProfileCard = ({
                                     {(magicEdenGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
                                         <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                        {!isDomainLikeCollection(nft.collection || expandedCollection) && (
-                                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                            <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                                          </div>
-                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -2093,11 +2083,6 @@ export const ProfileCard = ({
                                   {hlNfts.slice(0, displayLimit).map((nft: any, index: number) => (
                                     <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
                                       <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                      {!isDomainLikeCollection(nft.collection) && (
-                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                                        </div>
-                                      )}
                                     </div>
                                   ))}
                                 </div>
@@ -2776,9 +2761,6 @@ export const ProfileCard = ({
                                 )}
                                 {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
                                 {(isVideo || isAudio) && <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">{isVideo ? '▶' : '♪'}</div>}
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                  <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                                </div>
                               </div>
                             );
                           })}
@@ -2826,9 +2808,6 @@ export const ProfileCard = ({
                             <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
                               <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                               {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                              </div>
                             </div>
                           ))}
                         </div>
@@ -2887,9 +2866,6 @@ export const ProfileCard = ({
                             <div key={`hl-${nft.identifier || nft.contract}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
                               <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                               {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                              </div>
                             </div>
                           ))}
                         </div>
@@ -2927,10 +2903,6 @@ export const ProfileCard = ({
                                 <div className="hidden w-full h-full bg-gradient-to-br from-[#5298FF] to-[#3370CC] flex items-center justify-center">
                                   <span className="text-white font-bold text-2xl">ENS</span>
                                 </div>
-                              </div>
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{domain.name}</p>
-                                <p className="text-white/60 text-[10px] capitalize">{domain.type || 'owned'}</p>
                               </div>
                             </div>
                           ))}
@@ -2970,10 +2942,6 @@ export const ProfileCard = ({
                                   <span className="text-white font-bold text-xl">BASE</span>
                                 </div>
                               </div>
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{domain.name}</p>
-                                <p className="text-white/60 text-[10px] capitalize">{domain.type || 'owned'}</p>
-                              </div>
                             </div>
                           ))}
                         </div>
@@ -3002,9 +2970,6 @@ export const ProfileCard = ({
                                   {iotaName.name?.charAt(0).toUpperCase() || 'I'}
                                 </div>
                               )}
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-white text-xs font-medium truncate">{iotaName.name || 'IOTA NFT'}</p>
-                              </div>
                             </div>
                           ))}
                         </div>
