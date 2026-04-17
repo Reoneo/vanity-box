@@ -39,6 +39,14 @@ import suiLogo from '@/assets/sui-logo.png';
 import vechainLogo from '@/assets/vanity-vet-avatar.png';
 
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
+import {
+  useCurrentAccount as useSuiCurrentAccount,
+  useConnectWallet as useSuiConnectWallet,
+  useDisconnectWallet as useSuiDisconnectWallet,
+  useWallets as useSuiWallets,
+  useSignPersonalMessage as useSuiSignPersonalMessage,
+} from '@mysten/dapp-kit';
+import { supabase } from '@/integrations/supabase/client';
 
 interface IdentityPanelContentProps {
   iotaName: string;
@@ -74,7 +82,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   // Wallet link section expansion state
-  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | null>(null);
+  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | null>(null);
 
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
@@ -122,6 +130,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const ethVcs = vcList.filter(vc => vc.type === 'EthereumWalletOwnershipCredential');
   const tonVcs = vcList.filter(vc => vc.type === 'TonWalletOwnershipCredential');
   const aptosVcs = vcList.filter(vc => vc.type === 'AptosWalletOwnershipCredential');
+  const suiVcs = vcList.filter(vc => vc.type === 'SuiWalletOwnershipCredential');
 
   if (!isInitialized) {
     return (
@@ -342,12 +351,14 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             badgeLabel="VET"
           />
 
-          {/* Link Sui Wallet — coming soon */}
-          <ComingSoonWalletSection
-            label="Link Sui Wallet"
-            subtitle="Coming soon — Sui & Suiet wallets"
-            icon={<img src={suiLogo} alt="SUI" className="w-4 h-4 flex-shrink-0 rounded-full" />}
-            badgeLabel="SUI"
+          {/* Link Sui Wallet */}
+          <SuiWalletLinkSection
+            iotaName={iotaName}
+            holderDid={holderDid}
+            linkedVcs={suiVcs}
+            expanded={expandedWallet === 'sui'}
+            onToggle={() => setExpandedWallet(expandedWallet === 'sui' ? null : 'sui')}
+            addExternalCredential={addExternalCredential}
           />
 
           {/* Passkey Wallet */}
@@ -1067,5 +1078,141 @@ export function IdentityPanel({ iotaName, walletAddress }: IdentityPanelProps) {
     <IdentityProvider walletAddress={walletAddress}>
       <IdentityPanelContent iotaName={iotaName} />
     </IdentityProvider>
+  );
+}
+
+// ── Sui Wallet Link Section ──
+
+function SuiWalletLinkSection({
+  iotaName,
+  holderDid,
+  linkedVcs,
+  expanded,
+  onToggle,
+  addExternalCredential,
+}: {
+  iotaName: string;
+  holderDid: string;
+  linkedVcs: VerifiableCredential[];
+  expanded: boolean;
+  onToggle: () => void;
+  addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+}) {
+  const [isLinking, setIsLinking] = useState(false);
+  const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const account = useSuiCurrentAccount();
+  const { mutateAsync: connectWallet } = useSuiConnectWallet();
+  const { mutateAsync: disconnectWallet } = useSuiDisconnectWallet();
+  const { mutateAsync: signPersonalMessage } = useSuiSignPersonalMessage();
+  const wallets = useSuiWallets();
+
+  const handleLink = useCallback(async () => {
+    setIsLinking(true);
+    setErrorMsg('');
+    try {
+      // Connect if needed
+      let addr = account?.address;
+      if (!addr) {
+        setStep('connecting');
+        if (!wallets || wallets.length === 0) {
+          throw new Error('No Sui wallet detected. Install Sui Wallet or Suiet to continue.');
+        }
+        const result = await connectWallet({ wallet: wallets[0] });
+        addr = result?.accounts?.[0]?.address;
+        if (!addr) throw new Error('Failed to get Sui address');
+      }
+
+      // Sign nonce message
+      setStep('signing');
+      const timestamp = new Date().toISOString();
+      const message = [
+        'vanity.box wants you to verify your Sui wallet:',
+        addr,
+        '',
+        `Link Sui wallet to IOTA identity ${iotaName}`,
+        '',
+        `DID: ${holderDid}`,
+        'URI: https://vanity.box',
+        `Issued At: ${timestamp}`,
+      ].join('\n');
+
+      const messageBytes = new TextEncoder().encode(message);
+      const sigResult = await signPersonalMessage({ message: messageBytes });
+      const signature = sigResult?.signature || '';
+
+      setStep('issuing');
+      const { data, error } = await supabase.functions.invoke('issue-wallet-vc', {
+        body: { holderDid, address: addr, message, signature, iotaName, chain: 'sui' },
+      });
+      if (error) throw error;
+      const resp = data as any;
+      if (!resp?.vcJwt) throw new Error('Invalid response from credential issuance');
+
+      const newVc: VerifiableCredential = {
+        vcJwt: resp.vcJwt,
+        issuerDid: resp.issuerDid,
+        type: 'SuiWalletOwnershipCredential',
+        issuedAt: resp.issuedAt || new Date().toISOString(),
+        claims: { name: iotaName, chain: 'Sui', address: addr },
+      };
+      await addExternalCredential(newVc);
+      setStep('done');
+      toast.success('Sui wallet linked successfully');
+
+      window.dispatchEvent(new CustomEvent('iota-sui-linked', {
+        detail: { iotaName: iotaName.toLowerCase(), suiAddress: addr },
+      }));
+
+      try { await disconnectWallet(); } catch {}
+    } catch (e: any) {
+      console.error('Sui link error:', e);
+      const msg = e?.message || 'Failed to link Sui wallet';
+      setErrorMsg(msg.includes('reject') || msg.includes('cancel') ? 'Connection was rejected' : msg);
+      setStep('error');
+    } finally {
+      setIsLinking(false);
+    }
+  }, [account, wallets, connectWallet, disconnectWallet, signPersonalMessage, iotaName, holderDid, addExternalCredential]);
+
+  return (
+    <WalletLinkSection
+      label="Link Sui Wallet"
+      subtitle="Connect Sui Wallet or Suiet"
+      icon={<img src={suiLogo} alt="SUI" className="w-4 h-4 flex-shrink-0 rounded-full" />}
+      expanded={expanded}
+      onToggle={onToggle}
+      linkedVcs={linkedVcs}
+      badgeLabel="SUI"
+    >
+      {step === 'done' ? (
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Sui wallet linked</p>
+        </div>
+      ) : step === 'error' ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/30">
+            <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+            <p className="text-xs text-destructive">{errorMsg}</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setStep('idle')} className="w-full">Try Again</Button>
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          onClick={handleLink}
+          disabled={isLinking}
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+        >
+          {isLinking ? (
+            <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {step === 'connecting' ? 'Connecting…' : step === 'signing' ? 'Signing…' : 'Issuing…'}</>
+          ) : (
+            <><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link Sui Wallet</>
+          )}
+        </Button>
+      )}
+    </WalletLinkSection>
   );
 }

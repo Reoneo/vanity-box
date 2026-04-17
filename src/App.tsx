@@ -14,6 +14,14 @@ import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { WalletConnectProvider } from "@/contexts/WalletConnectContext";
 import { IotaWalletProvider } from "@/contexts/IotaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import '@mysten/dapp-kit/dist/index.css';
+import { createNetworkConfig, SuiClientProvider, WalletProvider as SuiWalletProvider } from '@mysten/dapp-kit';
+import { JsonRpcHTTPTransport, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
+
+const { networkConfig: suiNetworkConfig } = createNetworkConfig({
+  mainnet: { network: 'mainnet', transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('mainnet') }) },
+  testnet: { network: 'testnet', transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('testnet') }) },
+});
 
 // Lazy load SplashCursor for desktop only
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
@@ -100,7 +108,11 @@ const App = () => {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <AppContent />
+          <SuiClientProvider networks={suiNetworkConfig} defaultNetwork="mainnet">
+            <SuiWalletProvider autoConnect={false}>
+              <AppContent />
+            </SuiWalletProvider>
+          </SuiClientProvider>
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>

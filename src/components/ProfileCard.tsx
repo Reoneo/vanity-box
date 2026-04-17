@@ -14,6 +14,12 @@ const isValidEvmAddress = (address?: string): boolean => {
   if (!address) return false;
   return /^0x[a-fA-F0-9]{40}$/i.test(address);
 };
+
+// Detect domain-like collection names (so we can hide title overlays on the thumbnails)
+const isDomainLikeCollection = (name?: string): boolean => {
+  const n = (name || '').toLowerCase();
+  return /domain|name|\.eth|\.box|ens|basenam|\.iota/.test(n);
+};
 import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -219,11 +225,17 @@ export const ProfileCard = ({
   const [selectedNft, setSelectedNft] = useState<any>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
+  const [displayLimit, setDisplayLimit] = useState<number>(25);
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
-  
+
+  // Reset visible-NFT pagination whenever the user changes category or expanded collection
+  useEffect(() => {
+    setDisplayLimit(25);
+  }, [nftCategory, expandedCollection]);
+
   // IOTA-specific state
   const [iotaTokens, setIotaTokens] = useState<any[]>([]);
   const [iotaTransactions, setIotaTransactions] = useState<any[]>([]);
@@ -1641,9 +1653,67 @@ export const ProfileCard = ({
                             <span className="text-sm font-medium">Back</span>
                           </button>
                         )}
-                        <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
-                          {desktopActivePanel === 'nfts' ? 'NFTs' : desktopActivePanel || 'Select a category'}
-                        </h3>
+                        {(() => {
+                          if (desktopActivePanel !== 'nfts') {
+                            return (
+                              <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
+                                {desktopActivePanel || 'Select a category'}
+                              </h3>
+                            );
+                          }
+                          // NFTs header: dynamic title + total count
+                          let title = 'NFTs';
+                          let total: number | null = null;
+                          if (nftCategory === 'main') {
+                            title = 'NFTs';
+                          } else if (nftCategory === 'poaps') {
+                            title = 'POAPs';
+                            total = poapTotalCount || formattedPoaps.length;
+                          } else if (nftCategory === 'opensea') {
+                            if (expandedCollection) {
+                              title = formatCollectionName(expandedCollection);
+                              total = openSeaGroupedNfts[expandedCollection]?.length || 0;
+                            } else {
+                              title = 'OpenSea';
+                              total = filteredNfts.length;
+                            }
+                          } else if (nftCategory === 'magiceden') {
+                            if (expandedCollection) {
+                              title = formatCollectionName(expandedCollection);
+                              total = magicEdenGroupedNfts[expandedCollection]?.length || 0;
+                            } else {
+                              title = 'EVM';
+                              total = magicEdenNfts.length;
+                            }
+                          } else if (nftCategory === 'hyperliquid') {
+                            title = 'Hyperliquid';
+                            total = hlNfts.length;
+                          } else if (nftCategory === 'worldchain') {
+                            title = 'World Chain';
+                          } else if (nftCategory === 'ensdomains') {
+                            title = 'ENS Domains';
+                            total = ensDomains.length;
+                          } else if (nftCategory === 'basenames') {
+                            title = 'Basenames';
+                            total = basenames.length;
+                          } else if (nftCategory.startsWith('iota:')) {
+                            const col = nftCategory.replace('iota:', '');
+                            title = formatCollectionName(col);
+                            total = (iotaGroupedNfts[col] || []).length;
+                          } else if (nftCategory.startsWith('ton:')) {
+                            const col = nftCategory.replace('ton:', '');
+                            title = formatCollectionName(col);
+                            total = (tonCollections.find(c => c.collectionName === col)?.nfts || []).length;
+                          }
+                          return (
+                            <div className="flex flex-col items-center">
+                              <h3 className="text-xl font-bold text-[#D4AF37] truncate max-w-[60vw]">{title}</h3>
+                              {total !== null && (
+                                <p className="text-xs text-muted-foreground">{total.toLocaleString()} NFTs</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     
@@ -1949,15 +2019,20 @@ export const ProfileCard = ({
                               expandedCollection ? (
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                                    {(openSeaGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
                                         <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                                        </div>
+                                        {!isDomainLikeCollection(nft.collection || expandedCollection) && (
+                                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                            <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                          </div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
+                                  {(openSeaGroupedNfts[expandedCollection]?.length || 0) > displayLimit && (
+                                    <Button onClick={() => setDisplayLimit(d => d + 25)} className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">Load 25 more</Button>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="space-y-2">
@@ -1980,15 +2055,20 @@ export const ProfileCard = ({
                               expandedCollection ? (
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    {magicEdenGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                                    {(magicEdenGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
                                         <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
-                                        </div>
+                                        {!isDomainLikeCollection(nft.collection || expandedCollection) && (
+                                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                            <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                          </div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
+                                  {(magicEdenGroupedNfts[expandedCollection]?.length || 0) > displayLimit && (
+                                    <Button onClick={() => setDisplayLimit(d => d + 25)} className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">Load 25 more</Button>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="space-y-2">
@@ -2008,15 +2088,22 @@ export const ProfileCard = ({
                             )}
 
                             {nftCategory === 'hyperliquid' && (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {hlNfts.map((nft: any, index: number) => (
-                                  <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                                    <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                      <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  {hlNfts.slice(0, displayLimit).map((nft: any, index: number) => (
+                                    <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                      <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                      {!isDomainLikeCollection(nft.collection) && (
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                          <p className="text-white text-xs font-medium truncate">{nft.name}</p>
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
+                                {hlNfts.length > displayLimit && (
+                                  <Button onClick={() => setDisplayLimit(d => d + 25)} className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">Load 25 more</Button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -2358,32 +2445,31 @@ export const ProfileCard = ({
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-black dark:text-white">
-                        {nftCategory === 'main'
-                          ? 'NFTs'
-                          : nftCategory === 'poaps'
-                            ? 'POAPs'
-                            : nftCategory === 'opensea'
-                              ? 'OpenSea'
-                              : nftCategory === 'magiceden'
-                                ? 'EVM'
-                                : nftCategory === 'worldchain'
-                                  ? 'World Chain'
-                                  : nftCategory === 'ensdomains'
-                                    ? 'ENS Domains'
-                                    : nftCategory === 'basenames'
-                                      ? 'Basenames'
-                                      : nftCategory.startsWith('iota:')
-                                        ? nftCategory.replace('iota:', '')
-                                        : nftCategory.startsWith('ton:')
-                                          ? nftCategory.replace('ton:', '')
-                                          : 'Hyperliquid'}
-                      </h3>
-                      {nftCategory === 'poaps' && (poapTotalCount > 0 || formattedPoaps.length > 0) && (
-                        <span className="text-sm font-medium text-purple-500">
-                          {(poapTotalCount || formattedPoaps.length).toLocaleString()}
-                        </span>
-                      )}
+                      {(() => {
+                        let title = 'NFTs';
+                        let total: number | null = null;
+                        if (nftCategory === 'poaps') { title = 'POAPs'; total = poapTotalCount || formattedPoaps.length; }
+                        else if (nftCategory === 'opensea') {
+                          if (expandedCollection) { title = formatCollectionName(expandedCollection); total = openSeaGroupedNfts[expandedCollection]?.length || 0; }
+                          else { title = 'OpenSea'; total = filteredNfts.length; }
+                        }
+                        else if (nftCategory === 'magiceden') {
+                          if (expandedCollection) { title = formatCollectionName(expandedCollection); total = magicEdenGroupedNfts[expandedCollection]?.length || 0; }
+                          else { title = 'EVM'; total = magicEdenNfts.length; }
+                        }
+                        else if (nftCategory === 'worldchain') { title = 'World Chain'; }
+                        else if (nftCategory === 'ensdomains') { title = 'ENS Domains'; total = ensDomains.length; }
+                        else if (nftCategory === 'basenames') { title = 'Basenames'; total = basenames.length; }
+                        else if (nftCategory === 'hyperliquid') { title = 'Hyperliquid'; total = hlNfts.length; }
+                        else if (nftCategory.startsWith('iota:')) { const c = nftCategory.replace('iota:',''); title = formatCollectionName(c); total = (iotaGroupedNfts[c] || []).length; }
+                        else if (nftCategory.startsWith('ton:')) { const c = nftCategory.replace('ton:',''); title = formatCollectionName(c); total = (tonCollections.find(x=>x.collectionName===c)?.nfts || []).length; }
+                        return (
+                          <>
+                            <h3 className="text-lg font-bold text-black dark:text-white truncate max-w-[40vw]">{title}</h3>
+                            {total !== null && <span className="text-xs font-medium text-muted-foreground">{total.toLocaleString()} NFTs</span>}
+                          </>
+                        );
+                      })()}
                     </div>
                     <button
                       onClick={() => {
