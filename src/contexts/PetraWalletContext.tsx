@@ -5,11 +5,20 @@ import {
 } from '@aptos-labs/wallet-adapter-react';
 
 // Re-export the adapter's useWallet as our context value
+export interface AptosAdapterWallet {
+  name: string;
+  icon?: string;
+  url?: string;
+  isInstalled: boolean;
+}
+
 interface PetraWalletContextType {
   account: { address: string; publicKey: string } | null;
   network: { name: string; chainId?: string; url?: string } | null;
   isConnected: boolean;
   isInstalled: boolean;
+  /** All Aptos wallets known to the adapter (installed + discoverable). */
+  wallets: AptosAdapterWallet[];
   connect: (walletName?: string) => Promise<void>;
   disconnect: () => Promise<void>;
   signAndSubmitTransaction: (transaction: any) => Promise<any>;
