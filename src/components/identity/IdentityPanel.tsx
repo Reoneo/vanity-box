@@ -853,10 +853,22 @@ function AptosWalletLinkSection({
     }
   }, [connectAndGetAccount, holderDid, iotaName, addExternalCredential]);
 
+  // Sort: installed first, then by name. Always offer Petra as a fallback option.
+  const walletOptions = (() => {
+    const list = [...petra.wallets];
+    if (!list.some((w) => w.name.toLowerCase().includes('petra'))) {
+      list.push({ name: 'Petra', url: 'https://petra.app/', isInstalled: false });
+    }
+    return list.sort((a, b) => {
+      if (a.isInstalled !== b.isInstalled) return a.isInstalled ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  })();
+
   return (
     <WalletLinkSection
       label="Link Aptos Wallet"
-      subtitle="Connect via Petra wallet"
+      subtitle="Choose any Aptos wallet"
       icon={<img src={aptosLogo} alt="APT" className="w-4 h-4 flex-shrink-0 rounded-sm" />}
       expanded={expanded}
       onToggle={onToggle}
@@ -874,23 +886,43 @@ function AptosWalletLinkSection({
             <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
             <p className="text-xs text-destructive">{errorMsg}</p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setStep('idle')} className="w-full">
+          <Button size="sm" variant="outline" onClick={() => { setStep('idle'); setSelectedWallet(null); }} className="w-full">
             Try Again
           </Button>
         </div>
+      ) : isLinking ? (
+        <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-muted/40 border border-border">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground">
+            {step === 'connecting' ? `Connecting to ${selectedWallet}…`
+              : step === 'signing' ? `Awaiting signature from ${selectedWallet}…`
+              : 'Issuing credential…'}
+          </p>
+        </div>
       ) : (
-        <Button
-          size="sm"
-          onClick={handleLinkAptos}
-          disabled={isLinking}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-        >
-          {isLinking ? (
-            <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {step === 'connecting' ? 'Connecting…' : step === 'signing' ? 'Signing…' : 'Issuing…'}</>
-          ) : (
-            <><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link Aptos Wallet</>
-          )}
-        </Button>
+        <div className="grid grid-cols-1 gap-1.5">
+          {walletOptions.map((w) => (
+            <button
+              key={w.name}
+              type="button"
+              onClick={() => handleLinkAptos(w.name)}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors text-left"
+            >
+              {w.icon ? (
+                <img src={w.icon} alt={w.name} className="w-5 h-5 rounded-sm flex-shrink-0" />
+              ) : (
+                <div className="w-5 h-5 rounded-sm bg-muted flex items-center justify-center flex-shrink-0">
+                  <Wallet className="w-3 h-3 text-muted-foreground" />
+                </div>
+              )}
+              <span className="text-xs font-medium text-foreground flex-1 truncate">{w.name}</span>
+              {!w.isInstalled && (
+                <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted">Install</span>
+              )}
+              <Link2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            </button>
+          ))}
+        </div>
       )}
     </WalletLinkSection>
   );
