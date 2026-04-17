@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import Messages from "./pages/Messages";
+import UdRedirect from "./pages/UdRedirect";
 
 const queryClient = new QueryClient();
 
