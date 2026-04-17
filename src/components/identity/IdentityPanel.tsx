@@ -648,6 +648,7 @@ function AptosWalletLinkSection({
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
   const petra = usePetraWallet();
 
@@ -665,45 +666,24 @@ function AptosWalletLinkSection({
   };
 
   /**
-   * Triple-path Aptos connect:
-   * 1. window.aptos — available inside Petra's in-app browser (mobile) or extension
-   * 2. Wallet adapter — AIP-62 desktop extension detection
-   * 3. Mobile deeplink — redirect to open page inside Petra's in-app browser
+   * Connect to a chosen Aptos wallet via the Wallet Adapter (AIP-62).
+   * Falls back to window.aptos / mobile deeplink if Petra is selected and adapter is unavailable.
    */
-  const connectAndGetAccount = useCallback(async (): Promise<{
+  const connectAndGetAccount = useCallback(async (walletName: string): Promise<{
     address: string;
     signMessage: (payload: any) => Promise<any>;
     disconnect: () => Promise<void>;
   }> => {
-    // Path 1: Direct window.aptos (Petra in-app browser OR extension injected)
-    const petraGlobal = (window as any).aptos ?? (window as any).petra;
-    if (petraGlobal) {
-      console.log('[Aptos] Using window.aptos / window.petra (injected)');
-      try {
-        const response = await petraGlobal.connect();
-        const addr = response?.address;
-        if (addr) {
-          return {
-            address: addr,
-            signMessage: (payload: any) => petraGlobal.signMessage(payload),
-            disconnect: () => petraGlobal.disconnect(),
-          };
-        }
-      } catch (e: any) {
-        console.warn('[Aptos] window.aptos.connect() failed:', e);
-        // Fall through to other paths
-      }
-    }
+    const target = petra.wallets.find((w) => w.name === walletName);
+    const isPetra = walletName.toLowerCase().includes('petra');
 
-    // Path 2: Wallet adapter (desktop extension / AIP-62)
-    // Only attempt if the adapter actually detected an installed wallet
-    if (petra.isInstalled) {
-      console.log('[Aptos] Using wallet adapter (extension detected)');
+    // Path 1: Adapter connect (preferred for all AIP-62 wallets)
+    if (target?.isInstalled) {
+      console.log(`[Aptos] Connecting via adapter: ${walletName}`);
       if (!connectedRef.current) {
-        await petra.connect('Petra');
+        await petra.connect(walletName);
       }
 
-      // Poll the ref (not the closure) for account state
       const address = await new Promise<string>((resolve, reject) => {
         if (accountRef.current?.address) {
           resolve(accountRef.current.address);
@@ -729,26 +709,52 @@ function AptosWalletLinkSection({
       };
     }
 
-    // Path 3: Mobile / tablet — open this page inside Petra's in-app browser
-    const isMobile = /iPhone|iPad|iPod|Android|webOS/i.test(navigator.userAgent);
-    if (isMobile) {
-      console.log('[Aptos] Redirecting to Petra deeplink');
-      const currentUrl = window.location.href;
-      const deeplink = `https://petra.app/explore?link=${encodeURIComponent(currentUrl)}`;
-      window.open(deeplink, '_blank');
-      throw new Error('Opening Petra app… Once it opens, please tap "Link Aptos Wallet" again inside Petra\'s browser.');
+    // Path 2: Petra-specific fallbacks (window.aptos in in-app browser, mobile deeplink)
+    if (isPetra) {
+      const petraGlobal = (window as any).aptos ?? (window as any).petra;
+      if (petraGlobal) {
+        console.log('[Aptos] Using window.aptos / window.petra (injected)');
+        try {
+          const response = await petraGlobal.connect();
+          const addr = response?.address;
+          if (addr) {
+            return {
+              address: addr,
+              signMessage: (payload: any) => petraGlobal.signMessage(payload),
+              disconnect: () => petraGlobal.disconnect(),
+            };
+          }
+        } catch (e: any) {
+          console.warn('[Aptos] window.aptos.connect() failed:', e);
+        }
+      }
+
+      const isMobile = /iPhone|iPad|iPod|Android|webOS/i.test(navigator.userAgent);
+      if (isMobile) {
+        const currentUrl = window.location.href;
+        const deeplink = `https://petra.app/explore?link=${encodeURIComponent(currentUrl)}`;
+        window.open(deeplink, '_blank');
+        throw new Error('Opening Petra app… Once it opens, tap "Link Aptos Wallet" again inside Petra\'s browser.');
+      }
     }
 
-    throw new Error('Petra wallet not detected. Please install the Petra browser extension or open this page in the Petra mobile app.');
-  }, [petra.isInstalled, petra.connect, petra.signMessage, petra.disconnect]);
+    // Not installed → send the user to the wallet's install page
+    if (target?.url) {
+      window.open(target.url, '_blank', 'noopener,noreferrer');
+      throw new Error(`${walletName} is not installed. We opened the install page in a new tab.`);
+    }
 
-  const handleLinkAptos = useCallback(async () => {
+    throw new Error(`${walletName} not detected. Please install it and try again.`);
+  }, [petra.wallets, petra.connect, petra.signMessage, petra.disconnect]);
+
+  const handleLinkAptos = useCallback(async (walletName: string) => {
+    setSelectedWallet(walletName);
     setIsLinking(true);
     setStep('connecting');
     setErrorMsg('');
 
     try {
-      const wallet = await connectAndGetAccount();
+      const wallet = await connectAndGetAccount(walletName);
       const address = normalizeAptosAddress(wallet.address);
 
       setStep('signing');
@@ -774,16 +780,14 @@ function AptosWalletLinkSection({
         nonce,
       });
 
-      // Extract signature from response (shape varies between direct API and adapter)
       const signature = signResult?.signature
         ?? (signResult as any)?.result?.signature
         ?? (typeof signResult === 'string' ? signResult : null);
 
       if (!signature) {
-        throw new Error('Petra returned an empty signature');
+        throw new Error('Wallet returned an empty signature');
       }
 
-      // Verify address match if returned
       const signedAddr = signResult?.address ?? (signResult as any)?.result?.address;
       if (signedAddr && normalizeAptosAddress(signedAddr) !== address) {
         throw new Error('Signed address does not match connected wallet address');
@@ -818,7 +822,7 @@ function AptosWalletLinkSection({
 
         await addExternalCredential(newVc);
         setStep('done');
-        toast.success('Aptos wallet linked successfully');
+        toast.success(`${walletName} linked successfully`);
 
         try {
           await wallet.disconnect();
@@ -831,14 +835,14 @@ function AptosWalletLinkSection({
     } catch (error: any) {
       console.error('Aptos link error:', error);
       const code = String(error?.code ?? '');
-      const msg = error?.message || 'Failed to link Aptos wallet';
+      const msg = error?.message || `Failed to link ${walletName}`;
 
       if (code === '4001' || msg.includes('rejected') || msg.includes('denied')) {
         setErrorMsg('Connection/signature request was rejected');
       } else if (code === '4100') {
-        setErrorMsg('Wallet is not authorized for this site. Please reconnect Petra.');
+        setErrorMsg(`Wallet is not authorized for this site. Please reconnect ${walletName}.`);
       } else if (code === '4000') {
-        setErrorMsg('No Aptos account found in Petra wallet.');
+        setErrorMsg(`No Aptos account found in ${walletName}.`);
       } else {
         setErrorMsg(msg);
       }
@@ -849,10 +853,22 @@ function AptosWalletLinkSection({
     }
   }, [connectAndGetAccount, holderDid, iotaName, addExternalCredential]);
 
+  // Sort: installed first, then by name. Always offer Petra as a fallback option.
+  const walletOptions = (() => {
+    const list = [...petra.wallets];
+    if (!list.some((w) => w.name.toLowerCase().includes('petra'))) {
+      list.push({ name: 'Petra', url: 'https://petra.app/', isInstalled: false });
+    }
+    return list.sort((a, b) => {
+      if (a.isInstalled !== b.isInstalled) return a.isInstalled ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  })();
+
   return (
     <WalletLinkSection
       label="Link Aptos Wallet"
-      subtitle="Connect via Petra wallet"
+      subtitle="Choose any Aptos wallet"
       icon={<img src={aptosLogo} alt="APT" className="w-4 h-4 flex-shrink-0 rounded-sm" />}
       expanded={expanded}
       onToggle={onToggle}
@@ -870,23 +886,43 @@ function AptosWalletLinkSection({
             <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
             <p className="text-xs text-destructive">{errorMsg}</p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setStep('idle')} className="w-full">
+          <Button size="sm" variant="outline" onClick={() => { setStep('idle'); setSelectedWallet(null); }} className="w-full">
             Try Again
           </Button>
         </div>
+      ) : isLinking ? (
+        <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-muted/40 border border-border">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground">
+            {step === 'connecting' ? `Connecting to ${selectedWallet}…`
+              : step === 'signing' ? `Awaiting signature from ${selectedWallet}…`
+              : 'Issuing credential…'}
+          </p>
+        </div>
       ) : (
-        <Button
-          size="sm"
-          onClick={handleLinkAptos}
-          disabled={isLinking}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-        >
-          {isLinking ? (
-            <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {step === 'connecting' ? 'Connecting…' : step === 'signing' ? 'Signing…' : 'Issuing…'}</>
-          ) : (
-            <><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link Aptos Wallet</>
-          )}
-        </Button>
+        <div className="grid grid-cols-1 gap-1.5">
+          {walletOptions.map((w) => (
+            <button
+              key={w.name}
+              type="button"
+              onClick={() => handleLinkAptos(w.name)}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors text-left"
+            >
+              {w.icon ? (
+                <img src={w.icon} alt={w.name} className="w-5 h-5 rounded-sm flex-shrink-0" />
+              ) : (
+                <div className="w-5 h-5 rounded-sm bg-muted flex items-center justify-center flex-shrink-0">
+                  <Wallet className="w-3 h-3 text-muted-foreground" />
+                </div>
+              )}
+              <span className="text-xs font-medium text-foreground flex-1 truncate">{w.name}</span>
+              {!w.isInstalled && (
+                <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted">Install</span>
+              )}
+              <Link2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            </button>
+          ))}
+        </div>
       )}
     </WalletLinkSection>
   );

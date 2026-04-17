@@ -5,11 +5,20 @@ import {
 } from '@aptos-labs/wallet-adapter-react';
 
 // Re-export the adapter's useWallet as our context value
+export interface AptosAdapterWallet {
+  name: string;
+  icon?: string;
+  url?: string;
+  isInstalled: boolean;
+}
+
 interface PetraWalletContextType {
   account: { address: string; publicKey: string } | null;
   network: { name: string; chainId?: string; url?: string } | null;
   isConnected: boolean;
   isInstalled: boolean;
+  /** All Aptos wallets known to the adapter (installed + discoverable). */
+  wallets: AptosAdapterWallet[];
   connect: (walletName?: string) => Promise<void>;
   disconnect: () => Promise<void>;
   signAndSubmitTransaction: (transaction: any) => Promise<any>;
@@ -37,8 +46,14 @@ function PetraWalletBridge({ children }: { children: React.ReactNode }) {
       : null,
     isConnected: wallet.connected,
     isInstalled: wallet.wallets.some(
-      (w) => w.name.toLowerCase().includes('petra') && ('readyState' in w ? (w as any).readyState === 'Installed' : true)
+      (w) => 'readyState' in w ? (w as any).readyState === 'Installed' : true
     ),
+    wallets: wallet.wallets.map((w: any) => ({
+      name: w.name,
+      icon: w.icon,
+      url: w.url,
+      isInstalled: 'readyState' in w ? w.readyState === 'Installed' : true,
+    })),
     connect: async (walletName?: string) => {
       const name = walletName ?? 'Petra';
       await wallet.connect(name as any);
@@ -72,7 +87,7 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
   return (
     <AptosWalletAdapterProvider
       autoConnect={false}
-      optInWallets={['Petra']}
+      optInWallets={['Petra', 'Pontem Wallet', 'Martian', 'Nightly', 'OKX Wallet', 'Rise Wallet', 'TrustWallet', 'MSafe', 'Continue with Google'] as any}
       dappConfig={{
         network: 'mainnet' as any,
         aptosConnect: {
