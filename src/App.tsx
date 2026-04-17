@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import Messages from "./pages/Messages";
+import UdRedirect from "./pages/UdRedirect";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const AppRoutes = () => (
       <Route path="/messages" element={<Messages />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
+      <Route path="/ud" element={<UdRedirect />} />
       <Route path="/:username" element={<Index />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
