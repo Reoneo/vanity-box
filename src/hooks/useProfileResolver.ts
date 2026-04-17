@@ -381,6 +381,90 @@ async function fetchVetReverseProfile(address: string): Promise<any | null> {
 }
 
 /**
+ * Unstoppable Domains TLDs (resolved via UD public Profile API)
+ * Includes .vanity and all standard UD TLDs
+ */
+const UD_TLDS = [
+  '.vanity', '.crypto', '.x', '.nft', '.wallet', '.bitcoin', '.dao',
+  '.888', '.blockchain', '.unstoppable', '.zil', '.klever', '.hi',
+  '.kresus', '.polygon', '.anime', '.manga', '.binanceus', '.go', '.pog',
+  '.witg', '.metroplex', '.austin', '.tball', '.farms', '.stepn',
+  '.smart', '.raiin', '.altimist', '.ubu', '.pudgy', '.clay', '.lfg', '.com.cw',
+];
+
+function isUnstoppableDomain(normalized: string): boolean {
+  return UD_TLDS.some((tld) => normalized.endsWith(tld));
+}
+
+/**
+ * Fetch UD profile via Unstoppable Domains public Profile API (no API key required)
+ */
+async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
+  const url = `https://api.unstoppabledomains.com/profile/public/${encodeURIComponent(domain)}`;
+  console.log(`🔍 [Client] Fetching Unstoppable Domains profile for: ${domain}`);
+
+  const response = await fetchWithRetry(url, {}, 2, 10000);
+  if (!response) {
+    console.log('❌ UD: All retries failed');
+    return null;
+  }
+  if (response.status === 404) {
+    console.log('⚠️ UD: Profile not found (404)');
+    return { notFound: true };
+  }
+  if (!response.ok) {
+    console.log(`❌ UD: HTTP ${response.status}`);
+    return null;
+  }
+
+  const data = await response.json();
+  if (!data?.metadata?.domain) return { notFound: true };
+
+  // Build address: prefer ETH, then MATIC, then any owner verification
+  const verifications: Array<{ symbol: string; address: string }> = data.cryptoVerifications || [];
+  const ethAddr = verifications.find((v) => v.symbol === 'ETH')?.address;
+  const maticAddr = verifications.find((v) => v.symbol === 'MATIC')?.address;
+  const address = ethAddr || maticAddr || data.metadata?.owner || null;
+
+  // Normalize social links (UD only returns location/handle when set)
+  const sa = data.socialAccounts || {};
+  const links: Record<string, any> = {};
+  const addLink = (platform: string, builder: (h: string) => string) => {
+    const handle = sa[platform]?.location;
+    if (handle && typeof handle === 'string' && handle.trim()) {
+      links[platform] = { link: builder(handle), handle };
+    }
+  };
+  addLink('twitter', (h) => `https://twitter.com/${h.replace(/^@/, '')}`);
+  addLink('github', (h) => `https://github.com/${h.replace(/^@/, '')}`);
+  addLink('telegram', (h) => `https://t.me/${h.replace(/^@/, '')}`);
+  addLink('discord', (h) => h);
+  addLink('reddit', (h) => `https://reddit.com/user/${h.replace(/^@/, '')}`);
+  addLink('linkedin', (h) => h.startsWith('http') ? h : `https://linkedin.com/in/${h}`);
+  addLink('youtube', (h) => h.startsWith('http') ? h : `https://youtube.com/@${h.replace(/^@/, '')}`);
+
+  const profile = data.profile || {};
+  const avatar = profile.imagePath || null;
+
+  console.log(`✅ UD resolved: ${domain} -> ${address}`);
+
+  return {
+    address,
+    identity: data.metadata.domain,
+    platform: 'unstoppabledomains',
+    displayName: data.metadata.domain,
+    avatar,
+    description: profile.description || null,
+    header: profile.coverPath || null,
+    website: profile.web2Url || null,
+    url: profile.web2Url || null,
+    links,
+    location: profile.location || null,
+    email: null,
+  };
+}
+
+/**
  * Main profile resolution hook - uses public APIs directly from the client
  */
 export function useProfileResolver() {
@@ -412,10 +496,24 @@ export function useProfileResolver() {
       const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
+      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
+
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
+      // Route 0: Unstoppable Domains (.vanity, .crypto, .x, .nft, etc.) — UD public Profile API
+      if (isUdDomain) {
+        debug.tried.push('unstoppable');
+        const udStart = Date.now();
+        const udProfile = await fetchUnstoppableProfile(normalized);
+        debug.timingsMs.unstoppable = Date.now() - udStart;
+        if (udProfile && !udProfile.notFound) {
+          resolverResult = { ok: true, source: 'web3bio', profile: udProfile };
+        } else {
+          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+        }
+      }
       // Route 1: .iota domains — skip Web3.bio for instant loading
-      if (isIotaDomain) {
+      else if (isIotaDomain) {
         debug.tried.push('iota');
         const iotaStart = Date.now();
         const iotaProfile = await fetchIotaProfile(normalized);
@@ -708,10 +806,24 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
     const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
     const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
+    const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
+
     let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
+    // Route 0: Unstoppable Domains (.vanity, .crypto, .x, .nft, etc.) — UD public Profile API
+    if (isUdDomain) {
+      debug.tried.push('unstoppable');
+      const udStart = Date.now();
+      const udProfile = await fetchUnstoppableProfile(normalized);
+      debug.timingsMs.unstoppable = Date.now() - udStart;
+      if (udProfile && !udProfile.notFound) {
+        resolverResult = { ok: true, source: 'web3bio', profile: udProfile };
+      } else {
+        resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
+      }
+    }
     // Route 1: .iota domains — skip Web3.bio for instant loading
-    if (isIotaDomain) {
+    else if (isIotaDomain) {
       debug.tried.push('iota');
       const iotaStart = Date.now();
       const iotaProfile = await fetchIotaProfile(normalized);
