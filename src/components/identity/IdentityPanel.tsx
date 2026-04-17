@@ -648,6 +648,7 @@ function AptosWalletLinkSection({
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
   const petra = usePetraWallet();
 
