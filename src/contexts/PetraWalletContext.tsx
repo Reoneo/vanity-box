@@ -87,7 +87,7 @@ export const PetraWalletProvider: React.FC<{ children: React.ReactNode }> = ({ c
   return (
     <AptosWalletAdapterProvider
       autoConnect={false}
-      optInWallets={['Petra']}
+      optInWallets={['Petra', 'Pontem Wallet', 'Martian', 'Nightly', 'OKX Wallet', 'Rise Wallet', 'TrustWallet', 'MSafe', 'Continue with Google'] as any}
       dappConfig={{
         network: 'mainnet' as any,
         aptosConnect: {
