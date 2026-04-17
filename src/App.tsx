@@ -14,6 +14,14 @@ import { CryptoPriceProvider } from "@/contexts/CryptoPriceContext";
 import { WalletConnectProvider } from "@/contexts/WalletConnectContext";
 import { IotaWalletProvider } from "@/contexts/IotaWalletContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import '@mysten/dapp-kit/dist/index.css';
+import { createNetworkConfig, SuiClientProvider, WalletProvider as SuiWalletProvider } from '@mysten/dapp-kit';
+import { getFullnodeUrl } from '@mysten/sui/client';
+
+const { networkConfig: suiNetworkConfig } = createNetworkConfig({
+  mainnet: { url: getFullnodeUrl('mainnet') },
+  testnet: { url: getFullnodeUrl('testnet') },
+});
 
 // Lazy load SplashCursor for desktop only
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
