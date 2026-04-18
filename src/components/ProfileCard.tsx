@@ -2056,11 +2056,18 @@ export const ProfileCard = ({
                             {nftCategory === 'hyperliquid' && (
                               <div className="space-y-4">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  {hlNfts.slice(0, displayLimit).map((nft: any, index: number) => (
-                                    <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                                      <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                    </div>
-                                  ))}
+                                {hlNfts.slice(0, displayLimit).map((nft: any, index: number) => {
+                                    const hlImg = nft.image_url || nft.display_image_url;
+                                    const fallback = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(nft.name || nft.identifier || String(index))}&backgroundType=gradientLinear&backgroundColor=00d4aa,0a3d3d`;
+                                    return (
+                                      <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft({ ...nft, image_url: hlImg || fallback, display_image_url: hlImg || fallback })}>
+                                        <img src={hlImg || fallback} alt={nft.name} className="w-full aspect-square object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback; }} />
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                          <p className="text-xs font-medium text-white truncate">{nft.name}</p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                                 {hlNfts.length > displayLimit && (
                                   <Button onClick={() => setDisplayLimit(d => d + 25)} className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">Load 25 more</Button>
@@ -2847,12 +2854,19 @@ export const ProfileCard = ({
                     ) : (
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {hlNfts.map((nft: any, index: number) => (
-                            <div key={`hl-${nft.identifier || nft.contract}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                              <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                              {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
-                            </div>
-                          ))}
+                          {hlNfts.map((nft: any, index: number) => {
+                            const hlImg = nft.image_url || nft.display_image_url;
+                            const fallback = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(nft.name || nft.identifier || String(index))}&backgroundType=gradientLinear&backgroundColor=00d4aa,0a3d3d`;
+                            return (
+                              <div key={`hl-${nft.identifier || nft.contract}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all w-full" onClick={() => setSelectedNft({ ...nft, image_url: hlImg || fallback, display_image_url: hlImg || fallback })}>
+                                <img src={hlImg || fallback} alt={nft.name} className="w-full aspect-square object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback; }} />
+                                {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                  <p className="text-xs font-medium text-white truncate">{nft.name}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )
