@@ -26,6 +26,7 @@ import {
   Monitor,
   Smartphone,
   Plus,
+  ExternalLink,
 } from 'lucide-react';
 import { usePasskeyWallet, isValidIotaAddress } from '@/hooks/usePasskeyWallet';
 import { toast } from 'sonner';
