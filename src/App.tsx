@@ -130,10 +130,9 @@ const App = () => {
               }}
             >
               <DAppKitProvider
-                node={VECHAIN_NODE_URL}
+                nodeUrl={VECHAIN_NODE_URL}
                 usePersistence={true}
                 walletConnectOptions={vechainWalletConnectOptions}
-                v2Api={{ enabled: false, external: false }}
               >
                 <AppContent />
               </DAppKitProvider>
