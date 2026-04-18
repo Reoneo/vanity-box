@@ -756,7 +756,7 @@ function AptosWalletLinkSection({
           return;
         }
         let elapsed = 0;
-        const iv = setInterval(() => {
+        const iv = window.setInterval(() => {
           elapsed += 200;
           if (accountRef.current?.address) {
             clearInterval(iv);

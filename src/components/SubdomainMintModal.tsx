@@ -733,7 +733,7 @@ export const SubdomainMintModal: React.FC<SubdomainMintModalProps> = ({
         
         // Start countdown timer
         setWalletConnectionTimeRemaining(90);
-        const countdownInterval = setInterval(() => {
+        const countdownInterval = window.setInterval(() => {
           setWalletConnectionTimeRemaining(prev => {
             if (prev === null || prev <= 1) {
               clearInterval(countdownInterval);
