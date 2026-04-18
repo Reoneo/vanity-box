@@ -1816,31 +1816,7 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* ENS Domains Button */}
-                            {(ensDomainsLoading || ensDomains.length > 0) && !(ensDomainsFetched && ensDomains.length === 0) && (
-                              <button onClick={() => setNftCategory('ensdomains')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
-                                <div className="flex items-center justify-between h-full">
-                                  <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-black text-base">ENS Domains</h4>
-                                    <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} domains`}</p>
-                                  </div>
-                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                                </div>
-                              </button>
-                            )}
-
-                            {/* Basenames Button */}
-                            {(basenamesLoading || basenames.length > 0) && !(basenamesFetched && basenames.length === 0) && (
-                              <button onClick={() => setNftCategory('basenames')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0052FF] to-[#4D8FFF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
-                                <div className="flex items-center justify-between h-full">
-                                  <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-white text-base">Basenames</h4>
-                                    <p className="text-sm text-white/70">{basenamesLoading ? 'Loading…' : `${basenames.length} names`}</p>
-                                  </div>
-                                  <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
-                                </div>
-                              </button>
-                            )}
+                            {/* ENS Domains and Basenames buttons removed — using OpenSea collections instead */}
 
                             {/* IOTA Collection Buttons - separate per collection */}
                             {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
@@ -2631,45 +2607,7 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* ENS Domains Button - Show while loading OR if has domains after fetch */}
-                      {(ensDomainsLoading || ensDomains.length > 0) && !(ensDomainsFetched && ensDomains.length === 0) && (
-                        <button
-                          onClick={() => setNftCategory('ensdomains')}
-                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                        >
-                          <div className="flex items-center justify-between h-full">
-                            <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-black text-base">ENS Domains</h4>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-black/70">
-                                  {ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'domain' : 'domains'}`}
-                                </p>
-                              </div>
-                            </div>
-                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                          </div>
-                        </button>
-                      )}
-
-                      {/* Basenames Button - Show while loading OR if has basenames after fetch */}
-                      {(basenamesLoading || basenames.length > 0) && !(basenamesFetched && basenames.length === 0) && (
-                        <button
-                          onClick={() => setNftCategory('basenames')}
-                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0052FF] to-[#4D8FFF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                        >
-                          <div className="flex items-center justify-between h-full">
-                            <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-white text-base">Basenames</h4>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-white/70">
-                                  {basenamesLoading ? 'Loading…' : `${basenames.length} ${basenames.length === 1 ? 'name' : 'names'}`}
-                                </p>
-                              </div>
-                            </div>
-                            <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
-                          </div>
-                        </button>
-                      )}
+                      {/* ENS Domains and Basenames buttons removed — using OpenSea collections instead */}
 
                       {/* IOTA Collection Buttons - separate per collection */}
                       {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
