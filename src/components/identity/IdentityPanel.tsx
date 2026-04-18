@@ -1333,7 +1333,7 @@ function VechainWalletLinkSection({
 
       // VeChain wallets sign via certificate (text payload)
       if (!signer) throw new Error('VeChain signer unavailable');
-      const certResult: any = await signer.signCert?.(
+      const certResult: any = await (signer as any).signCert?.(
         {
           purpose: 'identification',
           payload: { type: 'text', content: message },
