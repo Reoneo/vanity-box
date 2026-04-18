@@ -10,19 +10,28 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 // and replace it with our browser-safe fetch-based shim. Works for relative requires too.
 function vechainSimpleNetShim(): Plugin {
   const shimPath = path.resolve(__dirname, "./src/shims/vechain-simple-net.js");
-  const re = /@vechain[\\/]connex-driver[\\/]dist[\\/]simple-net\.(js|mjs|cjs)$/;
+  const re = /@vechain[\\/]connex-driver[\\/]dist[\\/]simple-net(\.(js|mjs|cjs))?$/;
   return {
     name: "vechain-simple-net-shim",
     enforce: "pre",
-    load(id) {
-      const clean = id.split("?")[0];
-      if (re.test(clean)) {
-        return fs.readFileSync(shimPath, "utf-8");
+    async resolveId(source, importer) {
+      // Redirect any import (deep alias OR relative `./simple-net` from connex-driver)
+      // to our shim file so the original Node-only module is never loaded.
+      if (re.test(source)) {
+        return shimPath;
+      }
+      if (
+        importer &&
+        /@vechain[\\/]connex-driver[\\/]dist[\\/]/.test(importer) &&
+        /^\.\/simple-net(\.(js|mjs|cjs))?$/.test(source)
+      ) {
+        return shimPath;
       }
       return null;
     },
   };
 }
+
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
