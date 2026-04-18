@@ -18,6 +18,7 @@ import {
   Unplug,
   AlertTriangle,
   Link2,
+  ExternalLink,
 } from 'lucide-react';
 import { useIdentity, IdentityProvider } from '@/contexts/IdentityContext';
 import { CredentialList } from './CredentialList';
