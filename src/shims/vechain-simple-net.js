@@ -1,12 +1,9 @@
 // Browser-safe replacement for @vechain/connex-driver/dist/simple-net.js
-// Original is CJS and uses Node http.Agent via axios; this shim mirrors its CJS
-// shape so Rollup's commonjs plugin can statically detect its exports.
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = void 0;
-exports.SimpleNet = void 0;
+// ESM module: Vite's load() hook returns this as-is and treats it as ESM.
+// Provides both named `SimpleNet` and a default export so connex-driver's
+// barrel (which is run through @rollup/plugin-commonjs) can interop.
 
-class SimpleNet {
+export class SimpleNet {
   constructor(baseURL, timeout, wsTimeout) {
     this.baseURL = String(baseURL || '').replace(/\/+$/, '');
     this.timeout = timeout || 30000;
@@ -50,5 +47,4 @@ class SimpleNet {
   }
 }
 
-exports.SimpleNet = SimpleNet;
-exports.default = { SimpleNet: SimpleNet };
+export default { SimpleNet };
