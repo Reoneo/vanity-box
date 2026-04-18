@@ -165,18 +165,31 @@ serve(async (req) => {
           
           const ownedNames = namesData.names || namesData || [];
           if (Array.isArray(ownedNames) && ownedNames.length > 0) {
-            nfts = ownedNames.map((name: string, index: number) => ({
-              identifier: `hln-${index}`,
-              collection: 'HLN Names',
-              contract: null,
-              token_standard: 'erc721',
-              name: name,
-              description: `Hyperliquid Name: ${name}`,
-              image_url: null,
-              display_image_url: null,
-              chain: 'hyperliquid',
-              quantity: 1,
-            }));
+            nfts = ownedNames.map((entry: any, index: number) => {
+              // Entry can be a string OR an object like { name, image, tokenId, ... }
+              const nameStr = typeof entry === 'string'
+                ? entry
+                : (entry?.name || entry?.domain || entry?.handle || entry?.label || `HLN #${index}`);
+              const safeName = String(nameStr);
+              const img = typeof entry === 'object' && entry
+                ? (entry.image || entry.image_url || entry.imageUrl || entry.avatar || null)
+                : null;
+              const tokenId = typeof entry === 'object' && entry
+                ? (entry.tokenId || entry.id || entry.token_id || `hln-${index}`)
+                : `hln-${index}`;
+              return {
+                identifier: String(tokenId),
+                collection: 'HLN Names',
+                contract: null,
+                token_standard: 'erc721',
+                name: safeName,
+                description: `Hyperliquid Name: ${safeName}`,
+                image_url: img,
+                display_image_url: img,
+                chain: 'hyperliquid',
+                quantity: 1,
+              };
+            });
           }
         }
       } catch (namesError) {
