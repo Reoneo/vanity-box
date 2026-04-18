@@ -424,6 +424,41 @@ export const ProfileCard = ({
     fetchEvmTxForIota();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmTxFetchedForIota]);
 
+  // Fetch Hyperliquid NFTs/tokens for the LINKED EVM wallet on .iota profiles
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') ||
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota || !linkedEvmAddress) return;
+    if (!/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setHlLoading(true);
+        console.log('[ProfileCard] Fetching Hyperliquid for linked EVM wallet:', linkedEvmAddress);
+        const hlRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-hl-tokens', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          },
+          body: JSON.stringify({ walletAddress: linkedEvmAddress }),
+        });
+        const hlData = await hlRes.json();
+        if (cancelled) return;
+        console.log('[ProfileCard] HL (linked EVM) response:', { nfts: hlData?.nfts?.length, tokens: hlData?.tokens?.length });
+        if (Array.isArray(hlData?.nfts) && hlData.nfts.length > 0) setHlNfts(hlData.nfts);
+        if (Array.isArray(hlData?.tokens) && hlData.tokens.length > 0) setHlTokens(hlData.tokens);
+      } catch (e) {
+        console.error('[ProfileCard] Hyperliquid (linked EVM) fetch error:', e);
+      } finally {
+        if (!cancelled) setHlLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform]);
+
   // Merge IOTA + EVM transactions once both are available (mirrors token merge pattern)
   useEffect(() => {
     const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
