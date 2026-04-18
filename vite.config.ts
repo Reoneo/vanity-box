@@ -59,8 +59,8 @@ export default defineConfig(({ mode }) => ({
       "@mizuwallet-sdk/core": path.resolve(__dirname, "./src/shims/mizuwallet-core.ts"),
       "@telegram-apps/bridge": path.resolve(__dirname, "./src/shims/telegram-apps-bridge.ts"),
       // VeChain connex-driver uses Node http/https; replace its SimpleNet with a fetch-based browser shim
-      "@vechain/connex-driver/dist/simple-net.js": path.resolve(__dirname, "./src/shims/vechain-simple-net.ts"),
-      "@vechain/connex-driver/dist/simple-net": path.resolve(__dirname, "./src/shims/vechain-simple-net.ts"),
+      "@vechain/connex-driver/dist/simple-net.js": path.resolve(__dirname, "./src/shims/vechain-simple-net.js"),
+      "@vechain/connex-driver/dist/simple-net": path.resolve(__dirname, "./src/shims/vechain-simple-net.js"),
     },
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
