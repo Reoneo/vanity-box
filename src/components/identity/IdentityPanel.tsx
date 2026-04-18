@@ -83,7 +83,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   // Wallet link section expansion state
-  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | null>(null);
+  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | 'vechain' | null>(null);
 
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
