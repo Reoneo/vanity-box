@@ -1117,20 +1117,23 @@ function SplashCursor({
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 1,
+        // Constrain inside the gold chrome: below header (h-20 = 80px),
+        // above footer (~32px), inside left/right gold borders (2px each)
+        top: 80,
+        bottom: 32,
+        left: 2,
+        right: 2,
+        zIndex: 60,
         pointerEvents: 'none',
-        width: '100%',
-        height: '100%'
+        overflow: 'hidden',
       }}
     >
       <canvas
         ref={canvasRef}
         id="fluid"
         style={{
-          width: '100vw',
-          height: '100vh',
+          width: '100%',
+          height: '100%',
           display: 'block'
         }}
       />
