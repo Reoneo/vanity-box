@@ -1001,31 +1001,8 @@ function SplashCursor({
       return hash;
     }
 
-    window.addEventListener('mousedown', e => {
-      let pointer = pointers[0];
-      let posX = scaleByPixelRatio(e.clientX);
-      let posY = scaleByPixelRatio(e.clientY);
-      updatePointerDownData(pointer, -1, posX, posY);
-      clickSplat(pointer);
-    });
-
-    document.body.addEventListener('mousemove', function handleFirstMouseMove(e) {
-      let pointer = pointers[0];
-      let posX = scaleByPixelRatio(e.clientX);
-      let posY = scaleByPixelRatio(e.clientY);
-      let color = generateColor();
-      updateFrame();
-      updatePointerMoveData(pointer, posX, posY, color);
-      document.body.removeEventListener('mousemove', handleFirstMouseMove);
-    });
-
-    window.addEventListener('mousemove', e => {
-      let pointer = pointers[0];
-      let posX = scaleByPixelRatio(e.clientX);
-      let posY = scaleByPixelRatio(e.clientY);
-      let color = pointer.color;
-      updatePointerMoveData(pointer, posX, posY, color);
-    });
+    // Touch-only: mouse listeners intentionally removed so the splash effect
+    // only appears when the screen is touched, never on cursor movement.
 
     document.body.addEventListener('touchstart', function handleFirstTouchStart(e) {
       const touches = e.targetTouches;
