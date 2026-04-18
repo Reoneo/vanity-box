@@ -50,4 +50,6 @@ class SimpleNet {
 }
 
 exports.SimpleNet = SimpleNet;
+exports.default = { SimpleNet: SimpleNet };
+
 
