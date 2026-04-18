@@ -73,23 +73,43 @@ const AppContent = () => {
     };
   }, []);
 
-  // Optimized settings for desktop splash effect
+  // Tuned for 60fps on low-end mobile (e.g. Samsung Galaxy S10)
   const splashSettings = useMemo(() => ({
-    DYE_RESOLUTION: 360,
-    SIM_RESOLUTION: 48,
-    PRESSURE_ITERATIONS: 10,
+    SIM_RESOLUTION: 64,
+    DYE_RESOLUTION: 256,
+    CAPTURE_RESOLUTION: 256,
+    DENSITY_DISSIPATION: 4.5,
+    VELOCITY_DISSIPATION: 0.5,
+    PRESSURE: 1,
+    PRESSURE_ITERATIONS: 6,
+    CURL: 0,
+    SPLAT_RADIUS: 0.01,
+    SPLAT_FORCE: 4500,
+    SHADING: false,
+    COLOR_UPDATE_SPEED: 30,
+    targetFPS: 60,
   }), []);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {/* Global gold SplashCursor for desktop only */}
+      {/* Global gold SplashCursor for touchscreen devices */}
       {hasFinePointer && (
         <Suspense fallback={null}>
           <SplashCursor 
             enabled={true}
-            DYE_RESOLUTION={splashSettings.DYE_RESOLUTION}
             SIM_RESOLUTION={splashSettings.SIM_RESOLUTION}
+            DYE_RESOLUTION={splashSettings.DYE_RESOLUTION}
+            CAPTURE_RESOLUTION={splashSettings.CAPTURE_RESOLUTION}
+            DENSITY_DISSIPATION={splashSettings.DENSITY_DISSIPATION}
+            VELOCITY_DISSIPATION={splashSettings.VELOCITY_DISSIPATION}
+            PRESSURE={splashSettings.PRESSURE}
             PRESSURE_ITERATIONS={splashSettings.PRESSURE_ITERATIONS}
+            CURL={splashSettings.CURL}
+            SPLAT_RADIUS={splashSettings.SPLAT_RADIUS}
+            SPLAT_FORCE={splashSettings.SPLAT_FORCE}
+            SHADING={splashSettings.SHADING}
+            COLOR_UPDATE_SPEED={splashSettings.COLOR_UPDATE_SPEED}
+            targetFPS={splashSettings.targetFPS}
           />
         </Suspense>
       )}
