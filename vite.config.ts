@@ -9,7 +9,7 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 // Intercept @vechain/connex-driver/dist/simple-net.{js,mjs} (which uses Node http.Agent)
 // and replace it with our browser-safe fetch-based shim. Works for relative requires too.
 function vechainSimpleNetShim(): Plugin {
-  const shimPath = path.resolve(__dirname, "./src/shims/vechain-simple-net.ts");
+  const shimPath = path.resolve(__dirname, "./src/shims/vechain-simple-net.js");
   const re = /@vechain[\\/]connex-driver[\\/]dist[\\/]simple-net\.(js|mjs|cjs)$/;
   return {
     name: "vechain-simple-net-shim",
