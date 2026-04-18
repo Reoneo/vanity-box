@@ -1,5 +1,5 @@
 // Edge Function: Issue Multi-Chain Wallet Ownership VC
-// Supports Ethereum (SIWE), TON (ton_proof), and Aptos (ed25519) signatures
+// Supports TON, Aptos, and Sui wallet proofs
 // Persists the link in iota_wallet_links table
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -12,11 +12,18 @@ const corsHeaders = {
 
 const ISSUER_DID = 'did:vanity:iota:issuer-vanitybox-v1';
 
-type SupportedChain = 'ton' | 'aptos';
+type SupportedChain = 'ton' | 'aptos' | 'sui';
 
 const VC_TYPE_MAP: Record<SupportedChain, string> = {
   ton: 'TonWalletOwnershipCredential',
   aptos: 'AptosWalletOwnershipCredential',
+  sui: 'SuiWalletOwnershipCredential',
+};
+
+const CHAIN_LABEL_MAP: Record<SupportedChain, string> = {
+  ton: 'TON',
+  aptos: 'Aptos',
+  sui: 'Sui',
 };
 
 function base64urlEncode(str: string): string {
@@ -47,7 +54,7 @@ function createWalletVcJwt(holderDid: string, walletAddress: string, chain: Supp
       credentialSubject: {
         id: holderDid,
         address: walletAddress,
-        chain: chain === 'ton' ? 'TON' : 'Aptos',
+        chain: CHAIN_LABEL_MAP[chain],
         issuedBy: 'Vanity.box',
       },
       issuanceDate: new Date(now * 1000).toISOString(),
@@ -81,9 +88,9 @@ serve(async (req) => {
       );
     }
 
-    if (!['ton', 'aptos'].includes(chain)) {
+    if (!['ton', 'aptos', 'sui'].includes(chain)) {
       return new Response(
-        JSON.stringify({ error: 'Unsupported chain. Use "ton" or "aptos"' }),
+        JSON.stringify({ error: 'Unsupported chain. Use "ton", "aptos", or "sui"' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -103,7 +110,7 @@ serve(async (req) => {
       );
     }
 
-    // For TON and Aptos, we verify that a valid signature was provided
+    // For TON, Aptos, and Sui, validate signature presence/shape before issuing the VC
     // (The client-side wallet already verified the user controls the key)
     // Server-side we validate structure and issue the VC
     if (!signature || typeof signature !== 'string' || signature.length < 10) {
