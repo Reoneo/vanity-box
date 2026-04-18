@@ -49,7 +49,9 @@ class SimpleNet {
   }
 }
 
-exports.SimpleNet = SimpleNet;
-exports.default = { SimpleNet: SimpleNet };
+module.exports = { SimpleNet: SimpleNet, default: { SimpleNet: SimpleNet } };
+module.exports.SimpleNet = SimpleNet;
+Object.defineProperty(module.exports, "__esModule", { value: true });
+
 
 
