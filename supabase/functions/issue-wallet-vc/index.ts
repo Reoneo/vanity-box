@@ -13,18 +13,20 @@ const corsHeaders = {
 
 const ISSUER_DID = 'did:vanity:iota:issuer-vanitybox-v1';
 
-type SupportedChain = 'ton' | 'aptos' | 'sui';
+type SupportedChain = 'ton' | 'aptos' | 'sui' | 'vechain';
 
 const VC_TYPE_MAP: Record<SupportedChain, string> = {
   ton: 'TonWalletOwnershipCredential',
   aptos: 'AptosWalletOwnershipCredential',
   sui: 'SuiWalletOwnershipCredential',
+  vechain: 'VechainWalletOwnershipCredential',
 };
 
 const CHAIN_LABEL_MAP: Record<SupportedChain, string> = {
   ton: 'TON',
   aptos: 'Aptos',
   sui: 'Sui',
+  vechain: 'Vechain',
 };
 
 function base64urlEncode(str: string): string {
@@ -89,9 +91,9 @@ serve(async (req) => {
       );
     }
 
-    if (!['ton', 'aptos', 'sui'].includes(chain)) {
+    if (!['ton', 'aptos', 'sui', 'vechain'].includes(chain)) {
       return new Response(
-        JSON.stringify({ error: 'Unsupported chain. Use "ton", "aptos", or "sui"' }),
+        JSON.stringify({ error: 'Unsupported chain. Use "ton", "aptos", "sui", or "vechain"' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
