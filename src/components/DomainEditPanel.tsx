@@ -79,27 +79,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
       
       const subdomain = `${domain.name}.${domain.domain}`;
 
-      const { signature, timestamp } = await signForOperation('Delete domain', {
-        Subdomain: subdomain,
-      });
-      
-      const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-        body: { subdomain, domain: domain.domain, walletAddress: domain.address, signature, timestamp },
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (data?.success) {
-        toast.success(t('domain_deleted'));
-        window.dispatchEvent(new CustomEvent('domains-updated'));
-        window.dispatchEvent(new CustomEvent('back-to-domains'));
-      } else {
-        console.error('Delete failed:', data);
-        throw new Error(data?.error || t('failed_to_delete'));
-      }
+      throw new Error('Domain deletion is no longer supported in this project.');
     } catch (error) {
       console.error('Delete error:', error);
       toast.error(error instanceof Error ? error.message : t('failed_to_delete'));
@@ -129,25 +109,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
       const subdomain = `${domain.name}.${domain.domain}`;
 
-      const { signature, timestamp } = await signForOperation('Transfer domain', {
-        Subdomain: subdomain,
-        To: to,
-      });
-
-      const { data, error } = await supabase.functions.invoke('transfer-namestone-name', {
-        body: { subdomain, toAddress: to, walletAddress: domain.address, signature, timestamp },
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast.success('Domain transferred successfully!');
-        setTransferAddress('');
-        window.dispatchEvent(new CustomEvent('domains-updated'));
-        window.dispatchEvent(new CustomEvent('back-to-domains'));
-      } else {
-        throw new Error(data?.error || 'Failed to transfer domain');
-      }
+      throw new Error('Domain transfer is no longer supported in this project.');
     } catch (error) {
       console.error('Transfer error:', error);
       toast.error(error instanceof Error ? error.message : t('failed_to_transfer'));
@@ -201,32 +163,7 @@ export const DomainEditPanel: React.FC<DomainEditPanelProps> = ({ domain }) => {
 
       console.log(`[DomainEditPanel] Saving records for ${subdomain}:`, textRecords);
 
-      const { signature, timestamp } = await signForOperation('Update domain records', {
-        Subdomain: subdomain,
-      });
-
-      const { data, error } = await supabase.functions.invoke('set-namestone-records', {
-        body: {
-          subdomain,
-          walletAddress: domain.address,
-          textRecords,
-          signature,
-          timestamp,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast.success(t('records_saved'));
-        window.dispatchEvent(new CustomEvent('domains-updated'));
-        
-        // Auto-launch ENS app with the domain
-        const ensUrl = `https://app.ens.domains/${subdomain}`;
-        window.open(ensUrl, '_blank', 'noopener,noreferrer');
-      } else {
-        throw new Error(data?.error || t('failed_to_save_records'));
-      }
+      throw new Error('Saving domain records is no longer supported in this project.');
     } catch (error) {
       console.error('Save records error:', error);
       toast.error(error instanceof Error ? error.message : t('failed_to_save_records'));

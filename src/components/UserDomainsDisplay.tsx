@@ -403,31 +403,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
           setDeleteDialogOpen(false);
 
           try {
-            toast.info(t('deleting_domain'));
-
-            const { signature, timestamp } = await signForOperation('Delete domain', { Subdomain: fullName });
-
-            const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-              body: { 
-                subdomain: fullName, 
-                domain: domainToDelete.domain,
-                walletAddress: walletAddress,
-                signature,
-                timestamp,
-              },
-            });
-
-            if (error) {
-              console.error('Supabase error:', error);
-              throw error;
-            }
-
-            if (data?.success) {
-              toast.success(t('domain_deleted'));
-              await fetchDomains();
-            } else {
-              throw new Error(data?.error || t('failed_to_delete'));
-            }
+            throw new Error('Domain deletion is no longer supported in this project.');
           } catch (error) {
             console.error('Delete error:', error);
             toast.error(error instanceof Error ? error.message : t('failed_to_delete'));

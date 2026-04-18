@@ -1,5 +1,5 @@
 // Service layer for ENS redirect management
-import { callEdge } from "@/lib/supaInvoke";
+// Namestone integration removed — these are stubs that return a disabled response.
 import { vanityProfileUrl } from "./profile";
 
 export type SetRedirectResponse = {
@@ -13,36 +13,24 @@ export type SetRedirectResponse = {
   error?: string;
 };
 
+const disabled = (): SetRedirectResponse => ({
+  success: false,
+  error: "Namestone redirects are no longer supported in this project.",
+});
+
 export async function setDefaultVanityRedirect(
-  parentDomain: string, 
-  subname: string
+  _parentDomain: string,
+  _subname: string
 ): Promise<SetRedirectResponse> {
-  return callEdge<SetRedirectResponse>("set-namestone-redirect", {
-    parentDomain,
-    subname,
-    redirectType: "default",
-  });
+  return disabled();
 }
 
 export async function setCustomRedirect(
-  parentDomain: string, 
-  subname: string, 
-  customUrl: string
+  _parentDomain: string,
+  _subname: string,
+  _customUrl: string
 ): Promise<SetRedirectResponse> {
-  // Validate HTTPS
-  try {
-    const u = new URL(customUrl);
-    if (u.protocol !== "https:") {
-      throw new Error("URL must use HTTPS");
-    }
-  } catch (e) {
-    throw new Error("Invalid HTTPS URL");
-  }
-
-  return callEdge<SetRedirectResponse>("set-namestone-redirect", {
-    parentDomain,
-    subname,
-    redirectType: "custom",
-    customUrl,
-  });
+  return disabled();
 }
+
+export { vanityProfileUrl };
