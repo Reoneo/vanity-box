@@ -1,6 +1,7 @@
 // Edge Function: Issue Multi-Chain Wallet Ownership VC
 // Supports TON, Aptos, and Sui wallet proofs
 // Persists the link in iota_wallet_links table
+// v2 - cache bust for sui support redeploy
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
