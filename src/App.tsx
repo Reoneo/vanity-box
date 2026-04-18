@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense, useMemo } from "react";
+import { useEffect, useState, lazy, Suspense, useMemo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,12 +23,24 @@ const { networkConfig: suiNetworkConfig } = createNetworkConfig({
   testnet: { network: 'testnet', transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('testnet') }) },
 });
 
-// Lazy load SplashCursor for desktop only
+// Lazy load SplashCursor
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
 
-// Detect desktop vs mobile
-const isDesktop = typeof window !== 'undefined' && 
-  !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+// Hook: enable splash cursor on devices with a fine pointer (mouse/trackpad)
+const useFinePointer = () => {
+  const [fine, setFine] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(pointer: fine)').matches;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(pointer: fine)');
+    const handler = (e: MediaQueryListEvent) => setFine(e.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+  return fine;
+};
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -53,6 +65,7 @@ const AppRoutes = () => (
 );
 
 const AppContent = () => {
+  const hasFinePointer = useFinePointer();
   useEffect(() => {
     document.body.style.overscrollBehavior = "none";
     return () => {
@@ -70,7 +83,7 @@ const AppContent = () => {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       {/* Global gold SplashCursor for desktop only */}
-      {isDesktop && (
+      {hasFinePointer && (
         <Suspense fallback={null}>
           <SplashCursor 
             enabled={true}
