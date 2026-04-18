@@ -1109,7 +1109,7 @@ function SuiWalletLinkSection({
   const { mutateAsync: signPersonalMessage } = useSuiSignPersonalMessage();
   const wallets = useSuiWallets();
 
-  const handleLink = useCallback(async () => {
+  const handleLink = useCallback(async (preferredWallet?: any) => {
     setIsLinking(true);
     setErrorMsg('');
     try {
@@ -1118,9 +1118,10 @@ function SuiWalletLinkSection({
       if (!addr) {
         setStep('connecting');
         if (!wallets || wallets.length === 0) {
-          throw new Error('No Sui wallet detected. Install Sui Wallet or Suiet to continue.');
+          throw new Error('No Sui wallet detected. Install Sui Wallet, Suiet, or Nightly to continue.');
         }
-        const result = await connectWallet({ wallet: wallets[0] });
+        const walletToUse = preferredWallet || wallets[0];
+        const result = await connectWallet({ wallet: walletToUse });
         addr = result?.accounts?.[0]?.address;
         if (!addr) throw new Error('Failed to get Sui address');
       }
@@ -1215,16 +1216,32 @@ function SuiWalletLinkSection({
             )}
           </Button>
           {(() => {
-            const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://vanity.box';
-            const nightlyDeepLink = `nightly://browse?url=${encodeURIComponent(currentUrl)}`;
             const slushWebUrl = 'https://my.slush.app/';
+            const nightlyWallet = wallets.find((w: any) =>
+              (w?.name || '').toLowerCase().includes('nightly')
+            );
+            const handleNightlyLink = async () => {
+              if (nightlyWallet) {
+                await handleLink(nightlyWallet);
+              } else {
+                window.open(
+                  'https://chromewebstore.google.com/detail/nightly/fiikommddbeccaoicoejoniammnalkfa',
+                  '_blank',
+                  'noopener,noreferrer'
+                );
+              }
+            };
             return (
               <div className="grid grid-cols-2 gap-2">
-                <Button asChild size="sm" variant="outline" className="w-full">
-                  <a href={nightlyDeepLink} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                    Open Nightly
-                  </a>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleNightlyLink}
+                  disabled={isLinking}
+                >
+                  <Link2 className="w-3.5 h-3.5 mr-1.5" />
+                  {nightlyWallet ? 'Link via Nightly' : 'Install Nightly'}
                 </Button>
                 <Button asChild size="sm" variant="outline" className="w-full">
                   <a href={slushWebUrl} target="_blank" rel="noopener noreferrer">
@@ -1236,7 +1253,7 @@ function SuiWalletLinkSection({
             );
           })()}
           <p className="text-[10px] text-muted-foreground text-center">
-            On mobile? Open vanity.box inside Nightly's in-app browser, then tap Link Sui Wallet.
+            Nightly extension users: tap Link via Nightly to sign in your connected extension.
           </p>
         </div>
       )}
