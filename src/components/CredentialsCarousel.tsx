@@ -223,7 +223,7 @@ export default function CredentialsCarousel({
     if (!autoplay || items.length <= 1) return undefined;
     if (pauseOnHover && isHovered) return undefined;
 
-    const timer = window.setInterval(() => {
+    const timer = setInterval(() => {
       setPosition(prev => Math.min(prev + 1, itemsForRender.length - 1));
     }, autoplayDelay);
 

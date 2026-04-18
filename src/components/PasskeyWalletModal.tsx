@@ -181,7 +181,7 @@ function useIotaWalletDetection(modalOpen: boolean): WalletDetectionState {
 
     if (checkProviders()) return;
 
-    const interval = window.setInterval(() => {
+    const interval = setInterval(() => {
       if (cancelled) return;
       if (checkProviders()) { clearInterval(interval); return; }
       attempts++;

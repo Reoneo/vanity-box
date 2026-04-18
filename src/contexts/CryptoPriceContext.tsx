@@ -44,7 +44,7 @@ export const CryptoPriceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     loadPrices();
 
     // Refresh every 60 seconds
-    const interval = window.setInterval(loadPrices, 60000);
+    const interval = setInterval(loadPrices, 60000);
 
     return () => clearInterval(interval);
   }, []);

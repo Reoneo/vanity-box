@@ -17,24 +17,11 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import '@mysten/dapp-kit/dist/index.css';
 import { createNetworkConfig, SuiClientProvider, WalletProvider as SuiWalletProvider } from '@mysten/dapp-kit';
 import { JsonRpcHTTPTransport, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
-import { DAppKitProvider } from '@vechain/dapp-kit-react';
 
 const { networkConfig: suiNetworkConfig } = createNetworkConfig({
   mainnet: { network: 'mainnet', transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('mainnet') }) },
   testnet: { network: 'testnet', transport: new JsonRpcHTTPTransport({ url: getJsonRpcFullnodeUrl('testnet') }) },
 });
-
-// VeChain DAppKit configuration — mainnet, supports VeWorld + WalletConnect
-const VECHAIN_NODE_URL = 'https://mainnet.vechain.org/';
-const vechainWalletConnectOptions = {
-  projectId: 'a0b855ceaf109dbc8426479a4c3d38d8', // shared sample project id; replace with own for production
-  metadata: {
-    name: 'Vanity.box',
-    description: 'Premium Web3 Identity',
-    url: typeof window !== 'undefined' ? window.location.origin : 'https://vanity.box',
-    icons: ['https://vanity.box/favicon.ico'],
-  },
-};
 
 // Lazy load SplashCursor for desktop only
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
@@ -129,13 +116,7 @@ const App = () => {
                 name: 'Vanity.box',
               }}
             >
-              <DAppKitProvider
-                nodeUrl={VECHAIN_NODE_URL}
-                usePersistence={true}
-                walletConnectOptions={vechainWalletConnectOptions}
-              >
-                <AppContent />
-              </DAppKitProvider>
+              <AppContent />
             </SuiWalletProvider>
           </SuiClientProvider>
         </QueryClientProvider>

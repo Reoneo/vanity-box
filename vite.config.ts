@@ -1,37 +1,9 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import viteCompression from "vite-plugin-compression";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
-
-// Intercept @vechain/connex-driver/dist/simple-net.{js,mjs} (which uses Node http.Agent)
-// and replace it with our browser-safe fetch-based shim. Works for relative requires too.
-function vechainSimpleNetShim(): Plugin {
-  const shimPath = path.resolve(__dirname, "./src/shims/vechain-simple-net.js");
-  const re = /@vechain[\\/]connex-driver[\\/]dist[\\/]simple-net(\.(js|mjs|cjs))?$/;
-  return {
-    name: "vechain-simple-net-shim",
-    enforce: "pre",
-    async resolveId(source, importer) {
-      // Redirect any import (deep alias OR relative `./simple-net` from connex-driver)
-      // to our shim file so the original Node-only module is never loaded.
-      if (re.test(source)) {
-        return shimPath;
-      }
-      if (
-        importer &&
-        /@vechain[\\/]connex-driver[\\/]dist[\\/]/.test(importer) &&
-        /^\.\/simple-net(\.(js|mjs|cjs))?$/.test(source)
-      ) {
-        return shimPath;
-      }
-      return null;
-    },
-  };
-}
-
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -40,11 +12,10 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    vechainSimpleNetShim(),
     react(),
     mode === "development" && componentTagger(),
     nodePolyfills({
-      include: ['buffer', 'crypto', 'stream', 'util'],
+      include: ['buffer'],
       globals: {
         Buffer: true,
       },
@@ -67,9 +38,6 @@ export default defineConfig(({ mode }) => ({
       "aptos": path.resolve(__dirname, "./src/shims/aptos.ts"),
       "@mizuwallet-sdk/core": path.resolve(__dirname, "./src/shims/mizuwallet-core.ts"),
       "@telegram-apps/bridge": path.resolve(__dirname, "./src/shims/telegram-apps-bridge.ts"),
-      // VeChain connex-driver uses Node http/https; replace its SimpleNet with a fetch-based browser shim
-      "@vechain/connex-driver/dist/simple-net.js": path.resolve(__dirname, "./src/shims/vechain-simple-net.js"),
-      "@vechain/connex-driver/dist/simple-net": path.resolve(__dirname, "./src/shims/vechain-simple-net.js"),
     },
     // Prevent duplicate React instances from @iota/dapp-kit and @tanstack/react-query
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
