@@ -128,13 +128,20 @@ async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
       }
     }
     
+    // Fallback avatar for ENS profiles when web3.bio returns null
+    let avatar = primaryProfile.avatar as string | null;
+    if (!avatar && primaryProfile.platform === "ens" && primaryProfile.identity) {
+      avatar = `https://metadata.ens.domains/mainnet/avatar/${encodeURIComponent(primaryProfile.identity)}`;
+      console.log(`🖼️ Using ENS metadata avatar fallback for: ${primaryProfile.identity}`);
+    }
+
     // Normalize to our format
     return {
       address: primaryProfile.address,
       identity: primaryProfile.identity,
       platform: primaryProfile.platform,
       displayName: primaryProfile.displayName,
-      avatar: primaryProfile.avatar,
+      avatar,
       description: primaryProfile.description,
       header: primaryProfile.header,
       website: primaryProfile.links?.website?.link,
