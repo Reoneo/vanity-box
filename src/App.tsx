@@ -26,20 +26,20 @@ const { networkConfig: suiNetworkConfig } = createNetworkConfig({
 // Lazy load SplashCursor
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
 
-// Hook: enable splash cursor on devices with a fine pointer (mouse/trackpad)
-const useFinePointer = () => {
-  const [fine, setFine] = useState<boolean>(() => {
+// Hook: enable splash cursor on touchscreen devices (coarse pointer)
+const useTouchDevice = () => {
+  const [touch, setTouch] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(pointer: fine)').matches;
+    return window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
   });
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(pointer: fine)');
-    const handler = (e: MediaQueryListEvent) => setFine(e.matches);
+    const mq = window.matchMedia('(pointer: coarse)');
+    const handler = (e: MediaQueryListEvent) => setTouch(e.matches || 'ontouchstart' in window);
     mq.addEventListener?.('change', handler);
     return () => mq.removeEventListener?.('change', handler);
   }, []);
-  return fine;
+  return touch;
 };
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -65,7 +65,7 @@ const AppRoutes = () => (
 );
 
 const AppContent = () => {
-  const hasFinePointer = useFinePointer();
+  const hasFinePointer = useTouchDevice();
   useEffect(() => {
     document.body.style.overscrollBehavior = "none";
     return () => {
