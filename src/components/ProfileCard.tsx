@@ -2624,8 +2624,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* Hyperliquid Button - Only show if .hl domain or has HL NFTs - hide for IOTA */}
-                      {!isIotaProfile && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                      {/* Hyperliquid Button - show if .hl domain or HL NFTs; for IOTA require linked EVM */}
+                      {(!isIotaProfile || !!linkedEvmAddress) && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
                         <button
                           onClick={() => setNftCategory('hyperliquid')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
