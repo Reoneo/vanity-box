@@ -18,6 +18,7 @@ import {
   Unplug,
   AlertTriangle,
   Link2,
+  ExternalLink,
 } from 'lucide-react';
 import { useIdentity, IdentityProvider } from '@/contexts/IdentityContext';
 import { CredentialList } from './CredentialList';
@@ -1200,18 +1201,44 @@ function SuiWalletLinkSection({
           <Button size="sm" variant="outline" onClick={() => setStep('idle')} className="w-full">Try Again</Button>
         </div>
       ) : (
-        <Button
-          size="sm"
-          onClick={handleLink}
-          disabled={isLinking}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-        >
-          {isLinking ? (
-            <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {step === 'connecting' ? 'Connecting…' : step === 'signing' ? 'Signing…' : 'Issuing…'}</>
-          ) : (
-            <><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link Sui Wallet</>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button
+            size="sm"
+            onClick={handleLink}
+            disabled={isLinking}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
+            {isLinking ? (
+              <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {step === 'connecting' ? 'Connecting…' : step === 'signing' ? 'Signing…' : 'Issuing…'}</>
+            ) : (
+              <><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link Sui Wallet</>
+            )}
+          </Button>
+          {(() => {
+            const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://vanity.box';
+            const nightlyDeepLink = `nightly://browse?url=${encodeURIComponent(currentUrl)}`;
+            const slushWebUrl = 'https://my.slush.app/';
+            return (
+              <div className="grid grid-cols-2 gap-2">
+                <Button asChild size="sm" variant="outline" className="w-full">
+                  <a href={nightlyDeepLink} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                    Open Nightly
+                  </a>
+                </Button>
+                <Button asChild size="sm" variant="outline" className="w-full">
+                  <a href={slushWebUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                    Slush Web
+                  </a>
+                </Button>
+              </div>
+            );
+          })()}
+          <p className="text-[10px] text-muted-foreground text-center">
+            On mobile? Open vanity.box inside Nightly's in-app browser, then tap Link Sui Wallet.
+          </p>
+        </div>
       )}
     </WalletLinkSection>
   );
