@@ -47,7 +47,6 @@ import {
   useWallets as useSuiWallets,
   useSignPersonalMessage as useSuiSignPersonalMessage,
 } from '@mysten/dapp-kit';
-import { supabase } from '@/integrations/supabase/client';
 
 interface IdentityPanelContentProps {
   iotaName: string;
@@ -1142,14 +1141,22 @@ function SuiWalletLinkSection({
 
       const messageBytes = new TextEncoder().encode(message);
       const sigResult = await signPersonalMessage({ message: messageBytes });
-      const signature = sigResult?.signature || '';
+      const signature =
+        (typeof sigResult === 'string' ? sigResult : null)
+        ?? (typeof sigResult?.signature === 'string' ? sigResult.signature : null)
+        ?? (typeof (sigResult as any)?.result?.signature === 'string' ? (sigResult as any).result.signature : null)
+        ?? '';
+
+      if (!signature) {
+        throw new Error('Wallet returned an empty signature');
+      }
 
       setStep('issuing');
-      const { data, error } = await supabase.functions.invoke('issue-wallet-vc', {
-        body: { holderDid, address: addr, message, signature, iotaName, chain: 'sui' },
-      });
-      if (error) throw error;
-      const resp = data as any;
+      const resp = await callEdge<{ vcJwt: string; issuerDid: string; issuedAt: string; vcType: string }>(
+        'issue-wallet-vc',
+        { holderDid, address: addr, message, signature, iotaName, chain: 'sui' },
+      );
+
       if (!resp?.vcJwt) throw new Error('Invalid response from credential issuance');
 
       const newVc: VerifiableCredential = {
