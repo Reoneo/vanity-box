@@ -1123,7 +1123,7 @@ function SplashCursor({
         bottom: 32,
         left: 2,
         right: 2,
-        zIndex: 60,
+        zIndex: 2147483647,
         pointerEvents: 'none',
         overflow: 'hidden',
       }}
