@@ -1109,7 +1109,7 @@ function SuiWalletLinkSection({
   const { mutateAsync: signPersonalMessage } = useSuiSignPersonalMessage();
   const wallets = useSuiWallets();
 
-  const handleLink = useCallback(async () => {
+  const handleLink = useCallback(async (preferredWallet?: any) => {
     setIsLinking(true);
     setErrorMsg('');
     try {
@@ -1118,9 +1118,10 @@ function SuiWalletLinkSection({
       if (!addr) {
         setStep('connecting');
         if (!wallets || wallets.length === 0) {
-          throw new Error('No Sui wallet detected. Install Sui Wallet or Suiet to continue.');
+          throw new Error('No Sui wallet detected. Install Sui Wallet, Suiet, or Nightly to continue.');
         }
-        const result = await connectWallet({ wallet: wallets[0] });
+        const walletToUse = preferredWallet || wallets[0];
+        const result = await connectWallet({ wallet: walletToUse });
         addr = result?.accounts?.[0]?.address;
         if (!addr) throw new Error('Failed to get Sui address');
       }
