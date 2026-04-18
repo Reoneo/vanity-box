@@ -26,7 +26,7 @@
     "@mysten/dapp-kit": "^1.0.4",
     "@mysten/sui": "^2.16.0",
     "@mysten/wallet-standard": "^0.20.1",
-    "@noble/hashes": "^2.0.1",
+    "@noble/hashes": "1.7.1",
     "@pushprotocol/restapi": "^1.7.32",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
