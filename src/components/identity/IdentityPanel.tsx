@@ -47,6 +47,7 @@ import {
   useWallets as useSuiWallets,
   useSignPersonalMessage as useSuiSignPersonalMessage,
 } from '@mysten/dapp-kit';
+import { useWallet as useVechainWallet, useWalletModal as useVechainWalletModal } from '@vechain/dapp-kit-react';
 
 interface IdentityPanelContentProps {
   iotaName: string;
@@ -82,7 +83,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   // Wallet link section expansion state
-  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | null>(null);
+  const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | 'vechain' | null>(null);
 
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
@@ -131,6 +132,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const tonVcs = vcList.filter(vc => vc.type === 'TonWalletOwnershipCredential');
   const aptosVcs = vcList.filter(vc => vc.type === 'AptosWalletOwnershipCredential');
   const suiVcs = vcList.filter(vc => vc.type === 'SuiWalletOwnershipCredential');
+  const vechainVcs = vcList.filter(vc => vc.type === 'VechainWalletOwnershipCredential');
 
   if (!isInitialized) {
     return (
@@ -343,12 +345,14 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             />
           )}
 
-          {/* Link Vechain Wallet — coming soon */}
-          <ComingSoonWalletSection
-            label="Link Vechain Wallet"
-            subtitle="Coming soon — VeWorld integration"
-            icon={<img src={vechainLogo} alt="VET" className="w-4 h-4 flex-shrink-0 rounded-full" />}
-            badgeLabel="VET"
+          {/* Link Vechain Wallet — VeWorld + WalletConnect via DAppKit */}
+          <VechainWalletLinkSection
+            iotaName={iotaName}
+            holderDid={holderDid}
+            linkedVcs={vechainVcs}
+            expanded={expandedWallet === 'vechain'}
+            onToggle={() => setExpandedWallet(expandedWallet === 'vechain' ? null : 'vechain')}
+            addExternalCredential={addExternalCredential}
           />
 
           {/* Link Sui Wallet */}
@@ -1261,6 +1265,170 @@ function SuiWalletLinkSection({
           })()}
           <p className="text-[10px] text-muted-foreground text-center">
             Nightly extension users: tap Link via Nightly to sign in your connected extension.
+          </p>
+        </div>
+      )}
+    </WalletLinkSection>
+  );
+}
+
+// ── VeChain Wallet Link Section (VeWorld + Sync2 + WalletConnect via DAppKit) ──
+function VechainWalletLinkSection({
+  iotaName,
+  holderDid,
+  linkedVcs,
+  expanded,
+  onToggle,
+  addExternalCredential,
+}: {
+  iotaName: string;
+  holderDid: string;
+  linkedVcs: VerifiableCredential[];
+  expanded: boolean;
+  onToggle: () => void;
+  addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+}) {
+  const [isLinking, setIsLinking] = useState(false);
+  const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const { account, signer, disconnect } = useVechainWallet();
+  const { open: openVechainModal } = useVechainWalletModal();
+
+  const handleLink = useCallback(async () => {
+    setIsLinking(true);
+    setErrorMsg('');
+    try {
+      // Connect via DAppKit modal if not connected
+      let addr = account;
+      if (!addr) {
+        setStep('connecting');
+        await openVechainModal();
+        // Wait briefly for account to populate after modal
+        const start = Date.now();
+        while (!addr && Date.now() - start < 30000) {
+          await new Promise((r) => setTimeout(r, 250));
+          // re-read from latest hook value via window event would be ideal — just bail with prompt
+          addr = (window as any).__vechain_last_addr || account;
+          if (addr) break;
+        }
+        if (!addr) {
+          throw new Error('No VeChain wallet connected. Please connect VeWorld or another supported wallet.');
+        }
+      }
+
+      // Build SIWE-style proof message
+      setStep('signing');
+      const timestamp = new Date().toISOString();
+      const message = [
+        'vanity.box wants you to verify your VeChain wallet:',
+        addr,
+        '',
+        `Link Vechain wallet to IOTA identity ${iotaName}`,
+        '',
+        `DID: ${holderDid}`,
+        'URI: https://vanity.box',
+        `Issued At: ${timestamp}`,
+      ].join('\n');
+
+      // VeChain wallets sign via certificate (text payload)
+      if (!signer) throw new Error('VeChain signer unavailable');
+      const certResult: any = await (signer as any).signCert?.(
+        {
+          purpose: 'identification',
+          payload: { type: 'text', content: message },
+        },
+        { signer: addr }
+      ).catch(async () => {
+        // Fallback for newer DAppKit signer API (v2)
+        return await (signer as any).signTypedData?.(
+          { name: 'Vanity.box', version: '1' },
+          { Proof: [{ name: 'message', type: 'string' }] },
+          { message }
+        );
+      });
+
+      const signature =
+        (typeof certResult === 'string' ? certResult : null) ??
+        certResult?.signature ??
+        certResult?.annex?.signer ??
+        '';
+
+      if (!signature) throw new Error('VeChain wallet returned an empty signature');
+
+      setStep('issuing');
+      const resp = await callEdge<{ vcJwt: string; issuerDid: string; issuedAt: string; vcType: string }>(
+        'issue-wallet-vc',
+        { holderDid, address: addr, message, signature, iotaName, chain: 'vechain' },
+      );
+
+      if (!resp?.vcJwt) throw new Error('Invalid response from credential issuance');
+
+      const newVc: VerifiableCredential = {
+        vcJwt: resp.vcJwt,
+        issuerDid: resp.issuerDid,
+        type: 'VechainWalletOwnershipCredential',
+        issuedAt: resp.issuedAt || new Date().toISOString(),
+        claims: { name: iotaName, chain: 'Vechain', address: addr },
+      };
+      await addExternalCredential(newVc);
+      setStep('done');
+      toast.success('VeChain wallet linked successfully');
+
+      window.dispatchEvent(new CustomEvent('iota-vechain-linked', {
+        detail: { iotaName: iotaName.toLowerCase(), vechainAddress: addr },
+      }));
+
+      try { await disconnect(); } catch {}
+    } catch (e: any) {
+      console.error('VeChain link error:', e);
+      const msg = e?.message || 'Failed to link VeChain wallet';
+      setErrorMsg(msg.includes('reject') || msg.includes('cancel') ? 'Connection was rejected' : msg);
+      setStep('error');
+    } finally {
+      setIsLinking(false);
+    }
+  }, [account, signer, openVechainModal, disconnect, iotaName, holderDid, addExternalCredential]);
+
+  return (
+    <WalletLinkSection
+      label="Link Vechain Wallet"
+      subtitle="Connect VeWorld, Sync2, or WalletConnect"
+      icon={<img src={vechainLogo} alt="VET" className="w-4 h-4 flex-shrink-0 rounded-full" />}
+      expanded={expanded}
+      onToggle={onToggle}
+      linkedVcs={linkedVcs}
+      badgeLabel="VET"
+    >
+      {step === 'done' ? (
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">VeChain wallet linked</p>
+        </div>
+      ) : step === 'error' ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/30">
+            <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+            <p className="text-xs text-destructive">{errorMsg}</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setStep('idle')} className="w-full">Try Again</Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Button
+            size="sm"
+            onClick={handleLink}
+            disabled={isLinking}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+          >
+            {isLinking ? (
+              <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {step === 'connecting' ? 'Connecting…' : step === 'signing' ? 'Signing…' : 'Issuing…'}</>
+            ) : (
+              <><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link VeChain Wallet</>
+            )}
+          </Button>
+          <p className="text-[10px] text-muted-foreground text-center">
+            Opens the VeChain wallet selector (VeWorld, Sync2, WalletConnect).
           </p>
         </div>
       )}

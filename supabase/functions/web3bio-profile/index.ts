@@ -63,6 +63,16 @@ function pickPrimaryProfile(items: Web3BioRawProfile[]): Web3BioRawProfile | nul
   return items[0];
 }
 
+function ensAvatarFallback(identity: string): string | null {
+  // ENS metadata service serves the on-chain avatar text record (or auto-generated default).
+  // Works for any *.eth or *.box name registered on mainnet.
+  const lower = (identity || '').toLowerCase().trim();
+  if (lower.endsWith('.eth') || lower.endsWith('.box')) {
+    return `https://metadata.ens.domains/mainnet/avatar/${encodeURIComponent(lower)}`;
+  }
+  return null;
+}
+
 function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
   // Convert links to object format (matching get-ens-subdomain-profile)
   const linksObject: Record<string, { link: string; handle: string }> = {};
@@ -89,7 +99,7 @@ function normalizeProfile(raw: Web3BioRawProfile): SimpleProfile {
     identity: raw.identity,
     platform: raw.platform,
     displayName: raw.displayName,
-    avatar: raw.avatar,
+    avatar: raw.avatar || ensAvatarFallback(raw.identity),
     description: raw.description,
     email: raw.email,
     header: raw.header ?? null,
