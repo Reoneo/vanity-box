@@ -1215,16 +1215,32 @@ function SuiWalletLinkSection({
             )}
           </Button>
           {(() => {
-            const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://vanity.box';
-            const nightlyDeepLink = `nightly://browse?url=${encodeURIComponent(currentUrl)}`;
             const slushWebUrl = 'https://my.slush.app/';
+            const nightlyWallet = wallets.find((w: any) =>
+              (w?.name || '').toLowerCase().includes('nightly')
+            );
+            const handleNightlyLink = async () => {
+              if (nightlyWallet) {
+                await handleLink(nightlyWallet);
+              } else {
+                window.open(
+                  'https://chromewebstore.google.com/detail/nightly/fiikommddbeccaoicoejoniammnalkfa',
+                  '_blank',
+                  'noopener,noreferrer'
+                );
+              }
+            };
             return (
               <div className="grid grid-cols-2 gap-2">
-                <Button asChild size="sm" variant="outline" className="w-full">
-                  <a href={nightlyDeepLink} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                    Open Nightly
-                  </a>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleNightlyLink}
+                  disabled={isLinking}
+                >
+                  <Link2 className="w-3.5 h-3.5 mr-1.5" />
+                  {nightlyWallet ? 'Link via Nightly' : 'Install Nightly'}
                 </Button>
                 <Button asChild size="sm" variant="outline" className="w-full">
                   <a href={slushWebUrl} target="_blank" rel="noopener noreferrer">
@@ -1236,7 +1252,7 @@ function SuiWalletLinkSection({
             );
           })()}
           <p className="text-[10px] text-muted-foreground text-center">
-            On mobile? Open vanity.box inside Nightly's in-app browser, then tap Link Sui Wallet.
+            Nightly extension users: tap Link via Nightly to sign in your connected extension.
           </p>
         </div>
       )}
