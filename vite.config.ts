@@ -31,10 +31,11 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
+    vechainSimpleNetShim(),
     react(),
     mode === "development" && componentTagger(),
     nodePolyfills({
-      include: ['buffer', 'crypto'],
+      include: ['buffer', 'crypto', 'stream', 'util'],
       globals: {
         Buffer: true,
       },
