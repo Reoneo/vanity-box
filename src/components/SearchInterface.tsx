@@ -2228,6 +2228,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: false,
                   }] : []),
+                  // Passkey icon — show when no wallet is connected
+                  ...(!walletAddress ? [{
+                    icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
+                    label: 'Passkey',
+                    onClick: () => setShowPasskeyModal(true),
+                    isActive: showPasskeyModal,
+                  }] : []),
                   // Search icon on far right
                   {
                     icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
