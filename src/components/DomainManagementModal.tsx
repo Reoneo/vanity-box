@@ -223,27 +223,7 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
       
       const subdomain = `${domain.name}.${domain.domain}`;
 
-      const { signature, timestamp } = await signForOperation('Delete domain', {
-        Subdomain: subdomain,
-      });
-      
-      const { data, error } = await supabase.functions.invoke('delete-namestone-name', {
-        body: { subdomain, domain: domain.domain, walletAddress: domain.address, signature, timestamp },
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (data?.success) {
-        toast.success('Domain deleted successfully!');
-        window.dispatchEvent(new CustomEvent('domains-updated'));
-        onClose();
-      } else {
-        console.error('Delete failed:', data);
-        throw new Error(data?.error || 'Failed to delete domain');
-      }
+      throw new Error('Domain deletion is no longer supported in this project.');
     } catch (error) {
       console.error('Delete error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to delete domain');
@@ -296,28 +276,7 @@ export const DomainManagementModal: React.FC<DomainManagementModalProps> = ({
 
       console.log(`[DomainManagementModal] Saving records for ${subdomain}:`, textRecords);
 
-      const { signature, timestamp } = await signForOperation('Update domain records', {
-        Subdomain: subdomain,
-      });
-
-      const { data, error } = await supabase.functions.invoke('set-namestone-records', {
-        body: {
-          subdomain,
-          walletAddress: domain.address,
-          textRecords,
-          signature,
-          timestamp,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast.success('Records saved successfully!');
-        window.dispatchEvent(new CustomEvent('domains-updated'));
-      } else {
-        throw new Error(data?.error || 'Failed to save records');
-      }
+      throw new Error('Saving domain records is no longer supported in this project.');
     } catch (error) {
       console.error('Save records error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save records');

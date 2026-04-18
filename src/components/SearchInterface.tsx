@@ -1508,69 +1508,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       }
     }
 
-    // Check which subdomains are already taken on Namestone (only if there's a query)
+    // Namestone availability checks removed — show all results, mark none as taken.
     let allResults = getAllResults();
-    const checkFailedDomains = new Set<string>();
-    
-    // Show results now that user has searched
     setShowInitialResults(true);
-    
-    if (trimmedQuery) {
-      const checkPromises = allResults.map(async (result) => {
-        const domain = result.name.toLowerCase();
-        
-        // Skip ENS domains (.eth, .box) and vanity.ton - they don't use Namestone
-        const ensOrSpecialDomains = ['vanity.ton', 'vanity.eth', 'vape.box', 'smith.box', 'vanity.box'];
-        const isEnsCompatible = domain.endsWith('.eth') || domain.endsWith('.box');
-        
-        if (ensOrSpecialDomains.includes(domain) || isEnsCompatible) {
-          return null;
-        }
-        
-        try {
-          const { data, error } = await supabase.functions.invoke("check-namestone-subdomain", {
-            body: { subdomain: trimmedQuery, domain },
-          });
-          
-          // If check failed (error or no success), mark as check_failed
-          if (error || !data?.success) {
-            console.error(`Check failed for ${domain}:`, error || data);
-            return { domain, status: 'check_failed' };
-          }
-          
-          if (data?.exists) {
-            return { domain, status: 'taken' };
-          }
-        } catch (error) {
-          console.error(`Error checking ${domain}:`, error);
-          return { domain, status: 'check_failed' };
-        }
-        
-        return null;
-      });
-
-      const checkResults = await Promise.all(checkPromises);
-      const taken = new Set<string>();
-      
-      checkResults.forEach((result) => {
-        if (result) {
-          if (result.status === 'taken') {
-            taken.add(result.domain);
-          } else if (result.status === 'check_failed') {
-            checkFailedDomains.add(result.domain);
-          }
-        }
-      });
-      
-      setTakenSubdomains(taken);
-      
-      // Store check_failed domains in a state or pass to render
-      // For now, we'll use a window variable to communicate with render
-      (window as any).__checkFailedDomains = checkFailedDomains;
-    } else {
-      setTakenSubdomains(new Set());
-      (window as any).__checkFailedDomains = new Set();
-    }
+    setTakenSubdomains(new Set());
+    (window as any).__checkFailedDomains = new Set();
 
     await new Promise((resolve) => setTimeout(resolve, 250));
 
