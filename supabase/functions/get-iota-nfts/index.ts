@@ -14,9 +14,13 @@ const IOTA_RPC_URL = "https://api.mainnet.iota.cafe";
 const IOTA_NAMES_REGISTRATION_TYPES = [
   "::registration::Registration",
   "::registration::NameRegistration",
+  "::name_registration::NameRegistration",
+  "::name_registration::Registration",
   "::subdomain_registration::SubdomainRegistration",
   "iota_names::registration",
+  "iota_names::name_registration",
   "iota_names::subdomain",
+  "::name_registration::",
 ];
 
 // Helper to check if a type indicates an IOTA Names NFT

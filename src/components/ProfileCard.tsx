@@ -424,6 +424,41 @@ export const ProfileCard = ({
     fetchEvmTxForIota();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmTxFetchedForIota]);
 
+  // Fetch Hyperliquid NFTs/tokens for the LINKED EVM wallet on .iota profiles
+  useEffect(() => {
+    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') ||
+                   web3BioProfile?.platform === 'iota';
+    if (!isIota || !linkedEvmAddress) return;
+    if (!/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setHlLoading(true);
+        console.log('[ProfileCard] Fetching Hyperliquid for linked EVM wallet:', linkedEvmAddress);
+        const hlRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-hl-tokens', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          },
+          body: JSON.stringify({ walletAddress: linkedEvmAddress }),
+        });
+        const hlData = await hlRes.json();
+        if (cancelled) return;
+        console.log('[ProfileCard] HL (linked EVM) response:', { nfts: hlData?.nfts?.length, tokens: hlData?.tokens?.length });
+        if (Array.isArray(hlData?.nfts) && hlData.nfts.length > 0) setHlNfts(hlData.nfts);
+        if (Array.isArray(hlData?.tokens) && hlData.tokens.length > 0) setHlTokens(hlData.tokens);
+      } catch (e) {
+        console.error('[ProfileCard] Hyperliquid (linked EVM) fetch error:', e);
+      } finally {
+        if (!cancelled) setHlLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform]);
+
   // Merge IOTA + EVM transactions once both are available (mirrors token merge pattern)
   useEffect(() => {
     const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
@@ -2056,11 +2091,18 @@ export const ProfileCard = ({
                             {nftCategory === 'hyperliquid' && (
                               <div className="space-y-4">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  {hlNfts.slice(0, displayLimit).map((nft: any, index: number) => (
-                                    <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                                      <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                                    </div>
-                                  ))}
+                                {hlNfts.slice(0, displayLimit).map((nft: any, index: number) => {
+                                    const hlImg = nft.image_url || nft.display_image_url;
+                                    const fallback = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(nft.name || nft.identifier || String(index))}&backgroundType=gradientLinear&backgroundColor=00d4aa,0a3d3d`;
+                                    return (
+                                      <div key={`hl-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft({ ...nft, image_url: hlImg || fallback, display_image_url: hlImg || fallback })}>
+                                        <img src={hlImg || fallback} alt={nft.name} className="w-full aspect-square object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback; }} />
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                          <p className="text-xs font-medium text-white truncate">{nft.name}</p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                                 {hlNfts.length > displayLimit && (
                                   <Button onClick={() => setDisplayLimit(d => d + 25)} className="w-full bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30">Load 25 more</Button>
@@ -2582,8 +2624,8 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* Hyperliquid Button - Only show if .hl domain or has HL NFTs - hide for IOTA */}
-                      {!isIotaProfile && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                      {/* Hyperliquid Button - show if .hl domain or HL NFTs; for IOTA require linked EVM */}
+                      {(!isIotaProfile || !!linkedEvmAddress) && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
                         <button
                           onClick={() => setNftCategory('hyperliquid')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -2847,12 +2889,19 @@ export const ProfileCard = ({
                     ) : (
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {hlNfts.map((nft: any, index: number) => (
-                            <div key={`hl-${nft.identifier || nft.contract}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                              <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
-                              {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
-                            </div>
-                          ))}
+                          {hlNfts.map((nft: any, index: number) => {
+                            const hlImg = nft.image_url || nft.display_image_url;
+                            const fallback = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(nft.name || nft.identifier || String(index))}&backgroundType=gradientLinear&backgroundColor=00d4aa,0a3d3d`;
+                            return (
+                              <div key={`hl-${nft.identifier || nft.contract}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all w-full" onClick={() => setSelectedNft({ ...nft, image_url: hlImg || fallback, display_image_url: hlImg || fallback })}>
+                                <img src={hlImg || fallback} alt={nft.name} className="w-full aspect-square object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback; }} />
+                                {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                  <p className="text-xs font-medium text-white truncate">{nft.name}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )
