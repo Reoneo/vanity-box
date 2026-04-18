@@ -1,22 +1,19 @@
 // Browser-safe replacement for @vechain/connex-driver/dist/simple-net.js
-// The original uses Node http/https Agents; we use fetch instead.
+// Plain JS (no TS annotations) so it can be injected directly via Vite's load() hook.
 
 export class SimpleNet {
-  private baseURL: string;
-  private timeout: number;
-  public wsTimeout: number;
-
-  constructor(baseURL: string, timeout = 30_000, wsTimeout = 30_000) {
-    this.baseURL = baseURL.replace(/\/+$/, '');
-    this.timeout = timeout;
-    this.wsTimeout = wsTimeout;
+  constructor(baseURL, timeout, wsTimeout) {
+    this.baseURL = String(baseURL || '').replace(/\/+$/, '');
+    this.timeout = timeout || 30000;
+    this.wsTimeout = wsTimeout || 30000;
   }
 
-  async http(method: string, path: string, params?: any): Promise<any> {
+  async http(method, path, params) {
     params = params || {};
-    const url = new URL(path.replace(/^\/+/, ''), this.baseURL + '/');
+    const url = new URL(String(path || '').replace(/^\/+/, ''), this.baseURL + '/');
     if (params.query) {
-      for (const [k, v] of Object.entries(params.query)) {
+      for (const k of Object.keys(params.query)) {
+        const v = params.query[k];
         if (v !== undefined && v !== null) url.searchParams.append(k, String(v));
       }
     }
@@ -26,25 +23,25 @@ export class SimpleNet {
     try {
       const resp = await fetch(url.toString(), {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(params.headers || {}),
-        },
+        headers: Object.assign(
+          { 'Content-Type': 'application/json' },
+          params.headers || {}
+        ),
         body: params.body ? JSON.stringify(params.body) : undefined,
         signal: ctrl.signal,
       });
-      const headers: Record<string, string> = {};
+      const headers = {};
       resp.headers.forEach((v, k) => { headers[k] = v; });
       if (params.validateResponseHeader) params.validateResponseHeader(headers);
       const text = await resp.text();
-      if (!resp.ok) throw new Error(`${method} ${url}: ${resp.status} ${text}`);
-      try { return JSON.parse(text); } catch { return text; }
+      if (!resp.ok) throw new Error(method + ' ' + url + ': ' + resp.status + ' ' + text);
+      try { return JSON.parse(text); } catch (_e) { return text; }
     } finally {
       clearTimeout(tid);
     }
   }
 
-  openWebSocketReader(_path: string): any {
+  openWebSocketReader(_path) {
     throw new Error('WebSocket reader not supported in browser shim');
   }
 }
