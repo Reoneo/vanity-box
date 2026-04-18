@@ -26,6 +26,7 @@ import {
   Monitor,
   Smartphone,
   Plus,
+  ExternalLink,
 } from 'lucide-react';
 import { usePasskeyWallet, isValidIotaAddress } from '@/hooks/usePasskeyWallet';
 import { toast } from 'sonner';
@@ -444,6 +445,9 @@ export function PasskeyWalletModal({
             </div>
           )}
 
+          {/* Mobile wallet fallback — shown when passkey fails or on mobile without injected provider */}
+          <MobileWalletFallback />
+
           {/* Action Cards */}
           <div className="space-y-2.5">
             {/* Create Card */}
@@ -767,5 +771,71 @@ function StepPill({ active, complete, label }: { active: boolean; complete: bool
     )}>
       {complete ? '✓ ' : ''}{label}
     </span>
+  );
+}
+
+/* ─────────── Mobile Wallet Fallback ─────────── */
+function MobileWalletFallback() {
+  // Detect: mobile device, AND no injected wallet (so user can't passkey/extension link)
+  const [shouldShow, setShouldShow] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const ua = navigator.userAgent;
+    const isMobile = /Android|iPhone|iPod|iPad/.test(ua);
+    const hasInjected = !!(window as any).nightly?.iota || !!(window as any).iota || !!(globalThis as any).__iotaWalletStandard;
+    // Show on mobile when no injected wallet, OR always on mobile (gives users escape hatch)
+    setShouldShow(isMobile && !hasInjected);
+  }, []);
+
+  if (!shouldShow) return null;
+
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://vanity.box';
+  // Nightly deep link: opens the dapp inside Nightly's in-app browser where window.nightly.iota is injected
+  const nightlyDeepLink = `nightly://browse?url=${encodeURIComponent(currentUrl)}`;
+  // Slush web wallet (formerly Sui Wallet web) — opens the hosted wallet
+  const slushWebUrl = 'https://my.slush.app/';
+
+  return (
+    <div className="rounded-xl border border-primary/30 bg-primary/5 p-3.5 space-y-3">
+      <div className="flex items-start gap-2.5">
+        <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+          <Smartphone className="w-4.5 h-4.5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">Mobile wallet</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
+            Passkey not working? Open Vanity.box inside your wallet's in-app browser to connect.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          asChild
+          variant="outline"
+          className="h-10 text-xs font-semibold rounded-xl border-primary/40 text-primary hover:bg-primary/10"
+        >
+          <a href={nightlyDeepLink} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+            Open Nightly
+          </a>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          className="h-10 text-xs font-semibold rounded-xl border-primary/40 text-primary hover:bg-primary/10"
+        >
+          <a href={slushWebUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+            Slush Web
+          </a>
+        </Button>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+        Tip: in Nightly, tap the <strong>Browser</strong> tab and enter <strong>vanity.box</strong>.
+      </p>
+    </div>
   );
 }
