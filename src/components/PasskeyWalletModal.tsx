@@ -445,6 +445,9 @@ export function PasskeyWalletModal({
             </div>
           )}
 
+          {/* Mobile wallet fallback — shown when passkey fails or on mobile without injected provider */}
+          <MobileWalletFallback />
+
           {/* Action Cards */}
           <div className="space-y-2.5">
             {/* Create Card */}
