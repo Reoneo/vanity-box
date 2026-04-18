@@ -47,6 +47,7 @@ import {
   useWallets as useSuiWallets,
   useSignPersonalMessage as useSuiSignPersonalMessage,
 } from '@mysten/dapp-kit';
+import { useWallet as useVechainWallet, useWalletModal as useVechainWalletModal } from '@vechain/dapp-kit-react';
 
 interface IdentityPanelContentProps {
   iotaName: string;
@@ -131,6 +132,7 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const tonVcs = vcList.filter(vc => vc.type === 'TonWalletOwnershipCredential');
   const aptosVcs = vcList.filter(vc => vc.type === 'AptosWalletOwnershipCredential');
   const suiVcs = vcList.filter(vc => vc.type === 'SuiWalletOwnershipCredential');
+  const vechainVcs = vcList.filter(vc => vc.type === 'VechainWalletOwnershipCredential');
 
   if (!isInitialized) {
     return (
@@ -343,12 +345,14 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             />
           )}
 
-          {/* Link Vechain Wallet — coming soon */}
-          <ComingSoonWalletSection
-            label="Link Vechain Wallet"
-            subtitle="Coming soon — VeWorld integration"
-            icon={<img src={vechainLogo} alt="VET" className="w-4 h-4 flex-shrink-0 rounded-full" />}
-            badgeLabel="VET"
+          {/* Link Vechain Wallet — VeWorld + WalletConnect via DAppKit */}
+          <VechainWalletLinkSection
+            iotaName={iotaName}
+            holderDid={holderDid}
+            linkedVcs={vechainVcs}
+            expanded={expandedWallet === 'vechain'}
+            onToggle={() => setExpandedWallet(expandedWallet === 'vechain' ? null : 'vechain')}
+            addExternalCredential={addExternalCredential}
           />
 
           {/* Link Sui Wallet */}
