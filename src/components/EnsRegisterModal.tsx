@@ -133,7 +133,7 @@ export const EnsRegisterModal = ({ open, onOpenChange, name, label }: EnsRegiste
   useEffect(() => {
     if (step !== 'waiting' || !waitEndTime) return;
     
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
       const remaining = Math.max(0, Math.ceil((waitEndTime - Date.now()) / 1000));
       setCountdown(remaining);
       

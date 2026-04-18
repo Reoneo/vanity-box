@@ -47,7 +47,7 @@ import {
   useWallets as useSuiWallets,
   useSignPersonalMessage as useSuiSignPersonalMessage,
 } from '@mysten/dapp-kit';
-import { useWallet as useVechainWallet, useWalletModal as useVechainWalletModal } from '@vechain/dapp-kit-react';
+import { useWallet as useVechainWallet, useWalletModal as useVechainWalletModal, useConnex as useVechainConnex } from '@vechain/dapp-kit-react';
 
 interface IdentityPanelContentProps {
   iotaName: string;
@@ -756,7 +756,7 @@ function AptosWalletLinkSection({
           return;
         }
         let elapsed = 0;
-        const iv = setInterval(() => {
+        const iv = window.setInterval(() => {
           elapsed += 200;
           if (accountRef.current?.address) {
             clearInterval(iv);
@@ -1292,8 +1292,9 @@ function VechainWalletLinkSection({
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { account, signer, disconnect } = useVechainWallet();
+  const { account, disconnect } = useVechainWallet();
   const { open: openVechainModal } = useVechainWalletModal();
+  const connex = useVechainConnex();
 
   const handleLink = useCallback(async () => {
     setIsLinking(true);
@@ -1303,12 +1304,10 @@ function VechainWalletLinkSection({
       let addr = account;
       if (!addr) {
         setStep('connecting');
-        await openVechainModal();
-        // Wait briefly for account to populate after modal
+        openVechainModal();
         const start = Date.now();
         while (!addr && Date.now() - start < 30000) {
           await new Promise((r) => setTimeout(r, 250));
-          // re-read from latest hook value via window event would be ideal — just bail with prompt
           addr = (window as any).__vechain_last_addr || account;
           if (addr) break;
         }
@@ -1331,29 +1330,16 @@ function VechainWalletLinkSection({
         `Issued At: ${timestamp}`,
       ].join('\n');
 
-      // VeChain wallets sign via certificate (text payload)
-      if (!signer) throw new Error('VeChain signer unavailable');
-      const certResult: any = await (signer as any).signCert?.(
-        {
+      // VeChain wallets sign via certificate (text payload) using Connex vendor
+      const certResult: any = await (connex as any).vendor
+        .sign('cert', {
           purpose: 'identification',
           payload: { type: 'text', content: message },
-        },
-        { signer: addr }
-      ).catch(async () => {
-        // Fallback for newer DAppKit signer API (v2)
-        return await (signer as any).signTypedData?.(
-          { name: 'Vanity.box', version: '1' },
-          { Proof: [{ name: 'message', type: 'string' }] },
-          { message }
-        );
-      });
+        })
+        .signer(addr)
+        .request();
 
-      const signature =
-        (typeof certResult === 'string' ? certResult : null) ??
-        certResult?.signature ??
-        certResult?.annex?.signer ??
-        '';
-
+      const signature = certResult?.annex?.signature || certResult?.signature || '';
       if (!signature) throw new Error('VeChain wallet returned an empty signature');
 
       setStep('issuing');
@@ -1379,7 +1365,7 @@ function VechainWalletLinkSection({
         detail: { iotaName: iotaName.toLowerCase(), vechainAddress: addr },
       }));
 
-      try { await disconnect(); } catch {}
+      try { disconnect(); } catch {}
     } catch (e: any) {
       console.error('VeChain link error:', e);
       const msg = e?.message || 'Failed to link VeChain wallet';
@@ -1388,7 +1374,7 @@ function VechainWalletLinkSection({
     } finally {
       setIsLinking(false);
     }
-  }, [account, signer, openVechainModal, disconnect, iotaName, holderDid, addExternalCredential]);
+  }, [account, connex, openVechainModal, disconnect, iotaName, holderDid, addExternalCredential]);
 
   return (
     <WalletLinkSection
