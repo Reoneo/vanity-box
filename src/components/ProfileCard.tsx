@@ -3705,51 +3705,84 @@ export const ProfileCard = ({
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
 
-      {/* Avatar Popup Modal */}
-      {showAvatarPopup && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowAvatarPopup(false)}
-        >
-          <div className="relative max-w-[90vw] max-h-[90vh]">
-            <button
-              onClick={() => setShowAvatarPopup(false)}
-              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all z-10"
-            >
-              <X className="w-5 h-5 text-foreground" />
-            </button>
-            <img
-              src={web3BioProfile?.avatar || vanityBoxAvatar}
-              alt={web3BioProfile?.displayName || 'User'}
-              className="max-w-[90vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
+      <Dialog open={showAvatarPopup || showHeaderPopup} onOpenChange={(open) => {
+        if (!open) {
+          setShowAvatarPopup(false);
+          setShowHeaderPopup(false);
+        }
+      }}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-5xl border-border/60 bg-background/95 p-3 sm:p-4">
+          <DialogTitle className="sr-only">Profile media gallery</DialogTitle>
+          {activeMediaItem && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
+                    <img src={activeMediaItem.icon} alt="" className="h-3.5 w-3.5 rounded-full" />
+                    {activeMediaItem.label}
+                  </Badge>
+                  <span className="truncate text-sm text-muted-foreground">{activeMediaItem.title}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {mediaSlideIndex + 1} / {activeMediaSlides.length}
+                </div>
+              </div>
 
-      {/* Header Popup Modal */}
-      {showHeaderPopup && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowHeaderPopup(false)}
-        >
-          <div className="relative max-w-[95vw] max-h-[90vh]">
-            <button
-              onClick={() => setShowHeaderPopup(false)}
-              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all z-10"
-            >
-              <X className="w-5 h-5 text-foreground" />
-            </button>
-            <img
-              src={web3BioProfile?.header || iotaHeaderPattern}
-              alt="Header"
-              className="max-w-[95vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
+              <div className="relative overflow-hidden rounded-lg border border-border/60 bg-muted/30">
+                <img
+                  src={activeMediaItem.image}
+                  alt={activeMediaItem.title || 'Profile media'}
+                  className="max-h-[72vh] w-full object-contain"
+                />
+
+                {activeMediaSlides.length > 1 && (
+                  <>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      onClick={() => moveMediaSlide(-1)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      onClick={() => moveMediaSlide(1)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {activeMediaSlides.length > 1 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {activeMediaSlides.map((item, index) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setMediaSlideIndex(index)}
+                      className={`overflow-hidden rounded-lg border p-1 text-left transition ${index === mediaSlideIndex ? 'border-primary bg-accent/40' : 'border-border/60 bg-muted/20 hover:bg-muted/40'}`}
+                    >
+                      <div className="aspect-[4/3] overflow-hidden rounded-md bg-muted/30">
+                        <img src={item.image} alt={item.title || 'Profile media'} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex items-center gap-2 px-1 pt-2">
+                        <img src={item.icon} alt="" className="h-4 w-4 rounded-full" />
+                        <span className="truncate text-sm text-foreground">{item.label}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ENS Domain Detail Modal */}
       <ENSDomainDetailModal
