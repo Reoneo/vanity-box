@@ -1428,6 +1428,13 @@ export const ProfileCard = ({
     return linkedWalletOptions.find((option) => option.key === selectedLinkedWalletKey)?.address || currentWalletAddress;
   }, [currentWalletAddress, linkedWalletOptions, selectedLinkedWalletKey]);
 
+  const copyAddress = async () => {
+    if (!displayedWalletAddress) return;
+    await navigator.clipboard.writeText(displayedWalletAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const renderLinkedWalletRow = () => {
     if (!displayedWalletAddress) return null;
 
