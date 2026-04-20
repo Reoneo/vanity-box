@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import type { OnchainProfileData } from "@/lib/iota/vanityProfile";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
 import { ENSDomainDetailModal } from "./ENSDomainDetailModal";
@@ -277,6 +278,7 @@ export const ProfileCard = ({
   const [isHumanVerified, setIsHumanVerified] = useState(false);
   const [showAvatarPopup, setShowAvatarPopup] = useState(false);
   const [showHeaderPopup, setShowHeaderPopup] = useState(false);
+  const [mediaSlideIndex, setMediaSlideIndex] = useState(0);
   
   // EVM social links state for .iota profiles
   const [evmSocialLinks, setEvmSocialLinks] = useState<Array<{ platform: string; linkData: any; origin: string }>>([]);
@@ -840,6 +842,66 @@ export const ProfileCard = ({
            web3BioProfile?.displayName || 
            (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown');
   };
+
+  const normalizeMediaUrl = (url?: string | null) => {
+    const raw = (url || '').trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+    return `https://${raw}`;
+  };
+
+  const searchedChainLabel = useMemo(() => {
+    const normalized = searchedIdentity?.toLowerCase() || '';
+    if (normalized.endsWith('.eth')) return 'ENS';
+    if (normalized.endsWith('.base.eth')) return 'Base';
+    if (normalized.endsWith('.iota')) return 'IOTA';
+    return 'EVM';
+  }, [searchedIdentity]);
+
+  const avatarSlides = useMemo(() => {
+    const slides = [
+      {
+        key: 'searched-avatar',
+        label: searchedChainLabel,
+        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+      },
+      {
+        key: 'iota-avatar',
+        label: 'IOTA',
+        title: iotaOnchainProfile ? 'IOTA profile avatar' : null,
+        image: normalizeMediaUrl(iotaOnchainProfile?.avatarUrl),
+        icon: IOTA_ICON_URL,
+      },
+    ].filter((item) => item.image);
+
+    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
+  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
+
+  const headerSlides = useMemo(() => {
+    const slides = [
+      {
+        key: 'searched-header',
+        label: searchedChainLabel,
+        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+      },
+      {
+        key: 'iota-header',
+        label: 'IOTA',
+        title: iotaOnchainProfile ? 'IOTA profile header' : null,
+        image: normalizeMediaUrl(iotaOnchainProfile?.headerUrl),
+        icon: IOTA_ICON_URL,
+      },
+    ].filter((item) => item.image);
+
+    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
+  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
+
+  const activeMediaSlides = showAvatarPopup ? avatarSlides : headerSlides;
+  const activeMediaItem = activeMediaSlides[Math.min(mediaSlideIndex, Math.max(activeMediaSlides.length - 1, 0))];
 
   // Fetch all data on profile load for button visibility
   // PRIORITY: Fetch Talent Protocol FIRST so badge shows immediately (skip for IOTA profiles)
