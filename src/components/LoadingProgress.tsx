@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 interface LoadingProgressProps {
   isLoading: boolean;
+  title?: string;
+  primaryLabel?: string | null;
+  secondaryLabel?: string | null;
 }
 
-export const LoadingProgress = ({ isLoading }: LoadingProgressProps) => {
+export const LoadingProgress = ({ isLoading, title, primaryLabel, secondaryLabel }: LoadingProgressProps) => {
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const animationRef = useRef<number | null>(null);
@@ -51,19 +55,46 @@ export const LoadingProgress = ({ isLoading }: LoadingProgressProps) => {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-2xl border-2 border-[#D4AF37]/30 w-full max-w-md mx-4">
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-center text-gray-900 dark:text-white">
-            Loading
-          </h3>
-          <Progress 
-            value={progress} 
-            className="h-3 bg-gray-200 dark:bg-gray-800 transition-all duration-150"
-          />
-          <p className="text-center text-sm font-medium text-[#D4AF37]">
-            {progress}%
-          </p>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/70 backdrop-blur-md">
+      <div className="mx-4 w-full max-w-md rounded-2xl border border-border/60 bg-background/95 p-6 shadow-2xl shadow-primary/10">
+        <div className="space-y-5">
+          <div className="space-y-2 text-center">
+            <h3 className="text-lg font-semibold text-foreground">
+              {title || (secondaryLabel ? 'Loading linked profile' : 'Loading profile')}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {secondaryLabel ? 'Merging searched branding with linked IOTA data.' : 'Fetching the latest profile data.'}
+            </p>
+          </div>
+
+          {(primaryLabel || secondaryLabel) && (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {primaryLabel && <Badge variant="secondary" className="max-w-full truncate px-3 py-1">{primaryLabel}</Badge>}
+              {secondaryLabel && (
+                <>
+                  <span className="text-xs text-muted-foreground">→</span>
+                  <Badge variant="outline" className="max-w-full truncate px-3 py-1">{secondaryLabel}</Badge>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Preparing view</span>
+              <span>{Math.max(5, progress)}%</span>
+            </div>
+            <Progress
+              value={progress}
+              className="h-2 overflow-hidden rounded-full bg-muted transition-all duration-150"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="h-2 rounded-full bg-muted/80" />
+            <div className="h-2 rounded-full bg-muted/60" />
+            <div className="h-2 rounded-full bg-muted/40" />
+          </div>
         </div>
       </div>
     </div>
