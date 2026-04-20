@@ -1741,16 +1741,7 @@ export const ProfileCard = ({
                       </h2>
 
                       {/* Wallet Address */}
-                      {currentWalletAddress && (
-                        <div className="flex items-center justify-center">
-                          <code 
-                            onClick={copyAddress}
-                            className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-lg text-sm text-black/90 dark:text-white/90 cursor-pointer hover:bg-black/20 dark:hover:bg-white/20 transition-colors font-mono"
-                          >
-                            {copied ? 'Copied!' : shortenAddress(currentWalletAddress)}
-                          </code>
-                        </div>
-                      )}
+                      {displayedWalletAddress && renderLinkedWalletRow()}
 
                       {/* Following/Followers */}
                       {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
@@ -2387,16 +2378,7 @@ export const ProfileCard = ({
                     {getDisplayName()}
                   </h2>
 
-                  {currentWalletAddress && (
-                    <div className="flex items-center justify-center">
-                      <code 
-                        onClick={copyAddress}
-                        className="px-3 py-1 bg-muted rounded-md text-sm text-black dark:text-white cursor-pointer hover:bg-muted/80 transition-colors"
-                      >
-                        {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
-                      </code>
-                    </div>
-                  )}
+                  {displayedWalletAddress && renderLinkedWalletRow()}
 
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
