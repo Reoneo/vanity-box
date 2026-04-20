@@ -2114,12 +2114,26 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     activeSection={activeDockSection}
                     web3BioProfile={
                       isIotaName(displayQuery) && iotaOnchainProfile
-                        ? makeIotaDisplayProfile({
-                            base: web3BioProfile,
-                            iotaOnchainProfile,
-                            identity: displayQuery,
-                            ownerAddress: iotaOwnerAddress,
-                          })
+                        ? (() => {
+                            const built = makeIotaDisplayProfile({
+                              base: web3BioProfile,
+                              iotaOnchainProfile,
+                              identity: displayQuery,
+                              ownerAddress: iotaOwnerAddress,
+                            });
+                            // Apply ENS/EVM-domain overlay so the searched domain's
+                            // avatar, header, identity, and displayName win on top.
+                            if (ensOverlay) {
+                              return {
+                                ...built,
+                                identity: ensOverlay.identity,
+                                displayName: ensOverlay.displayName || built.displayName,
+                                avatar: ensOverlay.avatar || built.avatar,
+                                header: ensOverlay.header || built.header,
+                              };
+                            }
+                            return built;
+                          })()
                         : web3BioProfile
                     }
                     currentWalletAddress={
