@@ -117,7 +117,7 @@ const getChainIcon = (chain: string, size: number = 18) => {
       return <img src={IOTA_ICON_URL} alt="IOTA" width={size} height={size} className={iconClass} />;
     case 'ethereum':
     case 'eth':
-      return <img src={ethLogo} alt="Ethereum" width={size} height={size} className={iconClass} />;
+      return <img src={ethLogoBlue} alt="Ethereum" width={size} height={size} className={iconClass} />;
     case 'worldchain':
     case 'world':
       return <img src={wldLogo} alt="World Chain" width={size} height={size} className={iconClass} />;
@@ -189,7 +189,7 @@ const getChainIcon = (chain: string, size: number = 18) => {
         </svg>
       );
     default:
-      return <img src={ethLogo} alt="Network" width={size} height={size} className={iconClass} />;
+      return <img src={ethLogoBlue} alt="Network" width={size} height={size} className={iconClass} />;
   }
 };
 
@@ -221,6 +221,7 @@ export const ProfileCard = ({
   linkedEvmAddress,
   isResolvingLinkedEvm = false,
   linkedTonAddress,
+  linkedSuiAddress,
   iotaOnchainProfile,
   iotaNameObjectId,
   iotaOwnerAddress,
