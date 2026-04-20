@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import type { OnchainProfileData } from "@/lib/iota/vanityProfile";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
 import { ENSDomainDetailModal } from "./ENSDomainDetailModal";
@@ -277,6 +278,7 @@ export const ProfileCard = ({
   const [isHumanVerified, setIsHumanVerified] = useState(false);
   const [showAvatarPopup, setShowAvatarPopup] = useState(false);
   const [showHeaderPopup, setShowHeaderPopup] = useState(false);
+  const [mediaSlideIndex, setMediaSlideIndex] = useState(0);
   
   // EVM social links state for .iota profiles
   const [evmSocialLinks, setEvmSocialLinks] = useState<Array<{ platform: string; linkData: any; origin: string }>>([]);
@@ -839,6 +841,89 @@ export const ProfileCard = ({
     return web3BioProfile?.hlDomain || 
            web3BioProfile?.displayName || 
            (currentWalletAddress ? shortenAddress(currentWalletAddress) : 'Unknown');
+  };
+
+  const normalizeMediaUrl = (url?: string | null) => {
+    const raw = (url || '').trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+    return `https://${raw}`;
+  };
+
+  const searchedChainLabel = useMemo(() => {
+    const normalized = searchedIdentity?.toLowerCase() || '';
+    if (normalized.endsWith('.eth')) return 'ENS';
+    if (normalized.endsWith('.base.eth')) return 'Base';
+    if (normalized.endsWith('.iota')) return 'IOTA';
+    return 'EVM';
+  }, [searchedIdentity]);
+
+  const avatarSlides = useMemo(() => {
+    const slides = [
+      {
+        key: 'searched-avatar',
+        label: searchedChainLabel,
+        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+      },
+      {
+        key: 'iota-avatar',
+        label: 'IOTA',
+        title: iotaOnchainProfile ? 'IOTA profile avatar' : null,
+        image: normalizeMediaUrl(iotaOnchainProfile?.avatarUrl),
+        icon: IOTA_ICON_URL,
+      },
+    ].filter((item) => item.image);
+
+    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
+  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
+
+  const headerSlides = useMemo(() => {
+    const slides = [
+      {
+        key: 'searched-header',
+        label: searchedChainLabel,
+        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+      },
+      {
+        key: 'iota-header',
+        label: 'IOTA',
+        title: iotaOnchainProfile ? 'IOTA profile header' : null,
+        image: normalizeMediaUrl(iotaOnchainProfile?.headerUrl),
+        icon: IOTA_ICON_URL,
+      },
+    ].filter((item) => item.image);
+
+    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
+  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
+
+  const activeMediaSlides = showAvatarPopup ? avatarSlides : headerSlides;
+  const activeMediaItem = activeMediaSlides[Math.min(mediaSlideIndex, Math.max(activeMediaSlides.length - 1, 0))];
+
+  useEffect(() => {
+    if (showAvatarPopup || showHeaderPopup) {
+      setMediaSlideIndex(0);
+    }
+  }, [showAvatarPopup, showHeaderPopup]);
+
+  const openAvatarGallery = () => {
+    setMediaSlideIndex(0);
+    setShowHeaderPopup(false);
+    setShowAvatarPopup(true);
+  };
+
+  const openHeaderGallery = () => {
+    setMediaSlideIndex(0);
+    setShowAvatarPopup(false);
+    setShowHeaderPopup(true);
+  };
+
+  const moveMediaSlide = (direction: number) => {
+    if (activeMediaSlides.length <= 1) return;
+    setMediaSlideIndex((current) => (current + direction + activeMediaSlides.length) % activeMediaSlides.length);
   };
 
   // Fetch all data on profile load for button visibility
@@ -1491,7 +1576,7 @@ export const ProfileCard = ({
                 <div className="relative flex-shrink-0 w-full">
                   <div 
                     className="w-full aspect-[5.5/1] overflow-hidden cursor-pointer"
-                    onClick={() => setShowHeaderPopup(true)}
+                    onClick={openHeaderGallery}
                   >
                     <img
                       src={web3BioProfile?.header || iotaHeaderPattern}
@@ -1502,7 +1587,7 @@ export const ProfileCard = ({
                   {/* Avatar positioned absolutely to overlay header - centered on left half */}
                   <div 
                     className="absolute -bottom-16 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
-                    onClick={() => setShowAvatarPopup(true)}
+                    onClick={openAvatarGallery}
                   >
                     <div className="relative group">
                       <Avatar className="h-[136px] w-[136px] border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
@@ -2130,7 +2215,7 @@ export const ProfileCard = ({
                 <div className="relative flex-shrink-0">
                   <div 
                     className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden cursor-pointer"
-                    onClick={() => setShowHeaderPopup(true)}
+                    onClick={openHeaderGallery}
                   >
                     <img
                       src={web3BioProfile?.header || iotaHeaderPattern}
@@ -2141,7 +2226,7 @@ export const ProfileCard = ({
                   </div>
 
                   <div className="flex justify-center absolute -bottom-16 left-0 right-0">
-                    <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
+                    <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
                       {/* No glow ring – matches desktop */}
                       <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
                         <AvatarImage 
@@ -3620,51 +3705,84 @@ export const ProfileCard = ({
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
 
-      {/* Avatar Popup Modal */}
-      {showAvatarPopup && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowAvatarPopup(false)}
-        >
-          <div className="relative max-w-[90vw] max-h-[90vh]">
-            <button
-              onClick={() => setShowAvatarPopup(false)}
-              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all z-10"
-            >
-              <X className="w-5 h-5 text-foreground" />
-            </button>
-            <img
-              src={web3BioProfile?.avatar || vanityBoxAvatar}
-              alt={web3BioProfile?.displayName || 'User'}
-              className="max-w-[90vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
+      <Dialog open={showAvatarPopup || showHeaderPopup} onOpenChange={(open) => {
+        if (!open) {
+          setShowAvatarPopup(false);
+          setShowHeaderPopup(false);
+        }
+      }}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-5xl border-border/60 bg-background/95 p-3 sm:p-4">
+          <DialogTitle className="sr-only">Profile media gallery</DialogTitle>
+          {activeMediaItem && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
+                    <img src={activeMediaItem.icon} alt="" className="h-3.5 w-3.5 rounded-full" />
+                    {activeMediaItem.label}
+                  </Badge>
+                  <span className="truncate text-sm text-muted-foreground">{activeMediaItem.title}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {mediaSlideIndex + 1} / {activeMediaSlides.length}
+                </div>
+              </div>
 
-      {/* Header Popup Modal */}
-      {showHeaderPopup && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setShowHeaderPopup(false)}
-        >
-          <div className="relative max-w-[95vw] max-h-[90vh]">
-            <button
-              onClick={() => setShowHeaderPopup(false)}
-              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-background/80 hover:bg-background transition-all z-10"
-            >
-              <X className="w-5 h-5 text-foreground" />
-            </button>
-            <img
-              src={web3BioProfile?.header || iotaHeaderPattern}
-              alt="Header"
-              className="max-w-[95vw] max-h-[80vh] object-contain rounded-2xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
+              <div className="relative overflow-hidden rounded-lg border border-border/60 bg-muted/30">
+                <img
+                  src={activeMediaItem.image}
+                  alt={activeMediaItem.title || 'Profile media'}
+                  className="max-h-[72vh] w-full object-contain"
+                />
+
+                {activeMediaSlides.length > 1 && (
+                  <>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      onClick={() => moveMediaSlide(-1)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      onClick={() => moveMediaSlide(1)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {activeMediaSlides.length > 1 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {activeMediaSlides.map((item, index) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setMediaSlideIndex(index)}
+                      className={`overflow-hidden rounded-lg border p-1 text-left transition ${index === mediaSlideIndex ? 'border-primary bg-accent/40' : 'border-border/60 bg-muted/20 hover:bg-muted/40'}`}
+                    >
+                      <div className="aspect-[4/3] overflow-hidden rounded-md bg-muted/30">
+                        <img src={item.image} alt={item.title || 'Profile media'} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex items-center gap-2 px-1 pt-2">
+                        <img src={item.icon} alt="" className="h-4 w-4 rounded-full" />
+                        <span className="truncate text-sm text-foreground">{item.label}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ENS Domain Detail Modal */}
       <ENSDomainDetailModal
