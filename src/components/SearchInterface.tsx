@@ -289,6 +289,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   // Linked TON address for .iota profiles (resolved from iota_wallet_links)
   const [linkedTonAddress, setLinkedTonAddress] = useState<string | null>(null);
   const linkedTonResolverRef = useRef<string | null>(null);
+  const [linkedSuiAddress, setLinkedSuiAddress] = useState<string | null>(null);
+  const linkedSuiResolverRef = useRef<string | null>(null);
 
   // Cross-chain overlay: when an external domain (e.g. .eth) resolves to an EVM address
   // that has been linked to a vanity.iota profile, we render the IOTA profile but keep
@@ -483,6 +485,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Reset linked TON address
       setLinkedTonAddress(null);
       linkedTonResolverRef.current = null;
+      setLinkedSuiAddress(null);
+      linkedSuiResolverRef.current = null;
     }
   }, [web3BioProfile]);
 
@@ -738,6 +742,49 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     };
     window.addEventListener('iota-ton-linked', handleTonLinked);
     return () => window.removeEventListener('iota-ton-linked', handleTonLinked);
+  }, [displayQuery]);
+
+  // Resolve linked Sui address for .iota profiles
+  useEffect(() => {
+    const name = normalizeIotaQuery(displayQuery);
+    if (!name) {
+      setLinkedSuiAddress(null);
+      linkedSuiResolverRef.current = null;
+      return;
+    }
+
+    const resolverKey = `${name}|sui`;
+    if (linkedSuiResolverRef.current === resolverKey) return;
+    linkedSuiResolverRef.current = resolverKey;
+
+    let isCancelled = false;
+
+    const resolve = async () => {
+      try {
+        const localSui = localStorage.getItem(`iota-linked-sui:${name}`);
+        if (localSui) {
+          setLinkedSuiAddress(localSui);
+        }
+
+        const { data, error } = await supabase
+          .from('iota_cross_chain_profiles')
+          .select('sui_address')
+          .eq('iota_name', name)
+          .maybeSingle();
+
+        if (!isCancelled && !error && data?.sui_address) {
+          setLinkedSuiAddress(data.sui_address);
+          try { localStorage.setItem(`iota-linked-sui:${name}`, data.sui_address); } catch {}
+        } else if (!isCancelled && !localSui) {
+          setLinkedSuiAddress(null);
+        }
+      } catch (err) {
+        console.warn('[SearchInterface] Sui link resolution failed:', err);
+      }
+    };
+
+    resolve();
+    return () => { isCancelled = true; };
   }, [displayQuery]);
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
@@ -2259,6 +2306,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     linkedEvmAddress={linkedEvmAddress}
                     isResolvingLinkedEvm={isResolvingLinkedEvm}
                     linkedTonAddress={linkedTonAddress}
+                    linkedSuiAddress={linkedSuiAddress}
                     iotaOnchainProfile={iotaOnchainProfile}
                     iotaNameObjectId={iotaNameObjectId}
                     iotaOwnerAddress={iotaOwnerAddress}
