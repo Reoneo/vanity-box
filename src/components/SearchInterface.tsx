@@ -1483,21 +1483,50 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
               const candidateList = Array.from(candidates);
               console.log('🔗 Cross-chain candidates for', normalizedQuery, ':', candidateList);
+              if (candidateList.length === 0) return;
 
-              const { data: linked } = await supabase.functions.invoke(
-                'get-iota-name-by-evm',
-                {
-                  body: {
-                    evmAddresses: candidateList,
-                    evmAddress: candidateList[0],
-                    searchedName: normalizedQuery,
-                  },
+              // Set the overlay BEFORE awaiting so it survives stale-search aborts.
+              const overlay = {
+                identity: profile.identity || normalizedQuery,
+                displayName: profile.displayName || profile.identity || normalizedQuery,
+                avatar: profile.avatar || null,
+                header: profile.header || null,
+                platform: profile.platform || 'ens',
+              };
+
+              // Step 1: try denormalized cache first (instant single-row lookup).
+              let iotaName: string | null = null;
+              try {
+                const { data: cacheRows } = await supabase
+                  .from('iota_cross_chain_profiles')
+                  .select('iota_name, evm_address')
+                  .in('evm_address', candidateList)
+                  .limit(1);
+                if (cacheRows && cacheRows.length > 0) {
+                  const raw = String(cacheRows[0].iota_name || '').toLowerCase();
+                  iotaName = raw.endsWith('.iota') ? raw : `${raw}.iota`;
+                  console.log('🔗 Cross-chain cache hit:', iotaName);
                 }
-              );
-              console.log('🔗 Cross-chain edge response:', linked);
-              if (searchIdRef.current !== currentSearchId) return;
+              } catch (cacheErr: any) {
+                console.log('🔗 Cross-chain cache lookup failed:', cacheErr?.message);
+              }
 
-              const iotaName: string | null = linked?.iotaName || null;
+              // Step 2: fallback to edge function (which queries iota_wallet_links).
+              if (!iotaName) {
+                const { data: linked } = await supabase.functions.invoke(
+                  'get-iota-name-by-evm',
+                  {
+                    body: {
+                      evmAddresses: candidateList,
+                      evmAddress: candidateList[0],
+                      searchedName: normalizedQuery,
+                    },
+                  }
+                );
+                console.log('🔗 Cross-chain edge response:', linked);
+                iotaName = linked?.iotaName || null;
+              }
+
               if (!iotaName || !isIotaName(iotaName)) {
                 console.log('🔗 Cross-chain: no linked .iota for', normalizedQuery);
                 return;
@@ -1505,27 +1534,33 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
               console.log(`🔗 Cross-chain: ${normalizedQuery} -> linked .iota: ${iotaName}`);
 
-              setEnsOverlay({
-                identity: profile.identity || normalizedQuery,
-                displayName: profile.displayName || profile.identity || normalizedQuery,
-                avatar: profile.avatar || null,
-                header: profile.header || null,
-                platform: profile.platform || 'ens',
-              });
-
-              // Switch active query for IOTA flow but DO NOT navigate the URL.
+              // Apply overlay + switch active query for IOTA flow. We intentionally
+              // do NOT bail on stale-search here — the linked .iota name is
+              // deterministic for this searched ENS, so even a "late" result is
+              // still correct for the user's current view.
+              setEnsOverlay(overlay);
               setDisplayQuery(iotaName);
               setIotaOnchainProfileLoading(true);
               try {
                 const response = await fetchIotaOnchainProfile(iotaName);
-                if (searchIdRef.current !== currentSearchId) return;
                 if (response?.success) {
                   setIotaOnchainProfile(response.profile);
                   setIotaNameObjectId(response.nameObjectId);
                   setIotaOwnerAddress(response.ownerAddress);
+                  console.log('🔗 Overlay applied:', {
+                    searched: normalizedQuery,
+                    iotaName,
+                    hasOnchain: true,
+                  });
+                } else {
+                  console.log('🔗 Overlay applied (no on-chain profile):', {
+                    searched: normalizedQuery,
+                    iotaName,
+                    hasOnchain: false,
+                  });
                 }
               } finally {
-                if (searchIdRef.current === currentSearchId) setIotaOnchainProfileLoading(false);
+                setIotaOnchainProfileLoading(false);
               }
             } catch (err: any) {
               console.log('Cross-chain iota link lookup failed:', err?.message || err);
