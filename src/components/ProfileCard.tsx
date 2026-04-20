@@ -23,7 +23,7 @@ const isDomainLikeCollection = (name?: string): boolean => {
 import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
@@ -35,6 +35,7 @@ import defaultHeader from '@/assets/default-header-pattern.png';
 import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
+import ethTokenLogo from '@/assets/eth-logo.png';
 import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
@@ -279,6 +280,8 @@ export const ProfileCard = ({
   const [showAvatarPopup, setShowAvatarPopup] = useState(false);
   const [showHeaderPopup, setShowHeaderPopup] = useState(false);
   const [mediaSlideIndex, setMediaSlideIndex] = useState(0);
+  const mediaTouchStartXRef = useRef<number | null>(null);
+  const mediaTouchDeltaXRef = useRef(0);
   
   // EVM social links state for .iota profiles
   const [evmSocialLinks, setEvmSocialLinks] = useState<Array<{ platform: string; linkData: any; origin: string }>>([]);
@@ -858,47 +861,61 @@ export const ProfileCard = ({
     return 'EVM';
   }, [searchedIdentity]);
 
+  const searchedAvatarTitle = useMemo(() => {
+    if (searchedChainLabel === 'ENS') return 'ENS Profile Avatar';
+    if (searchedChainLabel === 'Base') return 'Base Profile Avatar';
+    if (searchedChainLabel === 'IOTA') return 'IOTA Profile Avatar';
+    return 'EVM Profile Avatar';
+  }, [searchedChainLabel]);
+
+  const searchedHeaderTitle = useMemo(() => {
+    if (searchedChainLabel === 'ENS') return 'ENS Profile Header';
+    if (searchedChainLabel === 'Base') return 'Base Profile Header';
+    if (searchedChainLabel === 'IOTA') return 'IOTA Profile Header';
+    return 'EVM Profile Header';
+  }, [searchedChainLabel]);
+
   const avatarSlides = useMemo(() => {
     const slides = [
       {
         key: 'searched-avatar',
         label: searchedChainLabel,
-        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        title: searchedAvatarTitle,
         image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
       },
       {
         key: 'iota-avatar',
         label: 'IOTA',
-        title: iotaOnchainProfile ? 'IOTA profile avatar' : null,
+        title: iotaOnchainProfile ? 'IOTA Profile Avatar' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.avatarUrl),
         icon: IOTA_ICON_URL,
       },
     ].filter((item) => item.image);
 
     return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
+  }, [searchedAvatarTitle, searchedChainLabel, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
 
   const headerSlides = useMemo(() => {
     const slides = [
       {
         key: 'searched-header',
         label: searchedChainLabel,
-        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        title: searchedHeaderTitle,
         image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
       },
       {
         key: 'iota-header',
         label: 'IOTA',
-        title: iotaOnchainProfile ? 'IOTA profile header' : null,
+        title: iotaOnchainProfile ? 'IOTA Profile Header' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.headerUrl),
         icon: IOTA_ICON_URL,
       },
     ].filter((item) => item.image);
 
     return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
+  }, [searchedChainLabel, searchedHeaderTitle, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
 
   const activeMediaSlides = showAvatarPopup ? avatarSlides : headerSlides;
   const activeMediaItem = activeMediaSlides[Math.min(mediaSlideIndex, Math.max(activeMediaSlides.length - 1, 0))];
@@ -924,6 +941,24 @@ export const ProfileCard = ({
   const moveMediaSlide = (direction: number) => {
     if (activeMediaSlides.length <= 1) return;
     setMediaSlideIndex((current) => (current + direction + activeMediaSlides.length) % activeMediaSlides.length);
+  };
+
+  const handleMediaTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    mediaTouchStartXRef.current = event.touches[0]?.clientX ?? null;
+    mediaTouchDeltaXRef.current = 0;
+  };
+
+  const handleMediaTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (mediaTouchStartXRef.current === null) return;
+    mediaTouchDeltaXRef.current = (event.touches[0]?.clientX ?? 0) - mediaTouchStartXRef.current;
+  };
+
+  const handleMediaTouchEnd = () => {
+    if (Math.abs(mediaTouchDeltaXRef.current) > 48) {
+      moveMediaSlide(mediaTouchDeltaXRef.current > 0 ? -1 : 1);
+    }
+    mediaTouchStartXRef.current = null;
+    mediaTouchDeltaXRef.current = 0;
   };
 
   // Fetch all data on profile load for button visibility
@@ -3711,24 +3746,29 @@ export const ProfileCard = ({
           setShowHeaderPopup(false);
         }
       }}>
-        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-5xl border-border/60 bg-background/95 p-3 sm:p-4">
+        <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl border-border/60 bg-background/95 p-3 sm:p-4">
           <DialogTitle className="sr-only">Profile media gallery</DialogTitle>
           {activeMediaItem && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-start justify-between gap-3 pr-10 sm:pr-12">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                   <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
                     <img src={activeMediaItem.icon} alt="" className="h-3.5 w-3.5 rounded-full" />
                     {activeMediaItem.label}
                   </Badge>
                   <span className="truncate text-sm text-muted-foreground">{activeMediaItem.title}</span>
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="shrink-0 rounded-full border border-border/60 bg-background/80 px-2 py-1 text-[11px] font-medium text-muted-foreground">
                   {mediaSlideIndex + 1} / {activeMediaSlides.length}
                 </div>
               </div>
 
-              <div className="relative overflow-hidden rounded-lg border border-border/60 bg-muted/30">
+              <div
+                className="relative overflow-hidden rounded-lg border border-border/60 bg-muted/30"
+                onTouchStart={handleMediaTouchStart}
+                onTouchMove={handleMediaTouchMove}
+                onTouchEnd={handleMediaTouchEnd}
+              >
                 <img
                   src={activeMediaItem.image}
                   alt={activeMediaItem.title || 'Profile media'}
@@ -3760,7 +3800,7 @@ export const ProfileCard = ({
               </div>
 
               {activeMediaSlides.length > 1 && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {activeMediaSlides.map((item, index) => (
                     <button
                       key={item.key}
@@ -3768,12 +3808,12 @@ export const ProfileCard = ({
                       onClick={() => setMediaSlideIndex(index)}
                       className={`overflow-hidden rounded-lg border p-1 text-left transition ${index === mediaSlideIndex ? 'border-primary bg-accent/40' : 'border-border/60 bg-muted/20 hover:bg-muted/40'}`}
                     >
-                      <div className="aspect-[4/3] overflow-hidden rounded-md bg-muted/30">
+                      <div className="mx-auto aspect-square w-14 overflow-hidden rounded-full border border-border/50 bg-muted/30 sm:w-16">
                         <img src={item.image} alt={item.title || 'Profile media'} className="h-full w-full object-cover" />
                       </div>
-                      <div className="flex items-center gap-2 px-1 pt-2">
+                      <div className="flex items-center justify-center gap-2 px-1 pt-2">
                         <img src={item.icon} alt="" className="h-4 w-4 rounded-full" />
-                        <span className="truncate text-sm text-foreground">{item.label}</span>
+                        <span className="truncate text-xs font-medium text-foreground sm:text-sm">{item.label}</span>
                       </div>
                     </button>
                   ))}
