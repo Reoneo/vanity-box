@@ -23,7 +23,7 @@ const isDomainLikeCollection = (name?: string): boolean => {
 import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
@@ -35,6 +35,7 @@ import defaultHeader from '@/assets/default-header-pattern.png';
 import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
+import ethTokenLogo from '@/assets/eth-logo.png';
 import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
