@@ -2060,7 +2060,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             />
             
             {/* Loading Progress Bar */}
-            <LoadingProgress isLoading={isLoading && !web3BioProfile} />
+            <LoadingProgress isLoading={(isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs))} />
             
             {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && !isLoading && (
@@ -2160,11 +2160,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                    </>
                 )}
               </>
-            )}
-
-            {/* Loading progress bar for .iota profiles while IPFS data loads */}
-            {(isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfileLoading || iotaOnchainProfile))) && iotaOnchainProfileLoading && !iotaOnchainProfile && web3BioProfile && !showMyIDs && (
-              <LoadingProgress isLoading={true} />
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
