@@ -1,6 +1,11 @@
 // Edge Function: Reverse lookup — find the .iota name linked to an EVM address.
 // Accepts either an `evmAddress` directly OR a `searchedName` (e.g. smith.box)
 // which it will resolve to an EVM address via the resolve-profile function.
+// Strategy:
+//   1. Query the denormalized `iota_cross_chain_profiles` cache (instant).
+//   2. Fallback to `iota_wallet_links` with OR-clause across candidates.
+//   3. Final fallback: explicit eq() query on the first candidate.
+//   4. Retries DB errors once with 250ms backoff.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -17,6 +22,18 @@ function jsonResp(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+function normalizeIotaName(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const lower = String(raw).toLowerCase().trim();
+  if (!lower) return null;
+  const bare = lower.includes(':') ? lower.split(':')[0] : lower;
+  return bare.endsWith('.iota') ? bare : `${bare}.iota`;
+}
+
+async function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 serve(async (req) => {
@@ -54,18 +71,15 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Build a candidate address list
+    // Build a candidate address list (lowercased + trimmed).
     const candidates = new Set<string>();
-    if (evmAddress && EVM_RE.test(String(evmAddress).trim())) {
-      candidates.add(String(evmAddress).trim().toLowerCase());
-    }
-    if (evmAddresses) {
-      for (const a of evmAddresses) {
-        if (typeof a === 'string' && EVM_RE.test(a.trim())) {
-          candidates.add(a.trim().toLowerCase());
-        }
-      }
-    }
+    const tryAdd = (raw: any) => {
+      if (typeof raw !== 'string') return;
+      const v = raw.trim();
+      if (EVM_RE.test(v)) candidates.add(v.toLowerCase());
+    };
+    tryAdd(evmAddress);
+    if (evmAddresses) for (const a of evmAddresses) tryAdd(a);
 
     // Fallback: resolve a searched name to an EVM address
     if (candidates.size === 0 && searchedName && typeof searchedName === 'string') {
@@ -73,10 +87,13 @@ serve(async (req) => {
         const { data: resolved } = await supabase.functions.invoke('resolve-profile', {
           body: { query: searchedName.trim() },
         });
-        const addr: string | undefined = resolved?.profile?.address;
-        if (addr && EVM_RE.test(addr)) candidates.add(addr.toLowerCase());
-        const recAddr: string | undefined = resolved?.profile?.ensRecords?.address;
-        if (recAddr && EVM_RE.test(recAddr)) candidates.add(recAddr.toLowerCase());
+        tryAdd(resolved?.profile?.address);
+        tryAdd(resolved?.profile?.ensRecords?.address);
+        tryAdd(resolved?.profile?.links?.ethereum);
+        const recs = resolved?.profile?.records || {};
+        for (const k of Object.keys(recs)) {
+          if (k.toLowerCase().includes('eth')) tryAdd(recs[k]);
+        }
       } catch (e) {
         console.log('[get-iota-name-by-evm] resolve-profile fallback failed:', (e as any)?.message);
       }
@@ -89,17 +106,69 @@ serve(async (req) => {
     const list = Array.from(candidates);
     console.log('[get-iota-name-by-evm] candidates:', list);
 
-    // Build OR clause matching evm_address case-insensitively for any candidate
-    const orClause = list.map((a) => `evm_address.ilike.${a}`).join(',');
+    // ── Step 1: denormalized cache lookup (single indexed query) ──
+    try {
+      const { data: cacheRows, error: cacheErr } = await supabase
+        .from('iota_cross_chain_profiles')
+        .select('iota_name, evm_address')
+        .in('evm_address', list)
+        .limit(1);
+      if (!cacheErr && cacheRows && cacheRows.length > 0) {
+        const iotaName = normalizeIotaName(cacheRows[0].iota_name);
+        console.log('[get-iota-name-by-evm] cache hit:', iotaName);
+        if (iotaName) {
+          return jsonResp({
+            success: true,
+            iotaName,
+            chain: 'ethereum',
+            matchedAddress: cacheRows[0].evm_address,
+            source: 'cache',
+          });
+        }
+      }
+    } catch (e) {
+      console.log('[get-iota-name-by-evm] cache lookup error:', (e as any)?.message);
+    }
 
-    const { data, error } = await supabase
-      .from('iota_wallet_links')
-      .select('iota_name, chain, evm_address')
-      .or(orClause)
-      .limit(50);
+    // ── Step 2: iota_wallet_links OR scan with retry ──
+    const orClause = list.map((a) => `evm_address.ilike.${a}`).join(',');
+    console.log('[get-iota-name-by-evm] OR clause:', orClause);
+
+    const runQuery = async () =>
+      await supabase
+        .from('iota_wallet_links')
+        .select('iota_name, chain, evm_address')
+        .or(orClause)
+        .limit(50);
+
+    let { data, error } = await runQuery();
+    if (error) {
+      console.error('[get-iota-name-by-evm] DB error (attempt 1), retrying:', error);
+      await sleep(250);
+      const retry = await runQuery();
+      data = retry.data;
+      error = retry.error;
+    }
+
+    // ── Step 3: explicit eq fallback ──
+    if ((error || !data || data.length === 0) && list[0]) {
+      console.log('[get-iota-name-by-evm] OR returned nothing, trying explicit eq');
+      const { data: eqData } = await supabase
+        .from('iota_wallet_links')
+        .select('iota_name, chain, evm_address')
+        .eq('evm_address', list[0])
+        .eq('chain', 'ethereum')
+        .limit(1);
+      if (eqData && eqData.length > 0) {
+        data = eqData;
+        error = null;
+      }
+    }
+
+    console.log('[get-iota-name-by-evm] returned rows:', data?.length ?? 0);
 
     if (error) {
-      console.error('[get-iota-name-by-evm] DB error:', error);
+      console.error('[get-iota-name-by-evm] DB error (final):', error);
       return jsonResp({ success: false, iotaName: null });
     }
 
@@ -114,15 +183,14 @@ serve(async (req) => {
       return aEth - bEth;
     });
 
-    const raw = String(sorted[0].iota_name || '').toLowerCase();
-    const bare = raw.includes(':') ? raw.split(':')[0] : raw;
-    const iotaName = bare.endsWith('.iota') ? bare : `${bare}.iota`;
+    const iotaName = normalizeIotaName(sorted[0].iota_name);
 
     return jsonResp({
-      success: true,
+      success: !!iotaName,
       iotaName,
       chain: sorted[0].chain || 'ethereum',
       matchedAddress: sorted[0].evm_address,
+      source: 'wallet_links',
     });
   } catch (error: any) {
     console.error('❌ Error in get-iota-name-by-evm:', error);
