@@ -2177,7 +2177,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={
-                      (isIotaName(displayQuery) || (ensOverlay && iotaOnchainProfile)) && iotaOnchainProfile
+                      (isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
                         ? (() => {
                             const built = makeIotaDisplayProfile({
                               base: web3BioProfile,
@@ -2198,10 +2198,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                             }
                             return built;
                           })()
-                        : web3BioProfile
+                        : ensOverlay && iotaOnchainProfileLoading
+                          ? {
+                              ...web3BioProfile,
+                              identity: ensOverlay.identity,
+                              displayName: ensOverlay.displayName || web3BioProfile.displayName,
+                              avatar: ensOverlay.avatar || web3BioProfile.avatar,
+                              header: ensOverlay.header || web3BioProfile.header,
+                            }
+                          : web3BioProfile
                     }
                     currentWalletAddress={
-                      (isIotaName(displayQuery) || (ensOverlay && iotaOnchainProfile)) && iotaOnchainProfile
+                      (isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
                         ? (iotaOwnerAddress || web3BioProfile.address)
                         : web3BioProfile.address
                     }
