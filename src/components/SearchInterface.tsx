@@ -1427,10 +1427,24 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           setEnsRecords(profile.ensRecords);
         }
 
-        // For IOTA address reverse lookups: the resolver found an iotaDomain but we
-        // didn't fire the onchain profile fetch earlier (query wasn't a .iota name).
-        // Fetch it now so the profile card renders full IOTA data.
-        if (!iotaOnchainPromise && profile.iotaDomain && isIotaName(profile.iotaDomain)) {
+        // ============================================================
+        // Cross-chain overlay (single source of truth):
+        // If a non-IOTA domain (e.g. .eth, .box, .crypto, .vanity) resolves
+        // to an EVM address that is linked to a vanity.iota, render the IOTA
+        // profile but overlay the searched domain's avatar/header/identity/
+        // displayName on top. URL stays on the searched domain.
+        // ============================================================
+        const queryIsIotaName = isIotaName(normalizedQuery);
+        const queryIsIotaAddr = isIotaAddr;
+
+        // IOTA reverse-lookup branch: query was an IOTA address and resolver
+        // surfaced a .iota name. No overlay; just hydrate the IOTA profile.
+        if (
+          !iotaOnchainPromise &&
+          profile.iotaDomain &&
+          isIotaName(profile.iotaDomain) &&
+          (queryIsIotaName || queryIsIotaAddr)
+        ) {
           setIotaOnchainProfileLoading(true);
           fetchIotaOnchainProfile(profile.iotaDomain).then(response => {
             if (response?.success) {
@@ -1441,40 +1455,57 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             setIotaOnchainProfileLoading(false);
           }).catch(() => setIotaOnchainProfileLoading(false));
 
-          // Also update the URL to the .iota domain for cleaner navigation
           const iotaPath = `/${encodeURIComponent(profile.iotaDomain)}`;
           if (location.pathname !== iotaPath) {
             navigate(iotaPath, { replace: true });
           }
           setDisplayQuery(profile.iotaDomain);
-        }
-
-        // Cross-chain overlay: if a non-IOTA domain (e.g. .eth) resolves to an EVM
-        // address that is linked to a vanity.iota profile, render the IOTA profile
-        // but keep the searched domain's avatar/header/displayName/identity on top.
-        const queryIsIotaName = isIotaName(normalizedQuery);
-        const queryIsIotaAddr = isIotaAddr;
-        const profileAlreadyIota =
-          profile.platform === 'iota' || (profile.iotaDomain && isIotaName(profile.iotaDomain));
-        if (
-          !queryIsIotaName &&
-          !queryIsIotaAddr &&
-          !profileAlreadyIota &&
-          profile.address &&
-          isValidEvmAddress(profile.address)
-        ) {
+        } else if (!queryIsIotaName && !queryIsIotaAddr) {
+          // Cross-chain overlay path. Build candidate EVM addresses from every
+          // place the resolver might have stashed one.
           (async () => {
             try {
-              const { data: linked } = await supabase.functions.invoke('get-iota-name-by-evm', {
-                body: { evmAddress: profile.address },
-              });
+              const candidates = new Set<string>();
+              const pushIfEvm = (v: any) => {
+                if (typeof v === 'string' && /^0x[a-fA-F0-9]{40}$/.test(v.trim())) {
+                  candidates.add(v.trim().toLowerCase());
+                }
+              };
+              pushIfEvm(profile.address);
+              pushIfEvm((profile as any)?.ensRecords?.address);
+              pushIfEvm((profile as any)?.links?.ethereum);
+              pushIfEvm((profile as any)?.records?.ETH);
+              pushIfEvm((profile as any)?.records?.['crypto.ETH.address']);
+              const udRecs = (profile as any)?.records || {};
+              for (const k of Object.keys(udRecs || {})) {
+                if (k.toLowerCase().includes('eth')) pushIfEvm(udRecs[k]);
+              }
+              pushIfEvm(normalizedQuery);
+
+              const candidateList = Array.from(candidates);
+              console.log('🔗 Cross-chain candidates for', normalizedQuery, ':', candidateList);
+
+              const { data: linked } = await supabase.functions.invoke(
+                'get-iota-name-by-evm',
+                {
+                  body: {
+                    evmAddresses: candidateList,
+                    evmAddress: candidateList[0],
+                    searchedName: normalizedQuery,
+                  },
+                }
+              );
+              console.log('🔗 Cross-chain edge response:', linked);
               if (searchIdRef.current !== currentSearchId) return;
+
               const iotaName: string | null = linked?.iotaName || null;
-              if (!iotaName || !isIotaName(iotaName)) return;
+              if (!iotaName || !isIotaName(iotaName)) {
+                console.log('🔗 Cross-chain: no linked .iota for', normalizedQuery);
+                return;
+              }
 
-              console.log(`🔗 Cross-chain: ${profile.identity} -> linked .iota: ${iotaName}`);
+              console.log(`🔗 Cross-chain: ${normalizedQuery} -> linked .iota: ${iotaName}`);
 
-              // Capture the searched ENS/EVM-domain branding as overlay
               setEnsOverlay({
                 identity: profile.identity || normalizedQuery,
                 displayName: profile.displayName || profile.identity || normalizedQuery,
@@ -1483,8 +1514,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 platform: profile.platform || 'ens',
               });
 
-              // Switch the active query to the .iota name so the IOTA profile flow renders.
-              // We intentionally do NOT navigate the URL — the user stays on the searched domain.
+              // Switch active query for IOTA flow but DO NOT navigate the URL.
               setDisplayQuery(iotaName);
               setIotaOnchainProfileLoading(true);
               try {
@@ -2099,12 +2129,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Loading progress bar for .iota profiles while IPFS data loads */}
-            {isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile && web3BioProfile && !showMyIDs && (
+            {(isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfileLoading || iotaOnchainProfile))) && iotaOnchainProfileLoading && !iotaOnchainProfile && web3BioProfile && !showMyIDs && (
               <LoadingProgress isLoading={true} />
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs && !(isIotaName(displayQuery) && iotaOnchainProfileLoading && !iotaOnchainProfile) ? (
+            {web3BioProfile && !showMyIDs && !((isIotaName(displayQuery) || (ensOverlay && iotaOnchainProfileLoading)) && iotaOnchainProfileLoading && !iotaOnchainProfile) ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
@@ -2113,7 +2143,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={
-                      isIotaName(displayQuery) && iotaOnchainProfile
+                      (isIotaName(displayQuery) || (ensOverlay && iotaOnchainProfile)) && iotaOnchainProfile
                         ? (() => {
                             const built = makeIotaDisplayProfile({
                               base: web3BioProfile,
@@ -2137,7 +2167,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         : web3BioProfile
                     }
                     currentWalletAddress={
-                      isIotaName(displayQuery) && iotaOnchainProfile
+                      (isIotaName(displayQuery) || (ensOverlay && iotaOnchainProfile)) && iotaOnchainProfile
                         ? (iotaOwnerAddress || web3BioProfile.address)
                         : web3BioProfile.address
                     }
