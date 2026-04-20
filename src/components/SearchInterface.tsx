@@ -892,9 +892,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         console.log('🔗 URL profile detected:', username);
         setSearchQuery(username);
         setIsHomepage(false);
-        setTimeout(() => {
-          handleSearch(username);
-        }, 100);
+        // No setTimeout — race-prone under StrictMode double-mount.
+        handleSearch(username);
       }
     } else if (location.pathname === '/') {
       // Back button to home — reset state
