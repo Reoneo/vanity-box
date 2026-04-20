@@ -36,6 +36,7 @@ import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import ethTokenLogo from '@/assets/eth-logo.png';
+import ethLogoBlue from '@/assets/eth-logo-blue.png';
 import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
@@ -47,6 +48,8 @@ import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
 import { useTonTokens } from "@/hooks/useTonTokens";
 import tonIconBlue from "@/assets/ton-icon-blue.png";
+import tonLogoBlue from "@/assets/ton-logo-blue.png";
+import suiLogoBlue from "@/assets/sui-logo-blue.png";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
 import CredentialsCarousel from "./CredentialsCarousel";
@@ -93,6 +96,7 @@ interface ProfileCardProps {
   isResolvingLinkedEvm?: boolean;
   // Linked TON address for .iota profiles
   linkedTonAddress?: string | null;
+  linkedSuiAddress?: string | null;
   // IOTA Onchain Profile props
   iotaOnchainProfile?: OnchainProfileData | null;
   iotaNameObjectId?: string | null;
@@ -113,7 +117,7 @@ const getChainIcon = (chain: string, size: number = 18) => {
       return <img src={IOTA_ICON_URL} alt="IOTA" width={size} height={size} className={iconClass} />;
     case 'ethereum':
     case 'eth':
-      return <img src={ethLogo} alt="Ethereum" width={size} height={size} className={iconClass} />;
+      return <img src={ethLogoBlue} alt="Ethereum" width={size} height={size} className={iconClass} />;
     case 'worldchain':
     case 'world':
       return <img src={wldLogo} alt="World Chain" width={size} height={size} className={iconClass} />;
@@ -185,7 +189,7 @@ const getChainIcon = (chain: string, size: number = 18) => {
         </svg>
       );
     default:
-      return <img src={ethLogo} alt="Network" width={size} height={size} className={iconClass} />;
+      return <img src={ethLogoBlue} alt="Network" width={size} height={size} className={iconClass} />;
   }
 };
 
@@ -217,6 +221,7 @@ export const ProfileCard = ({
   linkedEvmAddress,
   isResolvingLinkedEvm = false,
   linkedTonAddress,
+  linkedSuiAddress,
   iotaOnchainProfile,
   iotaNameObjectId,
   iotaOwnerAddress,
@@ -882,7 +887,7 @@ export const ProfileCard = ({
         label: searchedChainLabel,
         title: searchedAvatarTitle,
         image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
       },
       {
         key: 'iota-avatar',
@@ -903,7 +908,7 @@ export const ProfileCard = ({
         label: searchedChainLabel,
         title: searchedHeaderTitle,
         image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
       },
       {
         key: 'iota-header',
@@ -1391,16 +1396,84 @@ export const ProfileCard = ({
     return { label: 'Common', color: 'text-gray-500' };
   };
 
-  const copyAddress = async () => {
-    if (currentWalletAddress) {
-      await navigator.clipboard.writeText(currentWalletAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const shortenAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const linkedWalletOptions = useMemo(() => {
+    const options: Array<{ key: string; label: string; address: string; icon: string; alt: string }> = [];
+    if (linkedEvmAddress) options.push({ key: 'ethereum', label: 'Ethereum', address: linkedEvmAddress, icon: ethLogoBlue, alt: 'Ethereum' });
+    if (iotaOwnerAddress) options.push({ key: 'iota', label: 'IOTA', address: iotaOwnerAddress, icon: IOTA_ICON_URL, alt: 'IOTA' });
+    if (linkedSuiAddress) options.push({ key: 'sui', label: 'Sui', address: linkedSuiAddress, icon: suiLogoBlue, alt: 'Sui' });
+    if (linkedTonAddress) options.push({ key: 'ton', label: 'TON', address: linkedTonAddress, icon: tonLogoBlue, alt: 'TON' });
+    return options;
+  }, [linkedEvmAddress, iotaOwnerAddress, linkedSuiAddress, linkedTonAddress]);
+
+  const [selectedLinkedWalletKey, setSelectedLinkedWalletKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (linkedWalletOptions.length === 0) {
+      setSelectedLinkedWalletKey(null);
+      return;
+    }
+
+    setSelectedLinkedWalletKey((current) => {
+      if (current && linkedWalletOptions.some((option) => option.key === current)) return current;
+      return linkedWalletOptions[0].key;
+    });
+  }, [linkedWalletOptions]);
+
+  const displayedWalletAddress = useMemo(() => {
+    if (!selectedLinkedWalletKey) return currentWalletAddress;
+    return linkedWalletOptions.find((option) => option.key === selectedLinkedWalletKey)?.address || currentWalletAddress;
+  }, [currentWalletAddress, linkedWalletOptions, selectedLinkedWalletKey]);
+
+  const copyAddress = async () => {
+    if (!displayedWalletAddress) return;
+    await navigator.clipboard.writeText(displayedWalletAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renderLinkedWalletRow = () => {
+    if (!displayedWalletAddress) return null;
+
+    return (
+      <div className="flex flex-col items-center gap-2">
+        {linkedWalletOptions.length > 0 && (
+          <div className="flex items-center justify-center gap-2">
+            {linkedWalletOptions.map((option) => {
+              const isActive = option.key === selectedLinkedWalletKey;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setSelectedLinkedWalletKey(option.key)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border transition-all ${isActive ? 'border-primary bg-accent shadow-sm' : 'border-border/60 bg-background/60 hover:bg-accent/60'}`}
+                  aria-label={`Show ${option.label} wallet address`}
+                  title={option.label}
+                >
+                  <img src={option.icon} alt={option.alt} className="h-4.5 w-4.5 rounded-full object-cover" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex items-center justify-center">
+          <code
+            onClick={async () => {
+              await navigator.clipboard.writeText(displayedWalletAddress);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="cursor-pointer rounded-md bg-muted px-3 py-1 text-sm font-mono text-foreground transition-colors hover:bg-muted/80"
+          >
+            {copied ? 'Copied' : shortenAddress(displayedWalletAddress)}
+          </code>
+        </div>
+      </div>
+    );
   };
 
   const formatCastText = (text: string) => {
@@ -1471,7 +1544,7 @@ export const ProfileCard = ({
                             <img src={IOTA_ICON_URL} alt="IOTA" className="w-4 h-4 rounded-full border border-background" />
                           )}
                           {(source === 'ethereum' || source === 'both') && (
-                            <img src={ethLogo} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
+                            <img src={ethLogoBlue} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
                           )}
                         </div>
                       )}
@@ -1668,16 +1741,7 @@ export const ProfileCard = ({
                       </h2>
 
                       {/* Wallet Address */}
-                      {currentWalletAddress && (
-                        <div className="flex items-center justify-center">
-                          <code 
-                            onClick={copyAddress}
-                            className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-lg text-sm text-black/90 dark:text-white/90 cursor-pointer hover:bg-black/20 dark:hover:bg-white/20 transition-colors font-mono"
-                          >
-                            {copied ? 'Copied!' : shortenAddress(currentWalletAddress)}
-                          </code>
-                        </div>
-                      )}
+                      {displayedWalletAddress && renderLinkedWalletRow()}
 
                       {/* Following/Followers */}
                       {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
@@ -2314,16 +2378,7 @@ export const ProfileCard = ({
                     {getDisplayName()}
                   </h2>
 
-                  {currentWalletAddress && (
-                    <div className="flex items-center justify-center">
-                      <code 
-                        onClick={copyAddress}
-                        className="px-3 py-1 bg-muted rounded-md text-sm text-black dark:text-white cursor-pointer hover:bg-muted/80 transition-colors"
-                      >
-                        {copied ? 'Copied' : shortenAddress(currentWalletAddress)}
-                      </code>
-                    </div>
-                  )}
+                  {displayedWalletAddress && renderLinkedWalletRow()}
 
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
@@ -2533,7 +2588,7 @@ export const ProfileCard = ({
                                     <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
                                   )}
                                   {(source === 'ethereum' || source === 'both') && (
-                                    <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
+                                    <img src={ethLogoBlue} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
                                   )}
                                 </div>
                               )}
@@ -3369,7 +3424,7 @@ export const ProfileCard = ({
                               <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
                             )}
                             {(source === 'ethereum' || source === 'both') && (
-                              <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
+                              <img src={ethLogoBlue} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
                             )}
                           </div>
                         )}
