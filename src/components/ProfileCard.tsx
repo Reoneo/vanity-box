@@ -280,6 +280,8 @@ export const ProfileCard = ({
   const [showAvatarPopup, setShowAvatarPopup] = useState(false);
   const [showHeaderPopup, setShowHeaderPopup] = useState(false);
   const [mediaSlideIndex, setMediaSlideIndex] = useState(0);
+  const mediaTouchStartXRef = useRef<number | null>(null);
+  const mediaTouchDeltaXRef = useRef(0);
   
   // EVM social links state for .iota profiles
   const [evmSocialLinks, setEvmSocialLinks] = useState<Array<{ platform: string; linkData: any; origin: string }>>([]);
@@ -859,47 +861,61 @@ export const ProfileCard = ({
     return 'EVM';
   }, [searchedIdentity]);
 
+  const searchedAvatarTitle = useMemo(() => {
+    if (searchedChainLabel === 'ENS') return 'ENS Profile Avatar';
+    if (searchedChainLabel === 'Base') return 'Base Profile Avatar';
+    if (searchedChainLabel === 'IOTA') return 'IOTA Profile Avatar';
+    return 'EVM Profile Avatar';
+  }, [searchedChainLabel]);
+
+  const searchedHeaderTitle = useMemo(() => {
+    if (searchedChainLabel === 'ENS') return 'ENS Profile Header';
+    if (searchedChainLabel === 'Base') return 'Base Profile Header';
+    if (searchedChainLabel === 'IOTA') return 'IOTA Profile Header';
+    return 'EVM Profile Header';
+  }, [searchedChainLabel]);
+
   const avatarSlides = useMemo(() => {
     const slides = [
       {
         key: 'searched-avatar',
         label: searchedChainLabel,
-        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        title: searchedAvatarTitle,
         image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
       },
       {
         key: 'iota-avatar',
         label: 'IOTA',
-        title: iotaOnchainProfile ? 'IOTA profile avatar' : null,
+        title: iotaOnchainProfile ? 'IOTA Profile Avatar' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.avatarUrl),
         icon: IOTA_ICON_URL,
       },
     ].filter((item) => item.image);
 
     return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
+  }, [searchedAvatarTitle, searchedChainLabel, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
 
   const headerSlides = useMemo(() => {
     const slides = [
       {
         key: 'searched-header',
         label: searchedChainLabel,
-        title: searchedIdentity || web3BioProfile?.displayName || 'Searched profile',
+        title: searchedHeaderTitle,
         image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
       },
       {
         key: 'iota-header',
         label: 'IOTA',
-        title: iotaOnchainProfile ? 'IOTA profile header' : null,
+        title: iotaOnchainProfile ? 'IOTA Profile Header' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.headerUrl),
         icon: IOTA_ICON_URL,
       },
     ].filter((item) => item.image);
 
     return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedChainLabel, searchedIdentity, web3BioProfile?.displayName, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
+  }, [searchedChainLabel, searchedHeaderTitle, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
 
   const activeMediaSlides = showAvatarPopup ? avatarSlides : headerSlides;
   const activeMediaItem = activeMediaSlides[Math.min(mediaSlideIndex, Math.max(activeMediaSlides.length - 1, 0))];
@@ -925,6 +941,24 @@ export const ProfileCard = ({
   const moveMediaSlide = (direction: number) => {
     if (activeMediaSlides.length <= 1) return;
     setMediaSlideIndex((current) => (current + direction + activeMediaSlides.length) % activeMediaSlides.length);
+  };
+
+  const handleMediaTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    mediaTouchStartXRef.current = event.touches[0]?.clientX ?? null;
+    mediaTouchDeltaXRef.current = 0;
+  };
+
+  const handleMediaTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (mediaTouchStartXRef.current === null) return;
+    mediaTouchDeltaXRef.current = (event.touches[0]?.clientX ?? 0) - mediaTouchStartXRef.current;
+  };
+
+  const handleMediaTouchEnd = () => {
+    if (Math.abs(mediaTouchDeltaXRef.current) > 48) {
+      moveMediaSlide(mediaTouchDeltaXRef.current > 0 ? -1 : 1);
+    }
+    mediaTouchStartXRef.current = null;
+    mediaTouchDeltaXRef.current = 0;
   };
 
   // Fetch all data on profile load for button visibility
