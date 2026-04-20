@@ -1448,7 +1448,62 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           }
           setDisplayQuery(profile.iotaDomain);
         }
-        
+
+        // Cross-chain overlay: if a non-IOTA domain (e.g. .eth) resolves to an EVM
+        // address that is linked to a vanity.iota profile, render the IOTA profile
+        // but keep the searched domain's avatar/header/displayName/identity on top.
+        const queryIsIotaName = isIotaName(normalizedQuery);
+        const queryIsIotaAddr = isIotaAddr;
+        const profileAlreadyIota =
+          profile.platform === 'iota' || (profile.iotaDomain && isIotaName(profile.iotaDomain));
+        if (
+          !queryIsIotaName &&
+          !queryIsIotaAddr &&
+          !profileAlreadyIota &&
+          profile.address &&
+          isValidEvmAddress(profile.address)
+        ) {
+          (async () => {
+            try {
+              const { data: linked } = await supabase.functions.invoke('get-iota-name-by-evm', {
+                body: { evmAddress: profile.address },
+              });
+              if (searchIdRef.current !== currentSearchId) return;
+              const iotaName: string | null = linked?.iotaName || null;
+              if (!iotaName || !isIotaName(iotaName)) return;
+
+              console.log(`🔗 Cross-chain: ${profile.identity} -> linked .iota: ${iotaName}`);
+
+              // Capture the searched ENS/EVM-domain branding as overlay
+              setEnsOverlay({
+                identity: profile.identity || normalizedQuery,
+                displayName: profile.displayName || profile.identity || normalizedQuery,
+                avatar: profile.avatar || null,
+                header: profile.header || null,
+                platform: profile.platform || 'ens',
+              });
+
+              // Switch the active query to the .iota name so the IOTA profile flow renders.
+              // We intentionally do NOT navigate the URL — the user stays on the searched domain.
+              setDisplayQuery(iotaName);
+              setIotaOnchainProfileLoading(true);
+              try {
+                const response = await fetchIotaOnchainProfile(iotaName);
+                if (searchIdRef.current !== currentSearchId) return;
+                if (response?.success) {
+                  setIotaOnchainProfile(response.profile);
+                  setIotaNameObjectId(response.nameObjectId);
+                  setIotaOwnerAddress(response.ownerAddress);
+                }
+              } finally {
+                if (searchIdRef.current === currentSearchId) setIotaOnchainProfileLoading(false);
+              }
+            } catch (err: any) {
+              console.log('Cross-chain iota link lookup failed:', err?.message || err);
+            }
+          })();
+        }
+
         // Fetch additional data for Dock (non-blocking)
         if (profile.address) {
           // Fetch EFP stats
