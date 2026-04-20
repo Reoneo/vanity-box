@@ -1408,6 +1408,34 @@ export const ProfileCard = ({
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const linkedWalletOptions = useMemo(() => {
+    const options: Array<{ key: string; label: string; address: string; icon: string; alt: string }> = [];
+    if (linkedEvmAddress) options.push({ key: 'ethereum', label: 'Ethereum', address: linkedEvmAddress, icon: ethLogoBlue, alt: 'Ethereum' });
+    if (iotaOwnerAddress) options.push({ key: 'iota', label: 'IOTA', address: iotaOwnerAddress, icon: IOTA_ICON_URL, alt: 'IOTA' });
+    if (linkedSuiAddress) options.push({ key: 'sui', label: 'Sui', address: linkedSuiAddress, icon: suiLogoBlue, alt: 'Sui' });
+    if (linkedTonAddress) options.push({ key: 'ton', label: 'TON', address: linkedTonAddress, icon: tonLogoBlue, alt: 'TON' });
+    return options;
+  }, [linkedEvmAddress, iotaOwnerAddress, linkedSuiAddress, linkedTonAddress]);
+
+  const [selectedLinkedWalletKey, setSelectedLinkedWalletKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (linkedWalletOptions.length === 0) {
+      setSelectedLinkedWalletKey(null);
+      return;
+    }
+
+    setSelectedLinkedWalletKey((current) => {
+      if (current && linkedWalletOptions.some((option) => option.key === current)) return current;
+      return linkedWalletOptions[0].key;
+    });
+  }, [linkedWalletOptions]);
+
+  const displayedWalletAddress = useMemo(() => {
+    if (!selectedLinkedWalletKey) return currentWalletAddress;
+    return linkedWalletOptions.find((option) => option.key === selectedLinkedWalletKey)?.address || currentWalletAddress;
+  }, [currentWalletAddress, linkedWalletOptions, selectedLinkedWalletKey]);
+
   const formatCastText = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = text.split(urlRegex);
