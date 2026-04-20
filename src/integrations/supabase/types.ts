@@ -83,6 +83,45 @@ export type Database = {
         }
         Relationships: []
       }
+      iota_cross_chain_profiles: {
+        Row: {
+          apt_address: string | null
+          avatar_url: string | null
+          display_name: string | null
+          evm_address: string | null
+          iota_name: string
+          ipfs_cid: string | null
+          owner_address: string | null
+          sui_address: string | null
+          ton_address: string | null
+          updated_at: string
+        }
+        Insert: {
+          apt_address?: string | null
+          avatar_url?: string | null
+          display_name?: string | null
+          evm_address?: string | null
+          iota_name: string
+          ipfs_cid?: string | null
+          owner_address?: string | null
+          sui_address?: string | null
+          ton_address?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apt_address?: string | null
+          avatar_url?: string | null
+          display_name?: string | null
+          evm_address?: string | null
+          iota_name?: string
+          ipfs_cid?: string | null
+          owner_address?: string | null
+          sui_address?: string | null
+          ton_address?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       iota_wallet_links: {
         Row: {
           chain: string
