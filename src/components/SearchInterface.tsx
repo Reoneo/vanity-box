@@ -290,6 +290,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [linkedTonAddress, setLinkedTonAddress] = useState<string | null>(null);
   const linkedTonResolverRef = useRef<string | null>(null);
 
+  // Cross-chain overlay: when an external domain (e.g. .eth) resolves to an EVM address
+  // that has been linked to a vanity.iota profile, we render the IOTA profile but keep
+  // the searched domain's identity, displayName, avatar and header on top.
+  const [ensOverlay, setEnsOverlay] = useState<{
+    identity: string;
+    displayName: string | null;
+    avatar: string | null;
+    header: string | null;
+    platform: string;
+  } | null>(null);
+
   const isValidEvmAddress = (address?: string | null): address is string => {
     return !!address && /^0x[a-fA-F0-9]{40}$/i.test(address);
   };
@@ -1258,6 +1269,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setWeb3BioProfile(null);
     setEfpStats(null);
     setEnsRecords(null);
+    setEnsOverlay(null);
 
     // Update the display query to match what's being searched
     setDisplayQuery(trimmedQuery);
