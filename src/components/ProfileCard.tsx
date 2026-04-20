@@ -887,7 +887,7 @@ export const ProfileCard = ({
         label: searchedChainLabel,
         title: searchedAvatarTitle,
         image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
       },
       {
         key: 'iota-avatar',
@@ -908,7 +908,7 @@ export const ProfileCard = ({
         label: searchedChainLabel,
         title: searchedHeaderTitle,
         image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethTokenLogo,
+        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
       },
       {
         key: 'iota-header',
@@ -1435,6 +1435,47 @@ export const ProfileCard = ({
     if (!selectedLinkedWalletKey) return currentWalletAddress;
     return linkedWalletOptions.find((option) => option.key === selectedLinkedWalletKey)?.address || currentWalletAddress;
   }, [currentWalletAddress, linkedWalletOptions, selectedLinkedWalletKey]);
+
+  const renderLinkedWalletRow = () => {
+    if (!displayedWalletAddress) return null;
+
+    return (
+      <div className="flex flex-col items-center gap-2">
+        {linkedWalletOptions.length > 0 && (
+          <div className="flex items-center justify-center gap-2">
+            {linkedWalletOptions.map((option) => {
+              const isActive = option.key === selectedLinkedWalletKey;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setSelectedLinkedWalletKey(option.key)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border transition-all ${isActive ? 'border-primary bg-accent shadow-sm' : 'border-border/60 bg-background/60 hover:bg-accent/60'}`}
+                  aria-label={`Show ${option.label} wallet address`}
+                  title={option.label}
+                >
+                  <img src={option.icon} alt={option.alt} className="h-4.5 w-4.5 rounded-full object-cover" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex items-center justify-center">
+          <code
+            onClick={async () => {
+              await navigator.clipboard.writeText(displayedWalletAddress);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="cursor-pointer rounded-md bg-muted px-3 py-1 text-sm font-mono text-foreground transition-colors hover:bg-muted/80"
+          >
+            {copied ? 'Copied' : shortenAddress(displayedWalletAddress)}
+          </code>
+        </div>
+      </div>
+    );
+  };
 
   const formatCastText = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
