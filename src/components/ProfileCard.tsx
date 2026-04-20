@@ -36,6 +36,7 @@ import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import ethTokenLogo from '@/assets/eth-logo.png';
+import ethLogoBlue from '@/assets/eth-logo-blue.png';
 import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
@@ -47,6 +48,8 @@ import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
 import { useTonTokens } from "@/hooks/useTonTokens";
 import tonIconBlue from "@/assets/ton-icon-blue.png";
+import tonLogoBlue from "@/assets/ton-logo-blue.png";
+import suiLogoBlue from "@/assets/sui-logo-blue.png";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
 import CredentialsCarousel from "./CredentialsCarousel";
@@ -93,6 +96,7 @@ interface ProfileCardProps {
   isResolvingLinkedEvm?: boolean;
   // Linked TON address for .iota profiles
   linkedTonAddress?: string | null;
+  linkedSuiAddress?: string | null;
   // IOTA Onchain Profile props
   iotaOnchainProfile?: OnchainProfileData | null;
   iotaNameObjectId?: string | null;
