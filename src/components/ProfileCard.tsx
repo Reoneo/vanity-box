@@ -1396,14 +1396,6 @@ export const ProfileCard = ({
     return { label: 'Common', color: 'text-gray-500' };
   };
 
-  const copyAddress = async () => {
-    if (currentWalletAddress) {
-      await navigator.clipboard.writeText(currentWalletAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const shortenAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
@@ -1545,7 +1537,7 @@ export const ProfileCard = ({
                             <img src={IOTA_ICON_URL} alt="IOTA" className="w-4 h-4 rounded-full border border-background" />
                           )}
                           {(source === 'ethereum' || source === 'both') && (
-                            <img src={ethLogo} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
+                            <img src={ethLogoBlue} alt="ETH" className="w-4 h-4 rounded-full border border-background bg-background" />
                           )}
                         </div>
                       )}
@@ -2607,7 +2599,7 @@ export const ProfileCard = ({
                                     <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
                                   )}
                                   {(source === 'ethereum' || source === 'both') && (
-                                    <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
+                                    <img src={ethLogoBlue} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
                                   )}
                                 </div>
                               )}
@@ -3443,7 +3435,7 @@ export const ProfileCard = ({
                               <img src={IOTA_ICON_URL} alt="IOTA" className="w-3.5 h-3.5 rounded-full border border-background" />
                             )}
                             {(source === 'ethereum' || source === 'both') && (
-                              <img src={ethLogo} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
+                              <img src={ethLogoBlue} alt="ETH" className="w-3.5 h-3.5 rounded-full border border-background bg-background" />
                             )}
                           </div>
                         )}
