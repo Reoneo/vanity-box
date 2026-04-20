@@ -903,6 +903,29 @@ export const ProfileCard = ({
   const activeMediaSlides = showAvatarPopup ? avatarSlides : headerSlides;
   const activeMediaItem = activeMediaSlides[Math.min(mediaSlideIndex, Math.max(activeMediaSlides.length - 1, 0))];
 
+  useEffect(() => {
+    if (showAvatarPopup || showHeaderPopup) {
+      setMediaSlideIndex(0);
+    }
+  }, [showAvatarPopup, showHeaderPopup]);
+
+  const openAvatarGallery = () => {
+    setMediaSlideIndex(0);
+    setShowHeaderPopup(false);
+    setShowAvatarPopup(true);
+  };
+
+  const openHeaderGallery = () => {
+    setMediaSlideIndex(0);
+    setShowAvatarPopup(false);
+    setShowHeaderPopup(true);
+  };
+
+  const moveMediaSlide = (direction: number) => {
+    if (activeMediaSlides.length <= 1) return;
+    setMediaSlideIndex((current) => (current + direction + activeMediaSlides.length) % activeMediaSlides.length);
+  };
+
   // Fetch all data on profile load for button visibility
   // PRIORITY: Fetch Talent Protocol FIRST so badge shows immediately (skip for IOTA profiles)
   useEffect(() => {
@@ -1553,7 +1576,7 @@ export const ProfileCard = ({
                 <div className="relative flex-shrink-0 w-full">
                   <div 
                     className="w-full aspect-[5.5/1] overflow-hidden cursor-pointer"
-                    onClick={() => setShowHeaderPopup(true)}
+                    onClick={openHeaderGallery}
                   >
                     <img
                       src={web3BioProfile?.header || iotaHeaderPattern}
@@ -1564,7 +1587,7 @@ export const ProfileCard = ({
                   {/* Avatar positioned absolutely to overlay header - centered on left half */}
                   <div 
                     className="absolute -bottom-16 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
-                    onClick={() => setShowAvatarPopup(true)}
+                    onClick={openAvatarGallery}
                   >
                     <div className="relative group">
                       <Avatar className="h-[136px] w-[136px] border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
@@ -2192,7 +2215,7 @@ export const ProfileCard = ({
                 <div className="relative flex-shrink-0">
                   <div 
                     className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden cursor-pointer"
-                    onClick={() => setShowHeaderPopup(true)}
+                    onClick={openHeaderGallery}
                   >
                     <img
                       src={web3BioProfile?.header || iotaHeaderPattern}
@@ -2203,7 +2226,7 @@ export const ProfileCard = ({
                   </div>
 
                   <div className="flex justify-center absolute -bottom-16 left-0 right-0">
-                    <div className="relative group cursor-pointer" onClick={() => setShowAvatarPopup(true)}>
+                    <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
                       {/* No glow ring – matches desktop */}
                       <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
                         <AvatarImage 
