@@ -1,71 +1,224 @@
 
+## What’s happening
 
-## Why `Finesser.eth → vanity.iota` overlay isn't firing
+### 1. Sui / TON are crossed
+The current React logic in `ProfileCard.tsx` is actually mapping the wallet options in the right order:
 
-Confirmed via DB query that `iota_wallet_links` already holds the link:
-`vanity.iota → 0x71ab0b01e3ff45551e25b208e2a90298f73f7040 (chain: ethereum)`.
+- `ethereum -> ethLogoBlue`
+- `iota -> iotaLogoBlue`
+- `ton -> tonLogoBlue`
+- `sui -> suiLogoBlue`
 
-The edge function and the SearchInterface overlay branch are both wired. But a check of the live console shows **no `🔗 Cross-chain candidates` log line at all**, meaning the IIFE at `SearchInterface.tsx` line 1466 is exiting early or the branch is being skipped. Three concrete causes, all need fixing:
+That means the remaining bug is not the button array itself. The two likely causes are:
 
-1. **Stale-search guard kills the IOTA fetch.** The auto-search `useEffect` at line 886 runs on every `username` / `location.pathname` change and fires `handleSearch(username)` inside a `setTimeout`. In React StrictMode + with the `setEnsOverlay(null)` reset on line 1272 also retriggering the deps, two `handleSearch` calls overlap, both bump `searchIdRef.current`, and the awaited `fetchIotaOnchainProfile(iotaName)` at line 1521 is discarded by the `searchIdRef.current !== currentSearchId` check at line 1522. Result: `iotaOnchainProfile` is never set, so the render gate `(ensOverlay && iotaOnchainProfile)` stays false and we keep showing the bare ENS card.
+- The **binary asset files are mislabeled** (`ton-logo-blue-circle.png` currently contains the Sui icon, or `sui-logo-blue-circle.png` contains the TON icon).
+- The **data source is incomplete**, so the Sui button disappears because `linkedSuiAddress` is `null`, while the TON button is still present and visually looks like Sui due to the wrong file.
 
-2. **Edge function only checks `evm_address` once.** It builds an OR clause but doesn't query an alternate `chain='ethereum'` filter, doesn't strip whitespace/casing, and silently returns `success: false` for transient PostgREST errors instead of retrying.
+A DB check confirms `public.iota_cross_chain_profiles` currently has:
 
-3. **No persisted cross-chain index.** Every search hits the edge function and re-fetches the IOTA profile from chain + IPFS. Slow and fragile when IPFS/indexer hiccup. The user explicitly asked: *"Maybe a record should be created for .iota domains that hold the full .iota domain with linked wallets?"* — yes, we should.
+- `evm_address = 0x71ab...7040`
+- `ton_address = null`
+- `sui_address = null`
 
-## Fix plan
+for `vanity.iota`.
 
-### 1. Make the cross-chain fetch resilient to stale-search aborts (`SearchInterface.tsx`)
-- Inside the IIFE at line 1466, **set `ensOverlay` BEFORE awaiting** `get-iota-name-by-evm`, so even if the search is later superseded the overlay state survives for the next render.
-- Replace the `searchIdRef.current !== currentSearchId` early-return at line 1522 with a softer check: if it's stale, still set `iotaOnchainProfile` and `iotaOwnerAddress` (because the resolved IOTA name is correct for the searched ENS — it's not "the wrong profile", it's just the slower of two parallel runs).
-- Remove the `setTimeout(..., 100)` wrapper around `handleSearch(username)` in the auto-search effect; it just creates a race with a duplicate StrictMode mount.
+So today:
+- the **Sui button missing** is expected from the current DB row,
+- and the **TON button looking like Sui** points to the uploaded icon assets being assigned to the wrong files.
 
-### 2. Strengthen `get-iota-name-by-evm` edge function
-- Lowercase + trim every candidate before building the OR clause.
-- Add a second fallback query that ignores the OR list entirely and does an explicit `eq('evm_address', candidates[0]).eq('chain', 'ethereum')` — this catches RLS or PostgREST quirks.
-- On any DB error, retry once with a 250ms backoff before returning `success: false`.
-- Add a `console.log` of the final SQL filter and the returned row count so future regressions are visible in logs.
+### 2. Pressing Sui shows TON
+Because the current option-to-address mapping is correct in code, this symptom is most consistent with the **wrong icon file being displayed for the TON option**, not the wrong address being selected in state.
 
-### 3. Make the render branch tolerant of partial overlay state
-- Update the gate on `SearchInterface.tsx` line 2146 / 2170 from `(ensOverlay && iotaOnchainProfile)` to `(ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))` — render the overlay card immediately with the ENS branding even while the IOTA on-chain JSON streams in. Replaces the current "blank ENS card" failure mode.
+### 3. The second avatar slide is missing
+The media gallery currently builds two slides, then removes duplicates by **image URL**:
 
-### 4. Persistent cross-chain profile cache (the user's suggestion)
-Create a new Supabase table that stores, for every `.iota` name, a snapshot of its linked wallets and last-known on-chain profile pointer:
+- searched avatar/header
+- IOTA avatar/header
+
+and then runs a dedupe filter by `item.image`.
+
+That collapses the second slide when:
+- the searched media and linked IOTA media resolve to the same URL,
+- or the searched profile falls back to the same underlying image,
+- or a direct `.iota` search is not being treated consistently with linked-domain mode.
+
+### 4. The double loading feel
+The current loading behavior is split across:
+- initial `isLoading`
+- linked IOTA fetch `iotaOnchainProfileLoading`
+- profile card hide/show gates
+
+So users can see:
+1. one loader for the first resolved profile,
+2. then another loader while the linked IOTA profile hydrates.
+
+## Implementation plan
+
+### 1. Fix the chain icon source-of-truth
+Update `ProfileCard.tsx` to stop relying on ambiguous file naming alone and introduce a single verified icon registry, for example:
 
 ```text
-public.iota_cross_chain_profiles
-  iota_name      text primary key   -- e.g. 'vanity.iota'
-  owner_address  text               -- IOTA owner
-  evm_address    text               -- linked ETH wallet (lowercase)
-  ton_address    text
-  apt_address    text
-  sui_address    text
-  ipfs_cid       text               -- last published profile JSON
-  display_name   text
-  avatar_url     text
-  updated_at     timestamptz default now()
-  RLS: public read, service-role write
+CHAIN_MEDIA = {
+  ethereum: { icon, label, alt },
+  iota: { icon, label, alt },
+  ton: { icon, label, alt },
+  sui: { icon, label, alt }
+}
 ```
 
-Populated by:
-- A trigger on `iota_wallet_links` (insert/update) that upserts the matching row.
-- The `notarize-profile-iota` edge function on every profile publish.
-- A backfill migration that copies existing `iota_wallet_links` rows.
+Then:
+- rebind each imported uploaded asset to the correct chain,
+- apply the Ethereum icon to:
+  - ENS profile avatar/header badge,
+  - Ethereum linked wallet selector,
+  - Ethereum wallet link display,
+- ensure every chain button reads from the same registry.
 
-Then `get-iota-name-by-evm` can query this denormalized table first for an instant single-row lookup; it falls back to the existing `iota_wallet_links` join only on miss.
+If the binary files were saved under the wrong names, replace/re-import them with corrected filenames so the code and assets finally match.
 
-### 5. Diagnostic logs + memory update
-- Add `console.log('🔗 Overlay applied:', { searched, iotaName, hasOnchain })` at the moment `setIotaOnchainProfile` is called inside the cross-chain IIFE.
-- Update `mem://features/cross-chain-ens-iota-overlay.md` to record:
-  - The new `iota_cross_chain_profiles` table is the primary lookup.
-  - `ensOverlay` must be set before any awaited fetch.
-  - Render gate uses `iotaOnchainProfile || iotaOnchainProfileLoading`.
+### 2. Make linked wallet selection deterministic
+Refine the linked wallet selector in `ProfileCard.tsx` so the displayed address always comes from the selected option object, never inferred by icon position or fallback order.
 
-## After the fix
-Searching `Finesser.eth` will:
-- Keep URL at `/Finesser.eth`.
-- Immediately render the overlay card with Finesser.eth's avatar/name/header.
-- Stream in vanity.iota's socials, tokens, NFTs, and identity panel underneath as they arrive.
-- Log `🔗 Overlay applied: { searched: 'finesser.eth', iotaName: 'vanity.iota', hasOnchain: true }`.
-- All future searches resolve via a single indexed row in `iota_cross_chain_profiles` instead of an OR-scan of `iota_wallet_links`.
+Specifically:
+- keep `selectedLinkedWalletKey`,
+- derive `displayedWalletAddress` strictly from the selected option,
+- preserve selection if the same chain remains available after async updates,
+- fall back only when the chosen chain disappears.
 
+Add temporary logs while validating:
+```text
+selectedLinkedWalletKey
+linkedWalletOptions
+displayedWalletAddress
+```
+
+This will make TON/Sui misrouting obvious during verification.
+
+### 3. Fix missing Sui button and missing data handling
+Right now `linkedSuiAddress` is loaded only from `iota_cross_chain_profiles.sui_address`, and the current row is null.
+
+Update the linked-wallet loading flow in `SearchInterface.tsx` so each chain resolves consistently:
+
+- Ethereum: existing flow
+- TON: existing flow
+- Sui: existing flow
+- IOTA owner: existing flow
+
+Then make the UI explicit:
+- show a chain button only when that linked address exists,
+- never show a Sui button if there is no Sui address,
+- if the user expects Sui but DB has none, the UI should not silently imply it exists.
+
+If there is another table or event source that should populate Sui/TON links, wire that in; otherwise keep `iota_cross_chain_profiles` as the canonical source and avoid phantom buttons.
+
+### 4. Rebuild the avatar/header gallery as source-aware, not URL-deduped
+Refactor `avatarSlides` and `headerSlides` in `ProfileCard.tsx` so slides are keyed by **source**, not by image URL.
+
+New behavior:
+- `searched` source slide
+- `linked-iota` source slide
+- optional future chain-specific media slides if present
+
+Important change:
+- remove the current dedupe that drops slides when `entry.image === item.image`.
+
+Instead:
+- keep both slides if both sources exist, even when the image URLs match,
+- badge each slide clearly:
+  - “ENS Profile Avatar”
+  - “IOTA Profile Avatar”
+  - same for headers,
+- if one source has no image, omit only that source’s slide.
+
+This guarantees the vanity.iota slide remains visible whenever linked IOTA media exists.
+
+### 5. Treat all profile searches through one linked-profile presentation path
+Unify the display model so every search behaves like a linked-domain presentation:
+
+```text
+searched identity -> display shell immediately
+resolved source profile(s) -> hydrate into same shell
+```
+
+That means:
+- direct `.iota` searches,
+- ENS/UD/Base searches,
+- linked cross-chain overlays,
+
+all use the same profile-shell rendering contract.
+
+Practical changes:
+- keep the searched identity visible immediately,
+- keep one profile shell mounted while data resolves,
+- progressively fill avatar, header, address row, socials, tokens, NFTs.
+
+This removes the abrupt “resolve one profile, then swap to another” feeling.
+
+### 6. Replace the split loader with one seamless loading state
+Refactor `LoadingProgress.tsx` usage in `SearchInterface.tsx` into one unified loading state, such as:
+
+```text
+isProfileTransitionLoading =
+  isLoading
+  || iotaOnchainProfileLoading
+  || isResolvingLinkedEvm
+  || resolvingLinkedWallets
+```
+
+Then:
+- show one loader from search start until the target display shell is ready,
+- keep the same modal visible during the whole transition,
+- update the subtitle/labels instead of unmounting/remounting the loader.
+
+UI behavior:
+- one professional loading card,
+- searched domain shown as the primary identity,
+- linked destination shown as secondary only when relevant,
+- no second progress bar phase.
+
+### 7. Keep the profile card mounted sooner
+Adjust the render gating in `SearchInterface.tsx` so the profile shell appears as soon as the searched profile is known, even if linked chain enrichment is still arriving.
+
+Instead of hiding the card until the IOTA payload is fully ready:
+- render immediately with searched branding,
+- stream in linked wallet data,
+- stream in IOTA avatar/header/social/token/NFT content underneath.
+
+That creates the “seamless” feel you asked for and removes the perception of two separate loads.
+
+### 8. Polish the media modal layout
+While updating the gallery:
+- keep swipe support,
+- keep small preview thumbnails,
+- move the slide count away from the close button permanently,
+- add an accessible `DialogDescription` to remove the current Radix warning in console,
+- ensure the badge + title row wraps cleanly on mobile.
+
+## Files to update
+
+- `src/components/ProfileCard.tsx`
+  - correct icon registry and wallet selector behavior
+  - rebuild source-aware avatar/header slides
+  - keep both searched and linked IOTA slides
+  - modal polish and accessibility fix
+
+- `src/components/SearchInterface.tsx`
+  - unify loading state
+  - treat all domains through one linked-profile shell
+  - keep one continuous loader
+  - make linked chain address resolution consistent
+
+- `src/components/LoadingProgress.tsx`
+  - adapt copy/layout to support a single uninterrupted loading experience
+
+## Expected result after the fix
+
+For `vanity.box` / `Finesser.eth` / `.iota` searches:
+
+- Ethereum, IOTA, TON, and Sui icons will map to the correct chains.
+- A chain button will only appear when that linked wallet actually exists.
+- Pressing a chain icon will always show that chain’s own shortened wallet address.
+- The avatar and header galleries will preserve separate searched-vs-IOTA slides whenever both sources exist.
+- Direct `.iota` searches and linked cross-chain searches will use the same polished loading flow.
+- The loader will feel like one continuous transition instead of a double-load sequence.
+- The overall UI will look cleaner and more professional for vanity.box on mobile.
