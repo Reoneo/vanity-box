@@ -24,7 +24,7 @@ import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
 import { ENSDomainDetailModal } from "./ENSDomainDetailModal";
@@ -34,8 +34,6 @@ import type { FarcasterCast } from "@/types/farcaster";
 import defaultHeader from '@/assets/default-header-pattern.png';
 import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
-import ethLogo from '@/assets/eth-logo-dark.svg';
-import ethTokenLogo from '@/assets/eth-logo.png';
 import ethLogoBlue from '@/assets/eth-logo-blue-circle.png';
 import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
@@ -107,6 +105,13 @@ interface ProfileCardProps {
 
 // Official IOTA icon URL
 const IOTA_ICON_URL = iotaLogoBlue;
+
+const CHAIN_MEDIA = {
+  ethereum: { icon: ethLogoBlue, label: 'Ethereum', alt: 'Ethereum' },
+  iota: { icon: iotaLogoBlue, label: 'IOTA', alt: 'IOTA' },
+  ton: { icon: tonLogoBlue, label: 'TON', alt: 'TON' },
+  sui: { icon: suiLogoBlue, label: 'Sui', alt: 'Sui' },
+} as const;
 
 // Chain icon helper function for activity feed
 const getChainIcon = (chain: string, size: number = 18) => {
@@ -881,47 +886,45 @@ export const ProfileCard = ({
     return 'EVM Profile Header';
   }, [searchedChainLabel]);
 
+  const searchedMediaIcon = searchedChainLabel === 'IOTA' ? CHAIN_MEDIA.iota.icon : CHAIN_MEDIA.ethereum.icon;
+
   const avatarSlides = useMemo(() => {
-    const slides = [
+    return [
       {
         key: 'searched-avatar',
         label: searchedChainLabel,
         title: searchedAvatarTitle,
         image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
+        icon: searchedMediaIcon,
       },
       {
         key: 'iota-avatar',
         label: 'IOTA',
         title: iotaOnchainProfile ? 'IOTA Profile Avatar' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.avatarUrl),
-        icon: IOTA_ICON_URL,
+        icon: CHAIN_MEDIA.iota.icon,
       },
-    ].filter((item) => item.image);
-
-    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedAvatarTitle, searchedChainLabel, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
+    ].filter((item) => Boolean(item.image && item.title));
+  }, [iotaOnchainProfile, searchedAvatarTitle, searchedChainLabel, searchedMediaIcon, web3BioProfile?.avatar]);
 
   const headerSlides = useMemo(() => {
-    const slides = [
+    return [
       {
         key: 'searched-header',
         label: searchedChainLabel,
         title: searchedHeaderTitle,
         image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
+        icon: searchedMediaIcon,
       },
       {
         key: 'iota-header',
         label: 'IOTA',
         title: iotaOnchainProfile ? 'IOTA Profile Header' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.headerUrl),
-        icon: IOTA_ICON_URL,
+        icon: CHAIN_MEDIA.iota.icon,
       },
-    ].filter((item) => item.image);
-
-    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedChainLabel, searchedHeaderTitle, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
+    ].filter((item) => Boolean(item.image && item.title));
+  }, [iotaOnchainProfile, searchedChainLabel, searchedHeaderTitle, searchedMediaIcon, web3BioProfile?.header]);
 
   const activeMediaSlides = showAvatarPopup ? avatarSlides : headerSlides;
   const activeMediaItem = activeMediaSlides[Math.min(mediaSlideIndex, Math.max(activeMediaSlides.length - 1, 0))];
@@ -1403,10 +1406,10 @@ export const ProfileCard = ({
 
   const linkedWalletOptions = useMemo(() => {
     const options: Array<{ key: string; label: string; address: string; icon: string; alt: string }> = [];
-    if (linkedEvmAddress) options.push({ key: 'ethereum', label: 'Ethereum', address: linkedEvmAddress, icon: ethLogoBlue, alt: 'Ethereum' });
-    if (iotaOwnerAddress) options.push({ key: 'iota', label: 'IOTA', address: iotaOwnerAddress, icon: IOTA_ICON_URL, alt: 'IOTA' });
-    if (linkedTonAddress) options.push({ key: 'ton', label: 'TON', address: linkedTonAddress, icon: tonLogoBlue, alt: 'TON' });
-    if (linkedSuiAddress) options.push({ key: 'sui', label: 'Sui', address: linkedSuiAddress, icon: suiLogoBlue, alt: 'Sui' });
+    if (linkedEvmAddress) options.push({ key: 'ethereum', label: CHAIN_MEDIA.ethereum.label, address: linkedEvmAddress, icon: CHAIN_MEDIA.ethereum.icon, alt: CHAIN_MEDIA.ethereum.alt });
+    if (iotaOwnerAddress) options.push({ key: 'iota', label: CHAIN_MEDIA.iota.label, address: iotaOwnerAddress, icon: CHAIN_MEDIA.iota.icon, alt: CHAIN_MEDIA.iota.alt });
+    if (linkedTonAddress) options.push({ key: 'ton', label: CHAIN_MEDIA.ton.label, address: linkedTonAddress, icon: CHAIN_MEDIA.ton.icon, alt: CHAIN_MEDIA.ton.alt });
+    if (linkedSuiAddress) options.push({ key: 'sui', label: CHAIN_MEDIA.sui.label, address: linkedSuiAddress, icon: CHAIN_MEDIA.sui.icon, alt: CHAIN_MEDIA.sui.alt });
     return options;
   }, [linkedEvmAddress, iotaOwnerAddress, linkedSuiAddress, linkedTonAddress]);
 
@@ -3804,18 +3807,23 @@ export const ProfileCard = ({
       }}>
         <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl border-border/60 bg-background/95 p-3 sm:p-4">
           <DialogTitle className="sr-only">Profile media gallery</DialogTitle>
+          <DialogDescription className="sr-only">Swipe or use the arrow buttons to browse searched and linked profile media.</DialogDescription>
           {activeMediaItem && (
             <div className="space-y-4">
-              <div className="flex items-start justify-between gap-3 pr-10 sm:pr-12">
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
-                    <img src={activeMediaItem.icon} alt="" className="h-3.5 w-3.5 rounded-full" />
-                    {activeMediaItem.label}
-                  </Badge>
-                  <span className="truncate text-sm text-muted-foreground">{activeMediaItem.title}</span>
+              <div className="flex flex-col gap-2 pr-10 sm:pr-12">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
+                      <img src={activeMediaItem.icon} alt="" className="h-3.5 w-3.5 rounded-full" />
+                      {activeMediaItem.label}
+                    </Badge>
+                    <span className="truncate text-sm text-muted-foreground">{activeMediaItem.title}</span>
+                  </div>
                 </div>
-                <div className="shrink-0 rounded-full border border-border/60 bg-background/80 px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                  {mediaSlideIndex + 1} / {activeMediaSlides.length}
+                <div className="flex justify-start sm:justify-end">
+                  <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
+                    {mediaSlideIndex + 1} / {activeMediaSlides.length}
+                  </Badge>
                 </div>
               </div>
 

@@ -291,6 +291,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const linkedTonResolverRef = useRef<string | null>(null);
   const [linkedSuiAddress, setLinkedSuiAddress] = useState<string | null>(null);
   const linkedSuiResolverRef = useRef<string | null>(null);
+  const [resolvingLinkedWallets, setResolvingLinkedWallets] = useState(false);
 
   // Cross-chain overlay: when an external domain (e.g. .eth) resolves to an EVM address
   // that has been linked to a vanity.iota profile, we render the IOTA profile but keep
@@ -686,43 +687,63 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     };
   }, [displayQuery]);
 
-  // Resolve linked TON address for .iota profiles
+  // Resolve linked TON + Sui addresses for .iota profiles in one pass
   useEffect(() => {
     const name = normalizeIotaQuery(displayQuery);
     if (!name) {
       setLinkedTonAddress(null);
       linkedTonResolverRef.current = null;
+      setLinkedSuiAddress(null);
+      linkedSuiResolverRef.current = null;
+      setResolvingLinkedWallets(false);
       return;
     }
 
-    const resolverKey = `${name}|ton`;
-    if (linkedTonResolverRef.current === resolverKey) return;
-    linkedTonResolverRef.current = resolverKey;
+    const tonResolverKey = `${name}|ton`;
+    const suiResolverKey = `${name}|sui`;
+    if (linkedTonResolverRef.current === tonResolverKey && linkedSuiResolverRef.current === suiResolverKey) return;
+    linkedTonResolverRef.current = tonResolverKey;
+    linkedSuiResolverRef.current = suiResolverKey;
 
     let isCancelled = false;
+    setResolvingLinkedWallets(true);
 
     const resolve = async () => {
       try {
-        // Check localStorage first
         const localTon = localStorage.getItem(`iota-linked-ton:${name}`);
-        if (localTon) {
-          setLinkedTonAddress(localTon);
-        }
+        const localSui = localStorage.getItem(`iota-linked-sui:${name}`);
 
-        // Query DB
-        const { data, error } = await supabase.functions.invoke('get-iota-linked-ton', {
-          body: { iotaName: name },
-        });
+        if (localTon) setLinkedTonAddress(localTon);
+        if (localSui) setLinkedSuiAddress(localSui);
 
-        if (!isCancelled && data?.success && data?.tonAddress) {
-          console.log(`✅ Linked TON from DB for ${name}: ${data.tonAddress}`);
-          setLinkedTonAddress(data.tonAddress);
-          try { localStorage.setItem(`iota-linked-ton:${name}`, data.tonAddress); } catch {}
+        const [tonResult, suiResult] = await Promise.all([
+          supabase.functions.invoke('get-iota-linked-ton', { body: { iotaName: name } }),
+          supabase
+            .from('iota_cross_chain_profiles')
+            .select('sui_address')
+            .eq('iota_name', name)
+            .maybeSingle(),
+        ]);
+
+        const tonData = tonResult.data;
+        if (!isCancelled && tonData?.success && tonData?.tonAddress) {
+          setLinkedTonAddress(tonData.tonAddress);
+          try { localStorage.setItem(`iota-linked-ton:${name}`, tonData.tonAddress); } catch {}
         } else if (!isCancelled && !localTon) {
           setLinkedTonAddress(null);
         }
+
+        const suiData = suiResult.data;
+        if (!isCancelled && !suiResult.error && suiData?.sui_address) {
+          setLinkedSuiAddress(suiData.sui_address);
+          try { localStorage.setItem(`iota-linked-sui:${name}`, suiData.sui_address); } catch {}
+        } else if (!isCancelled && !localSui) {
+          setLinkedSuiAddress(null);
+        }
       } catch (err) {
-        console.warn('[SearchInterface] TON link resolution failed:', err);
+        console.warn('[SearchInterface] Linked wallet resolution failed:', err);
+      } finally {
+        if (!isCancelled) setResolvingLinkedWallets(false);
       }
     };
 
@@ -744,48 +765,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     return () => window.removeEventListener('iota-ton-linked', handleTonLinked);
   }, [displayQuery]);
 
-  // Resolve linked Sui address for .iota profiles
-  useEffect(() => {
-    const name = normalizeIotaQuery(displayQuery);
-    if (!name) {
-      setLinkedSuiAddress(null);
-      linkedSuiResolverRef.current = null;
-      return;
-    }
-
-    const resolverKey = `${name}|sui`;
-    if (linkedSuiResolverRef.current === resolverKey) return;
-    linkedSuiResolverRef.current = resolverKey;
-
-    let isCancelled = false;
-
-    const resolve = async () => {
-      try {
-        const localSui = localStorage.getItem(`iota-linked-sui:${name}`);
-        if (localSui) {
-          setLinkedSuiAddress(localSui);
-        }
-
-        const { data, error } = await supabase
-          .from('iota_cross_chain_profiles')
-          .select('sui_address')
-          .eq('iota_name', name)
-          .maybeSingle();
-
-        if (!isCancelled && !error && data?.sui_address) {
-          setLinkedSuiAddress(data.sui_address);
-          try { localStorage.setItem(`iota-linked-sui:${name}`, data.sui_address); } catch {}
-        } else if (!isCancelled && !localSui) {
-          setLinkedSuiAddress(null);
-        }
-      } catch (err) {
-        console.warn('[SearchInterface] Sui link resolution failed:', err);
-      }
-    };
-
-    resolve();
-    return () => { isCancelled = true; };
-  }, [displayQuery]);
+  const isProfileTransitionLoading = (isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs)) || (Boolean(web3BioProfile) && (isResolvingLinkedEvm || resolvingLinkedWallets));
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
   useEffect(() => {
@@ -2108,7 +2088,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             
             {/* Loading Progress Bar */}
             <LoadingProgress
-              isLoading={(isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs))}
+              isLoading={isProfileTransitionLoading}
               title={ensOverlay ? 'Loading linked profile' : 'Loading profile'}
               primaryLabel={displayQuery || web3BioProfile?.identity || null}
               secondaryLabel={ensOverlay ? (iotaOnchainProfile?.identity || ensOverlay.identity || 'Linked IOTA profile') : null}
@@ -2215,7 +2195,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs && !((isIotaName(displayQuery) || (ensOverlay && iotaOnchainProfileLoading)) && iotaOnchainProfileLoading && !iotaOnchainProfile) ? (
+            {web3BioProfile && !showMyIDs ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >

@@ -63,18 +63,18 @@ export const LoadingProgress = ({ isLoading, title, primaryLabel, secondaryLabel
               {title || (secondaryLabel ? 'Loading linked profile' : 'Loading profile')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              {secondaryLabel ? 'Merging searched branding with linked IOTA data.' : 'Fetching the latest profile data.'}
+              {secondaryLabel ? 'Blending searched identity with linked chain data.' : 'Fetching the latest profile data.'}
             </p>
           </div>
 
           {(primaryLabel || secondaryLabel) && (
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex flex-col items-center gap-2">
               {primaryLabel && <Badge variant="secondary" className="max-w-full truncate px-3 py-1">{primaryLabel}</Badge>}
               {secondaryLabel && (
-                <>
-                  <span className="text-xs text-muted-foreground">→</span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Linked to</span>
                   <Badge variant="outline" className="max-w-full truncate px-3 py-1">{secondaryLabel}</Badge>
-                </>
+                </div>
               )}
             </div>
           )}
