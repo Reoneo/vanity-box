@@ -2088,7 +2088,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             
             {/* Loading Progress Bar */}
             <LoadingProgress
-              isLoading={(isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs))}
+              isLoading={isProfileTransitionLoading}
               title={ensOverlay ? 'Loading linked profile' : 'Loading profile'}
               primaryLabel={displayQuery || web3BioProfile?.identity || null}
               secondaryLabel={ensOverlay ? (iotaOnchainProfile?.identity || ensOverlay.identity || 'Linked IOTA profile') : null}
@@ -2195,7 +2195,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs && !((isIotaName(displayQuery) || (ensOverlay && iotaOnchainProfileLoading)) && iotaOnchainProfileLoading && !iotaOnchainProfile) ? (
+            {web3BioProfile && !showMyIDs ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
