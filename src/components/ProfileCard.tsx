@@ -1406,10 +1406,10 @@ export const ProfileCard = ({
 
   const linkedWalletOptions = useMemo(() => {
     const options: Array<{ key: string; label: string; address: string; icon: string; alt: string }> = [];
-    if (linkedEvmAddress) options.push({ key: 'ethereum', label: 'Ethereum', address: linkedEvmAddress, icon: ethLogoBlue, alt: 'Ethereum' });
-    if (iotaOwnerAddress) options.push({ key: 'iota', label: 'IOTA', address: iotaOwnerAddress, icon: IOTA_ICON_URL, alt: 'IOTA' });
-    if (linkedTonAddress) options.push({ key: 'ton', label: 'TON', address: linkedTonAddress, icon: tonLogoBlue, alt: 'TON' });
-    if (linkedSuiAddress) options.push({ key: 'sui', label: 'Sui', address: linkedSuiAddress, icon: suiLogoBlue, alt: 'Sui' });
+    if (linkedEvmAddress) options.push({ key: 'ethereum', label: CHAIN_MEDIA.ethereum.label, address: linkedEvmAddress, icon: CHAIN_MEDIA.ethereum.icon, alt: CHAIN_MEDIA.ethereum.alt });
+    if (iotaOwnerAddress) options.push({ key: 'iota', label: CHAIN_MEDIA.iota.label, address: iotaOwnerAddress, icon: CHAIN_MEDIA.iota.icon, alt: CHAIN_MEDIA.iota.alt });
+    if (linkedTonAddress) options.push({ key: 'ton', label: CHAIN_MEDIA.ton.label, address: linkedTonAddress, icon: CHAIN_MEDIA.ton.icon, alt: CHAIN_MEDIA.ton.alt });
+    if (linkedSuiAddress) options.push({ key: 'sui', label: CHAIN_MEDIA.sui.label, address: linkedSuiAddress, icon: CHAIN_MEDIA.sui.icon, alt: CHAIN_MEDIA.sui.alt });
     return options;
   }, [linkedEvmAddress, iotaOwnerAddress, linkedSuiAddress, linkedTonAddress]);
 
@@ -3807,18 +3807,23 @@ export const ProfileCard = ({
       }}>
         <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl border-border/60 bg-background/95 p-3 sm:p-4">
           <DialogTitle className="sr-only">Profile media gallery</DialogTitle>
+          <DialogDescription className="sr-only">Swipe or use the arrow buttons to browse searched and linked profile media.</DialogDescription>
           {activeMediaItem && (
             <div className="space-y-4">
-              <div className="flex items-start justify-between gap-3 pr-10 sm:pr-12">
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
-                    <img src={activeMediaItem.icon} alt="" className="h-3.5 w-3.5 rounded-full" />
-                    {activeMediaItem.label}
-                  </Badge>
-                  <span className="truncate text-sm text-muted-foreground">{activeMediaItem.title}</span>
+              <div className="flex flex-col gap-2 pr-10 sm:pr-12">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
+                      <img src={activeMediaItem.icon} alt="" className="h-3.5 w-3.5 rounded-full" />
+                      {activeMediaItem.label}
+                    </Badge>
+                    <span className="truncate text-sm text-muted-foreground">{activeMediaItem.title}</span>
+                  </div>
                 </div>
-                <div className="shrink-0 rounded-full border border-border/60 bg-background/80 px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                  {mediaSlideIndex + 1} / {activeMediaSlides.length}
+                <div className="flex justify-start sm:justify-end">
+                  <Badge variant="secondary" className="gap-1.5 bg-secondary text-secondary-foreground">
+                    {mediaSlideIndex + 1} / {activeMediaSlides.length}
+                  </Badge>
                 </div>
               </div>
 
