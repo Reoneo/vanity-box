@@ -45,6 +45,7 @@ import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
 import { useTonTokens } from "@/hooks/useTonTokens";
+import tonIconBlue from "@/assets/ton-icon-blue.png";
 import tonLogoBlue from "@/assets/ton-logo-blue-circle.png";
 import suiLogoBlue from "@/assets/sui-logo-blue-circle.png";
 import iotaLogoBlue from "@/assets/iota-logo-blue-circle.png";
@@ -104,6 +105,13 @@ interface ProfileCardProps {
 
 // Official IOTA icon URL
 const IOTA_ICON_URL = iotaLogoBlue;
+
+const CHAIN_MEDIA = {
+  ethereum: { icon: ethLogoBlue, label: 'Ethereum', alt: 'Ethereum' },
+  iota: { icon: iotaLogoBlue, label: 'IOTA', alt: 'IOTA' },
+  ton: { icon: tonLogoBlue, label: 'TON', alt: 'TON' },
+  sui: { icon: suiLogoBlue, label: 'Sui', alt: 'Sui' },
+} as const;
 
 // Chain icon helper function for activity feed
 const getChainIcon = (chain: string, size: number = 18) => {
@@ -878,47 +886,45 @@ export const ProfileCard = ({
     return 'EVM Profile Header';
   }, [searchedChainLabel]);
 
+  const searchedMediaIcon = searchedChainLabel === 'IOTA' ? CHAIN_MEDIA.iota.icon : CHAIN_MEDIA.ethereum.icon;
+
   const avatarSlides = useMemo(() => {
-    const slides = [
+    return [
       {
         key: 'searched-avatar',
         label: searchedChainLabel,
         title: searchedAvatarTitle,
         image: normalizeMediaUrl(web3BioProfile?.avatar) || vanityBoxAvatar,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
+        icon: searchedMediaIcon,
       },
       {
         key: 'iota-avatar',
         label: 'IOTA',
         title: iotaOnchainProfile ? 'IOTA Profile Avatar' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.avatarUrl),
-        icon: IOTA_ICON_URL,
+        icon: CHAIN_MEDIA.iota.icon,
       },
-    ].filter((item) => item.image);
-
-    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedAvatarTitle, searchedChainLabel, web3BioProfile?.avatar, iotaOnchainProfile?.avatarUrl]);
+    ].filter((item) => Boolean(item.image && item.title));
+  }, [iotaOnchainProfile, searchedAvatarTitle, searchedChainLabel, searchedMediaIcon, web3BioProfile?.avatar]);
 
   const headerSlides = useMemo(() => {
-    const slides = [
+    return [
       {
         key: 'searched-header',
         label: searchedChainLabel,
         title: searchedHeaderTitle,
         image: normalizeMediaUrl(web3BioProfile?.header) || iotaHeaderPattern,
-        icon: searchedChainLabel === 'IOTA' ? IOTA_ICON_URL : ethLogoBlue,
+        icon: searchedMediaIcon,
       },
       {
         key: 'iota-header',
         label: 'IOTA',
         title: iotaOnchainProfile ? 'IOTA Profile Header' : null,
         image: normalizeMediaUrl(iotaOnchainProfile?.headerUrl),
-        icon: IOTA_ICON_URL,
+        icon: CHAIN_MEDIA.iota.icon,
       },
-    ].filter((item) => item.image);
-
-    return slides.filter((item, index, arr) => arr.findIndex((entry) => entry.image === item.image) === index);
-  }, [searchedChainLabel, searchedHeaderTitle, web3BioProfile?.header, iotaOnchainProfile?.headerUrl]);
+    ].filter((item) => Boolean(item.image && item.title));
+  }, [iotaOnchainProfile, searchedChainLabel, searchedHeaderTitle, searchedMediaIcon, web3BioProfile?.header]);
 
   const activeMediaSlides = showAvatarPopup ? avatarSlides : headerSlides;
   const activeMediaItem = activeMediaSlides[Math.min(mediaSlideIndex, Math.max(activeMediaSlides.length - 1, 0))];
