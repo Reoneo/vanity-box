@@ -36,7 +36,7 @@ import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogo from '@/assets/eth-logo-dark.svg';
 import ethTokenLogo from '@/assets/eth-logo.png';
-import ethLogoBlue from '@/assets/eth-logo-blue.png';
+import ethLogoBlue from '@/assets/eth-logo-blue-circle.png';
 import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
@@ -48,8 +48,9 @@ import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
 import { useTonTokens } from "@/hooks/useTonTokens";
 import tonIconBlue from "@/assets/ton-icon-blue.png";
-import tonLogoBlue from "@/assets/ton-logo-blue.png";
-import suiLogoBlue from "@/assets/sui-logo-blue.png";
+import tonLogoBlue from "@/assets/ton-logo-blue-circle.png";
+import suiLogoBlue from "@/assets/sui-logo-blue-circle.png";
+import iotaLogoBlue from "@/assets/iota-logo-blue-circle.png";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
 import CredentialsCarousel from "./CredentialsCarousel";
@@ -105,7 +106,7 @@ interface ProfileCardProps {
 }
 
 // Official IOTA icon URL
-const IOTA_ICON_URL = "https://d315pvdvxi2gex.cloudfront.net/d96a337f84c5c900f31e08817.svg";
+const IOTA_ICON_URL = iotaLogoBlue;
 
 // Chain icon helper function for activity feed
 const getChainIcon = (chain: string, size: number = 18) => {
@@ -1404,8 +1405,8 @@ export const ProfileCard = ({
     const options: Array<{ key: string; label: string; address: string; icon: string; alt: string }> = [];
     if (linkedEvmAddress) options.push({ key: 'ethereum', label: 'Ethereum', address: linkedEvmAddress, icon: ethLogoBlue, alt: 'Ethereum' });
     if (iotaOwnerAddress) options.push({ key: 'iota', label: 'IOTA', address: iotaOwnerAddress, icon: IOTA_ICON_URL, alt: 'IOTA' });
-    if (linkedSuiAddress) options.push({ key: 'sui', label: 'Sui', address: linkedSuiAddress, icon: suiLogoBlue, alt: 'Sui' });
     if (linkedTonAddress) options.push({ key: 'ton', label: 'TON', address: linkedTonAddress, icon: tonLogoBlue, alt: 'TON' });
+    if (linkedSuiAddress) options.push({ key: 'sui', label: 'Sui', address: linkedSuiAddress, icon: suiLogoBlue, alt: 'Sui' });
     return options;
   }, [linkedEvmAddress, iotaOwnerAddress, linkedSuiAddress, linkedTonAddress]);
 
