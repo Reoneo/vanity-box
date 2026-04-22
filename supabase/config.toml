@@ -188,3 +188,6 @@ verify_jwt = false
 
 [functions.get-iota-name-by-evm]
 verify_jwt = false
+
+[functions.get-ud-badges]
+verify_jwt = false
