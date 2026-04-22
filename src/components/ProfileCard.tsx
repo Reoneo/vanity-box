@@ -1846,7 +1846,7 @@ export const ProfileCard = ({
                         const hasTokens = portfolioTokens.length > 0;
                         const hasSocials = mergedSocialLinks.length > 0;
                         const hasTransactions = transactions.length > 0;
-                        const hasReputation = hasTalentData || hasPolymarketData;
+                        const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
 
                         const buttons: { title: string; onClick: () => void; panel?: 'nfts' | 'social' | 'tokens' | 'activity' }[] = [];
                         if (hasTransactions) buttons.push({ title: 'Activity', panel: 'activity', onClick: () => setDesktopActivePanel('activity') });
@@ -1855,10 +1855,7 @@ export const ProfileCard = ({
                         if (hasTokens) buttons.push({ title: 'Tokens', panel: 'tokens', onClick: () => setDesktopActivePanel('tokens') });
                         if (hasReputation) buttons.push({
                           title: 'Reputation',
-                          onClick: () => {
-                            if (hasTalentData) setShowTalentModal(true);
-                            else if (hasPolymarketData) setShowPolymarketModal(true);
-                          },
+                          onClick: () => setShowReputationModal(true),
                         });
                         buttons.sort((a, b) => a.title.localeCompare(b.title));
 
@@ -2488,7 +2485,7 @@ export const ProfileCard = ({
                     const hasTokens = portfolioTokens.length > 0;
                     const hasSocials = mergedSocialLinks.length > 0;
                     const hasTransactions = transactions.length > 0;
-                    const hasReputation = hasTalentData || hasPolymarketData;
+                    const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
 
                     const buttons: { title: string; onClick: () => void }[] = [];
                     if (hasTransactions) buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
@@ -2500,10 +2497,7 @@ export const ProfileCard = ({
                     if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
                     if (hasReputation) buttons.push({
                       title: 'Reputation',
-                      onClick: () => {
-                        if (hasTalentData) setShowTalentModal(true);
-                        else if (hasPolymarketData) setShowPolymarketModal(true);
-                      }
+                      onClick: () => setShowReputationModal(true),
                     });
 
                     buttons.sort((a, b) => a.title.localeCompare(b.title));
