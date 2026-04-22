@@ -51,6 +51,7 @@ import suiLogoBlue from "@/assets/sui-logo-blue-circle.png";
 import iotaLogoBlue from "@/assets/iota-logo-blue-circle.png";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
+import { ReputationModal, type UdBadgeItem } from "./ReputationModal";
 import CredentialsCarousel from "./CredentialsCarousel";
 import { BioTicker } from "./BioTicker";
 import { ChronologicalPoapGrid } from "./ChronologicalPoapGrid";
@@ -280,6 +281,10 @@ export const ProfileCard = ({
   const [transactionsFetched, setTransactionsFetched] = useState(false);
   const [showTalentModal, setShowTalentModal] = useState(false);
   const [showPolymarketModal, setShowPolymarketModal] = useState(false);
+  const [showReputationModal, setShowReputationModal] = useState(false);
+  const [udBadges, setUdBadges] = useState<UdBadgeItem[]>([]);
+  const [udBadgesLoading, setUdBadgesLoading] = useState(false);
+  const [udBadgesFetched, setUdBadgesFetched] = useState(false);
   const [hasTalentData, setHasTalentData] = useState(false);
   const [talentLoading, setTalentLoading] = useState(false);
   const [talentScore, setTalentScore] = useState<number | null>(null);
