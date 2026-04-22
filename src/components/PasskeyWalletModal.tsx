@@ -525,7 +525,6 @@ export function PasskeyWalletModal({
             </ActionCard>
 
             {/* Link Wallet option intentionally removed per product decision. */}
-            </ActionCard>
           </div>
 
           {/* Active bindings (collapsible) */}
