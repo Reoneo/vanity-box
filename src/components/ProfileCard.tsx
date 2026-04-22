@@ -3802,6 +3802,36 @@ export const ProfileCard = ({
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
 
+      {/* Polymarket Modal */}
+      <PolymarketModal
+        open={showPolymarketModal}
+        onOpenChange={setShowPolymarketModal}
+        wallet={currentWalletAddress}
+        ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+      />
+
+      {/* Reputation Modal — lists Talent Protocol, Polymarket, and Unstoppable badges */}
+      <ReputationModal
+        open={showReputationModal}
+        onClose={() => setShowReputationModal(false)}
+        hasTalent={hasTalentData}
+        talentScore={talentScore}
+        talentCreatorScore={talentCreatorScore}
+        hasPolymarket={hasPolymarketData}
+        polymarketWinRate={polymarketWinRate}
+        polymarketProfit={polymarketProfit}
+        udBadges={udBadges}
+        udBadgesLoading={udBadgesLoading}
+        onOpenTalent={() => {
+          setShowReputationModal(false);
+          setShowTalentModal(true);
+        }}
+        onOpenPolymarket={() => {
+          setShowReputationModal(false);
+          setShowPolymarketModal(true);
+        }}
+      />
+
       <Dialog open={showAvatarPopup || showHeaderPopup} onOpenChange={(open) => {
         if (!open) {
           setShowAvatarPopup(false);
