@@ -730,8 +730,147 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     },
   };
 
+  // Per-language overlays for newer keys so we don't have to edit every block.
+  // Falls back to English when a locale isn't listed.
+  const extraTranslations: Partial<Record<Language, Record<string, string>>> = {
+    en: {
+      search: 'Search',
+      reputation: 'Reputation',
+      tokens: 'Tokens',
+      social: 'Social',
+      vanity_tagline: 'Wear Your Vanity Onchain',
+      vanity_search_placeholder: 'Type your name .vanity here',
+    },
+    es: {
+      search: 'Buscar',
+      reputation: 'Reputación',
+      tokens: 'Tokens',
+      social: 'Social',
+      vanity_tagline: 'Lleva tu vanidad onchain',
+      vanity_search_placeholder: 'Escribe tu nombre .vanity aquí',
+    },
+    'es-419': {
+      search: 'Buscar',
+      reputation: 'Reputación',
+      tokens: 'Tokens',
+      social: 'Social',
+      vanity_tagline: 'Lleva tu vanidad onchain',
+      vanity_search_placeholder: 'Escribe tu nombre .vanity aquí',
+    },
+    fr: {
+      search: 'Rechercher',
+      reputation: 'Réputation',
+      tokens: 'Jetons',
+      social: 'Social',
+      vanity_tagline: 'Portez votre vanité onchain',
+      vanity_search_placeholder: 'Tapez votre nom .vanity ici',
+    },
+    de: {
+      search: 'Suchen',
+      reputation: 'Reputation',
+      tokens: 'Tokens',
+      social: 'Social',
+      vanity_tagline: 'Trage deine Vanity onchain',
+      vanity_search_placeholder: 'Gib deinen .vanity-Namen hier ein',
+    },
+    pt: {
+      search: 'Pesquisar',
+      reputation: 'Reputação',
+      tokens: 'Tokens',
+      social: 'Social',
+      vanity_tagline: 'Use sua vaidade onchain',
+      vanity_search_placeholder: 'Digite seu nome .vanity aqui',
+    },
+    ca: {
+      search: 'Cercar',
+      reputation: 'Reputació',
+      tokens: 'Tokens',
+      social: 'Social',
+      vanity_tagline: 'Porta la teva vanitat onchain',
+      vanity_search_placeholder: 'Escriu el teu nom .vanity aquí',
+    },
+    pl: {
+      search: 'Szukaj',
+      reputation: 'Reputacja',
+      tokens: 'Tokeny',
+      social: 'Społeczność',
+      vanity_tagline: 'Noś swoją próżność onchain',
+      vanity_search_placeholder: 'Wpisz swoją nazwę .vanity tutaj',
+    },
+    ja: {
+      search: '検索',
+      reputation: 'レピュテーション',
+      tokens: 'トークン',
+      social: 'ソーシャル',
+      vanity_tagline: 'あなたの虚栄心をオンチェーンで',
+      vanity_search_placeholder: 'ここに .vanity の名前を入力',
+    },
+    ko: {
+      search: '검색',
+      reputation: '평판',
+      tokens: '토큰',
+      social: '소셜',
+      vanity_tagline: '당신의 .vanity를 온체인으로',
+      vanity_search_placeholder: '여기에 .vanity 이름을 입력하세요',
+    },
+    'zh-CN': {
+      search: '搜索',
+      reputation: '声誉',
+      tokens: '代币',
+      social: '社交',
+      vanity_tagline: '把你的 Vanity 穿戴上链',
+      vanity_search_placeholder: '在此输入你的 .vanity 名称',
+    },
+    'zh-TW': {
+      search: '搜尋',
+      reputation: '聲譽',
+      tokens: '代幣',
+      social: '社交',
+      vanity_tagline: '把你的 Vanity 穿戴上鏈',
+      vanity_search_placeholder: '在此輸入你的 .vanity 名稱',
+    },
+    hi: {
+      search: 'खोजें',
+      reputation: 'प्रतिष्ठा',
+      tokens: 'टोकन',
+      social: 'सोशल',
+      vanity_tagline: 'अपनी वैनिटी ऑनचेन पहनें',
+      vanity_search_placeholder: 'यहां अपना .vanity नाम टाइप करें',
+    },
+    ms: {
+      search: 'Cari',
+      reputation: 'Reputasi',
+      tokens: 'Token',
+      social: 'Sosial',
+      vanity_tagline: 'Pakai Vanity anda di onchain',
+      vanity_search_placeholder: 'Taip nama .vanity anda di sini',
+    },
+    th: {
+      search: 'ค้นหา',
+      reputation: 'ชื่อเสียง',
+      tokens: 'โทเค็น',
+      social: 'โซเชียล',
+      vanity_tagline: 'สวมใส่ .vanity ของคุณบนเชน',
+      vanity_search_placeholder: 'พิมพ์ชื่อ .vanity ของคุณที่นี่',
+    },
+    id: {
+      search: 'Cari',
+      reputation: 'Reputasi',
+      tokens: 'Token',
+      social: 'Sosial',
+      vanity_tagline: 'Kenakan Vanity Anda onchain',
+      vanity_search_placeholder: 'Ketik nama .vanity Anda di sini',
+    },
+  };
+
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    return (
+      translations[language]?.[key] ||
+      extraTranslations[language]?.[key] ||
+      extraTranslations.en?.[key] ||
+      translations.en?.[key] ||
+      key
+    );
   };
 
   return (
