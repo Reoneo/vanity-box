@@ -67,7 +67,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen h-full bg-black dark:bg-black flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen h-full bg-background flex flex-col relative overflow-x-hidden">
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
       <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
 
@@ -83,8 +83,8 @@ const Index = () => {
         </div>
 
         {/* Hero Section - Takes remaining space between header and footer */}
-        <main className="flex-1 relative z-10 flex items-center justify-center pointer-events-auto overflow-x-hidden bg-black dark:bg-black">
-          <article className="w-full h-full bg-black dark:bg-black">
+        <main className="flex-1 relative z-10 flex items-center justify-center pointer-events-auto overflow-x-hidden bg-background">
+          <article className="w-full h-full bg-background">
             <SearchInterface />
           </article>
         </main>
