@@ -1794,16 +1794,24 @@ export const ProfileCard = ({
                       {(() => {
                         const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                         const hasTonNfts = tonNftsLoading || tonNftCount > 0;
-                        const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted || ensDomains.length > 0 || basenames.length > 0 || hasTonNfts;
-                        const hasTokens = portfolioTokens.length > 0 || isIotaProfile || iotaLoading || (!tokensFetched && isIotaProfile);
+                        const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0 || hasTonNfts;
+                        const hasTokens = portfolioTokens.length > 0;
                         const hasSocials = mergedSocialLinks.length > 0;
                         const hasTransactions = transactions.length > 0;
+                        const hasReputation = hasTalentData || hasPolymarketData;
 
-                        const buttons: { title: string; panel: 'nfts' | 'social' | 'tokens' | 'activity' }[] = [];
-                        if (hasTransactions) buttons.push({ title: 'Activity', panel: 'activity' });
-                        if (hasNfts) buttons.push({ title: 'NFTs', panel: 'nfts' });
-                        if (hasSocials) buttons.push({ title: 'Social', panel: 'social' });
-                        if (hasTokens) buttons.push({ title: 'Tokens', panel: 'tokens' });
+                        const buttons: { title: string; onClick: () => void; panel?: 'nfts' | 'social' | 'tokens' | 'activity' }[] = [];
+                        if (hasTransactions) buttons.push({ title: 'Activity', panel: 'activity', onClick: () => setDesktopActivePanel('activity') });
+                        if (hasNfts) buttons.push({ title: 'NFTs', panel: 'nfts', onClick: () => { setDesktopActivePanel('nfts'); onEnsureOpenSeaNfts?.(); } });
+                        if (hasSocials) buttons.push({ title: 'Social', panel: 'social', onClick: () => setDesktopActivePanel('social') });
+                        if (hasTokens) buttons.push({ title: 'Tokens', panel: 'tokens', onClick: () => setDesktopActivePanel('tokens') });
+                        if (hasReputation) buttons.push({
+                          title: 'Reputation',
+                          onClick: () => {
+                            if (hasTalentData) setShowTalentModal(true);
+                            else if (hasPolymarketData) setShowPolymarketModal(true);
+                          },
+                        });
                         buttons.sort((a, b) => a.title.localeCompare(b.title));
 
                         if (buttons.length === 0) return null;
@@ -1813,13 +1821,10 @@ export const ProfileCard = ({
                             {buttons.map((btn) => (
                               <button
                                 key={btn.title}
-                                onClick={() => {
-                                  setDesktopActivePanel(btn.panel);
-                                  if (btn.panel === 'nfts') onEnsureOpenSeaNfts?.();
-                                }}
-                                className={`py-2 px-4 rounded-xl border text-sm font-medium whitespace-nowrap transition-all duration-200
-                                  ${desktopActivePanel === btn.panel 
-                                    ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-md' 
+                                onClick={btn.onClick}
+                                className={`py-2 px-4 rounded-full border text-sm font-semibold whitespace-nowrap transition-all duration-200
+                                  ${btn.panel && desktopActivePanel === btn.panel
+                                    ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-md'
                                     : 'bg-[#D4AF37] border-[#D4AF37] text-black hover:bg-[#C4A030] hover:border-[#C4A030] shadow-sm'
                                   }`}
                               >
@@ -1840,24 +1845,7 @@ export const ProfileCard = ({
                         </div>
                       )}
 
-                      {/* Credentials Carousel - Talent Protocol & Polymarket */}
-                      {(!isIotaProfile || (linkedEvmAddress && hasTalentData)) && (
-                        <div className="pt-1">
-                          <CredentialsCarousel
-                            wallet={currentWalletAddress}
-                            ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-                            talentScore={talentScore}
-                            talentCreatorScore={talentCreatorScore}
-                            polymarketWinRate={polymarketWinRate}
-                            polymarketProfit={polymarketProfit}
-                            hasTalentData={hasTalentData}
-                            hasPolymarketData={hasPolymarketData}
-                            onTalentClick={() => setShowTalentModal(true)}
-                            onPolymarketClick={() => setShowPolymarketModal(true)}
-                            baseWidth={300}
-                          />
-                        </div>
-                      )}
+                      {/* Inline CredentialsCarousel removed — moved to Reputation action pill. */}
                       </div>
                     </div>
                   </div>
@@ -2448,48 +2436,38 @@ export const ProfileCard = ({
                   {(() => {
                     const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                     const hasTonNfts = tonNftsLoading || tonNftCount > 0;
-                    // NFTs button shows if any NFT source has data OR if any NFT source is still loading
-                    // Also show if OpenSea hasn't been attempted yet (data might come when overlay opens)
-                    const hasNfts = nftLoading || (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || !openseaAttempted || hasTonNfts;
-                    const hasTokens = portfolioTokens.length > 0 || isIotaProfile || iotaLoading || (!tokensFetched && isIotaProfile);
+                    const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || hasTonNfts;
+                    const hasTokens = portfolioTokens.length > 0;
                     const hasSocials = mergedSocialLinks.length > 0;
                     const hasTransactions = transactions.length > 0;
+                    const hasReputation = hasTalentData || hasPolymarketData;
 
-                    // Build buttons array
                     const buttons: { title: string; onClick: () => void }[] = [];
-                    
-                    if (hasTransactions) {
-                      buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
-                    }
-                    if (hasNfts) {
-                      buttons.push({ 
-                        title: 'NFTs', 
-                        onClick: () => {
-                          setShowNftsOverlay(true);
-                          // Trigger OpenSea fetch when overlay opens
-                          onEnsureOpenSeaNfts?.();
-                        }
-                      });
-                    }
-                    if (hasSocials) {
-                      buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
-                    }
-                    if (hasTokens) {
-                      buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
-                    }
+                    if (hasTransactions) buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
+                    if (hasNfts) buttons.push({
+                      title: 'NFTs',
+                      onClick: () => { setShowNftsOverlay(true); onEnsureOpenSeaNfts?.(); }
+                    });
+                    if (hasSocials) buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
+                    if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
+                    if (hasReputation) buttons.push({
+                      title: 'Reputation',
+                      onClick: () => {
+                        if (hasTalentData) setShowTalentModal(true);
+                        else if (hasPolymarketData) setShowPolymarketModal(true);
+                      }
+                    });
 
-                    // Sort alphabetically
                     buttons.sort((a, b) => a.title.localeCompare(b.title));
-
                     if (buttons.length === 0) return null;
 
                     return (
-                      <div className="flex items-center justify-center gap-2 px-4">
+                      <div className="flex flex-wrap items-center justify-center gap-2 px-4">
                         {buttons.map((btn) => (
                           <button
                             key={btn.title}
                             onClick={btn.onClick}
-                            className="flex-1 max-w-[85px] py-2 px-3 rounded-xl bg-[#D4AF37] border border-[#D4AF37] hover:bg-[#C4A030] hover:border-[#C4A030] active:scale-95 transition-all duration-200 text-sm font-medium text-black whitespace-nowrap shadow-sm"
+                            className="py-2 px-4 rounded-full bg-[#D4AF37] border border-[#D4AF37] hover:bg-[#C4A030] hover:border-[#C4A030] active:scale-95 transition-all duration-200 text-sm font-semibold text-black whitespace-nowrap shadow-sm"
                           >
                             {btn.title}
                           </button>
@@ -2507,31 +2485,14 @@ export const ProfileCard = ({
                           On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
                             month: 'short',
                             year: 'numeric',
-                            day: 'numeric' 
+                            day: 'numeric'
                           })}
                         </span>
                       </>
                     ) : null}
                   </div>
 
-                  {/* Credentials Carousel - Talent Protocol & Polymarket */}
-                  {(!isIotaProfile || (linkedEvmAddress && hasTalentData)) && (
-                  <div className="-mt-3">
-                    <CredentialsCarousel
-                      wallet={currentWalletAddress}
-                      ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
-                      talentScore={talentScore}
-                      talentCreatorScore={talentCreatorScore}
-                      polymarketWinRate={polymarketWinRate}
-                      polymarketProfit={polymarketProfit}
-                      hasTalentData={hasTalentData}
-                      hasPolymarketData={hasPolymarketData}
-                      onTalentClick={() => setShowTalentModal(true)}
-                      onPolymarketClick={() => setShowPolymarketModal(true)}
-                      baseWidth={340}
-                    />
-                  </div>
-                  )}
+                  {/* Inline CredentialsCarousel removed — moved to Reputation action pill. */}
                 </div>
               </div>
             )}
