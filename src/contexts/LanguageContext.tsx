@@ -738,7 +738,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputation',
       tokens: 'Tokens',
       social: 'Social',
-      vanity_tagline: 'Wear Your Vanity Onchain',
+      vanity_tagline: 'Your Vanity Wallet ID',
       vanity_search_placeholder: 'Type your name .vanity here',
     },
     es: {
@@ -746,7 +746,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputación',
       tokens: 'Tokens',
       social: 'Social',
-      vanity_tagline: 'Lleva tu vanidad onchain',
+      vanity_tagline: 'Tu ID de billetera Vanity',
       vanity_search_placeholder: 'Escribe tu nombre .vanity aquí',
     },
     'es-419': {
@@ -754,7 +754,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputación',
       tokens: 'Tokens',
       social: 'Social',
-      vanity_tagline: 'Lleva tu vanidad onchain',
+      vanity_tagline: 'Tu ID de billetera Vanity',
       vanity_search_placeholder: 'Escribe tu nombre .vanity aquí',
     },
     fr: {
@@ -762,7 +762,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Réputation',
       tokens: 'Jetons',
       social: 'Social',
-      vanity_tagline: 'Portez votre vanité onchain',
+      vanity_tagline: 'Votre ID de portefeuille Vanity',
       vanity_search_placeholder: 'Tapez votre nom .vanity ici',
     },
     de: {
@@ -770,7 +770,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputation',
       tokens: 'Tokens',
       social: 'Social',
-      vanity_tagline: 'Trage deine Vanity onchain',
+      vanity_tagline: 'Deine Vanity Wallet-ID',
       vanity_search_placeholder: 'Gib deinen .vanity-Namen hier ein',
     },
     pt: {
@@ -778,7 +778,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputação',
       tokens: 'Tokens',
       social: 'Social',
-      vanity_tagline: 'Use sua vaidade onchain',
+      vanity_tagline: 'Seu ID de carteira Vanity',
       vanity_search_placeholder: 'Digite seu nome .vanity aqui',
     },
     ca: {
@@ -786,7 +786,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputació',
       tokens: 'Tokens',
       social: 'Social',
-      vanity_tagline: 'Porta la teva vanitat onchain',
+      vanity_tagline: 'El teu ID de cartera Vanity',
       vanity_search_placeholder: 'Escriu el teu nom .vanity aquí',
     },
     pl: {
@@ -794,7 +794,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputacja',
       tokens: 'Tokeny',
       social: 'Społeczność',
-      vanity_tagline: 'Noś swoją próżność onchain',
+      vanity_tagline: 'Twój identyfikator portfela Vanity',
       vanity_search_placeholder: 'Wpisz swoją nazwę .vanity tutaj',
     },
     ja: {
@@ -802,7 +802,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'レピュテーション',
       tokens: 'トークン',
       social: 'ソーシャル',
-      vanity_tagline: 'あなたの虚栄心をオンチェーンで',
+      vanity_tagline: 'あなたのVanityウォレットID',
       vanity_search_placeholder: 'ここに .vanity の名前を入力',
     },
     ko: {
@@ -810,7 +810,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: '평판',
       tokens: '토큰',
       social: '소셜',
-      vanity_tagline: '당신의 .vanity를 온체인으로',
+      vanity_tagline: '당신의 Vanity 지갑 ID',
       vanity_search_placeholder: '여기에 .vanity 이름을 입력하세요',
     },
     'zh-CN': {
@@ -818,7 +818,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: '声誉',
       tokens: '代币',
       social: '社交',
-      vanity_tagline: '把你的 Vanity 穿戴上链',
+      vanity_tagline: '你的 Vanity 钱包 ID',
       vanity_search_placeholder: '在此输入你的 .vanity 名称',
     },
     'zh-TW': {
@@ -826,7 +826,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: '聲譽',
       tokens: '代幣',
       social: '社交',
-      vanity_tagline: '把你的 Vanity 穿戴上鏈',
+      vanity_tagline: '你的 Vanity 錢包 ID',
       vanity_search_placeholder: '在此輸入你的 .vanity 名稱',
     },
     hi: {
@@ -834,7 +834,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'प्रतिष्ठा',
       tokens: 'टोकन',
       social: 'सोशल',
-      vanity_tagline: 'अपनी वैनिटी ऑनचेन पहनें',
+      vanity_tagline: 'आपकी Vanity वॉलेट ID',
       vanity_search_placeholder: 'यहां अपना .vanity नाम टाइप करें',
     },
     ms: {
@@ -842,7 +842,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputasi',
       tokens: 'Token',
       social: 'Sosial',
-      vanity_tagline: 'Pakai Vanity anda di onchain',
+      vanity_tagline: 'ID Dompet Vanity Anda',
       vanity_search_placeholder: 'Taip nama .vanity anda di sini',
     },
     th: {
@@ -850,7 +850,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'ชื่อเสียง',
       tokens: 'โทเค็น',
       social: 'โซเชียล',
-      vanity_tagline: 'สวมใส่ .vanity ของคุณบนเชน',
+      vanity_tagline: 'ID กระเป๋าเงิน Vanity ของคุณ',
       vanity_search_placeholder: 'พิมพ์ชื่อ .vanity ของคุณที่นี่',
     },
     id: {
@@ -858,7 +858,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       reputation: 'Reputasi',
       tokens: 'Token',
       social: 'Sosial',
-      vanity_tagline: 'Kenakan Vanity Anda onchain',
+      vanity_tagline: 'ID Dompet Vanity Anda',
       vanity_search_placeholder: 'Ketik nama .vanity Anda di sini',
     },
   };

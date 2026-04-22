@@ -1,41 +1,35 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 /**
  * Home hero for the .vanity TLD landing.
- * Replaces the old "Coming Soon" block with a branded
- * title + tagline + search input + search button.
- *
- * Text colour: gold in dark mode, black in light mode.
+ * Brand: gold ".vanity" headline + tagline + search input that
+ * redirects users to https://{name}.vanity.box so they can purchase
+ * their domain on the Unstoppable Domains co-branded portal.
  */
 export const HomeFeatureShowcase: React.FC = () => {
   const { t } = useLanguage();
-  const { resolvedTheme } = useTheme();
-  const navigate = useNavigate();
   const [value, setValue] = useState('');
-
-  const isDark = resolvedTheme === 'dark';
-  const textColorClass = isDark ? 'text-[#D4AF37]' : 'text-black';
 
   const normalize = (raw: string) => {
     const trimmed = raw.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
     if (!trimmed) return '';
-    // Strip a leading dot if users type ".name"
     const cleaned = trimmed.startsWith('.') ? trimmed.slice(1) : trimmed;
     if (!cleaned) return '';
-    // If the user already typed a TLD, respect it; otherwise default to .vanity
-    return cleaned.includes('.') ? cleaned : `${cleaned}.vanity`;
+    // Strip any user-typed TLD: we always go to {name}.vanity.box
+    const base = cleaned.split('.')[0];
+    return base;
   };
 
   const handleSubmit = () => {
-    const target = normalize(value);
-    if (!target) return;
-    navigate(`/${target}`);
+    const name = normalize(value);
+    if (!name) return;
+    const url = `https://${name}.vanity.box`;
+    // External landing page on UD-powered vanity.box portal
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -48,7 +42,7 @@ export const HomeFeatureShowcase: React.FC = () => {
           className={cn(
             'text-center font-black tracking-tight leading-none',
             'text-5xl sm:text-6xl md:text-7xl',
-            textColorClass
+            'text-[#D4AF37]'
           )}
         >
           .vanity
@@ -57,7 +51,7 @@ export const HomeFeatureShowcase: React.FC = () => {
         <p
           className={cn(
             'text-center text-lg sm:text-xl md:text-2xl font-medium',
-            textColorClass
+            'text-[#D4AF37]'
           )}
         >
           {t('vanity_tagline')}
@@ -79,14 +73,14 @@ export const HomeFeatureShowcase: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSubmit();
             }}
-            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-black/10 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base"
+            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base"
           />
 
           <Button
             type="button"
             onClick={handleSubmit}
             disabled={!value.trim()}
-            className="h-12 px-10 rounded-full bg-black text-[#D4AF37] hover:bg-black/90 font-semibold text-base shadow-md disabled:opacity-60"
+            className="h-12 px-10 rounded-full bg-[#D4AF37] text-black hover:bg-[#C4A030] font-semibold text-base shadow-md disabled:opacity-60 disabled:bg-[#D4AF37] disabled:text-black"
           >
             {t('search')}
           </Button>

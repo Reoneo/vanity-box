@@ -51,6 +51,7 @@ import suiLogoBlue from "@/assets/sui-logo-blue-circle.png";
 import iotaLogoBlue from "@/assets/iota-logo-blue-circle.png";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
+import { ReputationModal, type UdBadgeItem } from "./ReputationModal";
 import CredentialsCarousel from "./CredentialsCarousel";
 import { BioTicker } from "./BioTicker";
 import { ChronologicalPoapGrid } from "./ChronologicalPoapGrid";
@@ -280,6 +281,10 @@ export const ProfileCard = ({
   const [transactionsFetched, setTransactionsFetched] = useState(false);
   const [showTalentModal, setShowTalentModal] = useState(false);
   const [showPolymarketModal, setShowPolymarketModal] = useState(false);
+  const [showReputationModal, setShowReputationModal] = useState(false);
+  const [udBadges, setUdBadges] = useState<UdBadgeItem[]>([]);
+  const [udBadgesLoading, setUdBadgesLoading] = useState(false);
+  const [udBadgesFetched, setUdBadgesFetched] = useState(false);
   const [hasTalentData, setHasTalentData] = useState(false);
   const [talentLoading, setTalentLoading] = useState(false);
   const [talentScore, setTalentScore] = useState<number | null>(null);
@@ -344,6 +349,49 @@ export const ProfileCard = ({
     };
     fetchTalentForIota();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, hasTalentData]);
+
+  // Fetch Unstoppable Domains community badges for any UD-style domain
+  // (covers .vanity, .crypto, .x, .nft, .888, .wallet, .bitcoin, .dao, .blockchain,
+  // .unstoppable, .pudgy, .clay, .anime, .manga, .austin, .binanceus, .farms, .go,
+  // .hi, .kresus, .kryptic, .lfg, .pog, .polygon, .stepn, .smobler, .raiin, .secret,
+  // and many other community TLDs).
+  const UD_TLDS = useMemo(
+    () => new Set([
+      'vanity','crypto','x','nft','wallet','bitcoin','dao','blockchain','unstoppable',
+      '888','pudgy','clay','anime','manga','austin','binanceus','farms','go','hi','kresus',
+      'kryptic','lfg','pog','polygon','stepn','smobler','raiin','secret','altimist',
+      'tball','metropolis','klever','witg','ubu','south','twin','yellow','pastor','derad',
+      'zil','q','privacy','wifi','dfz','agency','ask','gmgn','ledger','llm','token',
+    ]),
+    [],
+  );
+
+  useEffect(() => {
+    if (udBadgesFetched) return;
+    const ident = (searchedIdentity || web3BioProfile?.identity || '').toLowerCase();
+    if (!ident.includes('.')) return;
+    const tld = ident.split('.').pop() || '';
+    if (!UD_TLDS.has(tld)) return;
+
+    setUdBadgesLoading(true);
+    setUdBadgesFetched(true);
+    fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+      },
+      body: JSON.stringify({ domain: ident }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data?.badges)) {
+          setUdBadges(data.badges);
+        }
+      })
+      .catch((e) => console.warn('[ProfileCard] UD badges fetch failed', e))
+      .finally(() => setUdBadgesLoading(false));
+  }, [searchedIdentity, web3BioProfile?.identity, udBadgesFetched, UD_TLDS]);
 
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
@@ -1798,7 +1846,7 @@ export const ProfileCard = ({
                         const hasTokens = portfolioTokens.length > 0;
                         const hasSocials = mergedSocialLinks.length > 0;
                         const hasTransactions = transactions.length > 0;
-                        const hasReputation = hasTalentData || hasPolymarketData;
+                        const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
 
                         const buttons: { title: string; onClick: () => void; panel?: 'nfts' | 'social' | 'tokens' | 'activity' }[] = [];
                         if (hasTransactions) buttons.push({ title: 'Activity', panel: 'activity', onClick: () => setDesktopActivePanel('activity') });
@@ -1807,10 +1855,7 @@ export const ProfileCard = ({
                         if (hasTokens) buttons.push({ title: 'Tokens', panel: 'tokens', onClick: () => setDesktopActivePanel('tokens') });
                         if (hasReputation) buttons.push({
                           title: 'Reputation',
-                          onClick: () => {
-                            if (hasTalentData) setShowTalentModal(true);
-                            else if (hasPolymarketData) setShowPolymarketModal(true);
-                          },
+                          onClick: () => setShowReputationModal(true),
                         });
                         buttons.sort((a, b) => a.title.localeCompare(b.title));
 
@@ -2440,7 +2485,7 @@ export const ProfileCard = ({
                     const hasTokens = portfolioTokens.length > 0;
                     const hasSocials = mergedSocialLinks.length > 0;
                     const hasTransactions = transactions.length > 0;
-                    const hasReputation = hasTalentData || hasPolymarketData;
+                    const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
 
                     const buttons: { title: string; onClick: () => void }[] = [];
                     if (hasTransactions) buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
@@ -2452,10 +2497,7 @@ export const ProfileCard = ({
                     if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
                     if (hasReputation) buttons.push({
                       title: 'Reputation',
-                      onClick: () => {
-                        if (hasTalentData) setShowTalentModal(true);
-                        else if (hasPolymarketData) setShowPolymarketModal(true);
-                      }
+                      onClick: () => setShowReputationModal(true),
                     });
 
                     buttons.sort((a, b) => a.title.localeCompare(b.title));
@@ -3758,6 +3800,36 @@ export const ProfileCard = ({
         onOpenChange={setShowTalentModal}
         wallet={currentWalletAddress}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+      />
+
+      {/* Polymarket Modal */}
+      <PolymarketModal
+        open={showPolymarketModal}
+        onOpenChange={setShowPolymarketModal}
+        wallet={currentWalletAddress}
+        ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+      />
+
+      {/* Reputation Modal — lists Talent Protocol, Polymarket, and Unstoppable badges */}
+      <ReputationModal
+        open={showReputationModal}
+        onClose={() => setShowReputationModal(false)}
+        hasTalent={hasTalentData}
+        talentScore={talentScore}
+        talentCreatorScore={talentCreatorScore}
+        hasPolymarket={hasPolymarketData}
+        polymarketWinRate={polymarketWinRate}
+        polymarketProfit={polymarketProfit}
+        udBadges={udBadges}
+        udBadgesLoading={udBadgesLoading}
+        onOpenTalent={() => {
+          setShowReputationModal(false);
+          setShowTalentModal(true);
+        }}
+        onOpenPolymarket={() => {
+          setShowReputationModal(false);
+          setShowPolymarketModal(true);
+        }}
       />
 
       <Dialog open={showAvatarPopup || showHeaderPopup} onOpenChange={(open) => {
