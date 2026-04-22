@@ -2164,13 +2164,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
                 {!isSearchActive ? (
                   <>
-                    {/* Feature Showcase - Only show when on homepage */}
+                    {/* Vanity Hero — pinned directly under the page header, no scroll */}
                     {isHomepage && !web3BioProfile && !showSearchBar && (
-                      <div 
-                        className="fixed left-0 right-0 z-[9996] overflow-y-auto bg-background"
-                        style={{ 
-                          top: 'calc(env(safe-area-inset-top, 0px) + 64px)', 
-                         bottom: 0
+                      <div
+                        className="fixed left-0 right-0 z-[9996] overflow-hidden bg-background"
+                        style={{
+                          top: 'calc(env(safe-area-inset-top, 0px) + 64px)',
+                          bottom: '56px',
                         }}
                       >
                         <HomeFeatureShowcase />
