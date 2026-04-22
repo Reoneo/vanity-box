@@ -350,6 +350,49 @@ export const ProfileCard = ({
     fetchTalentForIota();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, hasTalentData]);
 
+  // Fetch Unstoppable Domains community badges for any UD-style domain
+  // (covers .vanity, .crypto, .x, .nft, .888, .wallet, .bitcoin, .dao, .blockchain,
+  // .unstoppable, .pudgy, .clay, .anime, .manga, .austin, .binanceus, .farms, .go,
+  // .hi, .kresus, .kryptic, .lfg, .pog, .polygon, .stepn, .smobler, .raiin, .secret,
+  // and many other community TLDs).
+  const UD_TLDS = useMemo(
+    () => new Set([
+      'vanity','crypto','x','nft','wallet','bitcoin','dao','blockchain','unstoppable',
+      '888','pudgy','clay','anime','manga','austin','binanceus','farms','go','hi','kresus',
+      'kryptic','lfg','pog','polygon','stepn','smobler','raiin','secret','altimist',
+      'tball','metropolis','klever','witg','ubu','south','twin','yellow','pastor','derad',
+      'zil','q','privacy','wifi','dfz','agency','ask','gmgn','ledger','llm','token',
+    ]),
+    [],
+  );
+
+  useEffect(() => {
+    if (udBadgesFetched) return;
+    const ident = (searchedIdentity || web3BioProfile?.identity || '').toLowerCase();
+    if (!ident.includes('.')) return;
+    const tld = ident.split('.').pop() || '';
+    if (!UD_TLDS.has(tld)) return;
+
+    setUdBadgesLoading(true);
+    setUdBadgesFetched(true);
+    fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+      },
+      body: JSON.stringify({ domain: ident }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data?.badges)) {
+          setUdBadges(data.badges);
+        }
+      })
+      .catch((e) => console.warn('[ProfileCard] UD badges fetch failed', e))
+      .finally(() => setUdBadgesLoading(false));
+  }, [searchedIdentity, web3BioProfile?.identity, udBadgesFetched, UD_TLDS]);
+
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
   const [evmTokensForIota, setEvmTokensForIota] = useState<any[]>([]);
