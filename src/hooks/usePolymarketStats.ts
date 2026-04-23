@@ -108,6 +108,14 @@ export function usePolymarketStats(walletAddress: string | undefined): UsePolyma
       return;
     }
 
+    // Polymarket only supports EVM addresses — skip non-EVM (e.g. IOTA 66-char hex)
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
