@@ -313,6 +313,25 @@ export const ProfileCard = ({
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
+  const effectiveEvmAddress = useMemo(() => {
+    if (isValidEvmAddress(currentWalletAddress)) return currentWalletAddress;
+    if (linkedEvmAddress && isValidEvmAddress(linkedEvmAddress)) return linkedEvmAddress;
+    return undefined;
+  }, [currentWalletAddress, linkedEvmAddress]);
+
+  useEffect(() => {
+    setDataLoaded(false);
+    setTokensFetched(false);
+    setTransactionsFetched(false);
+    setIotaFetched(false);
+    setEnsDomainsFetched(false);
+    setBasenamesFetched(false);
+    setUdBadgesFetched(false);
+    setUdBadges([]);
+    setHasPolymarketData(false);
+    setPolymarketWinRate(null);
+    setPolymarketProfit(null);
+  }, [searchedIdentity, currentWalletAddress, linkedEvmAddress, iotaOwnerAddressForFetch]);
 
   // Re-fetch Talent Protocol for IOTA profiles once linkedEvmAddress resolves
   useEffect(() => {
@@ -386,10 +405,7 @@ export const ProfileCard = ({
     });
 
     // If no UD-style identity, optionally try address-based lookup when we have an EVM address
-    const evmAddr =
-      currentWalletAddress && /^0x[a-fA-F0-9]{40}$/i.test(currentWalletAddress)
-        ? currentWalletAddress
-        : null;
+    const evmAddr = effectiveEvmAddress ?? null;
 
     if (!udIdent && !evmAddr) return;
 
@@ -432,13 +448,13 @@ export const ProfileCard = ({
         setUdBadgesLoading(false);
       }
     })();
-  }, [searchedIdentity, web3BioProfile?.identity, currentWalletAddress, udBadgesFetched, UD_TLDS]);
+  }, [searchedIdentity, web3BioProfile?.identity, effectiveEvmAddress, udBadgesFetched, UD_TLDS]);
 
   // Reset UD badge fetch state when the searched identity changes
   useEffect(() => {
     setUdBadgesFetched(false);
     setUdBadges([]);
-  }, [searchedIdentity]);
+  }, [searchedIdentity, currentWalletAddress, linkedEvmAddress]);
 
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
@@ -1075,8 +1091,8 @@ export const ProfileCard = ({
       const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
                      web3BioProfile?.platform === 'iota';
       
-      // For IOTA profiles, use linkedEvmAddress; otherwise use currentWalletAddress
-      const talentWallet = isIota ? linkedEvmAddress : currentWalletAddress;
+      // For IOTA profiles, use linkedEvmAddress; otherwise use the effective EVM wallet
+      const talentWallet = isIota ? linkedEvmAddress : effectiveEvmAddress;
       
       // PRIORITY 1: Fetch Talent Protocol data IMMEDIATELY
       const fetchTalentFirst = async () => {
@@ -1127,7 +1143,7 @@ export const ProfileCard = ({
       const fetchOtherData = async () => {
         // Check if the address is a valid EVM address (40 hex chars)
         // IOTA and other non-EVM addresses are longer and should not be passed to EVM-specific APIs
-        const isEvm = isValidEvmAddress(currentWalletAddress);
+        const isEvm = isValidEvmAddress(effectiveEvmAddress);
         
         if (!isEvm) {
           console.log('Skipping EVM-specific API calls for non-EVM address:', currentWalletAddress);
@@ -1144,7 +1160,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+                body: JSON.stringify({ walletAddress: effectiveEvmAddress }),
             });
             const tokenData = await tokenRes.json();
             console.log('Portfolio API response:', tokenData);
@@ -1166,7 +1182,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+                body: JSON.stringify({ walletAddress: effectiveEvmAddress }),
             });
             const txData = await txRes.json();
             console.log('Transactions API response:', txData);
@@ -1187,7 +1203,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+                body: JSON.stringify({ walletAddress: effectiveEvmAddress }),
             });
             const meData = await meRes.json();
             if (meData.nfts) setMagicEdenNfts(meData.nfts);
@@ -1204,7 +1220,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+                body: JSON.stringify({ walletAddress: effectiveEvmAddress }),
             });
             const hlData = await hlRes.json();
             console.log('Hyperliquid (HLN) response:', { nfts: hlData?.nfts?.length, tokens: hlData?.tokens?.length });
@@ -1225,7 +1241,7 @@ export const ProfileCard = ({
               'Content-Type': 'application/json',
               'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
             },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
+                body: JSON.stringify({ walletAddress: effectiveEvmAddress }),
           });
           const ensData = await ensRes.json();
           console.log('ENS Domains response:', ensData);
@@ -1266,7 +1282,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ wallet: currentWalletAddress }),
+                body: JSON.stringify({ wallet: effectiveEvmAddress }),
             });
             const polyData = await polyRes.json();
             console.log('Polymarket response:', polyData);
@@ -1366,7 +1382,7 @@ export const ProfileCard = ({
       // Start other data fetch in parallel
       fetchOtherData();
     }
-  }, [currentWalletAddress, dataLoaded, searchedIdentity]);
+  }, [currentWalletAddress, effectiveEvmAddress, linkedEvmAddress, dataLoaded, searchedIdentity, web3BioProfile?.platform]);
 
   // Fetch Hyperliquid NFTs/tokens from profile data
   useEffect(() => {
@@ -3854,7 +3870,7 @@ export const ProfileCard = ({
       <TalentProtocolModal
         open={showTalentModal}
         onOpenChange={setShowTalentModal}
-        wallet={currentWalletAddress}
+        wallet={effectiveEvmAddress}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
 
@@ -3862,7 +3878,7 @@ export const ProfileCard = ({
       <PolymarketModal
         open={showPolymarketModal}
         onOpenChange={setShowPolymarketModal}
-        wallet={currentWalletAddress}
+        wallet={effectiveEvmAddress}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
         displayIdentity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
         displayAvatar={web3BioProfile?.avatar || null}
@@ -3872,8 +3888,6 @@ export const ProfileCard = ({
       <ReputationModal
         open={showReputationModal}
         onClose={() => setShowReputationModal(false)}
-        identity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
-        avatarUrl={web3BioProfile?.avatar || null}
         hasTalent={hasTalentData}
         talentScore={talentScore}
         talentCreatorScore={talentCreatorScore}
