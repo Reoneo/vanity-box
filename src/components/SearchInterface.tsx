@@ -2236,7 +2236,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           : web3BioProfile
                     }
                     currentWalletAddress={
-                      (isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
+                      (isIotaName(displayQuery) && !ensOverlay) && iotaOnchainProfile
                         ? (iotaOwnerAddress || web3BioProfile.address)
                         : web3BioProfile.address
                     }
