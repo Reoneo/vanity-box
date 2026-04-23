@@ -3864,12 +3864,16 @@ export const ProfileCard = ({
         onOpenChange={setShowPolymarketModal}
         wallet={currentWalletAddress}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+        displayIdentity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
+        displayAvatar={web3BioProfile?.avatar || null}
       />
 
       {/* Reputation Modal — lists Talent Protocol, Polymarket, and Unstoppable badges */}
       <ReputationModal
         open={showReputationModal}
         onClose={() => setShowReputationModal(false)}
+        identity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
+        avatarUrl={web3BioProfile?.avatar || null}
         hasTalent={hasTalentData}
         talentScore={talentScore}
         talentCreatorScore={talentCreatorScore}
