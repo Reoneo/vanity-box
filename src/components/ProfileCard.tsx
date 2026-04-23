@@ -313,6 +313,25 @@ export const ProfileCard = ({
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
+  const effectiveEvmAddress = useMemo(() => {
+    if (isValidEvmAddress(currentWalletAddress)) return currentWalletAddress;
+    if (linkedEvmAddress && isValidEvmAddress(linkedEvmAddress)) return linkedEvmAddress;
+    return undefined;
+  }, [currentWalletAddress, linkedEvmAddress]);
+
+  useEffect(() => {
+    setDataLoaded(false);
+    setTokensFetched(false);
+    setTransactionsFetched(false);
+    setIotaFetched(false);
+    setEnsDomainsFetched(false);
+    setBasenamesFetched(false);
+    setUdBadgesFetched(false);
+    setUdBadges([]);
+    setHasPolymarketData(false);
+    setPolymarketWinRate(null);
+    setPolymarketProfit(null);
+  }, [searchedIdentity, currentWalletAddress, linkedEvmAddress, iotaOwnerAddressForFetch]);
 
   // Re-fetch Talent Protocol for IOTA profiles once linkedEvmAddress resolves
   useEffect(() => {
@@ -386,10 +405,7 @@ export const ProfileCard = ({
     });
 
     // If no UD-style identity, optionally try address-based lookup when we have an EVM address
-    const evmAddr =
-      currentWalletAddress && /^0x[a-fA-F0-9]{40}$/i.test(currentWalletAddress)
-        ? currentWalletAddress
-        : null;
+    const evmAddr = effectiveEvmAddress ?? null;
 
     if (!udIdent && !evmAddr) return;
 
@@ -432,13 +448,13 @@ export const ProfileCard = ({
         setUdBadgesLoading(false);
       }
     })();
-  }, [searchedIdentity, web3BioProfile?.identity, currentWalletAddress, udBadgesFetched, UD_TLDS]);
+  }, [searchedIdentity, web3BioProfile?.identity, effectiveEvmAddress, udBadgesFetched, UD_TLDS]);
 
   // Reset UD badge fetch state when the searched identity changes
   useEffect(() => {
     setUdBadgesFetched(false);
     setUdBadges([]);
-  }, [searchedIdentity]);
+  }, [searchedIdentity, currentWalletAddress, linkedEvmAddress]);
 
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
