@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ExternalLink, Share2, X, Calendar, Loader2, Settings, Check, AlertCircle } from 'lucide-react';
+import { ExternalLink, Share2, X, Calendar, Loader2, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePolymarketStats, PolymarketData } from '@/hooks/usePolymarketStats';
 import polymarketIcon from '@/assets/polymarket-icon-blue.png';
+import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 
 interface PolymarketModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   wallet?: string;
   ens?: string;
+  displayIdentity?: string;
+  displayAvatar?: string | null;
 }
 
 export const PolymarketModal = ({
@@ -21,9 +24,10 @@ export const PolymarketModal = ({
   onOpenChange,
   wallet,
   ens,
+  displayIdentity,
+  displayAvatar,
 }: PolymarketModalProps) => {
   const { data, loading, error, isEmpty, overrideAddress, refetch, setOverrideAddress, clearOverrideAddress } = usePolymarketStats(wallet);
-  const [showSettings, setShowSettings] = useState(false);
   const [overrideInput, setOverrideInput] = useState('');
   const [savingOverride, setSavingOverride] = useState(false);
 
