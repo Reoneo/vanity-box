@@ -112,70 +112,28 @@ export const PolymarketModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-border/50 rounded-3xl">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-[#D4AF37]/40 rounded-3xl">
         {/* Header */}
-        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b border-border/30">
+        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b border-[#D4AF37]/20 rounded-t-3xl">
           <div className="flex items-center gap-3">
-            <img 
-              src={polymarketIcon} 
-              alt="Polymarket" 
+            <img
+              src={polymarketIcon}
+              alt="Polymarket"
               className="w-8 h-8 rounded-lg object-contain"
             />
             <DialogTitle className="text-lg font-semibold text-foreground">Polymarket</DialogTitle>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4 text-foreground" />
-            </button>
-            <button
-              onClick={() => onOpenChange(false)}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
-            >
-              <X className="w-4 h-4 text-foreground" />
-            </button>
-          </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4 text-foreground" />
+          </button>
         </DialogHeader>
-
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="px-6 py-4 bg-muted/30 border-b border-border/30">
-            <p className="text-sm font-medium text-foreground mb-2">Polymarket Profile Address</p>
-            <p className="text-xs text-muted-foreground mb-3">
-              If your Polymarket activity is linked to a different wallet (proxy wallet), enter it here.
-            </p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="0x..."
-                value={overrideInput}
-                onChange={(e) => setOverrideInput(e.target.value)}
-                className="flex-1 text-sm"
-              />
-              <Button
-                size="sm"
-                onClick={handleSaveOverride}
-                disabled={savingOverride}
-                className="gap-1"
-              >
-                {savingOverride ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Check className="w-4 h-4" />
-                )}
-                Save
-              </Button>
-            </div>
-            {data?.usedOverride && (
-              <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                <Check className="w-3 h-3" />
-                Using override address: {data.effectiveAddress?.slice(0, 8)}...
-              </p>
-            )}
-          </div>
-        )}
+        <DialogDescription className="sr-only">
+          Polymarket profile and stats for {displayName}
+        </DialogDescription>
 
         {/* Content */}
         <div className="px-6 pb-6">
