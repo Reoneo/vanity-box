@@ -371,30 +371,74 @@ export const ProfileCard = ({
 
   useEffect(() => {
     if (udBadgesFetched) return;
-    const ident = (searchedIdentity || web3BioProfile?.identity || '').toLowerCase();
-    if (!ident.includes('.')) return;
-    const tld = ident.split('.').pop() || '';
-    if (!UD_TLDS.has(tld)) return;
+
+    // Build candidate identities — prefer the original UD-style domain (overlay sets
+    // searchedIdentity to the .eth/.x/.crypto/etc. that the user actually searched).
+    const candidateIdents = Array.from(new Set([
+      (searchedIdentity || '').toLowerCase(),
+      (web3BioProfile?.identity || '').toLowerCase(),
+    ].filter(Boolean)));
+
+    const udIdent = candidateIdents.find((id) => {
+      if (!id.includes('.')) return false;
+      const tld = id.split('.').pop() || '';
+      return UD_TLDS.has(tld);
+    });
+
+    // If no UD-style identity, optionally try address-based lookup when we have an EVM address
+    const evmAddr =
+      currentWalletAddress && /^0x[a-fA-F0-9]{40}$/i.test(currentWalletAddress)
+        ? currentWalletAddress
+        : null;
+
+    if (!udIdent && !evmAddr) return;
 
     setUdBadgesLoading(true);
     setUdBadgesFetched(true);
-    fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-      },
-      body: JSON.stringify({ domain: ident }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data?.badges)) {
-          setUdBadges(data.badges);
+
+    const callBadges = async (body: Record<string, string>) => {
+      const r = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+        },
+        body: JSON.stringify(body),
+      });
+      return r.json();
+    };
+
+    (async () => {
+      try {
+        let result: any = null;
+        if (udIdent) {
+          result = await callBadges({ domain: udIdent });
+          console.log('[ProfileCard] UD badges (domain) for', udIdent, '→', result?.badges?.length ?? 0);
         }
-      })
-      .catch((e) => console.warn('[ProfileCard] UD badges fetch failed', e))
-      .finally(() => setUdBadgesLoading(false));
-  }, [searchedIdentity, web3BioProfile?.identity, udBadgesFetched, UD_TLDS]);
+        // Fallback to address-based lookup if domain returned no badges
+        if ((!result?.badges || result.badges.length === 0) && evmAddr) {
+          const addrResult = await callBadges({ address: evmAddr });
+          console.log('[ProfileCard] UD badges (address) for', evmAddr, '→', addrResult?.badges?.length ?? 0);
+          if (Array.isArray(addrResult?.badges) && addrResult.badges.length > 0) {
+            result = addrResult;
+          }
+        }
+        if (Array.isArray(result?.badges)) {
+          setUdBadges(result.badges);
+        }
+      } catch (e) {
+        console.warn('[ProfileCard] UD badges fetch failed', e);
+      } finally {
+        setUdBadgesLoading(false);
+      }
+    })();
+  }, [searchedIdentity, web3BioProfile?.identity, currentWalletAddress, udBadgesFetched, UD_TLDS]);
+
+  // Reset UD badge fetch state when the searched identity changes
+  useEffect(() => {
+    setUdBadgesFetched(false);
+    setUdBadges([]);
+  }, [searchedIdentity]);
 
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
