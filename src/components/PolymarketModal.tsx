@@ -69,10 +69,9 @@ export const PolymarketModal = ({
       setSavingOverride(true);
       const result = await clearOverrideAddress();
       setSavingOverride(false);
-      
+
       if (result.success) {
         toast.success('Profile address cleared');
-        setShowSettings(false);
       } else {
         toast.error(result.error || 'Failed to clear');
       }
@@ -91,13 +90,12 @@ export const PolymarketModal = ({
 
     if (result.success) {
       toast.success('Profile address saved');
-      setShowSettings(false);
     } else {
       toast.error(result.error || 'Failed to save');
     }
   };
 
-  const displayName = ens || (wallet ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : 'Unknown');
+  const displayName = displayIdentity || ens || (wallet ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : 'Unknown');
 
   // Get stats from data
   const stats = data?.stats || {
