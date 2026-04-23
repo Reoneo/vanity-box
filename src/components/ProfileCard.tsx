@@ -234,6 +234,7 @@ export const ProfileCard = ({
   iotaOnchainProfile,
   iotaNameObjectId,
   iotaOwnerAddress,
+  iotaOwnerAddressForFetch,
   onEditIotaProfile,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
