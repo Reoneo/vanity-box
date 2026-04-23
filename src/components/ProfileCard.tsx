@@ -1241,10 +1241,12 @@ export const ProfileCard = ({
         }
 
         // Fetch IOTA data via native IOTA RPC (tokens, NFTs, transactions in parallel)
-        if (isIota) {
+        // Also runs in cross-chain overlay mode when an IOTA owner address is available.
+        const iotaFetchAddress = iotaOwnerAddressForFetch || currentWalletAddress;
+        if ((isIota || !!iotaOwnerAddressForFetch) && iotaFetchAddress) {
           setIotaLoading(true);
           setTransactionsLoading(true);
-          
+
           const iotaFetchPromises = [
             // Fetch IOTA tokens via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-tokens', {
@@ -1253,9 +1255,9 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: iotaFetchAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, tokens: [] })),
-            
+
             // Fetch IOTA NFTs via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-nfts', {
               method: 'POST',
@@ -1263,9 +1265,9 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: iotaFetchAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, nfts: [] })),
-            
+
             // Fetch IOTA transactions via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-transactions', {
               method: 'POST',
@@ -1273,39 +1275,46 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: iotaFetchAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, transactions: [] })),
           ];
-          
+
           try {
             const [tokensData, nftsData, txData] = await Promise.all(iotaFetchPromises);
-            
+
             console.log('IOTA Tokens:', tokensData);
             console.log('IOTA NFTs:', nftsData);
             console.log('IOTA Transactions:', txData);
-            
+
             if (tokensData.tokens) {
               const enrichedTokens = tokensData.tokens.map((t: any) => ({
                 ...t,
                 icon: t.icon && !t.icon.includes('coingecko') ? t.icon : (t.symbol?.toUpperCase() === 'IOTA' ? IOTA_ICON_URL : t.icon),
               }));
               setIotaTokens(enrichedTokens);
-              setPortfolioTokens(enrichedTokens);
-              if (tokensData.totalValue) setPortfolioTotalValue(tokensData.totalValue);
+              // In overlay mode, don't overwrite the EVM portfolio — IOTA tokens are merged separately
+              if (isIota) {
+                setPortfolioTokens(enrichedTokens);
+                if (tokensData.totalValue) setPortfolioTotalValue(tokensData.totalValue);
+              }
             }
             if (nftsData.nfts) setIotaNfts(nftsData.nfts);
             if (txData.transactions) {
               setIotaTransactions(txData.transactions);
-              setTransactions(txData.transactions);
+              if (isIota) setTransactions(txData.transactions);
             }
-          } catch (e) { 
+          } catch (e) {
             console.error('IOTA fetch error:', e);
           } finally {
             setIotaLoading(false);
             setIotaFetched(true);
-            setTokensFetched(true);
-            setTransactionsLoading(false);
-            setTransactionsFetched(true);
+            if (isIota) {
+              setTokensFetched(true);
+              setTransactionsLoading(false);
+              setTransactionsFetched(true);
+            } else {
+              setTransactionsLoading(false);
+            }
           }
         }
       };
