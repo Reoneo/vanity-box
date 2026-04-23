@@ -20,12 +20,14 @@ interface UdBadge {
 }
 
 /**
- * Fetches Unstoppable Domains community badges for a given UD-style domain.
+ * Fetches Unstoppable Domains community badges by domain or by wallet address.
  *
- * Endpoint reference:
- *   GET https://api.unstoppabledomains.com/profile/public/{domain}/badges
+ * Body: { domain?: string } | { address?: string }
  *
- * Returns: { badges: UdBadge[] } — only `approved`/`active` badges are returned.
+ * Endpoints:
+ *   GET https://api.unstoppabledomains.com/profile/public/{domain|address}/badges
+ *
+ * Always returns 200 with `{ badges: [...] }` (graceful on upstream failure).
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,11 +36,18 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const domain = String(body?.domain ?? "").trim().toLowerCase();
+    const rawDomain = String(body?.domain ?? "").trim().toLowerCase();
+    const rawAddress = String(body?.address ?? "").trim();
 
-    if (!domain || !domain.includes(".")) {
+    const lookups: string[] = [];
+    if (rawDomain && rawDomain.includes(".")) lookups.push(rawDomain);
+    if (rawAddress && /^0x[a-fA-F0-9]{40}$/.test(rawAddress)) {
+      lookups.push(rawAddress.toLowerCase());
+    }
+
+    if (lookups.length === 0) {
       return new Response(
-        JSON.stringify({ badges: [], reason: "invalid-domain" }),
+        JSON.stringify({ badges: [], reason: "invalid-input" }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -46,37 +55,55 @@ serve(async (req) => {
       );
     }
 
-    const url = `https://api.unstoppabledomains.com/profile/public/${encodeURIComponent(domain)}/badges`;
+    let badges: any[] = [];
+    let usedLookup: string | null = null;
+    let lastStatus: number | null = null;
 
-    const res = await fetch(url, {
-      headers: { Accept: "application/json" },
-    });
+    for (const key of lookups) {
+      const url = `https://api.unstoppabledomains.com/profile/public/${encodeURIComponent(key)}/badges`;
+      try {
+        const res = await fetch(url, { headers: { Accept: "application/json" } });
+        lastStatus = res.status;
 
-    if (!res.ok) {
-      console.warn("[get-ud-badges] Upstream non-OK", { domain, status: res.status });
-      return new Response(JSON.stringify({ badges: [], status: res.status }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        if (!res.ok) {
+          console.warn("[get-ud-badges] Upstream non-OK", { key, status: res.status });
+          continue;
+        }
+
+        const data = await res.json();
+        const rawBadges: UdBadge[] = Array.isArray(data?.badges) ? data.badges : [];
+
+        const normalized = rawBadges
+          .filter((b) => b && b.active !== false && b.status !== "rejected")
+          .map((b) => ({
+            code: b.code,
+            name: b.name,
+            logo: b.logo,
+            description: b.description ?? "",
+            linkUrl: b.linkUrl ?? "",
+            count: typeof b.count === "number" ? b.count : null,
+            type: b.type ?? "",
+          }));
+
+        if (normalized.length > 0) {
+          badges = normalized;
+          usedLookup = key;
+          break;
+        }
+        // Empty array from this key — try next lookup
+        if (!usedLookup) usedLookup = key;
+      } catch (innerErr) {
+        console.warn("[get-ud-badges] fetch error", { key, error: String(innerErr) });
+      }
     }
 
-    const data = await res.json();
-    const rawBadges: UdBadge[] = Array.isArray(data?.badges) ? data.badges : [];
-
-    const badges = rawBadges
-      .filter((b) => b && b.active !== false && b.status !== "rejected")
-      .map((b) => ({
-        code: b.code,
-        name: b.name,
-        logo: b.logo,
-        description: b.description ?? "",
-        linkUrl: b.linkUrl ?? "",
-        count: typeof b.count === "number" ? b.count : null,
-        type: b.type ?? "",
-      }));
-
     return new Response(
-      JSON.stringify({ badges, total: badges.length }),
+      JSON.stringify({
+        badges,
+        total: badges.length,
+        usedLookup,
+        status: lastStatus,
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

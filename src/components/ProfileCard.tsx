@@ -101,6 +101,8 @@ interface ProfileCardProps {
   iotaOnchainProfile?: OnchainProfileData | null;
   iotaNameObjectId?: string | null;
   iotaOwnerAddress?: string | null;
+  // When set (cross-chain overlay), forces IOTA-side fetches (NFTs/tokens/tx) to use this address
+  iotaOwnerAddressForFetch?: string | null;
   onEditIotaProfile?: () => void;
 }
 
@@ -232,6 +234,7 @@ export const ProfileCard = ({
   iotaOnchainProfile,
   iotaNameObjectId,
   iotaOwnerAddress,
+  iotaOwnerAddressForFetch,
   onEditIotaProfile,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
@@ -368,30 +371,74 @@ export const ProfileCard = ({
 
   useEffect(() => {
     if (udBadgesFetched) return;
-    const ident = (searchedIdentity || web3BioProfile?.identity || '').toLowerCase();
-    if (!ident.includes('.')) return;
-    const tld = ident.split('.').pop() || '';
-    if (!UD_TLDS.has(tld)) return;
+
+    // Build candidate identities — prefer the original UD-style domain (overlay sets
+    // searchedIdentity to the .eth/.x/.crypto/etc. that the user actually searched).
+    const candidateIdents = Array.from(new Set([
+      (searchedIdentity || '').toLowerCase(),
+      (web3BioProfile?.identity || '').toLowerCase(),
+    ].filter(Boolean)));
+
+    const udIdent = candidateIdents.find((id) => {
+      if (!id.includes('.')) return false;
+      const tld = id.split('.').pop() || '';
+      return UD_TLDS.has(tld);
+    });
+
+    // If no UD-style identity, optionally try address-based lookup when we have an EVM address
+    const evmAddr =
+      currentWalletAddress && /^0x[a-fA-F0-9]{40}$/i.test(currentWalletAddress)
+        ? currentWalletAddress
+        : null;
+
+    if (!udIdent && !evmAddr) return;
 
     setUdBadgesLoading(true);
     setUdBadgesFetched(true);
-    fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-      },
-      body: JSON.stringify({ domain: ident }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data?.badges)) {
-          setUdBadges(data.badges);
+
+    const callBadges = async (body: Record<string, string>) => {
+      const r = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+        },
+        body: JSON.stringify(body),
+      });
+      return r.json();
+    };
+
+    (async () => {
+      try {
+        let result: any = null;
+        if (udIdent) {
+          result = await callBadges({ domain: udIdent });
+          console.log('[ProfileCard] UD badges (domain) for', udIdent, '→', result?.badges?.length ?? 0);
         }
-      })
-      .catch((e) => console.warn('[ProfileCard] UD badges fetch failed', e))
-      .finally(() => setUdBadgesLoading(false));
-  }, [searchedIdentity, web3BioProfile?.identity, udBadgesFetched, UD_TLDS]);
+        // Fallback to address-based lookup if domain returned no badges
+        if ((!result?.badges || result.badges.length === 0) && evmAddr) {
+          const addrResult = await callBadges({ address: evmAddr });
+          console.log('[ProfileCard] UD badges (address) for', evmAddr, '→', addrResult?.badges?.length ?? 0);
+          if (Array.isArray(addrResult?.badges) && addrResult.badges.length > 0) {
+            result = addrResult;
+          }
+        }
+        if (Array.isArray(result?.badges)) {
+          setUdBadges(result.badges);
+        }
+      } catch (e) {
+        console.warn('[ProfileCard] UD badges fetch failed', e);
+      } finally {
+        setUdBadgesLoading(false);
+      }
+    })();
+  }, [searchedIdentity, web3BioProfile?.identity, currentWalletAddress, udBadgesFetched, UD_TLDS]);
+
+  // Reset UD badge fetch state when the searched identity changes
+  useEffect(() => {
+    setUdBadgesFetched(false);
+    setUdBadges([]);
+  }, [searchedIdentity]);
 
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
@@ -1238,10 +1285,12 @@ export const ProfileCard = ({
         }
 
         // Fetch IOTA data via native IOTA RPC (tokens, NFTs, transactions in parallel)
-        if (isIota) {
+        // Also runs in cross-chain overlay mode when an IOTA owner address is available.
+        const iotaFetchAddress = iotaOwnerAddressForFetch || currentWalletAddress;
+        if ((isIota || !!iotaOwnerAddressForFetch) && iotaFetchAddress) {
           setIotaLoading(true);
           setTransactionsLoading(true);
-          
+
           const iotaFetchPromises = [
             // Fetch IOTA tokens via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-tokens', {
@@ -1250,9 +1299,9 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: iotaFetchAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, tokens: [] })),
-            
+
             // Fetch IOTA NFTs via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-nfts', {
               method: 'POST',
@@ -1260,9 +1309,9 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: iotaFetchAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, nfts: [] })),
-            
+
             // Fetch IOTA transactions via native RPC
             fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-iota-transactions', {
               method: 'POST',
@@ -1270,39 +1319,46 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: iotaFetchAddress }),
             }).then(res => res.json()).catch(e => ({ error: e.message, transactions: [] })),
           ];
-          
+
           try {
             const [tokensData, nftsData, txData] = await Promise.all(iotaFetchPromises);
-            
+
             console.log('IOTA Tokens:', tokensData);
             console.log('IOTA NFTs:', nftsData);
             console.log('IOTA Transactions:', txData);
-            
+
             if (tokensData.tokens) {
               const enrichedTokens = tokensData.tokens.map((t: any) => ({
                 ...t,
                 icon: t.icon && !t.icon.includes('coingecko') ? t.icon : (t.symbol?.toUpperCase() === 'IOTA' ? IOTA_ICON_URL : t.icon),
               }));
               setIotaTokens(enrichedTokens);
-              setPortfolioTokens(enrichedTokens);
-              if (tokensData.totalValue) setPortfolioTotalValue(tokensData.totalValue);
+              // In overlay mode, don't overwrite the EVM portfolio — IOTA tokens are merged separately
+              if (isIota) {
+                setPortfolioTokens(enrichedTokens);
+                if (tokensData.totalValue) setPortfolioTotalValue(tokensData.totalValue);
+              }
             }
             if (nftsData.nfts) setIotaNfts(nftsData.nfts);
             if (txData.transactions) {
               setIotaTransactions(txData.transactions);
-              setTransactions(txData.transactions);
+              if (isIota) setTransactions(txData.transactions);
             }
-          } catch (e) { 
+          } catch (e) {
             console.error('IOTA fetch error:', e);
           } finally {
             setIotaLoading(false);
             setIotaFetched(true);
-            setTokensFetched(true);
-            setTransactionsLoading(false);
-            setTransactionsFetched(true);
+            if (isIota) {
+              setTokensFetched(true);
+              setTransactionsLoading(false);
+              setTransactionsFetched(true);
+            } else {
+              setTransactionsLoading(false);
+            }
           }
         }
       };
@@ -3808,12 +3864,16 @@ export const ProfileCard = ({
         onOpenChange={setShowPolymarketModal}
         wallet={currentWalletAddress}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
+        displayIdentity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
+        displayAvatar={web3BioProfile?.avatar || null}
       />
 
       {/* Reputation Modal — lists Talent Protocol, Polymarket, and Unstoppable badges */}
       <ReputationModal
         open={showReputationModal}
         onClose={() => setShowReputationModal(false)}
+        identity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
+        avatarUrl={web3BioProfile?.avatar || null}
         hasTalent={hasTalentData}
         talentScore={talentScore}
         talentCreatorScore={talentCreatorScore}

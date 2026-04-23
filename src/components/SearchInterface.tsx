@@ -2240,6 +2240,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         ? (iotaOwnerAddress || web3BioProfile.address)
                         : web3BioProfile.address
                     }
+                    iotaOwnerAddressForFetch={
+                      ensOverlay && iotaOwnerAddress ? iotaOwnerAddress : null
+                    }
                     connectedWalletAddress={
                       isIotaName(displayQuery) && isIotaConnected && iotaWalletAddress
                         ? iotaWalletAddress
