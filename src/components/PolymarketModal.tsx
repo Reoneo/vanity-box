@@ -213,17 +213,17 @@ export const PolymarketModal = ({
             <div className="space-y-6 py-4">
               {/* Profile Header */}
               <div className="flex flex-col items-center gap-2">
-                <Avatar className="h-24 w-24 border-2 border-border">
-                  <AvatarImage src={data.profile?.avatar} />
+                <Avatar className="h-24 w-24 border-2 border-[#D4AF37]/60">
+                  <AvatarImage src={displayAvatar || data.profile?.avatar || vanityBoxAvatar} />
                   <AvatarFallback className="text-2xl bg-muted text-foreground">
-                    {(data.profile?.displayName || displayName).charAt(0).toUpperCase()}
+                    {displayName.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                
-                <h3 className="text-xl font-semibold text-foreground">
-                  {data.profile?.displayName || displayName}
+
+                <h3 className="text-xl font-semibold text-foreground text-center break-all">
+                  {displayName}
                 </h3>
-                
+
                 {data.profile?.joinedDate && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
@@ -307,7 +307,7 @@ export const PolymarketModal = ({
                     Open Positions ({positions.filter(p => p.status === 'Open').length})
                     <span className="flex-1 h-px bg-border/50" />
                   </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="space-y-2">
                     {positions.filter(p => p.status === 'Open').slice(0, 5).map((position, index) => (
                       <div 
                         key={index}
