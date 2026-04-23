@@ -101,6 +101,8 @@ interface ProfileCardProps {
   iotaOnchainProfile?: OnchainProfileData | null;
   iotaNameObjectId?: string | null;
   iotaOwnerAddress?: string | null;
+  // When set (cross-chain overlay), forces IOTA-side fetches (NFTs/tokens/tx) to use this address
+  iotaOwnerAddressForFetch?: string | null;
   onEditIotaProfile?: () => void;
 }
 
