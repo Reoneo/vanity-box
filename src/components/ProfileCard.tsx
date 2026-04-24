@@ -3439,6 +3439,54 @@ export const ProfileCard = ({
                 </div>
               </div>
             )}
+
+            {/* Reputation Inline Overlay (mobile) */}
+            {showReputationInline && (
+              <div className="fixed left-[35%] right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col border-l border-[#D4AF37]/30" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+                <div
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+                    <div className="w-10" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-lg font-bold text-black dark:text-white">Reputation</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowReputationInline(false)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      aria-label="Close Reputation"
+                    >
+                      <X className="w-4 h-4 text-black" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto py-3 pb-24">
+                  <ReputationModal
+                    open={true}
+                    inline
+                    onClose={() => setShowReputationInline(false)}
+                    hasTalent={hasTalentData}
+                    talentScore={talentScore}
+                    talentCreatorScore={talentCreatorScore}
+                    hasPolymarket={hasPolymarketData}
+                    polymarketWinRate={polymarketWinRate}
+                    polymarketProfit={polymarketProfit}
+                    udBadges={udBadges}
+                    udBadgesLoading={udBadgesLoading}
+                    onOpenTalent={() => {
+                      setShowReputationInline(false);
+                      setShowTalentModal(true);
+                    }}
+                    onOpenPolymarket={() => {
+                      setShowReputationInline(false);
+                      setShowPolymarketModal(true);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
