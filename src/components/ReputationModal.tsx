@@ -57,32 +57,7 @@ export const ReputationModal = ({
     (hasTalent ? 1 : 0) + (hasPolymarket ? 1 : 0) + udBadges.length;
 
   const body = (
-
-  return (
-    <>
-      <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-        <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-[#D4AF37]/40 rounded-3xl [&>button]:hidden">
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-background border-b border-[#D4AF37]/20 px-4 py-3 flex items-center justify-between rounded-t-3xl">
-            <div className="w-9" />
-            <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-              <DialogTitle className="text-lg font-bold text-black dark:text-white">
-                Reputation
-              </DialogTitle>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4 text-black" />
-            </button>
-          </div>
-          <DialogDescription className="sr-only">
-            Reputation badges and verifications.
-          </DialogDescription>
-
-          <div className="px-4 py-3 pb-6 space-y-4 max-w-lg mx-auto w-full">
+    <div className="px-4 py-3 pb-6 space-y-4 max-w-lg mx-auto w-full">
             {/* Talent + Polymarket rows */}
             {hasTalent && (
               <button
