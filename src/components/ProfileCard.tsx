@@ -2501,10 +2501,10 @@ export const ProfileCard = ({
 
                   {/* Email/Website/Bio - Only show if user has email, website, or bio */}
                   {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
-                    <div className="flex flex-col items-center gap-1.5">
+                    <div className={`flex flex-col gap-1.5 ${mobileInlinePanelActive ? 'items-start' : 'items-center'}`}>
                       {/* Email and Website row */}
                       {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                        <div className="flex items-center justify-center gap-4 flex-wrap">
+                        <div className={`flex items-center gap-4 flex-wrap ${mobileInlinePanelActive ? 'justify-start' : 'justify-center'}`}>
                           {web3BioProfile?.email && (
                             <a 
                               href={`mailto:${web3BioProfile.email}`} 
