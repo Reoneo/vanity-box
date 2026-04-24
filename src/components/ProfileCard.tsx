@@ -277,6 +277,7 @@ export const ProfileCard = ({
   const [portfolioTotalValue, setPortfolioTotalValue] = useState<number>(0);
   const [showTokensOverlay, setShowTokensOverlay] = useState(false);
   const [showActivityOverlay, setShowActivityOverlay] = useState(false);
+  const [showReputationInline, setShowReputationInline] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
