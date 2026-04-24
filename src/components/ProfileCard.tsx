@@ -398,11 +398,7 @@ export const ProfileCard = ({
       (web3BioProfile?.identity || '').toLowerCase(),
     ].filter(Boolean)));
 
-    const udIdent = candidateIdents.find((id) => {
-      if (!id.includes('.')) return false;
-      const tld = id.split('.').pop() || '';
-      return UD_TLDS.has(tld);
-    });
+
 
     // Collect every UD-style domain candidate we know about for this profile.
     const domainCandidates = candidateIdents.filter((id) => {
