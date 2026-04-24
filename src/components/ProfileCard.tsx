@@ -2405,7 +2405,7 @@ export const ProfileCard = ({
             </div>
             ) : (
               /* Mobile: Original stacked layout - black with gold gradient in dark mode */
-              <div className="space-y-2 pb-20 bg-background min-h-full">
+              <div className={`space-y-2 pb-20 bg-background min-h-full transition-all duration-200 ${mobileInlinePanelActive ? 'w-[35%] pr-1' : 'w-full'}`}>
                 {/* Header and Avatar with Verified Badge - Always visible */}
                 <div className="relative flex-shrink-0">
                   <div 
