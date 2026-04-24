@@ -2470,7 +2470,7 @@ export const ProfileCard = ({
                 <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
 
                   {/* Display name with refined typography */}
-                  <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
+                  <h2 className={`text-2xl font-bold text-foreground tracking-tight ${mobileInlinePanelActive ? 'text-left' : 'text-center'}`}>
                     {getDisplayName()}
                   </h2>
 
