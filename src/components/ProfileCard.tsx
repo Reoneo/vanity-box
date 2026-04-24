@@ -2556,14 +2556,14 @@ export const ProfileCard = ({
                     if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
                     if (hasReputation) buttons.push({
                       title: 'Reputation',
-                      onClick: () => setShowReputationModal(true),
+                      onClick: () => setShowReputationInline(true),
                     });
 
                     buttons.sort((a, b) => a.title.localeCompare(b.title));
                     if (buttons.length === 0) return null;
 
                     return (
-                      <div className="flex flex-wrap items-center justify-center gap-2 px-4">
+                      <div className={`flex flex-wrap items-center gap-2 px-4 ${mobileInlinePanelActive ? 'justify-start' : 'justify-center'}`}>
                         {buttons.map((btn) => (
                           <button
                             key={btn.title}
