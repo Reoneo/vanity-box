@@ -398,47 +398,32 @@ export const ProfileCard = ({
       (web3BioProfile?.identity || '').toLowerCase(),
     ].filter(Boolean)));
 
-    const udIdent = candidateIdents.find((id) => {
+
+
+    // Collect every UD-style domain candidate we know about for this profile.
+    const domainCandidates = candidateIdents.filter((id) => {
       if (!id.includes('.')) return false;
       const tld = id.split('.').pop() || '';
       return UD_TLDS.has(tld);
     });
 
-    // If no UD-style identity, optionally try address-based lookup when we have an EVM address
-    const evmAddr = effectiveEvmAddress ?? null;
-
-    if (!udIdent && !evmAddr) return;
+    if (domainCandidates.length === 0) return;
 
     setUdBadgesLoading(true);
     setUdBadgesFetched(true);
 
-    const callBadges = async (body: Record<string, string>) => {
-      const r = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-        },
-        body: JSON.stringify(body),
-      });
-      return r.json();
-    };
-
     (async () => {
       try {
-        let result: any = null;
-        if (udIdent) {
-          result = await callBadges({ domain: udIdent });
-          console.log('[ProfileCard] UD badges (domain) for', udIdent, '→', result?.badges?.length ?? 0);
-        }
-        // Fallback to address-based lookup if domain returned no badges
-        if ((!result?.badges || result.badges.length === 0) && evmAddr) {
-          const addrResult = await callBadges({ address: evmAddr });
-          console.log('[ProfileCard] UD badges (address) for', evmAddr, '→', addrResult?.badges?.length ?? 0);
-          if (Array.isArray(addrResult?.badges) && addrResult.badges.length > 0) {
-            result = addrResult;
-          }
-        }
+        const r = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ud-badges', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          },
+          body: JSON.stringify({ domains: domainCandidates }),
+        });
+        const result = await r.json();
+        console.log('[ProfileCard] UD badges for', domainCandidates, '→', result?.badges?.length ?? 0, 'used:', result?.usedLookup);
         if (Array.isArray(result?.badges)) {
           setUdBadges(result.badges);
         }
@@ -448,7 +433,7 @@ export const ProfileCard = ({
         setUdBadgesLoading(false);
       }
     })();
-  }, [searchedIdentity, web3BioProfile?.identity, effectiveEvmAddress, udBadgesFetched, UD_TLDS]);
+  }, [searchedIdentity, web3BioProfile?.identity, udBadgesFetched, UD_TLDS]);
 
   // Reset UD badge fetch state when the searched identity changes
   useEffect(() => {
