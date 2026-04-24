@@ -277,6 +277,7 @@ export const ProfileCard = ({
   const [portfolioTotalValue, setPortfolioTotalValue] = useState<number>(0);
   const [showTokensOverlay, setShowTokensOverlay] = useState(false);
   const [showActivityOverlay, setShowActivityOverlay] = useState(false);
+  const [showReputationInline, setShowReputationInline] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -313,6 +314,7 @@ export const ProfileCard = ({
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
+  const mobileInlinePanelActive = isMobile && (showAllSocials || showNftsOverlay || showTokensOverlay || showActivityOverlay || showReputationInline);
   const effectiveEvmAddress = useMemo(() => {
     if (isValidEvmAddress(currentWalletAddress)) return currentWalletAddress;
     if (linkedEvmAddress && isValidEvmAddress(linkedEvmAddress)) return linkedEvmAddress;
@@ -2403,7 +2405,7 @@ export const ProfileCard = ({
             </div>
             ) : (
               /* Mobile: Original stacked layout - black with gold gradient in dark mode */
-              <div className="space-y-2 pb-20 bg-background min-h-full">
+              <div className={`space-y-2 pb-20 bg-background min-h-full transition-all duration-200 ${mobileInlinePanelActive ? 'w-[35%] pr-1' : 'w-full'}`}>
                 {/* Header and Avatar with Verified Badge - Always visible */}
                 <div className="relative flex-shrink-0">
                   <div 
@@ -2418,10 +2420,10 @@ export const ProfileCard = ({
                     {/* No gradient overlay – matches desktop */}
                   </div>
 
-                  <div className="flex justify-center absolute -bottom-16 left-0 right-0">
+                  <div className={`absolute -bottom-16 left-0 right-0 flex ${mobileInlinePanelActive ? 'justify-start pl-3' : 'justify-center'}`}>
                     <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
                       {/* No glow ring – matches desktop */}
-                      <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
+                      <Avatar className="relative h-36 w-36 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
                         <AvatarImage 
                           src={web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
@@ -2468,7 +2470,7 @@ export const ProfileCard = ({
                 <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
 
                   {/* Display name with refined typography */}
-                  <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
+                  <h2 className={`text-2xl font-bold text-foreground tracking-tight ${mobileInlinePanelActive ? 'text-left' : 'text-center'}`}>
                     {getDisplayName()}
                   </h2>
 
@@ -2477,7 +2479,7 @@ export const ProfileCard = ({
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
                   {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
-                    <div className="flex justify-center items-center gap-1.5 text-sm">
+                    <div className={`flex items-center gap-1.5 text-sm ${mobileInlinePanelActive ? 'justify-start' : 'justify-center'}`}>
                       <button
                         onClick={onFollowingClick}
                         className="flex items-center gap-1 hover:opacity-80 transition-colors"
@@ -2499,10 +2501,10 @@ export const ProfileCard = ({
 
                   {/* Email/Website/Bio - Only show if user has email, website, or bio */}
                   {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
-                    <div className="flex flex-col items-center gap-1.5">
+                    <div className={`flex flex-col gap-1.5 ${mobileInlinePanelActive ? 'items-start' : 'items-center'}`}>
                       {/* Email and Website row */}
                       {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                        <div className="flex items-center justify-center gap-4 flex-wrap">
+                        <div className={`flex items-center gap-4 flex-wrap ${mobileInlinePanelActive ? 'justify-start' : 'justify-center'}`}>
                           {web3BioProfile?.email && (
                             <a 
                               href={`mailto:${web3BioProfile.email}`} 
@@ -2554,14 +2556,14 @@ export const ProfileCard = ({
                     if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
                     if (hasReputation) buttons.push({
                       title: 'Reputation',
-                      onClick: () => setShowReputationModal(true),
+                      onClick: () => setShowReputationInline(true),
                     });
 
                     buttons.sort((a, b) => a.title.localeCompare(b.title));
                     if (buttons.length === 0) return null;
 
                     return (
-                      <div className="flex flex-wrap items-center justify-center gap-2 px-4">
+                      <div className={`flex flex-wrap items-center gap-2 px-4 ${mobileInlinePanelActive ? 'justify-start' : 'justify-center'}`}>
                         {buttons.map((btn) => (
                           <button
                             key={btn.title}
@@ -2598,7 +2600,7 @@ export const ProfileCard = ({
 
             {/* Flip Card for All Social Links */}
             {showAllSocials && isMobile && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-[35%] right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col border-l border-[#D4AF37]/30" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
@@ -2675,7 +2677,7 @@ export const ProfileCard = ({
 
             {/* NFTs Overlay - Fits within gold borders */}
             {showNftsOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-[35%] right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col border-l border-[#D4AF37]/30" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header — mirrors Activity overlay style */}
                 <div
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
@@ -3290,7 +3292,7 @@ export const ProfileCard = ({
 
             {/* Tokens Overlay */}
             {showTokensOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-[35%] right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col border-l border-[#D4AF37]/30" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
@@ -3376,7 +3378,7 @@ export const ProfileCard = ({
 
             {/* Activity Overlay */}
             {showActivityOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-[35%] right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col border-l border-[#D4AF37]/30" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
                 <div 
                   className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
@@ -3434,6 +3436,54 @@ export const ProfileCard = ({
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Reputation Inline Overlay (mobile) */}
+            {showReputationInline && (
+              <div className="fixed left-[35%] right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col border-l border-[#D4AF37]/30" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+                <div
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+                    <div className="w-10" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-lg font-bold text-black dark:text-white">Reputation</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowReputationInline(false)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      aria-label="Close Reputation"
+                    >
+                      <X className="w-4 h-4 text-black" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto py-3 pb-24">
+                  <ReputationModal
+                    open={true}
+                    inline
+                    onClose={() => setShowReputationInline(false)}
+                    hasTalent={hasTalentData}
+                    talentScore={talentScore}
+                    talentCreatorScore={talentCreatorScore}
+                    hasPolymarket={hasPolymarketData}
+                    polymarketWinRate={polymarketWinRate}
+                    polymarketProfit={polymarketProfit}
+                    udBadges={udBadges}
+                    udBadgesLoading={udBadgesLoading}
+                    onOpenTalent={() => {
+                      setShowReputationInline(false);
+                      setShowTalentModal(true);
+                    }}
+                    onOpenPolymarket={() => {
+                      setShowReputationInline(false);
+                      setShowPolymarketModal(true);
+                    }}
+                  />
                 </div>
               </div>
             )}
