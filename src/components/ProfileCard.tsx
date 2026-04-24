@@ -2479,7 +2479,7 @@ export const ProfileCard = ({
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
                   {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
-                    <div className="flex justify-center items-center gap-1.5 text-sm">
+                    <div className={`flex items-center gap-1.5 text-sm ${mobileInlinePanelActive ? 'justify-start' : 'justify-center'}`}>
                       <button
                         onClick={onFollowingClick}
                         className="flex items-center gap-1 hover:opacity-80 transition-colors"
