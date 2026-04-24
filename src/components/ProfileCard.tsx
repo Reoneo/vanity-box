@@ -2420,10 +2420,10 @@ export const ProfileCard = ({
                     {/* No gradient overlay – matches desktop */}
                   </div>
 
-                  <div className="flex justify-center absolute -bottom-16 left-0 right-0">
+                  <div className={`absolute -bottom-16 left-0 right-0 flex ${mobileInlinePanelActive ? 'justify-start pl-3' : 'justify-center'}`}>
                     <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
                       {/* No glow ring – matches desktop */}
-                      <Avatar className="relative h-32 w-32 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
+                      <Avatar className="relative h-36 w-36 border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
                         <AvatarImage 
                           src={web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
