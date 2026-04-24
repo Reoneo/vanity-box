@@ -314,6 +314,7 @@ export const ProfileCard = ({
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
+  const mobileInlinePanelActive = isMobile && (showAllSocials || showNftsOverlay || showTokensOverlay || showActivityOverlay || showReputationInline);
   const effectiveEvmAddress = useMemo(() => {
     if (isValidEvmAddress(currentWalletAddress)) return currentWalletAddress;
     if (linkedEvmAddress && isValidEvmAddress(linkedEvmAddress)) return linkedEvmAddress;
