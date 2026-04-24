@@ -26,6 +26,8 @@ interface ReputationModalProps {
   udBadgesLoading: boolean;
   onOpenTalent: () => void;
   onOpenPolymarket: () => void;
+  /** When true, render body only (no Dialog wrapper) for inline embedding. */
+  inline?: boolean;
 }
 
 export const ReputationModal = ({
@@ -41,6 +43,7 @@ export const ReputationModal = ({
   udBadgesLoading,
   onOpenTalent,
   onOpenPolymarket,
+  inline = false,
 }: ReputationModalProps) => {
   const [selectedBadge, setSelectedBadge] = useState<UdBadgeItem | null>(null);
 
@@ -52,6 +55,8 @@ export const ReputationModal = ({
 
   const totalRows =
     (hasTalent ? 1 : 0) + (hasPolymarket ? 1 : 0) + udBadges.length;
+
+  const body = (
 
   return (
     <>
