@@ -42,7 +42,7 @@ export const HomeFeatureShowcase: React.FC = () => {
           className={cn(
             'text-center font-black tracking-tight leading-none',
             'text-5xl sm:text-6xl md:text-7xl',
-            'text-[#D4AF37]'
+            'text-foreground dark:text-[#D4AF37]'
           )}
         >
           .vanity
@@ -73,7 +73,7 @@ export const HomeFeatureShowcase: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSubmit();
             }}
-            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base"
+            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base text-center"
           />
 
           <Button

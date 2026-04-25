@@ -1,5 +1,4 @@
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Award, Loader2, X, TrendingUp, Trophy } from "lucide-react";
+import { Award, Loader2, TrendingUp, Trophy, X } from "lucide-react";
 import vanityBoxAvatar from "@/assets/vanity-box-default-avatar.png";
 
 export interface UdBadgeItem {
@@ -16,6 +15,7 @@ interface ReputationModalProps {
   onClose: () => void;
   identity?: string;
   avatarUrl?: string | null;
+  headerImageUrl?: string | null;
   hasTalent: boolean;
   talentScore: number | null;
   talentCreatorScore: number | null;
@@ -33,6 +33,7 @@ export const ReputationModal = ({
   onClose,
   identity,
   avatarUrl,
+  headerImageUrl,
   hasTalent,
   talentScore,
   talentCreatorScore,
@@ -44,165 +45,150 @@ export const ReputationModal = ({
   onOpenTalent,
   onOpenPolymarket,
 }: ReputationModalProps) => {
+  if (!open) return null;
+
+  const displayName = identity || "Profile";
+  const totalCount = (hasTalent ? 1 : 0) + (hasPolymarket ? 1 : 0) + udBadges.length;
+
   const formatProfit = (n: number | null) => {
     if (n === null || Number.isNaN(n)) return "—";
     const sign = n >= 0 ? "+" : "-";
     return `${sign}$${Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   };
 
-  const displayName = identity || "Profile";
-  const totalCount =
-    (hasTalent ? 1 : 0) + (hasPolymarket ? 1 : 0) + udBadges.length;
-
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-[#D4AF37]/40 rounded-3xl">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-[#D4AF37]/20 px-4 py-3 flex items-center justify-between rounded-t-3xl">
-          <div className="flex items-center gap-2">
-            <Award className="w-5 h-5 text-[#D4AF37]" />
-            <DialogTitle className="text-lg font-semibold text-foreground">
-              Reputation
-            </DialogTitle>
+    <div
+      className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col"
+      style={{ backfaceVisibility: "hidden", top: "calc(env(safe-area-inset-top, 0px) + 64px)", bottom: 0 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Reputation for ${displayName}`}
+    >
+      <div
+        className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+        style={headerImageUrl ? { backgroundImage: `url(${headerImageUrl})` } : undefined}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90 bg-black/20" />
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+          <div className="w-9" />
+          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
+            <h3 className="text-lg font-bold text-black dark:text-white truncate">Reputation</h3>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
-            aria-label="Close"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+            aria-label="Close Reputation"
           >
-            <X className="w-4 h-4 text-foreground" />
+            <X className="w-4 h-4 text-black" />
           </button>
         </div>
-        <DialogDescription className="sr-only">
-          Reputation badges and verifications for {displayName}
-        </DialogDescription>
+      </div>
 
-        {/* Hero */}
-        <div className="px-6 pt-6 pb-4 flex flex-col items-center gap-3 border-b border-border/30">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#D4AF37]/60 bg-muted">
-            <img
-              src={avatarUrl || vanityBoxAvatar}
-              alt={displayName}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = vanityBoxAvatar;
-              }}
-            />
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
+        <div className="max-w-lg mx-auto space-y-4">
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#D4AF37]/60 bg-muted shadow-lg">
+              <img
+                src={avatarUrl || vanityBoxAvatar}
+                alt={displayName}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = vanityBoxAvatar;
+                }}
+              />
+            </div>
+            <div className="text-center space-y-1">
+              <h2 className="text-xl font-bold text-foreground break-all">{displayName}</h2>
+              <p className="text-sm text-muted-foreground">
+                {totalCount} reputation {totalCount === 1 ? "item" : "items"}
+              </p>
+            </div>
           </div>
-          <h3 className="text-base font-semibold text-foreground text-center break-all">
-            {displayName}
-          </h3>
-          {totalCount > 0 && (
-            <p className="text-xs text-muted-foreground">
-              {totalCount} reputation {totalCount === 1 ? "item" : "items"}
-            </p>
-          )}
-        </div>
 
-        {/* Cards */}
-        <div className="p-4 space-y-3">
-          {/* Talent Protocol */}
           {hasTalent && (
             <button
               onClick={onOpenTalent}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/5 hover:bg-[#D4AF37]/10 transition-colors text-left"
+              className="w-full min-h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
             >
-              <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center text-[#D4AF37] font-bold flex-shrink-0">
-                <Trophy className="w-6 h-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-foreground">
-                  Talent Protocol
+              <div className="flex items-center justify-between h-full gap-3 py-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1 text-left">
+                  <div className="w-11 h-11 rounded-xl bg-black/10 flex items-center justify-center flex-shrink-0">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-medium text-base">Talent Protocol</h4>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {talentScore !== null && (
+                        <span className="text-xs text-black/70">Builder {talentScore}</span>
+                      )}
+                      {talentCreatorScore !== null && (
+                        <span className="text-xs text-black/70">Creator {talentCreatorScore}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {talentScore !== null && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      Builder {talentScore}
-                    </span>
-                  )}
-                  {talentCreatorScore !== null && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      Creator {talentCreatorScore}
-                    </span>
-                  )}
-                </div>
+                <span className="text-2xl leading-none">›</span>
               </div>
             </button>
           )}
 
-          {/* Polymarket */}
           {hasPolymarket && (
             <button
               onClick={onOpenPolymarket}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/5 hover:bg-[#D4AF37]/10 transition-colors text-left"
+              className="w-full min-h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
             >
-              <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/15 flex items-center justify-center text-[#D4AF37] font-bold flex-shrink-0">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-foreground">
-                  Polymarket
+              <div className="flex items-center justify-between h-full gap-3 py-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1 text-left">
+                  <div className="w-11 h-11 rounded-xl bg-black/10 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-medium text-base">Polymarket</h4>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {polymarketWinRate !== null && (
+                        <span className="text-xs text-black/70">{polymarketWinRate}% win</span>
+                      )}
+                      {polymarketProfit !== null && (
+                        <span className="text-xs text-black/70">PnL {formatProfit(polymarketProfit)}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {polymarketWinRate !== null && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
-                      {(polymarketWinRate * 100).toFixed(0)}% win
-                    </span>
-                  )}
-                  {polymarketProfit !== null && (
-                    <span
-                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                        polymarketProfit >= 0
-                          ? "bg-green-500/15 text-green-500"
-                          : "bg-red-500/15 text-red-500"
-                      }`}
-                    >
-                      PnL {formatProfit(polymarketProfit)}
-                    </span>
-                  )}
-                </div>
+                <span className="text-2xl leading-none">›</span>
               </div>
             </button>
           )}
 
-          {/* UD Badges */}
           {(udBadgesLoading || udBadges.length > 0) && (
-            <div className="pt-2">
-              <div className="flex items-center justify-between mb-3 px-1">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Unstoppable Badges
-                </h3>
+            <section className="space-y-3 pt-2">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-sm font-semibold text-foreground">Unstoppable Badges</h3>
                 {udBadges.length > 0 && (
-                  <span className="text-xs text-[#D4AF37] font-semibold">
-                    {udBadges.length}
-                  </span>
+                  <span className="text-xs font-semibold text-muted-foreground">{udBadges.length}</span>
                 )}
               </div>
 
               {udBadgesLoading ? (
-                <div className="flex items-center justify-center py-6 text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <div className="flex items-center justify-center py-10 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   <span className="text-sm">Loading badges…</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {udBadges.map((b) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {udBadges.map((badge) => (
                     <a
-                      key={b.code}
-                      href={
-                        b.linkUrl ||
-                        `https://unstoppabledomains.com/badge/${encodeURIComponent(b.code)}`
-                      }
+                      key={badge.code}
+                      href={badge.linkUrl || `https://unstoppabledomains.com/badge/${encodeURIComponent(badge.code)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={`${b.name}${b.description ? ` — ${b.description}` : ""}`}
-                      className="group flex flex-col items-center gap-1.5 p-2 rounded-2xl border border-[#D4AF37]/30 hover:border-[#D4AF37]/70 bg-background hover:bg-[#D4AF37]/5 transition-all aspect-square"
+                      title={`${badge.name}${badge.description ? ` — ${badge.description}` : ""}`}
+                      className="rounded-2xl border border-[#D4AF37]/30 bg-card hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/5 transition-all p-3"
                     >
-                      <div className="w-full flex-1 aspect-square rounded-xl overflow-hidden bg-[#D4AF37]/10 flex items-center justify-center">
-                        {b.logo ? (
+                      <div className="aspect-square rounded-xl bg-muted flex items-center justify-center overflow-hidden mb-2">
+                        {badge.logo ? (
                           <img
-                            src={b.logo}
-                            alt={b.name}
+                            src={badge.logo}
+                            alt={badge.name}
                             className="w-full h-full object-cover"
                             loading="lazy"
                             onError={(e) => {
@@ -210,26 +196,27 @@ export const ReputationModal = ({
                             }}
                           />
                         ) : (
-                          <Award className="w-6 h-6 text-[#D4AF37]" />
+                          <Award className="w-7 h-7 text-[#D4AF37]" />
                         )}
                       </div>
-                      <div className="text-[10px] font-medium text-center text-foreground line-clamp-2 leading-tight">
-                        {b.name}
+                      <div className="text-xs font-medium text-foreground text-center leading-tight line-clamp-2">
+                        {badge.name}
                       </div>
                     </a>
                   ))}
                 </div>
               )}
-            </div>
+            </section>
           )}
 
           {!hasTalent && !hasPolymarket && udBadges.length === 0 && !udBadgesLoading && (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              No reputation data available yet.
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg">No reputation data found</p>
+              <p className="text-sm mt-2">This profile has no reputation items yet.</p>
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
