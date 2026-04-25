@@ -188,13 +188,12 @@ export const ReputationModal = ({
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {udBadges.map((badge) => (
-                    <a
+                    <button
                       key={badge.code}
-                      href={badge.linkUrl || `https://unstoppabledomains.com/badge/${encodeURIComponent(badge.code)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      type="button"
+                      onClick={() => setSelectedBadge(badge)}
                       title={`${badge.name}${badge.description ? ` — ${badge.description}` : ""}`}
-                      className="rounded-2xl border border-[#D4AF37]/30 bg-card hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/5 transition-all p-3"
+                      className="text-left rounded-2xl border border-[#D4AF37]/30 bg-card hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/5 transition-all p-3"
                     >
                       <div className="aspect-square rounded-xl bg-muted flex items-center justify-center overflow-hidden mb-2">
                         {badge.logo ? (
@@ -214,7 +213,12 @@ export const ReputationModal = ({
                       <div className="text-xs font-medium text-foreground text-center leading-tight line-clamp-2">
                         {badge.name}
                       </div>
-                    </a>
+                      {typeof badge.holdersCount === "number" && (
+                        <div className="text-[10px] text-muted-foreground text-center mt-1">
+                          {badge.holdersCount.toLocaleString()} holders
+                        </div>
+                      )}
+                    </button>
                   ))}
                 </div>
               )}
