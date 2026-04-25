@@ -108,6 +108,15 @@ serve(async (req) => {
             linkUrl: b.linkUrl ?? "",
             count: typeof b.count === "number" ? b.count : null,
             type: b.type ?? "",
+            holdersCount: typeof b.holdersCount === "number" ? b.holdersCount : null,
+            sponsor: b.sponsor ?? null,
+            gallery: b.gallery ?? null,
+            marketplace: b.marketplace ?? null,
+            contracts: b.contracts ?? null,
+            social: b.social ?? null,
+            coverPhoto: b.coverPhoto ?? "",
+            videoUrl: b.videoUrl ?? "",
+            groupChatId: b.groupChatId ?? "",
           }));
 
         if (normalized.length > 0) {
