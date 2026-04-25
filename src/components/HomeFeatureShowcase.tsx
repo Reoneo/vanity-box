@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 export const HomeFeatureShowcase: React.FC = () => {
   const { t } = useLanguage();
   const [value, setValue] = useState('');
-  const vanityClass = 'text-foreground dark:text-primary';
 
   const normalize = (raw: string) => {
     const trimmed = raw.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
@@ -43,7 +42,7 @@ export const HomeFeatureShowcase: React.FC = () => {
           className={cn(
             'text-center font-black tracking-tight leading-none',
             'text-5xl sm:text-6xl md:text-7xl',
-            vanityClass
+            'text-[#D4AF37]'
           )}
         >
           .vanity
@@ -52,7 +51,7 @@ export const HomeFeatureShowcase: React.FC = () => {
         <p
           className={cn(
             'text-center text-lg sm:text-xl md:text-2xl font-medium',
-            'text-foreground'
+            'text-[#D4AF37]'
           )}
         >
           {t('vanity_tagline')}
@@ -74,14 +73,14 @@ export const HomeFeatureShowcase: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSubmit();
             }}
-            className="h-12 w-full max-w-md rounded-xl border-2 border-primary/40 bg-background text-center text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary"
+            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base"
           />
 
           <Button
             type="button"
             onClick={handleSubmit}
             disabled={!value.trim()}
-            className="h-12 px-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base shadow-md disabled:opacity-60 disabled:bg-primary disabled:text-primary-foreground"
+            className="h-12 px-10 rounded-full bg-[#D4AF37] text-black hover:bg-[#C4A030] font-semibold text-base shadow-md disabled:opacity-60 disabled:bg-[#D4AF37] disabled:text-black"
           >
             {t('search')}
           </Button>

@@ -112,9 +112,9 @@ export const PolymarketModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-primary/40 rounded-3xl [&>button]:hidden">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 bg-background border border-[#D4AF37]/40 rounded-3xl">
         {/* Header */}
-        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b border-primary/20 rounded-t-3xl">
+        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b border-[#D4AF37]/20 rounded-t-3xl">
           <div className="flex items-center gap-3">
             <img
               src={polymarketIcon}
@@ -213,7 +213,7 @@ export const PolymarketModal = ({
             <div className="space-y-6 py-4">
               {/* Profile Header */}
               <div className="flex flex-col items-center gap-2">
-                <Avatar className="h-24 w-24 border-2 border-primary/60">
+                <Avatar className="h-24 w-24 border-2 border-[#D4AF37]/60">
                   <AvatarImage src={displayAvatar || data.profile?.avatar || vanityBoxAvatar} />
                   <AvatarFallback className="text-2xl bg-muted text-foreground">
                     {displayName.charAt(0).toUpperCase()}
@@ -282,7 +282,7 @@ export const PolymarketModal = ({
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground leading-snug break-words whitespace-normal">
+                          <p className="text-sm font-medium text-foreground line-clamp-1">
                             {position.market}
                           </p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -321,7 +321,7 @@ export const PolymarketModal = ({
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground leading-snug break-words whitespace-normal">
+                          <p className="text-sm font-medium text-foreground line-clamp-1">
                             {position.market}
                           </p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">

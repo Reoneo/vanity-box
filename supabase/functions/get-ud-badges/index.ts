@@ -20,15 +20,12 @@ interface UdBadge {
 }
 
 /**
- * Fetches Unstoppable Domains community badges.
+ * Fetches Unstoppable Domains community badges by domain or by wallet address.
  *
- * Body: { domain?: string, domains?: string[] }
+ * Body: { domain?: string } | { address?: string }
  *
- * Note: UD's public badges endpoint only accepts DOMAIN inputs (not raw addresses).
- * Pass every known UD-style identity for the user; the first one that returns badges wins.
- *
- * Endpoint:
- *   GET https://api.unstoppabledomains.com/profile/public/{domain}/badges
+ * Endpoints:
+ *   GET https://api.unstoppabledomains.com/profile/public/{domain|address}/badges
  *
  * Always returns 200 with `{ badges: [...] }` (graceful on upstream failure).
  */
@@ -39,21 +36,22 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
+    const rawDomain = String(body?.domain ?? "").trim().toLowerCase();
+    const rawAddress = String(body?.address ?? "").trim();
 
-    const candidates: string[] = [];
-    const pushDomain = (raw: unknown) => {
-      const s = String(raw ?? "").trim().toLowerCase();
-      if (s && s.includes(".") && !/^0x[a-f0-9]{40}$/.test(s) && !candidates.includes(s)) {
-        candidates.push(s);
-      }
-    };
-    pushDomain(body?.domain);
-    if (Array.isArray(body?.domains)) body.domains.forEach(pushDomain);
+    const lookups: string[] = [];
+    if (rawDomain && rawDomain.includes(".")) lookups.push(rawDomain);
+    if (rawAddress && /^0x[a-fA-F0-9]{40}$/.test(rawAddress)) {
+      lookups.push(rawAddress.toLowerCase());
+    }
 
-    if (candidates.length === 0) {
+    if (lookups.length === 0) {
       return new Response(
-        JSON.stringify({ badges: [], reason: "no-domain-candidates" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({ badges: [], reason: "invalid-input" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -61,14 +59,14 @@ serve(async (req) => {
     let usedLookup: string | null = null;
     let lastStatus: number | null = null;
 
-    for (const key of candidates) {
+    for (const key of lookups) {
       const url = `https://api.unstoppabledomains.com/profile/public/${encodeURIComponent(key)}/badges`;
       try {
         const res = await fetch(url, { headers: { Accept: "application/json" } });
         lastStatus = res.status;
 
         if (!res.ok) {
-          console.warn("[get-ud-badges] non-OK", { key, status: res.status });
+          console.warn("[get-ud-badges] Upstream non-OK", { key, status: res.status });
           continue;
         }
 
@@ -92,6 +90,7 @@ serve(async (req) => {
           usedLookup = key;
           break;
         }
+        // Empty array from this key — try next lookup
         if (!usedLookup) usedLookup = key;
       } catch (innerErr) {
         console.warn("[get-ud-badges] fetch error", { key, error: String(innerErr) });
@@ -104,15 +103,20 @@ serve(async (req) => {
         total: badges.length,
         usedLookup,
         status: lastStatus,
-        triedCandidates: candidates,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   } catch (e) {
     console.error("[get-ud-badges] error", e);
     return new Response(
-      JSON.stringify({ badges: [], error: String((e as any)?.message ?? e) }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      JSON.stringify({ badges: [], error: String(e?.message ?? e) }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   }
 });
