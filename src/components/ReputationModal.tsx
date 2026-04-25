@@ -56,6 +56,7 @@ export const ReputationModal = ({
   onOpenTalent,
   onOpenPolymarket,
 }: ReputationModalProps) => {
+  const [selectedBadge, setSelectedBadge] = useState<UdBadgeItem | null>(null);
   if (!open) return null;
 
   const displayName = identity || "Profile";
