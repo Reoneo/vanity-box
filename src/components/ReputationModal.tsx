@@ -1,4 +1,5 @@
-import { Award, Loader2, TrendingUp, Trophy, X } from "lucide-react";
+import { Award, ExternalLink, Loader2, TrendingUp, Trophy, Users, X } from "lucide-react";
+import { useState } from "react";
 import vanityBoxAvatar from "@/assets/vanity-box-default-avatar.png";
 
 export interface UdBadgeItem {
@@ -8,6 +9,16 @@ export interface UdBadgeItem {
   description?: string;
   linkUrl?: string;
   count?: number | null;
+  type?: string;
+  holdersCount?: number | null;
+  sponsor?: any;
+  gallery?: any;
+  marketplace?: any;
+  contracts?: any;
+  social?: any;
+  coverPhoto?: string;
+  videoUrl?: string;
+  groupChatId?: string;
 }
 
 interface ReputationModalProps {
