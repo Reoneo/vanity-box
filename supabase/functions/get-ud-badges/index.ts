@@ -36,13 +36,29 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const rawDomain = String(body?.domain ?? "").trim().toLowerCase();
-    const rawAddress = String(body?.address ?? "").trim();
+    const domainCandidates = [
+      body?.domain,
+      Array.isArray(body?.domains) ? body.domains[0] : undefined,
+    ]
+      .map((value) => String(value ?? "").trim().toLowerCase())
+      .filter(Boolean);
+    const addressCandidates = [
+      body?.address,
+      Array.isArray(body?.addresses) ? body.addresses[0] : undefined,
+      body?.walletAddress,
+      body?.wallet,
+    ]
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
 
     const lookups: string[] = [];
-    if (rawDomain && rawDomain.includes(".")) lookups.push(rawDomain);
-    if (rawAddress && /^0x[a-fA-F0-9]{40}$/.test(rawAddress)) {
-      lookups.push(rawAddress.toLowerCase());
+    for (const rawDomain of domainCandidates) {
+      if (rawDomain.includes(".")) lookups.push(rawDomain);
+    }
+    for (const rawAddress of addressCandidates) {
+      if (/^0x[a-fA-F0-9]{40}$/.test(rawAddress)) {
+        lookups.push(rawAddress.toLowerCase());
+      }
     }
 
     if (lookups.length === 0) {

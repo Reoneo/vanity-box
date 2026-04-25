@@ -313,6 +313,11 @@ export const ProfileCard = ({
   // Desktop split layout state - which panel to show on the right
   const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
   const isMobile = useIsMobile();
+  const effectiveEvmWallet = useMemo(() => {
+    if (isValidEvmAddress(currentWalletAddress)) return currentWalletAddress;
+    if (isValidEvmAddress(linkedEvmAddress)) return linkedEvmAddress;
+    return undefined;
+  }, [currentWalletAddress, linkedEvmAddress]);
 
   // Re-fetch Talent Protocol for IOTA profiles once linkedEvmAddress resolves
   useEffect(() => {
@@ -372,8 +377,6 @@ export const ProfileCard = ({
   useEffect(() => {
     if (udBadgesFetched) return;
 
-    // Build candidate identities — prefer the original UD-style domain (overlay sets
-    // searchedIdentity to the .eth/.x/.crypto/etc. that the user actually searched).
     const candidateIdents = Array.from(new Set([
       (searchedIdentity || '').toLowerCase(),
       (web3BioProfile?.identity || '').toLowerCase(),
@@ -385,12 +388,7 @@ export const ProfileCard = ({
       return UD_TLDS.has(tld);
     });
 
-    // If no UD-style identity, optionally try address-based lookup when we have an EVM address
-    const evmAddr =
-      currentWalletAddress && /^0x[a-fA-F0-9]{40}$/i.test(currentWalletAddress)
-        ? currentWalletAddress
-        : null;
-
+    const evmAddr = effectiveEvmWallet ?? null;
     if (!udIdent && !evmAddr) return;
 
     setUdBadgesLoading(true);
@@ -415,7 +413,6 @@ export const ProfileCard = ({
           result = await callBadges({ domain: udIdent });
           console.log('[ProfileCard] UD badges (domain) for', udIdent, '→', result?.badges?.length ?? 0);
         }
-        // Fallback to address-based lookup if domain returned no badges
         if ((!result?.badges || result.badges.length === 0) && evmAddr) {
           const addrResult = await callBadges({ address: evmAddr });
           console.log('[ProfileCard] UD badges (address) for', evmAddr, '→', addrResult?.badges?.length ?? 0);
@@ -423,22 +420,20 @@ export const ProfileCard = ({
             result = addrResult;
           }
         }
-        if (Array.isArray(result?.badges)) {
-          setUdBadges(result.badges);
-        }
+        setUdBadges(Array.isArray(result?.badges) ? result.badges : []);
       } catch (e) {
         console.warn('[ProfileCard] UD badges fetch failed', e);
+        setUdBadges([]);
       } finally {
         setUdBadgesLoading(false);
       }
     })();
-  }, [searchedIdentity, web3BioProfile?.identity, currentWalletAddress, udBadgesFetched, UD_TLDS]);
+  }, [searchedIdentity, web3BioProfile?.identity, effectiveEvmWallet, udBadgesFetched, UD_TLDS]);
 
-  // Reset UD badge fetch state when the searched identity changes
   useEffect(() => {
     setUdBadgesFetched(false);
     setUdBadges([]);
-  }, [searchedIdentity]);
+  }, [searchedIdentity, web3BioProfile?.identity, effectiveEvmWallet]);
 
   // Fetch EVM tokens via Zerion for .iota profiles with linked Ethereum wallets and merge with IOTA tokens
   const [evmTokensFetchedForIota, setEvmTokensFetchedForIota] = useState(false);
@@ -1065,18 +1060,32 @@ export const ProfileCard = ({
     mediaTouchDeltaXRef.current = 0;
   };
 
-  // Fetch all data on profile load for button visibility
-  // PRIORITY: Fetch Talent Protocol FIRST so badge shows immediately (skip for IOTA profiles)
   useEffect(() => {
-    if (currentWalletAddress && !dataLoaded) {
+    setDataLoaded(false);
+    setHasTalentData(false);
+    setTalentScore(null);
+    setTalentCreatorScore(null);
+    setIsHumanVerified(false);
+    setHasPolymarketData(false);
+    setPolymarketWinRate(null);
+    setPolymarketProfit(null);
+    setIotaFetched(false);
+    setIotaTokens([]);
+    setIotaTransactions([]);
+    setIotaNfts([]);
+  }, [searchedIdentity, currentWalletAddress, effectiveEvmWallet, iotaOwnerAddressForFetch]);
+
+  // Fetch all data on profile load for button visibility
+  // PRIORITY: Fetch Talent Protocol FIRST so badge shows immediately
+  useEffect(() => {
+    if ((currentWalletAddress || effectiveEvmWallet || iotaOwnerAddressForFetch) && !dataLoaded) {
       setDataLoaded(true);
       
-      // Check if this is an IOTA profile
       const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
-                     web3BioProfile?.platform === 'iota';
+                     web3BioProfile?.platform === 'iota' ||
+                     !!iotaOwnerAddressForFetch;
       
-      // For IOTA profiles, use linkedEvmAddress; otherwise use currentWalletAddress
-      const talentWallet = isIota ? linkedEvmAddress : currentWalletAddress;
+      const talentWallet = effectiveEvmWallet;
       
       // PRIORITY 1: Fetch Talent Protocol data IMMEDIATELY
       const fetchTalentFirst = async () => {
@@ -1125,9 +1134,8 @@ export const ProfileCard = ({
       
       // Fetch other data in parallel (non-blocking)
       const fetchOtherData = async () => {
-        // Check if the address is a valid EVM address (40 hex chars)
-        // IOTA and other non-EVM addresses are longer and should not be passed to EVM-specific APIs
-        const isEvm = isValidEvmAddress(currentWalletAddress);
+        const evmWalletAddress = effectiveEvmWallet;
+        const isEvm = !!evmWalletAddress;
         
         if (!isEvm) {
           console.log('Skipping EVM-specific API calls for non-EVM address:', currentWalletAddress);
@@ -1135,8 +1143,7 @@ export const ProfileCard = ({
           setTransactionsFetched(true);
         }
 
-        // Fetch tokens (EVM only)
-        if (isEvm) {
+        if (isEvm && evmWalletAddress) {
           try {
             const tokenRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
               method: 'POST',
@@ -1144,7 +1151,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: evmWalletAddress }),
             });
             const tokenData = await tokenRes.json();
             console.log('Portfolio API response:', tokenData);
@@ -1157,8 +1164,7 @@ export const ProfileCard = ({
           }
         }
 
-        // Fetch transactions for Activity button (EVM only)
-        if (isEvm) {
+        if (isEvm && evmWalletAddress) {
           try {
             const txRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
               method: 'POST',
@@ -1166,7 +1172,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: evmWalletAddress }),
             });
             const txData = await txRes.json();
             console.log('Transactions API response:', txData);
@@ -1178,8 +1184,7 @@ export const ProfileCard = ({
           }
         }
 
-        // Fetch Magic Eden NFTs (EVM only)
-        if (isEvm) {
+        if (isEvm && evmWalletAddress) {
           try {
             const meRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-magiceden-nfts', {
               method: 'POST',
@@ -1187,15 +1192,14 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: evmWalletAddress }),
             });
             const meData = await meRes.json();
             if (meData.nfts) setMagicEdenNfts(meData.nfts);
           } catch (e) { console.error('Magic Eden fetch error:', e); }
         }
 
-        // Fetch Hyperliquid (HLN) NFTs + tokens (EVM only) — direct fetch, independent of Web3.bio
-        if (isEvm) {
+        if (isEvm && evmWalletAddress) {
           setHlLoading(true);
           try {
             const hlRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-hl-tokens', {
@@ -1204,7 +1208,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: currentWalletAddress }),
+              body: JSON.stringify({ walletAddress: evmWalletAddress }),
             });
             const hlData = await hlRes.json();
             console.log('Hyperliquid (HLN) response:', { nfts: hlData?.nfts?.length, tokens: hlData?.tokens?.length });
@@ -1217,48 +1221,55 @@ export const ProfileCard = ({
           }
         }
 
-        // Fetch ENS Domains from The Graph
-        try {
-          const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
-          });
-          const ensData = await ensRes.json();
-          console.log('ENS Domains response:', ensData);
-          if (ensData.domains) setEnsDomains(ensData.domains);
-        } catch (e) { 
-          console.error('ENS Domains fetch error:', e); 
-        } finally {
+        if (isEvm && evmWalletAddress) {
+          try {
+            const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: evmWalletAddress }),
+            });
+            const ensData = await ensRes.json();
+            console.log('ENS Domains response:', ensData);
+            if (ensData.domains) setEnsDomains(ensData.domains);
+          } catch (e) { 
+            console.error('ENS Domains fetch error:', e); 
+          } finally {
+            setEnsDomainsLoading(false);
+            setEnsDomainsFetched(true);
+          }
+        } else {
           setEnsDomainsLoading(false);
           setEnsDomainsFetched(true);
         }
 
-        // Fetch Basenames from Base subgraph
-        try {
-          const baseRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-basenames', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-            },
-            body: JSON.stringify({ walletAddress: currentWalletAddress }),
-          });
-          const baseData = await baseRes.json();
-          console.log('Basenames response:', baseData);
-          if (baseData.domains) setBasenames(baseData.domains);
-        } catch (e) { 
-          console.error('Basenames fetch error:', e); 
-        } finally {
+        if (isEvm && evmWalletAddress) {
+          try {
+            const baseRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-basenames', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+              },
+              body: JSON.stringify({ walletAddress: evmWalletAddress }),
+            });
+            const baseData = await baseRes.json();
+            console.log('Basenames response:', baseData);
+            if (baseData.domains) setBasenames(baseData.domains);
+          } catch (e) { 
+            console.error('Basenames fetch error:', e); 
+          } finally {
+            setBasenamesLoading(false);
+            setBasenamesFetched(true);
+          }
+        } else {
           setBasenamesLoading(false);
           setBasenamesFetched(true);
         }
 
-        // Fetch Polymarket data (skip for IOTA profiles)
-        if (!isIota && isEvm) {
+        if (!isIota && isEvm && evmWalletAddress) {
           try {
             const polyRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-polymarket-data', {
               method: 'POST',
@@ -1266,7 +1277,7 @@ export const ProfileCard = ({
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ wallet: currentWalletAddress }),
+              body: JSON.stringify({ wallet: evmWalletAddress }),
             });
             const polyData = await polyRes.json();
             console.log('Polymarket response:', polyData);
@@ -1366,7 +1377,7 @@ export const ProfileCard = ({
       // Start other data fetch in parallel
       fetchOtherData();
     }
-  }, [currentWalletAddress, dataLoaded, searchedIdentity]);
+  }, [currentWalletAddress, effectiveEvmWallet, iotaOwnerAddressForFetch, dataLoaded, searchedIdentity]);
 
   // Fetch Hyperliquid NFTs/tokens from profile data
   useEffect(() => {
@@ -3854,7 +3865,7 @@ export const ProfileCard = ({
       <TalentProtocolModal
         open={showTalentModal}
         onOpenChange={setShowTalentModal}
-        wallet={currentWalletAddress}
+        wallet={effectiveEvmWallet}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
       />
 
@@ -3862,7 +3873,7 @@ export const ProfileCard = ({
       <PolymarketModal
         open={showPolymarketModal}
         onOpenChange={setShowPolymarketModal}
-        wallet={currentWalletAddress}
+        wallet={effectiveEvmWallet}
         ens={searchedIdentity?.includes('.') ? searchedIdentity : undefined}
         displayIdentity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
         displayAvatar={web3BioProfile?.avatar || null}
@@ -3874,6 +3885,7 @@ export const ProfileCard = ({
         onClose={() => setShowReputationModal(false)}
         identity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
         avatarUrl={web3BioProfile?.avatar || null}
+        headerImageUrl={web3BioProfile?.header || null}
         hasTalent={hasTalentData}
         talentScore={talentScore}
         talentCreatorScore={talentCreatorScore}
