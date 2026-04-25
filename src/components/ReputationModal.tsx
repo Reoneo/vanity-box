@@ -233,6 +233,133 @@ export const ReputationModal = ({
           )}
         </div>
       </div>
+
+      {selectedBadge && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setSelectedBadge(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${selectedBadge.name} details`}
+        >
+          <div
+            className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl bg-background dark:bg-black border-2 border-[#D4AF37]/60 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {selectedBadge.coverPhoto && (
+              <div
+                className="w-full h-28 bg-cover bg-center rounded-t-3xl"
+                style={{ backgroundImage: `url(${selectedBadge.coverPhoto})` }}
+              />
+            )}
+            <button
+              onClick={() => setSelectedBadge(null)}
+              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-[#D4AF37] hover:bg-[#B8860B] transition-all"
+              aria-label="Close badge details"
+            >
+              <X className="w-4 h-4 text-black" />
+            </button>
+
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-muted flex items-center justify-center flex-shrink-0 border border-[#D4AF37]/40">
+                  {selectedBadge.logo ? (
+                    <img src={selectedBadge.logo} alt={selectedBadge.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Award className="w-8 h-8 text-[#D4AF37]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-bold text-foreground break-words">{selectedBadge.name}</h3>
+                  {selectedBadge.type && (
+                    <p className="text-xs text-muted-foreground capitalize mt-0.5">{selectedBadge.type}</p>
+                  )}
+                </div>
+              </div>
+
+              {selectedBadge.description && (
+                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+                  {selectedBadge.description}
+                </p>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {typeof selectedBadge.holdersCount === "number" && (
+                  <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[#D4AF37]" />
+                    <div>
+                      <div className="text-muted-foreground">Holders</div>
+                      <div className="font-semibold text-foreground">
+                        {selectedBadge.holdersCount.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {typeof selectedBadge.count === "number" && (
+                  <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-2">
+                    <Award className="w-4 h-4 text-[#D4AF37]" />
+                    <div>
+                      <div className="text-muted-foreground">Count</div>
+                      <div className="font-semibold text-foreground">
+                        {selectedBadge.count.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {selectedBadge.sponsor && (selectedBadge.sponsor.name || selectedBadge.sponsor.link) && (
+                <div className="rounded-xl border border-[#D4AF37]/20 bg-card p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Sponsored by</div>
+                  <div className="flex items-center gap-2">
+                    {selectedBadge.sponsor.logo && (
+                      <img src={selectedBadge.sponsor.logo} alt="" className="w-6 h-6 rounded" />
+                    )}
+                    <span className="text-sm font-medium text-foreground">
+                      {selectedBadge.sponsor.name || selectedBadge.sponsor.link}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {Array.isArray(selectedBadge.gallery) && selectedBadge.gallery.length > 0 && (
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Gallery</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedBadge.gallery.slice(0, 6).map((g: any, i: number) => {
+                      const src = typeof g === "string" ? g : g?.url || g?.src;
+                      return src ? (
+                        <img key={i} src={src} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2 pt-1">
+                {selectedBadge.linkUrl && (
+                  <a
+                    href={selectedBadge.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-black font-semibold py-2.5 transition-all"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Visit
+                  </a>
+                )}
+                <a
+                  href={`https://unstoppabledomains.com/badge/${encodeURIComponent(selectedBadge.code)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 text-foreground font-medium py-2.5 transition-all"
+                >
+                  View on Unstoppable Domains
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
