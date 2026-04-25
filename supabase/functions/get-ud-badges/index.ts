@@ -17,6 +17,15 @@ interface UdBadge {
   count?: number;
   type?: string;
   active?: boolean;
+  sponsor?: any;
+  gallery?: any;
+  marketplace?: any;
+  holdersCount?: number;
+  contracts?: any;
+  social?: any;
+  coverPhoto?: string;
+  videoUrl?: string;
+  groupChatId?: string;
 }
 
 /**
