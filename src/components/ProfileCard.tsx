@@ -47,7 +47,8 @@ import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
 import { useTonTokens } from "@/hooks/useTonTokens";
 import tonIconBlue from "@/assets/ton-icon-blue.png";
 import tonLogoBlue from "@/assets/ton-logo-blue-circle.png";
-import suiLogoBlue from "@/assets/sui-logo-blue-circle.png";
+import tonTokenIcon from "@/assets/ton-token-icon.png";
+import suiLogoBlue from "@/assets/sui-logo-blue-circle-new.png";
 import iotaLogoBlue from "@/assets/iota-logo-blue-circle.png";
 import { TalentProtocolModal } from "./TalentProtocolModal";
 import { PolymarketModal } from "./PolymarketModal";
@@ -1528,6 +1529,16 @@ export const ProfileCard = ({
     return options;
   }, [linkedEvmAddress, iotaOwnerAddress, linkedSuiAddress, linkedTonAddress]);
 
+  // Sort tokens by USD value (highest first); zero/undefined values fall to the bottom.
+  const sortedPortfolioTokens = useMemo(() => {
+    return [...portfolioTokens].sort((a: any, b: any) => {
+      const va = Number(a?.value) || 0;
+      const vb = Number(b?.value) || 0;
+      if (vb !== va) return vb - va;
+      return String(a?.symbol || '').localeCompare(String(b?.symbol || ''));
+    });
+  }, [portfolioTokens]);
+
   const [selectedLinkedWalletKey, setSelectedLinkedWalletKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1708,14 +1719,17 @@ export const ProfileCard = ({
                 </div>
               )}
               
-              {portfolioTokens.map((token: any, index: number) => (
+              {sortedPortfolioTokens.map((token: any, index: number) => {
+                const isTon = token.chain === 'ton' || String(token.symbol || '').toUpperCase() === 'TON';
+                const displayIcon = isTon ? tonTokenIcon : token.icon;
+                return (
                 <div 
                   key={token.id || `token-${index}`}
                   className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-black/10 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                    {token.icon ? (
-                      <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
+                    {displayIcon ? (
+                      <img src={displayIcon} alt={token.symbol} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-base font-bold text-black dark:text-white">{token.symbol?.slice(0, 2)}</span>
                     )}
@@ -1734,7 +1748,8 @@ export const ProfileCard = ({
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>
@@ -3345,13 +3360,16 @@ export const ProfileCard = ({
                       )}
                       
                       {/* Token List */}
-                      {portfolioTokens.map((token: any, index: number) => (
+                      {sortedPortfolioTokens.map((token: any, index: number) => {
+                        const isTon = token.chain === 'ton' || String(token.symbol || '').toUpperCase() === 'TON';
+                        const displayIcon = isTon ? tonTokenIcon : token.icon;
+                        return (
                         <div 
                           key={token.id || `token-${index}`}
                           className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
                         >
-                          {token.icon ? (
-                            <img src={token.icon} alt={token.symbol} className="w-10 h-10 rounded-full object-cover" />
+                          {displayIcon ? (
+                            <img src={displayIcon} alt={token.symbol} className="w-10 h-10 rounded-full object-cover" />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] font-bold">
                               {token.symbol?.slice(0, 2) || '?'}
@@ -3377,7 +3395,8 @@ export const ProfileCard = ({
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

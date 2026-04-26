@@ -765,6 +765,50 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     return () => window.removeEventListener('iota-ton-linked', handleTonLinked);
   }, [displayQuery]);
 
+  // Cross-chain reverse linker: for non-.iota profiles (ENS / UD / .box / etc.),
+  // look up linked Sui + TON addresses by reverse-mapping the resolved EVM wallet
+  // address to rows in iota_cross_chain_profiles.
+  useEffect(() => {
+    const iotaName = normalizeIotaQuery(displayQuery);
+    if (iotaName) return; // .iota path handled by the resolver above
+    const evm = (web3BioProfile?.address || '').toLowerCase();
+    if (!/^0x[a-f0-9]{40}$/.test(evm)) return;
+
+    let cancelled = false;
+
+    try {
+      const cachedSui = localStorage.getItem(`cross-linked-sui:${evm}`);
+      const cachedTon = localStorage.getItem(`cross-linked-ton:${evm}`);
+      if (cachedSui) setLinkedSuiAddress(cachedSui);
+      if (cachedTon) setLinkedTonAddress(cachedTon);
+    } catch {}
+
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('iota_cross_chain_profiles')
+          .select('sui_address, ton_address')
+          .eq('evm_address', evm)
+          .maybeSingle();
+        if (cancelled || error) return;
+        if (data?.sui_address) {
+          setLinkedSuiAddress(data.sui_address);
+          try { localStorage.setItem(`cross-linked-sui:${evm}`, data.sui_address); } catch {}
+        } else {
+          setLinkedSuiAddress(null);
+        }
+        if (data?.ton_address) {
+          setLinkedTonAddress(data.ton_address);
+          try { localStorage.setItem(`cross-linked-ton:${evm}`, data.ton_address); } catch {}
+        }
+      } catch (err) {
+        console.warn('[SearchInterface] cross-chain Sui/TON reverse lookup failed:', err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [displayQuery, web3BioProfile?.address]);
+
   const isProfileTransitionLoading = (isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs)) || (Boolean(web3BioProfile) && (isResolvingLinkedEvm || resolvingLinkedWallets));
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
