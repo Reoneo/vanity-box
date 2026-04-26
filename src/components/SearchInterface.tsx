@@ -757,8 +757,21 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         setLinkedTonAddress(tonAddress);
       }
     };
+    const handleSuiLinked = (event: Event) => {
+      const { iotaName: linkedName, suiAddress } = (event as CustomEvent).detail || {};
+      const currentName = displayQuery?.toLowerCase()?.trim();
+      if (linkedName === currentName && suiAddress) {
+        console.log(`🔗 Real-time Sui link event for ${linkedName}: ${suiAddress}`);
+        setLinkedSuiAddress(suiAddress);
+        try { localStorage.setItem(`iota-linked-sui:${linkedName}`, suiAddress); } catch {}
+      }
+    };
     window.addEventListener('iota-ton-linked', handleTonLinked);
-    return () => window.removeEventListener('iota-ton-linked', handleTonLinked);
+    window.addEventListener('iota-sui-linked', handleSuiLinked);
+    return () => {
+      window.removeEventListener('iota-ton-linked', handleTonLinked);
+      window.removeEventListener('iota-sui-linked', handleSuiLinked);
+    };
   }, [displayQuery]);
 
   // Cross-chain reverse linker: for non-.iota profiles (ENS / UD / .box / etc.),
