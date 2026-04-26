@@ -1748,7 +1748,8 @@ export const ProfileCard = ({
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>
