@@ -718,11 +718,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
         const [tonResult, suiResult] = await Promise.all([
           supabase.functions.invoke('get-iota-linked-ton', { body: { iotaName: name } }),
-          supabase
-            .from('iota_cross_chain_profiles')
-            .select('sui_address')
-            .eq('iota_name', name)
-            .maybeSingle(),
+          supabase.functions.invoke('get-iota-linked-sui', { body: { iotaName: name } }),
         ]);
 
         const tonData = tonResult.data;
@@ -734,9 +730,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
 
         const suiData = suiResult.data;
-        if (!isCancelled && !suiResult.error && suiData?.sui_address) {
-          setLinkedSuiAddress(suiData.sui_address);
-          try { localStorage.setItem(`iota-linked-sui:${name}`, suiData.sui_address); } catch {}
+        if (!isCancelled && suiData?.success && suiData?.suiAddress) {
+          setLinkedSuiAddress(suiData.suiAddress);
+          try { localStorage.setItem(`iota-linked-sui:${name}`, suiData.suiAddress); } catch {}
         } else if (!isCancelled && !localSui) {
           setLinkedSuiAddress(null);
         }
