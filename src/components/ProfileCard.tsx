@@ -1529,6 +1529,16 @@ export const ProfileCard = ({
     return options;
   }, [linkedEvmAddress, iotaOwnerAddress, linkedSuiAddress, linkedTonAddress]);
 
+  // Sort tokens by USD value (highest first); zero/undefined values fall to the bottom.
+  const sortedPortfolioTokens = useMemo(() => {
+    return [...portfolioTokens].sort((a: any, b: any) => {
+      const va = Number(a?.value) || 0;
+      const vb = Number(b?.value) || 0;
+      if (vb !== va) return vb - va;
+      return String(a?.symbol || '').localeCompare(String(b?.symbol || ''));
+    });
+  }, [portfolioTokens]);
+
   const [selectedLinkedWalletKey, setSelectedLinkedWalletKey] = useState<string | null>(null);
 
   useEffect(() => {
