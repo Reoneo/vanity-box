@@ -3360,13 +3360,16 @@ export const ProfileCard = ({
                       )}
                       
                       {/* Token List */}
-                      {portfolioTokens.map((token: any, index: number) => (
+                      {sortedPortfolioTokens.map((token: any, index: number) => {
+                        const isTon = token.chain === 'ton' || String(token.symbol || '').toUpperCase() === 'TON';
+                        const displayIcon = isTon ? tonTokenIcon : token.icon;
+                        return (
                         <div 
                           key={token.id || `token-${index}`}
                           className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
                         >
-                          {token.icon ? (
-                            <img src={token.icon} alt={token.symbol} className="w-10 h-10 rounded-full object-cover" />
+                          {displayIcon ? (
+                            <img src={displayIcon} alt={token.symbol} className="w-10 h-10 rounded-full object-cover" />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] font-bold">
                               {token.symbol?.slice(0, 2) || '?'}
@@ -3392,7 +3395,8 @@ export const ProfileCard = ({
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
