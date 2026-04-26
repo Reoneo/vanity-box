@@ -1719,14 +1719,17 @@ export const ProfileCard = ({
                 </div>
               )}
               
-              {portfolioTokens.map((token: any, index: number) => (
+              {sortedPortfolioTokens.map((token: any, index: number) => {
+                const isTon = token.chain === 'ton' || String(token.symbol || '').toUpperCase() === 'TON';
+                const displayIcon = isTon ? tonTokenIcon : token.icon;
+                return (
                 <div 
                   key={token.id || `token-${index}`}
                   className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
                 >
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-black/10 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                    {token.icon ? (
-                      <img src={token.icon} alt={token.symbol} className="w-full h-full object-cover" />
+                    {displayIcon ? (
+                      <img src={displayIcon} alt={token.symbol} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-base font-bold text-black dark:text-white">{token.symbol?.slice(0, 2)}</span>
                     )}
