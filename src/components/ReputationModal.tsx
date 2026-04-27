@@ -77,13 +77,12 @@ export const ReputationModal = ({
       aria-label={`Reputation for ${displayName}`}
     >
       <div
-        className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+        className="relative w-full aspect-[3.3/1] md:aspect-[5.5/1] bg-cover bg-center flex-shrink-0 overflow-hidden"
         style={headerImageUrl ? { backgroundImage: `url(${headerImageUrl})` } : undefined}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90 bg-black/20" />
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
-          <div className="w-9" />
-          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 dark:to-background/80 bg-black/10" />
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3">
+          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
             <h3 className="text-lg font-bold text-black dark:text-white truncate">Reputation</h3>
           </div>
           <button
@@ -98,23 +97,10 @@ export const ReputationModal = ({
 
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         <div className="max-w-lg mx-auto space-y-4">
-          <div className="flex flex-col items-center gap-3 py-2">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#D4AF37]/60 bg-muted shadow-lg">
-              <img
-                src={avatarUrl || vanityBoxAvatar}
-                alt={displayName}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = vanityBoxAvatar;
-                }}
-              />
-            </div>
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-bold text-foreground break-all">{displayName}</h2>
-              <p className="text-sm text-muted-foreground">
-                {totalCount} reputation {totalCount === 1 ? "item" : "items"}
-              </p>
-            </div>
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">
+              {totalCount} reputation {totalCount === 1 ? "item" : "items"}
+            </p>
           </div>
 
           {hasTalent && (
