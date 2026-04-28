@@ -3514,8 +3514,35 @@ export const ProfileCard = ({
                           ))}
                         </div>
                       );
-                    })()
-                  ) : null}
+                     })()
+                   ) : nftCategory === 'suins' ? (
+                     suinsLoading ? (
+                       <div className="flex items-center justify-center py-12">
+                         <Loader2 className="w-8 h-8 animate-spin text-[#4DA2FF]" />
+                       </div>
+                     ) : suinsNames.length === 0 ? (
+                       <div className="text-center py-12 text-muted-foreground">
+                         <p>No SuiNS names found</p>
+                       </div>
+                     ) : (
+                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                         {suinsNames.map((n, index) => (
+                           <div key={n.identifier || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#4DA2FF]/30 hover:border-[#4DA2FF]/60 transition-all" onClick={() => setSelectedNft({ name: n.name, image_url: n.image_url, collection: n.collection, description: n.description, identifier: n.identifier, contract: n.contract })}>
+                             {n.image_url ? (
+                               <img src={n.image_url} alt={n.name} className="w-full aspect-square object-cover" />
+                             ) : (
+                               <div className="w-full aspect-square bg-gradient-to-br from-[#4DA2FF] to-[#6FB7FF] flex items-center justify-center text-white font-bold text-2xl">
+                                 {n.name?.charAt(0)?.toUpperCase() || 'S'}
+                               </div>
+                             )}
+                             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                               <p className="text-xs font-medium text-white truncate">{n.name}</p>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     )
+                   ) : null}
                 </div>
               </div>
             )}
