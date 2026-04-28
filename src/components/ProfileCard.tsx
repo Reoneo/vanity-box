@@ -3123,7 +3123,42 @@ export const ProfileCard = ({
                         )
                       )}
 
-                      {/* Empty state placeholder when no categories available - include IOTA + TON check */}
+                      {/* SuiNS Names button — shown whenever a Sui address is available */}
+                      {(suinsLoading || suinsCount > 0) && (
+                        suinsLoading ? (
+                          <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white">
+                            <div className="flex items-center justify-between h-full">
+                              <div className="text-left flex items-center gap-2">
+                                <img src={suiLogoBlue} alt="Sui" className="w-5 h-5 rounded-full" />
+                                <div>
+                                  <h4 className="font-medium text-white text-base">SuiNS Names</h4>
+                                  <p className="text-sm text-white/70">Loading…</p>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        ) : (
+                          <button onClick={() => setNftCategory('suins')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation">
+                            <div className="flex items-center justify-between h-full">
+                              <div className="text-left flex-1 min-w-0 mr-3 flex items-center gap-2">
+                                <img src={suiLogoBlue} alt="Sui" className="w-5 h-5 rounded-full" />
+                                <div>
+                                  <h4 className="font-medium text-white text-base">SuiNS Names</h4>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm text-white/70">{suinsCount} {suinsCount === 1 ? 'item' : 'items'}</p>
+                                    <div className="flex -space-x-2">
+                                      {suinsNames.slice(0, 3).map((n, idx) => (
+                                        n.image_url ? <img key={idx} src={n.image_url} alt="" className="w-5 h-5 rounded-full border border-white/20 object-cover" /> : null
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                            </div>
+                          </button>
+                        )
+                      )}
                       {poaps.length === 0 && 
                        nfts.length === 0 && 
                        openseaAttempted && 
