@@ -2001,6 +2001,15 @@ export const ProfileCard = ({
                             <span className="text-sm font-medium">Back</span>
                           </button>
                         )}
+                        {desktopActivePanel === 'reputation' && desktopReputationCategory !== 'main' && (
+                          <button 
+                            onClick={() => setDesktopReputationCategory('main')} 
+                            className="absolute left-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] transition-colors"
+                          >
+                            <ChevronDown className="w-4 h-4 rotate-90" />
+                            <span className="text-sm font-medium">Back</span>
+                          </button>
+                        )}
                         {(() => {
                           if (desktopActivePanel !== 'nfts') {
                             return (
