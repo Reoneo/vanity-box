@@ -1939,7 +1939,15 @@ export const ProfileCard = ({
                         if (hasTokens) buttons.push({ title: 'Tokens', panel: 'tokens', onClick: () => setDesktopActivePanel('tokens') });
                         if (hasReputation) buttons.push({
                           title: 'Reputation',
-                          onClick: () => setShowReputationModal(true),
+                          panel: 'reputation',
+                          onClick: () => {
+                            if (isMobile) {
+                              setShowReputationModal(true);
+                            } else {
+                              setDesktopReputationCategory('main');
+                              setDesktopActivePanel('reputation');
+                            }
+                          },
                         });
                         buttons.sort((a, b) => a.title.localeCompare(b.title));
 
