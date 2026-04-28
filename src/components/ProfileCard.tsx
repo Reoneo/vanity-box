@@ -44,6 +44,7 @@ import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
+import { useSuiNames } from "@/hooks/useSuiNames";
 import { useTonTokens } from "@/hooks/useTonTokens";
 import tonIconBlue from "@/assets/ton-icon-blue.png";
 import tonLogoBlue from "@/assets/ton-logo-blue-circle.png";
@@ -910,6 +911,9 @@ export const ProfileCard = ({
   // TON NFTs for .iota profiles with linked TON wallet
   const { nfts: tonNfts, collections: tonCollections, isLoading: tonNftsLoading, fetched: tonNftsFetched } = useTonNFTs(linkedTonAddress);
   const tonNftCount = useMemo(() => tonNfts.length, [tonNfts]);
+  // SuiNS Names — fetched for any available Sui address (linked or otherwise)
+  const { names: suinsNames, loading: suinsLoading, fetched: suinsFetched } = useSuiNames(linkedSuiAddress || null);
+  const suinsCount = suinsNames.length;
 
   // Detect if this is an IOTA profile
   const isIotaProfile = useMemo(() => {
@@ -1699,7 +1703,7 @@ export const ProfileCard = ({
 
     if (panel === 'tokens') {
       return (
-        <div className="h-full overflow-y-auto px-6 py-3 pb-20">
+        <div className="h-full overflow-y-auto px-6 py-3 pb-32">
           {portfolioLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
@@ -1760,7 +1764,7 @@ export const ProfileCard = ({
 
     if (panel === 'activity') {
       return (
-        <div className="h-full overflow-y-auto px-6 py-3 pb-20">
+        <div className="h-full overflow-y-auto px-6 py-3 pb-32">
           {transactionsLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
@@ -1869,7 +1873,7 @@ export const ProfileCard = ({
                   {/* Left side - 50% - Profile info: white in light mode, black+gold gradient in dark */}
                   <div className="w-1/2 flex flex-col min-h-0 border-r border-[#D4AF37]/20 bg-white dark:bg-black">
                     {/* Left panel content - with top padding for avatar overlap */}
-                    <div className="flex-1 overflow-y-auto pt-20 pb-28">
+                    <div className="flex-1 overflow-y-auto pt-20 pb-40">
                       <div className="px-6 space-y-3">
                       {/* Name */}
                       <h2 className="text-2xl font-bold text-center text-black dark:text-white tracking-tight">
@@ -1926,7 +1930,7 @@ export const ProfileCard = ({
                       {(() => {
                         const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                         const hasTonNfts = tonNftsLoading || tonNftCount > 0;
-                        const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0 || hasTonNfts;
+                        const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || ensDomains.length > 0 || basenames.length > 0 || hasTonNfts || suinsCount > 0 || suinsLoading;
                         const hasTokens = portfolioTokens.length > 0;
                         const hasSocials = mergedSocialLinks.length > 0;
                         const hasTransactions = transactions.length > 0;
@@ -2078,12 +2082,12 @@ export const ProfileCard = ({
                     </div>
                     
                     {/* Panel content */}
-                    <div className="flex-1 overflow-y-auto pb-4 min-h-0">
+                    <div className="flex-1 overflow-y-auto pb-32 min-h-0">
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
                     {desktopActivePanel === 'reputation' && (
-                      <div className="h-full overflow-y-auto px-6 py-3 pb-4">
+                      <div className="h-full overflow-y-auto px-6 py-3 pb-32">
                         {desktopReputationCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {hasTalentData && (
@@ -2195,7 +2199,7 @@ export const ProfileCard = ({
                     )}
                     {desktopActivePanel === 'nfts' && (
                       /* Desktop NFTs inline panel - reuses existing NFT rendering */
-                      <div className="h-full overflow-y-auto px-6 py-3 pb-4">
+                      <div className="h-full overflow-y-auto px-6 py-3 pb-32">
                         {nftCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {/* POAPs Button */}
@@ -2360,7 +2364,42 @@ export const ProfileCard = ({
                               )
                             )}
 
-                            {/* Hint for IOTA profiles without linked EVM */}
+                            {/* SuiNS Names button (desktop) */}
+                            {(suinsLoading || suinsCount > 0) && (
+                              suinsLoading ? (
+                                <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white">
+                                  <div className="flex items-center justify-between h-full">
+                                    <div className="text-left flex items-center gap-2">
+                                      <img src={suiLogoBlue} alt="Sui" className="w-5 h-5 rounded-full" />
+                                      <div>
+                                        <h4 className="font-medium text-white text-base">SuiNS Names</h4>
+                                        <p className="text-sm text-white/70">Loading…</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              ) : (
+                                <button onClick={() => setNftCategory('suins')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                  <div className="flex items-center justify-between h-full">
+                                    <div className="text-left flex-1 min-w-0 mr-3 flex items-center gap-2">
+                                      <img src={suiLogoBlue} alt="Sui" className="w-5 h-5 rounded-full" />
+                                      <div>
+                                        <h4 className="font-medium text-white text-base">SuiNS Names</h4>
+                                        <p className="text-sm text-white/70">{suinsCount} {suinsCount === 1 ? 'item' : 'items'}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex -space-x-2">
+                                        {suinsNames.slice(0, 3).map((n, idx) => (
+                                          n.image_url ? <img key={idx} src={n.image_url} alt="" className="w-5 h-5 rounded-full border border-white/20 object-cover" /> : null
+                                        ))}
+                                      </div>
+                                      <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                                    </div>
+                                  </div>
+                                </button>
+                              )
+                            )}
                             {isIotaProfile && !linkedEvmAddress && !isResolvingLinkedEvm && !linkedTonAddress && poaps.length === 0 && nfts.length === 0 && tonNftCount === 0 && (
                               <div className="text-center py-6 text-muted-foreground">
                                 <p className="text-sm">No Ethereum or TON wallet linked to this IOTA ID yet.</p>
@@ -2462,6 +2501,34 @@ export const ProfileCard = ({
                               );
                             })()}
 
+                            {/* SuiNS Names Grid (desktop) */}
+                            {nftCategory === 'suins' && (
+                              suinsLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                  <Loader2 className="w-8 h-8 animate-spin text-[#4DA2FF]" />
+                                </div>
+                              ) : suinsNames.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground"><p>No SuiNS names found</p></div>
+                              ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                  {suinsNames.map((n, index) => (
+                                    <div key={n.identifier || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#4DA2FF]/30 hover:border-[#4DA2FF]/60 transition-all" onClick={() => setSelectedNft({ name: n.name, image_url: n.image_url, collection: n.collection, description: n.description, identifier: n.identifier, contract: n.contract })}>
+                                      {n.image_url ? (
+                                        <img src={n.image_url} alt={n.name} className="w-full aspect-square object-cover" />
+                                      ) : (
+                                        <div className="w-full aspect-square bg-gradient-to-br from-[#4DA2FF] to-[#6FB7FF] flex items-center justify-center text-white font-bold text-2xl">
+                                          {n.name?.charAt(0)?.toUpperCase() || 'S'}
+                                        </div>
+                                      )}
+                                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                        <p className="text-xs font-medium text-white truncate">{n.name}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )
+                            )}
+
                             {nftCategory === 'opensea' && (
                               expandedCollection ? (
                                 <div className="space-y-4">
@@ -2561,7 +2628,7 @@ export const ProfileCard = ({
             </div>
             ) : (
               /* Mobile: Original stacked layout - black with gold gradient in dark mode */
-              <div className="space-y-2 pb-20 bg-background min-h-full">
+              <div className="space-y-2 pb-40 bg-background min-h-full">
                 {/* Header and Avatar with Verified Badge - Always visible */}
                 <div className="relative flex-shrink-0">
                   <div 
@@ -2696,7 +2763,7 @@ export const ProfileCard = ({
                   {(() => {
                     const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                     const hasTonNfts = tonNftsLoading || tonNftCount > 0;
-                    const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || hasTonNfts;
+                    const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || hasTonNfts || suinsCount > 0 || suinsLoading;
                     const hasTokens = portfolioTokens.length > 0;
                     const hasSocials = mergedSocialLinks.length > 0;
                     const hasTransactions = transactions.length > 0;
@@ -2896,7 +2963,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* NFTs Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
                   {nftCategory === 'main' ? (
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
@@ -3119,7 +3186,42 @@ export const ProfileCard = ({
                         )
                       )}
 
-                      {/* Empty state placeholder when no categories available - include IOTA + TON check */}
+                      {/* SuiNS Names button — shown whenever a Sui address is available */}
+                      {(suinsLoading || suinsCount > 0) && (
+                        suinsLoading ? (
+                          <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white">
+                            <div className="flex items-center justify-between h-full">
+                              <div className="text-left flex items-center gap-2">
+                                <img src={suiLogoBlue} alt="Sui" className="w-5 h-5 rounded-full" />
+                                <div>
+                                  <h4 className="font-medium text-white text-base">SuiNS Names</h4>
+                                  <p className="text-sm text-white/70">Loading…</p>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        ) : (
+                          <button onClick={() => setNftCategory('suins')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation">
+                            <div className="flex items-center justify-between h-full">
+                              <div className="text-left flex-1 min-w-0 mr-3 flex items-center gap-2">
+                                <img src={suiLogoBlue} alt="Sui" className="w-5 h-5 rounded-full" />
+                                <div>
+                                  <h4 className="font-medium text-white text-base">SuiNS Names</h4>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm text-white/70">{suinsCount} {suinsCount === 1 ? 'item' : 'items'}</p>
+                                    <div className="flex -space-x-2">
+                                      {suinsNames.slice(0, 3).map((n, idx) => (
+                                        n.image_url ? <img key={idx} src={n.image_url} alt="" className="w-5 h-5 rounded-full border border-white/20 object-cover" /> : null
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <ChevronDown className="w-5 h-5 text-white -rotate-90 flex-shrink-0" />
+                            </div>
+                          </button>
+                        )
+                      )}
                       {poaps.length === 0 && 
                        nfts.length === 0 && 
                        openseaAttempted && 
@@ -3440,8 +3542,35 @@ export const ProfileCard = ({
                           ))}
                         </div>
                       );
-                    })()
-                  ) : null}
+                     })()
+                   ) : nftCategory === 'suins' ? (
+                     suinsLoading ? (
+                       <div className="flex items-center justify-center py-12">
+                         <Loader2 className="w-8 h-8 animate-spin text-[#4DA2FF]" />
+                       </div>
+                     ) : suinsNames.length === 0 ? (
+                       <div className="text-center py-12 text-muted-foreground">
+                         <p>No SuiNS names found</p>
+                       </div>
+                     ) : (
+                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                         {suinsNames.map((n, index) => (
+                           <div key={n.identifier || index} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#4DA2FF]/30 hover:border-[#4DA2FF]/60 transition-all" onClick={() => setSelectedNft({ name: n.name, image_url: n.image_url, collection: n.collection, description: n.description, identifier: n.identifier, contract: n.contract })}>
+                             {n.image_url ? (
+                               <img src={n.image_url} alt={n.name} className="w-full aspect-square object-cover" />
+                             ) : (
+                               <div className="w-full aspect-square bg-gradient-to-br from-[#4DA2FF] to-[#6FB7FF] flex items-center justify-center text-white font-bold text-2xl">
+                                 {n.name?.charAt(0)?.toUpperCase() || 'S'}
+                               </div>
+                             )}
+                             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                               <p className="text-xs font-medium text-white truncate">{n.name}</p>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     )
+                   ) : null}
                 </div>
               </div>
             )}
@@ -3472,7 +3601,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Tokens Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
                   {portfolioLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -3560,7 +3689,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Activity Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
                   {transactionsLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -3605,7 +3734,7 @@ export const ProfileCard = ({
         {/* Socials Section */}
         {activeSection === 'socials' && (
           <div className="flex-1 overflow-y-auto">
-            <div className="space-y-4 pb-24">
+            <div className="space-y-4 pb-40">
             <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
@@ -3890,7 +4019,7 @@ export const ProfileCard = ({
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
           <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
-            <div className="space-y-4 pb-24">
+            <div className="space-y-4 pb-40">
             <div className="p-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
