@@ -4056,6 +4056,70 @@ export const ProfileCard = ({
         }}
       />
 
+      {desktopSelectedBadge && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setDesktopSelectedBadge(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${desktopSelectedBadge.name} details`}
+        >
+          <div
+            className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl bg-background dark:bg-black border-2 border-[#D4AF37]/60 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setDesktopSelectedBadge(null)}
+              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-[#D4AF37] hover:bg-[#B8860B] transition-all z-10"
+              aria-label="Close badge details"
+            >
+              <X className="w-4 h-4 text-black" />
+            </button>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-muted flex items-center justify-center flex-shrink-0 border border-[#D4AF37]/40">
+                  {desktopSelectedBadge.logo ? (
+                    <img src={desktopSelectedBadge.logo} alt={desktopSelectedBadge.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Award className="w-8 h-8 text-[#D4AF37]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-bold text-foreground break-words">{desktopSelectedBadge.name}</h3>
+                  {desktopSelectedBadge.type && (
+                    <p className="text-xs text-muted-foreground capitalize mt-0.5">{desktopSelectedBadge.type}</p>
+                  )}
+                </div>
+              </div>
+              {desktopSelectedBadge.description && (
+                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+                  {desktopSelectedBadge.description}
+                </p>
+              )}
+              {typeof desktopSelectedBadge.holdersCount === 'number' && (
+                <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-2 text-xs">
+                  <Users className="w-4 h-4 text-[#D4AF37]" />
+                  <div>
+                    <div className="text-muted-foreground">Holders</div>
+                    <div className="font-semibold text-foreground">
+                      {desktopSelectedBadge.holdersCount.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <a
+                href={desktopSelectedBadge.linkUrl || `https://unstoppabledomains.com/badge/${encodeURIComponent(desktopSelectedBadge.code)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#D4AF37] hover:bg-[#B8860B] text-black font-semibold py-2.5 transition-all"
+              >
+                <ExternalLink className="w-4 h-4" /> View Badge
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Dialog open={showAvatarPopup || showHeaderPopup} onOpenChange={(open) => {
         if (!open) {
           setShowAvatarPopup(false);
