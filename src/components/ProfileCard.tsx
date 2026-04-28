@@ -44,6 +44,7 @@ import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
 import { WorldchainNFTSection } from "./WorldchainNFTSection";
 import { useTonNFTs, type TonNFTCollectionGroup } from "@/hooks/useTonNFTs";
+import { useSuiNames } from "@/hooks/useSuiNames";
 import { useTonTokens } from "@/hooks/useTonTokens";
 import tonIconBlue from "@/assets/ton-icon-blue.png";
 import tonLogoBlue from "@/assets/ton-logo-blue-circle.png";
@@ -910,6 +911,9 @@ export const ProfileCard = ({
   // TON NFTs for .iota profiles with linked TON wallet
   const { nfts: tonNfts, collections: tonCollections, isLoading: tonNftsLoading, fetched: tonNftsFetched } = useTonNFTs(linkedTonAddress);
   const tonNftCount = useMemo(() => tonNfts.length, [tonNfts]);
+  // SuiNS Names — fetched for any available Sui address (linked or otherwise)
+  const { names: suinsNames, loading: suinsLoading, fetched: suinsFetched } = useSuiNames(linkedSuiAddress || null);
+  const suinsCount = suinsNames.length;
 
   // Detect if this is an IOTA profile
   const isIotaProfile = useMemo(() => {
