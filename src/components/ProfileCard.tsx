@@ -2012,9 +2012,12 @@ export const ProfileCard = ({
                         )}
                         {(() => {
                           if (desktopActivePanel !== 'nfts') {
+                            const repTitle = desktopActivePanel === 'reputation'
+                              ? (desktopReputationCategory === 'badges' ? 'Unstoppable Badges' : 'Reputation')
+                              : null;
                             return (
                               <h3 className="text-xl font-bold text-[#D4AF37] capitalize">
-                                {desktopActivePanel || 'Select a category'}
+                                {repTitle || desktopActivePanel || 'Select a category'}
                               </h3>
                             );
                           }
