@@ -1703,7 +1703,7 @@ export const ProfileCard = ({
 
     if (panel === 'tokens') {
       return (
-        <div className="h-full overflow-y-auto px-6 py-3 pb-20">
+        <div className="h-full overflow-y-auto px-6 py-3 pb-32">
           {portfolioLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
@@ -1764,7 +1764,7 @@ export const ProfileCard = ({
 
     if (panel === 'activity') {
       return (
-        <div className="h-full overflow-y-auto px-6 py-3 pb-20">
+        <div className="h-full overflow-y-auto px-6 py-3 pb-32">
           {transactionsLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
@@ -3734,7 +3734,7 @@ export const ProfileCard = ({
         {/* Socials Section */}
         {activeSection === 'socials' && (
           <div className="flex-1 overflow-y-auto">
-            <div className="space-y-4 pb-24">
+            <div className="space-y-4 pb-40">
             <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center">
@@ -4019,7 +4019,7 @@ export const ProfileCard = ({
         {/* Farcaster Section */}
         {activeSection === 'farcaster' && (
           <div className="flex-1 overflow-y-auto" style={{ minHeight: '400px' }}>
-            <div className="space-y-4 pb-24">
+            <div className="space-y-4 pb-40">
             <div className="p-6">
             <h3 className="text-2xl font-bold text-[#D4AF37] mb-6">📰 Farcaster Feed</h3>
             <div>{/* Removed max-h and overflow-y-auto */}
