@@ -312,7 +312,9 @@ export const ProfileCard = ({
   const [linkedEvmEnsFetched, setLinkedEvmEnsFetched] = useState(false);
   
   // Desktop split layout state - which panel to show on the right
-  const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | null>(null);
+  const [desktopActivePanel, setDesktopActivePanel] = useState<'nfts' | 'social' | 'tokens' | 'activity' | 'reputation' | null>(null);
+  const [desktopReputationCategory, setDesktopReputationCategory] = useState<'main' | 'badges'>('main');
+  const [desktopSelectedBadge, setDesktopSelectedBadge] = useState<UdBadgeItem | null>(null);
   const isMobile = useIsMobile();
   const effectiveEvmWallet = useMemo(() => {
     if (isValidEvmAddress(currentWalletAddress)) return currentWalletAddress;
