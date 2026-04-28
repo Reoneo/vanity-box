@@ -1873,7 +1873,7 @@ export const ProfileCard = ({
                   {/* Left side - 50% - Profile info: white in light mode, black+gold gradient in dark */}
                   <div className="w-1/2 flex flex-col min-h-0 border-r border-[#D4AF37]/20 bg-white dark:bg-black">
                     {/* Left panel content - with top padding for avatar overlap */}
-                    <div className="flex-1 overflow-y-auto pt-20 pb-28">
+                    <div className="flex-1 overflow-y-auto pt-20 pb-40">
                       <div className="px-6 space-y-3">
                       {/* Name */}
                       <h2 className="text-2xl font-bold text-center text-black dark:text-white tracking-tight">
@@ -2082,12 +2082,12 @@ export const ProfileCard = ({
                     </div>
                     
                     {/* Panel content */}
-                    <div className="flex-1 overflow-y-auto pb-4 min-h-0">
+                    <div className="flex-1 overflow-y-auto pb-32 min-h-0">
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
                     {desktopActivePanel === 'reputation' && (
-                      <div className="h-full overflow-y-auto px-6 py-3 pb-4">
+                      <div className="h-full overflow-y-auto px-6 py-3 pb-32">
                         {desktopReputationCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {hasTalentData && (
@@ -2199,7 +2199,7 @@ export const ProfileCard = ({
                     )}
                     {desktopActivePanel === 'nfts' && (
                       /* Desktop NFTs inline panel - reuses existing NFT rendering */
-                      <div className="h-full overflow-y-auto px-6 py-3 pb-4">
+                      <div className="h-full overflow-y-auto px-6 py-3 pb-32">
                         {nftCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {/* POAPs Button */}
@@ -2628,7 +2628,7 @@ export const ProfileCard = ({
             </div>
             ) : (
               /* Mobile: Original stacked layout - black with gold gradient in dark mode */
-              <div className="space-y-2 pb-20 bg-background min-h-full">
+              <div className="space-y-2 pb-40 bg-background min-h-full">
                 {/* Header and Avatar with Verified Badge - Always visible */}
                 <div className="relative flex-shrink-0">
                   <div 
@@ -2963,7 +2963,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* NFTs Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
                   {nftCategory === 'main' ? (
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
@@ -3601,7 +3601,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Tokens Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
                   {portfolioLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -3689,7 +3689,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Activity Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
                   {transactionsLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
