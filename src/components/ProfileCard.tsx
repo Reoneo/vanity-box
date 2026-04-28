@@ -1932,7 +1932,7 @@ export const ProfileCard = ({
                         const hasTransactions = transactions.length > 0;
                         const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
 
-                        const buttons: { title: string; onClick: () => void; panel?: 'nfts' | 'social' | 'tokens' | 'activity' }[] = [];
+                        const buttons: { title: string; onClick: () => void; panel?: 'nfts' | 'social' | 'tokens' | 'activity' | 'reputation' }[] = [];
                         if (hasTransactions) buttons.push({ title: 'Activity', panel: 'activity', onClick: () => setDesktopActivePanel('activity') });
                         if (hasNfts) buttons.push({ title: 'NFTs', panel: 'nfts', onClick: () => { setDesktopActivePanel('nfts'); onEnsureOpenSeaNfts?.(); } });
                         if (hasSocials) buttons.push({ title: 'Social', panel: 'social', onClick: () => setDesktopActivePanel('social') });
