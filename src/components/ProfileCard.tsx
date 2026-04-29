@@ -2989,8 +2989,29 @@ export const ProfileCard = ({
                   {nftCategory === 'main' ? (
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
+                      {/* Chain filter icons */}
+                      <div className="flex items-center justify-center gap-3 pb-2">
+                        {([
+                          { key: 'evm', icon: ethLogoBlue, alt: 'Ethereum / EVM', ring: 'ring-[#D4AF37]' },
+                          { key: 'iota', icon: iotaLogoBlue, alt: 'IOTA', ring: 'ring-[#00BFA5]' },
+                          { key: 'ton', icon: tonIconBlue, alt: 'TON', ring: 'ring-[#0098EA]' },
+                          { key: 'sui', icon: suiLogoBlue, alt: 'Sui', ring: 'ring-[#4DA2FF]' },
+                        ] as const).map((c) => {
+                          const active = nftChainFilter === c.key;
+                          return (
+                            <button
+                              key={c.key}
+                              onClick={() => setNftChainFilter(active ? 'all' : c.key)}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active ? `ring-2 ${c.ring} scale-110` : 'opacity-60 hover:opacity-100'}`}
+                              aria-label={`Filter ${c.alt}`}
+                            >
+                              <img src={c.icon} alt={c.alt} className="w-8 h-8 rounded-full" />
+                            </button>
+                          );
+                        })}
+                      </div>
                       {/* POAPs Button - Only show if has items */}
-                      {(poaps.length > 0 || poapTotalCount > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (poaps.length > 0 || poapTotalCount > 0) && (
                         <button
                           onClick={() => setNftCategory('poaps')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
