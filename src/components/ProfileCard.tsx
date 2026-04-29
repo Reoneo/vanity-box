@@ -249,6 +249,7 @@ export const ProfileCard = ({
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
+  const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('all');
 
   // Reset visible-NFT pagination whenever the user changes category or expanded collection
   useEffect(() => {
@@ -2202,8 +2203,29 @@ export const ProfileCard = ({
                       <div className="h-full overflow-y-auto px-6 py-3 pb-32">
                         {nftCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
+                            {/* Chain filter icons */}
+                            <div className="flex items-center justify-center gap-3 pb-2">
+                              {([
+                                { key: 'evm', icon: ethLogoBlue, alt: 'Ethereum / EVM', ring: 'ring-[#D4AF37]' },
+                                { key: 'iota', icon: iotaLogoBlue, alt: 'IOTA', ring: 'ring-[#00BFA5]' },
+                                { key: 'ton', icon: tonIconBlue, alt: 'TON', ring: 'ring-[#0098EA]' },
+                                { key: 'sui', icon: suiLogoBlue, alt: 'Sui', ring: 'ring-[#4DA2FF]' },
+                              ] as const).map((c) => {
+                                const active = nftChainFilter === c.key;
+                                return (
+                                  <button
+                                    key={c.key}
+                                    onClick={() => setNftChainFilter(active ? 'all' : c.key)}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active ? `ring-2 ${c.ring} scale-110` : 'opacity-60 hover:opacity-100'}`}
+                                    aria-label={`Filter ${c.alt}`}
+                                  >
+                                    <img src={c.icon} alt={c.alt} className="w-8 h-8 rounded-full" />
+                                  </button>
+                                );
+                              })}
+                            </div>
                             {/* POAPs Button */}
-                            {(poaps.length > 0 || poapTotalCount > 0) && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (poaps.length > 0 || poapTotalCount > 0) && (
                               <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -2223,13 +2245,13 @@ export const ProfileCard = ({
                             )}
 
                             {/* OpenSea collections — promoted as individual top-level buttons (domain collections first) */}
-                            {(!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
                               <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between">
                                 <span className="text-sm font-medium">OpenSea — Loading…</span>
                                 <Loader2 className="w-4 h-4 animate-spin" />
                               </div>
                             )}
-                            {(!isIotaProfile || !!linkedEvmAddress) && openSeaTopLevelEntries.map(([collection, collectionNfts]) => (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && openSeaTopLevelEntries.map(([collection, collectionNfts]) => (
                               <button
                                 key={`os-${collection}`}
                                 onClick={() => { setNftCategory('opensea'); setExpandedCollection(collection); }}
@@ -2253,7 +2275,7 @@ export const ProfileCard = ({
                             ))}
 
                             {/* Magic Eden Button - show for IOTA profiles with linked EVM */}
-                            {(!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
                               <button onClick={() => setNftCategory('magiceden')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -2266,7 +2288,7 @@ export const ProfileCard = ({
                             )}
 
                             {/* World Chain Button - show for IOTA profiles with linked EVM */}
-                            {(!isIotaProfile || !!linkedEvmAddress) && (worldchainNftsLoading || worldchainNftCount > 0) && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && (worldchainNftsLoading || worldchainNftCount > 0) && (
                               <button onClick={() => setNftCategory('worldchain')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -2279,7 +2301,7 @@ export const ProfileCard = ({
                             )}
 
                             {/* Hyperliquid Button - show for IOTA profiles with linked EVM */}
-                            {(!isIotaProfile || !!linkedEvmAddress) && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
                               <button onClick={() => setNftCategory('hyperliquid')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
@@ -2294,7 +2316,7 @@ export const ProfileCard = ({
                             {/* ENS Domains and Basenames buttons removed — using OpenSea collections instead */}
 
                             {/* IOTA Collection Buttons - separate per collection */}
-                            {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'iota') && isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
                               iotaLoading ? (
                                 <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white">
                                   <div className="flex items-center justify-between h-full">
@@ -2329,7 +2351,7 @@ export const ProfileCard = ({
                             )}
 
                             {/* TON NFT Buttons - show for IOTA profiles with linked TON */}
-                            {isIotaProfile && (tonNftsLoading || tonNftCount > 0) && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'ton') && isIotaProfile && (tonNftsLoading || tonNftCount > 0) && (
                               tonNftsLoading ? (
                                 <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0098EA] to-[#45AEF5] text-white">
                                   <div className="flex items-center justify-between h-full">
@@ -2365,7 +2387,7 @@ export const ProfileCard = ({
                             )}
 
                             {/* SuiNS Names button (desktop) */}
-                            {(suinsLoading || suinsCount > 0) && (
+                            {(nftChainFilter === 'all' || nftChainFilter === 'sui') && (suinsLoading || suinsCount > 0) && (
                               suinsLoading ? (
                                 <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white">
                                   <div className="flex items-center justify-between h-full">
@@ -2967,8 +2989,29 @@ export const ProfileCard = ({
                   {nftCategory === 'main' ? (
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
+                      {/* Chain filter icons */}
+                      <div className="flex items-center justify-center gap-3 pb-2">
+                        {([
+                          { key: 'evm', icon: ethLogoBlue, alt: 'Ethereum / EVM', ring: 'ring-[#D4AF37]' },
+                          { key: 'iota', icon: iotaLogoBlue, alt: 'IOTA', ring: 'ring-[#00BFA5]' },
+                          { key: 'ton', icon: tonIconBlue, alt: 'TON', ring: 'ring-[#0098EA]' },
+                          { key: 'sui', icon: suiLogoBlue, alt: 'Sui', ring: 'ring-[#4DA2FF]' },
+                        ] as const).map((c) => {
+                          const active = nftChainFilter === c.key;
+                          return (
+                            <button
+                              key={c.key}
+                              onClick={() => setNftChainFilter(active ? 'all' : c.key)}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active ? `ring-2 ${c.ring} scale-110` : 'opacity-60 hover:opacity-100'}`}
+                              aria-label={`Filter ${c.alt}`}
+                            >
+                              <img src={c.icon} alt={c.alt} className="w-8 h-8 rounded-full" />
+                            </button>
+                          );
+                        })}
+                      </div>
                       {/* POAPs Button - Only show if has items */}
-                      {(poaps.length > 0 || poapTotalCount > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (poaps.length > 0 || poapTotalCount > 0) && (
                         <button
                           onClick={() => setNftCategory('poaps')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -2991,18 +3034,18 @@ export const ProfileCard = ({
                       )}
 
                       {/* OpenSea collections — promoted as individual top-level buttons (domain collections first) */}
-                      {(!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
                         <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between">
                           <span className="text-sm font-medium">OpenSea — Loading…</span>
                           <Loader2 className="w-4 h-4 animate-spin" />
                         </div>
                       )}
-                      {(!isIotaProfile || !!linkedEvmAddress) && openseaAttempted && nfts.length === 0 && openseaHasErrors && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && openseaAttempted && nfts.length === 0 && openseaHasErrors && (
                         <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-center">
                           <span className="text-sm text-black/70">OpenSea unavailable</span>
                         </div>
                       )}
-                      {(!isIotaProfile || !!linkedEvmAddress) && openSeaTopLevelEntries.map(([collection, collectionNfts]) => (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && openSeaTopLevelEntries.map(([collection, collectionNfts]) => (
                         <button
                           key={`os-mob-${collection}`}
                           onClick={() => {
@@ -3030,7 +3073,7 @@ export const ProfileCard = ({
                       ))}
 
                       {/* Magic Eden (EVM) Button - show for IOTA profiles with linked EVM */}
-                      {(!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && (magicEdenLoading || magicEdenNfts.length > 0) && (
                         <button
                           onClick={() => setNftCategory('magiceden')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -3057,7 +3100,7 @@ export const ProfileCard = ({
                       )}
 
                       {/* World Chain Button - show for IOTA profiles with linked EVM */}
-                      {(!isIotaProfile || !!linkedEvmAddress) && (worldchainNftsLoading || worldchainNftCount > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && (worldchainNftsLoading || worldchainNftCount > 0) && (
                         <button
                           onClick={() => setNftCategory('worldchain')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -3089,7 +3132,7 @@ export const ProfileCard = ({
                       )}
 
                       {/* Hyperliquid Button - show if .hl domain or HL NFTs; for IOTA require linked EVM */}
-                      {(!isIotaProfile || !!linkedEvmAddress) && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && (web3BioProfile?.hlDomain || hlNfts.length > 0) && (
                         <button
                           onClick={() => setNftCategory('hyperliquid')}
                           className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
@@ -3116,7 +3159,7 @@ export const ProfileCard = ({
                       {/* ENS Domains and Basenames buttons removed — using OpenSea collections instead */}
 
                       {/* IOTA Collection Buttons - separate per collection */}
-                      {isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'iota') && isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
                         iotaLoading ? (
                           <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#00D9C4] text-white">
                             <div className="flex items-center justify-between h-full">
@@ -3151,7 +3194,7 @@ export const ProfileCard = ({
                       )}
 
                       {/* TON NFT Buttons - show for IOTA profiles with linked TON */}
-                      {isIotaProfile && (tonNftsLoading || tonNftCount > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'ton') && isIotaProfile && (tonNftsLoading || tonNftCount > 0) && (
                         tonNftsLoading ? (
                           <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#0098EA] to-[#45AEF5] text-white">
                             <div className="flex items-center justify-between h-full">
@@ -3187,7 +3230,7 @@ export const ProfileCard = ({
                       )}
 
                       {/* SuiNS Names button — shown whenever a Sui address is available */}
-                      {(suinsLoading || suinsCount > 0) && (
+                      {(nftChainFilter === 'all' || nftChainFilter === 'sui') && (suinsLoading || suinsCount > 0) && (
                         suinsLoading ? (
                           <button className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#4DA2FF] to-[#6FB7FF] text-white">
                             <div className="flex items-center justify-between h-full">
