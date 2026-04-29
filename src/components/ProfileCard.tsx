@@ -249,6 +249,7 @@ export const ProfileCard = ({
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
+  const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('all');
 
   // Reset visible-NFT pagination whenever the user changes category or expanded collection
   useEffect(() => {
