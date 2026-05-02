@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Plus, Trash2, Loader2, Image, Globe, Mail, User, Link2, Fingerprint, ShieldCheck, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, Loader2, Image, Globe, Mail, User, Link2, Fingerprint, ShieldCheck, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   OnchainProfileData,
@@ -21,6 +21,7 @@ import {
 } from '@/lib/iota/vanityProfile';
 import { IdentityPanel } from '@/components/identity/IdentityPanel';
 import { useIotaWallet } from '@/contexts/IotaWalletContext';
+import { useVanityVerification } from '@/hooks/useVanityVerification';
 
 interface IotaProfileEditModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ interface IotaProfileEditModalProps {
   iotaName: string;
   nameObjectId: string;
   currentProfile: OnchainProfileData | null;
+  linkedEvmAddress?: string | null;
   onProfileUpdated: () => void;
 }
 
@@ -53,12 +55,18 @@ export function IotaProfileEditModal({
   iotaName,
   nameObjectId,
   currentProfile,
+  linkedEvmAddress,
   onProfileUpdated,
 }: IotaProfileEditModalProps) {
   const [isPending, setIsPending] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('profile');
   const { address: iotaWalletAddress } = useIotaWallet();
   const [lastSaveResult, setLastSaveResult] = useState<{ ipfsCid: string; gatewayUrl: string } | null>(null);
+  const vanityVerification = useVanityVerification();
+
+  // Detect if current profile is NOT a .vanity.iota subdomain
+  const isVanityIotaSubdomain = iotaName.toLowerCase().endsWith('.vanity.iota');
+  const showVanitySection = !isVanityIotaSubdomain && !!linkedEvmAddress;
   
   // Form state
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -86,6 +94,7 @@ export function IotaProfileEditModal({
       setLinks([]);
     }
     setLastSaveResult(null);
+    vanityVerification.reset();
   }, [currentProfile, open]);
   
   const handleAddLink = () => {
@@ -355,6 +364,146 @@ export function IotaProfileEditModal({
                     </div>
                   )}
                 </div>
+
+                {/* Verify Unstoppable .vanity Section */}
+                {showVanitySection && (
+                  <div className="space-y-3 pt-2">
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-[#D4AF37]" />
+                        Unstoppable .vanity Domain
+                      </Label>
+                      <p className="text-[10px] text-muted-foreground">
+                        Verify your .vanity domain to claim a matching .vanity.iota subdomain — gasless and free.
+                      </p>
+
+                      {vanityVerification.step === 'idle' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-9 text-xs border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                          onClick={() => vanityVerification.verifyOwnership(linkedEvmAddress!)}
+                        >
+                          <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
+                          Verify .vanity
+                        </Button>
+                      )}
+
+                      {vanityVerification.step === 'verifying' && (
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50">
+                          <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+                          <span className="text-xs text-muted-foreground">Checking .vanity domains...</span>
+                        </div>
+                      )}
+
+                      {vanityVerification.step === 'verified' && vanityVerification.vanityDomains.length === 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                            <XCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                            <span className="text-xs text-muted-foreground">No .vanity domain found for your linked wallet</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 h-8 text-xs border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                              onClick={() => window.open('https://get.unstoppabledomains.com/vanity/', '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Get .vanity
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 h-8 text-xs"
+                              onClick={() => vanityVerification.verifyOwnership(linkedEvmAddress!)}
+                            >
+                              Verify Again
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {vanityVerification.step === 'verified' && vanityVerification.vanityDomains.length > 0 && (
+                        <div className="space-y-2">
+                          {vanityVerification.vanityDomains.map((domain) => {
+                            const prefix = domain.replace(/\.vanity$/i, '');
+                            return (
+                              <div key={domain} className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium truncate">{domain}</p>
+                                  <p className="text-[10px] text-muted-foreground">→ {prefix}.vanity.iota</p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="h-7 text-[10px] px-3 bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90"
+                                  onClick={() => {
+                                    if (iotaWalletAddress) {
+                                      vanityVerification.mintSubdomain(domain, iotaWalletAddress, linkedEvmAddress!);
+                                    } else {
+                                      toast.error('Please connect your IOTA wallet');
+                                    }
+                                  }}
+                                >
+                                  Mint
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {vanityVerification.step === 'minting' && (
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50">
+                          <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+                          <span className="text-xs text-muted-foreground">Minting .vanity.iota subdomain (gas-free)...</span>
+                        </div>
+                      )}
+
+                      {vanityVerification.step === 'minted' && vanityVerification.mintedDomain && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium">{vanityVerification.mintedDomain.fullName} claimed!</p>
+                              <p className="text-[10px] text-muted-foreground">Sponsored • Gas-free</p>
+                            </div>
+                          </div>
+                          {vanityVerification.mintedDomain.profileUrl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full h-8 text-xs border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                              onClick={() => window.open(vanityVerification.mintedDomain!.profileUrl, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              View Profile
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {vanityVerification.step === 'error' && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/30">
+                            <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+                            <span className="text-xs text-destructive">{vanityVerification.error}</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full h-8 text-xs"
+                            onClick={() => vanityVerification.reset()}
+                          >
+                            Try Again
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             

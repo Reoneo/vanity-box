@@ -2360,6 +2360,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 iotaName={displayQuery}
                 nameObjectId={iotaNameObjectId || ''}
                 currentProfile={iotaOnchainProfile}
+                linkedEvmAddress={linkedEvmAddress}
                 onProfileUpdated={() => {
                   const normalizedName = normalizeIotaQuery(displayQuery);
                   if (!normalizedName) return;
