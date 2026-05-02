@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Plus, Trash2, Loader2, Image, Globe, Mail, User, Link2, Fingerprint, ShieldCheck, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, Loader2, Image, Globe, Mail, User, Link2, Fingerprint, ShieldCheck, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   OnchainProfileData,
@@ -21,6 +21,7 @@ import {
 } from '@/lib/iota/vanityProfile';
 import { IdentityPanel } from '@/components/identity/IdentityPanel';
 import { useIotaWallet } from '@/contexts/IotaWalletContext';
+import { useVanityVerification } from '@/hooks/useVanityVerification';
 
 interface IotaProfileEditModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ interface IotaProfileEditModalProps {
   iotaName: string;
   nameObjectId: string;
   currentProfile: OnchainProfileData | null;
+  linkedEvmAddress?: string | null;
   onProfileUpdated: () => void;
 }
 
