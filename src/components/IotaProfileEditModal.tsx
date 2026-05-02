@@ -55,12 +55,18 @@ export function IotaProfileEditModal({
   iotaName,
   nameObjectId,
   currentProfile,
+  linkedEvmAddress,
   onProfileUpdated,
 }: IotaProfileEditModalProps) {
   const [isPending, setIsPending] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('profile');
   const { address: iotaWalletAddress } = useIotaWallet();
   const [lastSaveResult, setLastSaveResult] = useState<{ ipfsCid: string; gatewayUrl: string } | null>(null);
+  const vanityVerification = useVanityVerification();
+
+  // Detect if current profile is NOT a .vanity.iota subdomain
+  const isVanityIotaSubdomain = iotaName.toLowerCase().endsWith('.vanity.iota');
+  const showVanitySection = !isVanityIotaSubdomain && !!linkedEvmAddress;
   
   // Form state
   const [avatarUrl, setAvatarUrl] = useState('');
