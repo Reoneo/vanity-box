@@ -94,6 +94,7 @@ export function IotaProfileEditModal({
       setLinks([]);
     }
     setLastSaveResult(null);
+    vanityVerification.reset();
   }, [currentProfile, open]);
   
   const handleAddLink = () => {
