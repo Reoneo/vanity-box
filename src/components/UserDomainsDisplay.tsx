@@ -225,8 +225,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
           {/* Step 1: Connect EVM wallet if needed */}
           {!evmAddress && vanityVerification.step === 'idle' && (
             <div className="text-center">
-              <p className="text-xs text-amber-500 mb-3">Connect your Ethereum wallet to verify .vanity ownership</p>
-              <w3m-button size="sm" />
+              <p className="text-xs text-amber-500 mb-3">Connect your Ethereum wallet above to verify .vanity ownership</p>
             </div>
           )}
 
