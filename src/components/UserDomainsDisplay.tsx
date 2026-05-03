@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useWalletSign } from '@/hooks/useWalletSign';
-import { Loader2, Pencil, Send, Trash2, ExternalLink, RefreshCw } from 'lucide-react';
+import { Loader2, Pencil, Send, Trash2, ExternalLink, RefreshCw, ShieldCheck, CheckCircle2, XCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
@@ -14,6 +14,8 @@ import ensLogoBlue from '@/assets/ens-logo-blue.png';
 import ensLogoLink from '@/assets/ens-logo-link.png';
 import smithCashAvatar from '@/assets/smith-cash-avatar.png';
 import { DomainEditPanel } from './DomainEditPanel';
+import { useVanityVerification } from '@/hooks/useVanityVerification';
+import { useAccount } from 'wagmi';
 
 import noResultsGif from '@/assets/no-results.gif';
 
