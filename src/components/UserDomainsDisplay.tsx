@@ -202,20 +202,152 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
 
   if (domains.length === 0) {
     return (
-      <div className="text-center py-8">
-        <button 
-          onClick={handleBackClick}
-          className="flex items-center gap-2 text-foreground hover:text-primary mb-6"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          {t('back')}
-        </button>
-        <p className="text-gray-600 dark:text-gray-400">{t('no_domains_found')}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-          {t('mint_first_id')}
-        </p>
+      <div className="px-4 py-8 space-y-6">
+        <div className="text-center space-y-2">
+          <p className="text-muted-foreground">{t('no_domains_found')}</p>
+          <p className="text-sm text-muted-foreground/70">
+            {t('mint_first_id')}
+          </p>
+        </div>
+
+        {/* Vanity Verify Section */}
+        <div className="max-w-sm mx-auto space-y-4">
+          <div className="text-center space-y-1">
+            <h3 className="text-sm font-semibold text-foreground flex items-center justify-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-[#D4AF37]" />
+              Unstoppable .vanity Domain
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Verify your .vanity domain on Polygon to claim a free .vanity.iota subdomain
+            </p>
+          </div>
+
+          {/* Step 1: Connect EVM wallet if needed */}
+          {!evmAddress && vanityVerification.step === 'idle' && (
+            <div className="text-center">
+              <p className="text-xs text-amber-500 mb-3">Connect your Ethereum wallet to verify .vanity ownership</p>
+              <w3m-button size="sm" />
+            </div>
+          )}
+
+          {/* Step 2: Verify ownership */}
+          {evmAddress && vanityVerification.step === 'idle' && (
+            <Button
+              className="w-full h-11 bg-[#D4AF37] hover:bg-[#F4E4BC] text-black font-bold rounded-xl"
+              onClick={() => vanityVerification.verifyOwnership(evmAddress)}
+            >
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Verify .vanity Ownership
+            </Button>
+          )}
+
+          {vanityVerification.step === 'verifying' && (
+            <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-muted/50">
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+              <span className="text-sm text-muted-foreground">Checking .vanity domains on Polygon...</span>
+            </div>
+          )}
+
+          {/* No domains found */}
+          {vanityVerification.step === 'verified' && vanityVerification.vanityDomains.length === 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                <XCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">No .vanity domains found for {evmAddress?.slice(0, 6)}...{evmAddress?.slice(-4)}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={() => vanityVerification.reset()}
+                >
+                  Try Again
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs border-[#D4AF37]/30 text-[#D4AF37]"
+                  onClick={() => window.open('https://unstoppabledomains.com/tlds/vanity', '_blank')}
+                >
+                  Get a .vanity Domain
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Domains found — show claim buttons */}
+          {vanityVerification.step === 'verified' && vanityVerification.vanityDomains.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">
+                  Found {vanityVerification.vanityDomains.length} .vanity domain{vanityVerification.vanityDomains.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              {vanityVerification.vanityDomains.map((domain) => {
+                const subname = domain.replace(/\.vanity$/i, '');
+                const fullIotaName = `${subname}.vanity.iota`;
+                return (
+                  <Button
+                    key={domain}
+                    className="w-full h-11 bg-[#D4AF37] hover:bg-[#F4E4BC] text-black font-bold rounded-xl"
+                    onClick={() => vanityVerification.mintSubdomain(domain, walletAddress || '', evmAddress || '')}
+                  >
+                    Claim {fullIotaName}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+
+          {vanityVerification.step === 'minting' && (
+            <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-muted/50">
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4AF37]" />
+              <span className="text-sm text-muted-foreground">Claiming your .vanity.iota subdomain...</span>
+            </div>
+          )}
+
+          {vanityVerification.step === 'minted' && vanityVerification.mintedDomain && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-xs text-foreground font-medium">
+                  {vanityVerification.mintedDomain.fullName} claimed!
+                </span>
+              </div>
+              {vanityVerification.mintedDomain.profileUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs border-[#D4AF37]/30 text-[#D4AF37]"
+                  onClick={() => window.open(vanityVerification.mintedDomain!.profileUrl, '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1.5" />
+                  View Profile
+                </Button>
+              )}
+            </div>
+          )}
+
+          {vanityVerification.step === 'error' && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30">
+                <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">{vanityVerification.error}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => vanityVerification.reset()}
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
+        </div>
+
         {theme === 'light' && (
           <img 
             src={noResultsGif} 
