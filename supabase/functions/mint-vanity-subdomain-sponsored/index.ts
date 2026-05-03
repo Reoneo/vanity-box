@@ -23,7 +23,7 @@ const corsHeaders = {
 
 // Placeholder: The parent NFT object ID for "vanity.iota" on IOTA mainnet
 // Replace with the actual on-chain NFT object ID when available
-const VANITY_IOTA_PARENT_NFT = "PLACEHOLDER_VANITY_IOTA_PARENT_NFT_OBJECT_ID";
+const VANITY_IOTA_PARENT_NFT = "0xf7e59c075252acc02198f32fa625172c36137aa8d30d5fcf77cbff1c66efa86a";
 
 const CLOUDFLARE_ZONE_ID = Deno.env.get("CLOUDFLARE_ZONE_ID");
 const CLOUDFLARE_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
