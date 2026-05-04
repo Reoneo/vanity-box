@@ -394,17 +394,8 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
 
   return (
     <div className="space-y-6 px-4 pb-20">
-      {/* Header with Back Button - Added top padding for navbar spacing */}
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6 pt-4">
-        <button 
-          onClick={handleBackClick}
-          className="flex items-center justify-center w-10 h-10 rounded-xl bg-background/50 border border-border/50 hover:border-[#D4AF37]/50 hover:bg-background/80 transition-all duration-200 group"
-          aria-label="Back"
-        >
-          <svg className="w-5 h-5 text-foreground group-hover:text-[#D4AF37] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
         <h1 className="text-3xl md:text-4xl font-bold text-foreground">
           My IDs
         </h1>
