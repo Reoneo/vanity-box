@@ -203,36 +203,33 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
   if (domains.length === 0) {
     return (
       <div className="px-4 py-8 space-y-6">
-        <div className="text-center space-y-2">
-          <p className="text-muted-foreground">{t('no_domains_found')}</p>
-          <p className="text-sm text-muted-foreground/70">
-            {t('mint_first_id')}
+        <div className="text-center space-y-3">
+          <h2 className="text-xl font-bold text-foreground">{t('no_domains_found')}</h2>
+          <p className="text-sm text-muted-foreground">
+            Get your .vanity domain or verify ownership to claim a free .vanity.iota subdomain
           </p>
         </div>
 
-        {/* Vanity Verify Section */}
-        <div className="max-w-sm mx-auto space-y-4">
-          <div className="text-center space-y-1">
-            <h3 className="text-sm font-semibold text-foreground flex items-center justify-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-[#D4AF37]" />
-              Unstoppable .vanity Domain
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Verify your .vanity domain on Polygon to claim a free .vanity.iota subdomain
-            </p>
-          </div>
+        {/* Action Buttons */}
+        <div className="max-w-sm mx-auto space-y-3">
+          {/* Register Button */}
+          <Button
+            className="w-full h-12 bg-[#D4AF37] hover:bg-[#F4E4BC] text-black font-bold rounded-xl"
+            onClick={() => window.open('https://get.unstoppabledomains.com/vanity/', '_blank', 'noopener,noreferrer')}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Register a .vanity Domain
+          </Button>
 
-          {/* Step 1: Connect EVM wallet if needed */}
+          {/* Verify Button */}
           {!evmAddress && vanityVerification.step === 'idle' && (
-            <div className="text-center">
-              <p className="text-xs text-amber-500 mb-3">Connect your Ethereum wallet above to verify .vanity ownership</p>
-            </div>
+            <p className="text-xs text-center text-amber-500">Connect your Ethereum wallet above to verify .vanity ownership</p>
           )}
 
-          {/* Step 2: Verify ownership */}
           {evmAddress && vanityVerification.step === 'idle' && (
             <Button
-              className="w-full h-11 bg-[#D4AF37] hover:bg-[#F4E4BC] text-black font-bold rounded-xl"
+              variant="outline"
+              className="w-full h-12 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 font-bold rounded-xl"
               onClick={() => vanityVerification.verifyOwnership(evmAddress)}
             >
               <ShieldCheck className="h-4 w-4 mr-2" />
@@ -247,35 +244,18 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
             </div>
           )}
 
-          {/* No domains found */}
           {vanityVerification.step === 'verified' && vanityVerification.vanityDomains.length === 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
                 <XCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
                 <span className="text-xs text-muted-foreground">No .vanity domains found for {evmAddress?.slice(0, 6)}...{evmAddress?.slice(-4)}</span>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs"
-                  onClick={() => vanityVerification.reset()}
-                >
-                  Try Again
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs border-[#D4AF37]/30 text-[#D4AF37]"
-                  onClick={() => window.open('https://unstoppabledomains.com/tlds/vanity', '_blank')}
-                >
-                  Get a .vanity Domain
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => vanityVerification.reset()}>
+                Try Again
+              </Button>
             </div>
           )}
 
-          {/* Domains found — show claim buttons */}
           {vanityVerification.step === 'verified' && vanityVerification.vanityDomains.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
@@ -316,12 +296,7 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 </span>
               </div>
               {vanityVerification.mintedDomain.profileUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs border-[#D4AF37]/30 text-[#D4AF37]"
-                  onClick={() => window.open(vanityVerification.mintedDomain!.profileUrl, '_blank')}
-                >
+                <Button variant="outline" size="sm" className="w-full text-xs border-[#D4AF37]/30 text-[#D4AF37]" onClick={() => window.open(vanityVerification.mintedDomain!.profileUrl, '_blank')}>
                   <ExternalLink className="h-3 w-3 mr-1.5" />
                   View Profile
                 </Button>
@@ -335,25 +310,12 @@ export const UserDomainsDisplay: React.FC<UserDomainsDisplayProps> = ({ walletAd
                 <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                 <span className="text-xs text-muted-foreground">{vanityVerification.error}</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => vanityVerification.reset()}
-              >
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => vanityVerification.reset()}>
                 Try Again
               </Button>
             </div>
           )}
         </div>
-
-        {theme === 'light' && (
-          <img 
-            src={noResultsGif} 
-            alt="No domains found" 
-            className="w-48 h-48 mx-auto mt-4 object-contain"
-          />
-        )}
       </div>
     );
   }
