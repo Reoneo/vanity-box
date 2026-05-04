@@ -3,33 +3,32 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 
 /**
  * Home hero for the .vanity TLD landing.
- * Brand: gold ".vanity" headline + tagline + search input that
- * redirects users to https://{name}.vanity.box so they can purchase
- * their domain on the Unstoppable Domains co-branded portal.
+ * Brand: gold ".vanity" headline + tagline + search input.
+ * Search navigates to profile like the dock search bar.
+ * Names without a TLD redirect to home page.
  */
 export const HomeFeatureShowcase: React.FC = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [value, setValue] = useState('');
 
-  const normalize = (raw: string) => {
-    const trimmed = raw.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-    if (!trimmed) return '';
-    const cleaned = trimmed.startsWith('.') ? trimmed.slice(1) : trimmed;
-    if (!cleaned) return '';
-    // Strip any user-typed TLD: we always go to {name}.vanity.box
-    const base = cleaned.split('.')[0];
-    return base;
-  };
-
   const handleSubmit = () => {
-    const name = normalize(value);
-    if (!name) return;
-    const url = `https://${name}.vanity.box`;
-    // External landing page on UD-powered vanity.box portal
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const trimmed = value.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+    if (!trimmed) return;
+
+    // If the query has no TLD (no dot), navigate home
+    if (!trimmed.includes('.')) {
+      navigate('/', { replace: false });
+      return;
+    }
+
+    // Navigate to the profile route — same as dock search
+    navigate(`/${encodeURIComponent(trimmed)}`, { replace: false });
   };
 
   return (
@@ -82,6 +81,7 @@ export const HomeFeatureShowcase: React.FC = () => {
             disabled={!value.trim()}
             className="h-12 px-10 rounded-full bg-[#D4AF37] text-black hover:bg-[#C4A030] font-semibold text-base shadow-md disabled:opacity-60 disabled:bg-[#D4AF37] disabled:text-black"
           >
+            <Search className="w-4 h-4 mr-2" />
             {t('search')}
           </Button>
         </div>
