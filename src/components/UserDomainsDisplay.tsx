@@ -17,7 +17,7 @@ import { DomainEditPanel } from './DomainEditPanel';
 import { useVanityVerification } from '@/hooks/useVanityVerification';
 import { useAccount } from 'wagmi';
 
-import noResultsGif from '@/assets/no-results.gif';
+
 
 interface Domain {
   name: string;
