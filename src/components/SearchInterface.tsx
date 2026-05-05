@@ -1275,6 +1275,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Require a search query - we only show subdomain results, not parent domains
     if (!trimmedQuery) return;
 
+    // Prevent searches with spaces
+    if (trimmedQuery.includes(" ")) {
+      return;
+    }
+
+    const hasDot = trimmedQuery.includes('.');
+    const isPotentialWallet = trimmedQuery.startsWith('0x') && /^0x[a-fA-F0-9]+$/i.test(trimmedQuery);
+    const isEvmWallet = /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
+    const isIotaAddr = isValidIotaAddress(trimmedQuery);
+    const isWalletAddress = isEvmWallet || isIotaAddr;
+
+    // If query has no dot and is not a wallet address, open UD search without changing the current screen
+    if (!hasDot && !isWalletAddress) {
+      window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}`, '_blank');
+      return;
+    }
+
     console.log("Search start", { query: trimmedQuery });
     setShowFilterDropdown(false);
     setShowSearchBar(false); // Close search overlay immediately when search begins
@@ -1282,11 +1299,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // Reset detail view state to fix glitch
     setShowDetailView(false);
     setDetailViewResult(null);
-
-    // Prevent searches with spaces
-    if (trimmedQuery.includes(" ")) {
-      return;
-    }
 
     // Special test mode: show all domains for subdomain minting
     if (trimmedQuery.toLowerCase() === "test321") {
@@ -1314,10 +1326,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     // - Wallet addresses: 42 chars (0x + 40 hex)
     // - Domain-style lookups with dots (.vanity, .eth, etc.): 63 chars
     // - Regular names without dots: 12 chars
-    const hasDot = trimmedQuery.includes('.');
-    const isPotentialWallet = trimmedQuery.startsWith('0x') && /^0x[a-fA-F0-9]+$/i.test(trimmedQuery);
-    const isIotaAddr = isValidIotaAddress(trimmedQuery);
-
     let maxLength = 12; // Default for regular names
     if (isPotentialWallet || isIotaAddr) {
       maxLength = 70; // Allow wallet addresses (EVM 42 chars, IOTA 66 chars + buffer)
@@ -1362,10 +1370,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setHasSearched(true);
     setIsSearchActive(true);
 
-    // Check if query is a valid wallet address (EVM: 40 hex, IOTA: 64 hex)
-    const isEvmWallet = trimmedQuery && /^0x[a-fA-F0-9]{40}$/i.test(trimmedQuery);
-    const isWalletAddress = isEvmWallet || isIotaAddr;
-
     console.log("🔍 Query analysis:", {
       query: trimmedQuery,
       isWalletAddress,
@@ -1387,17 +1391,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     } else if (isIotaAddr) {
       normalizedAddress = trimmedQuery.toLowerCase();
       console.log("✅ IOTA address detected:", normalizedAddress);
-    }
-
-    // If query has no dot and is not a wallet address, open UD search and return home
-    if (trimmedQuery && !trimmedQuery.includes(".") && !isWalletAddress) {
-      setIsLoading(false);
-      setIsHomepage(true);
-      setIsSearchActive(false);
-      setHasSearched(false);
-      window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}`, '_blank');
-      navigate('/', { replace: false });
-      return;
     }
 
     // If query contains a dot OR is a wallet address, try fetching profile using unified resolver
