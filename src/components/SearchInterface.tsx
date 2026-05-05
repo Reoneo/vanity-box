@@ -2796,14 +2796,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       isActive: false,
                     }] : []),
-                    {
+                    ...(walletAddress ? [{
                       icon: <User className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Profile',
                       onClick: async () => {
-                        if (!walletAddress) {
-                          toast.error('Please connect your wallet first');
-                          return;
-                        }
                         // For IOTA wallets, resolve .iota name first (same as profile dock)
                         let searchIdentifier = connectedUsername || walletAddress;
                         if (!connectedUsername && connectedWalletType === 'iota') {
@@ -2818,7 +2814,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         if (searchIdentifier) handleSearch(searchIdentifier);
                       },
                       isActive: false,
-                    },
+                    }] : []),
                     {
                       icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Search',
