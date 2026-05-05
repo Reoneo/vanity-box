@@ -1389,12 +1389,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       console.log("✅ IOTA address detected:", normalizedAddress);
     }
 
-    // If query has no dot and is not a wallet address, return to home page
+    // If query has no dot and is not a wallet address, open UD search and return home
     if (trimmedQuery && !trimmedQuery.includes(".") && !isWalletAddress) {
       setIsLoading(false);
       setIsHomepage(true);
       setIsSearchActive(false);
       setHasSearched(false);
+      window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}`, '_blank');
       navigate('/', { replace: false });
       return;
     }

@@ -21,14 +21,8 @@ export const HomeFeatureShowcase: React.FC = () => {
     const trimmed = value.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
     if (!trimmed) return;
 
-    // If the query has no TLD (no dot), navigate home
-    if (!trimmed.includes('.')) {
-      navigate('/', { replace: false });
-      return;
-    }
-
-    // Navigate to the profile route — same as dock search
-    navigate(`/${encodeURIComponent(trimmed)}`, { replace: false });
+    // Open Unstoppable Domains search with the query
+    window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmed)}`, '_blank');
   };
 
   return (
