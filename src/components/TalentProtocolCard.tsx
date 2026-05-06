@@ -49,7 +49,13 @@ export const TalentProtocolCard = ({ wallet, ens, talentId }: TalentProtocolCard
         } else if (data?.scores) {
           console.log('[TalentCard] Scores found:', data.scores);
           setScores(data.scores);
-          setHasData(data.scores.builder !== null || data.scores.creator !== null);
+          const builderVal = data.scores.builder?.value;
+          const creatorVal = data.scores.creator?.value;
+          // Hide if both scores are 0 or null
+          setHasData(
+            (builderVal !== null && builderVal !== 0) ||
+            (creatorVal !== null && creatorVal !== 0)
+          );
         } else {
           console.log('[TalentCard] No scores in response');
           setScores(null);
