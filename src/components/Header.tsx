@@ -18,7 +18,7 @@ import { isTelegramWebView } from "@/lib/telegram";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4AF37" }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const lastSyncClickRef = React.useRef<number>(0);
@@ -134,7 +134,7 @@ export const Header: React.FC = () => {
   const TriggerOrClose = menuOpen ? SheetClose : SheetTrigger;
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-      <header className="fixed top-0 left-0 right-0 z-[100] w-full bg-[#D4AF37] pt-safe-area-inset-top">
+      <header className="fixed top-0 left-0 right-0 z-[100] w-full pt-safe-area-inset-top" style={{ backgroundColor: accentColor }}>
         {/* Preload the logo */}
         <link rel="preload" as="image" href={vanityLogo} />
 

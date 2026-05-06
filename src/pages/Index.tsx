@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { SearchInterface } from "@/components/SearchInterface";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
@@ -14,8 +14,14 @@ import { NetworkIcon } from "@/components/NetworkIcon";
 const Index = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
+  const { username } = useParams<{ username?: string }>();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const { isConnected: walletConnected, openChainModal } = useWalletConnect();
+
+  // Profile-specific theme overrides
+  const isPoap = username?.toLowerCase() === "poap.eth";
+  const accentColor = isPoap ? "#B8B8E8" : "#D4AF37";
+  const accentLight = isPoap ? "#D0D0F0" : "#F4E4BC";
 
   // Listen for wallet connection events
   useEffect(() => {
@@ -69,7 +75,7 @@ const Index = () => {
   return (
     <div className="min-h-screen h-full bg-background flex flex-col relative overflow-x-hidden">
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
-      <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
+      <div className="fixed inset-0 border-l-2 border-r-2 pointer-events-none z-50" style={{ borderColor: accentColor }} />
 
       {/* Content wrapper */}
       <div className="min-h-screen h-full flex flex-col relative z-40">
@@ -79,7 +85,7 @@ const Index = () => {
         </div>
 
         <div className="pointer-events-auto flex-shrink-0">
-          <Header />
+          <Header accentColor={accentColor} />
         </div>
 
         {/* Hero Section - Takes remaining space between header and footer */}
@@ -89,7 +95,7 @@ const Index = () => {
           </article>
         </main>
 
-        <footer className="fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999] pointer-events-auto">
+        <footer className="fixed bottom-0 left-0 right-0 py-1 border-t-2 z-[9999] pointer-events-auto" style={{ background: `linear-gradient(to right, ${accentColor}, ${accentLight}, ${accentColor})`, borderColor: accentColor }}>
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">
