@@ -77,7 +77,7 @@ const Index = () => {
   return (
     <div className="min-h-screen h-full bg-background flex flex-col relative overflow-x-hidden">
       {/* Gold border wrapper - fixed position z-50 to appear over everything including infinite menu */}
-      <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
+      <div className="fixed inset-0 border-l-2 border-r-2 pointer-events-none z-50" style={{ borderColor: accentColor }} />
 
       {/* Content wrapper */}
       <div className="min-h-screen h-full flex flex-col relative z-40">
