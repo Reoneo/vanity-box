@@ -18,7 +18,7 @@ import { isTelegramWebView } from "@/lib/telegram";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4AF37" }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const lastSyncClickRef = React.useRef<number>(0);
