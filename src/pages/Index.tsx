@@ -87,7 +87,7 @@ const Index = () => {
         </div>
 
         <div className="pointer-events-auto flex-shrink-0">
-          <Header />
+          <Header accentColor={accentColor} />
         </div>
 
         {/* Hero Section - Takes remaining space between header and footer */}
