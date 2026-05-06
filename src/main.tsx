@@ -2,6 +2,15 @@ import { createRoot } from "react-dom/client";
 import React from "react";
 import App from "./App.tsx";
 import "./index.css";
+
+// Subdomain redirect: poap.vanity.box → www.vanity.box/poap.eth
+(() => {
+  const h = window.location.hostname;
+  if (h === "poap.vanity.box") {
+    window.location.replace("https://www.vanity.box/poap.eth");
+    return;
+  }
+})();
 import { initMiniKit } from "@/lib/minikit";
 
 // Bootstrap MiniKit once on app load with enhanced logging
