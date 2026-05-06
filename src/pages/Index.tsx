@@ -95,7 +95,7 @@ const Index = () => {
           </article>
         </main>
 
-        <footer className={`fixed bottom-0 left-0 right-0 py-1 bg-gradient-to-r ${footerGradient} border-t-2 z-[9999] pointer-events-auto`} style={{ borderColor: accentColor }}>
+        <footer className="fixed bottom-0 left-0 right-0 py-1 border-t-2 z-[9999] pointer-events-auto" style={{ background: `linear-gradient(to right, ${accentColor}, ${accentLight}, ${accentColor})`, borderColor: accentColor }}>
           <div className="container mx-auto px-4 flex items-center justify-between text-xs">
             {/* Language Selector on Left */}
             <div className="flex items-center gap-1.5">
