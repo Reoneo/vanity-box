@@ -14,8 +14,16 @@ import { NetworkIcon } from "@/components/NetworkIcon";
 const Index = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
+  const { username } = useParams<{ username?: string }>();
   const [user, setUser] = useState<{ username?: string; walletAddress?: string } | null>(null);
   const { isConnected: walletConnected, openChainModal } = useWalletConnect();
+
+  // Profile-specific theme overrides
+  const isPoap = username?.toLowerCase() === "poap.eth";
+  const accentColor = isPoap ? "#B8B8E8" : "#D4AF37";
+  const footerGradient = isPoap
+    ? "from-[#B8B8E8] via-[#D0D0F0] to-[#B8B8E8]"
+    : "from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37]";
 
   // Listen for wallet connection events
   useEffect(() => {
