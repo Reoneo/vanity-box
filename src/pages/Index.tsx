@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { SearchInterface } from "@/components/SearchInterface";
 import { PersonalizedHeader } from "@/components/PersonalizedHeader";
