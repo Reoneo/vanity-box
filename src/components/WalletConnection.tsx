@@ -547,9 +547,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Check for passkey session too
   const hasPasskeySession = !!sessionStorage.getItem(PASSKEY_IOTA_SESSION_KEY);
   if (!user && !petraConnected && !walletConnectConnected && !iotaConnected && !hasPasskeySession) {
-    return (
-      <>
-        <Button
+    // Hide connect button on home page and profiles — only show wallet UI when already connected
+    return null;
           onClick={() => {
             console.log('🔍 Checking environment...');
             console.log('  - window.Telegram:', !!(window as any).Telegram);
