@@ -344,9 +344,9 @@ export const ProfileCard = ({
         const talentData = await talentRes.json();
         console.log('[ProfileCard] Talent Protocol for IOTA linked EVM:', talentData);
         if (!talentData.noData && !talentData.error && talentData.scores) {
-          const builderVal = talentData.scores.builder?.value ?? 0;
-          const creatorVal = talentData.scores.creator?.value ?? 0;
-          setHasTalentData(builderVal > 0 || creatorVal > 0);
+          const builderVal = Number(talentData.scores.builder?.value ?? 0);
+          const creatorVal = Number(talentData.scores.creator?.value ?? 0);
+          setHasTalentData(builderVal > 0);
           setTalentScore(builderVal > 0 ? builderVal : null);
           setTalentCreatorScore(creatorVal > 0 ? creatorVal : null);
           const hasHumanVerification = 
@@ -1119,9 +1119,9 @@ export const ProfileCard = ({
           const talentData = await talentRes.json();
           console.log('[ProfileCard] Talent Protocol response (PRIORITY):', talentData);
           if (!talentData.noData && !talentData.error && talentData.scores) {
-            const builderVal = talentData.scores.builder?.value ?? 0;
-            const creatorVal = talentData.scores.creator?.value ?? 0;
-            setHasTalentData(builderVal > 0 || creatorVal > 0);
+            const builderVal = Number(talentData.scores.builder?.value ?? 0);
+            const creatorVal = Number(talentData.scores.creator?.value ?? 0);
+            setHasTalentData(builderVal > 0);
             setTalentScore(builderVal > 0 ? builderVal : null);
             setTalentCreatorScore(creatorVal > 0 ? creatorVal : null);
             

@@ -49,13 +49,9 @@ export const TalentProtocolCard = ({ wallet, ens, talentId }: TalentProtocolCard
         } else if (data?.scores) {
           console.log('[TalentCard] Scores found:', data.scores);
           setScores(data.scores);
-          const builderVal = data.scores.builder?.value;
-          const creatorVal = data.scores.creator?.value;
-          // Hide if both scores are 0 or null
-          setHasData(
-            (builderVal !== null && builderVal !== 0) ||
-            (creatorVal !== null && creatorVal !== 0)
-          );
+          const builderVal = Number(data.scores.builder?.value ?? 0);
+          // Hide the Talent Protocol badge unless Builder Score is above 0.
+          setHasData(builderVal > 0);
         } else {
           console.log('[TalentCard] No scores in response');
           setScores(null);

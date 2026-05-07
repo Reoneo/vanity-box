@@ -3,11 +3,11 @@ import React from "react";
 import App from "./App.tsx";
 import "./index.css";
 
-// Subdomain redirect: poap.vanity.box → www.vanity.box/poap.eth
+// Subdomain redirect: poap.vanity.box → vanity.box/poap.eth
 (() => {
   const h = window.location.hostname;
   if (h === "poap.vanity.box") {
-    window.location.replace("https://www.vanity.box/poap.eth");
+    window.location.replace("https://vanity.box/poap.eth");
     return;
   }
 })();
