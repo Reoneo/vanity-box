@@ -547,59 +547,8 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
   // Check for passkey session too
   const hasPasskeySession = !!sessionStorage.getItem(PASSKEY_IOTA_SESSION_KEY);
   if (!user && !petraConnected && !walletConnectConnected && !iotaConnected && !hasPasskeySession) {
-    // Hide connect button on home page and profiles — only show wallet UI when already connected
+    // Hide connect button — only show wallet UI when already connected (e.g. passkey)
     return null;
-          onClick={() => {
-            console.log('🔍 Checking environment...');
-            console.log('  - window.Telegram:', !!(window as any).Telegram);
-            console.log('  - window.Telegram.WebApp:', !!(window as any).Telegram?.WebApp);
-            console.log('  - isTelegramWebView():', isTelegramWebView());
-            console.log('  - MiniKit.isInstalled():', MiniKit.isInstalled());
-            console.log('  - isIotaWalletAvailable:', isIotaWalletAvailable);
-            
-            if (isTelegramWebView()) {
-              console.log('✅ Detected Telegram WebView - connecting TON wallet');
-              handleTelegramConnect();
-            } else if (MiniKit.isInstalled()) {
-              console.log('✅ Detected World App - connecting World ID');
-              handleConnect();
-            } else {
-              // Desktop or mobile browser -> show IOTA wallet modal
-              console.log('✅ Opening IOTA wallet modal');
-              setShowIotaModal(true);
-            }
-          }}
-          disabled={isLoading}
-          variant="outline"
-          size="sm"
-          className={cn("h-10 bg-black text-white border-0 hover:bg-black/90 font-semibold", className)}
-        >
-          {isLoading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-              {t('connecting')}
-            </>
-          ) : (
-            t('Connect')
-          )}
-        </Button>
-        
-        {/* IOTA Connect Modal - render on any browser (desktop or mobile) except special apps */}
-        {isIotaWalletAvailable && (
-          <ConnectModal 
-            trigger={<span style={{ display: 'none' }} />}
-            open={showIotaModal} 
-            onOpenChange={(open) => {
-              setShowIotaModal(open);
-            }}
-            onConnected={({ wallet }) => {
-              console.log('[WalletConnection] IOTA wallet connected via modal:', wallet.name);
-              setShowIotaModal(false);
-            }}
-          />
-        )}
-      </>
-    );
   }
 
   // Get display info based on wallet type
