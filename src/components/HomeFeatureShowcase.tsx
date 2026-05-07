@@ -8,9 +8,8 @@ import { Search } from 'lucide-react';
 
 /**
  * Home hero for the .vanity TLD landing.
- * Brand: gold ".vanity" headline + tagline + search input.
- * Search navigates to profile like the dock search bar.
- * Names without a TLD redirect to home page.
+ * Vertically centered. Search supports profile lookups (names with TLD)
+ * and falls back to Unstoppable Domains search for bare names.
  */
 export const HomeFeatureShowcase: React.FC = () => {
   const { t } = useLanguage();
@@ -21,14 +20,20 @@ export const HomeFeatureShowcase: React.FC = () => {
     const trimmed = value.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
     if (!trimmed) return;
 
-    // Open Unstoppable Domains search with the query
+    // If the name contains a dot (has a TLD), treat as profile lookup
+    if (trimmed.includes('.')) {
+      navigate(`/${trimmed}`);
+      return;
+    }
+
+    // No TLD — open Unstoppable Domains search
     window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmed)}`, '_blank');
   };
 
   return (
     <section
       aria-label=".vanity hero"
-      className="w-full px-4 pt-6 pb-10 md:pt-10 md:pb-14 flex flex-col items-center justify-start"
+      className="w-full h-full px-4 flex flex-col items-center justify-center"
     >
       <div className="w-full max-w-xl mx-auto flex flex-col items-center gap-5">
         <h1
