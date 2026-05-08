@@ -248,6 +248,7 @@ export const ProfileCard = ({
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [showAllSocials, setShowAllSocials] = useState(false);
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
+  const [showWalletsOverlay, setShowWalletsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
   const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('all');
 
