@@ -2112,6 +2112,7 @@ export const ProfileCard = ({
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
+                    {desktopActivePanel === 'wallets' && renderDesktopPanelContent('wallets')}
                     {desktopActivePanel === 'reputation' && (
                       <div className="h-full overflow-y-auto px-6 py-3 pb-32">
                         {desktopReputationCategory === 'main' ? (
