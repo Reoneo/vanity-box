@@ -2802,6 +2802,7 @@ export const ProfileCard = ({
                       title: 'Reputation',
                       onClick: () => setShowReputationModal(true),
                     });
+                    if (linkedWalletOptions.length > 0) buttons.push({ title: 'Wallets', onClick: () => setShowWalletsOverlay(true) });
 
                     buttons.sort((a, b) => a.title.localeCompare(b.title));
                     if (buttons.length === 0) return null;
@@ -2812,7 +2813,8 @@ export const ProfileCard = ({
                           <button
                             key={btn.title}
                             onClick={btn.onClick}
-                            className="py-2 px-4 rounded-full bg-[#D4AF37] border border-[#D4AF37] hover:bg-[#C4A030] hover:border-[#C4A030] active:scale-95 transition-all duration-200 text-sm font-semibold text-black whitespace-nowrap shadow-sm"
+                            className="dock-item py-2 px-4 rounded-xl text-sm font-semibold whitespace-nowrap text-[#D4AF37]"
+                            style={{ width: 'auto', height: 'auto' }}
                           >
                             {btn.title}
                           </button>
