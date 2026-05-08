@@ -3772,6 +3772,53 @@ export const ProfileCard = ({
                 </div>
               </div>
             )}
+
+            {/* Wallets Overlay */}
+            {showWalletsOverlay && (
+              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+                {/* Header */}
+                <div 
+                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+                    <div className="w-10" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-lg font-bold text-black dark:text-white">Wallets</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowWalletsOverlay(false)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                    >
+                      <X className="w-4 h-4 text-black" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto px-4 py-6">
+                  <div className="max-w-md mx-auto space-y-3">
+                    {linkedWalletOptions.map((option) => (
+                      <button
+                        key={option.key}
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(option.address);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="w-full flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors"
+                      >
+                        <img src={option.icon} alt={option.alt} className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-sm font-semibold text-foreground">{option.label}</p>
+                          <p className="text-xs font-mono text-muted-foreground truncate">{option.address}</p>
+                        </div>
+                        <Copy className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
