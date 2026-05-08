@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
+
+const PLACEHOLDER_TEXTS = [
+  'Claim your Name',
+  'Lookup a wallet address',
+  'Lookup a Web3 Domain',
+];
 
 /**
  * Home hero for the .vanity TLD landing.
@@ -15,6 +20,15 @@ export const HomeFeatureShowcase: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [value, setValue] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  // Rotate placeholder text every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDER_TEXTS.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = () => {
     const trimmed = value.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
@@ -57,7 +71,7 @@ export const HomeFeatureShowcase: React.FC = () => {
 
         <div className="w-full flex flex-col items-center gap-3 mt-1">
           <label htmlFor="vanity-hero-search" className="sr-only">
-            {t('vanity_search_placeholder')}
+            {PLACEHOLDER_TEXTS[placeholderIndex]}
           </label>
           <Input
             id="vanity-hero-search"
@@ -65,24 +79,25 @@ export const HomeFeatureShowcase: React.FC = () => {
             inputMode="text"
             autoComplete="off"
             spellCheck={false}
-            placeholder={t('vanity_search_placeholder')}
+            placeholder={PLACEHOLDER_TEXTS[placeholderIndex]}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSubmit();
             }}
-            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base text-center"
+            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-black dark:border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base text-center"
           />
 
-          <Button
+          <button
             type="button"
             onClick={handleSubmit}
             disabled={!value.trim()}
-            className="h-12 px-10 rounded-full bg-[#D4AF37] text-black hover:bg-[#C4A030] font-semibold text-base shadow-md disabled:opacity-60 disabled:bg-[#D4AF37] disabled:text-black"
+            className="dock-item h-12 px-10 rounded-xl bg-[#D4AF37] text-black font-semibold text-base disabled:opacity-60 flex items-center gap-2"
+            style={{ width: 'auto' }}
           >
-            <Search className="w-4 h-4 mr-2" />
+            <Search className="w-4 h-4" />
             {t('search')}
-          </Button>
+          </button>
         </div>
       </div>
     </section>
