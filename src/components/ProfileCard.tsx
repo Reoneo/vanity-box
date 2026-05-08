@@ -1937,7 +1937,7 @@ export const ProfileCard = ({
                         const hasTransactions = transactions.length > 0;
                         const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
 
-                        const buttons: { title: string; onClick: () => void; panel?: 'nfts' | 'social' | 'tokens' | 'activity' | 'reputation' }[] = [];
+                        const buttons: { title: string; onClick: () => void; panel?: 'nfts' | 'social' | 'tokens' | 'activity' | 'reputation' | 'wallets' }[] = [];
                         if (hasTransactions) buttons.push({ title: 'Activity', panel: 'activity', onClick: () => setDesktopActivePanel('activity') });
                         if (hasNfts) buttons.push({ title: 'NFTs', panel: 'nfts', onClick: () => { setDesktopActivePanel('nfts'); onEnsureOpenSeaNfts?.(); } });
                         if (hasSocials) buttons.push({ title: 'Social', panel: 'social', onClick: () => setDesktopActivePanel('social') });
@@ -1954,6 +1954,7 @@ export const ProfileCard = ({
                             }
                           },
                         });
+                        if (linkedWalletOptions.length > 0) buttons.push({ title: 'Wallets', panel: 'wallets', onClick: () => setDesktopActivePanel('wallets') });
                         buttons.sort((a, b) => a.title.localeCompare(b.title));
 
                         if (buttons.length === 0) return null;
@@ -1964,11 +1965,8 @@ export const ProfileCard = ({
                               <button
                                 key={btn.title}
                                 onClick={btn.onClick}
-                                className={`py-2 px-4 rounded-full border text-sm font-semibold whitespace-nowrap transition-all duration-200
-                                  ${btn.panel && desktopActivePanel === btn.panel
-                                    ? 'bg-[#D4AF37] border-[#D4AF37] text-black shadow-md'
-                                    : 'bg-[#D4AF37] border-[#D4AF37] text-black hover:bg-[#C4A030] hover:border-[#C4A030] shadow-sm'
-                                  }`}
+                                className="dock-item py-2 px-4 rounded-xl text-sm font-semibold whitespace-nowrap text-[#D4AF37]"
+                                style={{ width: 'auto', height: 'auto' }}
                               >
                                 {btn.title}
                               </button>
