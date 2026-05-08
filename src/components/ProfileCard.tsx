@@ -2718,7 +2718,7 @@ export const ProfileCard = ({
                     {getDisplayName()}
                   </h2>
 
-                  {displayedWalletAddress && renderLinkedWalletRow()}
+                  {/* Wallet addresses moved to Wallets button */}
 
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
