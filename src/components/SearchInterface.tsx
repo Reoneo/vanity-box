@@ -2815,16 +2815,17 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       },
                       isActive: false,
                     }] : []),
-                    {
+                    // Only show Search button when NOT on homepage (homepage has its own search)
+                    ...(!isHomepage ? [{
                       icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Search',
                       onClick: () => {
                         // Reset isSearchActive to show the modal-style search overlay
                         setIsSearchActive(false);
-                        setShowSearchBar(prev => !prev);
+                        setShowSearchBar((prev: boolean) => !prev);
                       },
                       isActive: showSearchBar,
-                    },
+                    }] : []),
                     {
                       icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
                       label: 'Passkey',
