@@ -1883,7 +1883,7 @@ export const ProfileCard = ({
                       </h2>
 
                       {/* Wallet Address */}
-                      {displayedWalletAddress && renderLinkedWalletRow()}
+                      {/* Wallet addresses moved to Wallets button */}
 
                       {/* Following/Followers */}
                       {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
