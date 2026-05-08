@@ -1648,7 +1648,33 @@ export const ProfileCard = ({
   };
 
   // Helper function to render desktop panel content inline (no overlay header)
-  const renderDesktopPanelContent = (panel: 'nfts' | 'social' | 'tokens' | 'activity') => {
+  const renderDesktopPanelContent = (panel: 'nfts' | 'social' | 'tokens' | 'activity' | 'wallets') => {
+    if (panel === 'wallets') {
+      return (
+        <div className="h-full overflow-y-auto px-6 py-6">
+          <div className="max-w-md mx-auto space-y-3">
+            {linkedWalletOptions.map((option) => (
+              <button
+                key={option.key}
+                onClick={async () => {
+                  await navigator.clipboard.writeText(option.address);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors"
+              >
+                <img src={option.icon} alt={option.alt} className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-semibold text-foreground">{option.label}</p>
+                  <p className="text-xs font-mono text-muted-foreground truncate">{option.address}</p>
+                </div>
+                <Copy className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
     if (panel === 'social') {
       return (
         <div className="h-full overflow-y-auto px-6 py-6">
