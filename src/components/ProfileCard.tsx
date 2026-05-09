@@ -2764,6 +2764,15 @@ export const ProfileCard = ({
                       )}
                     </div>
                   </div>
+                  {/* Share button - top right under header (mobile) */}
+                  <button
+                    type="button"
+                    onClick={handleShareProfile}
+                    aria-label="Share profile"
+                    className="absolute top-2 right-2 z-30 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all shadow-lg"
+                  >
+                    <Share2 className="w-4 h-4 text-[#D4AF37]" />
+                  </button>
                 </div>
 
                 <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
