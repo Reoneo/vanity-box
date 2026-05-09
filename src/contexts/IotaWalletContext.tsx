@@ -78,6 +78,10 @@ function IotaWalletContextInner({ children }: { children: ReactNode }) {
     if (saved && isValidIotaAddress(saved)) {
       console.log('[IotaWalletContext] Restoring passkey session:', saved);
       setPasskeyAddr(saved);
+      // Notify listeners (Header, WalletConnection) that a wallet is connected
+      window.dispatchEvent(new CustomEvent('wallet-connected', {
+        detail: { walletAddress: saved, walletType: 'iota', source: 'passkey', username: null },
+      }));
     }
   }, []); // only on mount
 
