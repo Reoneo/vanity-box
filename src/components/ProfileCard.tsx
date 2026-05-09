@@ -1913,6 +1913,15 @@ export const ProfileCard = ({
                       )}
                     </div>
                   </div>
+                  {/* Share button - top right under header */}
+                  <button
+                    type="button"
+                    onClick={handleShareProfile}
+                    aria-label="Share profile"
+                    className="absolute top-3 right-3 z-30 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all shadow-lg"
+                  >
+                    <Share2 className="w-5 h-5 text-[#D4AF37]" />
+                  </button>
                 </div>
 
                 {/* 50:50 Split Content Area - extends to footer */}
