@@ -51,6 +51,12 @@ export default function Messages() {
       // Wallet address comes from connected wallets
       if (iotaAddress) setWalletAddress(iotaAddress);
       else if (evmAddress) setWalletAddress(evmAddress);
+
+      // Fallback: passkey/extension IOTA wallets without a linked .iota domain
+      // use their raw IOTA address as the messaging identity
+      if (!linked && iotaAddress) {
+        setDomain(prev => prev || iotaAddress.toLowerCase());
+      }
     })();
   }, [iotaAddress, evmAddress]);
 
