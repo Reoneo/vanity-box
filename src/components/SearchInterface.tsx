@@ -2348,7 +2348,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             ) : null}
 
             {/* IOTA Profile Edit Modal */}
-            {showIotaEditModal && isIotaName(displayQuery) && (
+            {showIotaEditModal && (isIotaName(displayQuery) || (connectedWalletType === 'iota' && walletAddress)) && (
               <IotaProfileEditModal
                 open={showIotaEditModal}
                 onClose={() => setShowIotaEditModal(false)}
@@ -2433,27 +2433,32 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: activeDockSection === 'profile',
                   },
-                  // Only show Edit pencil when viewing own profile
-                  // For .iota profiles, also compare against iotaOwnerAddress since web3BioProfile.address may differ
-                  ...((walletAddress && web3BioProfile?.address && 
-                     walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase()) ||
-                     (walletAddress && iotaOwnerAddress && isIotaName(displayQuery) &&
-                     walletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase()) ? [{
-                    icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
-                    label: 'Edit',
-                    onClick: () => {
-                      if (isIotaName(displayQuery)) {
-                        // For .iota profiles, open edit onchain profile modal directly
-                        setShowIotaEditModal(true);
-                      } else {
-                        setShowMyIDs(true);
-                        setActiveDockSection('profile');
-                      }
-                    },
-                    isActive: false,
-                  }] : []),
-                  // Messages icon — only for users connected with a .iota subdomain
-                  ...(connectedUsername && isIotaName(connectedUsername) ? [{
+                   // Only show Edit pencil when viewing own profile
+                   // For .iota profiles, also compare against iotaOwnerAddress since web3BioProfile.address may differ
+                   // For passkey/extension IOTA wallets without a .iota name, allow editing on their own raw-address profile
+                   ...((walletAddress && web3BioProfile?.address && 
+                      walletAddress.toLowerCase() === web3BioProfile.address.toLowerCase()) ||
+                      (walletAddress && iotaOwnerAddress && isIotaName(displayQuery) &&
+                      walletAddress.toLowerCase() === iotaOwnerAddress.toLowerCase()) ||
+                      (walletAddress && connectedWalletType === 'iota' &&
+                      displayQuery && walletAddress.toLowerCase() === displayQuery.toLowerCase()) ? [{
+                     icon: <Pencil className="w-5 h-5 text-[#D4AF37]" />,
+                     label: 'Edit',
+                     onClick: () => {
+                       if (isIotaName(displayQuery) || connectedWalletType === 'iota') {
+                         // For .iota profiles OR any IOTA wallet (passkey/extension) on own raw address,
+                         // open the IOTA edit + identity modal directly
+                         setShowIotaEditModal(true);
+                       } else {
+                         setShowMyIDs(true);
+                         setActiveDockSection('profile');
+                       }
+                     },
+                     isActive: false,
+                   }] : []),
+                   // Messages icon — for users connected with a .iota subdomain OR any IOTA wallet (passkey)
+                   ...((connectedUsername && isIotaName(connectedUsername)) ||
+                       (connectedWalletType === 'iota' && walletAddress) ? [{
                     icon: <MessageSquare className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Messages',
                     onClick: () => {
