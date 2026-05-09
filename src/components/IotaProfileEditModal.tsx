@@ -182,12 +182,29 @@ export function IotaProfileEditModal({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg p-0 max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden">
-        <DialogHeader className="p-6 pb-0 flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Edit {iotaName}
+        <DialogHeader className="p-6 pb-3 flex-shrink-0 border-b border-border/50 bg-gradient-to-b from-[#D4AF37]/5 to-transparent">
+          <DialogTitle className="flex items-center gap-2.5 text-base">
+            <div className="w-9 h-9 rounded-lg bg-[#D4AF37]/15 flex items-center justify-center flex-shrink-0">
+              <User className="h-4.5 w-4.5 text-[#D4AF37]" />
+            </div>
+            <div className="flex flex-col items-start min-w-0">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Edit Profile</span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(iotaName);
+                  toast.success('Copied');
+                }}
+                className="font-mono text-sm text-foreground hover:text-[#D4AF37] transition-colors truncate max-w-[260px]"
+                title={iotaName}
+              >
+                {iotaName.startsWith('0x') && iotaName.length > 20
+                  ? `${iotaName.slice(0, 6)}…${iotaName.slice(-4)}`
+                  : iotaName}
+              </button>
+            </div>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs pt-1">
             Profile stored on IPFS, integrity verified via IOTA notarization.
           </DialogDescription>
         </DialogHeader>
