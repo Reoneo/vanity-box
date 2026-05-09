@@ -2348,7 +2348,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             ) : null}
 
             {/* IOTA Profile Edit Modal */}
-            {showIotaEditModal && isIotaName(displayQuery) && (
+            {showIotaEditModal && (isIotaName(displayQuery) || (connectedWalletType === 'iota' && walletAddress)) && (
               <IotaProfileEditModal
                 open={showIotaEditModal}
                 onClose={() => setShowIotaEditModal(false)}
