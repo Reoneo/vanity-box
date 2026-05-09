@@ -1529,6 +1529,24 @@ export const ProfileCard = ({
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const handleShareProfile = async () => {
+    const identifier = (searchedIdentity || web3BioProfile?.identity || iotaOwnerAddress || linkedEvmAddress || '').toString();
+    if (!identifier) return;
+    const url = `${window.location.origin}/${identifier}`;
+    const title = `${web3BioProfile?.displayName || identifier} on vanity.box`;
+    const text = web3BioProfile?.description || `Check out ${identifier} on vanity.box`;
+    try {
+      if (typeof navigator !== 'undefined' && (navigator as any).share) {
+        await (navigator as any).share({ title, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Profile link copied');
+      }
+    } catch (err) {
+      // user cancelled or share failed; ignore
+    }
+  };
+
   const linkedWalletOptions = useMemo(() => {
     const options: Array<{ key: string; label: string; address: string; icon: string; alt: string }> = [];
     if (linkedEvmAddress) options.push({ key: 'ethereum', label: CHAIN_MEDIA.ethereum.label, address: linkedEvmAddress, icon: CHAIN_MEDIA.ethereum.icon, alt: CHAIN_MEDIA.ethereum.alt });
