@@ -16,6 +16,13 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { NetworkIcon } from "@/components/NetworkIcon";
+import vanityLogo from "@/assets/vanity-v-wallet-logo.png";
+
+const shortenDomain = (d: string) => {
+  if (!d) return "";
+  if (d.startsWith("0x") && d.length > 20) return `${d.slice(0, 6)}…${d.slice(-4)}`;
+  return d.length > 28 ? `${d.slice(0, 14)}…${d.slice(-8)}` : d;
+};
 
 export default function Messages() {
   const navigate = useNavigate();
