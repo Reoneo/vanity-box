@@ -16,6 +16,13 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { NetworkIcon } from "@/components/NetworkIcon";
+import vanityLogo from "@/assets/vanity-v-wallet-logo.png";
+
+const shortenDomain = (d: string) => {
+  if (!d) return "";
+  if (d.startsWith("0x") && d.length > 20) return `${d.slice(0, 6)}…${d.slice(-4)}`;
+  return d.length > 28 ? `${d.slice(0, 14)}…${d.slice(-8)}` : d;
+};
 
 export default function Messages() {
   const navigate = useNavigate();
@@ -140,37 +147,73 @@ export default function Messages() {
     );
   }
 
-  // Not registered state
+  // Not registered state — wrapped in the same shell (header, borders, footer, dock)
   if (!isRegistered) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-        <Shield className="w-16 h-16 text-[#D4AF37] mb-4 animate-pulse" />
-        <h1 className="text-2xl font-bold text-foreground mb-2">Set Up Encrypted Messaging</h1>
-        <p className="text-muted-foreground mb-2 max-w-md">
-          Generate your device encryption keys and register your identity.
-        </p>
-        <p className="text-sm text-muted-foreground/70 mb-2 max-w-md">
-          Domain: <span className="text-[#D4AF37] font-mono">{domain || "Not linked"}</span>
-        </p>
-        {domain ? (
-          <button
-            onClick={register}
-            disabled={isLoading}
-            className="px-6 py-3 bg-[#D4AF37] text-black font-semibold rounded-xl hover:bg-[#D4AF37]/90 transition-colors disabled:opacity-50"
-          >
-            {isLoading ? "Generating keys…" : "Generate Keys & Register"}
-          </button>
-        ) : (
-          <p className="text-sm text-muted-foreground mb-4 max-w-md">
-            Visit your profile first, then come back here to set up messaging.
-          </p>
-        )}
-        <button
-          onClick={() => navigate("/")}
-          className="mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Back to Home
-        </button>
+      <div className="h-dvh bg-black dark:bg-black flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 border-l-2 border-r-2 border-[#D4AF37] pointer-events-none z-50" />
+        <div className="h-dvh flex flex-col relative z-40">
+          <div className="flex-shrink-0"><Header /></div>
+
+          <main className="flex-1 flex flex-col items-center justify-center px-6 text-center bg-background overflow-y-auto">
+            <div className="w-20 h-20 rounded-2xl bg-[#D4AF37]/10 flex items-center justify-center mb-5 ring-1 ring-[#D4AF37]/30">
+              <img src={vanityLogo} alt="Vanity" className="w-14 h-14 rounded-xl object-cover" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Set Up Encrypted Messaging</h1>
+            <p className="text-muted-foreground mb-3 max-w-md">
+              Generate your device encryption keys and register your identity.
+            </p>
+            <div className="mb-5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40 border border-border">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Domain</span>
+              <button
+                onClick={() => { if (domain) { navigator.clipboard.writeText(domain); toast.success("Copied"); } }}
+                className="text-sm font-mono text-[#D4AF37] hover:opacity-80"
+                title={domain || ""}
+              >
+                {domain ? shortenDomain(domain) : "Not linked"}
+              </button>
+            </div>
+            {domain ? (
+              <button
+                onClick={register}
+                disabled={isLoading}
+                className="px-6 py-3 bg-[#D4AF37] text-black font-semibold rounded-xl hover:bg-[#D4AF37]/90 transition-colors disabled:opacity-50"
+              >
+                {isLoading ? "Generating keys…" : "Generate Keys & Register"}
+              </button>
+            ) : (
+              <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                Visit your profile first, then come back here to set up messaging.
+              </p>
+            )}
+            <button
+              onClick={() => navigate("/")}
+              className="mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back to Home
+            </button>
+          </main>
+
+          <footer className="flex-shrink-0 py-1 bg-gradient-to-r from-[#D4AF37] via-[#F4E4BC] to-[#D4AF37] border-t-2 border-[#D4AF37] z-[9999]">
+            <div className="container mx-auto px-4 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5"><LanguageSelector /></div>
+              <div className="text-black absolute left-1/2 transform -translate-x-1/2 font-normal whitespace-nowrap">
+                © 2026 vanity.box. All rights reserved.
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="hover:opacity-70 transition-opacity"
+                  aria-label="Toggle theme"
+                >
+                  {theme === "dark" ? <Sun className="w-6 h-6 text-black" /> : <Moon className="w-6 h-6 text-black" />}
+                </button>
+              </div>
+            </div>
+          </footer>
+
+          <Dock items={dockItems} />
+        </div>
       </div>
     );
   }

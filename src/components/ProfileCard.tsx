@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil, ChevronLeft, ChevronRight, Award, Users } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil, ChevronLeft, ChevronRight, Award, Users, Share2 } from "lucide-react";
 import type { OnchainProfileData } from "@/lib/iota/vanityProfile";
 import { toast } from "sonner";
 
@@ -1529,6 +1529,24 @@ export const ProfileCard = ({
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const handleShareProfile = async () => {
+    const identifier = (searchedIdentity || web3BioProfile?.identity || iotaOwnerAddress || linkedEvmAddress || '').toString();
+    if (!identifier) return;
+    const url = `${window.location.origin}/${identifier}`;
+    const title = `${web3BioProfile?.displayName || identifier} on vanity.box`;
+    const text = web3BioProfile?.description || `Check out ${identifier} on vanity.box`;
+    try {
+      if (typeof navigator !== 'undefined' && (navigator as any).share) {
+        await (navigator as any).share({ title, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Profile link copied');
+      }
+    } catch (err) {
+      // user cancelled or share failed; ignore
+    }
+  };
+
   const linkedWalletOptions = useMemo(() => {
     const options: Array<{ key: string; label: string; address: string; icon: string; alt: string }> = [];
     if (linkedEvmAddress) options.push({ key: 'ethereum', label: CHAIN_MEDIA.ethereum.label, address: linkedEvmAddress, icon: CHAIN_MEDIA.ethereum.icon, alt: CHAIN_MEDIA.ethereum.alt });
@@ -1895,6 +1913,15 @@ export const ProfileCard = ({
                       )}
                     </div>
                   </div>
+                  {/* Share button - top right under header */}
+                  <button
+                    type="button"
+                    onClick={handleShareProfile}
+                    aria-label="Share profile"
+                    className="absolute top-3 right-3 z-30 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all shadow-lg"
+                  >
+                    <Share2 className="w-5 h-5 text-[#D4AF37]" />
+                  </button>
                 </div>
 
                 {/* 50:50 Split Content Area - extends to footer */}
@@ -2737,6 +2764,15 @@ export const ProfileCard = ({
                       )}
                     </div>
                   </div>
+                  {/* Share button - top right under header (mobile) */}
+                  <button
+                    type="button"
+                    onClick={handleShareProfile}
+                    aria-label="Share profile"
+                    className="absolute top-2 right-2 z-30 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all shadow-lg"
+                  >
+                    <Share2 className="w-4 h-4 text-[#D4AF37]" />
+                  </button>
                 </div>
 
                 <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
