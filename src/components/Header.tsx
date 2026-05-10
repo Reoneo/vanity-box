@@ -43,7 +43,14 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !!sessionStorage.getItem('vanity_passkey_iota_address');
+    } catch {
+      return false;
+    }
+  });
   const [isPetraConnected, setIsPetraConnected] = useState(false);
   const [showMyIds, setShowMyIds] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
