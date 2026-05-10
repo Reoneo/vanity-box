@@ -2795,7 +2795,21 @@ export const ProfileCard = ({
                     {getDisplayName()}
                   </h2>
 
-                  {/* Wallet addresses moved to Wallets button */}
+                  {/* Wallet Address — show shortened single address when not multi-chain */}
+                  {linkedWalletOptions.length < 2 && (() => {
+                    const addr = linkedWalletOptions[0]?.address || web3BioProfile?.address || iotaOwnerAddress || currentWalletAddress;
+                    if (!addr) return null;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => { try { navigator.clipboard.writeText(addr); } catch {} }}
+                        className="mx-auto block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors"
+                        aria-label="Copy wallet address"
+                      >
+                        {shortenAddress(addr)}
+                      </button>
+                    );
+                  })()}
 
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
