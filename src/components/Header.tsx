@@ -8,7 +8,7 @@ import telegramIcon from "@/assets/telegram-icon.png";
 import petraIcon from "@/assets/petra-icon.png";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, Home } from "lucide-react";
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, Home } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
@@ -43,7 +43,14 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [isMintWindowOpen, setIsMintWindowOpen] = useState(false);
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !!sessionStorage.getItem('vanity_passkey_iota_address');
+    } catch {
+      return false;
+    }
+  });
   const [isPetraConnected, setIsPetraConnected] = useState(false);
   const [showMyIds, setShowMyIds] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
@@ -325,29 +332,6 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
         className="w-[85vw] max-w-sm bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 pt-6 overflow-y-auto"
       >
         <nav className="space-y-6">
-          {/* Legal Links */}
-          <div className="space-y-3">
-            <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Legal</h3>
-            <div className="flex flex-col gap-3">
-              <Link
-                to="/privacy-policy"
-                onClick={() => setMenuOpen(false)}
-                className="h-14 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between transition-all duration-300 hover:shadow-lg"
-              >
-                <span className="font-medium">Privacy Policy</span>
-                <ChevronRight className="w-5 h-5" />
-              </Link>
-              <Link
-                to="/terms-of-use"
-                onClick={() => setMenuOpen(false)}
-                className="h-14 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between transition-all duration-300 hover:shadow-lg"
-              >
-                <span className="font-medium">Terms of Use</span>
-                <ChevronRight className="w-5 h-5" />
-              </Link>
-            </div>
-          </div>
-
           {/* Contact */}
           <div className="space-y-3">
             <h3 className="text-xl font-playfair font-semibold text-gray-900 dark:text-white">Contact</h3>

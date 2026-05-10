@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, ChevronDown, Globe } from 'lucide-react';
+import { LogOut, Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import wldLogo from '@/assets/wld-logo.png';
@@ -596,7 +596,6 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
           <span className="font-bold text-white truncate max-w-48">
             {displayUsername}
           </span>
-          <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg mt-2 z-[10000]">
