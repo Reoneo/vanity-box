@@ -2866,7 +2866,7 @@ export const ProfileCard = ({
                       title: 'Reputation',
                       onClick: () => setShowReputationModal(true),
                     });
-                    if (linkedWalletOptions.length > 0) buttons.push({ title: 'Wallets', onClick: () => setShowWalletsOverlay(true) });
+                    if (linkedWalletOptions.length >= 2) buttons.push({ title: 'Wallets', onClick: () => setShowWalletsOverlay(true) });
 
                     buttons.sort((a, b) => a.title.localeCompare(b.title));
                     if (buttons.length === 0) return null;
