@@ -2009,7 +2009,7 @@ export const ProfileCard = ({
                             }
                           },
                         });
-                        if (linkedWalletOptions.length > 0) buttons.push({ title: 'Wallets', panel: 'wallets', onClick: () => setDesktopActivePanel('wallets') });
+                        if (linkedWalletOptions.length >= 2) buttons.push({ title: 'Wallets', panel: 'wallets', onClick: () => setDesktopActivePanel('wallets') });
                         buttons.sort((a, b) => a.title.localeCompare(b.title));
 
                         if (buttons.length === 0) return null;
