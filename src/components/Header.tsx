@@ -8,7 +8,7 @@ import telegramIcon from "@/assets/telegram-icon.png";
 import petraIcon from "@/assets/petra-icon.png";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, ChevronRight, Home } from "lucide-react";
+import { Moon, Sun, Search, Mail, Send, Linkedin, Twitter, Home } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
