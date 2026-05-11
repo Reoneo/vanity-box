@@ -1,61 +1,29 @@
-# SEO Score Fixes — index.html only
+# Plan: 5 Fixes
 
-All changes target `index.html` and remain invisible to users via the existing `.seo-only` utility class. No visual or behavioural changes.
+## 1. Activity/NFT loading speed for raw wallet addresses
+Investigate `useProfileResolver`, NFT fetch hooks. Add parallel fetching and avoid blocking on slow APIs. For raw wallet searches, kick off NFT/activity fetches immediately in parallel rather than sequentially after profile resolution.
 
-## Issues addressed
+## 2. Passkey IOTA wallets — IPFS profile data display
+Verify that on passkey login (no `.iota` name yet), the profile loader still attempts reverse-lookup → IPFS profile fetch. Currently passkey addresses likely render a stub profile. Fix: on passkey session, run reverse lookup of address → `.iota` name → fetch IPFS notarized profile (avatar, bio, social, header).
 
-1. **H1 missing** — already present inside `.seo-only`, but auditors sometimes flag it because it sits inside an `aria-hidden` block. Move the heading hierarchy outside `aria-hidden` (still visually hidden via `.seo-only`) so crawlers and SEO bots count it cleanly.
-2. **Good headings on the page** — restructure to a proper outline: one `H1`, then sequential `H2` → `H3` (drop the orphan `H4`, no skipped levels).
-3. **Few internal links** — add a hidden `<nav aria-label="Site">` block with internal anchors (`/`, `/messages`, `/privacy-policy`, `/terms-of-use`, plus a handful of popular profile/search routes that exist in the app) so crawlers see internal link signals. Hidden via `.seo-only`.
-4. **Domain in title** — current `<title>` and `og:title` / `twitter:title` all start with `Vanity.box`. Rewrite them without the domain.
-5. **Favicon markup** — already has `/favicon.ico` links, but add the standard fuller markup that SEO auditors check for: explicit `rel="icon" sizes="any"`, a PNG fallback (`/vanity-box-logo.png`), and keep the existing `apple-touch-icon`. Also add `<link rel="manifest">` reference only if a manifest exists — skipping since none is present.
+## 3. NFT Detail Modal UI (image attached)
+Current: blank blue background dominates, title overlaps the in-image text awkwardly, button bar feels detached. Improvements:
+- Constrain image area to a clean square aspect with rounded top
+- Move title/chain info into a clean panel below the image with proper spacing
+- Add subtle gradient over image bottom so title overlay never collides
+- Keep gold "View on OpenSea" CTA but tighten paddings, add description/owner row if available
+- Mobile-first: full-width with safe-area padding
 
-## Specific edits
+## 4. Copy address → "Copied" toast
+Audit clickable address spots (ProfileCard, NFT modal owner, Header connected button, Messages thread address). Replace silent `navigator.clipboard.writeText` with a helper that also fires `toast({ description: 'Copied' })` from `useToast` / sonner.
 
-### Title + social titles (remove domain)
-- `<title>Personalised Web3 Wallet Addresses & Blockchain Identity Names</title>`
-- `og:title` and `twitter:title` updated to the same string.
-- Keep `og:site_name` (add it) = `Vanity.box` so brand is still attributed without polluting the title tag.
+## 5. Domain avatars for UD across UNS/CNS (ETH/Polygon/Base) + UD Profile API enrichment
+In `resolve-ud-opensea` edge function, also extract `display_image_url` / `image_url` from the OpenSea NFT response and return it. Then in `useProfileResolver.resolveUdProfile`, merge: prefer UD Profile API avatar, fall back to OpenSea image. Also enrich UD NFT collection rendering to use OpenSea image directly so avatars show for all chains.
 
-### Favicon block (replace lines 11–12)
-```html
-<link rel="icon" href="/favicon.ico" sizes="any" />
-<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="shortcut icon" href="/favicon.ico" />
-<link rel="icon" type="image/png" href="/vanity-box-logo.png" />
-<link rel="apple-touch-icon" href="/vanity-box-logo.png" />
-```
-(Removes the duplicate apple-touch-icon line later in the file.)
+## Technical notes
+- Files: `src/hooks/useProfileResolver.ts`, `src/components/NFTDetailModal.tsx`, `src/components/ProfileCard.tsx`, `src/components/Header.tsx`, `src/components/WalletConnection.tsx`, `src/pages/Messages.tsx`, `supabase/functions/resolve-ud-opensea/index.ts`, possibly UD NFT fetch edge function.
+- Reuse existing `useToast` hook for copy notifications.
+- For #1, ensure NFT/token hooks fire as soon as an address is known, not gated on profile API completion.
+- For #2, leverage existing IOTA reverse-lookup (`useProfileResolver` already has this for passkey sessions per memory) — confirm IPFS profile fetch is wired.
 
-### Headings + internal links (restructure `.seo-only` block)
-- Remove `aria-hidden="true"` from the wrapper so headings/links are crawlable (still visually hidden via clip + off-screen positioning — zero visual impact).
-- Outline:
-  - `H1` Personalised Web3 Wallet Addresses & Blockchain Identity Names
-  - `H2` Replace long crypto wallet addresses with one easy-to-read name
-  - `H2` Supported blockchains and naming services
-    - `H3` Ethereum, Base, IOTA, Aptos, TON, Sui, World Chain, Unstoppable Domains
-  - `H2` Features
-    - `H3` Cross-chain profiles, gasless onboarding, verified identity
-  - `H2` Get started
-- Add hidden internal nav:
-```html
-<nav aria-label="Primary">
-  <a href="/">Home</a>
-  <a href="/messages">Messages</a>
-  <a href="/privacy-policy">Privacy Policy</a>
-  <a href="/terms-of-use">Terms of Use</a>
-</nav>
-<nav aria-label="Explore">
-  <a href="/vitalik.eth">Explore ENS profiles</a>
-  <a href="/vanity.iota">Explore IOTA profiles</a>
-  <a href="/jesse.base.eth">Explore Basenames</a>
-  <a href="/sandy.ton">Explore TON profiles</a>
-</nav>
-```
-(All routes already exist in `useProfileResolver` / `App.tsx`.)
-
-## Files changed
-- `index.html` (only)
-
-## Verification
-After changes: view-source confirms one H1, sequential H2/H3, ≥8 internal `<a href="/...">` links, `<title>` no longer contains "vanity.box", and 5 favicon link tags. Preview UI unchanged.
+No business logic changes outside data plumbing required by these fixes.
