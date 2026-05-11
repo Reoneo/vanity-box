@@ -1623,6 +1623,7 @@ export const ProfileCard = ({
             onClick={async () => {
               await navigator.clipboard.writeText(displayedWalletAddress);
               setCopied(true);
+              toast.success('Copied');
               setTimeout(() => setCopied(false), 2000);
             }}
             className="cursor-pointer rounded-md bg-muted px-3 py-1 text-sm font-mono text-foreground transition-colors hover:bg-muted/80"
