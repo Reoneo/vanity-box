@@ -1946,7 +1946,7 @@ export const ProfileCard = ({
                         return (
                           <button
                             type="button"
-                            onClick={() => { try { navigator.clipboard.writeText(addr); } catch {} }}
+                            onClick={() => { try { navigator.clipboard.writeText(addr); toast.success('Copied'); } catch {} }}
                             className="mx-auto block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors"
                             aria-label="Copy wallet address"
                           >
