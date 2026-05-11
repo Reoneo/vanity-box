@@ -194,3 +194,6 @@ verify_jwt = false
 
 [functions.get-suins-names]
 verify_jwt = false
+
+[functions.resolve-ud-opensea]
+verify_jwt = false
