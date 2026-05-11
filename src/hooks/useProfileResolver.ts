@@ -409,6 +409,68 @@ function isUdLegacyResolutionTld(normalized: string): boolean {
 }
 
 /**
+ * Resolve a UD domain → owner wallet via OpenSea (primary, reliable).
+ * Returns { address, chain } or null.
+ */
+async function resolveUdViaOpenSea(domain: string): Promise<{ address: string; chain: string } | null> {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data, error } = await supabase.functions.invoke('resolve-ud-opensea', {
+      body: { domain },
+    });
+    if (error) {
+      console.log('⚠️ OpenSea UD resolve error:', error.message);
+      return null;
+    }
+    if (data?.ok && data?.address) {
+      console.log(`✅ OpenSea UD resolved: ${domain} -> ${data.address} (${data.chain})`);
+      return { address: data.address, chain: data.chain };
+    }
+    return null;
+  } catch (e: any) {
+    console.error('❌ OpenSea UD resolve exception:', e?.message || e);
+    return null;
+  }
+}
+
+/**
+ * Resolve a UD domain by OpenSea-first strategy: get owner via OpenSea, then enrich
+ * with UD Profile API (for avatar/socials/etc). Falls back gracefully when either side fails.
+ */
+async function resolveUdProfile(domain: string): Promise<any | null> {
+  // Run both in parallel; OpenSea is authoritative for ownership.
+  const [openseaRes, udRes] = await Promise.all([
+    resolveUdViaOpenSea(domain),
+    fetchUnstoppableProfile(domain).catch(() => null),
+  ]);
+
+  const udProfile = udRes && !udRes.notFound ? udRes : null;
+
+  if (openseaRes?.address) {
+    if (udProfile) {
+      // Enrich UD profile but trust OpenSea's owner address.
+      return { ...udProfile, address: openseaRes.address };
+    }
+    // Minimal profile pointing to the owner wallet.
+    return {
+      address: openseaRes.address,
+      identity: domain,
+      platform: 'unstoppabledomains',
+      displayName: domain,
+      avatar: null,
+      description: null,
+      header: null,
+      website: null,
+      url: null,
+      links: {},
+    };
+  }
+
+  // OpenSea couldn't resolve — fall back to whatever UD Profile API returned.
+  return udProfile;
+}
+
+/**
  * Fetch UD profile via Unstoppable Domains public Profile API (no API key required)
  */
 async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
