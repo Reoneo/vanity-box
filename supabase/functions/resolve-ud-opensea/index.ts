@@ -23,7 +23,7 @@ async function fetchOwner(
   chain: string,
   contract: string,
   tokenIdDecimal: string,
-): Promise<string | null> {
+): Promise<{ owner: string; image: string | null } | null> {
   const url = `https://api.opensea.io/api/v2/chain/${chain}/contract/${contract}/nfts/${tokenIdDecimal}`;
   try {
     const res = await fetch(url, { headers: { "x-api-key": apiKey, accept: "application/json" } });
