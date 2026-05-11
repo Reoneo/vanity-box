@@ -586,7 +586,7 @@ export function useProfileResolver() {
       if (isUdDomain) {
         debug.tried.push('unstoppable');
         const udStart = Date.now();
-        const udProfile = await fetchUnstoppableProfile(normalized);
+        const udProfile = await resolveUdProfile(normalized);
         debug.timingsMs.unstoppable = Date.now() - udStart;
         if (udProfile && !udProfile.notFound) {
           resolverResult = { ok: true, source: 'web3bio', profile: udProfile };
