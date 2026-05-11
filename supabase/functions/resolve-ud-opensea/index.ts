@@ -71,10 +71,10 @@ serve(async (req) => {
 
     // Try contracts in parallel
     const results = await Promise.all(
-      UD_CONTRACTS.map((c) => fetchOwner(apiKey, c.chain, c.address, tokenIdDecimal).then((owner) => ({ ...c, owner }))),
+      UD_CONTRACTS.map((c) => fetchOwner(apiKey, c.chain, c.address, tokenIdDecimal).then((res) => ({ ...c, ...res }))),
     );
 
-    const hit = results.find((r) => r.owner && /^0x[a-fA-F0-9]{40}$/.test(r.owner));
+    const hit = results.find((r: any) => r.owner && /^0x[a-fA-F0-9]{40}$/.test(r.owner));
 
     if (!hit) {
       return new Response(
@@ -87,7 +87,8 @@ serve(async (req) => {
       JSON.stringify({
         ok: true,
         domain: normalized,
-        address: hit.owner,
+        address: (hit as any).owner,
+        image: (hit as any).image || null,
         chain: hit.chain,
         contract: hit.address,
         tokenId: tokenIdDecimal,
