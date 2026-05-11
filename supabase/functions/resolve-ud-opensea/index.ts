@@ -32,12 +32,13 @@ async function fetchOwner(
       return null;
     }
     const data = await res.json();
-    const owners = data?.nft?.owners;
-    if (Array.isArray(owners) && owners.length > 0 && owners[0]?.address) {
-      return owners[0].address;
-    }
-    if (data?.nft?.owner && typeof data.nft.owner === "string") return data.nft.owner;
-    return null;
+    const nft = data?.nft;
+    const image = nft?.display_image_url || nft?.image_url || nft?.metadata?.image || null;
+    const owners = nft?.owners;
+    let owner: string | null = null;
+    if (Array.isArray(owners) && owners.length > 0 && owners[0]?.address) owner = owners[0].address;
+    else if (nft?.owner && typeof nft.owner === "string") owner = nft.owner;
+    return owner ? { owner, image } as any : null;
   } catch (e) {
     console.error("OpenSea fetch error", e);
     return null;
