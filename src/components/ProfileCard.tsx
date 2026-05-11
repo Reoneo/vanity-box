@@ -1589,6 +1589,7 @@ export const ProfileCard = ({
     if (!displayedWalletAddress) return;
     await navigator.clipboard.writeText(displayedWalletAddress);
     setCopied(true);
+    toast.success('Copied');
     setTimeout(() => setCopied(false), 2000);
   };
 
