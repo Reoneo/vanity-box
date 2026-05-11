@@ -139,9 +139,11 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-[#D4AF37]/30 p-0">
-        {/* Full Width Media */}
-        <div className="relative w-full aspect-square overflow-hidden bg-black/20">
+      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-[#D4AF37]/30 p-0 rounded-2xl">
+        <DialogTitle className="sr-only">{nft.name || `NFT #${nft.identifier}`}</DialogTitle>
+
+        {/* Media — clean square, no overlapping text */}
+        <div className="relative w-full aspect-square overflow-hidden rounded-t-2xl bg-gradient-to-br from-black/40 to-black/10">
           {mediaType === 'video' && animationUrl ? (
             <video
               ref={videoRef}
@@ -156,74 +158,71 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
           ) : mediaType === 'audio' && animationUrl ? (
             <div className="relative w-full h-full">
               {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={nft.name || 'NFT'}
-                  className="w-full h-full object-contain"
-                />
+                <img src={imageUrl} alt={nft.name || 'NFT'} className="w-full h-full object-contain" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5">
                   <Volume2 className="w-24 h-24 text-[#D4AF37]/50" />
                 </div>
               )}
-              <audio
-                ref={audioRef}
-                src={animationUrl}
-                controls
-                autoPlay
-                loop
-                className="absolute bottom-4 left-4 right-4"
-              />
+              <audio ref={audioRef} src={animationUrl} controls autoPlay loop className="absolute bottom-4 left-4 right-4" />
             </div>
           ) : imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={nft.name || 'NFT'}
-              className="w-full h-full object-contain"
-            />
+            <img src={imageUrl} alt={nft.name || 'NFT'} className="w-full h-full object-contain" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               No Media Available
             </div>
           )}
-          
-          {/* Title Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 sm:p-6 pointer-events-none">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
-              {nft.name || `NFT #${nft.identifier}`}
-            </h2>
-            <div className="flex flex-wrap items-center gap-2">
-              {nft.chain && (
-                <Badge variant="outline" className="bg-black/70 backdrop-blur-sm border-white/30 text-white capitalize flex items-center gap-1.5">
-                  {getChainIcon(nft.chain, 14)}
-                  <span>{nft.chain}</span>
-                </Badge>
-              )}
-              {nft.quantity && nft.quantity > 1 && (
-                <Badge className="bg-emerald-600 text-white border-0">
-                  x{nft.quantity} Owned
-                </Badge>
-              )}
-              {mediaType === 'video' && (
-                <Badge className="bg-purple-600 text-white border-0">
-                  <Play className="w-3 h-3 mr-1" /> Video
-                </Badge>
-              )}
-              {mediaType === 'audio' && (
-                <Badge className="bg-blue-600 text-white border-0">
-                  <Volume2 className="w-3 h-3 mr-1" /> Audio
-                </Badge>
-              )}
+
+          {/* Subtle media-type pill, top-right */}
+          {(mediaType === 'video' || mediaType === 'audio') && (
+            <div className="absolute top-3 right-3">
+              <Badge className="bg-black/70 backdrop-blur-sm text-white border-0 gap-1">
+                {mediaType === 'video' ? <Play className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                {mediaType === 'video' ? 'Video' : 'Audio'}
+              </Badge>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="p-4 sm:p-6 space-y-3">
+        {/* Metadata panel — clean, no overlay */}
+        <div className="px-5 pt-5 pb-4 space-y-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
+            {nft.name || `NFT #${nft.identifier}`}
+          </h2>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {nft.chain && (
+              <Badge variant="outline" className="bg-muted/60 border-border/60 text-foreground capitalize flex items-center gap-1.5 px-2.5 py-1">
+                {getChainIcon(nft.chain, 14)}
+                <span className="text-xs font-medium">{nft.chain}</span>
+              </Badge>
+            )}
+            {nft.collection && nft.collection !== nft.name && (
+              <Badge variant="outline" className="bg-muted/40 border-border/40 text-muted-foreground text-xs capitalize">
+                {nft.collection}
+              </Badge>
+            )}
+            {nft.quantity && nft.quantity > 1 && (
+              <Badge className="bg-emerald-600 text-white border-0 text-xs">
+                x{nft.quantity} Owned
+              </Badge>
+            )}
+          </div>
+
+          {nft.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+              {nft.description}
+            </p>
+          )}
+        </div>
+
+        {/* Action */}
+        <div className="px-5 pb-5">
           {nft.opensea_url && (
             <Button
               onClick={() => window.open(nft.opensea_url, '_blank')}
-              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold active:scale-95 transition-transform touch-manipulation"
+              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold active:scale-95 transition-transform touch-manipulation rounded-xl"
               size="lg"
             >
               <ExternalLink className="w-4 h-4 mr-2" />

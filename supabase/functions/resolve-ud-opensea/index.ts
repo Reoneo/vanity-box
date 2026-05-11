@@ -23,7 +23,7 @@ async function fetchOwner(
   chain: string,
   contract: string,
   tokenIdDecimal: string,
-): Promise<string | null> {
+): Promise<{ owner: string; image: string | null } | null> {
   const url = `https://api.opensea.io/api/v2/chain/${chain}/contract/${contract}/nfts/${tokenIdDecimal}`;
   try {
     const res = await fetch(url, { headers: { "x-api-key": apiKey, accept: "application/json" } });
@@ -32,12 +32,13 @@ async function fetchOwner(
       return null;
     }
     const data = await res.json();
-    const owners = data?.nft?.owners;
-    if (Array.isArray(owners) && owners.length > 0 && owners[0]?.address) {
-      return owners[0].address;
-    }
-    if (data?.nft?.owner && typeof data.nft.owner === "string") return data.nft.owner;
-    return null;
+    const nft = data?.nft;
+    const image = nft?.display_image_url || nft?.image_url || nft?.metadata?.image || null;
+    const owners = nft?.owners;
+    let owner: string | null = null;
+    if (Array.isArray(owners) && owners.length > 0 && owners[0]?.address) owner = owners[0].address;
+    else if (nft?.owner && typeof nft.owner === "string") owner = nft.owner;
+    return owner ? { owner, image } as any : null;
   } catch (e) {
     console.error("OpenSea fetch error", e);
     return null;
@@ -70,10 +71,10 @@ serve(async (req) => {
 
     // Try contracts in parallel
     const results = await Promise.all(
-      UD_CONTRACTS.map((c) => fetchOwner(apiKey, c.chain, c.address, tokenIdDecimal).then((owner) => ({ ...c, owner }))),
+      UD_CONTRACTS.map((c) => fetchOwner(apiKey, c.chain, c.address, tokenIdDecimal).then((res) => ({ ...c, ...res }))),
     );
 
-    const hit = results.find((r) => r.owner && /^0x[a-fA-F0-9]{40}$/.test(r.owner));
+    const hit = results.find((r: any) => r.owner && /^0x[a-fA-F0-9]{40}$/.test(r.owner));
 
     if (!hit) {
       return new Response(
@@ -86,7 +87,8 @@ serve(async (req) => {
       JSON.stringify({
         ok: true,
         domain: normalized,
-        address: hit.owner,
+        address: (hit as any).owner,
+        image: (hit as any).image || null,
         chain: hit.chain,
         contract: hit.address,
         tokenId: tokenIdDecimal,

@@ -1589,6 +1589,7 @@ export const ProfileCard = ({
     if (!displayedWalletAddress) return;
     await navigator.clipboard.writeText(displayedWalletAddress);
     setCopied(true);
+    toast.success('Copied');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -1622,6 +1623,7 @@ export const ProfileCard = ({
             onClick={async () => {
               await navigator.clipboard.writeText(displayedWalletAddress);
               setCopied(true);
+              toast.success('Copied');
               setTimeout(() => setCopied(false), 2000);
             }}
             className="cursor-pointer rounded-md bg-muted px-3 py-1 text-sm font-mono text-foreground transition-colors hover:bg-muted/80"
@@ -1678,6 +1680,7 @@ export const ProfileCard = ({
                 onClick={async () => {
                   await navigator.clipboard.writeText(option.address);
                   setCopied(true);
+                  toast.success('Copied');
                   setTimeout(() => setCopied(false), 2000);
                 }}
                 className="w-full flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors"
@@ -1943,7 +1946,7 @@ export const ProfileCard = ({
                         return (
                           <button
                             type="button"
-                            onClick={() => { try { navigator.clipboard.writeText(addr); } catch {} }}
+                            onClick={() => { try { navigator.clipboard.writeText(addr); toast.success('Copied'); } catch {} }}
                             className="mx-auto block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors"
                             aria-label="Copy wallet address"
                           >
@@ -2802,7 +2805,7 @@ export const ProfileCard = ({
                     return (
                       <button
                         type="button"
-                        onClick={() => { try { navigator.clipboard.writeText(addr); } catch {} }}
+                        onClick={() => { try { navigator.clipboard.writeText(addr); toast.success('Copied'); } catch {} }}
                         className="mx-auto block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors"
                         aria-label="Copy wallet address"
                       >
@@ -3894,6 +3897,7 @@ export const ProfileCard = ({
                         onClick={async () => {
                           await navigator.clipboard.writeText(option.address);
                           setCopied(true);
+                          toast.success('Copied');
                           setTimeout(() => setCopied(false), 2000);
                         }}
                         className="w-full flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors"

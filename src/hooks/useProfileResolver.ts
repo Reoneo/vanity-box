@@ -412,7 +412,7 @@ function isUdLegacyResolutionTld(normalized: string): boolean {
  * Resolve a UD domain → owner wallet via OpenSea (primary, reliable).
  * Returns { address, chain } or null.
  */
-async function resolveUdViaOpenSea(domain: string): Promise<{ address: string; chain: string } | null> {
+async function resolveUdViaOpenSea(domain: string): Promise<{ address: string; chain: string; image: string | null } | null> {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     const { data, error } = await supabase.functions.invoke('resolve-ud-opensea', {
@@ -424,7 +424,7 @@ async function resolveUdViaOpenSea(domain: string): Promise<{ address: string; c
     }
     if (data?.ok && data?.address) {
       console.log(`✅ OpenSea UD resolved: ${domain} -> ${data.address} (${data.chain})`);
-      return { address: data.address, chain: data.chain };
+      return { address: data.address, chain: data.chain, image: data.image || null };
     }
     return null;
   } catch (e: any) {
@@ -448,8 +448,12 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
 
   if (openseaRes?.address) {
     if (udProfile) {
-      // Enrich UD profile but trust OpenSea's owner address.
-      return { ...udProfile, address: openseaRes.address };
+      // Enrich UD profile but trust OpenSea's owner address; use OpenSea image as avatar fallback.
+      return {
+        ...udProfile,
+        address: openseaRes.address,
+        avatar: udProfile.avatar || openseaRes.image || null,
+      };
     }
     // Minimal profile pointing to the owner wallet.
     return {
@@ -457,7 +461,7 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
       identity: domain,
       platform: 'unstoppabledomains',
       displayName: domain,
-      avatar: null,
+      avatar: openseaRes.image || null,
       description: null,
       header: null,
       website: null,
