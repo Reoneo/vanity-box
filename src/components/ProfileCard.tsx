@@ -3897,6 +3897,7 @@ export const ProfileCard = ({
                         onClick={async () => {
                           await navigator.clipboard.writeText(option.address);
                           setCopied(true);
+                          toast.success('Copied');
                           setTimeout(() => setCopied(false), 2000);
                         }}
                         className="w-full flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors"
