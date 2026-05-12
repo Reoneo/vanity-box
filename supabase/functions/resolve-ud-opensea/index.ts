@@ -131,27 +131,33 @@ serve(async (req) => {
     const tokenIdDecimal = BigInt(hash).toString(10);
 
     // Try contracts in parallel
-    const results = await Promise.all(
-      UD_CONTRACTS.map((c) => fetchOwner(apiKey, c.chain, c.address, tokenIdDecimal).then((res) => ({ ...c, ...res }))),
-    );
+    const [results, udFallback] = await Promise.all([
+      Promise.all(
+        UD_CONTRACTS.map((c) => fetchOwner(apiKey, c.chain, c.address, tokenIdDecimal).then((res) => ({ ...c, ...res }))),
+      ),
+      fetchUdFallback(normalized).catch(() => ({ owner: null, image: null })),
+    ]);
 
     const hit = results.find((r: any) => r.owner && /^0x[a-fA-F0-9]{40}$/.test(r.owner));
+    const imageHit = results.find((r: any) => r.image)?.image || udFallback.image || null;
 
-    if (!hit) {
+    if (!hit && !udFallback.owner) {
       return new Response(
-        JSON.stringify({ ok: false, domain: normalized, tokenId: tokenIdDecimal, notFound: true }),
+        JSON.stringify({ ok: false, domain: normalized, tokenId: tokenIdDecimal, image: imageHit, notFound: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    const resolvedAddress = (hit as any)?.owner || udFallback.owner;
 
     return new Response(
       JSON.stringify({
         ok: true,
         domain: normalized,
-        address: (hit as any).owner,
-        image: (hit as any).image || null,
-        chain: hit.chain,
-        contract: hit.address,
+        address: resolvedAddress,
+        image: (hit as any)?.image || imageHit,
+        chain: (hit as any)?.chain || "ud-profile",
+        contract: (hit as any)?.address || null,
         tokenId: tokenIdDecimal,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
