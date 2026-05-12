@@ -390,6 +390,7 @@ const UD_TLDS = [
   '.kresus', '.polygon', '.anime', '.manga', '.binanceus', '.go', '.pog',
   '.witg', '.metroplex', '.austin', '.tball', '.farms', '.stepn',
   '.smart', '.raiin', '.altimist', '.ubu', '.pudgy', '.clay', '.lfg', '.com.cw',
+  '.oxuux.nft', '.0xmapper.dao', '.etherid.nft',
   // Extended UD TLD set
   '.dev', '.press', '.app', '.how', '.website', '.rsvp', '.page', '.foo', '.uno', '.meme',
   '.channel', '.mov', '.zip', '.prof', '.phd', '.esq', '.dad', '.host', '.soy', '.day',
