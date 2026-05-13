@@ -548,6 +548,7 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
 
   // Build address: prefer ETH, then MATIC, then any owner verification
   const verifications: Array<{ symbol: string; address: string }> = data.cryptoVerifications || [];
+  const records = data.records || {};
   const ethAddr = verifications.find((v) => v.symbol === 'ETH')?.address;
   const maticAddr = verifications.find((v) => v.symbol === 'MATIC')?.address;
   const address = firstEvmAddress(
@@ -562,7 +563,6 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
 
   // Normalize social links from socialAccounts AND records (UD stores in either)
   const sa = data.socialAccounts || {};
-  const records = data.records || {};
   const links: Record<string, any> = {};
   const addLink = (platform: string, recordKeys: string[], builder: (h: string) => string) => {
     let handle = sa[platform]?.location;
