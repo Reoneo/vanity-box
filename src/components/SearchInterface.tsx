@@ -1324,13 +1324,13 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
     // Max character limit varies by query type:
     // - Wallet addresses: 42 chars (0x + 40 hex)
-    // - Domain-style lookups with dots (.vanity, .eth, etc.): 63 chars
+    // - Domain-style lookups with dots (.vanity, .0xmapper.dao, etc.): allow long UD/DNS names
     // - Regular names without dots: 12 chars
     let maxLength = 12; // Default for regular names
     if (isPotentialWallet || isIotaAddr) {
       maxLength = 70; // Allow wallet addresses (EVM 42 chars, IOTA 66 chars + buffer)
     } else if (hasDot) {
-      maxLength = 63; // Allow full domain lookups like afrobeat.vanity
+      maxLength = 255; // Allow full UD/DNS lookups, including compound TLDs
     }
     
     if (trimmedQuery.length > maxLength) {
