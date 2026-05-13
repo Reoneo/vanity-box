@@ -18,6 +18,9 @@ const UD_CONTRACTS: Array<{ chain: string; address: string }> = [
   { chain: "base", address: "0xc3c2bce847f56b7f8f9bd9ae8651b9b8f786af07" },
 ];
 
+const OPENSEA_UD_COLLECTION_SLUG = "unstoppable-domains-polygon";
+const isEvmAddress = (value: unknown): value is string => /^0x[a-fA-F0-9]{40}$/.test(String(value || "").trim());
+
 const normalizeMediaUrl = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -51,18 +54,34 @@ async function fetchJson(url: string, headers: HeadersInit = {}): Promise<any | 
 async function fetchOwners(apiKey: string, chain: string, contract: string, tokenIdDecimal: string): Promise<string | null> {
   const url = `https://api.opensea.io/api/v2/chain/${chain}/contract/${contract}/nfts/${tokenIdDecimal}/owners`;
   const data = await fetchJson(url, { "x-api-key": apiKey });
-  const owner = data?.owners?.find?.((o: any) => /^0x[a-fA-F0-9]{40}$/.test(String(o?.address || "")))?.address;
+  const owner = data?.owners?.find?.((o: any) => isEvmAddress(o?.address))?.address;
   return owner || null;
 }
 
-async function fetchUdFallback(domain: string): Promise<{ owner: string | null; image: string | null }> {
-  const profile = await fetchJson(`https://api.unstoppabledomains.com/profile/public/${encodeURIComponent(domain)}`);
+async function fetchUdFallback(domain: string): Promise<{ owner: string | null; image: string | null; records?: Record<string, string> }> {
+  const udApiKey = Deno.env.get("UD_API_KEY");
+  const authHeaders = udApiKey ? { Authorization: `Bearer ${udApiKey}` } : {};
+  const [profile, resolution] = await Promise.all([
+    fetchJson(`https://api.unstoppabledomains.com/profile/public/${encodeURIComponent(domain)}`, authHeaders),
+    fetchJson(`https://resolve.unstoppabledomains.com/domains/${encodeURIComponent(domain)}`, authHeaders),
+  ]);
+  const records = { ...(resolution?.records || {}), ...(profile?.records || {}) };
   const verifications: Array<{ symbol?: string; address?: string }> = Array.isArray(profile?.cryptoVerifications) ? profile.cryptoVerifications : [];
   const ethAddress = verifications.find((v) => v.symbol === "ETH")?.address;
   const maticAddress = verifications.find((v) => v.symbol === "MATIC")?.address;
-  const owner = ethAddress || maticAddress || profile?.metadata?.owner || null;
-  const image = firstUrl(profile?.profile?.imagePath, profile?.metadata?.image, profile?.image);
-  return { owner: /^0x[a-fA-F0-9]{40}$/.test(String(owner || "")) ? owner : null, image };
+  const owner = [
+    ethAddress,
+    maticAddress,
+    records?.["crypto.ETH.address"],
+    records?.["crypto.MATIC.version.MATIC.address"],
+    records?.["crypto.MATIC.address"],
+    records?.["crypto.POL.address"],
+    resolution?.meta?.owner,
+    resolution?.metadata?.owner,
+    profile?.metadata?.owner,
+  ].find(isEvmAddress) || null;
+  const image = firstUrl(profile?.profile?.imagePath, profile?.profile?.imageUrl, profile?.metadata?.image, profile?.image);
+  return { owner, image, records };
 }
 
 async function fetchOwner(
