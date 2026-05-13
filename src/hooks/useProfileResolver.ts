@@ -432,6 +432,22 @@ const UD_LEGACY_RESOLUTION_TLDS = [
   '.anime', '.manga', '.binanceus', '.go',
 ];
 
+const normalizeUdMediaUrl = (value?: string | null): string | null => {
+  const raw = (value || '').trim();
+  if (!raw) return null;
+  if (raw.startsWith('ipfs://ipfs/')) return `https://ipfs.io/ipfs/${raw.slice('ipfs://ipfs/'.length)}`;
+  if (raw.startsWith('ipfs://')) return `https://ipfs.io/ipfs/${raw.slice('ipfs://'.length)}`;
+  if (raw.startsWith('ar://')) return `https://arweave.net/${raw.slice('ar://'.length)}`;
+  return raw;
+};
+
+const firstEvmAddress = (...values: unknown[]): string | null => {
+  for (const value of values) {
+    if (typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value.trim())) return value.trim();
+  }
+  return null;
+};
+
 function isUnstoppableDomain(normalized: string): boolean {
   return UD_TLDS.some((tld) => normalized.endsWith(tld));
 }
@@ -484,7 +500,7 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
       return {
         ...udProfile,
         address: openseaRes.address,
-        avatar: udProfile.avatar || openseaRes.image || null,
+        avatar: normalizeUdMediaUrl(openseaRes.image) || normalizeUdMediaUrl(udProfile.avatar) || null,
       };
     }
     // Minimal profile pointing to the owner wallet.
@@ -493,7 +509,7 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
       identity: domain,
       platform: 'unstoppabledomains',
       displayName: domain,
-      avatar: openseaRes.image || null,
+      avatar: normalizeUdMediaUrl(openseaRes.image) || null,
       description: null,
       header: null,
       website: null,
@@ -532,13 +548,21 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
 
   // Build address: prefer ETH, then MATIC, then any owner verification
   const verifications: Array<{ symbol: string; address: string }> = data.cryptoVerifications || [];
+  const records = data.records || {};
   const ethAddr = verifications.find((v) => v.symbol === 'ETH')?.address;
   const maticAddr = verifications.find((v) => v.symbol === 'MATIC')?.address;
-  const address = ethAddr || maticAddr || data.metadata?.owner || null;
+  const address = firstEvmAddress(
+    ethAddr,
+    maticAddr,
+    records['crypto.ETH.address'],
+    records['crypto.MATIC.version.MATIC.address'],
+    records['crypto.MATIC.address'],
+    records['crypto.POL.address'],
+    data.metadata?.owner,
+  );
 
   // Normalize social links from socialAccounts AND records (UD stores in either)
   const sa = data.socialAccounts || {};
-  const records = data.records || {};
   const links: Record<string, any> = {};
   const addLink = (platform: string, recordKeys: string[], builder: (h: string) => string) => {
     let handle = sa[platform]?.location;
@@ -562,7 +586,8 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
   addLink('instagram', ['social.instagram.username'], (h) => `https://instagram.com/${h.replace(/^@/, '')}`);
 
   const profile = data.profile || {};
-  const avatar = profile.imagePath || null;
+  const avatar = normalizeUdMediaUrl(profile.imagePath || profile.imageUrl || data.metadata?.image || data.image);
+  const header = normalizeUdMediaUrl(profile.coverPath || profile.coverUrl);
 
   console.log(`✅ UD resolved: ${domain} -> ${address}`);
 
@@ -573,10 +598,11 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
     displayName: data.metadata.domain,
     avatar,
     description: profile.description || null,
-    header: profile.coverPath || null,
+    header,
     website: profile.web2Url || null,
     url: profile.web2Url || null,
     links,
+    records,
     location: profile.location || null,
     email: null,
   };
