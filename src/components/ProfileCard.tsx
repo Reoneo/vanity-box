@@ -2784,14 +2784,18 @@ export const ProfileCard = ({
                       )}
                     </div>
                   </div>
-                  {/* Share button - top right under header (mobile) */}
+                  {/* Share button - top left under header (iOS-style, mobile) */}
                   <button
                     type="button"
                     onClick={handleShareProfile}
                     aria-label="Share profile"
-                    className="absolute top-2 right-2 z-30 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all shadow-lg"
+                    className="absolute top-2 left-2 z-30 w-10 h-10 rounded-full bg-transparent hover:bg-black/20 dark:hover:bg-white/10 flex items-center justify-center transition-all"
                   >
-                    <Share2 className="w-4 h-4 text-[#D4AF37]" />
+                    <svg viewBox="0 0 24 24" className="w-6 h-6 text-black dark:text-[#D4AF37]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 3v13" />
+                      <path d="m7 8 5-5 5 5" />
+                      <path d="M5 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" transform="translate(0 -1)" />
+                    </svg>
                   </button>
                 </div>
 
