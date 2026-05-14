@@ -502,13 +502,15 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
 
   const udProfile = udRes && !udRes.notFound ? udRes : null;
 
+  const metadataImageFallback = `https://api.unstoppabledomains.com/metadata/image-src/${encodeURIComponent(domain)}?withOverlay=false`;
+
   if (openseaRes?.address) {
     if (udProfile) {
-      // Enrich UD profile but trust OpenSea's owner address; use OpenSea image as avatar fallback.
+      // Trust UD's avatar (best quality), then OpenSea image, then UD metadata renderer.
       return {
         ...udProfile,
         address: openseaRes.address,
-        avatar: normalizeUdMediaUrl(openseaRes.image) || normalizeUdMediaUrl(udProfile.avatar) || null,
+        avatar: normalizeUdMediaUrl(udProfile.avatar) || normalizeUdMediaUrl(openseaRes.image) || metadataImageFallback,
       };
     }
     // Minimal profile pointing to the owner wallet.
@@ -517,7 +519,7 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
       identity: domain,
       platform: 'unstoppabledomains',
       displayName: domain,
-      avatar: normalizeUdMediaUrl(openseaRes.image) || null,
+      avatar: normalizeUdMediaUrl(openseaRes.image) || metadataImageFallback,
       description: null,
       header: null,
       website: null,
