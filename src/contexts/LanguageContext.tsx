@@ -185,6 +185,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       connect_wallet: 'Connectar cartera',
       approve_in_wallet: 'Aprovar a la cartera',
       confirm_in_wallet: 'Confirmar transacció a la cartera',
+      chain_no_nfts_message: 'Els teus NFT de {chain} es faran visibles quan creïs una cartera Vanity i vinculis aquesta cadena al teu perfil Vanity per unificar tots els teus actius en un sol lloc.',
     },
     de: {
       inbox: 'Posteingang',
@@ -226,6 +227,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'Follower',
       search_following: 'Folgende durchsuchen...',
       search_followers: 'Follower durchsuchen...',
+      chain_no_nfts_message: 'Deine {chain}-NFTs werden sichtbar, sobald du ein Vanity Wallet erstellst und diese Chain mit deinem Vanity-Profil verknüpfst, um all deine Assets an einem Ort zu vereinen.',
     },
     ko: {
       inbox: '받은편지함',
@@ -267,6 +269,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: '팔로워',
       search_following: '팔로잉 검색...',
       search_followers: '팔로워 검색...',
+      chain_no_nfts_message: '{chain} NFT는 Vanity 지갑을 만들고 이 체인을 Vanity 프로필에 연결하여 모든 자산을 한 곳에 통합한 후 표시됩니다.',
     },
     pl: {
       inbox: 'Skrzynka odbiorcza',
@@ -308,6 +311,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'Obserwujący',
       search_following: 'Szukaj obserwowanych...',
       search_followers: 'Szukaj obserwujących...',
+      chain_no_nfts_message: 'Twoje NFT {chain} staną się widoczne po utworzeniu portfela Vanity i powiązaniu tej sieci z profilem Vanity, aby zjednoczyć wszystkie aktywa w jednym miejscu.',
     },
     pt: {
       inbox: 'Caixa de entrada',
@@ -349,6 +353,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'Seguidores',
       search_following: 'Pesquisar seguindo...',
       search_followers: 'Pesquisar seguidores...',
+      chain_no_nfts_message: 'Seus NFTs da {chain} ficarão visíveis assim que você criar uma carteira Vanity e vincular esta rede ao seu perfil Vanity para unificar todos os seus ativos em um só lugar.',
     },
     es: {
       inbox: 'Bandeja de entrada',
@@ -390,6 +395,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'Seguidores',
       search_following: 'Buscar siguiendo...',
       search_followers: 'Buscar seguidores...',
+      chain_no_nfts_message: 'Tus NFTs de {chain} serán visibles una vez que crees una billetera Vanity y vincules esta red a tu perfil Vanity para unificar todos tus activos en un solo lugar.',
     },
     "es-419": {
       inbox: 'Bandeja de entrada',
@@ -472,6 +478,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'Pengikut',
       search_following: 'Cari mengikuti...',
       search_followers: 'Cari pengikut...',
+      chain_no_nfts_message: 'NFT {chain} anda akan kelihatan setelah anda mencipta dompet Vanity dan memautkan rangkaian ini ke profil Vanity anda untuk menyatukan semua aset anda di satu tempat.',
     },
     th: {
       inbox: 'กล่องขาเข้า',
@@ -513,6 +520,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'ผู้ติดตาม',
       search_following: 'ค้นหาการติดตาม...',
       search_followers: 'ค้นหาผู้ติดตาม...',
+      chain_no_nfts_message: 'NFT {chain} ของคุณจะปรากฏเมื่อคุณสร้างกระเป๋าเงิน Vanity และเชื่อมโยงเชนนี้กับโปรไฟล์ Vanity เพื่อรวมสินทรัพย์ทั้งหมดของคุณไว้ในที่เดียว',
     },
     id: {
       inbox: 'Kotak Masuk',
@@ -554,6 +562,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'Pengikut',
       search_following: 'Cari mengikuti...',
       search_followers: 'Cari pengikut...',
+      chain_no_nfts_message: 'NFT {chain} Anda akan terlihat setelah Anda membuat dompet Vanity dan menautkan jaringan ini ke profil Vanity Anda untuk menyatukan semua aset di satu tempat.',
     },
     "zh-TW": {
       inbox: '收件箱',
@@ -636,6 +645,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'Abonnés',
       search_following: 'Rechercher des abonnements...',
       search_followers: 'Rechercher des abonnés...',
+      chain_no_nfts_message: 'Vos NFT {chain} seront visibles dès que vous créerez un portefeuille Vanity et lierez cette chaîne à votre profil Vanity pour réunir tous vos actifs en un seul endroit.',
     },
     ja: {
       inbox: '受信トレイ',
@@ -677,6 +687,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'フォロワー',
       search_following: 'フォロー中を検索...',
       search_followers: 'フォロワーを検索...',
+      chain_no_nfts_message: '{chain}のNFTは、Vanityウォレットを作成し、このチェーンをVanityプロフィールにリンクすることで、すべての資産を一か所に統合した後に表示されます。',
     },
     "zh-CN": {
       inbox: '收件箱',
@@ -759,6 +770,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       followers: 'फॉलोअर्स',
       search_following: 'फॉलोइंग खोजें...',
       search_followers: 'फॉलोअर्स खोजें...',
+      chain_no_nfts_message: 'अपने सभी एसेट्स को एक जगह एकीकृत करने के लिए Vanity वॉलेट बनाने और इस चेन को अपने Vanity प्रोफ़ाइल से लिंक करने के बाद आपके {chain} NFT दिखाई देंगे।',
     },
   };
 
@@ -772,6 +784,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Your Vanity Wallet ID',
       vanity_search_placeholder: 'Type your name .vanity here',
+      chain_no_nfts_message: 'Your {chain} NFTs become visible once you create a Vanity wallet and link this chain to your Vanity profile to unify all of your assets in one place.',
     },
     es: {
       search: 'Buscar',
@@ -780,6 +793,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Tu ID de billetera Vanity',
       vanity_search_placeholder: 'Escribe tu nombre .vanity aquí',
+      chain_no_nfts_message: 'Tus NFTs de {chain} serán visibles una vez que crees una billetera Vanity y vincules esta red a tu perfil Vanity para unificar todos tus activos en un solo lugar.',
     },
     'es-419': {
       search: 'Buscar',
@@ -788,6 +802,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Tu ID de billetera Vanity',
       vanity_search_placeholder: 'Escribe tu nombre .vanity aquí',
+      chain_no_nfts_message: 'Tus NFTs de {chain} serán visibles una vez que crees una billetera Vanity y vincules esta red a tu perfil Vanity para unificar todos tus activos en un solo lugar.',
     },
     fr: {
       search: 'Rechercher',
@@ -796,6 +811,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Votre ID de portefeuille Vanity',
       vanity_search_placeholder: 'Tapez votre nom .vanity ici',
+      chain_no_nfts_message: 'Vos NFT {chain} seront visibles dès que vous créerez un portefeuille Vanity et lierez cette chaîne à votre profil Vanity pour réunir tous vos actifs en un seul endroit.',
     },
     de: {
       search: 'Suchen',
@@ -804,6 +820,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Deine Vanity Wallet-ID',
       vanity_search_placeholder: 'Gib deinen .vanity-Namen hier ein',
+      chain_no_nfts_message: 'Deine {chain}-NFTs werden sichtbar, sobald du ein Vanity Wallet erstellst und diese Chain mit deinem Vanity-Profil verknüpfst, um all deine Assets an einem Ort zu vereinen.',
     },
     pt: {
       search: 'Pesquisar',
@@ -812,6 +829,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Seu ID de carteira Vanity',
       vanity_search_placeholder: 'Digite seu nome .vanity aqui',
+      chain_no_nfts_message: 'Seus NFTs da {chain} ficarão visíveis assim que você criar uma carteira Vanity e vincular esta rede ao seu perfil Vanity para unificar todos os seus ativos em um só lugar.',
     },
     ca: {
       search: 'Cercar',
@@ -820,6 +838,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'El teu ID de cartera Vanity',
       vanity_search_placeholder: 'Escriu el teu nom .vanity aquí',
+      chain_no_nfts_message: 'Els teus NFT de {chain} es faran visibles quan creïs una cartera Vanity i vinculis aquesta cadena al teu perfil Vanity per unificar tots els teus actius en un sol lloc.',
     },
     pl: {
       search: 'Szukaj',
@@ -828,6 +847,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Społeczność',
       vanity_tagline: 'Twój identyfikator portfela Vanity',
       vanity_search_placeholder: 'Wpisz swoją nazwę .vanity tutaj',
+      chain_no_nfts_message: 'Twoje NFT {chain} staną się widoczne po utworzeniu portfela Vanity i powiązaniu tej sieci z profilem Vanity, aby zjednoczyć wszystkie aktywa w jednym miejscu.',
     },
     ja: {
       search: '検索',
@@ -836,6 +856,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'ソーシャル',
       vanity_tagline: 'あなたのVanityウォレットID',
       vanity_search_placeholder: 'ここに .vanity の名前を入力',
+      chain_no_nfts_message: '{chain}のNFTは、Vanityウォレットを作成し、このチェーンをVanityプロフィールにリンクすることで、すべての資産を一か所に統合した後に表示されます。',
     },
     ko: {
       search: '검색',
@@ -844,6 +865,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: '소셜',
       vanity_tagline: '당신의 Vanity 지갑 ID',
       vanity_search_placeholder: '여기에 .vanity 이름을 입력하세요',
+      chain_no_nfts_message: '{chain} NFT는 Vanity 지갑을 만들고 이 체인을 Vanity 프로필에 연결하여 모든 자산을 한 곳에 통합한 후 표시됩니다.',
     },
     'zh-CN': {
       search: '搜索',
@@ -852,6 +874,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: '社交',
       vanity_tagline: '你的 Vanity 钱包 ID',
       vanity_search_placeholder: '在此输入你的 .vanity 名称',
+      chain_no_nfts_message: '创建 Vanity 钱包并将此链链接到您的 Vanity 个人资料以将所有资产统一到一处后,您的 {chain} NFT 即可显示。',
     },
     'zh-TW': {
       search: '搜尋',
@@ -860,6 +883,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: '社交',
       vanity_tagline: '你的 Vanity 錢包 ID',
       vanity_search_placeholder: '在此輸入你的 .vanity 名稱',
+      chain_no_nfts_message: '建立 Vanity 錢包並將此鏈結到您的 Vanity 個人檔案以將所有資產統一在一處後,您的 {chain} NFT 即可顯示。',
     },
     hi: {
       search: 'खोजें',
@@ -868,6 +892,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'सोशल',
       vanity_tagline: 'आपकी Vanity वॉलेट ID',
       vanity_search_placeholder: 'यहां अपना .vanity नाम टाइप करें',
+      chain_no_nfts_message: 'अपने सभी एसेट्स को एक जगह एकीकृत करने के लिए Vanity वॉलेट बनाने और इस चेन को अपने Vanity प्रोफ़ाइल से लिंक करने के बाद आपके {chain} NFT दिखाई देंगे।',
     },
     ms: {
       search: 'Cari',
@@ -876,6 +901,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Sosial',
       vanity_tagline: 'ID Dompet Vanity Anda',
       vanity_search_placeholder: 'Taip nama .vanity anda di sini',
+      chain_no_nfts_message: 'NFT {chain} anda akan kelihatan setelah anda mencipta dompet Vanity dan memautkan rangkaian ini ke profil Vanity anda untuk menyatukan semua aset anda di satu tempat.',
     },
     th: {
       search: 'ค้นหา',
@@ -884,6 +910,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'โซเชียล',
       vanity_tagline: 'ID กระเป๋าเงิน Vanity ของคุณ',
       vanity_search_placeholder: 'พิมพ์ชื่อ .vanity ของคุณที่นี่',
+      chain_no_nfts_message: 'NFT {chain} ของคุณจะปรากฏเมื่อคุณสร้างกระเป๋าเงิน Vanity และเชื่อมโยงเชนนี้กับโปรไฟล์ Vanity เพื่อรวมสินทรัพย์ทั้งหมดของคุณไว้ในที่เดียว',
     },
     id: {
       search: 'Cari',
@@ -892,6 +919,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Sosial',
       vanity_tagline: 'ID Dompet Vanity Anda',
       vanity_search_placeholder: 'Ketik nama .vanity Anda di sini',
+      chain_no_nfts_message: 'NFT {chain} Anda akan terlihat setelah Anda membuat dompet Vanity dan menautkan jaringan ini ke profil Vanity Anda untuk menyatukan semua aset di satu tempat.',
     },
   };
 
