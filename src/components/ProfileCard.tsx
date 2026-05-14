@@ -253,6 +253,16 @@ export const ProfileCard = ({
   const [showWalletsOverlay, setShowWalletsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
   const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('all');
+  const [vanityWalletPrompt, setVanityWalletPrompt] = useState<string | null>(null);
+  const { t: tLang } = useLanguage();
+  // Notify Dock to illuminate the fingerprint/passkey icon while the prompt is visible
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('vanity-wallet-prompt', { detail: { active: !!vanityWalletPrompt } }));
+    if (vanityWalletPrompt) {
+      const id = setTimeout(() => setVanityWalletPrompt(null), 8000);
+      return () => clearTimeout(id);
+    }
+  }, [vanityWalletPrompt]);
 
   // Reset visible-NFT pagination whenever the user changes category or expanded collection
   useEffect(() => {
