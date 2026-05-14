@@ -594,7 +594,8 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
   addLink('instagram', ['social.instagram.username'], (h) => `https://instagram.com/${h.replace(/^@/, '')}`);
 
   const profile = data.profile || {};
-  const avatar = normalizeUdMediaUrl(profile.imagePath || profile.imageUrl || data.metadata?.image || data.image);
+  const metadataImageFallback = `https://api.unstoppabledomains.com/metadata/image-src/${encodeURIComponent(data.metadata.domain)}?withOverlay=false`;
+  const avatar = normalizeUdMediaUrl(profile.imagePath || profile.imageUrl || data.metadata?.image || data.image) || metadataImageFallback;
   const header = normalizeUdMediaUrl(profile.coverPath || profile.coverUrl);
 
   console.log(`✅ UD resolved: ${domain} -> ${address}`);
