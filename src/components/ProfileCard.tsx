@@ -2317,7 +2317,6 @@ export const ProfileCard = ({
                                 <p>{tLang('chain_no_nfts_message').replace('{chain}', vanityWalletPrompt)}</p>
                               </div>
                             )}
-                            </div>
                             {/* POAPs Button */}
                             {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (poaps.length > 0 || poapTotalCount > 0) && (
                               <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
