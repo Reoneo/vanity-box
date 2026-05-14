@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, MessageCircle, Repeat2, Heart, Loader2, Search, Filter, ChevronDown, Link2, Globe, Mail, Calendar, X, Pencil, ChevronLeft, ChevronRight, Award, Users, Share2 } from "lucide-react";
 import type { OnchainProfileData } from "@/lib/iota/vanityProfile";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Helper to validate EVM address format (40 hex chars after 0x)
 // IOTA and other non-EVM addresses are longer and should not be passed to EVM APIs
