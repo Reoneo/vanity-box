@@ -2475,12 +2475,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: false,
                   }] : []),
-                  // Passkey icon — show when no wallet is connected
-                  ...(!walletAddress ? [{
-                    icon: <Fingerprint className="w-6 h-6 text-[#D4AF37]" />,
+                  // Passkey icon — show when no wallet is connected, or when prompting to create a Vanity wallet
+                  ...((!walletAddress || vanityWalletPromptActive) ? [{
+                    icon: <Fingerprint className={`w-6 h-6 text-[#D4AF37] ${vanityWalletPromptActive ? 'animate-pulse drop-shadow-[0_0_12px_#D4AF37]' : ''}`} />,
                     label: 'Passkey',
                     onClick: () => setShowPasskeyModal(true),
-                    isActive: showPasskeyModal,
+                    isActive: showPasskeyModal || vanityWalletPromptActive,
                   }] : []),
                   // Search icon on far right
                   {
