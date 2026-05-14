@@ -449,7 +449,15 @@ const firstEvmAddress = (...values: unknown[]): string | null => {
 };
 
 function isUnstoppableDomain(normalized: string): boolean {
-  return UD_TLDS.some((tld) => normalized.endsWith(tld));
+  // Allowlist match (fast path for known TLDs)
+  if (UD_TLDS.some((tld) => normalized.endsWith(tld))) return true;
+  // Permissive catchall: any domain-like input not handled by another route
+  // gets a chance at the UD Profile API. The API itself is authoritative;
+  // genuinely unregistered names cleanly return 404 / notFound.
+  // Skip pure wallet-looking strings (handled earlier) and single-label inputs.
+  if (!normalized.includes('.')) return false;
+  if (/\s/.test(normalized)) return false;
+  return true;
 }
 
 function isUdLegacyResolutionTld(normalized: string): boolean {
@@ -494,13 +502,15 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
 
   const udProfile = udRes && !udRes.notFound ? udRes : null;
 
+  const metadataImageFallback = `https://api.unstoppabledomains.com/metadata/image-src/${encodeURIComponent(domain)}?withOverlay=false`;
+
   if (openseaRes?.address) {
     if (udProfile) {
-      // Enrich UD profile but trust OpenSea's owner address; use OpenSea image as avatar fallback.
+      // Trust UD's avatar (best quality), then OpenSea image, then UD metadata renderer.
       return {
         ...udProfile,
         address: openseaRes.address,
-        avatar: normalizeUdMediaUrl(openseaRes.image) || normalizeUdMediaUrl(udProfile.avatar) || null,
+        avatar: normalizeUdMediaUrl(udProfile.avatar) || normalizeUdMediaUrl(openseaRes.image) || metadataImageFallback,
       };
     }
     // Minimal profile pointing to the owner wallet.
@@ -509,7 +519,7 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
       identity: domain,
       platform: 'unstoppabledomains',
       displayName: domain,
-      avatar: normalizeUdMediaUrl(openseaRes.image) || null,
+      avatar: normalizeUdMediaUrl(openseaRes.image) || metadataImageFallback,
       description: null,
       header: null,
       website: null,
@@ -586,7 +596,8 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
   addLink('instagram', ['social.instagram.username'], (h) => `https://instagram.com/${h.replace(/^@/, '')}`);
 
   const profile = data.profile || {};
-  const avatar = normalizeUdMediaUrl(profile.imagePath || profile.imageUrl || data.metadata?.image || data.image);
+  const metadataImageFallback = `https://api.unstoppabledomains.com/metadata/image-src/${encodeURIComponent(data.metadata.domain)}?withOverlay=false`;
+  const avatar = normalizeUdMediaUrl(profile.imagePath || profile.imageUrl || data.metadata?.image || data.image) || metadataImageFallback;
   const header = normalizeUdMediaUrl(profile.coverPath || profile.coverUrl);
 
   console.log(`✅ UD resolved: ${domain} -> ${address}`);
