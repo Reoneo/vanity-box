@@ -259,6 +259,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   
   // Dock panel states
   const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster'>('profile');
+  const [vanityWalletPromptActive, setVanityWalletPromptActive] = useState(false);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ active: boolean }>).detail;
+      setVanityWalletPromptActive(!!detail?.active);
+    };
+    window.addEventListener('vanity-wallet-prompt', handler);
+    return () => window.removeEventListener('vanity-wallet-prompt', handler);
+  }, []);
   const [poapTokens, setPoapTokens] = useState<any[]>([]);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
   const [showEFPFollowingModal, setShowEFPFollowingModal] = useState(false);
