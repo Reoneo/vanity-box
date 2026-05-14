@@ -1884,17 +1884,17 @@ export const ProfileCard = ({
                   </div>
                   {/* Avatar positioned absolutely to overlay header - centered on left half */}
                   <div 
-                    className="absolute -bottom-16 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
+                    className="absolute -bottom-24 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
                     onClick={openAvatarGallery}
                   >
                     <div className="relative group">
-                      <Avatar className="h-[136px] w-[136px] border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
+                      <Avatar className="h-[272px] w-[272px] rounded-2xl border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
                         <AvatarImage 
                           src={web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
-                          className="object-cover"
+                          className="object-cover rounded-2xl"
                         />
-                        <AvatarFallback className="text-5xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                        <AvatarFallback className="rounded-2xl text-7xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
                           {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
