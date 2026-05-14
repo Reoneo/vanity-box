@@ -449,7 +449,15 @@ const firstEvmAddress = (...values: unknown[]): string | null => {
 };
 
 function isUnstoppableDomain(normalized: string): boolean {
-  return UD_TLDS.some((tld) => normalized.endsWith(tld));
+  // Allowlist match (fast path for known TLDs)
+  if (UD_TLDS.some((tld) => normalized.endsWith(tld))) return true;
+  // Permissive catchall: any domain-like input not handled by another route
+  // gets a chance at the UD Profile API. The API itself is authoritative;
+  // genuinely unregistered names cleanly return 404 / notFound.
+  // Skip pure wallet-looking strings (handled earlier) and single-label inputs.
+  if (!normalized.includes('.')) return false;
+  if (/\s/.test(normalized)) return false;
+  return true;
 }
 
 function isUdLegacyResolutionTld(normalized: string): boolean {
