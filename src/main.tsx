@@ -3,12 +3,22 @@ import React from "react";
 import App from "./App.tsx";
 import "./index.css";
 
-// Subdomain redirect: poap.vanity.box → vanity.box/poap.eth
+// Subdomain redirect: any *.vanity.box → vanity.box/{sub}
+// e.g. poap.vanity.box → vanity.box/poap, alice.vanity.box → vanity.box/alice
+// The profile resolver then resolves the name across ENS / IOTA / UD / Web3.bio.
 (() => {
   const h = window.location.hostname;
-  if (h === "poap.vanity.box") {
-    window.location.replace("https://vanity.box/poap.eth");
-    return;
+  const SKIP = new Set(["www", "app", "api", "get", "id-preview", "preview", "staging"]);
+  if (h.endsWith(".vanity.box")) {
+    const sub = h.slice(0, -".vanity.box".length);
+    // Skip multi-segment infra hosts (e.g. id-preview--xxx.vanity.box) and known infra subs
+    if (sub && !sub.includes(".") && !SKIP.has(sub) && !sub.startsWith("id-preview")) {
+      const path = window.location.pathname === "/" ? "" : window.location.pathname;
+      window.location.replace(
+        `https://vanity.box/${sub}${path}${window.location.search}${window.location.hash}`
+      );
+      return;
+    }
   }
 })();
 import { initMiniKit } from "@/lib/minikit";
