@@ -802,6 +802,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Tu ID de billetera Vanity',
       vanity_search_placeholder: 'Escribe tu nombre .vanity aquí',
+      chain_no_nfts_message: 'Tus NFTs de {chain} serán visibles una vez que crees una billetera Vanity y vincules esta red a tu perfil Vanity para unificar todos tus activos en un solo lugar.',
     },
     fr: {
       search: 'Rechercher',
@@ -873,6 +874,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: '社交',
       vanity_tagline: '你的 Vanity 钱包 ID',
       vanity_search_placeholder: '在此输入你的 .vanity 名称',
+      chain_no_nfts_message: '创建 Vanity 钱包并将此链链接到您的 Vanity 个人资料以将所有资产统一到一处后,您的 {chain} NFT 即可显示。',
     },
     'zh-TW': {
       search: '搜尋',
@@ -881,6 +883,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: '社交',
       vanity_tagline: '你的 Vanity 錢包 ID',
       vanity_search_placeholder: '在此輸入你的 .vanity 名稱',
+      chain_no_nfts_message: '建立 Vanity 錢包並將此鏈結到您的 Vanity 個人檔案以將所有資產統一在一處後,您的 {chain} NFT 即可顯示。',
     },
     hi: {
       search: 'खोजें',
