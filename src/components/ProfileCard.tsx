@@ -2758,27 +2758,26 @@ export const ProfileCard = ({
                     {/* No gradient overlay – matches desktop */}
                   </div>
 
-                  <div className="flex justify-center absolute -bottom-16 left-0 right-0">
+                  <div className="flex justify-center absolute -bottom-14 left-0 right-0">
                     <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
-                      {/* No glow ring – matches desktop */}
-                      <Avatar className="relative h-32 w-32 rounded-2xl border-[3px] border-background shadow-2xl ring-2 ring-primary/20">
+                      <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
                         <AvatarImage 
                           src={web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
                           className="object-cover rounded-2xl"
                         />
-                        <AvatarFallback className="rounded-2xl text-5xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                        <AvatarFallback className="rounded-2xl text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
                           {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       {/* Verified Badge - Only show when user has human verification */}
                       {isHumanVerified && (
                         <div
-                          className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center"
+                          className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center"
                           title="Verified Builder"
                         >
                           <div className="relative">
-                            <svg viewBox="0 0 24 24" className="w-10 h-10 drop-shadow-lg">
+                            <svg viewBox="0 0 24 24" className="w-9 h-9 drop-shadow-lg">
                               <defs>
                                 <linearGradient id="badge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                                   <stop offset="0%" stopColor="#3B82F6" />
@@ -2801,21 +2800,21 @@ export const ProfileCard = ({
                           </div>
                         </div>
                       )}
+                      {/* Share button - directly under the avatar (iOS-style, mobile) */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
+                        aria-label="Share profile"
+                        className="absolute -bottom-11 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-black dark:text-[#D4AF37]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 3v13" />
+                          <path d="m7 8 5-5 5 5" />
+                          <path d="M5 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" transform="translate(0 -1)" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                  {/* Share button - top left under header (iOS-style, mobile) */}
-                  <button
-                    type="button"
-                    onClick={handleShareProfile}
-                    aria-label="Share profile"
-                    className="absolute top-2 left-2 z-30 w-10 h-10 rounded-full bg-transparent hover:bg-black/20 dark:hover:bg-white/10 flex items-center justify-center transition-all"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 text-black dark:text-[#D4AF37]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3v13" />
-                      <path d="m7 8 5-5 5 5" />
-                      <path d="M5 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" transform="translate(0 -1)" />
-                    </svg>
-                  </button>
                 </div>
 
                 <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
