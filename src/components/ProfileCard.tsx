@@ -1895,17 +1895,17 @@ export const ProfileCard = ({
                   </div>
                   {/* Avatar positioned absolutely to overlay header - centered on left half */}
                   <div 
-                    className="absolute -bottom-24 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
+                    className="absolute -bottom-20 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
                     onClick={openAvatarGallery}
                   >
                     <div className="relative group">
-                      <Avatar className="h-[272px] w-[272px] rounded-2xl border-4 border-white dark:border-black shadow-2xl ring-2 ring-[#D4AF37]/50">
+                      <Avatar className="h-44 w-44 rounded-2xl shadow-xl">
                         <AvatarImage 
                           src={web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
                           className="object-cover rounded-2xl"
                         />
-                        <AvatarFallback className="rounded-2xl text-7xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                        <AvatarFallback className="rounded-2xl text-6xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
                           {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -1925,21 +1925,21 @@ export const ProfileCard = ({
                           </div>
                         </div>
                       )}
+                      {/* Share button - directly under the avatar (iOS-style icon) */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
+                        aria-label="Share profile"
+                        className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center transition-all"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-black dark:text-[#D4AF37]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 3v13" />
+                          <path d="m7 8 5-5 5 5" />
+                          <path d="M5 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" transform="translate(0 -1)" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                  {/* Share button - top left under header (iOS-style icon) */}
-                  <button
-                    type="button"
-                    onClick={handleShareProfile}
-                    aria-label="Share profile"
-                    className="absolute top-3 left-3 z-30 w-10 h-10 rounded-full bg-transparent hover:bg-black/20 dark:hover:bg-white/10 flex items-center justify-center transition-all"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 text-black dark:text-[#D4AF37]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3v13" />
-                      <path d="m7 8 5-5 5 5" />
-                      <path d="M5 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" transform="translate(0 -1)" />
-                    </svg>
-                  </button>
                 </div>
 
                 {/* 50:50 Split Content Area - extends to footer */}
