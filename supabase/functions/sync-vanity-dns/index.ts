@@ -60,7 +60,7 @@ async function ensureWildcardDNS(token: string, zoneId: string): Promise<Record<
   return results;
 }
 
-/** Build the Cloudflare Worker script — redirects ANY *.vanity.box to ud.me */
+/** Build the Cloudflare Worker script — redirects ANY *.vanity.box to vanity.box/{name}.vanity */
 function buildWorkerScript(): string {
   return `export default {
   async fetch(request) {
@@ -71,7 +71,8 @@ function buildWorkerScript(): string {
     const match = host.match(/^([^.]+)\\.vanity\\.box$/);
     if (!match) return new Response("Not found", { status: 404 });
     const name = match[1];
-    return Response.redirect("https://ud.me/" + name + ".vanity", 301);
+    // Redirect to the Vanity profile (vanity.box/{name}.vanity), not ud.me
+    return Response.redirect("https://vanity.box/" + name + ".vanity" + url.pathname + url.search, 301);
   }
 };
 `;
