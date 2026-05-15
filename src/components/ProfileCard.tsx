@@ -2817,7 +2817,7 @@ export const ProfileCard = ({
                   </div>
                 </div>
 
-                <div className="p-4 pt-[68px] space-y-2 flex-shrink-0">
+                <div className="p-4 pt-[120px] space-y-2 flex-shrink-0">
 
                   {/* Display name with refined typography */}
                   <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
