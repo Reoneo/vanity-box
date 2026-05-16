@@ -80,6 +80,42 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const imageUrl = nft.image_url || nft.display_image_url;
   const mediaType = getMediaType(animationUrl);
 
+  // Detect ENS NFT and extract expiry from attributes/traits
+  const ensContract = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
+  const wrapperContract = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
+  const contractLower = (nft.contract || '').toLowerCase();
+  const collectionLower = (nft.collection || '').toLowerCase();
+  const nameLower = (nft.name || '').toLowerCase();
+  const isEnsNft =
+    contractLower === ensContract ||
+    contractLower === wrapperContract ||
+    collectionLower === 'ens' ||
+    collectionLower.includes('ethereum name service') ||
+    nameLower.endsWith('.eth');
+
+  const attributes: any[] =
+    nft.metadata?.attributes || nft.traits || nft.metadata?.traits || [];
+  const findAttr = (keys: string[]) =>
+    attributes.find((a: any) => {
+      const t = String(a?.trait_type || a?.traitType || '').toLowerCase();
+      return keys.some((k) => t === k.toLowerCase());
+    });
+
+  const expiryAttr = findAttr(['Expiration Date', 'Expires', 'Expiry']);
+  const rawExpiry = expiryAttr?.value ?? expiryAttr?.display_value;
+  const expiryNum = rawExpiry != null ? Number(rawExpiry) : NaN;
+  const expiryDate = Number.isFinite(expiryNum) && expiryNum > 0
+    ? new Date(expiryNum < 1e12 ? expiryNum * 1000 : expiryNum)
+    : null;
+  const expiryExpired = expiryDate ? isPast(expiryDate) : false;
+
+  const regAttr = findAttr(['Registration Date', 'Created Date', 'Created']);
+  const rawReg = regAttr?.value ?? regAttr?.display_value;
+  const regNum = rawReg != null ? Number(rawReg) : NaN;
+  const registrationDate = Number.isFinite(regNum) && regNum > 0
+    ? new Date(regNum < 1e12 ? regNum * 1000 : regNum)
+    : null;
+
   return (
     <div
       className="fixed left-0 right-0 bg-background dark:bg-black z-[9999] animate-fade-in flex flex-col overscroll-contain"
