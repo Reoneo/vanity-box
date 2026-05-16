@@ -16,7 +16,7 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   banner,
 }) => {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://vanity.box";
-  const supabaseUrl = "https://nttbfocahntuwqtsgpfr.supabase.co";
+  const supabaseUrl = "https://gdjjboorqviobvvygpca.supabase.co";
 
   const title = username ? `${displayName || username} - Vanity.box` : "Vanity.box - Premium Web3 Identity";
 
