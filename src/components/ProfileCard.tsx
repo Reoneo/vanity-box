@@ -2357,8 +2357,9 @@ export const ProfileCard = ({
                                   <button
                                     key={c.key}
                                     onClick={() => {
-                                      if (!c.has) { setVanityWalletPrompt(c.alt); return; }
-                                      setNftChainFilter(active ? 'all' : c.key);
+                                      const next = active ? 'all' : c.key;
+                                      setNftChainFilter(next);
+                                      setVanityWalletPrompt(next !== 'all' && !c.has ? c.alt : '');
                                     }}
                                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active ? `ring-2 ${c.ring} scale-110` : c.has ? 'opacity-60 hover:opacity-100' : 'opacity-100'}`}
                                     aria-label={`Filter ${c.alt}`}
