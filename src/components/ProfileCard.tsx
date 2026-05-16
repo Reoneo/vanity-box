@@ -1560,12 +1560,11 @@ export const ProfileCard = ({
     if (isUnstoppableCollection(name)) {
       const chain = unstoppableChain(name);
       const chainIcon = chain === 'base'
-        ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 inline-block align-middle object-contain" style={{ borderRadius: 4 }} />
-        : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 inline-block align-middle rounded-full" />;
-      const udClass = imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`);
+        ? <img src={baseSquareBlue} alt="Base" className="h-10 w-10 inline-block align-middle object-contain" style={{ borderRadius: 8 }} />
+        : <img src={polygonIcon} alt="Polygon" className="h-10 w-10 inline-block align-middle rounded-full" />;
       return (
-        <span className="inline-flex items-center gap-1.5 align-middle">
-          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={udClass} />
+        <span className="inline-flex items-center gap-2 align-middle">
+          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={imgClassName} />
           {chainIcon}
         </span>
       );
