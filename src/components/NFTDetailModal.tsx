@@ -197,15 +197,35 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
             <ChevronDown className="w-4 h-4 text-black rotate-90" />
           </button>
           <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%] flex items-center justify-center">
-            {isEnsNft ? (
-              <img src={ensCollectionLogo} alt="ENS" className="h-5 w-auto object-contain" />
-            ) : collectionLower === 'basenames' || collectionLower === 'basename' || collectionLower === 'base names' ? (
-              <img src={basenamesCollectionLogo} alt="Basenames" className="h-5 w-auto object-contain" />
-            ) : (
-              <h3 className="text-lg font-bold text-black dark:text-white truncate">
-                {nft.name || `NFT #${nft.identifier}`}
-              </h3>
-            )}
+            {(() => {
+              const chainLower = (nft.chain || '').toLowerCase();
+              const isUnstoppable =
+                collectionLower.includes('unstoppable') ||
+                collectionLower.includes('ud.me') ||
+                /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic)$/i.test(nameLower);
+              if (isEnsNft) {
+                return <img src={ensCollectionLogo} alt="ENS" className="h-5 w-auto object-contain" />;
+              }
+              if (collectionLower === 'basenames' || collectionLower === 'basename' || collectionLower === 'base names') {
+                return <img src={basenamesCollectionLogo} alt="Basenames" className="h-5 w-auto object-contain" />;
+              }
+              if (isUnstoppable) {
+                const chainIcon = chainLower === 'base'
+                  ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 object-contain" style={{ borderRadius: 4 }} />
+                  : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 rounded-full" />;
+                return (
+                  <div className="flex items-center gap-1.5">
+                    <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className="h-5 w-auto object-contain" />
+                    {chainIcon}
+                  </div>
+                );
+              }
+              return (
+                <h3 className="text-lg font-bold text-black dark:text-white truncate">
+                  {nft.name || `NFT #${nft.identifier}`}
+                </h3>
+              );
+            })()}
           </div>
           <button
             onClick={onClose}
