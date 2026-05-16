@@ -16,7 +16,7 @@ async function fetchDuneResults(apiKey: string): Promise<string[]> {
       { headers: { "X-Dune-API-Key": apiKey } }
     );
     if (!res.ok) throw new Error(`Dune API error [${res.status}]: ${await res.text()}`);
-    const data = await res.json();
+    const data = await parseJsonSafe(res);
     const rows = data?.result?.rows ?? [];
     allRows.push(...rows);
     if (rows.length < limit) break;
@@ -40,7 +40,7 @@ async function ensureWildcardDNS(token: string, zoneId: string): Promise<Record<
       { headers: authHeaders }
     );
     if (listRes.ok) {
-      const listJson = await listRes.json();
+      const listJson = await parseJsonSafe(listRes);
       const found = (listJson.result ?? []).find((r: any) => r.name === wc);
       if (found) { results[wc] = "exists"; continue; }
     }
@@ -50,7 +50,7 @@ async function ensureWildcardDNS(token: string, zoneId: string): Promise<Record<
       headers: authHeaders,
       body: JSON.stringify({ type: "A", name: wc, content: "192.0.2.1", ttl: 1, proxied: true }),
     });
-    const createJson = await createRes.json();
+    const createJson = await parseJsonSafe(createRes);
     if (!createJson.success) {
       results[wc] = `error: ${createJson.errors?.map((e: any) => e.message).join("; ")}`;
     } else {
@@ -105,7 +105,7 @@ async function deployWorker(token: string, accountId: string, script: string): P
       body: form,
     }
   );
-  const json = await res.json();
+  const json = await parseJsonSafe(res);
   if (!json.success) {
     const err = json.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
     console.error("Worker deploy error:", err);
@@ -126,7 +126,7 @@ async function ensureWorkerRoute(token: string, zoneId: string): Promise<string>
     { headers: authHeaders }
   );
   if (listRes.ok) {
-    const listJson = await listRes.json();
+    const listJson = await parseJsonSafe(listRes);
     if ((listJson.result ?? []).find((r: any) => r.pattern === ROUTE_PATTERN)) {
       return "exists";
     }
@@ -140,7 +140,7 @@ async function ensureWorkerRoute(token: string, zoneId: string): Promise<string>
       body: JSON.stringify({ pattern: ROUTE_PATTERN, script: WORKER_NAME }),
     }
   );
-  const createJson = await createRes.json();
+  const createJson = await parseJsonSafe(createRes);
   if (!createJson.success) {
     return `error: ${createJson.errors?.map((e: any) => e.message).join("; ") ?? "unknown"}`;
   }
@@ -177,7 +177,7 @@ async function ensureWwwPageRule(token: string, zoneId: string): Promise<string>
   );
 
   if (listRes.ok) {
-    const listJson = await listRes.json();
+    const listJson = await parseJsonSafe(listRes);
     const rules = listJson.result?.rules ?? [];
     if (rules.find((r: any) => r.description === RULE_DESC)) return "exists";
 
@@ -190,7 +190,7 @@ async function ensureWwwPageRule(token: string, zoneId: string): Promise<string>
         body: JSON.stringify({ rules: [...rules, ruleBody] }),
       }
     );
-    const updateJson = await updateRes.json();
+    const updateJson = await parseJsonSafe(updateRes);
     if (!updateJson.success) {
       return `error: ${updateJson.errors?.map((e: any) => e.message).join("; ")}`;
     }
@@ -211,7 +211,7 @@ async function ensureWwwPageRule(token: string, zoneId: string): Promise<string>
       }),
     }
   );
-  const createJson = await createRes.json();
+  const createJson = await parseJsonSafe(createRes);
   if (!createJson.success) {
     return `error: ${createJson.errors?.map((e: any) => e.message).join("; ")}`;
   }
@@ -235,7 +235,7 @@ async function ensureWwwCNAMEs(
       { headers: authHeaders }
     );
     if (!res.ok) break;
-    const json = await res.json();
+    const json = await parseJsonSafe(res);
     for (const rec of json.result ?? []) {
       if (rec.name?.startsWith("www.") && rec.name?.endsWith(".vanity.box")) {
         existing.add(rec.name);
@@ -269,7 +269,7 @@ async function ensureWwwCNAMEs(
             proxied: true,
           }),
         });
-        const json = await res.json();
+        const json = await parseJsonSafe(res);
         if (json.success) return { name, status: "created" as const };
         const err = json.errors?.map((e: any) => e.message).join("; ") ?? "unknown";
         return { name, status: "error" as const, error: err };
@@ -512,7 +512,7 @@ Deno.serve(async (req) => {
           { headers: authHeaders }
         );
         if (!res.ok) throw new Error(`CF list error: ${await res.text()}`);
-        const json = await res.json();
+        const json = await parseJsonSafe(res);
         for (const rec of json.result ?? []) {
           if (
             rec.name?.endsWith(".vanity.box") &&
@@ -551,7 +551,7 @@ Deno.serve(async (req) => {
               `${CF_BASE}/zones/${ZONE_ID}/dns_records/${rec.id}`,
               { method: "DELETE", headers: authHeaders }
             );
-            const json = await res.json();
+            const json = await parseJsonSafe(res);
             return { rec, success: json.success, errors: json.errors };
           })
         );
