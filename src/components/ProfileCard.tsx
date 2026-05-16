@@ -1457,10 +1457,19 @@ export const ProfileCard = ({
   // Group OpenSea NFTs by collection (excluding POAPs)
   const openSeaGroupedNfts = useMemo(() => {
     const groups: Record<string, any[]> = {};
-    
+
     // Add regular NFTs (OpenSea only)
     filteredNfts.forEach(nft => {
-      const collection = nft.collection || 'Unknown Collection';
+      const rawCollection = nft.collection || 'Unknown Collection';
+      const lower = String(rawCollection).toLowerCase();
+      const isUd = lower.includes('unstoppable') || lower.includes('ud.me');
+      let collection = rawCollection;
+      if (isUd) {
+        const chain = String(nft.chain || '').toLowerCase();
+        collection = chain.includes('base')
+          ? 'Unstoppable Domains: Base'
+          : 'Unstoppable Domains: Polygon';
+      }
       if (!groups[collection]) {
         groups[collection] = [];
       }
