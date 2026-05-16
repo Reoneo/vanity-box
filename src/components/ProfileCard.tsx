@@ -257,7 +257,7 @@ export const ProfileCard = ({
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
   const [showWalletsOverlay, setShowWalletsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
-  const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('all');
+  const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('evm');
   const [vanityWalletPrompt, setVanityWalletPrompt] = useState<string | null>(null);
   const { t: tLang } = useLanguage();
   // Notify Dock to illuminate the fingerprint/passkey icon while the prompt is visible
