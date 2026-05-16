@@ -179,6 +179,27 @@ async function fetchEnsDirectProfile(name: string): Promise<any | null> {
  * Works for .eth, .sol, .box, wallet addresses, and more
  */
 async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data, error } = await supabase.functions.invoke('web3bio-profile', {
+      body: { identity },
+    });
+
+    if (!error && data?.profile) {
+      return data.profile;
+    }
+
+    if (!error && data?.notFound) {
+      return { notFound: true };
+    }
+
+    if (error) {
+      console.log('⚠️ Web3.bio edge lookup error:', error.message);
+    }
+  } catch (edgeError: any) {
+    console.log('⚠️ Web3.bio edge lookup failed, trying public API:', edgeError?.message || edgeError);
+  }
+
   const url = `https://api.web3.bio/profile/${encodeURIComponent(identity)}`;
   console.log(`🔍 [Client] Fetching Web3.bio profile for: ${identity}`);
 
