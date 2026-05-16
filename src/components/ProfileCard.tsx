@@ -1571,9 +1571,10 @@ export const ProfileCard = ({
       const chainIcon = chain === 'base'
         ? <img src={baseSquareBlue} alt="Base" className="h-10 w-10 inline-block align-middle object-contain" style={{ borderRadius: 8 }} />
         : <img src={polygonIcon} alt="Polygon" className="h-10 w-10 inline-block align-middle rounded-full" />;
+      const udClass = imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`);
       return (
         <span className="inline-flex items-center gap-2 align-middle">
-          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={imgClassName} />
+          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={udClass} />
           {chainIcon}
         </span>
       );
