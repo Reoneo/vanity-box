@@ -204,18 +204,18 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                 collectionLower.includes('ud.me') ||
                 /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic)$/i.test(nameLower);
               if (isEnsNft) {
-                return <img src={ensCollectionLogo} alt="ENS" className="h-5 w-auto object-contain" />;
+                return <img src={ensCollectionLogo} alt="ENS" className="h-10 w-auto object-contain" />;
               }
               if (collectionLower === 'basenames' || collectionLower === 'basename' || collectionLower === 'base names') {
-                return <img src={basenamesCollectionLogo} alt="Basenames" className="h-5 w-auto object-contain" />;
+                return <img src={basenamesCollectionLogo} alt="Basenames" className="h-10 w-auto object-contain" />;
               }
               if (isUnstoppable) {
                 const chainIcon = chainLower === 'base'
-                  ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 object-contain" style={{ borderRadius: 4 }} />
-                  : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 rounded-full" />;
+                  ? <img src={baseSquareBlue} alt="Base" className="h-10 w-10 object-contain" style={{ borderRadius: 8 }} />
+                  : <img src={polygonIcon} alt="Polygon" className="h-10 w-10 rounded-full" />;
                 return (
-                  <div className="flex items-center gap-1.5">
-                    <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className="h-5 w-auto object-contain" />
+                  <div className="flex items-center gap-2">
+                    <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className="h-10 w-auto object-contain" />
                     {chainIcon}
                   </div>
                 );
