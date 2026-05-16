@@ -1,17 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Play, Volume2, ChevronLeft, X } from "lucide-react";
+import { ExternalLink, Play, Volume2, ChevronDown, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 
 // Import network logos for chain icons
 import ethLogo from "@/assets/eth-logo.png";
 import wldLogo from "@/assets/wld-logo.png";
+import polygonIcon from "@/assets/polygon-icon.svg";
+import iotaHeaderPattern from "@/assets/iota-header-pattern.png";
 
 interface NFTDetailModalProps {
   nft: any;
   isOpen: boolean;
   onClose: () => void;
+  headerImage?: string;
 }
 
 // Helper to detect media type from URL
@@ -39,11 +42,9 @@ const getChainIcon = (chain: string, size: number = 16) => {
       return <img src={wldLogo} alt="World Chain" width={size} height={size} className={iconClass} />;
     case 'polygon':
     case 'matic':
-      return (
-        <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={iconClass}>
-          <circle cx="16" cy="16" r="16" fill="#8247E5" />
-        </svg>
-      );
+    case 'polygon-pos':
+    case 'polygon-mainnet':
+      return <img src={polygonIcon} alt="Polygon" width={size} height={size} className={iconClass} />;
     case 'base':
       return (
         <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={iconClass}>
