@@ -108,7 +108,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     const label = nm.endsWith('.eth') ? extractLabel(nm) : '';
     const labelTokenId = label && !label.includes('.') ? labelhashToTokenId(labelhash(label)).toString() : null;
     const contract = c === wrapperContract ? wrapperContract : ensContract;
-    const metadataTokenId = nft.identifier || labelTokenId;
+    const metadataTokenId = labelTokenId || nft.identifier;
     if (metadataTokenId) {
       const url = `https://metadata.ens.domains/mainnet/${contract}/${metadataTokenId}`;
       fetch(url)
@@ -118,12 +118,6 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           setEnsAttrs(data.attributes);
         })
         .catch(() => {});
-    }
-    if (label && !label.includes('.')) {
-      const tokenId = BigInt(labelTokenId!);
-      fetchEnsExpiryFromRegistrar(tokenId).then((expiry) => {
-        if (!cancelled && expiry) setEnsExpiryDate(expiry);
-      }).catch(() => {});
     }
     return () => { cancelled = true; };
   }, [isOpen, nft]);
