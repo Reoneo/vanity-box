@@ -2814,19 +2814,7 @@ export const ProfileCard = ({
                           </div>
                         </div>
                       )}
-                      {/* Share button - directly under the avatar (iOS-style, mobile) */}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
-                        aria-label="Share profile"
-                        className="absolute -bottom-11 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center transition-all"
-                      >
-                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-black dark:text-[#D4AF37]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 3v13" />
-                          <path d="m7 8 5-5 5 5" />
-                          <path d="M5 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" transform="translate(0 -1)" />
-                        </svg>
-                      </button>
+                      {/* Share button moved to top-left of header image (see above) */}
                     </div>
                   </div>
                 </div>
