@@ -152,6 +152,23 @@ serve(async (req) => {
       avatar = normalizeMediaUrl(avatar);
     }
 
+    // Social-preview crawlers (Twitter, Facebook, LinkedIn, iMessage, Slack…)
+    // do NOT accept SVG for og:image. If we resolved a raster avatar, just
+    // redirect to it — that's the image users actually want to see in the
+    // preview card (matches Web3.bio's behavior).
+    if (avatar && /^https?:\/\//i.test(avatar)) {
+      // Verify it's a usable raster image before redirecting.
+      try {
+        const head = await fetchWithTimeout(avatar, { method: 'HEAD' }, 4000);
+        const ct = head.headers.get('content-type') || '';
+        if (head.ok && (ct.startsWith('image/') && !ct.includes('svg'))) {
+          return Response.redirect(avatar, 302);
+        }
+      } catch {
+        // Fall through to SVG fallback
+      }
+    }
+
     // Embed avatar as data URI for reliable rasterization by social previews.
     let avatarDataUri: string | null = null;
     if (avatar) {
