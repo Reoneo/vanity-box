@@ -257,7 +257,7 @@ export const ProfileCard = ({
   const [showNftsOverlay, setShowNftsOverlay] = useState(false);
   const [showWalletsOverlay, setShowWalletsOverlay] = useState(false);
   const [nftCategory, setNftCategory] = useState<string>('main');
-  const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('all');
+  const [nftChainFilter, setNftChainFilter] = useState<'all' | 'evm' | 'iota' | 'ton' | 'sui'>('evm');
   const [vanityWalletPrompt, setVanityWalletPrompt] = useState<string | null>(null);
   const { t: tLang } = useLanguage();
   // Notify Dock to illuminate the fingerprint/passkey icon while the prompt is visible
@@ -1562,9 +1562,12 @@ export const ProfileCard = ({
       const chainIcon = chain === 'base'
         ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 inline-block align-middle object-contain" style={{ borderRadius: 4 }} />
         : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 inline-block align-middle rounded-full" />;
+      const udClass = chain === 'polygon'
+        ? imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`)
+        : imgClassName;
       return (
         <span className="inline-flex items-center gap-1.5 align-middle">
-          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={imgClassName} />
+          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={udClass} />
           {chainIcon}
         </span>
       );
