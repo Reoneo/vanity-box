@@ -268,6 +268,12 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
             </h2>
           )}
 
+          {isEnsNft && nft.name && (
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
+              {nft.name}
+            </h2>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             {nft.chain && (
               <Badge variant="outline" className="bg-muted/60 border-[#D4AF37]/40 text-foreground capitalize flex items-center gap-1.5 px-2.5 py-1 rounded-full">
