@@ -535,30 +535,61 @@ async function resolveUdProfile(domain: string): Promise<any | null> {
 /**
  * Fetch UD profile via Unstoppable Domains public Profile API (no API key required)
  */
+async function fetchUnstoppableMetadata(domain: string): Promise<any | null> {
+  // UD on-chain metadata endpoint — always reflects latest records set by the owner,
+  // even when the Profile API hasn't picked them up yet (common for freshly minted /
+  // freshly updated domains like .vanity).
+  const url = `https://api.unstoppabledomains.com/metadata/${encodeURIComponent(domain)}`;
+  try {
+    const response = await fetchWithRetry(url, {}, 1, 8000);
+    if (!response || !response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch UD profile via Unstoppable Domains public Profile API (no API key required),
+ * with a metadata-endpoint merge so freshly-set on-chain records (avatar, socials,
+ * description, website, email) always appear — even before the Profile API catches up.
+ */
 async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
   const url = `https://api.unstoppabledomains.com/profile/public/${encodeURIComponent(domain)}`;
   console.log(`🔍 [Client] Fetching Unstoppable Domains profile for: ${domain}`);
 
-  const response = await fetchWithRetry(url, {}, 2, 10000);
-  if (!response) {
+  const [profileResponse, metadata] = await Promise.all([
+    fetchWithRetry(url, {}, 2, 10000),
+    fetchUnstoppableMetadata(domain),
+  ]);
+
+  let data: any = null;
+  if (profileResponse && profileResponse.ok) {
+    try { data = await profileResponse.json(); } catch { data = null; }
+  } else if (profileResponse && profileResponse.status === 404) {
+    // Profile API says "not found" — but if metadata exists, the domain IS registered;
+    // synthesize a minimal profile from on-chain metadata records.
+    if (!metadata?.name) return { notFound: true };
+    data = { metadata: { domain: metadata.name, owner: metadata.owner, image: metadata.image_url || metadata.image }, records: metadata.properties?.records || {}, profile: {}, socialAccounts: {}, cryptoVerifications: [] };
+  } else if (!profileResponse) {
     console.log('❌ UD: All retries failed');
     return null;
-  }
-  if (response.status === 404) {
-    console.log('⚠️ UD: Profile not found (404)');
-    return { notFound: true };
-  }
-  if (!response.ok) {
-    console.log(`❌ UD: HTTP ${response.status}`);
+  } else {
+    console.log(`❌ UD: HTTP ${profileResponse.status}`);
     return null;
   }
 
-  const data = await response.json();
-  if (!data?.metadata?.domain) return { notFound: true };
+  if (!data?.metadata?.domain && !metadata?.name) return { notFound: true };
+  if (!data.metadata) data.metadata = { domain: metadata?.name || domain };
 
-  // Build address: prefer ETH, then MATIC, then any owner verification
+  // MERGE on-chain records (authoritative) over Profile API records.
+  // This is what makes newly-set records appear immediately.
+  const profileRecords = data.records || {};
+  const onchainRecords = metadata?.properties?.records || metadata?.records || {};
+  const records: Record<string, string> = { ...profileRecords, ...onchainRecords };
+
+  // Address: prefer ETH/MATIC verifications, then merged records, then owner.
   const verifications: Array<{ symbol: string; address: string }> = data.cryptoVerifications || [];
-  const records = data.records || {};
   const ethAddr = verifications.find((v) => v.symbol === 'ETH')?.address;
   const maticAddr = verifications.find((v) => v.symbol === 'MATIC')?.address;
   const address = firstEvmAddress(
@@ -569,9 +600,11 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
     records['crypto.MATIC.address'],
     records['crypto.POL.address'],
     data.metadata?.owner,
+    metadata?.owner,
   );
 
-  // Normalize social links from socialAccounts AND records (UD stores in either)
+  // Normalize social links from socialAccounts AND records (UD stores in either,
+  // and freshly-set socials only land in records until the Profile API re-indexes).
   const sa = data.socialAccounts || {};
   const links: Record<string, any> = {};
   const addLink = (platform: string, recordKeys: string[], builder: (h: string) => string) => {
@@ -586,7 +619,7 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
       links[platform] = { link: builder(handle.trim()), handle: handle.trim() };
     }
   };
-  addLink('twitter', ['social.twitter.username'], (h) => `https://twitter.com/${h.replace(/^@/, '')}`);
+  addLink('twitter', ['social.twitter.username', 'social.twitter.handle'], (h) => `https://twitter.com/${h.replace(/^@/, '')}`);
   addLink('github', ['social.github.username'], (h) => `https://github.com/${h.replace(/^@/, '')}`);
   addLink('telegram', ['social.telegram.username'], (h) => `https://t.me/${h.replace(/^@/, '')}`);
   addLink('discord', ['social.discord.username'], (h) => h);
@@ -596,26 +629,64 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
   addLink('instagram', ['social.instagram.username'], (h) => `https://instagram.com/${h.replace(/^@/, '')}`);
 
   const profile = data.profile || {};
-  const metadataImageFallback = `https://api.unstoppabledomains.com/metadata/image-src/${encodeURIComponent(data.metadata.domain)}?withOverlay=false`;
-  const avatar = normalizeUdMediaUrl(profile.imagePath || profile.imageUrl || data.metadata?.image || data.image) || metadataImageFallback;
-  const header = normalizeUdMediaUrl(profile.coverPath || profile.coverUrl);
+  const domainName = data.metadata.domain || metadata?.name || domain;
+  const metadataImageFallback = `https://api.unstoppabledomains.com/metadata/image-src/${encodeURIComponent(domainName)}?withOverlay=false`;
 
-  console.log(`✅ UD resolved: ${domain} -> ${address}`);
+  // Avatar: profile API > on-chain records (ipfs.html.value / social.picture.value) > metadata image > UD renderer.
+  const avatar = normalizeUdMediaUrl(
+    profile.imagePath
+      || profile.imageUrl
+      || records['social.picture.value']
+      || records['social.image.value']
+      || records['ipfs.html.value']
+      || data.metadata?.image
+      || metadata?.image_url
+      || metadata?.image
+  ) || metadataImageFallback;
+
+  // Header / cover: profile API > on-chain banner record.
+  const header = normalizeUdMediaUrl(
+    profile.coverPath
+      || profile.coverUrl
+      || records['social.cover.value']
+      || records['social.banner.value']
+  );
+
+  // Description, website, email, location — merge profile API + on-chain records.
+  const description = profile.description
+    || records['social.bio.value']
+    || records['ipfs.description']
+    || null;
+  const website = profile.web2Url
+    || records['ipfs.redirect_domain.value']
+    || records['social.website.value']
+    || records['social.url.value']
+    || null;
+  const email = profile.publicDomainSellerEmail
+    || profile.email
+    || records['whois.email.value']
+    || records['social.email.value']
+    || null;
+  const location = profile.location
+    || records['social.location.value']
+    || null;
+
+  console.log(`✅ UD resolved: ${domainName} -> ${address} (records merged: ${Object.keys(records).length})`);
 
   return {
     address,
-    identity: data.metadata.domain,
+    identity: domainName,
     platform: 'unstoppabledomains',
-    displayName: data.metadata.domain,
+    displayName: domainName,
     avatar,
-    description: profile.description || null,
+    description,
     header,
-    website: profile.web2Url || null,
-    url: profile.web2Url || null,
+    website,
+    url: website,
     links,
     records,
-    location: profile.location || null,
-    email: profile.publicDomainSellerEmail || profile.email || records['whois.email.value'] || null,
+    location,
+    email,
   };
 }
 
