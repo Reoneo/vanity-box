@@ -4353,6 +4353,7 @@ export const ProfileCard = ({
           nft={selectedNft}
           isOpen={!!selectedNft}
           onClose={() => setSelectedNft(null)}
+          headerImage={web3BioProfile?.header || iotaHeaderPattern}
         />
       )}
 
