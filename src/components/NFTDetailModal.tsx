@@ -19,6 +19,7 @@ import ensCollectionLogo from "@/assets/ens-collection-logo.png";
 import basenamesCollectionLogo from "@/assets/basenames-collection-logo.png";
 import baseSquareBlue from "@/assets/base-square-blue.png";
 import unstoppableCollectionLogo from "@/assets/unstoppable-collection-logo.png";
+import unstoppableUMark from "@/assets/unstoppable-u-mark.png";
 
 interface NFTDetailModalProps {
   nft: any;
@@ -152,6 +153,11 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
       collectionLower.includes('ethereum name service') ||
       nameLower.endsWith('.eth')
     );
+  const isUnstoppableNft =
+    collectionLower.includes('unstoppable') ||
+    collectionLower.includes('ud.me') ||
+    /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic)$/i.test(nameLower);
+  const unstoppableChainLower = (nft.chain || '').toLowerCase().includes('base') ? 'base' : 'polygon';
 
   const attributes: any[] =
     (ensAttrs && ensAttrs.length ? ensAttrs : null) ||
@@ -211,8 +217,8 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
               }
               if (isUnstoppable) {
                 const chainIcon = chainLower === 'base'
-                  ? <img src={baseSquareBlue} alt="Base" className="h-10 w-10 object-contain" style={{ borderRadius: 8 }} />
-                  : <img src={polygonIcon} alt="Polygon" className="h-10 w-10 rounded-full" />;
+                  ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 object-contain" style={{ borderRadius: 4 }} />
+                  : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 rounded-full" />;
                 return (
                   <div className="flex items-center gap-2">
                     <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className="h-10 w-auto object-contain" />
@@ -331,6 +337,29 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                   <img src={grailsLogo} alt="Grails" className="w-4 h-4 object-contain" />
                 </a>
               </div>
+            ) : isUnstoppableNft ? (
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://ud.me/${(nft.name || '').toString()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="View on Unstoppable Domains"
+                  className="w-7 h-7 rounded-full bg-white border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity overflow-hidden"
+                >
+                  <img src={unstoppableUMark} alt="Unstoppable Domains" className="w-4 h-4 object-contain" />
+                </a>
+                {nft.opensea_url && (
+                  <a
+                    href={nft.opensea_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="View on OpenSea"
+                    className="w-7 h-7 rounded-full bg-[#2081E2] border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity"
+                  >
+                    <img src={openseaLogomark} alt="OpenSea" className="w-4 h-4 object-contain" />
+                  </a>
+                )}
+              </div>
             ) : (
               nft.collection && nft.collection !== nft.name && (
                 <Badge variant="outline" className="bg-muted/40 border-border/40 text-muted-foreground text-xs capitalize rounded-full px-2.5 py-1">
@@ -413,7 +442,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         </div>
 
         {/* Action */}
-        {!isEnsNft && !isBasenameNft && nft.opensea_url && (
+        {!isEnsNft && !isBasenameNft && !isUnstoppableNft && nft.opensea_url && (
           <div className="pt-5">
             <Button
               onClick={() => window.open(nft.opensea_url, '_blank')}
