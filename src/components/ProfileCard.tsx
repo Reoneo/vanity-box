@@ -43,6 +43,9 @@ import ethPlusGold from '@/assets/eth-plus-gold.png';
 import ethPlusDark from '@/assets/eth-plus-dark.png';
 import ensCollectionLogo from '@/assets/ens-collection-logo.png';
 import basenamesCollectionLogo from '@/assets/basenames-collection-logo.png';
+import unstoppableCollectionLogo from '@/assets/unstoppable-collection-logo.png';
+import polygonIcon from '@/assets/polygon-icon.svg';
+import baseSquareBlue from '@/assets/base-square-blue.png';
 
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
