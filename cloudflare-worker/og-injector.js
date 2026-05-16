@@ -43,10 +43,30 @@ export default {
     const url = new URL(request.url);
     const ua = request.headers.get('user-agent') || '';
     const isCrawler = CRAWLER_REGEX.test(ua);
+    const isProfile = isProfilePath(url.pathname);
 
-    // Pass through real users and non-profile paths instantly.
-    if (!isCrawler || !isProfilePath(url.pathname)) {
+    // Pass through non-profile paths instantly.
+    if (!isProfile) {
       return fetch(request);
+    }
+
+    // Lovable's custom domain currently returns 404 for deep profile paths.
+    // Fetch the app shell from / so both users and crawlers receive index.html,
+    // then the SPA can render /<profile> client-side as intended.
+    const shellUrl = new URL(request.url);
+    shellUrl.pathname = '/';
+    shellUrl.search = '';
+    const shellRequest = new Request(shellUrl.toString(), request);
+    const originResponse = await fetch(shellRequest);
+    const ct = originResponse.headers.get('content-type') || '';
+    if (!ct.includes('text/html')) return originResponse;
+
+    // Real users get the shell unchanged; crawlers get rewritten OG tags below.
+    if (!isCrawler) {
+      return new Response(originResponse.body, {
+        status: originResponse.status,
+        headers: { ...Object.fromEntries(originResponse.headers), 'cache-control': 'public, max-age=60' },
+      });
     }
 
     const username = decodeURIComponent(url.pathname.split('/').filter(Boolean)[0]);
@@ -55,10 +75,6 @@ export default {
     const ogImage = `${SUPABASE_OG_BASE}?username=${encodeURIComponent(username)}&displayName=${encodeURIComponent(display)}`;
     const title = `${display} - Vanity.box`;
     const desc = `View ${display}'s Web3 identity on Vanity.box`;
-
-    const originResponse = await fetch(request);
-    const ct = originResponse.headers.get('content-type') || '';
-    if (!ct.includes('text/html')) return originResponse;
 
     const rewriter = new HTMLRewriter()
       .on('title', {
