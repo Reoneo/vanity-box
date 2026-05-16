@@ -1457,10 +1457,19 @@ export const ProfileCard = ({
   // Group OpenSea NFTs by collection (excluding POAPs)
   const openSeaGroupedNfts = useMemo(() => {
     const groups: Record<string, any[]> = {};
-    
+
     // Add regular NFTs (OpenSea only)
     filteredNfts.forEach(nft => {
-      const collection = nft.collection || 'Unknown Collection';
+      const rawCollection = nft.collection || 'Unknown Collection';
+      const lower = String(rawCollection).toLowerCase();
+      const isUd = lower.includes('unstoppable') || lower.includes('ud.me');
+      let collection = rawCollection;
+      if (isUd) {
+        const chain = String(nft.chain || '').toLowerCase();
+        collection = chain.includes('base')
+          ? 'Unstoppable Domains: Base'
+          : 'Unstoppable Domains: Polygon';
+      }
       if (!groups[collection]) {
         groups[collection] = [];
       }
@@ -1562,9 +1571,10 @@ export const ProfileCard = ({
       const chainIcon = chain === 'base'
         ? <img src={baseSquareBlue} alt="Base" className="h-10 w-10 inline-block align-middle object-contain" style={{ borderRadius: 8 }} />
         : <img src={polygonIcon} alt="Polygon" className="h-10 w-10 inline-block align-middle rounded-full" />;
+      const udClass = imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`);
       return (
         <span className="inline-flex items-center gap-2 align-middle">
-          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={imgClassName} />
+          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={udClass} />
           {chainIcon}
         </span>
       );
