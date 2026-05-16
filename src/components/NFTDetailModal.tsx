@@ -16,6 +16,7 @@ import ensMarkBlue from "@/assets/ens-mark-blue.png";
 import openseaLogomark from "@/assets/opensea-logomark-white.svg";
 import grailsLogo from "@/assets/grails-logo.svg";
 import ensCollectionLogo from "@/assets/ens-collection-logo.png";
+import basenamesCollectionLogo from "@/assets/basenames-collection-logo.png";
 
 interface NFTDetailModalProps {
   nft: any;
@@ -192,6 +193,8 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%] flex items-center justify-center">
             {isEnsNft ? (
               <img src={ensCollectionLogo} alt="ENS" className="h-5 w-auto object-contain" />
+            ) : collectionLower === 'basenames' || collectionLower === 'basename' || collectionLower === 'base names' ? (
+              <img src={basenamesCollectionLogo} alt="Basenames" className="h-5 w-auto object-contain" />
             ) : (
               <h3 className="text-lg font-bold text-black dark:text-white truncate">
                 {nft.name || `NFT #${nft.identifier}`}
