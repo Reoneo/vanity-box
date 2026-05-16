@@ -211,6 +211,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           </div>
         )}
       </div>
+      </div>
     </div>
   );
 };
