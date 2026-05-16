@@ -1602,7 +1602,7 @@ export const ProfileCard = ({
   const handleShareProfile = async () => {
     const identifier = (searchedIdentity || web3BioProfile?.identity || iotaOwnerAddress || linkedEvmAddress || '').toString();
     if (!identifier) return;
-    const avatar = web3BioProfile?.avatar || iotaOnchainProfile?.avatar || '';
+    const avatar = web3BioProfile?.avatar || (iotaOnchainProfile as any)?.avatar || '';
     const params = new URLSearchParams();
     if (avatar) params.set('avatar', avatar);
     const qs = params.toString();
