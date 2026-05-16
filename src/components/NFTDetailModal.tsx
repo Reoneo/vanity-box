@@ -19,6 +19,7 @@ import ensCollectionLogo from "@/assets/ens-collection-logo.png";
 import basenamesCollectionLogo from "@/assets/basenames-collection-logo.png";
 import baseSquareBlue from "@/assets/base-square-blue.png";
 import unstoppableCollectionLogo from "@/assets/unstoppable-collection-logo.png";
+import unstoppableUMark from "@/assets/unstoppable-u-mark.png";
 
 interface NFTDetailModalProps {
   nft: any;
