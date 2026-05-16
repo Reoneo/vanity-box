@@ -1,29 +1,55 @@
-# Plan: 5 Fixes
+## The real problem
 
-## 1. Activity/NFT loading speed for raw wallet addresses
-Investigate `useProfileResolver`, NFT fetch hooks. Add parallel fetching and avoid blocking on slow APIs. For raw wallet searches, kick off NFT/activity fetches immediately in parallel rather than sequentially after profile resolution.
+Currently the share link includes `?avatar=...` because that's the only way the OG image edge function knows which avatar to render. The OG meta tags themselves are injected by `react-helmet-async` (`DynamicMetaTags.tsx`), which runs **client-side after JavaScript executes**.
 
-## 2. Passkey IOTA wallets — IPFS profile data display
-Verify that on passkey login (no `.iota` name yet), the profile loader still attempts reverse-lookup → IPFS profile fetch. Currently passkey addresses likely render a stub profile. Fix: on passkey session, run reverse lookup of address → `.iota` name → fetch IPFS notarized profile (avatar, bio, social, header).
+Social-preview crawlers (X/Twitter, iMessage, Facebook, LinkedIn, Discord, Telegram, WhatsApp, Slack) **do not execute JavaScript**. They fetch the raw HTML at `vanity.box/smith.box` and see only the static tags in `index.html` — which point at the generic `vanity-meta-image.jpeg`. That is why your preview falls back to the brand image no matter what Helmet does.
 
-## 3. NFT Detail Modal UI (image attached)
-Current: blank blue background dominates, title overlaps the in-image text awkwardly, button bar feels detached. Improvements:
-- Constrain image area to a clean square aspect with rounded top
-- Move title/chain info into a clean panel below the image with proper spacing
-- Add subtle gradient over image bottom so title overlay never collides
-- Keep gold "View on OpenSea" CTA but tighten paddings, add description/owner row if available
-- Mobile-first: full-width with safe-area padding
+The sites that "manage to do it" all do one of two things:
+1. Server-side render the per-profile HTML (Next.js, Remix, etc.)
+2. Sit behind an edge worker (Cloudflare Worker / Vercel edge) that detects crawler User-Agents and rewrites the `<meta>` tags before responding
 
-## 4. Copy address → "Copied" toast
-Audit clickable address spots (ProfileCard, NFT modal owner, Header connected button, Messages thread address). Replace silent `navigator.clipboard.writeText` with a helper that also fires `toast({ description: 'Copied' })` from `useToast` / sonner.
+We're on Vite + React SPA, so option 1 isn't available without a stack change. Option 2 is — and the project already has `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, and `CLOUDFLARE_ACCOUNT_ID` secrets, meaning `vanity.box` is on Cloudflare.
 
-## 5. Domain avatars for UD across UNS/CNS (ETH/Polygon/Base) + UD Profile API enrichment
-In `resolve-ud-opensea` edge function, also extract `display_image_url` / `image_url` from the OpenSea NFT response and return it. Then in `useProfileResolver.resolveUdProfile`, merge: prefer UD Profile API avatar, fall back to OpenSea image. Also enrich UD NFT collection rendering to use OpenSea image directly so avatars show for all chains.
+## Plan
 
-## Technical notes
-- Files: `src/hooks/useProfileResolver.ts`, `src/components/NFTDetailModal.tsx`, `src/components/ProfileCard.tsx`, `src/components/Header.tsx`, `src/components/WalletConnection.tsx`, `src/pages/Messages.tsx`, `supabase/functions/resolve-ud-opensea/index.ts`, possibly UD NFT fetch edge function.
-- Reuse existing `useToast` hook for copy notifications.
-- For #1, ensure NFT/token hooks fire as soon as an address is known, not gated on profile API completion.
-- For #2, leverage existing IOTA reverse-lookup (`useProfileResolver` already has this for passkey sessions per memory) — confirm IPFS profile fetch is wired.
+### 1. Make the OG edge function self-sufficient
+Update `supabase/functions/og-image/index.ts` so it can be called with just `?username=smith.box` and resolves the avatar itself server-side (Web3.bio for `.eth`/`.box`/etc., IOTA indexer for `.iota`, UD API for `.vanity` / UD TLDs — mirroring the resolution logic already in `useProfileResolver`). Cache the rendered SVG for ~1h. This removes the need for `?avatar=...` in the share URL entirely.
 
-No business logic changes outside data plumbing required by these fixes.
+### 2. Deploy a Cloudflare Worker for OG injection
+Create a Worker bound to `vanity.box/*` that:
+- Inspects `User-Agent`. If it matches a known social-preview crawler (Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, TelegramBot, WhatsApp, Bingbot preview, Google snippet, iMessage/AppleBot, etc.), AND the path looks like a profile (`/<name>` with no static-asset extension), it:
+  1. Fetches the original `index.html` from the Lovable origin
+  2. Rewrites/injects per-profile `<title>`, `og:title`, `og:description`, `og:image`, `og:url`, `twitter:*`, and `canonical` — `og:image` points at the edge function from step 1 with just `?username=<name>`
+  3. Returns the modified HTML
+- For non-crawlers, passes the request straight through to the origin unchanged (no perf hit for users, SPA still works exactly as today).
+
+The Worker uses `HTMLRewriter` (native to Cloudflare Workers) so it's fast and streaming. No avatar fetching in the Worker itself — the OG image URL handles that lazily when the crawler requests the image.
+
+### 3. Simplify the in-app share handler
+In `src/components/ProfileCard.tsx` `handleShareProfile`, drop the `?avatar=...` query string. The share URL becomes exactly `https://vanity.box/<identifier>`. Keep the `navigator.share({ files })` avatar-as-file fallback for native mobile share sheets (that's a separate UX win and not what crawlers use).
+
+### 4. Clean up `DynamicMetaTags.tsx`
+Stop appending `&avatar=...&banner=...` to the og-image URL — call it with just `?username=...&displayName=...`. The function resolves the rest. This keeps the client-side Helmet behavior aligned with the Worker's crawler output so JS-executing crawlers (Googlebot) and non-JS crawlers see the same image.
+
+### Technical details
+
+**Files touched in the repo:**
+- `supabase/functions/og-image/index.ts` — add server-side avatar resolution by username (Web3.bio + IOTA indexer + UD API), keep existing SVG renderer
+- `src/components/ProfileCard.tsx` — remove `?avatar=` from `handleShareProfile`'s `url`
+- `src/components/DynamicMetaTags.tsx` — stop forwarding `avatar`/`banner` to the og-image URL
+
+**Cloudflare Worker (new, deployed separately via Cloudflare API using the existing secrets):**
+- Single `fetch` handler, crawler UA regex, `HTMLRewriter` to swap meta tags, route bound to `vanity.box/*` and `www.vanity.box/*`
+- Excludes paths with file extensions (`.js`, `.css`, `.png`, `.svg`, `.ico`, etc.) and reserved routes (`/messages`, `/privacy`, `/terms`, etc.) so it only acts on profile URLs
+
+### What this does NOT do
+- It does not change the SPA's runtime behavior for real users
+- It does not require migrating off Vite/React
+- It does not break existing `?avatar=` links — the param is just ignored
+
+### One decision needed from you
+The Cloudflare Worker needs to be deployed to your Cloudflare account. I can:
+- **(a)** Write the Worker source + a deploy script that uses your existing `CLOUDFLARE_*` secrets and run it from an edge function, or
+- **(b)** Give you the Worker code and one-line `wrangler deploy` command for you to run locally
+
+Tell me which you prefer and I'll implement.
