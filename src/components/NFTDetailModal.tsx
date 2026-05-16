@@ -170,6 +170,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const rawReg = regAttr?.value ?? regAttr?.display_value;
   const registrationDate = parseEnsDateValue(rawReg);
   const ensLabel = nameLower.endsWith('.eth') ? extractLabel(nameLower) : (nft.name || '').toString().replace(/\.eth$/i, '');
+  const domainFullName = isBasenameNft ? (nft.name || '').toString() : `${ensLabel}.eth`;
   const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
   const graceEnded = graceEndDate ? isPast(graceEndDate) : false;
 
