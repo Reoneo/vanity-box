@@ -17,6 +17,7 @@ import openseaLogomark from "@/assets/opensea-logomark-white.svg";
 import grailsLogo from "@/assets/grails-logo.svg";
 import ensCollectionLogo from "@/assets/ens-collection-logo.png";
 import basenamesCollectionLogo from "@/assets/basenames-collection-logo.png";
+import baseSquareBlue from "@/assets/base-square-blue.png";
 
 interface NFTDetailModalProps {
   nft: any;
@@ -54,7 +55,7 @@ const getChainIcon = (chain: string, size: number = 16) => {
     case 'polygon-mainnet':
       return <img src={polygonIcon} alt="Polygon" width={size} height={size} className={iconClass} />;
     case 'base':
-      return <img src={basenamesCollectionLogo} alt="Base" width={size} height={size} className="object-contain" style={{ borderRadius: size * 0.2 }} />;
+      return <img src={baseSquareBlue} alt="Base" width={size} height={size} className="object-contain" style={{ borderRadius: size * 0.2 }} />;
     default:
       return <img src={ethLogo} alt="Network" width={size} height={size} className={iconClass} />;
   }
@@ -169,6 +170,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const rawReg = regAttr?.value ?? regAttr?.display_value;
   const registrationDate = parseEnsDateValue(rawReg);
   const ensLabel = nameLower.endsWith('.eth') ? extractLabel(nameLower) : (nft.name || '').toString().replace(/\.eth$/i, '');
+  const domainFullName = isBasenameNft ? (nft.name || '').toString() : `${ensLabel}.eth`;
   const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
   const graceEnded = graceEndDate ? isPast(graceEndDate) : false;
 
@@ -285,10 +287,10 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                 <span className="text-xs font-medium">{nft.chain}</span>
               </Badge>
             )}
-            {isEnsNft ? (
+            {(isEnsNft || isBasenameNft) ? (
               <div className="flex items-center gap-2">
                 <a
-                  href={`https://app.ens.domains/${ensLabel}.eth`}
+                  href={`https://app.ens.domains/${domainFullName}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View on ENS"
@@ -308,7 +310,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                   </a>
                 )}
                 <a
-                  href={`https://grails.app/${ensLabel}.eth`}
+                  href={`https://grails.app/${domainFullName}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View on Grails"
@@ -391,7 +393,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         </div>
 
         {/* Action */}
-        {!isEnsNft && nft.opensea_url && (
+        {!isEnsNft && !isBasenameNft && nft.opensea_url && (
           <div className="pt-5">
             <Button
               onClick={() => window.open(nft.opensea_url, '_blank')}
