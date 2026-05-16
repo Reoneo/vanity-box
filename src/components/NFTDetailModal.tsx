@@ -204,7 +204,6 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
           </div>
         )}
       </div>
-    </div>,
-    document.body
+    </div>
   );
 };
