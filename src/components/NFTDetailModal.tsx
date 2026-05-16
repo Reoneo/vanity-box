@@ -81,13 +81,14 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
 
   return (
     <div
-      className="absolute inset-0 z-50 bg-background overflow-y-auto overscroll-contain"
+      className="fixed left-0 right-0 bg-background dark:bg-black z-[9999] animate-fade-in flex flex-col overscroll-contain"
+      style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}
       role="dialog"
       aria-modal="true"
     >
       {/* Banner header — mirrors NFT collection overlay style */}
       <div
-        className="sticky top-0 z-[210] w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+        className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
         style={{ backgroundImage: `url(${headerImage || iotaHeaderPattern})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
@@ -115,6 +116,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
       </div>
 
       {/* Content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
       <div className="mx-auto w-full max-w-2xl px-4 py-4 pb-28">
         {/* Media — square, fully contained, no overflow */}
         <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 to-black/10 border border-[#D4AF37]/20">
@@ -208,6 +210,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
             </Button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
