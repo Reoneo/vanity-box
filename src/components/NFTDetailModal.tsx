@@ -107,7 +107,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     let cancelled = false;
     const label = nm.endsWith('.eth') ? extractLabel(nm) : '';
     const labelTokenId = label && !label.includes('.') ? labelhashToTokenId(labelhash(label)).toString() : null;
-    const contract = c === wrapperContract ? wrapperContract : ensContract;
+    const contract = labelTokenId ? ensContract : (c === wrapperContract ? wrapperContract : ensContract);
     const metadataTokenId = labelTokenId || nft.identifier;
     if (metadataTokenId) {
       const url = `https://metadata.ens.domains/mainnet/${contract}/${metadataTokenId}`;
