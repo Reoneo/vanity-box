@@ -849,8 +849,8 @@ export function useProfileResolver() {
         debug.tried.push('ens-direct', 'web3bio');
         const raceStart = Date.now();
 
-        const ensPromise = fetchEnsDirectProfile(normalized).catch(() => null);
-        const w3Promise = fetchWeb3BioProfile(normalized).catch(() => null);
+        const ensPromise = withTimeout(fetchEnsDirectProfile(normalized).catch(() => null), 6500, null);
+        const w3Promise = withTimeout(fetchWeb3BioProfile(normalized).catch(() => null), 12000, null);
 
         // First-success race: resolve as soon as either returns a usable profile.
         const firstSuccess = await new Promise<any>((resolve) => {
