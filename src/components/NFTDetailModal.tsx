@@ -232,6 +232,40 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
               {nft.description}
             </p>
           )}
+
+          {isEnsNft && (expiryDate || registrationDate) && (
+            <div className="space-y-2 bg-muted/30 rounded-xl p-3 border border-[#D4AF37]/15">
+              {registrationDate && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-xs">Registered</span>
+                  </div>
+                  <span className="text-xs font-medium text-foreground">
+                    {format(registrationDate, 'MMM d, yyyy')}
+                  </span>
+                </div>
+              )}
+              {expiryDate && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-xs">Expires</span>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xs font-semibold ${expiryExpired ? 'text-red-500' : 'text-foreground'}`}>
+                      {format(expiryDate, 'MMM d, yyyy')}
+                    </div>
+                    <div className={`text-[10px] ${expiryExpired ? 'text-red-400' : 'text-muted-foreground'}`}>
+                      {expiryExpired
+                        ? `Expired ${formatDistanceToNow(expiryDate)} ago`
+                        : `in ${formatDistanceToNow(expiryDate)}`}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Action */}
