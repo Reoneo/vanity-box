@@ -1529,6 +1529,18 @@ export const ProfileCard = ({
       .join(' ');
   };
 
+  // Render collection label — substitute the ENS logo image for the "ENS" collection
+  const isEnsCollection = (name: string) => {
+    const n = (name || '').toLowerCase().trim();
+    return n === 'ens' || n === 'ethereum name service' || n === 'ens: ethereum name service';
+  };
+  const renderCollectionLabel = (name: string, imgClassName = "h-5 w-auto inline-block align-middle"): React.ReactNode => {
+    if (isEnsCollection(name)) {
+      return <img src={ensCollectionLogo} alt="ENS" className={imgClassName} />;
+    }
+    return formatCollectionName(name);
+  };
+
   const getRarityLabel = (score: number) => {
     if (score >= 80) return { label: 'Legendary', color: 'text-purple-400' };
     if (score >= 60) return { label: 'Epic', color: 'text-blue-400' };
