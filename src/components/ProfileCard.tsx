@@ -1944,7 +1944,7 @@ export const ProfileCard = ({
                   {/* Left side - 50% - Profile info: white in light mode, black+gold gradient in dark */}
                   <div className="w-1/2 flex flex-col min-h-0 border-r border-[#D4AF37]/20 bg-white dark:bg-black">
                     {/* Left panel content - with top padding for avatar overlap */}
-                    <div className="flex-1 overflow-y-auto pt-[104px] pb-40">
+                    <div className="flex-1 overflow-y-auto pt-[96px] pb-40">
                       <div className="px-6 space-y-3">
                       {/* Name */}
                       <h2 className="text-2xl font-bold text-center text-black dark:text-white tracking-tight">
