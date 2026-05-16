@@ -2,15 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { format, formatDistanceToNow, isPast } from "date-fns";
+import { format, formatDistanceToNow, isPast, addDays } from "date-fns";
 import { extractLabel, labelhash, labelhashToTokenId } from "@/lib/ens";
 
 
 // Import network logos for chain icons
 import ethLogo from "@/assets/eth-logo.png";
+import ethLogoBlueCircle from "@/assets/eth-logo-blue-circle.png";
 import wldLogo from "@/assets/wld-logo.png";
 import polygonIcon from "@/assets/polygon-icon.svg";
 import iotaHeaderPattern from "@/assets/iota-header-pattern.png";
+import ensMarkBlue from "@/assets/ens-mark-blue.png";
+import openseaLogomark from "@/assets/opensea-logomark-white.svg";
+import grailsLogo from "@/assets/grails-logo.svg";
+import ensCollectionLogo from "@/assets/ens-collection-logo.png";
 
 interface NFTDetailModalProps {
   nft: any;
@@ -39,7 +44,7 @@ const getChainIcon = (chain: string, size: number = 16) => {
   switch (chainLower) {
     case 'ethereum':
     case 'eth':
-      return <img src={ethLogo} alt="Ethereum" width={size} height={size} className={iconClass} />;
+      return <img src={ethLogoBlueCircle} alt="Ethereum" width={size} height={size} className={iconClass} />;
     case 'worldchain':
       return <img src={wldLogo} alt="World Chain" width={size} height={size} className={iconClass} />;
     case 'polygon':
