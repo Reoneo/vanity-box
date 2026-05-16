@@ -289,15 +289,6 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
             )}
             {(isEnsNft || isBasenameNft) ? (
               <div className="flex items-center gap-2">
-                <a
-                  href={`https://app.ens.domains/${domainFullName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="View on ENS"
-                  className="w-7 h-7 rounded-full bg-muted/60 border border-border/40 flex items-center justify-center hover:bg-muted transition-colors"
-                >
-                  <img src={ensMarkBlue} alt="ENS" className="w-4 h-4 object-contain" />
-                </a>
                 {nft.opensea_url && (
                   <a
                     href={nft.opensea_url}
