@@ -42,6 +42,7 @@ import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
 import ethPlusDark from '@/assets/eth-plus-dark.png';
 import ensCollectionLogo from '@/assets/ens-collection-logo.png';
+import basenamesCollectionLogo from '@/assets/basenames-collection-logo.png';
 
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
@@ -1534,9 +1535,16 @@ export const ProfileCard = ({
     const n = (name || '').toLowerCase().trim();
     return n === 'ens' || n === 'ethereum name service' || n === 'ens: ethereum name service';
   };
+  const isBasenamesCollection = (name: string) => {
+    const n = (name || '').toLowerCase().trim();
+    return n === 'basenames' || n === 'basename' || n === 'base names';
+  };
   const renderCollectionLabel = (name: string, imgClassName = "h-5 w-auto inline-block align-middle"): React.ReactNode => {
     if (isEnsCollection(name)) {
       return <img src={ensCollectionLogo} alt="ENS" className={imgClassName} />;
+    }
+    if (isBasenamesCollection(name)) {
+      return <img src={basenamesCollectionLogo} alt="Basenames" className={imgClassName} />;
     }
     return formatCollectionName(name);
   };
