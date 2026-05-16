@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronLeft, X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+
 
 // Import network logos for chain icons
 import ethLogo from "@/assets/eth-logo.png";
@@ -78,12 +78,11 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
   const imageUrl = nft.image_url || nft.display_image_url;
   const mediaType = getMediaType(animationUrl);
 
-  return createPortal(
+  return (
     <div
-      className="fixed inset-0 z-[2147483000] bg-background overflow-y-auto overscroll-contain"
+      className="absolute inset-0 z-50 bg-background overflow-y-auto overscroll-contain"
       role="dialog"
       aria-modal="true"
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       {/* Top bar with gold rounded back & close buttons — rendered via portal so it always sits above the global header */}
       <div className="sticky top-0 z-[210] flex items-center justify-between px-4 py-3 bg-background/95 backdrop-blur-md border-b border-[#D4AF37]/20 pt-safe-area-inset-top">
@@ -205,7 +204,6 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
           </div>
         )}
       </div>
-    </div>,
-    document.body
+    </div>
   );
 };
