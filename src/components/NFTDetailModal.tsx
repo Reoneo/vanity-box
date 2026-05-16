@@ -12,7 +12,7 @@ import ethLogoBlueCircle from "@/assets/eth-logo-blue-circle.png";
 import wldLogo from "@/assets/wld-logo.png";
 import polygonIcon from "@/assets/polygon-icon.svg";
 import iotaHeaderPattern from "@/assets/iota-header-pattern.png";
-import ensMarkBlue from "@/assets/ens-mark-blue.png";
+
 import openseaLogomark from "@/assets/opensea-logomark-white.svg";
 import grailsLogo from "@/assets/grails-logo.svg";
 import ensCollectionLogo from "@/assets/ens-collection-logo.png";
@@ -289,15 +289,6 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
             )}
             {(isEnsNft || isBasenameNft) ? (
               <div className="flex items-center gap-2">
-                <a
-                  href={`https://app.ens.domains/${domainFullName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="View on ENS"
-                  className="w-7 h-7 rounded-full bg-muted/60 border border-border/40 flex items-center justify-center hover:bg-muted transition-colors"
-                >
-                  <img src={ensMarkBlue} alt="ENS" className="w-4 h-4 object-contain" />
-                </a>
                 {nft.opensea_url && (
                   <a
                     href={nft.opensea_url}
@@ -333,11 +324,19 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
             )}
           </div>
 
-          {nft.description && (
+          {isEnsNft ? (
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
+              An Ethereum Name Service (ENS) domain is a decentralized, human-readable web3 username (e.g., alice.eth) built on the Ethereum blockchain. It functions like a digital phonebook, replacing long, complex cryptographic wallet addresses—such as 0x71C...B29—with a simple, memorable name.
+            </p>
+          ) : isBasenameNft ? (
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
+              Basenames are human-readable, decentralized domain names (e.g., username.base.eth) built on the Base Layer 2 network. They allow users to replace complex, hard-to-read hexadecimal wallet addresses with simple names.
+            </p>
+          ) : nft.description ? (
             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
               {nft.description}
             </p>
-          )}
+          ) : null}
 
           {isEnsNft && (expiryDate || registrationDate) && (
             <div className="space-y-2 bg-muted/30 rounded-xl p-3 border border-[#D4AF37]/15">
