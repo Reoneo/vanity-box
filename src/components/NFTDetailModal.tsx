@@ -32,13 +32,15 @@ interface NFTDetailModalProps {
 const getMediaType = (url: string | null | undefined): 'video' | 'audio' | 'image' => {
   if (!url) return 'image';
   const lower = url.toLowerCase();
-  if (lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov') || lower.includes('.ogv') || lower.includes('video')) {
-    return 'video';
-  }
   if (lower.includes('.mp3') || lower.includes('.wav') || lower.includes('.ogg') || lower.includes('.m4a') || lower.includes('audio')) {
     return 'audio';
   }
-  return 'image';
+  if (lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov') || lower.includes('.ogv') || lower.includes('.m3u8') || lower.includes('video')) {
+    return 'video';
+  }
+  // If we have an animation/media URL but no recognizable extension (common for OpenSea-hosted media),
+  // assume video since most NFT animation_urls are video content.
+  return 'video';
 };
 
 // Network chain icons
