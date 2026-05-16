@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { format, formatDistanceToNow, isPast } from "date-fns";
+import { useEffect, useRef, useState } from "react";
 
 
 // Import network logos for chain icons
