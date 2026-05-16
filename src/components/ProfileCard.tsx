@@ -1602,12 +1602,39 @@ export const ProfileCard = ({
   const handleShareProfile = async () => {
     const identifier = (searchedIdentity || web3BioProfile?.identity || iotaOwnerAddress || linkedEvmAddress || '').toString();
     if (!identifier) return;
-    const url = `${window.location.origin}/${identifier}`;
+    const avatar = web3BioProfile?.avatar || iotaOnchainProfile?.avatar || '';
+    const params = new URLSearchParams();
+    if (avatar) params.set('avatar', avatar);
+    const qs = params.toString();
+    const url = `${window.location.origin}/${identifier}${qs ? `?${qs}` : ''}`;
     const title = `${web3BioProfile?.displayName || identifier} on vanity.box`;
     const text = web3BioProfile?.description || `Check out ${identifier} on vanity.box`;
+
+    // Try to attach the avatar as a file so the share sheet preview uses it
+    let files: File[] | undefined;
+    if (avatar) {
+      try {
+        const resolved = avatar.startsWith('ipfs://')
+          ? avatar.replace('ipfs://', 'https://ipfs.io/ipfs/')
+          : avatar;
+        const res = await fetch(resolved, { mode: 'cors' });
+        if (res.ok) {
+          const blob = await res.blob();
+          const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+          const file = new File([blob], `${identifier}.${ext}`, { type: blob.type || 'image/png' });
+          const navAny = navigator as any;
+          if (navAny.canShare && navAny.canShare({ files: [file] })) {
+            files = [file];
+          }
+        }
+      } catch {
+        // ignore — fall back to plain URL share
+      }
+    }
+
     try {
       if (typeof navigator !== 'undefined' && (navigator as any).share) {
-        await (navigator as any).share({ title, text, url });
+        await (navigator as any).share(files ? { title, text, url, files } : { title, text, url });
       } else {
         await navigator.clipboard.writeText(url);
         toast.success('Profile link copied');
