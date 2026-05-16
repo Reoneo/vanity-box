@@ -54,11 +54,7 @@ const getChainIcon = (chain: string, size: number = 16) => {
     case 'polygon-mainnet':
       return <img src={polygonIcon} alt="Polygon" width={size} height={size} className={iconClass} />;
     case 'base':
-      return (
-        <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={iconClass}>
-          <circle cx="16" cy="16" r="16" fill="#0052FF" />
-        </svg>
-      );
+      return <img src={basenamesCollectionLogo} alt="Base" width={size} height={size} className="object-contain" style={{ borderRadius: size * 0.2 }} />;
     default:
       return <img src={ethLogo} alt="Network" width={size} height={size} className={iconClass} />;
   }
@@ -141,12 +137,19 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const contractLower = (nft.contract || '').toLowerCase();
   const collectionLower = (nft.collection || '').toLowerCase();
   const nameLower = (nft.name || '').toLowerCase();
+  const isBasenameNft =
+    collectionLower === 'basenames' ||
+    collectionLower === 'basename' ||
+    collectionLower === 'base names' ||
+    nameLower.endsWith('.base.eth');
   const isEnsNft =
-    contractLower === ensContract ||
-    contractLower === wrapperContract ||
-    collectionLower === 'ens' ||
-    collectionLower.includes('ethereum name service') ||
-    nameLower.endsWith('.eth');
+    !isBasenameNft && (
+      contractLower === ensContract ||
+      contractLower === wrapperContract ||
+      collectionLower === 'ens' ||
+      collectionLower.includes('ethereum name service') ||
+      nameLower.endsWith('.eth')
+    );
 
   const attributes: any[] =
     (ensAttrs && ensAttrs.length ? ensAttrs : null) ||
