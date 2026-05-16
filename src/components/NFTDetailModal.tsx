@@ -132,7 +132,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
 
   if (!isOpen || !nft) return null;
 
-  const animationUrl = nft.animation_url || nft.metadata?.animation_url;
+  const animationUrl = nft.animation_url || nft.display_animation_url || nft.metadata?.animation_url;
   const imageUrl = nft.image_url || nft.display_image_url;
   const mediaType = getMediaType(animationUrl);
 
