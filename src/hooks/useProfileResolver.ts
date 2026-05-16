@@ -1163,27 +1163,34 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
         resolverResult = { ok: false, source: 'vet', profile: null, notFound: true };
       }
     }
-    // Route 3: .eth domains — direct ENS resolution via viem, web3.bio as fallback
+    // Route 3: .eth domains — race direct ENS resolution against Web3.bio (whichever wins).
     else if (isEthDomain) {
-      debug.tried.push('ens-direct');
-      const ensStart = Date.now();
-      const ensProfile = await fetchEnsDirectProfile(normalized);
-      debug.timingsMs.ensDirect = Date.now() - ensStart;
+      debug.tried.push('ens-direct', 'web3bio');
+      const raceStart = Date.now();
 
-      if (ensProfile) {
-        resolverResult = { ok: true, source: 'web3bio', profile: ensProfile };
+      const ensPromise = withTimeout(fetchEnsDirectProfile(normalized).catch(() => null), 6500, null);
+      const w3Promise = withTimeout(fetchWeb3BioProfile(normalized).catch(() => null), 12000, null);
+
+      const firstSuccess = await new Promise<any>((resolve) => {
+        let pending = 2;
+        const tryResolve = (val: any) => {
+          pending -= 1;
+          if (val && !val.notFound) {
+            resolve(val);
+          } else if (pending === 0) {
+            resolve(null);
+          }
+        };
+        ensPromise.then(tryResolve);
+        w3Promise.then(tryResolve);
+      });
+
+      debug.timingsMs.ethRace = Date.now() - raceStart;
+
+      if (firstSuccess) {
+        resolverResult = { ok: true, source: 'web3bio', profile: firstSuccess };
       } else {
-        // Fallback to web3.bio
-        debug.tried.push('web3bio');
-        const w3Start = Date.now();
-        const web3Profile = await fetchWeb3BioProfile(normalized);
-        debug.timingsMs.web3bio = Date.now() - w3Start;
-
-        if (web3Profile && !web3Profile.notFound) {
-          resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
-        } else {
-          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
-        }
+        resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
       }
     }
     // Route 4: Web3.bio-compatible TLDs (.box, .sol, etc.) and wallet addresses
