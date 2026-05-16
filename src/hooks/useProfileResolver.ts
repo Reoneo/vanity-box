@@ -615,7 +615,7 @@ async function fetchUnstoppableProfile(domain: string): Promise<any | null> {
     links,
     records,
     location: profile.location || null,
-    email: null,
+    email: profile.publicDomainSellerEmail || profile.email || records['whois.email.value'] || null,
   };
 }
 
