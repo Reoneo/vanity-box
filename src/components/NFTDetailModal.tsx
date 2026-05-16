@@ -287,10 +287,10 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                 <span className="text-xs font-medium">{nft.chain}</span>
               </Badge>
             )}
-            {isEnsNft ? (
+            {(isEnsNft || isBasenameNft) ? (
               <div className="flex items-center gap-2">
                 <a
-                  href={`https://app.ens.domains/${ensLabel}.eth`}
+                  href={`https://app.ens.domains/${domainFullName}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View on ENS"
@@ -310,7 +310,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                   </a>
                 )}
                 <a
-                  href={`https://grails.app/${ensLabel}.eth`}
+                  href={`https://grails.app/${domainFullName}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="View on Grails"
