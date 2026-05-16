@@ -784,7 +784,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       social: 'Social',
       vanity_tagline: 'Your Vanity Wallet ID',
       vanity_search_placeholder: 'Type your name .vanity here',
-      chain_no_nfts_message: 'Your {chain} NFTs become visible once you create a Vanity wallet and link this chain to your Vanity profile to unify all of your assets in one place.',
+      chain_no_nfts_message: "This profile's {chain} NFTs will appear here once the owner creates a Vanity wallet and links this chain to their Vanity profile to unify all of their assets in one place.",
     },
     es: {
       search: 'Buscar',
