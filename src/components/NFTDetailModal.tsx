@@ -116,6 +116,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
       </div>
 
       {/* Content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
       <div className="mx-auto w-full max-w-2xl px-4 py-4 pb-28">
         {/* Media — square, fully contained, no overflow */}
         <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 to-black/10 border border-[#D4AF37]/20">
