@@ -176,24 +176,18 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     nft.metadata?.attributes || nft.traits || nft.metadata?.traits || [];
   const findAttr = (keys: string[]) =>
     attributes.find((a: any) => {
-      const t = String(a?.trait_type || a?.traitType || '').toLowerCase();
-      return keys.some((k) => t === k.toLowerCase());
+      const t = normalizeEnsAttrKey(a?.trait_type || a?.traitType || a?.name || a?.key);
+      return keys.some((k) => t === normalizeEnsAttrKey(k));
     });
 
-  const expiryAttr = findAttr(['Expiration Date', 'Expires', 'Expiry']);
+  const expiryAttr = findAttr(['Expiration Date', 'Expiration', 'Expires', 'Expiry', 'Expiry Date', 'Name Expires']);
   const rawExpiry = expiryAttr?.value ?? expiryAttr?.display_value;
-  const expiryNum = rawExpiry != null ? Number(rawExpiry) : NaN;
-  const expiryDate = Number.isFinite(expiryNum) && expiryNum > 0
-    ? new Date(expiryNum < 1e12 ? expiryNum * 1000 : expiryNum)
-    : null;
+  const expiryDate = parseEnsDateValue(rawExpiry) || ensExpiryDate;
   const expiryExpired = expiryDate ? isPast(expiryDate) : false;
 
   const regAttr = findAttr(['Registration Date', 'Created Date', 'Created']);
   const rawReg = regAttr?.value ?? regAttr?.display_value;
-  const regNum = rawReg != null ? Number(rawReg) : NaN;
-  const registrationDate = Number.isFinite(regNum) && regNum > 0
-    ? new Date(regNum < 1e12 ? regNum * 1000 : regNum)
-    : null;
+  const registrationDate = parseEnsDateValue(rawReg);
 
   return (
     <div
