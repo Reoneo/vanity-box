@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
+import { extractLabel, labelhash, labelhashToTokenId } from "@/lib/ens";
 
 
 // Import network logos for chain icons
@@ -57,10 +58,24 @@ const getChainIcon = (chain: string, size: number = 16) => {
   }
 };
 
+const normalizeEnsAttrKey = (value: unknown) =>
+  String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const parseEnsDateValue = (value: unknown): Date | null => {
+  if (value == null || value === '') return null;
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return new Date(numeric < 1e12 ? numeric * 1000 : numeric);
+  }
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [ensAttrs, setEnsAttrs] = useState<any[] | null>(null);
+  const [ensExpiryDate, setEnsExpiryDate] = useState<Date | null>(null);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -79,6 +94,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   useEffect(() => {
     if (!isOpen || !nft) return;
     setEnsAttrs(null);
+    setEnsExpiryDate(null);
     const ensContract = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
     const wrapperContract = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
     const c = (nft.contract || '').toLowerCase();
@@ -87,17 +103,22 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     const isEns =
       c === ensContract || c === wrapperContract ||
       col === 'ens' || col.includes('ethereum name service') || nm.endsWith('.eth');
-    if (!isEns || !nft.identifier) return;
-    const contract = c === wrapperContract ? wrapperContract : ensContract;
-    const url = `https://metadata.ens.domains/mainnet/${contract}/${nft.identifier}`;
+    if (!isEns) return;
     let cancelled = false;
-    fetch(url)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.attributes) return;
-        setEnsAttrs(data.attributes);
-      })
-      .catch(() => {});
+    const label = nm.endsWith('.eth') ? extractLabel(nm) : '';
+    const labelTokenId = label && !label.includes('.') ? labelhashToTokenId(labelhash(label)).toString() : null;
+    const contract = labelTokenId ? ensContract : (c === wrapperContract ? wrapperContract : ensContract);
+    const metadataTokenId = labelTokenId || nft.identifier;
+    if (metadataTokenId) {
+      const url = `https://metadata.ens.domains/mainnet/${contract}/${metadataTokenId}`;
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelled || !data?.attributes) return;
+          setEnsAttrs(data.attributes);
+        })
+        .catch(() => {});
+    }
     return () => { cancelled = true; };
   }, [isOpen, nft]);
 
@@ -126,24 +147,18 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     nft.metadata?.attributes || nft.traits || nft.metadata?.traits || [];
   const findAttr = (keys: string[]) =>
     attributes.find((a: any) => {
-      const t = String(a?.trait_type || a?.traitType || '').toLowerCase();
-      return keys.some((k) => t === k.toLowerCase());
+      const t = normalizeEnsAttrKey(a?.trait_type || a?.traitType || a?.name || a?.key);
+      return keys.some((k) => t === normalizeEnsAttrKey(k));
     });
 
-  const expiryAttr = findAttr(['Expiration Date', 'Expires', 'Expiry']);
+  const expiryAttr = findAttr(['Expiration Date', 'Expiration', 'Expires', 'Expiry', 'Expiry Date', 'Name Expires']);
   const rawExpiry = expiryAttr?.value ?? expiryAttr?.display_value;
-  const expiryNum = rawExpiry != null ? Number(rawExpiry) : NaN;
-  const expiryDate = Number.isFinite(expiryNum) && expiryNum > 0
-    ? new Date(expiryNum < 1e12 ? expiryNum * 1000 : expiryNum)
-    : null;
+  const expiryDate = parseEnsDateValue(rawExpiry) || ensExpiryDate;
   const expiryExpired = expiryDate ? isPast(expiryDate) : false;
 
   const regAttr = findAttr(['Registration Date', 'Created Date', 'Created']);
   const rawReg = regAttr?.value ?? regAttr?.display_value;
-  const regNum = rawReg != null ? Number(rawReg) : NaN;
-  const registrationDate = Number.isFinite(regNum) && regNum > 0
-    ? new Date(regNum < 1e12 ? regNum * 1000 : regNum)
-    : null;
+  const registrationDate = parseEnsDateValue(rawReg);
 
   return (
     <div

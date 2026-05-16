@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Import network logos
-import ethLogo from "@/assets/eth-logo.png";
+import ethLogoBlue from "@/assets/eth-logo-blue-circle.png";
 
 interface ChronologicalPoapGridProps {
   poaps: any[];
@@ -35,7 +35,7 @@ const PoapNetworkIcon = ({ chain, size = 14 }: { chain?: string; size?: number }
   }
   
   // Ethereum mainnet
-  return <img src={ethLogo} alt="Ethereum" width={size} height={size} className="rounded-full" />;
+  return <img src={ethLogoBlue} alt="Ethereum" width={size} height={size} className="rounded-full" />;
 };
 
 export const ChronologicalPoapGrid = ({ 
