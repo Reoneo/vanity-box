@@ -3,8 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
-import { createPublicClient, http } from "viem";
-import { mainnet } from "viem/chains";
+import { encodeFunctionData, decodeFunctionResult } from "viem";
 import { extractLabel, labelhash, labelhashToTokenId, BASE_REGISTRAR, BASE_REGISTRAR_ABI } from "@/lib/ens";
 
 
@@ -73,7 +72,31 @@ const parseEnsDateValue = (value: unknown): Date | null => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const ensClient = createPublicClient({ chain: mainnet, transport: http() });
+const fetchEnsExpiryFromRegistrar = async (tokenId: bigint): Promise<Date | null> => {
+  const data = encodeFunctionData({
+    abi: BASE_REGISTRAR_ABI as any,
+    functionName: 'nameExpires',
+    args: [tokenId],
+  });
+  const response = await fetch('https://eth.llamarpc.com', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'eth_call',
+      params: [{ to: BASE_REGISTRAR, data }, 'latest'],
+    }),
+  });
+  const json = await response.json();
+  if (json.error || !json.result) return null;
+  const expiry = decodeFunctionResult({
+    abi: BASE_REGISTRAR_ABI as any,
+    functionName: 'nameExpires',
+    data: json.result,
+  }) as bigint;
+  return expiry > 0n ? new Date(Number(expiry) * 1000) : null;
+};
 
 export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
