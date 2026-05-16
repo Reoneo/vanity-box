@@ -122,6 +122,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     nameLower.endsWith('.eth');
 
   const attributes: any[] =
+    (ensAttrs && ensAttrs.length ? ensAttrs : null) ||
     nft.metadata?.attributes || nft.traits || nft.metadata?.traits || [];
   const findAttr = (keys: string[]) =>
     attributes.find((a: any) => {
