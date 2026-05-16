@@ -1,0 +1,9 @@
+name = "vanity-box-og-injector"
+main = "og-injector.js"
+compatibility_date = "2025-01-01"
+
+# Bind to both apex and www so crawlers hit the Worker no matter which host they request.
+routes = [
+  { pattern = "vanity.box/*", zone_name = "vanity.box" },
+  { pattern = "www.vanity.box/*", zone_name = "vanity.box" },
+]
