@@ -260,9 +260,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
 
         {/* Metadata */}
         <div className="pt-5 space-y-3">
-          {isEnsNft ? (
-            <img src={ensCollectionLogo} alt="ENS" className="h-7 w-auto object-contain" />
-          ) : (
+          {!isEnsNft && (
             <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
               {nft.name || `NFT #${nft.identifier}`}
             </h2>
