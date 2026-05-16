@@ -15,7 +15,6 @@ interface NFTDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   headerImage?: string;
-  inline?: boolean;
 }
 
 // Helper to detect media type from URL
@@ -57,13 +56,13 @@ const getChainIcon = (chain: string, size: number = 16) => {
   }
 };
 
-export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage, inline = false }: NFTDetailModalProps) => {
+export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Lock body scroll when open
   useEffect(() => {
-    if (!isOpen || inline) return;
+    if (!isOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -72,112 +71,13 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage, inline = fal
       document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
     };
-  }, [isOpen, onClose, inline]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !nft) return null;
 
   const animationUrl = nft.animation_url || nft.metadata?.animation_url;
   const imageUrl = nft.image_url || nft.display_image_url;
   const mediaType = getMediaType(animationUrl);
-
-  const content = (
-    <div className={inline ? "mx-auto w-full max-w-2xl px-0 pb-32" : "mx-auto w-full max-w-2xl px-4 py-4 pb-28"}>
-      {/* Media — square, fully contained, no overflow */}
-      <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 to-black/10 border border-[#D4AF37]/20">
-        {mediaType === 'video' && animationUrl ? (
-          <video
-            ref={videoRef}
-            src={animationUrl}
-            poster={imageUrl}
-            controls
-            autoPlay
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-contain"
-          />
-        ) : mediaType === 'audio' && animationUrl ? (
-          <div className="relative w-full h-full">
-            {imageUrl ? (
-              <img src={imageUrl} alt={nft.name || 'NFT'} className="absolute inset-0 w-full h-full object-contain" />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5">
-                <Volume2 className="w-24 h-24 text-[#D4AF37]/50" />
-              </div>
-            )}
-            <audio ref={audioRef} src={animationUrl} controls autoPlay loop className="absolute bottom-4 left-4 right-4" />
-          </div>
-        ) : imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={nft.name || 'NFT'}
-            className="absolute inset-0 w-full h-full object-contain"
-            loading="lazy"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-            No Media Available
-          </div>
-        )}
-
-        {(mediaType === 'video' || mediaType === 'audio') && (
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-black/70 backdrop-blur-sm text-white border-0 gap-1">
-              {mediaType === 'video' ? <Play className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-              {mediaType === 'video' ? 'Video' : 'Audio'}
-            </Badge>
-          </div>
-        )}
-      </div>
-
-      {/* Metadata */}
-      <div className="pt-5 space-y-3">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
-          {nft.name || `NFT #${nft.identifier}`}
-        </h2>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {nft.chain && (
-            <Badge variant="outline" className="bg-muted/60 border-[#D4AF37]/40 text-foreground capitalize flex items-center gap-1.5 px-2.5 py-1 rounded-full">
-              {getChainIcon(nft.chain, 14)}
-              <span className="text-xs font-medium">{nft.chain}</span>
-            </Badge>
-          )}
-          {nft.collection && nft.collection !== nft.name && (
-            <Badge variant="outline" className="bg-muted/40 border-border/40 text-muted-foreground text-xs capitalize rounded-full px-2.5 py-1">
-              {nft.collection}
-            </Badge>
-          )}
-          {nft.quantity && nft.quantity > 1 && (
-            <Badge className="bg-emerald-600 text-white border-0 text-xs rounded-full">
-              x{nft.quantity} Owned
-            </Badge>
-          )}
-        </div>
-
-        {nft.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
-            {nft.description}
-          </p>
-        )}
-      </div>
-
-      {/* Action */}
-      {nft.opensea_url && (
-        <div className="pt-5">
-          <Button
-            onClick={() => window.open(nft.opensea_url, '_blank')}
-            className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold active:scale-95 transition-transform touch-manipulation rounded-xl"
-            size="lg"
-          >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            View on OpenSea
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-
-  if (inline) return content;
 
   return (
     <div
@@ -217,7 +117,100 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage, inline = fal
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto overscroll-contain">
-        {content}
+      <div className="mx-auto w-full max-w-2xl px-4 py-4 pb-28">
+        {/* Media — square, fully contained, no overflow */}
+        <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 to-black/10 border border-[#D4AF37]/20">
+          {mediaType === 'video' && animationUrl ? (
+            <video
+              ref={videoRef}
+              src={animationUrl}
+              poster={imageUrl}
+              controls
+              autoPlay
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-contain"
+            />
+          ) : mediaType === 'audio' && animationUrl ? (
+            <div className="relative w-full h-full">
+              {imageUrl ? (
+                <img src={imageUrl} alt={nft.name || 'NFT'} className="absolute inset-0 w-full h-full object-contain" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5">
+                  <Volume2 className="w-24 h-24 text-[#D4AF37]/50" />
+                </div>
+              )}
+              <audio ref={audioRef} src={animationUrl} controls autoPlay loop className="absolute bottom-4 left-4 right-4" />
+            </div>
+          ) : imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={nft.name || 'NFT'}
+              className="absolute inset-0 w-full h-full object-contain"
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+              No Media Available
+            </div>
+          )}
+
+          {(mediaType === 'video' || mediaType === 'audio') && (
+            <div className="absolute top-3 right-3">
+              <Badge className="bg-black/70 backdrop-blur-sm text-white border-0 gap-1">
+                {mediaType === 'video' ? <Play className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                {mediaType === 'video' ? 'Video' : 'Audio'}
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {/* Metadata */}
+        <div className="pt-5 space-y-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
+            {nft.name || `NFT #${nft.identifier}`}
+          </h2>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {nft.chain && (
+              <Badge variant="outline" className="bg-muted/60 border-[#D4AF37]/40 text-foreground capitalize flex items-center gap-1.5 px-2.5 py-1 rounded-full">
+                {getChainIcon(nft.chain, 14)}
+                <span className="text-xs font-medium">{nft.chain}</span>
+              </Badge>
+            )}
+            {nft.collection && nft.collection !== nft.name && (
+              <Badge variant="outline" className="bg-muted/40 border-border/40 text-muted-foreground text-xs capitalize rounded-full px-2.5 py-1">
+                {nft.collection}
+              </Badge>
+            )}
+            {nft.quantity && nft.quantity > 1 && (
+              <Badge className="bg-emerald-600 text-white border-0 text-xs rounded-full">
+                x{nft.quantity} Owned
+              </Badge>
+            )}
+          </div>
+
+          {nft.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
+              {nft.description}
+            </p>
+          )}
+        </div>
+
+        {/* Action */}
+        {nft.opensea_url && (
+          <div className="pt-5">
+            <Button
+              onClick={() => window.open(nft.opensea_url, '_blank')}
+              className="w-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black font-semibold active:scale-95 transition-transform touch-manipulation rounded-xl"
+              size="lg"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View on OpenSea
+            </Button>
+          </div>
+        )}
+      </div>
       </div>
     </div>
   );

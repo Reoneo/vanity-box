@@ -94,6 +94,20 @@ async function fetchWithRetry(
   return null;
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        timeoutId = setTimeout(() => resolve(fallback), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 /**
  * Viem public client for direct ENS resolution on Ethereum mainnet
  */
@@ -165,6 +179,27 @@ async function fetchEnsDirectProfile(name: string): Promise<any | null> {
  * Works for .eth, .sol, .box, wallet addresses, and more
  */
 async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data, error } = await supabase.functions.invoke('web3bio-profile', {
+      body: { identity },
+    });
+
+    if (!error && data?.profile) {
+      return data.profile;
+    }
+
+    if (!error && data?.notFound) {
+      return { notFound: true };
+    }
+
+    if (error) {
+      console.log('⚠️ Web3.bio edge lookup error:', error.message);
+    }
+  } catch (edgeError: any) {
+    console.log('⚠️ Web3.bio edge lookup failed, trying public API:', edgeError?.message || edgeError);
+  }
+
   const url = `https://api.web3.bio/profile/${encodeURIComponent(identity)}`;
   console.log(`🔍 [Client] Fetching Web3.bio profile for: ${identity}`);
 
@@ -814,8 +849,8 @@ export function useProfileResolver() {
         debug.tried.push('ens-direct', 'web3bio');
         const raceStart = Date.now();
 
-        const ensPromise = fetchEnsDirectProfile(normalized).catch(() => null);
-        const w3Promise = fetchWeb3BioProfile(normalized).catch(() => null);
+        const ensPromise = withTimeout(fetchEnsDirectProfile(normalized).catch(() => null), 6500, null);
+        const w3Promise = withTimeout(fetchWeb3BioProfile(normalized).catch(() => null), 12000, null);
 
         // First-success race: resolve as soon as either returns a usable profile.
         const firstSuccess = await new Promise<any>((resolve) => {
@@ -1128,27 +1163,34 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
         resolverResult = { ok: false, source: 'vet', profile: null, notFound: true };
       }
     }
-    // Route 3: .eth domains — direct ENS resolution via viem, web3.bio as fallback
+    // Route 3: .eth domains — race direct ENS resolution against Web3.bio (whichever wins).
     else if (isEthDomain) {
-      debug.tried.push('ens-direct');
-      const ensStart = Date.now();
-      const ensProfile = await fetchEnsDirectProfile(normalized);
-      debug.timingsMs.ensDirect = Date.now() - ensStart;
+      debug.tried.push('ens-direct', 'web3bio');
+      const raceStart = Date.now();
 
-      if (ensProfile) {
-        resolverResult = { ok: true, source: 'web3bio', profile: ensProfile };
+      const ensPromise = withTimeout(fetchEnsDirectProfile(normalized).catch(() => null), 6500, null);
+      const w3Promise = withTimeout(fetchWeb3BioProfile(normalized).catch(() => null), 12000, null);
+
+      const firstSuccess = await new Promise<any>((resolve) => {
+        let pending = 2;
+        const tryResolve = (val: any) => {
+          pending -= 1;
+          if (val && !val.notFound) {
+            resolve(val);
+          } else if (pending === 0) {
+            resolve(null);
+          }
+        };
+        ensPromise.then(tryResolve);
+        w3Promise.then(tryResolve);
+      });
+
+      debug.timingsMs.ethRace = Date.now() - raceStart;
+
+      if (firstSuccess) {
+        resolverResult = { ok: true, source: 'web3bio', profile: firstSuccess };
       } else {
-        // Fallback to web3.bio
-        debug.tried.push('web3bio');
-        const w3Start = Date.now();
-        const web3Profile = await fetchWeb3BioProfile(normalized);
-        debug.timingsMs.web3bio = Date.now() - w3Start;
-
-        if (web3Profile && !web3Profile.notFound) {
-          resolverResult = { ok: true, source: 'web3bio', profile: web3Profile };
-        } else {
-          resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
-        }
+        resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
       }
     }
     // Route 4: Web3.bio-compatible TLDs (.box, .sol, etc.) and wallet addresses
