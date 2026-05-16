@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 
 
@@ -60,6 +60,7 @@ const getChainIcon = (chain: string, size: number = 16) => {
 export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [ensAttrs, setEnsAttrs] = useState<any[] | null>(null);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -73,6 +74,33 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
       window.removeEventListener('keydown', onKey);
     };
   }, [isOpen, onClose]);
+
+  // Fetch ENS metadata directly (always includes Expiration Date)
+  useEffect(() => {
+    if (!isOpen || !nft) return;
+    setEnsAttrs(null);
+    const ensContract = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
+    const wrapperContract = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
+    const c = (nft.contract || '').toLowerCase();
+    const col = (nft.collection || '').toLowerCase();
+    const nm = (nft.name || '').toLowerCase();
+    const isEns =
+      c === ensContract || c === wrapperContract ||
+      col === 'ens' || col.includes('ethereum name service') || nm.endsWith('.eth');
+    if (!isEns || !nft.identifier) return;
+    const contract = c === wrapperContract ? wrapperContract : ensContract;
+    const url = `https://metadata.ens.domains/mainnet/${contract}/${nft.identifier}`;
+    let cancelled = false;
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.attributes) return;
+        setEnsAttrs(data.attributes);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isOpen, nft]);
+
 
   if (!isOpen || !nft) return null;
 
@@ -94,6 +122,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     nameLower.endsWith('.eth');
 
   const attributes: any[] =
+    (ensAttrs && ensAttrs.length ? ensAttrs : null) ||
     nft.metadata?.attributes || nft.traits || nft.metadata?.traits || [];
   const findAttr = (keys: string[]) =>
     attributes.find((a: any) => {
