@@ -17,6 +17,7 @@ import openseaLogomark from "@/assets/opensea-logomark-white.svg";
 import grailsLogo from "@/assets/grails-logo.svg";
 import ensCollectionLogo from "@/assets/ens-collection-logo.png";
 import basenamesCollectionLogo from "@/assets/basenames-collection-logo.png";
+import baseSquareBlue from "@/assets/base-square-blue.png";
 
 interface NFTDetailModalProps {
   nft: any;
