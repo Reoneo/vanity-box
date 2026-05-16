@@ -3,6 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
+import { createPublicClient, http } from "viem";
+import { mainnet } from "viem/chains";
+import { extractLabel, labelhash, labelhashToTokenId, BASE_REGISTRAR, BASE_REGISTRAR_ABI } from "@/lib/ens";
 
 
 // Import network logos for chain icons
@@ -57,10 +60,26 @@ const getChainIcon = (chain: string, size: number = 16) => {
   }
 };
 
+const normalizeEnsAttrKey = (value: unknown) =>
+  String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const parseEnsDateValue = (value: unknown): Date | null => {
+  if (value == null || value === '') return null;
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return new Date(numeric < 1e12 ? numeric * 1000 : numeric);
+  }
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const ensClient = createPublicClient({ chain: mainnet, transport: http() });
+
 export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [ensAttrs, setEnsAttrs] = useState<any[] | null>(null);
+  const [ensExpiryDate, setEnsExpiryDate] = useState<Date | null>(null);
 
   // Lock body scroll when open
   useEffect(() => {
