@@ -186,10 +186,14 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           >
             <ChevronDown className="w-4 h-4 text-black rotate-90" />
           </button>
-          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
-            <h3 className="text-lg font-bold text-black dark:text-white truncate">
-              {nft.name || `NFT #${nft.identifier}`}
-            </h3>
+          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%] flex items-center justify-center">
+            {isEnsNft ? (
+              <img src={ensCollectionLogo} alt="ENS" className="h-5 w-auto object-contain" />
+            ) : (
+              <h3 className="text-lg font-bold text-black dark:text-white truncate">
+                {nft.name || `NFT #${nft.identifier}`}
+              </h3>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -253,9 +257,13 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
 
         {/* Metadata */}
         <div className="pt-5 space-y-3">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
-            {nft.name || `NFT #${nft.identifier}`}
-          </h2>
+          {isEnsNft ? (
+            <img src={ensCollectionLogo} alt="ENS" className="h-7 w-auto object-contain" />
+          ) : (
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
+              {nft.name || `NFT #${nft.identifier}`}
+            </h2>
+          )}
 
           <div className="flex flex-wrap items-center gap-2">
             {nft.chain && (
@@ -264,10 +272,44 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                 <span className="text-xs font-medium">{nft.chain}</span>
               </Badge>
             )}
-            {nft.collection && nft.collection !== nft.name && (
-              <Badge variant="outline" className="bg-muted/40 border-border/40 text-muted-foreground text-xs capitalize rounded-full px-2.5 py-1">
-                {nft.collection}
-              </Badge>
+            {isEnsNft ? (
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://app.ens.domains/${ensLabel}.eth`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="View on ENS"
+                  className="w-7 h-7 rounded-full bg-muted/60 border border-border/40 flex items-center justify-center hover:bg-muted transition-colors"
+                >
+                  <img src={ensMarkBlue} alt="ENS" className="w-4 h-4 object-contain" />
+                </a>
+                {nft.opensea_url && (
+                  <a
+                    href={nft.opensea_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="View on OpenSea"
+                    className="w-7 h-7 rounded-full bg-[#2081E2] border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity"
+                  >
+                    <img src={openseaLogomark} alt="OpenSea" className="w-4 h-4 object-contain" />
+                  </a>
+                )}
+                <a
+                  href={`https://grails.app/${ensLabel}.eth`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="View on Grails"
+                  className="w-7 h-7 rounded-full bg-muted/60 border border-border/40 flex items-center justify-center hover:bg-muted transition-colors overflow-hidden"
+                >
+                  <img src={grailsLogo} alt="Grails" className="w-4 h-4 object-contain" />
+                </a>
+              </div>
+            ) : (
+              nft.collection && nft.collection !== nft.name && (
+                <Badge variant="outline" className="bg-muted/40 border-border/40 text-muted-foreground text-xs capitalize rounded-full px-2.5 py-1">
+                  {nft.collection}
+                </Badge>
+              )
             )}
             {nft.quantity && nft.quantity > 1 && (
               <Badge className="bg-emerald-600 text-white border-0 text-xs rounded-full">
@@ -313,12 +355,30 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                   </div>
                 </div>
               )}
+              {graceEndDate && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-xs">Grace period ends</span>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xs font-semibold ${graceEnded ? 'text-red-500' : 'text-amber-500'}`}>
+                      {format(graceEndDate, 'MMM d, yyyy')}
+                    </div>
+                    <div className={`text-[10px] ${graceEnded ? 'text-red-400' : 'text-muted-foreground'}`}>
+                      {graceEnded
+                        ? `Ended ${formatDistanceToNow(graceEndDate)} ago`
+                        : `in ${formatDistanceToNow(graceEndDate)}`}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Action */}
-        {nft.opensea_url && (
+        {!isEnsNft && nft.opensea_url && (
           <div className="pt-5">
             <Button
               onClick={() => window.open(nft.opensea_url, '_blank')}
