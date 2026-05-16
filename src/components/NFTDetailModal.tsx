@@ -12,7 +12,7 @@ import ethLogoBlueCircle from "@/assets/eth-logo-blue-circle.png";
 import wldLogo from "@/assets/wld-logo.png";
 import polygonIcon from "@/assets/polygon-icon.svg";
 import iotaHeaderPattern from "@/assets/iota-header-pattern.png";
-import ensMarkBlue from "@/assets/ens-mark-blue.png";
+
 import openseaLogomark from "@/assets/opensea-logomark-white.svg";
 import grailsLogo from "@/assets/grails-logo.svg";
 import ensCollectionLogo from "@/assets/ens-collection-logo.png";
