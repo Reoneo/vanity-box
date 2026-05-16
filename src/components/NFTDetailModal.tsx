@@ -337,6 +337,29 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                   <img src={grailsLogo} alt="Grails" className="w-4 h-4 object-contain" />
                 </a>
               </div>
+            ) : isUnstoppableNft ? (
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://ud.me/${(nft.name || '').toString()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="View on Unstoppable Domains"
+                  className="w-7 h-7 rounded-full bg-white border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity overflow-hidden"
+                >
+                  <img src={unstoppableUMark} alt="Unstoppable Domains" className="w-4 h-4 object-contain" />
+                </a>
+                {nft.opensea_url && (
+                  <a
+                    href={nft.opensea_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="View on OpenSea"
+                    className="w-7 h-7 rounded-full bg-[#2081E2] border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity"
+                  >
+                    <img src={openseaLogomark} alt="OpenSea" className="w-4 h-4 object-contain" />
+                  </a>
+                )}
+              </div>
             ) : (
               nft.collection && nft.collection !== nft.name && (
                 <Badge variant="outline" className="bg-muted/40 border-border/40 text-muted-foreground text-xs capitalize rounded-full px-2.5 py-1">
