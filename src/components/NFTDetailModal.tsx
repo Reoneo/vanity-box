@@ -98,6 +98,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   useEffect(() => {
     if (!isOpen || !nft) return;
     setEnsAttrs(null);
+    setEnsExpiryDate(null);
     const ensContract = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
     const wrapperContract = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
     const c = (nft.contract || '').toLowerCase();
@@ -117,6 +118,18 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         setEnsAttrs(data.attributes);
       })
       .catch(() => {});
+    const label = nm.endsWith('.eth') ? extractLabel(nm) : '';
+    if (label && !label.includes('.')) {
+      const tokenId = labelhashToTokenId(labelhash(label));
+      ensClient.readContract({
+        address: BASE_REGISTRAR,
+        abi: BASE_REGISTRAR_ABI,
+        functionName: 'nameExpires',
+        args: [tokenId],
+      }).then((expiry) => {
+        if (!cancelled && expiry > 0n) setEnsExpiryDate(new Date(Number(expiry) * 1000));
+      }).catch(() => {});
+    }
     return () => { cancelled = true; };
   }, [isOpen, nft]);
 
