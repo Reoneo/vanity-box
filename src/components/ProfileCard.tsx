@@ -2754,18 +2754,14 @@ export const ProfileCard = ({
                     />
                     {/* No gradient overlay – matches desktop */}
                   </div>
-                  {/* Share button - top-left of header image (iOS-style, mobile) */}
+                  {/* Share button - top-left of header image (traditional share icon, mobile) */}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
                     aria-label="Share profile"
-                    className="absolute top-3 left-3 z-40 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center transition-all"
+                    className="absolute top-3 left-3 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-transparent backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60"
                   >
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-black dark:text-[#D4AF37]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3v13" />
-                      <path d="m7 8 5-5 5 5" />
-                      <path d="M5 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" transform="translate(0 -1)" />
-                    </svg>
+                    <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
 
                   <div className="flex justify-center absolute -bottom-14 left-0 right-0">
