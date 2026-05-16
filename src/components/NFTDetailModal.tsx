@@ -130,20 +130,24 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     const isEns =
       c === ensContract || c === wrapperContract ||
       col === 'ens' || col.includes('ethereum name service') || nm.endsWith('.eth');
-    if (!isEns || !nft.identifier) return;
-    const contract = c === wrapperContract ? wrapperContract : ensContract;
-    const url = `https://metadata.ens.domains/mainnet/${contract}/${nft.identifier}`;
+    if (!isEns) return;
     let cancelled = false;
-    fetch(url)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.attributes) return;
-        setEnsAttrs(data.attributes);
-      })
-      .catch(() => {});
     const label = nm.endsWith('.eth') ? extractLabel(nm) : '';
+    const labelTokenId = label && !label.includes('.') ? labelhashToTokenId(labelhash(label)).toString() : null;
+    const contract = c === wrapperContract ? wrapperContract : ensContract;
+    const metadataTokenId = nft.identifier || labelTokenId;
+    if (metadataTokenId) {
+      const url = `https://metadata.ens.domains/mainnet/${contract}/${metadataTokenId}`;
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelled || !data?.attributes) return;
+          setEnsAttrs(data.attributes);
+        })
+        .catch(() => {});
+    }
     if (label && !label.includes('.')) {
-      const tokenId = labelhashToTokenId(labelhash(label));
+      const tokenId = BigInt(labelTokenId!);
       fetchEnsExpiryFromRegistrar(tokenId).then((expiry) => {
         if (!cancelled && expiry) setEnsExpiryDate(expiry);
       }).catch(() => {});
