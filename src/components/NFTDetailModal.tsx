@@ -79,12 +79,12 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-background overflow-y-auto overscroll-contain"
+      className="fixed inset-0 z-[200] bg-background overflow-y-auto overscroll-contain pt-safe-area-inset-top"
       role="dialog"
       aria-modal="true"
     >
-      {/* Top bar with gold rounded back & close buttons (matches collection view) */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-background/95 backdrop-blur-md border-b border-[#D4AF37]/20">
+      {/* Top bar with gold rounded back & close buttons — sits above the global gold header (z-[100]) */}
+      <div className="sticky top-0 z-[210] flex items-center justify-between px-4 py-3 bg-background/95 backdrop-blur-md border-b border-[#D4AF37]/20 pt-safe-area-inset-top">
         <button
           type="button"
           onClick={onClose}
