@@ -3109,7 +3109,7 @@ export const ProfileCard = ({
                         {nftCategory === 'main'
                           ? 'NFTs'
                           : expandedCollection
-                            ? renderCollectionLabel(expandedCollection)
+                            ? renderCollectionLabel(expandedCollection, "h-10 w-auto inline-block align-middle")
                             : nftCategory === 'poaps'
                               ? 'POAPs'
                               : nftCategory === 'magiceden'
