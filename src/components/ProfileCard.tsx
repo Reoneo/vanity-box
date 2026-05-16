@@ -2121,7 +2121,7 @@ export const ProfileCard = ({
                             );
                           }
                           // NFTs header: dynamic title + total count
-                          let title = 'NFTs';
+                          let title: React.ReactNode = 'NFTs';
                           let total: number | null = null;
                           if (nftCategory === 'main') {
                             title = 'NFTs';
@@ -2130,7 +2130,7 @@ export const ProfileCard = ({
                             total = poapTotalCount || formattedPoaps.length;
                           } else if (nftCategory === 'opensea') {
                             if (expandedCollection) {
-                              title = formatCollectionName(expandedCollection);
+                              title = renderCollectionLabel(expandedCollection);
                               total = openSeaGroupedNfts[expandedCollection]?.length || 0;
                             } else {
                               title = 'OpenSea';
@@ -2138,7 +2138,7 @@ export const ProfileCard = ({
                             }
                           } else if (nftCategory === 'magiceden') {
                             if (expandedCollection) {
-                              title = formatCollectionName(expandedCollection);
+                              title = renderCollectionLabel(expandedCollection);
                               total = magicEdenGroupedNfts[expandedCollection]?.length || 0;
                             } else {
                               title = 'EVM';
@@ -2157,11 +2157,11 @@ export const ProfileCard = ({
                             total = basenames.length;
                           } else if (nftCategory.startsWith('iota:')) {
                             const col = nftCategory.replace('iota:', '');
-                            title = formatCollectionName(col);
+                            title = renderCollectionLabel(col);
                             total = (iotaGroupedNfts[col] || []).length;
                           } else if (nftCategory.startsWith('ton:')) {
                             const col = nftCategory.replace('ton:', '');
-                            title = formatCollectionName(col);
+                            title = renderCollectionLabel(col);
                             total = (tonCollections.find(c => c.collectionName === col)?.nfts || []).length;
                           }
                           return (
@@ -2362,7 +2362,7 @@ export const ProfileCard = ({
                               >
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                    <h4 className="font-medium text-black text-base truncate">{renderCollectionLabel(collection)}</h4>
                                     <div className="flex items-center gap-2">
                                       <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
                                       <div className="flex -space-x-2">
@@ -2674,7 +2674,7 @@ export const ProfileCard = ({
                                     <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                       <div className="flex items-center justify-between h-full">
                                         <div className="text-left flex-1 min-w-0 mr-3">
-                                          <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                          <h4 className="font-medium text-black text-base truncate">{renderCollectionLabel(collection)}</h4>
                                           <p className="text-sm text-black/70">{collectionNfts.length} items</p>
                                         </div>
                                         <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
@@ -2705,7 +2705,7 @@ export const ProfileCard = ({
                                     <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                       <div className="flex items-center justify-between h-full">
                                         <div className="text-left flex-1 min-w-0 mr-3">
-                                          <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                          <h4 className="font-medium text-black text-base truncate">{renderCollectionLabel(collection)}</h4>
                                           <p className="text-sm text-black/70">{collectionNfts.length} items</p>
                                         </div>
                                         <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
@@ -3193,7 +3193,7 @@ export const ProfileCard = ({
                         >
                           <div className="flex items-center justify-between h-full">
                             <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                              <h4 className="font-medium text-black text-base truncate">{renderCollectionLabel(collection)}</h4>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
                                 <div className="flex -space-x-2">
@@ -3477,7 +3477,7 @@ export const ProfileCard = ({
                           <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation">
                             <div className="flex items-center justify-between h-full">
                               <div className="text-left flex-1 min-w-0 mr-3">
-                                <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                <h4 className="font-medium text-black text-base truncate">{renderCollectionLabel(collection)}</h4>
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
                                   <div className="flex -space-x-2">
@@ -3527,7 +3527,7 @@ export const ProfileCard = ({
                           <button key={collection} onClick={() => setExpandedCollection(collection)} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation">
                             <div className="flex items-center justify-between h-full">
                               <div className="text-left flex-1 min-w-0 mr-3">
-                                <h4 className="font-medium text-black text-base truncate">{formatCollectionName(collection)}</h4>
+                                <h4 className="font-medium text-black text-base truncate">{renderCollectionLabel(collection)}</h4>
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm text-black/70">{collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}</p>
                                   <div className="flex -space-x-2">
@@ -4071,7 +4071,7 @@ export const ProfileCard = ({
                             onCheckedChange={() => handleCollectionToggle(collection)}
                             className="hover:bg-[#D4AF37]/10 cursor-pointer"
                           >
-                            <span className="font-medium">{formatCollectionName(collection)}</span>
+                            <span className="font-medium">{renderCollectionLabel(collection)}</span>
                           </DropdownMenuCheckboxItem>
                         ))}
                         {selectedCollections.length > 0 && (
@@ -4100,7 +4100,7 @@ export const ProfileCard = ({
                         className="cursor-pointer bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25 border border-[#D4AF37]/30 transition-colors font-medium px-3 py-1"
                         onClick={() => handleCollectionToggle(collection)}
                       >
-                        {formatCollectionName(collection)} ×
+                        {renderCollectionLabel(collection)} ×
                       </Badge>
                     ))}
                   </div>
@@ -4153,7 +4153,7 @@ export const ProfileCard = ({
                           Back to Collections
                         </Button>
                         <div className="flex-1">
-                          <h4 className="font-bold text-foreground text-lg">{formatCollectionName(expandedCollection)}</h4>
+                          <h4 className="font-bold text-foreground text-lg">{renderCollectionLabel(expandedCollection)}</h4>
                           <p className="text-xs text-muted-foreground">
                             {openSeaGroupedNfts[expandedCollection]?.length || 0} items
                           </p>
@@ -4200,7 +4200,7 @@ export const ProfileCard = ({
                           <div className="flex items-center justify-between h-full">
                             <div className="text-left flex-1 min-w-0 mr-3">
                               <h4 className="font-medium text-black text-base truncate">
-                                {formatCollectionName(collection)}
+                                {renderCollectionLabel(collection)}
                               </h4>
                               <p className="text-sm text-[#D4AF37]">
                                 {collectionNfts.length} {collectionNfts.length === 1 ? 'item' : 'items'}
