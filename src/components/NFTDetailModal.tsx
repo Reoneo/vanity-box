@@ -212,8 +212,8 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
               }
               if (isUnstoppable) {
                 const chainIcon = chainLower === 'base'
-                  ? <img src={baseSquareBlue} alt="Base" className="h-10 w-10 object-contain" style={{ borderRadius: 8 }} />
-                  : <img src={polygonIcon} alt="Polygon" className="h-10 w-10 rounded-full" />;
+                  ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 object-contain" style={{ borderRadius: 4 }} />
+                  : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 rounded-full" />;
                 return (
                   <div className="flex items-center gap-2">
                     <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className="h-10 w-auto object-contain" />
