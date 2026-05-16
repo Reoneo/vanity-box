@@ -55,7 +55,7 @@ const getChainIcon = (chain: string, size: number = 16) => {
     case 'polygon-mainnet':
       return <img src={polygonIcon} alt="Polygon" width={size} height={size} className={iconClass} />;
     case 'base':
-      return <img src={basenamesCollectionLogo} alt="Base" width={size} height={size} className="object-contain" style={{ borderRadius: size * 0.2 }} />;
+      return <img src={baseSquareBlue} alt="Base" width={size} height={size} className="object-contain" style={{ borderRadius: size * 0.2 }} />;
     default:
       return <img src={ethLogo} alt="Network" width={size} height={size} className={iconClass} />;
   }
