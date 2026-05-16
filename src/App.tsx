@@ -81,7 +81,7 @@ const AppContent = () => {
   }), []);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       {/* Global gold SplashCursor for desktop only */}
       {hasFinePointer && (
         <Suspense fallback={null}>
