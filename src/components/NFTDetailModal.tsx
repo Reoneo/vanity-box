@@ -393,7 +393,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         </div>
 
         {/* Action */}
-        {!isEnsNft && nft.opensea_url && (
+        {!isEnsNft && !isBasenameNft && nft.opensea_url && (
           <div className="pt-5">
             <Button
               onClick={() => window.open(nft.opensea_url, '_blank')}
