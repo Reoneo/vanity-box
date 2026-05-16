@@ -24,8 +24,10 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   const currentUrl = username ? `${origin}/${username}` : origin;
 
   // Use edge function to generate dynamic OG image
+  // og-image resolves avatar server-side from the username, so social-preview
+  // crawlers (which don't execute JS) get the correct image for any deep link.
   const ogImageUrl = username
-    ? `${supabaseUrl}/functions/v1/og-image?username=${encodeURIComponent(username)}${displayName ? `&displayName=${encodeURIComponent(displayName)}` : ""}${avatar ? `&avatar=${encodeURIComponent(avatar)}` : ""}${banner ? `&banner=${encodeURIComponent(banner)}` : ""}`
+    ? `${supabaseUrl}/functions/v1/og-image?username=${encodeURIComponent(username)}${displayName ? `&displayName=${encodeURIComponent(displayName)}` : ""}`
     : `${origin}/vanity-meta-image.jpeg`;
 
   return (

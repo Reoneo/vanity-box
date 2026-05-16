@@ -1603,10 +1603,7 @@ export const ProfileCard = ({
     const identifier = (searchedIdentity || web3BioProfile?.identity || iotaOwnerAddress || linkedEvmAddress || '').toString();
     if (!identifier) return;
     const avatar = web3BioProfile?.avatar || (iotaOnchainProfile as any)?.avatar || '';
-    const params = new URLSearchParams();
-    if (avatar) params.set('avatar', avatar);
-    const qs = params.toString();
-    const url = `${window.location.origin}/${identifier}${qs ? `?${qs}` : ''}`;
+    const url = `${window.location.origin}/${identifier}`;
     const title = `${web3BioProfile?.displayName || identifier} on vanity.box`;
     const text = web3BioProfile?.description || `Check out ${identifier} on vanity.box`;
 
