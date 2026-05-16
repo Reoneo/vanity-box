@@ -1568,12 +1568,18 @@ export const ProfileCard = ({
     }
     if (isUnstoppableCollection(name)) {
       const chain = unstoppableChain(name);
+      // Headers pass h-10+; list rows use default h-5. Only enlarge the UD logo and shrink the chain icon for list rows.
+      const isListRow = /\bh-5\b/.test(imgClassName);
+      const chainSize = isListRow ? 'h-5 w-5' : 'h-10 w-10';
       const chainIcon = chain === 'base'
-        ? <img src={baseSquareBlue} alt="Base" className="h-10 w-10 inline-block align-middle object-contain" style={{ borderRadius: 8 }} />
-        : <img src={polygonIcon} alt="Polygon" className="h-10 w-10 inline-block align-middle rounded-full" />;
+        ? <img src={baseSquareBlue} alt="Base" className={`${chainSize} inline-block align-middle object-contain`} style={{ borderRadius: isListRow ? 4 : 8 }} />
+        : <img src={polygonIcon} alt="Polygon" className={`${chainSize} inline-block align-middle rounded-full`} />;
+      const udClass = isListRow
+        ? imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`)
+        : imgClassName;
       return (
         <span className="inline-flex items-center gap-2 align-middle">
-          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={imgClassName} />
+          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={udClass} />
           {chainIcon}
         </span>
       );
