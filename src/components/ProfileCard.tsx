@@ -3078,7 +3078,7 @@ export const ProfileCard = ({
                         {nftCategory === 'main'
                           ? 'NFTs'
                           : expandedCollection
-                            ? formatCollectionName(expandedCollection)
+                            ? renderCollectionLabel(expandedCollection)
                             : nftCategory === 'poaps'
                               ? 'POAPs'
                               : nftCategory === 'magiceden'
@@ -3092,9 +3092,9 @@ export const ProfileCard = ({
                                       : nftCategory === 'basenames'
                                         ? 'Basenames'
                                         : nftCategory.startsWith('iota:')
-                                          ? formatCollectionName(nftCategory.slice(5))
+                                          ? renderCollectionLabel(nftCategory.slice(5))
                                           : nftCategory.startsWith('ton:')
-                                            ? formatCollectionName(nftCategory.slice(4))
+                                            ? renderCollectionLabel(nftCategory.slice(4))
                                             : 'NFTs'}
                       </h3>
                     </div>
