@@ -1,17 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Play, Volume2, ChevronLeft, X } from "lucide-react";
+import { ExternalLink, Play, Volume2, ChevronDown, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 
 // Import network logos for chain icons
 import ethLogo from "@/assets/eth-logo.png";
 import wldLogo from "@/assets/wld-logo.png";
+import polygonIcon from "@/assets/polygon-icon.svg";
+import iotaHeaderPattern from "@/assets/iota-header-pattern.png";
 
 interface NFTDetailModalProps {
   nft: any;
   isOpen: boolean;
   onClose: () => void;
+  headerImage?: string;
 }
 
 // Helper to detect media type from URL
@@ -39,11 +42,9 @@ const getChainIcon = (chain: string, size: number = 16) => {
       return <img src={wldLogo} alt="World Chain" width={size} height={size} className={iconClass} />;
     case 'polygon':
     case 'matic':
-      return (
-        <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={iconClass}>
-          <circle cx="16" cy="16" r="16" fill="#8247E5" />
-        </svg>
-      );
+    case 'polygon-pos':
+    case 'polygon-mainnet':
+      return <img src={polygonIcon} alt="Polygon" width={size} height={size} className={iconClass} />;
     case 'base':
       return (
         <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={iconClass}>
@@ -55,7 +56,7 @@ const getChainIcon = (chain: string, size: number = 16) => {
   }
 };
 
-export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) => {
+export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -84,29 +85,33 @@ export const NFTDetailModal = ({ nft, isOpen, onClose }: NFTDetailModalProps) =>
       role="dialog"
       aria-modal="true"
     >
-      {/* Top bar with gold rounded back & close buttons — rendered via portal so it always sits above the global header */}
-      <div className="sticky top-0 z-[210] flex items-center justify-between px-4 py-3 bg-background/95 backdrop-blur-md border-b border-[#D4AF37]/20 pt-safe-area-inset-top">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Back"
-          className="w-10 h-10 rounded-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black flex items-center justify-center transition-all active:scale-95 shadow-md"
-        >
-          <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
-        </button>
-
-        <h1 className="text-base font-semibold text-foreground truncate px-3 max-w-[60%] text-center">
-          {nft.name || `NFT #${nft.identifier}`}
-        </h1>
-
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="w-10 h-10 rounded-full bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-black flex items-center justify-center transition-all active:scale-95 shadow-md"
-        >
-          <X className="w-5 h-5" strokeWidth={2.5} />
-        </button>
+      {/* Banner header — mirrors NFT collection overlay style */}
+      <div
+        className="sticky top-0 z-[210] w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+        style={{ backgroundImage: `url(${headerImage || iotaHeaderPattern})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+          <button
+            onClick={onClose}
+            aria-label="Back"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+          >
+            <ChevronDown className="w-4 h-4 text-black rotate-90" />
+          </button>
+          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
+            <h3 className="text-lg font-bold text-black dark:text-white truncate">
+              {nft.name || `NFT #${nft.identifier}`}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+          >
+            <X className="w-4 h-4 text-black" />
+          </button>
+        </div>
       </div>
 
       {/* Content */}
