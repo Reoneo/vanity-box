@@ -43,6 +43,9 @@ import ethPlusGold from '@/assets/eth-plus-gold.png';
 import ethPlusDark from '@/assets/eth-plus-dark.png';
 import ensCollectionLogo from '@/assets/ens-collection-logo.png';
 import basenamesCollectionLogo from '@/assets/basenames-collection-logo.png';
+import unstoppableCollectionLogo from '@/assets/unstoppable-collection-logo.png';
+import polygonIcon from '@/assets/polygon-icon.svg';
+import baseSquareBlue from '@/assets/base-square-blue.png';
 
 import { useDisplayName } from "@/hooks/useDisplayName";
 import { useWorldchainNFTs } from "@/hooks/useWorldchainNFTs";
@@ -1539,12 +1542,32 @@ export const ProfileCard = ({
     const n = (name || '').toLowerCase().trim();
     return n === 'basenames' || n === 'basename' || n === 'base names';
   };
+  const isUnstoppableCollection = (name: string) => {
+    const n = (name || '').toLowerCase().trim();
+    return n.includes('unstoppable');
+  };
+  const unstoppableChain = (name: string): 'base' | 'polygon' => {
+    const n = (name || '').toLowerCase();
+    return n.includes('base') ? 'base' : 'polygon';
+  };
   const renderCollectionLabel = (name: string, imgClassName = "h-5 w-auto inline-block align-middle"): React.ReactNode => {
     if (isEnsCollection(name)) {
       return <img src={ensCollectionLogo} alt="ENS" className={imgClassName} />;
     }
     if (isBasenamesCollection(name)) {
       return <img src={basenamesCollectionLogo} alt="Basenames" className={imgClassName} />;
+    }
+    if (isUnstoppableCollection(name)) {
+      const chain = unstoppableChain(name);
+      const chainIcon = chain === 'base'
+        ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 inline-block align-middle object-contain" style={{ borderRadius: 4 }} />
+        : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 inline-block align-middle rounded-full" />;
+      return (
+        <span className="inline-flex items-center gap-1.5 align-middle">
+          <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className={imgClassName} />
+          {chainIcon}
+        </span>
+      );
     }
     return formatCollectionName(name);
   };
