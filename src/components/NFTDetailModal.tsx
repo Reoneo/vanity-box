@@ -346,7 +346,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                   aria-label="View on Unstoppable Domains"
                   className="w-7 h-7 rounded-full bg-white border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity overflow-hidden"
                 >
-                  <img src={unstoppableUMark} alt="Unstoppable Domains" className="w-4 h-4 object-contain" />
+                  <img src={unstoppableUMark} alt="Unstoppable Domains" className="w-8 h-8 object-contain" />
                 </a>
                 {nft.opensea_url && (
                   <a
