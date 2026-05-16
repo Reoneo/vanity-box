@@ -324,11 +324,19 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
             )}
           </div>
 
-          {nft.description && (
+          {isEnsNft ? (
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
+              An Ethereum Name Service (ENS) domain is a decentralized, human-readable web3 username (e.g., alice.eth) built on the Ethereum blockchain. It functions like a digital phonebook, replacing long, complex cryptographic wallet addresses—such as 0x71C...B29—with a simple, memorable name.
+            </p>
+          ) : isBasenameNft ? (
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
+              Basenames are human-readable, decentralized domain names (e.g., username.base.eth) built on the Base Layer 2 network. They allow users to replace complex, hard-to-read hexadecimal wallet addresses with simple names.
+            </p>
+          ) : nft.description ? (
             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line break-words">
               {nft.description}
             </p>
-          )}
+          ) : null}
 
           {isEnsNft && (expiryDate || registrationDate) && (
             <div className="space-y-2 bg-muted/30 rounded-xl p-3 border border-[#D4AF37]/15">
