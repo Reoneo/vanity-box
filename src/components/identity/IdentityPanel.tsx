@@ -318,14 +318,20 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
       </div>
 
       {/* Modals */}
-      <PresentationModal
-        open={showPresentationModal}
-        onClose={() => setShowPresentationModal(false)}
-        vpJwt={lastVpJwt}
-        expiresAt={vpExpiresAt}
-        nonce={currentNonce}
-        onVerify={handleVerify}
-      />
+      {addUnverifiedChain && (
+        <AddUnverifiedWalletModal
+          open={!!addUnverifiedChain}
+          onClose={() => setAddUnverifiedChain(null)}
+          chain={addUnverifiedChain}
+          chainLabel={
+            addUnverifiedChain === 'ethereum' ? 'Ethereum'
+            : addUnverifiedChain === 'ton' ? 'TON'
+            : addUnverifiedChain === 'aptos' ? 'Aptos'
+            : 'Sui'
+          }
+          onSubmit={(addr) => addUnverified(addUnverifiedChain, addr)}
+        />
+      )}
       <LinkEthereumWalletModal
         open={showLinkEthModal}
         onClose={() => setShowLinkEthModal(false)}
