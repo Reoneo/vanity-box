@@ -1,55 +1,78 @@
-## The real problem
+## 1. Hide Presentation + Verify steps (Identity panel)
 
-Currently the share link includes `?avatar=...` because that's the only way the OG image edge function knows which avatar to render. The OG meta tags themselves are injected by `react-helmet-async` (`DynamicMetaTags.tsx`), which runs **client-side after JavaScript executes**.
+`src/components/identity/IdentityPanel.tsx`
+- Remove Step 3 (Create Presentation) and Step 4 (Verify) rows from the UI
+- Remove progress dots 3 + 4 (only DID + VC visible)
+- Strip `handleCreatePresentation`, `handleVerify`, `PresentationModal` mount, related state
+- Remove `onPresentCredential` button from `CredentialList` (no longer surface "Present")
+- Keep underlying context methods (other code paths may still use them) but no UI entrypoints
 
-Social-preview crawlers (X/Twitter, iMessage, Facebook, LinkedIn, Discord, Telegram, WhatsApp, Slack) **do not execute JavaScript**. They fetch the raw HTML at `vanity.box/smith.box` and see only the static tags in `index.html` — which point at the generic `vanity-meta-image.jpeg`. That is why your preview falls back to the brand image no matter what Helmet does.
+## 2. Manual (unverified) wallet linking — multi-wallet per chain
 
-The sites that "manage to do it" all do one of two things:
-1. Server-side render the per-profile HTML (Next.js, Remix, etc.)
-2. Sit behind an edge worker (Cloudflare Worker / Vercel edge) that detects crawler User-Agents and rewrites the `<meta>` tags before responding
+### Storage
+New localStorage layer keyed per `iotaName`:
+```
+vanity_unverified_wallets:<iotaName> = {
+  ethereum: string[], ton: string[], aptos: string[], sui: string[]
+}
+```
+Also tracked: verified wallets already come from `vcList` (multiple VCs of same type already supported — we'll just stop deduping).
 
-We're on Vite + React SPA, so option 1 isn't available without a stack change. Option 2 is — and the project already has `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, and `CLOUDFLARE_ACCOUNT_ID` secrets, meaning `vanity.box` is on Cloudflare.
+New hook: `src/hooks/useLinkedWallets.ts`
+- Returns `{ verified: {chain, address}[], unverified: {chain, address}[], isVerified(address) }`
+- Merges VC-issued addresses + localStorage unverified list
 
-## Plan
+### UI — Identity panel wallet sections
+For each chain section (ETH/TON/Aptos/Sui):
+- Existing "Link Wallet" CTA stays (verified path)
+- Add secondary CTA: "Add address manually" → opens small modal with address input + chain validation
+- Linked list now shows ALL wallets (multiple verified VCs + unverified) with badges:
+  - Verified: existing green ShieldCheck badge
+  - Unverified: amber `AlertTriangle` badge clickable → opens info popover
+- Each entry has its own unlink/remove control
+- Remove existing single-wallet guards that block adding a second VC
 
-### 1. Make the OG edge function self-sufficient
-Update `supabase/functions/og-image/index.ts` so it can be called with just `?username=smith.box` and resolves the avatar itself server-side (Web3.bio for `.eth`/`.box`/etc., IOTA indexer for `.iota`, UD API for `.vanity` / UD TLDs — mirroring the resolution logic already in `useProfileResolver`). Cache the rendered SVG for ~1h. This removes the need for `?avatar=...` in the share URL entirely.
+New component: `src/components/UnverifiedBadge.tsx`
+- Amber pill "Unverified" with tooltip + click → Dialog explaining "This wallet address was added manually. We have NOT verified ownership because it was not authenticated by connecting and signing with the wallet. Data shown for this address may not represent the profile owner."
 
-### 2. Deploy a Cloudflare Worker for OG injection
-Create a Worker bound to `vanity.box/*` that:
-- Inspects `User-Agent`. If it matches a known social-preview crawler (Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, TelegramBot, WhatsApp, Bingbot preview, Google snippet, iMessage/AppleBot, etc.), AND the path looks like a profile (`/<name>` with no static-asset extension), it:
-  1. Fetches the original `index.html` from the Lovable origin
-  2. Rewrites/injects per-profile `<title>`, `og:title`, `og:description`, `og:image`, `og:url`, `twitter:*`, and `canonical` — `og:image` points at the edge function from step 1 with just `?username=<name>`
-  3. Returns the modified HTML
-- For non-crawlers, passes the request straight through to the origin unchanged (no perf hit for users, SPA still works exactly as today).
+### Data-source plumbing (badges in profile UI)
+Touch points (provenance: which wallet each item came from):
+- Tokens: `src/components/ProfileCard.tsx` token renderer — add small `Unverified` chip next to items whose source wallet is in unverified set
+- NFTs: NFT grid renderer — same chip overlay on tile corner
+- Activity: transaction list rows — chip in row metadata
+- Social links (EFP / Farcaster / Talent / etc.): SocialIcon row — chip on card
+- Reputation (Talent, POAPs): ReputationModal / TalentProtocolCard — chip in header
 
-The Worker uses `HTMLRewriter` (native to Cloudflare Workers) so it's fast and streaming. No avatar fetching in the Worker itself — the OG image URL handles that lazily when the crawler requests the image.
+Strategy to avoid touching 20 fetch hooks:
+- All cross-chain data hooks already accept an address. Change `useProfileResolver` (or the profile assembly layer) to fetch the union of `verified ∪ unverified` addresses, tag each result with `__sourceAddress` + `__verified: boolean`, then merge.
+- Renderers read `item.__verified` and render `<UnverifiedBadge />` when false.
 
-### 3. Simplify the in-app share handler
-In `src/components/ProfileCard.tsx` `handleShareProfile`, drop the `?avatar=...` query string. The share URL becomes exactly `https://vanity.box/<identifier>`. Keep the `navigator.share({ files })` avatar-as-file fallback for native mobile share sheets (that's a separate UX win and not what crawlers use).
+I'll do this iteratively per data source — first tokens (most-requested), then NFTs, then activity/social/reputation in a second pass. Plan flags this so user knows pass 1 ≠ all sources.
 
-### 4. Clean up `DynamicMetaTags.tsx`
-Stop appending `&avatar=...&banner=...` to the og-image URL — call it with just `?username=...&displayName=...`. The function resolves the rest. This keeps the client-side Helmet behavior aligned with the Worker's crawler output so JS-executing crawlers (Googlebot) and non-JS crawlers see the same image.
+## 3. Edit-Profile modal: container-bound + i18n
 
-### Technical details
+`src/components/IotaProfileEditModal.tsx`
+- Replace full-viewport `Dialog` with positioning constrained to the profile container (same approach as NFT modal — absolute inside ProfileCard's `relative` wrapper, respects gold side borders)
+- Wrap every user-facing string in `t()` via existing `LanguageContext`
+- Add translation keys to language files for all labels/placeholders/buttons/section titles
 
-**Files touched in the repo:**
-- `supabase/functions/og-image/index.ts` — add server-side avatar resolution by username (Web3.bio + IOTA indexer + UD API), keep existing SVG renderer
-- `src/components/ProfileCard.tsx` — remove `?avatar=` from `handleShareProfile`'s `url`
-- `src/components/DynamicMetaTags.tsx` — stop forwarding `avatar`/`banner` to the og-image URL
+## 4. Order of work in this loop
 
-**Cloudflare Worker (new, deployed separately via Cloudflare API using the existing secrets):**
-- Single `fetch` handler, crawler UA regex, `HTMLRewriter` to swap meta tags, route bound to `vanity.box/*` and `www.vanity.box/*`
-- Excludes paths with file extensions (`.js`, `.css`, `.png`, `.svg`, `.ico`, etc.) and reserved routes (`/messages`, `/privacy`, `/terms`, etc.) so it only acts on profile URLs
+1. Hide VP/Verify (small, isolated)
+2. Edit modal container + i18n (medium, contained to one component)
+3. Unverified wallet linking — Identity panel + UnverifiedBadge + localStorage + tokens pass (the largest change)
 
-### What this does NOT do
-- It does not change the SPA's runtime behavior for real users
-- It does not require migrating off Vite/React
-- It does not break existing `?avatar=` links — the param is just ignored
+Activity/Social/Reputation badge plumbing will be flagged as a follow-up pass after pass 1 ships and you confirm the visual treatment.
 
-### One decision needed from you
-The Cloudflare Worker needs to be deployed to your Cloudflare account. I can:
-- **(a)** Write the Worker source + a deploy script that uses your existing `CLOUDFLARE_*` secrets and run it from an edge function, or
-- **(b)** Give you the Worker code and one-line `wrangler deploy` command for you to run locally
+## Files to create
+- `src/components/UnverifiedBadge.tsx`
+- `src/hooks/useLinkedWallets.ts`
+- `src/components/AddUnverifiedWalletModal.tsx`
 
-Tell me which you prefer and I'll implement.
+## Files to edit (pass 1)
+- `src/components/identity/IdentityPanel.tsx` (hide VP/Verify, add manual-add CTAs, allow multi-VC)
+- `src/components/identity/CredentialList.tsx` (drop Present button)
+- `src/components/IotaProfileEditModal.tsx` (container + i18n)
+- `src/contexts/LanguageContext.tsx` + locale files (new keys)
+- `src/components/ProfileCard.tsx` (token badge rendering, manual-wallet fetch merging)
+- Possibly `src/hooks/useProfileResolver.ts` (merge unverified addresses into asset fetches)
