@@ -2274,7 +2274,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={
-                      (isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
+                      (isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test(displayQuery || '') || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
                         ? (() => {
                             const built = makeIotaDisplayProfile({
                               base: web3BioProfile,
