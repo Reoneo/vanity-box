@@ -22,11 +22,11 @@ import {
 } from 'lucide-react';
 import { useIdentity, IdentityProvider } from '@/contexts/IdentityContext';
 import { CredentialList } from './CredentialList';
-import { VerificationResultCard } from './VerificationResultCard';
-import { PresentationModal } from './PresentationModal';
 import { LinkEthereumWalletModal } from '@/components/LinkEthereumWalletModal';
 import { PasskeyWalletModal } from '@/components/PasskeyWalletModal';
-import { generateNonce, calculateExpiry } from '@/lib/identity/vault';
+import { AddUnverifiedWalletModal } from '@/components/AddUnverifiedWalletModal';
+import { UnverifiedBadge } from '@/components/UnverifiedBadge';
+import { useLinkedWallets, type SupportedChain } from '@/hooks/useLinkedWallets';
 import { setLinkedDomain } from '@/lib/messaging/linkDomain';
 import { callEdge } from '@/lib/supaInvoke';
 import { cn } from '@/lib/utils';
