@@ -239,20 +239,20 @@ export function IotaProfileEditModal({
 
   return (
     <div
-      className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] z-[9999] flex items-stretch justify-center animate-fade-in"
+      className="fixed left-0 right-0 top-[80px] bottom-[120px] md:bottom-[140px] z-[9999] flex items-start justify-center px-3 pt-3 sm:pt-6 animate-fade-in pointer-events-none"
       role="dialog"
       aria-modal="true"
     >
       {/* Backdrop confined to profile container area */}
       <div
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-        onClick={onClose}
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm pointer-events-auto"
+        onClick={() => requestClose()}
       />
-      {/* Panel — fills the container, leaving the page's gold side borders visible */}
-      <div className="relative w-full h-full max-w-2xl bg-background border border-[#D4AF37]/40 shadow-2xl flex flex-col overflow-hidden">
+      {/* Panel — auto height, capped to container, leaving gold side borders + dock visible */}
+      <div className="relative w-full max-w-2xl max-h-full bg-background border border-[#D4AF37]/40 rounded-lg shadow-2xl flex flex-col overflow-hidden pointer-events-auto">
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => requestClose()}
           className="absolute right-3 top-3 z-10 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
           aria-label="Close"
         >
