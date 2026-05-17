@@ -2410,6 +2410,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               );
             })()}
 
+            {/* Helper: if the IOTA edit modal is open, prompt to save before navigating */}
+            {(() => { (window as any).__vanityIsEditOpen = showIotaEditModal; return null; })()}
+
             {/* Profile Dock - separate from profile container for proper z-index stacking */}
             {web3BioProfile && !showMyIDs && (
               <Dock
