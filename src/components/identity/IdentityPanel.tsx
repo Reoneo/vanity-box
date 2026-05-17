@@ -214,62 +214,8 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         {vcList.length > 0 && (
           <CredentialList
             credentials={vcList}
-            onPresentCredential={handleCreatePresentation}
             isLoading={isLoading}
           />
-        )}
-      </StepRow>
-
-      {/* Step 3: VP */}
-      <StepRow
-        label="Create Presentation"
-        complete={isStepComplete('vp')}
-        active={isStepActive('vp')}
-        expanded={expandedStep === 'vp'}
-        onToggle={() => setExpandedStep(expandedStep === 'vp' ? null : 'vp')}
-      >
-        {vcList.length > 0 && !lastVpJwt && (
-          <p className="text-xs text-muted-foreground">
-            Click "Present" on a credential above to create a VP
-          </p>
-        )}
-        {lastVpJwt && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPresentationModal(true)}
-            className="w-full border-primary/50 text-primary hover:bg-primary/10"
-          >
-            <FileCheck className="w-3.5 h-3.5 mr-1.5" />
-            View Presentation
-          </Button>
-        )}
-      </StepRow>
-
-      {/* Step 4: Verify */}
-      <StepRow
-        label="Verify Presentation"
-        complete={isStepComplete('verify')}
-        active={isStepActive('verify')}
-        expanded={expandedStep === 'verify'}
-        onToggle={() => setExpandedStep(expandedStep === 'verify' ? null : 'verify')}
-      >
-        {lastVpJwt && !verificationResult?.valid && (
-          <Button
-            onClick={handleVerify}
-            disabled={isLoading || !lastVpJwt}
-            size="sm"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-          >
-            {isLoading && currentStep === 'verify' ? (
-              <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Verifying...</>
-            ) : (
-              <>Verify Now <ChevronRight className="w-3.5 h-3.5 ml-1" /></>
-            )}
-          </Button>
-        )}
-        {verificationResult && (
-          <VerificationResultCard result={verificationResult} />
         )}
       </StepRow>
 
