@@ -2434,6 +2434,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     label: 'Home',
                     onClick: (e: React.MouseEvent) => {
                       e.stopPropagation();
+                      guard(() => {
                       setShowSearchBar(false);
                       setHadPreviousProfile(false); // Prevent useEffect from re-enabling search
                       setWeb3BioProfile(null);
@@ -2455,6 +2456,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       setShowDetailView(false);
                       setDetailViewResult(null);
                       navigate('/', { replace: false });
+                      });
                     },
                     isActive: false,
                   }] : []),
