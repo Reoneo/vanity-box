@@ -106,6 +106,42 @@ export function IotaProfileEditModal({
     setLastSaveResult(null);
     vanityVerification.reset();
   }, [currentProfile, open]);
+
+  // Track dirty state by comparing current snapshot against the profile baseline
+  const baseline = useMemo(() => JSON.stringify({
+    avatarUrl: currentProfile?.avatarUrl || '',
+    headerUrl: currentProfile?.headerUrl || '',
+    bio: currentProfile?.bio || '',
+    email: currentProfile?.email || '',
+    website: currentProfile?.website || '',
+    links: currentProfile?.links || [],
+  }), [currentProfile]);
+  const current = JSON.stringify({ avatarUrl, headerUrl, bio, email, website, links });
+  const isDirty = baseline !== current;
+
+  // Pending close action — when set, an unsaved-changes prompt is shown
+  const [pendingClose, setPendingClose] = useState<null | (() => void)>(null);
+
+  const requestClose = (proceed?: () => void) => {
+    const after = proceed || (() => {});
+    if (!isDirty) {
+      onClose();
+      after();
+      return;
+    }
+    setPendingClose(() => after);
+  };
+
+  // Expose to outside callers (e.g. Dock buttons) so they can prompt before navigating
+  useEffect(() => {
+    if (!open) return;
+    (window as any).__vanityRequestCloseEdit = (proceed: () => void) => requestClose(proceed);
+    return () => {
+      if ((window as any).__vanityRequestCloseEdit) {
+        delete (window as any).__vanityRequestCloseEdit;
+      }
+    };
+  }, [open, isDirty]);
   
   const handleAddLink = () => {
     const usedPlatforms = new Set(links.map(l => l.platform));
