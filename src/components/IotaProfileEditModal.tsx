@@ -217,9 +217,11 @@ export function IotaProfileEditModal({
       
       toast.success('Profile saved to IPFS & notarized on IOTA!');
       onProfileUpdated();
+      return true;
     } catch (error: any) {
       console.error('Save error:', error);
       toast.error(error.message || 'Failed to save profile');
+      return false;
     } finally {
       setIsPending(false);
     }
@@ -228,10 +230,10 @@ export function IotaProfileEditModal({
   // Escape to close
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') requestClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, isDirty]);
 
   if (!open) return null;
 
