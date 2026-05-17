@@ -22,11 +22,11 @@ import {
 } from 'lucide-react';
 import { useIdentity, IdentityProvider } from '@/contexts/IdentityContext';
 import { CredentialList } from './CredentialList';
-import { VerificationResultCard } from './VerificationResultCard';
-import { PresentationModal } from './PresentationModal';
 import { LinkEthereumWalletModal } from '@/components/LinkEthereumWalletModal';
 import { PasskeyWalletModal } from '@/components/PasskeyWalletModal';
-import { generateNonce, calculateExpiry } from '@/lib/identity/vault';
+import { AddUnverifiedWalletModal } from '@/components/AddUnverifiedWalletModal';
+import { UnverifiedBadge } from '@/components/UnverifiedBadge';
+import { useLinkedWallets, type SupportedChain } from '@/hooks/useLinkedWallets';
 import { setLinkedDomain } from '@/lib/messaging/linkDomain';
 import { callEdge } from '@/lib/supaInvoke';
 import { cn } from '@/lib/utils';
@@ -52,13 +52,12 @@ interface IdentityPanelContentProps {
   iotaName: string;
 }
 
-type StepKey = 'did' | 'vc' | 'vp' | 'verify';
+type StepKey = 'did' | 'vc';
 
 function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const {
     holderDid,
     vcList,
-    lastVpJwt,
     verificationResult,
     isLoading,
     error,
@@ -66,30 +65,27 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     isInitialized,
     createDid,
     requestOwnershipCredential,
-    createPresentationFromCredential,
-    verifyPresentation,
     clearIdentity,
     addExternalCredential,
     removeCredentialByType,
     setStep,
   } = useIdentity();
 
-  const [showPresentationModal, setShowPresentationModal] = useState(false);
   const [showLinkEthModal, setShowLinkEthModal] = useState(false);
   const [showPasskeyModal, setShowPasskeyModal] = useState(false);
-  const [currentNonce, setCurrentNonce] = useState<string>('');
-  const [vpExpiresAt, setVpExpiresAt] = useState<string>('');
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   // Wallet link section expansion state
   const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | null>(null);
 
+  // Manual-address (unverified) link state
+  const { unverified, add: addUnverified, remove: removeUnverified } = useLinkedWallets(iotaName);
+  const [addUnverifiedChain, setAddUnverifiedChain] = useState<SupportedChain | null>(null);
+
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
       case 'did': return !!holderDid;
       case 'vc': return vcList.length > 0;
-      case 'vp': return !!lastVpJwt;
-      case 'verify': return !!verificationResult?.valid;
     }
   };
 
@@ -97,34 +93,15 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     switch (step) {
       case 'did': return currentStep === 'did' && !holderDid;
       case 'vc': return currentStep === 'vc' && !!holderDid;
-      case 'vp': return currentStep === 'vp' && vcList.length > 0;
-      case 'verify': return currentStep === 'verify' && !!lastVpJwt;
     }
   };
 
-  const handleCreatePresentation = async (vcJwt: string) => {
-    const nonce = generateNonce();
-    setCurrentNonce(nonce);
-    setVpExpiresAt(calculateExpiry(600));
-    
-    const vpJwt = await createPresentationFromCredential(vcJwt, nonce);
-    if (vpJwt) {
-      setShowPresentationModal(true);
-    }
-  };
-
-  const handleVerify = async () => {
-    if (lastVpJwt) {
-      await verifyPresentation(lastVpJwt);
-    }
-  };
-
-  // Auto-link domain for messaging after successful VP verification
+  // Auto-link domain for messaging after VC issuance (replaces old post-verify hook)
   useEffect(() => {
-    if (verificationResult?.valid && iotaName) {
+    if (vcList.length > 0 && iotaName) {
       setLinkedDomain(iotaName);
     }
-  }, [verificationResult?.valid, iotaName]);
+  }, [vcList.length, iotaName]);
 
   // Get linked wallets from vcList
   const ethVcs = vcList.filter(vc => vc.type === 'EthereumWalletOwnershipCredential');
@@ -144,8 +121,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const steps: { key: StepKey; label: string; num: number }[] = [
     { key: 'did', label: 'Create DID', num: 1 },
     { key: 'vc', label: 'Request Credential', num: 2 },
-    { key: 'vp', label: 'Create Presentation', num: 3 },
-    { key: 'verify', label: 'Verify', num: 4 },
   ];
 
   return (
@@ -239,62 +214,8 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
         {vcList.length > 0 && (
           <CredentialList
             credentials={vcList}
-            onPresentCredential={handleCreatePresentation}
             isLoading={isLoading}
           />
-        )}
-      </StepRow>
-
-      {/* Step 3: VP */}
-      <StepRow
-        label="Create Presentation"
-        complete={isStepComplete('vp')}
-        active={isStepActive('vp')}
-        expanded={expandedStep === 'vp'}
-        onToggle={() => setExpandedStep(expandedStep === 'vp' ? null : 'vp')}
-      >
-        {vcList.length > 0 && !lastVpJwt && (
-          <p className="text-xs text-muted-foreground">
-            Click "Present" on a credential above to create a VP
-          </p>
-        )}
-        {lastVpJwt && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPresentationModal(true)}
-            className="w-full border-primary/50 text-primary hover:bg-primary/10"
-          >
-            <FileCheck className="w-3.5 h-3.5 mr-1.5" />
-            View Presentation
-          </Button>
-        )}
-      </StepRow>
-
-      {/* Step 4: Verify */}
-      <StepRow
-        label="Verify Presentation"
-        complete={isStepComplete('verify')}
-        active={isStepActive('verify')}
-        expanded={expandedStep === 'verify'}
-        onToggle={() => setExpandedStep(expandedStep === 'verify' ? null : 'verify')}
-      >
-        {lastVpJwt && !verificationResult?.valid && (
-          <Button
-            onClick={handleVerify}
-            disabled={isLoading || !lastVpJwt}
-            size="sm"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-          >
-            {isLoading && currentStep === 'verify' ? (
-              <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Verifying...</>
-            ) : (
-              <>Verify Now <ChevronRight className="w-3.5 h-3.5 ml-1" /></>
-            )}
-          </Button>
-        )}
-        {verificationResult && (
-          <VerificationResultCard result={verificationResult} />
         )}
       </StepRow>
 
@@ -310,6 +231,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             onToggle={() => setExpandedWallet(expandedWallet === 'eth' ? null : 'eth')}
             linkedVcs={ethVcs}
             badgeLabel="ETH"
+            unverifiedAddresses={unverified.ethereum}
+            onAddUnverified={() => setAddUnverifiedChain('ethereum')}
+            onRemoveUnverified={(a) => removeUnverified('ethereum', a)}
           >
             <Button
               size="sm"
@@ -329,6 +253,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             expanded={expandedWallet === 'ton'}
             onToggle={() => setExpandedWallet(expandedWallet === 'ton' ? null : 'ton')}
             addExternalCredential={addExternalCredential}
+            unverifiedAddresses={unverified.ton}
+            onAddUnverified={() => setAddUnverifiedChain('ton')}
+            onRemoveUnverified={(a) => removeUnverified('ton', a)}
           />
 
           {/* Link Aptos Wallet — gated on Aptos Connect dappId */}
@@ -340,6 +267,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
               expanded={expandedWallet === 'aptos'}
               onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
               addExternalCredential={addExternalCredential}
+              unverifiedAddresses={unverified.aptos}
+              onAddUnverified={() => setAddUnverifiedChain('aptos')}
+              onRemoveUnverified={(a) => removeUnverified('aptos', a)}
             />
           )}
 
@@ -359,6 +289,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             expanded={expandedWallet === 'sui'}
             onToggle={() => setExpandedWallet(expandedWallet === 'sui' ? null : 'sui')}
             addExternalCredential={addExternalCredential}
+            unverifiedAddresses={unverified.sui}
+            onAddUnverified={() => setAddUnverifiedChain('sui')}
+            onRemoveUnverified={(a) => removeUnverified('sui', a)}
           />
 
           {/* Passkey Wallet */}
@@ -397,14 +330,20 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
       </div>
 
       {/* Modals */}
-      <PresentationModal
-        open={showPresentationModal}
-        onClose={() => setShowPresentationModal(false)}
-        vpJwt={lastVpJwt}
-        expiresAt={vpExpiresAt}
-        nonce={currentNonce}
-        onVerify={handleVerify}
-      />
+      {addUnverifiedChain && (
+        <AddUnverifiedWalletModal
+          open={!!addUnverifiedChain}
+          onClose={() => setAddUnverifiedChain(null)}
+          chain={addUnverifiedChain}
+          chainLabel={
+            addUnverifiedChain === 'ethereum' ? 'Ethereum'
+            : addUnverifiedChain === 'ton' ? 'TON'
+            : addUnverifiedChain === 'aptos' ? 'Aptos'
+            : 'Sui'
+          }
+          onSubmit={(addr) => addUnverified(addUnverifiedChain, addr)}
+        />
+      )}
       <LinkEthereumWalletModal
         open={showLinkEthModal}
         onClose={() => setShowLinkEthModal(false)}
@@ -460,6 +399,9 @@ function WalletLinkSection({
   onToggle,
   linkedVcs,
   badgeLabel,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
   children,
 }: {
   label: string;
@@ -469,8 +411,12 @@ function WalletLinkSection({
   onToggle: () => void;
   linkedVcs: VerifiableCredential[];
   badgeLabel: string;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
   children: React.ReactNode;
 }) {
+  const totalCount = linkedVcs.length + (unverifiedAddresses?.length || 0);
   return (
     <div className="rounded-lg border border-border bg-muted/5">
       <button
@@ -485,9 +431,9 @@ function WalletLinkSection({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {linkedVcs.length > 0 && (
+          {totalCount > 0 && (
             <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-              {linkedVcs.length} linked
+              {totalCount} linked
             </Badge>
           )}
           <ChevronDown className={cn(
@@ -498,15 +444,44 @@ function WalletLinkSection({
       </button>
       {expanded && (
         <div className="px-3 pb-3 space-y-2">
-          {/* Show linked addresses */}
+          {/* Verified linked addresses */}
           {linkedVcs.map((vc, i) => (
-            <div key={i} className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-muted/30 border border-border">
+            <div key={`v-${i}`} className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-muted/30 border border-border">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
               <span className="text-xs font-mono truncate flex-1">{vc.claims.address}</span>
               <Badge variant="outline" className="text-[10px]">{badgeLabel}</Badge>
             </div>
           ))}
+          {/* Unverified manual addresses */}
+          {(unverifiedAddresses || []).map((addr) => (
+            <div key={`u-${addr}`} className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-amber-500/5 border border-amber-500/30">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <span className="text-xs font-mono truncate flex-1">{addr}</span>
+              <UnverifiedBadge address={addr} />
+              {onRemoveUnverified && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveUnverified(addr)}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Remove"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ))}
           {children}
+          {onAddUnverified && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAddUnverified}
+              className="w-full border-dashed border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Add address manually (unverified)
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -522,6 +497,9 @@ function TonWalletLinkSection({
   expanded,
   onToggle,
   addExternalCredential,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
 }: {
   iotaName: string;
   holderDid: string;
@@ -529,6 +507,9 @@ function TonWalletLinkSection({
   expanded: boolean;
   onToggle: () => void;
   addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
 }) {
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
@@ -656,6 +637,9 @@ function TonWalletLinkSection({
       onToggle={onToggle}
       linkedVcs={linkedVcs}
       badgeLabel="TON"
+      unverifiedAddresses={unverifiedAddresses}
+      onAddUnverified={onAddUnverified}
+      onRemoveUnverified={onRemoveUnverified}
     >
       {step === 'done' ? (
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
@@ -699,6 +683,9 @@ function AptosWalletLinkSection({
   expanded,
   onToggle,
   addExternalCredential,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
 }: {
   iotaName: string;
   holderDid: string;
@@ -706,6 +693,9 @@ function AptosWalletLinkSection({
   expanded: boolean;
   onToggle: () => void;
   addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
 }) {
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
@@ -937,6 +927,9 @@ function AptosWalletLinkSection({
       onToggle={onToggle}
       linkedVcs={linkedVcs}
       badgeLabel="APT"
+      unverifiedAddresses={unverifiedAddresses}
+      onAddUnverified={onAddUnverified}
+      onRemoveUnverified={onRemoveUnverified}
     >
       {step === 'done' ? (
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
@@ -1090,6 +1083,9 @@ function SuiWalletLinkSection({
   expanded,
   onToggle,
   addExternalCredential,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
 }: {
   iotaName: string;
   holderDid: string;
@@ -1097,6 +1093,9 @@ function SuiWalletLinkSection({
   expanded: boolean;
   onToggle: () => void;
   addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
 }) {
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
@@ -1194,6 +1193,9 @@ function SuiWalletLinkSection({
       onToggle={onToggle}
       linkedVcs={linkedVcs}
       badgeLabel="SUI"
+      unverifiedAddresses={unverifiedAddresses}
+      onAddUnverified={onAddUnverified}
+      onRemoveUnverified={onRemoveUnverified}
     >
       {step === 'done' ? (
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">

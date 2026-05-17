@@ -11,7 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface CredentialListProps {
   credentials: VerifiableCredential[];
-  onPresentCredential: (vcJwt: string) => void;
+  onPresentCredential?: (vcJwt: string) => void;
   isLoading?: boolean;
   selectedVcJwt?: string | null;
 }
@@ -69,16 +69,18 @@ export function CredentialList({
                   </div>
                 </div>
 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onPresentCredential(vc.vcJwt)}
-                  disabled={isLoading}
-                  className="flex-shrink-0 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10"
-                >
-                  Present
-                  <ChevronRight className="w-3 h-3 ml-1" />
-                </Button>
+                {onPresentCredential && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onPresentCredential(vc.vcJwt)}
+                    disabled={isLoading}
+                    className="flex-shrink-0 border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                  >
+                    Present
+                    <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
