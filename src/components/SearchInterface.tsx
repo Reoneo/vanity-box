@@ -2534,7 +2534,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     },
                     isActive: showSearchBar,
                   },
-                ]}
+                  ];
+                })()}
               />
             )}
 
