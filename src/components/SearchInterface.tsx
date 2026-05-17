@@ -116,6 +116,18 @@ import { makeIotaDisplayProfile } from "@/lib/iota/iotaDisplayProfile";
 import { setLinkedDomain } from "@/lib/messaging/linkDomain";
 import { loadVaultFromStorage } from "@/lib/identity/vault";
 
+  // Auto-load IPFS profile for NON-.iota profiles (e.g. smith.box) under the connected IOTA wallet key
+  useEffect(() => {
+    if (!web3BioProfile || isIotaName(displayQuery)) return;
+    if (connectedWalletType !== 'iota' || !walletAddress) return;
+    let cancelled = false;
+    import('@/lib/iota/vanityProfile').then(({ fetchProfileFromIPFS }) =>
+      fetchProfileFromIPFS(walletAddress).then(({ profile }) => {
+        if (!cancelled && profile) setIotaOnchainProfile(profile as any);
+      }).catch(() => {})
+    );
+    return () => { cancelled = true; };
+  }, [web3BioProfile?.identity, displayQuery, connectedWalletType, walletAddress]);
 
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { LoadingProgress } from "@/components/LoadingProgress";
