@@ -583,7 +583,7 @@ export function IotaProfileEditModal({
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
