@@ -497,6 +497,9 @@ function TonWalletLinkSection({
   expanded,
   onToggle,
   addExternalCredential,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
 }: {
   iotaName: string;
   holderDid: string;
@@ -504,6 +507,9 @@ function TonWalletLinkSection({
   expanded: boolean;
   onToggle: () => void;
   addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
 }) {
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
@@ -631,6 +637,9 @@ function TonWalletLinkSection({
       onToggle={onToggle}
       linkedVcs={linkedVcs}
       badgeLabel="TON"
+      unverifiedAddresses={unverifiedAddresses}
+      onAddUnverified={onAddUnverified}
+      onRemoveUnverified={onRemoveUnverified}
     >
       {step === 'done' ? (
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
@@ -674,6 +683,9 @@ function AptosWalletLinkSection({
   expanded,
   onToggle,
   addExternalCredential,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
 }: {
   iotaName: string;
   holderDid: string;
@@ -681,6 +693,9 @@ function AptosWalletLinkSection({
   expanded: boolean;
   onToggle: () => void;
   addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
 }) {
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
@@ -912,6 +927,9 @@ function AptosWalletLinkSection({
       onToggle={onToggle}
       linkedVcs={linkedVcs}
       badgeLabel="APT"
+      unverifiedAddresses={unverifiedAddresses}
+      onAddUnverified={onAddUnverified}
+      onRemoveUnverified={onRemoveUnverified}
     >
       {step === 'done' ? (
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
@@ -1065,6 +1083,9 @@ function SuiWalletLinkSection({
   expanded,
   onToggle,
   addExternalCredential,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
 }: {
   iotaName: string;
   holderDid: string;
@@ -1072,6 +1093,9 @@ function SuiWalletLinkSection({
   expanded: boolean;
   onToggle: () => void;
   addExternalCredential: (vc: VerifiableCredential) => Promise<void>;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
 }) {
   const [isLinking, setIsLinking] = useState(false);
   const [step, setStep] = useState<'idle' | 'connecting' | 'signing' | 'issuing' | 'done' | 'error'>('idle');
@@ -1169,6 +1193,9 @@ function SuiWalletLinkSection({
       onToggle={onToggle}
       linkedVcs={linkedVcs}
       badgeLabel="SUI"
+      unverifiedAddresses={unverifiedAddresses}
+      onAddUnverified={onAddUnverified}
+      onRemoveUnverified={onRemoveUnverified}
     >
       {step === 'done' ? (
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
