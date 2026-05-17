@@ -602,7 +602,7 @@ export function IotaProfileEditModal({
             
             {/* Sticky Profile Footer */}
             <div className="flex justify-end gap-3 p-6 pt-4 border-t bg-background flex-shrink-0">
-              <Button variant="outline" onClick={onClose} disabled={isPending}>
+              <Button variant="outline" onClick={() => requestClose()} disabled={isPending}>
                 Cancel
               </Button>
               <Button 
@@ -632,6 +632,47 @@ export function IotaProfileEditModal({
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Unsaved changes prompt */}
+      <AlertDialog open={!!pendingClose} onOpenChange={(o) => { if (!o) setPendingClose(null); }}>
+        <AlertDialogContent className="z-[10000]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes before closing?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved profile edits. Save them to IPFS, discard, or keep editing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel onClick={() => setPendingClose(null)}>Keep editing</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const after = pendingClose;
+                setPendingClose(null);
+                onClose();
+                after?.();
+              }}
+            >
+              Discard
+            </Button>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                const after = pendingClose;
+                const ok = await handleSave();
+                if (ok !== false) {
+                  setPendingClose(null);
+                  onClose();
+                  after?.();
+                }
+              }}
+              disabled={isPending}
+            >
+              {isPending ? 'Saving…' : 'Save & close'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
