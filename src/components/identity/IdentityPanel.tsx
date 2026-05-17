@@ -387,6 +387,9 @@ function WalletLinkSection({
   onToggle,
   linkedVcs,
   badgeLabel,
+  unverifiedAddresses,
+  onAddUnverified,
+  onRemoveUnverified,
   children,
 }: {
   label: string;
@@ -396,8 +399,12 @@ function WalletLinkSection({
   onToggle: () => void;
   linkedVcs: VerifiableCredential[];
   badgeLabel: string;
+  unverifiedAddresses?: string[];
+  onAddUnverified?: () => void;
+  onRemoveUnverified?: (address: string) => void;
   children: React.ReactNode;
 }) {
+  const totalCount = linkedVcs.length + (unverifiedAddresses?.length || 0);
   return (
     <div className="rounded-lg border border-border bg-muted/5">
       <button
@@ -412,9 +419,9 @@ function WalletLinkSection({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {linkedVcs.length > 0 && (
+          {totalCount > 0 && (
             <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-              {linkedVcs.length} linked
+              {totalCount} linked
             </Badge>
           )}
           <ChevronDown className={cn(
@@ -425,15 +432,44 @@ function WalletLinkSection({
       </button>
       {expanded && (
         <div className="px-3 pb-3 space-y-2">
-          {/* Show linked addresses */}
+          {/* Verified linked addresses */}
           {linkedVcs.map((vc, i) => (
-            <div key={i} className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-muted/30 border border-border">
+            <div key={`v-${i}`} className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-muted/30 border border-border">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
               <span className="text-xs font-mono truncate flex-1">{vc.claims.address}</span>
               <Badge variant="outline" className="text-[10px]">{badgeLabel}</Badge>
             </div>
           ))}
+          {/* Unverified manual addresses */}
+          {(unverifiedAddresses || []).map((addr) => (
+            <div key={`u-${addr}`} className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-amber-500/5 border border-amber-500/30">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <span className="text-xs font-mono truncate flex-1">{addr}</span>
+              <UnverifiedBadge address={addr} />
+              {onRemoveUnverified && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveUnverified(addr)}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Remove"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ))}
           {children}
+          {onAddUnverified && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAddUnverified}
+              className="w-full border-dashed border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Add address manually (unverified)
+            </Button>
+          )}
         </div>
       )}
     </div>
