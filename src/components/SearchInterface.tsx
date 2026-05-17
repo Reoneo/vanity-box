@@ -546,6 +546,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address, linkedEvmAddress, efpStats, displayQuery]);
 
+  // Auto-load IPFS profile for NON-.iota profiles (e.g. smith.box) under the connected IOTA wallet key
+  useEffect(() => {
+    if (!web3BioProfile || isIotaName(displayQuery)) return;
+    if (connectedWalletType !== 'iota' || !walletAddress) return;
+    let cancelled = false;
+    import('@/lib/iota/vanityProfile').then(({ fetchProfileFromIPFS }) =>
+      fetchProfileFromIPFS(walletAddress).then(({ profile }) => {
+        if (!cancelled && profile) setIotaOnchainProfile(profile as any);
+      }).catch(() => {})
+    );
+    return () => { cancelled = true; };
+  }, [web3BioProfile?.identity, displayQuery, connectedWalletType, walletAddress]);
+
   // Resolve linked EVM address for .iota profiles
   // Priority: 1) localStorage 2) encrypted vault (owner) 3) DB via edge function (public viewers)
   useEffect(() => {
