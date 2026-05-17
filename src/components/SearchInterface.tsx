@@ -2531,8 +2531,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Search',
                     onClick: () => {
-                      // Toggle modal search overlay
-                      setShowSearchBar(prev => !prev);
+                      guard(() => setShowSearchBar(prev => !prev));
                     },
                     isActive: showSearchBar,
                   },
