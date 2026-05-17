@@ -52,13 +52,12 @@ interface IdentityPanelContentProps {
   iotaName: string;
 }
 
-type StepKey = 'did' | 'vc' | 'vp' | 'verify';
+type StepKey = 'did' | 'vc';
 
 function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const {
     holderDid,
     vcList,
-    lastVpJwt,
     verificationResult,
     isLoading,
     error,
@@ -66,30 +65,27 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     isInitialized,
     createDid,
     requestOwnershipCredential,
-    createPresentationFromCredential,
-    verifyPresentation,
     clearIdentity,
     addExternalCredential,
     removeCredentialByType,
     setStep,
   } = useIdentity();
 
-  const [showPresentationModal, setShowPresentationModal] = useState(false);
   const [showLinkEthModal, setShowLinkEthModal] = useState(false);
   const [showPasskeyModal, setShowPasskeyModal] = useState(false);
-  const [currentNonce, setCurrentNonce] = useState<string>('');
-  const [vpExpiresAt, setVpExpiresAt] = useState<string>('');
   const [expandedStep, setExpandedStep] = useState<StepKey | null>(null);
 
   // Wallet link section expansion state
   const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | null>(null);
 
+  // Manual-address (unverified) link state
+  const { unverified, add: addUnverified, remove: removeUnverified } = useLinkedWallets(iotaName);
+  const [addUnverifiedChain, setAddUnverifiedChain] = useState<SupportedChain | null>(null);
+
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
       case 'did': return !!holderDid;
       case 'vc': return vcList.length > 0;
-      case 'vp': return !!lastVpJwt;
-      case 'verify': return !!verificationResult?.valid;
     }
   };
 
@@ -97,34 +93,15 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
     switch (step) {
       case 'did': return currentStep === 'did' && !holderDid;
       case 'vc': return currentStep === 'vc' && !!holderDid;
-      case 'vp': return currentStep === 'vp' && vcList.length > 0;
-      case 'verify': return currentStep === 'verify' && !!lastVpJwt;
     }
   };
 
-  const handleCreatePresentation = async (vcJwt: string) => {
-    const nonce = generateNonce();
-    setCurrentNonce(nonce);
-    setVpExpiresAt(calculateExpiry(600));
-    
-    const vpJwt = await createPresentationFromCredential(vcJwt, nonce);
-    if (vpJwt) {
-      setShowPresentationModal(true);
-    }
-  };
-
-  const handleVerify = async () => {
-    if (lastVpJwt) {
-      await verifyPresentation(lastVpJwt);
-    }
-  };
-
-  // Auto-link domain for messaging after successful VP verification
+  // Auto-link domain for messaging after VC issuance (replaces old post-verify hook)
   useEffect(() => {
-    if (verificationResult?.valid && iotaName) {
+    if (vcList.length > 0 && iotaName) {
       setLinkedDomain(iotaName);
     }
-  }, [verificationResult?.valid, iotaName]);
+  }, [vcList.length, iotaName]);
 
   // Get linked wallets from vcList
   const ethVcs = vcList.filter(vc => vc.type === 'EthereumWalletOwnershipCredential');
@@ -144,8 +121,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   const steps: { key: StepKey; label: string; num: number }[] = [
     { key: 'did', label: 'Create DID', num: 1 },
     { key: 'vc', label: 'Request Credential', num: 2 },
-    { key: 'vp', label: 'Create Presentation', num: 3 },
-    { key: 'verify', label: 'Verify', num: 4 },
   ];
 
   return (
