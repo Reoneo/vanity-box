@@ -231,6 +231,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             onToggle={() => setExpandedWallet(expandedWallet === 'eth' ? null : 'eth')}
             linkedVcs={ethVcs}
             badgeLabel="ETH"
+            unverifiedAddresses={unverified.ethereum}
+            onAddUnverified={() => setAddUnverifiedChain('ethereum')}
+            onRemoveUnverified={(a) => removeUnverified('ethereum', a)}
           >
             <Button
               size="sm"
@@ -250,6 +253,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             expanded={expandedWallet === 'ton'}
             onToggle={() => setExpandedWallet(expandedWallet === 'ton' ? null : 'ton')}
             addExternalCredential={addExternalCredential}
+            unverifiedAddresses={unverified.ton}
+            onAddUnverified={() => setAddUnverifiedChain('ton')}
+            onRemoveUnverified={(a) => removeUnverified('ton', a)}
           />
 
           {/* Link Aptos Wallet — gated on Aptos Connect dappId */}
@@ -261,6 +267,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
               expanded={expandedWallet === 'aptos'}
               onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
               addExternalCredential={addExternalCredential}
+              unverifiedAddresses={unverified.aptos}
+              onAddUnverified={() => setAddUnverifiedChain('aptos')}
+              onRemoveUnverified={(a) => removeUnverified('aptos', a)}
             />
           )}
 
@@ -280,6 +289,9 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             expanded={expandedWallet === 'sui'}
             onToggle={() => setExpandedWallet(expandedWallet === 'sui' ? null : 'sui')}
             addExternalCredential={addExternalCredential}
+            unverifiedAddresses={unverified.sui}
+            onAddUnverified={() => setAddUnverifiedChain('sui')}
+            onRemoveUnverified={(a) => removeUnverified('sui', a)}
           />
 
           {/* Passkey Wallet */}
