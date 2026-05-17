@@ -1,5 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -96,6 +106,42 @@ export function IotaProfileEditModal({
     setLastSaveResult(null);
     vanityVerification.reset();
   }, [currentProfile, open]);
+
+  // Track dirty state by comparing current snapshot against the profile baseline
+  const baseline = useMemo(() => JSON.stringify({
+    avatarUrl: currentProfile?.avatarUrl || '',
+    headerUrl: currentProfile?.headerUrl || '',
+    bio: currentProfile?.bio || '',
+    email: currentProfile?.email || '',
+    website: currentProfile?.website || '',
+    links: currentProfile?.links || [],
+  }), [currentProfile]);
+  const current = JSON.stringify({ avatarUrl, headerUrl, bio, email, website, links });
+  const isDirty = baseline !== current;
+
+  // Pending close action — when set, an unsaved-changes prompt is shown
+  const [pendingClose, setPendingClose] = useState<null | (() => void)>(null);
+
+  const requestClose = (proceed?: () => void) => {
+    const after = proceed || (() => {});
+    if (!isDirty) {
+      onClose();
+      after();
+      return;
+    }
+    setPendingClose(() => after);
+  };
+
+  // Expose to outside callers (e.g. Dock buttons) so they can prompt before navigating
+  useEffect(() => {
+    if (!open) return;
+    (window as any).__vanityRequestCloseEdit = (proceed: () => void) => requestClose(proceed);
+    return () => {
+      if ((window as any).__vanityRequestCloseEdit) {
+        delete (window as any).__vanityRequestCloseEdit;
+      }
+    };
+  }, [open, isDirty]);
   
   const handleAddLink = () => {
     const usedPlatforms = new Set(links.map(l => l.platform));
@@ -171,9 +217,11 @@ export function IotaProfileEditModal({
       
       toast.success('Profile saved to IPFS & notarized on IOTA!');
       onProfileUpdated();
+      return true;
     } catch (error: any) {
       console.error('Save error:', error);
       toast.error(error.message || 'Failed to save profile');
+      return false;
     } finally {
       setIsPending(false);
     }
@@ -182,29 +230,29 @@ export function IotaProfileEditModal({
   // Escape to close
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') requestClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, isDirty]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] z-[9999] flex items-stretch justify-center animate-fade-in"
+      className="fixed left-0 right-0 top-[80px] bottom-[120px] md:bottom-[140px] z-[9999] flex items-start justify-center px-3 pt-3 sm:pt-6 animate-fade-in pointer-events-none"
       role="dialog"
       aria-modal="true"
     >
       {/* Backdrop confined to profile container area */}
       <div
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-        onClick={onClose}
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm pointer-events-auto"
+        onClick={() => requestClose()}
       />
-      {/* Panel — fills the container, leaving the page's gold side borders visible */}
-      <div className="relative w-full h-full max-w-2xl bg-background border border-[#D4AF37]/40 shadow-2xl flex flex-col overflow-hidden">
+      {/* Panel — auto height, capped to container, leaving gold side borders + dock visible */}
+      <div className="relative w-full max-w-2xl max-h-full bg-background border border-[#D4AF37]/40 rounded-lg shadow-2xl flex flex-col overflow-hidden pointer-events-auto">
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => requestClose()}
           className="absolute right-3 top-3 z-10 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
           aria-label="Close"
         >
@@ -554,7 +602,7 @@ export function IotaProfileEditModal({
             
             {/* Sticky Profile Footer */}
             <div className="flex justify-end gap-3 p-6 pt-4 border-t bg-background flex-shrink-0">
-              <Button variant="outline" onClick={onClose} disabled={isPending}>
+              <Button variant="outline" onClick={() => requestClose()} disabled={isPending}>
                 Cancel
               </Button>
               <Button 
@@ -584,6 +632,47 @@ export function IotaProfileEditModal({
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Unsaved changes prompt */}
+      <AlertDialog open={!!pendingClose} onOpenChange={(o) => { if (!o) setPendingClose(null); }}>
+        <AlertDialogContent className="z-[10000]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes before closing?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved profile edits. Save them to IPFS, discard, or keep editing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel onClick={() => setPendingClose(null)}>Keep editing</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const after = pendingClose;
+                setPendingClose(null);
+                onClose();
+                after?.();
+              }}
+            >
+              Discard
+            </Button>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                const after = pendingClose;
+                const ok = await handleSave();
+                if (ok !== false) {
+                  setPendingClose(null);
+                  onClose();
+                  after?.();
+                }
+              }}
+              disabled={isPending}
+            >
+              {isPending ? 'Saving…' : 'Save & close'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

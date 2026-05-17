@@ -2274,7 +2274,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   <ProfileCard
                     activeSection={activeDockSection}
                     web3BioProfile={
-                      (isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
+                      (isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test(displayQuery || '') || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
                         ? (() => {
                             const built = makeIotaDisplayProfile({
                               base: web3BioProfile,
@@ -2410,16 +2410,31 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               );
             })()}
 
+            {/* Helper: if the IOTA edit modal is open, prompt to save before navigating */}
+            {(() => { (window as any).__vanityIsEditOpen = showIotaEditModal; return null; })()}
+
             {/* Profile Dock - separate from profile container for proper z-index stacking */}
             {web3BioProfile && !showMyIDs && (
               <Dock
-                items={[
+                items={(() => {
+                  const guard = (action: () => void) => {
+                    const req = (window as any).__vanityRequestCloseEdit as
+                      | ((proceed: () => void) => void)
+                      | undefined;
+                    if (showIotaEditModal && req) {
+                      req(action);
+                    } else {
+                      action();
+                    }
+                  };
+                  return [
                   // Only show Home button when viewing a profile (not on home page)
                   ...(web3BioProfile ? [{
                     icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Home',
                     onClick: (e: React.MouseEvent) => {
                       e.stopPropagation();
+                      guard(() => {
                       setShowSearchBar(false);
                       setHadPreviousProfile(false); // Prevent useEffect from re-enabling search
                       setWeb3BioProfile(null);
@@ -2441,6 +2456,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       setShowDetailView(false);
                       setDetailViewResult(null);
                       navigate('/', { replace: false });
+                      });
                     },
                     isActive: false,
                   }] : []),
@@ -2466,7 +2482,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         }
                       }
 
-                      if (searchIdentifier) handleSearch(searchIdentifier);
+                      if (searchIdentifier) guard(() => handleSearch(searchIdentifier));
                     },
                     isActive: activeDockSection === 'profile',
                   },
@@ -2515,12 +2531,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     icon: <Search className="w-6 h-6 text-[#D4AF37]" />,
                     label: 'Search',
                     onClick: () => {
-                      // Toggle modal search overlay
-                      setShowSearchBar(prev => !prev);
+                      guard(() => setShowSearchBar(prev => !prev));
                     },
                     isActive: showSearchBar,
                   },
-                ]}
+                  ];
+                })()}
               />
             )}
 
