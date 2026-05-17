@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -179,11 +179,39 @@ export function IotaProfileEditModal({
     }
   };
   
+  // Escape to close
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg p-0 max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden">
-        <DialogHeader className="p-6 pb-3 flex-shrink-0 border-b border-border/50 bg-gradient-to-b from-[#D4AF37]/5 to-transparent">
-          <DialogTitle className="flex items-center gap-2.5 text-base">
+    <div
+      className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] z-[9999] flex items-stretch justify-center animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+    >
+      {/* Backdrop confined to profile container area */}
+      <div
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Panel — fills the container, leaving the page's gold side borders visible */}
+      <div className="relative w-full h-full max-w-2xl bg-background border border-[#D4AF37]/40 shadow-2xl flex flex-col overflow-hidden">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div className="p-6 pb-3 flex-shrink-0 border-b border-border/50 bg-gradient-to-b from-[#D4AF37]/5 to-transparent">
+          <div className="flex items-center gap-2.5 text-base font-semibold">
             <div className="w-9 h-9 rounded-lg bg-[#D4AF37]/15 flex items-center justify-center flex-shrink-0">
               <User className="h-4.5 w-4.5 text-[#D4AF37]" />
             </div>
@@ -203,12 +231,12 @@ export function IotaProfileEditModal({
                   : iotaName}
               </button>
             </div>
-          </DialogTitle>
-          <DialogDescription className="text-xs pt-1">
+          </div>
+          <p className="text-xs text-muted-foreground pt-1">
             Profile stored on IPFS, integrity verified via IOTA notarization.
-          </DialogDescription>
-        </DialogHeader>
-        
+          </p>
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
           <div className="px-6 flex-shrink-0">
             <TabsList className="grid w-full grid-cols-2">
@@ -555,7 +583,7 @@ export function IotaProfileEditModal({
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

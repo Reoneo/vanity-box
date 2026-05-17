@@ -1,15 +1,8 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SupportedChain } from '@/hooks/useLinkedWallets';
 
@@ -50,6 +43,15 @@ export function AddUnverifiedWalletModal({
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
   const handleSubmit = () => {
     const err = validate(chain, value);
     if (err) {
@@ -64,27 +66,34 @@ export function AddUnverifiedWalletModal({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) {
-          setValue('');
-          setError(null);
-          onClose();
-        }
-      }}
+    <div
+      className="absolute inset-0 z-[10000] flex items-center justify-center p-4 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
     >
-      <DialogContent className="max-w-sm mx-4">
-        <DialogHeader>
-          <DialogTitle>Add {chainLabel} address</DialogTitle>
-          <DialogDescription className="text-xs">
+      <div
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-sm bg-background border border-[#D4AF37]/40 rounded-lg shadow-2xl p-5">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 opacity-70 hover:opacity-100"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div className="space-y-1 mb-3 pr-6">
+          <h3 className="text-base font-semibold">Add {chainLabel} address</h3>
+          <p className="text-xs text-muted-foreground">
             Enter a wallet address to fetch its cross-chain data. The address
             will be marked <strong>Unverified</strong> because ownership has
             not been proven by signing.
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
 
-        <div className="space-y-3 pt-2">
+        <div className="space-y-3 pt-1">
           <div className="space-y-1.5">
             <Label htmlFor="addr" className="text-xs">
               {chainLabel} wallet address
@@ -132,7 +141,7 @@ export function AddUnverifiedWalletModal({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
