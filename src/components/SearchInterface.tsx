@@ -2416,7 +2416,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {/* Profile Dock - separate from profile container for proper z-index stacking */}
             {web3BioProfile && !showMyIDs && (
               <Dock
-                items={[
+                items={(() => {
+                  const guard = (action: () => void) => {
+                    const req = (window as any).__vanityRequestCloseEdit as
+                      | ((proceed: () => void) => void)
+                      | undefined;
+                    if (showIotaEditModal && req) {
+                      req(action);
+                    } else {
+                      action();
+                    }
+                  };
+                  return [
                   // Only show Home button when viewing a profile (not on home page)
                   ...(web3BioProfile ? [{
                     icon: <Home className="w-6 h-6 text-[#D4AF37]" />,
