@@ -2357,30 +2357,45 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             ) : null}
 
             {/* IOTA Profile Edit Modal */}
-            {showIotaEditModal && (isIotaName(displayQuery) || (connectedWalletType === 'iota' && walletAddress)) && (
-              <IotaProfileEditModal
-                open={showIotaEditModal}
-                onClose={() => setShowIotaEditModal(false)}
-                iotaName={displayQuery}
-                nameObjectId={iotaNameObjectId || ''}
-                currentProfile={iotaOnchainProfile}
-                linkedEvmAddress={linkedEvmAddress}
-                onProfileUpdated={() => {
-                  const normalizedName = normalizeIotaQuery(displayQuery);
-                  if (!normalizedName) return;
-
-                  fetchIotaOnchainProfile(normalizedName)
-                    .then(response => {
-                      if (response?.success) {
-                        setIotaOnchainProfile(response.profile);
-                        setIotaNameObjectId(response.nameObjectId);
-                        setIotaOwnerAddress(response.ownerAddress);
-                      }
-                    })
-                    .catch(console.error);
-                }}
-              />
-            )}
+            {showIotaEditModal && (isIotaName(displayQuery) || (connectedWalletType === 'iota' && walletAddress)) && (() => {
+              // For non-.iota profiles, save/load the IPFS profile under the connected IOTA wallet address
+              const isIota = isIotaName(displayQuery);
+              const storageKey = isIota
+                ? displayQuery
+                : (connectedWalletType === 'iota' && walletAddress ? walletAddress : displayQuery);
+              return (
+                <IotaProfileEditModal
+                  open={showIotaEditModal}
+                  onClose={() => setShowIotaEditModal(false)}
+                  iotaName={storageKey}
+                  nameObjectId={iotaNameObjectId || ''}
+                  currentProfile={iotaOnchainProfile}
+                  linkedEvmAddress={linkedEvmAddress}
+                  onProfileUpdated={() => {
+                    // Refresh on-chain profile for .iota names
+                    const normalizedName = normalizeIotaQuery(displayQuery);
+                    if (normalizedName) {
+                      fetchIotaOnchainProfile(normalizedName)
+                        .then(response => {
+                          if (response?.success) {
+                            setIotaOnchainProfile(response.profile);
+                            setIotaNameObjectId(response.nameObjectId);
+                            setIotaOwnerAddress(response.ownerAddress);
+                          }
+                        })
+                        .catch(console.error);
+                      return;
+                    }
+                    // For non-.iota profiles, fetch the freshly-saved IPFS profile under the wallet key
+                    import('@/lib/iota/vanityProfile').then(({ fetchProfileFromIPFS }) =>
+                      fetchProfileFromIPFS(storageKey).then(({ profile }) => {
+                        if (profile) setIotaOnchainProfile(profile as any);
+                      }).catch(console.error)
+                    );
+                  }}
+                />
+              );
+            })()}
 
             {/* Profile Dock - separate from profile container for proper z-index stacking */}
             {web3BioProfile && !showMyIDs && (
