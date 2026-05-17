@@ -2482,7 +2482,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         }
                       }
 
-                      if (searchIdentifier) handleSearch(searchIdentifier);
+                      if (searchIdentifier) guard(() => handleSearch(searchIdentifier));
                     },
                     isActive: activeDockSection === 'profile',
                   },
