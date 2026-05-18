@@ -44,6 +44,8 @@ import ethPlusDark from '@/assets/eth-plus-dark.png';
 import ensCollectionLogo from '@/assets/ens-collection-logo.png';
 import basenamesCollectionLogo from '@/assets/basenames-collection-logo.png';
 import unstoppableCollectionLogo from '@/assets/unstoppable-collection-logo.png';
+import poapCollectionLogo from '@/assets/poap-collection-logo.png';
+import doodlesCertifiedViralLogo from '@/assets/doodles-certified-viral-logo.gif';
 import polygonIcon from '@/assets/polygon-icon.svg';
 import baseSquareBlue from '@/assets/base-square-blue.png';
 
@@ -1555,6 +1557,14 @@ export const ProfileCard = ({
     const n = (name || '').toLowerCase().trim();
     return n.includes('unstoppable');
   };
+  const isPoapCollection = (name: string) => {
+    const n = (name || '').toLowerCase().trim();
+    return n === 'poap' || n === 'poaps' || n === 'proof of attendance protocol';
+  };
+  const isDoodlesCertifiedViralCollection = (name: string) => {
+    const n = (name || '').toLowerCase().trim();
+    return n.includes('doodles') && n.includes('certified') && n.includes('viral');
+  };
   const unstoppableChain = (name: string): 'base' | 'polygon' => {
     const n = (name || '').toLowerCase();
     return n.includes('base') ? 'base' : 'polygon';
@@ -1562,6 +1572,12 @@ export const ProfileCard = ({
   const renderCollectionLabel = (name: string, imgClassName = "h-5 w-auto inline-block align-middle"): React.ReactNode => {
     if (isEnsCollection(name)) {
       return <img src={ensCollectionLogo} alt="ENS" className={imgClassName} />;
+    }
+    if (isPoapCollection(name)) {
+      return <img src={poapCollectionLogo} alt="POAP" className={imgClassName} />;
+    }
+    if (isDoodlesCertifiedViralCollection(name)) {
+      return <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className={imgClassName} />;
     }
     if (isBasenamesCollection(name)) {
       return <img src={basenamesCollectionLogo} alt="Basenames" className={imgClassName} />;
@@ -2196,7 +2212,7 @@ export const ProfileCard = ({
                           if (nftCategory === 'main') {
                             title = 'NFTs';
                           } else if (nftCategory === 'poaps') {
-                            title = 'POAPs';
+                            title = renderCollectionLabel('POAPs', "h-6 w-auto inline-block align-middle");
                             total = poapTotalCount || formattedPoaps.length;
                           } else if (nftCategory === 'opensea') {
                             if (expandedCollection) {
@@ -2403,7 +2419,7 @@ export const ProfileCard = ({
                               <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-black text-base">POAPs</h4>
+                                    <h4 className="font-medium text-black text-base">{renderCollectionLabel('POAPs')}</h4>
                                     <div className="flex items-center gap-2">
                                       <p className="text-sm text-black/70">{(poapTotalCount || poaps.length).toLocaleString()} {(poapTotalCount || poaps.length) === 1 ? 'badge' : 'badges'}</p>
                                       <div className="flex -space-x-2">
@@ -3151,7 +3167,7 @@ export const ProfileCard = ({
                           : expandedCollection
                             ? renderCollectionLabel(expandedCollection, "h-10 w-auto inline-block align-middle")
                             : nftCategory === 'poaps'
-                              ? 'POAPs'
+                              ? renderCollectionLabel('POAPs', "h-10 w-auto inline-block align-middle")
                               : nftCategory === 'magiceden'
                                 ? 'Magic Eden'
                                 : nftCategory === 'hyperliquid'
@@ -3226,7 +3242,7 @@ export const ProfileCard = ({
                         >
                           <div className="flex items-center justify-between h-full">
                             <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-black text-base">POAPs</h4>
+                              <h4 className="font-medium text-black text-base">{renderCollectionLabel('POAPs')}</h4>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm text-black/70">{(poapTotalCount || poaps.length).toLocaleString()} {(poapTotalCount || poaps.length) === 1 ? 'item' : 'items'}</p>
                                 <div className="flex -space-x-2">
