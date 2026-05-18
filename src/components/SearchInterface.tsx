@@ -546,18 +546,36 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.address, linkedEvmAddress, efpStats, displayQuery]);
 
-  // Auto-load IPFS profile for NON-.iota profiles (e.g. smith.box) under the connected IOTA wallet key
+  // Auto-load IPFS profile data for ANY viewer (public visibility).
+  // Resolution key priority:
+  //   1) raw IOTA hex address in displayQuery (someone searched the passkey wallet directly)
+  //   2) cross-chain resolved iotaOwnerAddress (raw hex) for a non-.iota query
+  //   3) owner viewing their own non-.iota profile while connected with passkey IOTA wallet
   useEffect(() => {
-    if (!web3BioProfile || isIotaName(displayQuery)) return;
-    if (connectedWalletType !== 'iota' || !walletAddress) return;
+    const IOTA_HEX = /^0x[a-f0-9]{64}$/i;
+    let key: string | null = null;
+    if (IOTA_HEX.test((displayQuery || '').trim())) {
+      key = (displayQuery || '').trim().toLowerCase();
+    } else if (!isIotaName(displayQuery) && iotaOwnerAddress && IOTA_HEX.test(iotaOwnerAddress)) {
+      key = iotaOwnerAddress.toLowerCase();
+    } else if (
+      !isIotaName(displayQuery) &&
+      web3BioProfile &&
+      connectedWalletType === 'iota' &&
+      walletAddress &&
+      IOTA_HEX.test(walletAddress)
+    ) {
+      key = walletAddress.toLowerCase();
+    }
+    if (!key) return;
     let cancelled = false;
     import('@/lib/iota/vanityProfile').then(({ fetchProfileFromIPFS }) =>
-      fetchProfileFromIPFS(walletAddress).then(({ profile }) => {
+      fetchProfileFromIPFS(key!).then(({ profile }) => {
         if (!cancelled && profile) setIotaOnchainProfile(profile as any);
       }).catch(() => {})
     );
     return () => { cancelled = true; };
-  }, [web3BioProfile?.identity, displayQuery, connectedWalletType, walletAddress]);
+  }, [displayQuery, iotaOwnerAddress, web3BioProfile?.identity, connectedWalletType, walletAddress]);
 
   // Resolve linked EVM address for .iota profiles
   // Priority: 1) localStorage 2) encrypted vault (owner) 3) DB via edge function (public viewers)
