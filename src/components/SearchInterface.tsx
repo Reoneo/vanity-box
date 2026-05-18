@@ -1642,8 +1642,24 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 iotaName = linked?.iotaName || null;
               }
 
-              if (!iotaName || !isIotaName(iotaName)) {
-                console.log('🔗 Cross-chain: no linked .iota for', normalizedQuery);
+              if (!iotaName) {
+                console.log('🔗 Cross-chain: no linked iota for', normalizedQuery);
+                return;
+              }
+
+              // Passkey wallet (raw 64-hex address) — no .iota name, just an
+              // IPFS-notarized profile keyed on the wallet address. Surface
+              // the overlay + set owner address so the auto-load effect picks
+              // up the IPFS profile.
+              if (/^0x[a-f0-9]{64}$/i.test(iotaName)) {
+                console.log(`🔗 Cross-chain: ${normalizedQuery} -> passkey iota wallet ${iotaName}`);
+                setEnsOverlay(overlay);
+                setIotaOwnerAddress(iotaName.toLowerCase());
+                return;
+              }
+
+              if (!isIotaName(iotaName)) {
+                console.log('🔗 Cross-chain: invalid iota name', iotaName);
                 return;
               }
 
