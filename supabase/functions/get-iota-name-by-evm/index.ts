@@ -29,6 +29,8 @@ function normalizeIotaName(raw: string | null | undefined): string | null {
   const lower = String(raw).toLowerCase().trim();
   if (!lower) return null;
   const bare = lower.includes(':') ? lower.split(':')[0] : lower;
+  // Raw IOTA hex address (passkey wallet without a .iota domain) — return as-is
+  if (/^0x[a-f0-9]{64}$/.test(bare)) return bare;
   return bare.endsWith('.iota') ? bare : `${bare}.iota`;
 }
 
