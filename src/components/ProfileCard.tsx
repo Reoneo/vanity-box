@@ -2212,7 +2212,7 @@ export const ProfileCard = ({
                           if (nftCategory === 'main') {
                             title = 'NFTs';
                           } else if (nftCategory === 'poaps') {
-                            title = 'POAPs';
+                            title = renderCollectionLabel('POAPs', "h-6 w-auto inline-block align-middle");
                             total = poapTotalCount || formattedPoaps.length;
                           } else if (nftCategory === 'opensea') {
                             if (expandedCollection) {
@@ -2419,7 +2419,7 @@ export const ProfileCard = ({
                               <button onClick={() => setNftCategory('poaps')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
                                 <div className="flex items-center justify-between h-full">
                                   <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-black text-base">POAPs</h4>
+                                    <h4 className="font-medium text-black text-base">{renderCollectionLabel('POAPs')}</h4>
                                     <div className="flex items-center gap-2">
                                       <p className="text-sm text-black/70">{(poapTotalCount || poaps.length).toLocaleString()} {(poapTotalCount || poaps.length) === 1 ? 'badge' : 'badges'}</p>
                                       <div className="flex -space-x-2">
@@ -3167,7 +3167,7 @@ export const ProfileCard = ({
                           : expandedCollection
                             ? renderCollectionLabel(expandedCollection, "h-10 w-auto inline-block align-middle")
                             : nftCategory === 'poaps'
-                              ? 'POAPs'
+                              ? renderCollectionLabel('POAPs', "h-10 w-auto inline-block align-middle")
                               : nftCategory === 'magiceden'
                                 ? 'Magic Eden'
                                 : nftCategory === 'hyperliquid'
@@ -3242,7 +3242,7 @@ export const ProfileCard = ({
                         >
                           <div className="flex items-center justify-between h-full">
                             <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-black text-base">POAPs</h4>
+                              <h4 className="font-medium text-black text-base">{renderCollectionLabel('POAPs')}</h4>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm text-black/70">{(poapTotalCount || poaps.length).toLocaleString()} {(poapTotalCount || poaps.length) === 1 ? 'item' : 'items'}</p>
                                 <div className="flex -space-x-2">
