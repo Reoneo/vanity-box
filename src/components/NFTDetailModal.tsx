@@ -19,6 +19,7 @@ import ensCollectionLogo from "@/assets/ens-collection-logo.png";
 import basenamesCollectionLogo from "@/assets/basenames-collection-logo.png";
 import baseSquareBlue from "@/assets/base-square-blue.png";
 import unstoppableCollectionLogo from "@/assets/unstoppable-collection-logo.png";
+import doodlesCertifiedViralLogo from "@/assets/doodles-certified-viral-logo.gif";
 import unstoppableUMark from "@/assets/unstoppable-u-mark.png";
 
 interface NFTDetailModalProps {
@@ -213,6 +214,9 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                 /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic)$/i.test(nameLower);
               if (isEnsNft) {
                 return <img src={ensCollectionLogo} alt="ENS" className="h-10 w-auto object-contain" />;
+              }
+              if (collectionLower.includes('doodles') && collectionLower.includes('certified') && collectionLower.includes('viral')) {
+                return <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className="h-10 w-auto object-contain" />;
               }
               if (collectionLower === 'basenames' || collectionLower === 'basename' || collectionLower === 'base names') {
                 return <img src={basenamesCollectionLogo} alt="Basenames" className="h-10 w-auto object-contain" />;
