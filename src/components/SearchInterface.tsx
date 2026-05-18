@@ -1619,7 +1619,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   .limit(1);
                 if (cacheRows && cacheRows.length > 0) {
                   const raw = String(cacheRows[0].iota_name || '').toLowerCase();
-                  iotaName = raw.endsWith('.iota') ? raw : `${raw}.iota`;
+                  iotaName = /^0x[a-f0-9]{64}$/.test(raw)
+                    ? raw
+                    : (raw.endsWith('.iota') ? raw : `${raw}.iota`);
                   console.log('🔗 Cross-chain cache hit:', iotaName);
                 }
               } catch (cacheErr: any) {
