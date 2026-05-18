@@ -44,6 +44,8 @@ import ethPlusDark from '@/assets/eth-plus-dark.png';
 import ensCollectionLogo from '@/assets/ens-collection-logo.png';
 import basenamesCollectionLogo from '@/assets/basenames-collection-logo.png';
 import unstoppableCollectionLogo from '@/assets/unstoppable-collection-logo.png';
+import poapCollectionLogo from '@/assets/poap-collection-logo.png';
+import doodlesCertifiedViralLogo from '@/assets/doodles-certified-viral-logo.gif';
 import polygonIcon from '@/assets/polygon-icon.svg';
 import baseSquareBlue from '@/assets/base-square-blue.png';
 
@@ -1555,6 +1557,14 @@ export const ProfileCard = ({
     const n = (name || '').toLowerCase().trim();
     return n.includes('unstoppable');
   };
+  const isPoapCollection = (name: string) => {
+    const n = (name || '').toLowerCase().trim();
+    return n === 'poap' || n === 'poaps' || n === 'proof of attendance protocol';
+  };
+  const isDoodlesCertifiedViralCollection = (name: string) => {
+    const n = (name || '').toLowerCase().trim();
+    return n.includes('doodles') && n.includes('certified') && n.includes('viral');
+  };
   const unstoppableChain = (name: string): 'base' | 'polygon' => {
     const n = (name || '').toLowerCase();
     return n.includes('base') ? 'base' : 'polygon';
@@ -1562,6 +1572,12 @@ export const ProfileCard = ({
   const renderCollectionLabel = (name: string, imgClassName = "h-5 w-auto inline-block align-middle"): React.ReactNode => {
     if (isEnsCollection(name)) {
       return <img src={ensCollectionLogo} alt="ENS" className={imgClassName} />;
+    }
+    if (isPoapCollection(name)) {
+      return <img src={poapCollectionLogo} alt="POAP" className={imgClassName} />;
+    }
+    if (isDoodlesCertifiedViralCollection(name)) {
+      return <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className={imgClassName} />;
     }
     if (isBasenamesCollection(name)) {
       return <img src={basenamesCollectionLogo} alt="Basenames" className={imgClassName} />;
