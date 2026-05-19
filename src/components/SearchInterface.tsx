@@ -868,7 +868,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
   useEffect(() => {
-    const isIota = isIotaName(displayQuery);
+    const isIota = isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test((displayQuery||"").trim()) || (!!iotaOwnerAddress && /^0x[a-f0-9]{64}$/i.test(iotaOwnerAddress));
     const address = isIota ? linkedEvmAddress : web3BioProfile?.address;
     const isValidAddress = address && 
                           address !== 'undefined' && 
@@ -903,7 +903,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Preload POAPs in background when profile loads (use linkedEvmAddress for IOTA)
   useEffect(() => {
-    const isIota = isIotaName(displayQuery);
+    const isIota = isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test((displayQuery||"").trim()) || (!!iotaOwnerAddress && /^0x[a-f0-9]{64}$/i.test(iotaOwnerAddress));
     const poapAddress = isIota ? linkedEvmAddress : web3BioProfile?.address;
     
     if (poapAddress && /^0x[a-fA-F0-9]{40}$/i.test(poapAddress) && poapTokens.length === 0 && !isLoadingPoaps) {
@@ -2062,7 +2062,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     if (!nftNextCursor || nftLoading) return;
     
     // For IOTA profiles, use linkedEvmAddress; otherwise use web3BioProfile.address
-    const isIota = isIotaName(displayQuery);
+    const isIota = isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test((displayQuery||"").trim()) || (!!iotaOwnerAddress && /^0x[a-f0-9]{64}$/i.test(iotaOwnerAddress));
     const address = isIota ? linkedEvmAddress : (web3BioProfile?.address || walletAddress);
     const addressString = typeof address === 'string' ? address : (address as any)?.value;
     
@@ -2079,7 +2079,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   const handleLoadMorePoaps = async () => {
     if (!poapHasMore || poapLoadingMore) return;
-    const isIota = isIotaName(displayQuery);
+    const isIota = isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test((displayQuery||"").trim()) || (!!iotaOwnerAddress && /^0x[a-f0-9]{64}$/i.test(iotaOwnerAddress));
     const address = isIota ? linkedEvmAddress : (web3BioProfile?.address || walletAddress);
     if (!address || !/^0x[a-fA-F0-9]{40}$/i.test(address as string)) return;
 
