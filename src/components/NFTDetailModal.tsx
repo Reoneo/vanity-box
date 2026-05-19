@@ -187,8 +187,10 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage, embedded = f
 
   return (
     <div
-      className="fixed left-0 right-0 bg-background dark:bg-black z-[9999] animate-fade-in flex flex-col overscroll-contain"
-      style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}
+      className={embedded
+        ? "absolute inset-0 bg-background dark:bg-black z-30 animate-fade-in flex flex-col overscroll-contain"
+        : "fixed left-0 right-0 bg-background dark:bg-black z-[9999] animate-fade-in flex flex-col overscroll-contain"}
+      style={embedded ? { backfaceVisibility: 'hidden' } : { backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}
       role="dialog"
       aria-modal="true"
     >
