@@ -339,7 +339,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   };
 
   const fetchLinkedEvmFromDb = async (rawName?: string | null): Promise<any | null> => {
-    const normalizedName = normalizeIotaQuery(rawName);
+    const trimmed = (rawName || '').trim().toLowerCase();
+    const isHex = /^0x[a-f0-9]{64}$/i.test(trimmed);
+    const normalizedName = isHex ? trimmed : normalizeIotaQuery(rawName);
     if (!normalizedName) return null;
 
     const { data, error } = await supabase.functions.invoke("get-iota-linked-evm", {
