@@ -580,7 +580,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   // Resolve linked EVM address for .iota profiles
   // Priority: 1) localStorage 2) encrypted vault (owner) 3) DB via edge function (public viewers)
   useEffect(() => {
-    const name = normalizeIotaQuery(displayQuery);
+    const IOTA_HEX_RE = /^0x[a-f0-9]{64}$/i;
+    const trimmedQuery = (displayQuery || '').trim().toLowerCase();
+    const name = normalizeIotaQuery(displayQuery)
+      || (IOTA_HEX_RE.test(trimmedQuery) ? trimmedQuery : null)
+      || (iotaOwnerAddress && IOTA_HEX_RE.test(iotaOwnerAddress) ? iotaOwnerAddress.toLowerCase() : null);
     if (!name) {
       setLinkedEvmAddress(null);
       setIsResolvingLinkedEvm(false);
