@@ -1979,7 +1979,7 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="fixed inset-0 top-[60px] bottom-[28px] flex flex-col overflow-hidden z-10">
+              <div className="fixed inset-0 top-20 bottom-[28px] flex flex-col overflow-hidden z-10">
                 {/* Full-width Header spanning both sides - with avatar overlay */}
                 <div className="relative flex-shrink-0 w-full">
                   <div 
@@ -1997,7 +1997,7 @@ export const ProfileCard = ({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
                     aria-label="Share profile"
-                    className="absolute top-3 left-3 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-transparent backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60"
+                    className="absolute top-4 left-4 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-[#D4AF37]/40 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60 shadow-md"
                   >
                     <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
@@ -2173,7 +2173,7 @@ export const ProfileCard = ({
                   </div>
 
                   {/* Right side - 50% - Content panels with themed background - extends to footer */}
-                  <div className="w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
+                  <div className="relative w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
                     {/* Panel header - with back button on left when in subcategory */}
                     <div className="flex-shrink-0 px-6 py-4 bg-black/5 dark:bg-black/50">
                       <div className="relative flex items-center justify-center">
@@ -2833,6 +2833,15 @@ export const ProfileCard = ({
                         <div className="text-lg font-medium">No Onchain Data</div>
                         <p className="text-sm">No social links, tokens, activity, or NFTs found for this address.</p>
                       </div>
+                    )}
+                    {selectedNft && (
+                      <NFTDetailModal
+                        nft={selectedNft}
+                        isOpen={!!selectedNft}
+                        onClose={() => setSelectedNft(null)}
+                        headerImage={web3BioProfile?.header || iotaHeaderPattern}
+                        embedded
+                      />
                     )}
                   </div>
                 </div>
@@ -4449,7 +4458,7 @@ export const ProfileCard = ({
         />
       )}
 
-      {selectedNft && (
+      {selectedNft && isMobile && (
         <NFTDetailModal
           nft={selectedNft}
           isOpen={!!selectedNft}
