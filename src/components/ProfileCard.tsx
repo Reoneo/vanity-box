@@ -1997,7 +1997,7 @@ export const ProfileCard = ({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
                     aria-label="Share profile"
-                    className="absolute top-3 left-3 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-transparent backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60"
+                    className="absolute top-4 left-4 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-[#D4AF37]/40 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60 shadow-md"
                   >
                     <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
