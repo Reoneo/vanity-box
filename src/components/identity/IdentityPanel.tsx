@@ -420,36 +420,7 @@ function WalletLinkSection({
               <Badge variant="outline" className="text-[10px]">{badgeLabel}</Badge>
             </div>
           ))}
-          {/* Unverified manual addresses */}
-          {(unverifiedAddresses || []).map((addr) => (
-            <div key={`u-${addr}`} className="flex items-center gap-2 px-2.5 py-2 rounded-md bg-amber-500/5 border border-amber-500/30">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-              <span className="text-xs font-mono truncate flex-1">{addr}</span>
-              <UnverifiedBadge address={addr} />
-              {onRemoveUnverified && (
-                <button
-                  type="button"
-                  onClick={() => onRemoveUnverified(addr)}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
-                  aria-label="Remove"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          ))}
           {children}
-          {onAddUnverified && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onAddUnverified}
-              className="w-full border-dashed border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-            >
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Add address manually (unverified)
-            </Button>
-          )}
         </div>
       )}
     </div>
