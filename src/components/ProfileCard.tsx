@@ -2009,7 +2009,7 @@ export const ProfileCard = ({
                     <div className="relative group">
                       <Avatar className="h-44 w-44 rounded-2xl shadow-xl">
                         <AvatarImage 
-                          src={web3BioProfile?.avatar} 
+                          src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
                           className="object-cover rounded-2xl"
                         />
@@ -2868,7 +2868,7 @@ export const ProfileCard = ({
                     <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
                       <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
                         <AvatarImage 
-                          src={web3BioProfile?.avatar} 
+                          src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
                           alt={web3BioProfile?.displayName || 'User'}
                           className="object-cover rounded-2xl"
                         />
