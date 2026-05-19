@@ -887,7 +887,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Fetch EFP stats for .iota profiles when linkedEvmAddress resolves
   useEffect(() => {
-    if (!isIotaName(displayQuery) || !linkedEvmAddress || !/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
+    const isIotaLike = isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test((displayQuery||'').trim()) || (!!iotaOwnerAddress && /^0x[a-f0-9]{64}$/i.test(iotaOwnerAddress));
+    if (!isIotaLike || !linkedEvmAddress || !/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
     if (efpStats) return; // Already have stats
 
     console.log('🔄 Fetching EFP stats for linked EVM on .iota profile:', linkedEvmAddress);
