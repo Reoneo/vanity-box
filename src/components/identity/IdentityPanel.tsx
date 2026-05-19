@@ -24,9 +24,6 @@ import { useIdentity, IdentityProvider } from '@/contexts/IdentityContext';
 import { CredentialList } from './CredentialList';
 import { LinkEthereumWalletModal } from '@/components/LinkEthereumWalletModal';
 import { PasskeyWalletModal } from '@/components/PasskeyWalletModal';
-import { AddUnverifiedWalletModal } from '@/components/AddUnverifiedWalletModal';
-import { UnverifiedBadge } from '@/components/UnverifiedBadge';
-import { useLinkedWallets, type SupportedChain } from '@/hooks/useLinkedWallets';
 import { setLinkedDomain } from '@/lib/messaging/linkDomain';
 import { callEdge } from '@/lib/supaInvoke';
 import { cn } from '@/lib/utils';
@@ -78,9 +75,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
   // Wallet link section expansion state
   const [expandedWallet, setExpandedWallet] = useState<'eth' | 'ton' | 'aptos' | 'sui' | null>(null);
 
-  // Manual-address (unverified) link state
-  const { unverified, add: addUnverified, remove: removeUnverified } = useLinkedWallets(iotaName);
-  const [addUnverifiedChain, setAddUnverifiedChain] = useState<SupportedChain | null>(null);
 
   const isStepComplete = (step: StepKey): boolean => {
     switch (step) {
@@ -231,9 +225,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             onToggle={() => setExpandedWallet(expandedWallet === 'eth' ? null : 'eth')}
             linkedVcs={ethVcs}
             badgeLabel="ETH"
-            unverifiedAddresses={unverified.ethereum}
-            onAddUnverified={() => setAddUnverifiedChain('ethereum')}
-            onRemoveUnverified={(a) => removeUnverified('ethereum', a)}
           >
             <Button
               size="sm"
@@ -253,9 +244,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             expanded={expandedWallet === 'ton'}
             onToggle={() => setExpandedWallet(expandedWallet === 'ton' ? null : 'ton')}
             addExternalCredential={addExternalCredential}
-            unverifiedAddresses={unverified.ton}
-            onAddUnverified={() => setAddUnverifiedChain('ton')}
-            onRemoveUnverified={(a) => removeUnverified('ton', a)}
           />
 
           {/* Link Aptos Wallet — gated on Aptos Connect dappId */}
@@ -267,9 +255,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
               expanded={expandedWallet === 'aptos'}
               onToggle={() => setExpandedWallet(expandedWallet === 'aptos' ? null : 'aptos')}
               addExternalCredential={addExternalCredential}
-              unverifiedAddresses={unverified.aptos}
-              onAddUnverified={() => setAddUnverifiedChain('aptos')}
-              onRemoveUnverified={(a) => removeUnverified('aptos', a)}
             />
           )}
 
@@ -289,9 +274,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
             expanded={expandedWallet === 'sui'}
             onToggle={() => setExpandedWallet(expandedWallet === 'sui' ? null : 'sui')}
             addExternalCredential={addExternalCredential}
-            unverifiedAddresses={unverified.sui}
-            onAddUnverified={() => setAddUnverifiedChain('sui')}
-            onRemoveUnverified={(a) => removeUnverified('sui', a)}
           />
 
           {/* Passkey Wallet */}
@@ -330,20 +312,6 @@ function IdentityPanelContent({ iotaName }: IdentityPanelContentProps) {
       </div>
 
       {/* Modals */}
-      {addUnverifiedChain && (
-        <AddUnverifiedWalletModal
-          open={!!addUnverifiedChain}
-          onClose={() => setAddUnverifiedChain(null)}
-          chain={addUnverifiedChain}
-          chainLabel={
-            addUnverifiedChain === 'ethereum' ? 'Ethereum'
-            : addUnverifiedChain === 'ton' ? 'TON'
-            : addUnverifiedChain === 'aptos' ? 'Aptos'
-            : 'Sui'
-          }
-          onSubmit={(addr) => addUnverified(addUnverifiedChain, addr)}
-        />
-      )}
       <LinkEthereumWalletModal
         open={showLinkEthModal}
         onClose={() => setShowLinkEthModal(false)}
