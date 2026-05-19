@@ -4458,7 +4458,7 @@ export const ProfileCard = ({
         />
       )}
 
-      {selectedNft && (
+      {selectedNft && isMobile && (
         <NFTDetailModal
           nft={selectedNft}
           isOpen={!!selectedNft}
