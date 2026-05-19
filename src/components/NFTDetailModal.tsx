@@ -27,6 +27,7 @@ interface NFTDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   headerImage?: string;
+  embedded?: boolean;
 }
 
 // Helper to detect media type from URL
