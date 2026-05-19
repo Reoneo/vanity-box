@@ -80,7 +80,7 @@ const parseEnsDateValue = (value: unknown): Date | null => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailModalProps) => {
+export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage, embedded = false }: NFTDetailModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [ensAttrs, setEnsAttrs] = useState<any[] | null>(null);
