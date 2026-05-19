@@ -2834,6 +2834,15 @@ export const ProfileCard = ({
                         <p className="text-sm">No social links, tokens, activity, or NFTs found for this address.</p>
                       </div>
                     )}
+                    {selectedNft && (
+                      <NFTDetailModal
+                        nft={selectedNft}
+                        isOpen={!!selectedNft}
+                        onClose={() => setSelectedNft(null)}
+                        headerImage={web3BioProfile?.header || iotaHeaderPattern}
+                        embedded
+                      />
+                    )}
                   </div>
                 </div>
               </div>
