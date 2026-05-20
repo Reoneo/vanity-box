@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Calendar, Clock, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { ExternalLink, Calendar, Clock, Copy, Check, User as UserIcon, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { format, formatDistanceToNow, isPast, addDays } from 'date-fns';
 
 interface ENSDomainDetailModalProps {
@@ -12,6 +12,10 @@ interface ENSDomainDetailModalProps {
     expiryDate?: string | number;
     createdAt?: string | number;
     image_url?: string;
+    owner?: string;
+    registrant?: string;
+    wrappedOwner?: string;
+    resolvedAddress?: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,6 +49,28 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const truncate = (a?: string) => (a && a.length > 10 ? `${a.slice(0, 6)}…${a.slice(-4)}` : (a || ''));
+  const userAddr = (domain.resolvedAddress || domain.owner || '').toLowerCase();
+  const ownerAddr = (domain.registrant || domain.wrappedOwner || domain.owner || '').toLowerCase();
+
+  const [userName, setUserName] = useState<string | null>(null);
+  const [ownerName, setOwnerName] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const lookup = async (addr: string, set: (v: string | null) => void) => {
+      if (!addr || !/^0x[a-f0-9]{40}$/.test(addr)) { set(null); return; }
+      try {
+        const r = await fetch(`https://api.web3.bio/ns/ens/${addr}`);
+        if (!r.ok) { set(null); return; }
+        const j = await r.json();
+        if (!cancelled) set(j?.identity || j?.displayName || null);
+      } catch { if (!cancelled) set(null); }
+    };
+    lookup(userAddr, setUserName);
+    if (ownerAddr !== userAddr) lookup(ownerAddr, setOwnerName); else setOwnerName(null);
+    return () => { cancelled = true; };
+  }, [userAddr, ownerAddr]);
 
   // Fallback avatar using ENS metadata service
   const avatarUrl = domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`;
@@ -145,6 +171,32 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
                   </p>
                 </div>
               </div>
+            )}
+            {(userAddr || ownerAddr) && (
+              <>
+                {userAddr && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <UserIcon className="w-4 h-4" />
+                      <span className="text-sm">User</span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground font-mono">
+                      {userName || truncate(userAddr)}
+                    </span>
+                  </div>
+                )}
+                {ownerAddr && ownerAddr !== userAddr && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Crown className="w-4 h-4" />
+                      <span className="text-sm">Owner</span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground font-mono">
+                      {ownerName || truncate(ownerAddr)}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
