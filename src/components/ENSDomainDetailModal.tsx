@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Calendar, Clock, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { ExternalLink, Calendar, Clock, Copy, Check, User as UserIcon, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { format, formatDistanceToNow, isPast, addDays } from 'date-fns';
 
 interface ENSDomainDetailModalProps {
@@ -12,6 +12,10 @@ interface ENSDomainDetailModalProps {
     expiryDate?: string | number;
     createdAt?: string | number;
     image_url?: string;
+    owner?: string;
+    registrant?: string;
+    wrappedOwner?: string;
+    resolvedAddress?: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
