@@ -172,6 +172,32 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
                 </div>
               </div>
             )}
+            {(userAddr || ownerAddr) && (
+              <>
+                {userAddr && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <UserIcon className="w-4 h-4" />
+                      <span className="text-sm">User</span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground font-mono">
+                      {userName || truncate(userAddr)}
+                    </span>
+                  </div>
+                )}
+                {ownerAddr && ownerAddr !== userAddr && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Crown className="w-4 h-4" />
+                      <span className="text-sm">Owner</span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground font-mono">
+                      {ownerName || truncate(ownerAddr)}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Actions */}
