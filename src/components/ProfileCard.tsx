@@ -1574,10 +1574,22 @@ export const ProfileCard = ({
       return <img src={ensCollectionLogo} alt="ENS" className={imgClassName} />;
     }
     if (isPoapCollection(name)) {
-      return <img src={poapCollectionLogo} alt="POAP" className={imgClassName} />;
+      const doubled = imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`);
+      return (
+        <span className="inline-flex items-center gap-2 align-middle">
+          <img src={poapCollectionLogo} alt="POAP" className={doubled} />
+          <span className="font-medium">POAP</span>
+        </span>
+      );
     }
     if (isDoodlesCertifiedViralCollection(name)) {
-      return <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className={imgClassName} />;
+      const doubled = imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`);
+      return (
+        <span className="inline-flex items-center gap-2 align-middle">
+          <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className={doubled} />
+          <span className="font-medium">Doodles: Certified Viral</span>
+        </span>
+      );
     }
     if (isBasenamesCollection(name)) {
       return <img src={basenamesCollectionLogo} alt="Basenames" className={imgClassName} />;
