@@ -3711,10 +3711,22 @@ export const ProfileCard = ({
                     ) : (
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {ensDomains.map((domain: any, index: number) => (
+                          {ensDomains.map((domain: any, index: number) => {
+                            const expMs = domain.expiryDate
+                              ? (typeof domain.expiryDate === 'string' ? parseInt(domain.expiryDate) : domain.expiryDate) * 1000
+                              : null;
+                            const now = Date.now();
+                            const GRACE = 90 * 24 * 60 * 60 * 1000;
+                            let statusBorder = 'border-[#5298FF]/20 hover:border-[#5298FF]/50';
+                            if (expMs) {
+                              if (now > expMs + GRACE) statusBorder = 'border-emerald-500 hover:border-emerald-400';
+                              else if (now > expMs) statusBorder = 'border-[#D4AF37] hover:border-[#F0D78C]';
+                              else if (expMs - now < 90 * 24 * 60 * 60 * 1000) statusBorder = 'border-red-500 hover:border-red-400';
+                            }
+                            return (
                             <div
                               key={`ens-${domain.name}-${index}`}
-                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#5298FF]/20 hover:border-[#5298FF]/50 transition-all w-full"
+                              className={`group relative overflow-hidden rounded-xl cursor-pointer border transition-all w-full ${statusBorder}`}
                               onClick={() => setSelectedEnsDomain(domain)}
                             >
                               <div className="aspect-square bg-gradient-to-br from-[#5298FF]/10 to-[#3370CC]/10 overflow-hidden">
@@ -3732,7 +3744,8 @@ export const ProfileCard = ({
                                 </div>
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )
