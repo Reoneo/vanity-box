@@ -58,6 +58,7 @@ async function fetchWithRetry(urls: string[], body: string, maxRetries = 2): Pro
   throw lastError || new Error('All subgraph endpoints failed');
 }
 
+// v2 — supports domainName single lookup
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
