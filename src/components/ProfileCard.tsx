@@ -1574,22 +1574,10 @@ export const ProfileCard = ({
       return <img src={ensCollectionLogo} alt="ENS" className={imgClassName} />;
     }
     if (isPoapCollection(name)) {
-      const doubled = imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`);
-      return (
-        <span className="inline-flex items-center gap-2 align-middle">
-          <img src={poapCollectionLogo} alt="POAP" className={doubled} />
-          <span className="font-medium">POAP</span>
-        </span>
-      );
+      return <img src={poapCollectionLogo} alt="POAP" className={imgClassName} />;
     }
     if (isDoodlesCertifiedViralCollection(name)) {
-      const doubled = imgClassName.replace(/h-(\d+)/, (_, n) => `h-${Number(n) * 2}`);
-      return (
-        <span className="inline-flex items-center gap-2 align-middle">
-          <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className={doubled} />
-          <span className="font-medium">Doodles: Certified Viral</span>
-        </span>
-      );
+      return <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className={imgClassName} />;
     }
     if (isBasenamesCollection(name)) {
       return <img src={basenamesCollectionLogo} alt="Basenames" className={imgClassName} />;
@@ -1991,7 +1979,7 @@ export const ProfileCard = ({
           <div className="flex-1 overflow-y-auto">
             {/* Desktop: 50:50 split layout */}
             {!isMobile ? (
-              <div className="fixed inset-0 top-20 bottom-[28px] flex flex-col overflow-hidden z-10">
+              <div className="fixed inset-0 top-[60px] bottom-[28px] flex flex-col overflow-hidden z-10">
                 {/* Full-width Header spanning both sides - with avatar overlay */}
                 <div className="relative flex-shrink-0 w-full">
                   <div 
@@ -2009,7 +1997,7 @@ export const ProfileCard = ({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
                     aria-label="Share profile"
-                    className="absolute top-4 left-4 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-[#D4AF37]/40 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60 shadow-md"
+                    className="absolute top-3 left-3 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-transparent backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60"
                   >
                     <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
@@ -2185,7 +2173,7 @@ export const ProfileCard = ({
                   </div>
 
                   {/* Right side - 50% - Content panels with themed background - extends to footer */}
-                  <div className="relative w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
+                  <div className="w-1/2 flex flex-col min-h-0 bg-white dark:bg-black border-l border-[#D4AF37]/20">
                     {/* Panel header - with back button on left when in subcategory */}
                     <div className="flex-shrink-0 px-6 py-4 bg-black/5 dark:bg-black/50">
                       <div className="relative flex items-center justify-center">
@@ -2845,15 +2833,6 @@ export const ProfileCard = ({
                         <div className="text-lg font-medium">No Onchain Data</div>
                         <p className="text-sm">No social links, tokens, activity, or NFTs found for this address.</p>
                       </div>
-                    )}
-                    {selectedNft && (
-                      <NFTDetailModal
-                        nft={selectedNft}
-                        isOpen={!!selectedNft}
-                        onClose={() => setSelectedNft(null)}
-                        headerImage={web3BioProfile?.header || iotaHeaderPattern}
-                        embedded
-                      />
                     )}
                   </div>
                 </div>
@@ -3711,22 +3690,10 @@ export const ProfileCard = ({
                     ) : (
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {ensDomains.map((domain: any, index: number) => {
-                            const expMs = domain.expiryDate
-                              ? (typeof domain.expiryDate === 'string' ? parseInt(domain.expiryDate) : domain.expiryDate) * 1000
-                              : null;
-                            const now = Date.now();
-                            const GRACE = 90 * 24 * 60 * 60 * 1000;
-                            let statusBorder = 'border-[#5298FF]/20 hover:border-[#5298FF]/50';
-                            if (expMs) {
-                              if (now > expMs + GRACE) statusBorder = 'border-emerald-500 hover:border-emerald-400';
-                              else if (now > expMs) statusBorder = 'border-[#D4AF37] hover:border-[#F0D78C]';
-                              else if (expMs - now < 90 * 24 * 60 * 60 * 1000) statusBorder = 'border-red-500 hover:border-red-400';
-                            }
-                            return (
+                          {ensDomains.map((domain: any, index: number) => (
                             <div
                               key={`ens-${domain.name}-${index}`}
-                              className={`group relative overflow-hidden rounded-xl cursor-pointer border transition-all w-full ${statusBorder}`}
+                              className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#5298FF]/20 hover:border-[#5298FF]/50 transition-all w-full"
                               onClick={() => setSelectedEnsDomain(domain)}
                             >
                               <div className="aspect-square bg-gradient-to-br from-[#5298FF]/10 to-[#3370CC]/10 overflow-hidden">
@@ -3744,8 +3711,7 @@ export const ProfileCard = ({
                                 </div>
                               </div>
                             </div>
-                            );
-                          })}
+                          ))}
                         </div>
                       </div>
                     )
@@ -4483,7 +4449,7 @@ export const ProfileCard = ({
         />
       )}
 
-      {selectedNft && isMobile && (
+      {selectedNft && (
         <NFTDetailModal
           nft={selectedNft}
           isOpen={!!selectedNft}
