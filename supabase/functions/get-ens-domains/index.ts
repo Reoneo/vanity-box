@@ -65,7 +65,74 @@ serve(async (req) => {
   }
 
   try {
-    const { walletAddress } = await req.json();
+    const body = await req.json();
+    const { walletAddress, domainName } = body || {};
+
+    // --- Single domain lookup by name (used to surface a searched .eth name) ---
+    if (domainName && typeof domainName === 'string') {
+      const name = domainName.toLowerCase().trim();
+      console.log('🔍 Fetching single ENS domain by name:', name);
+      const singleQuery = {
+        query: `
+          query GetDomainByName($name: String!) {
+            domains(first: 1, where: { name: $name }) {
+              id
+              name
+              labelName
+              owner { id }
+              registrant { id }
+              wrappedOwner { id }
+              resolvedAddress { id }
+              resolver { address }
+              createdAt
+              expiryDate
+            }
+            registrations(first: 1, where: { domain_: { name: $name } }, orderBy: registrationDate, orderDirection: desc) {
+              registrationDate
+              expiryDate
+              registrant { id }
+            }
+          }
+        `,
+        variables: { name },
+      };
+      try {
+        const r = await fetchWithRetry(ENS_SUBGRAPH_URLS, JSON.stringify(singleQuery));
+        const j = await r.json();
+        const d = j?.data?.domains?.[0];
+        const reg = j?.data?.registrations?.[0];
+        if (!d) {
+          return new Response(JSON.stringify({ domain: null }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const formatted = {
+          identifier: d.name,
+          name: d.name,
+          collection: 'ENS Domains',
+          image_url: `https://metadata.ens.domains/mainnet/avatar/${d.name}`,
+          display_image_url: `https://metadata.ens.domains/mainnet/avatar/${d.name}`,
+          type: d.wrappedOwner?.id ? 'wrapped' : 'owned',
+          expiryDate: reg?.expiryDate || d.expiryDate,
+          createdAt: reg?.registrationDate || d.createdAt,
+          owner: d.wrappedOwner?.id || d.owner?.id,
+          manager: d.owner?.id,
+          registrant: reg?.registrant?.id || d.registrant?.id,
+          resolvedAddress: d.resolvedAddress?.id,
+          resolver: d.resolver?.address,
+          chain: 'ethereum',
+          isEnsDomain: true,
+        };
+        return new Response(JSON.stringify({ domain: formatted }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        console.error('Single domain fetch failed:', e);
+        return new Response(JSON.stringify({ domain: null, error: String(e) }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
     if (!walletAddress || typeof walletAddress !== 'string') {
       console.log('❌ No valid wallet address provided');
@@ -78,6 +145,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     const normalizedAddress = walletAddress.toLowerCase();
     console.log('🔍 Fetching ENS domains for:', normalizedAddress);

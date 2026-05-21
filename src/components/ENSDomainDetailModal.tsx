@@ -5,19 +5,25 @@ import { ExternalLink, Calendar, Clock, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { format, formatDistanceToNow, isPast, addDays } from 'date-fns';
 
-interface ENSDomainDetailModalProps {
+interface ENSDomainDetailProps {
   domain: {
     name: string;
     type?: string;
     expiryDate?: string | number;
     createdAt?: string | number;
     image_url?: string;
+    owner?: string;
+    manager?: string;
+    registrant?: string;
+    resolvedAddress?: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDetailModalProps) => {
+const shortAddr = (a?: string) => (a && a.length > 10 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a || '');
+
+export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDetailProps) => {
   const [copied, setCopied] = useState(false);
 
   if (!domain) return null;
@@ -36,9 +42,19 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
 
   const expiryDate = expiryTimestamp ? new Date(expiryTimestamp) : null;
   const createdDate = createdTimestamp ? new Date(createdTimestamp) : null;
-  
+  const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
+
   const isExpired = expiryDate ? isPast(expiryDate) : false;
+  const isGraceEnded = graceEndDate ? isPast(graceEndDate) : false;
   const isExpiringSoon = expiryDate && !isExpired ? isPast(addDays(new Date(), -90)) && expiryDate < addDays(new Date(), 90) : false;
+
+  const roles: { label: string; address?: string }[] = [
+    { label: 'Owner', address: domain.owner },
+    { label: 'Manager', address: domain.manager },
+    { label: 'Registrant', address: domain.registrant },
+    { label: 'ETH record', address: domain.resolvedAddress },
+  ].filter((r) => !!r.address);
+
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(domain.name);
@@ -146,7 +162,46 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
                 </div>
               </div>
             )}
+            {graceEndDate && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm">Grace period ends</span>
+                </div>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${isGraceEnded ? 'text-emerald-500' : isExpired ? 'text-amber-500' : 'text-foreground'}`}>
+                    {format(graceEndDate, 'MMM d, yyyy')}
+                  </span>
+                  <p className={`text-xs ${isGraceEnded ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                    {isGraceEnded
+                      ? `Ended ${formatDistanceToNow(graceEndDate)} ago`
+                      : `in ${formatDistanceToNow(graceEndDate)}`}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Roles */}
+          {roles.length > 0 && (
+            <div className="space-y-2 bg-muted/30 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-foreground mb-2">Roles</h3>
+              {roles.map((r) => (
+                <div key={r.label} className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-muted-foreground">{r.label}</span>
+                  <button
+                    type="button"
+                    onClick={() => window.open(`https://etherscan.io/address/${r.address}`, '_blank')}
+                    className="text-sm font-mono text-foreground hover:text-[#5298FF] transition-colors"
+                    title={r.address}
+                  >
+                    {shortAddr(r.address)}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
 
           {/* Actions */}
           <div className="flex gap-2">
