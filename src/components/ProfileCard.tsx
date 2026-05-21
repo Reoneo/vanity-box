@@ -653,6 +653,36 @@ export const ProfileCard = ({
     fetchLinkedEvmEns();
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, linkedEvmEnsFetched]);
 
+  // Inject the searched .eth name into the ENS collection even if the resolved address doesn't own it
+  useEffect(() => {
+    const name = (searchedIdentity || '').toLowerCase().trim();
+    if (!name.endsWith('.eth')) return;
+    if (!ensDomainsFetched) return;
+    if (ensDomains.some((d: any) => (d?.name || '').toLowerCase() === name)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+          },
+          body: JSON.stringify({ domainName: name }),
+        });
+        const j = await res.json();
+        if (!cancelled && j?.domain) {
+          setEnsDomains((prev) => prev.some((d: any) => (d?.name || '').toLowerCase() === name) ? prev : [j.domain, ...prev]);
+        }
+      } catch (e) {
+        console.warn('[ProfileCard] searched ENS injection failed:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [searchedIdentity, ensDomainsFetched, ensDomains]);
+
+
+
   // Step B: Fetch EVM social links from Web3.bio AFTER linked ENS domains are resolved
   useEffect(() => {
     const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
