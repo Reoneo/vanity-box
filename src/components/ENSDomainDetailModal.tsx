@@ -5,19 +5,25 @@ import { ExternalLink, Calendar, Clock, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { format, formatDistanceToNow, isPast, addDays } from 'date-fns';
 
-interface ENSDomainDetailModalProps {
+interface ENSDomainDetailProps {
   domain: {
     name: string;
     type?: string;
     expiryDate?: string | number;
     createdAt?: string | number;
     image_url?: string;
+    owner?: string;
+    manager?: string;
+    registrant?: string;
+    resolvedAddress?: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDetailModalProps) => {
+const shortAddr = (a?: string) => (a && a.length > 10 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a || '');
+
+export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDetailProps) => {
   const [copied, setCopied] = useState(false);
 
   if (!domain) return null;
@@ -36,9 +42,19 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
 
   const expiryDate = expiryTimestamp ? new Date(expiryTimestamp) : null;
   const createdDate = createdTimestamp ? new Date(createdTimestamp) : null;
-  
+  const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
+
   const isExpired = expiryDate ? isPast(expiryDate) : false;
+  const isGraceEnded = graceEndDate ? isPast(graceEndDate) : false;
   const isExpiringSoon = expiryDate && !isExpired ? isPast(addDays(new Date(), -90)) && expiryDate < addDays(new Date(), 90) : false;
+
+  const roles: { label: string; address?: string }[] = [
+    { label: 'Owner', address: domain.owner },
+    { label: 'Manager', address: domain.manager },
+    { label: 'Registrant', address: domain.registrant },
+    { label: 'ETH record', address: domain.resolvedAddress },
+  ].filter((r) => !!r.address);
+
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(domain.name);
