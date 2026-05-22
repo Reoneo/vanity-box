@@ -343,6 +343,10 @@ serve(async (req) => {
             createdAt: d.createdAt,
             expiryDate: d.expiryDate,
             owner: d.owner?.id,
+            manager: d.owner?.id,
+            registrant: d.registrant?.id,
+            resolvedAddress: d.resolvedAddress?.id,
+            resolver: d.resolver?.address,
           });
         }
       }
@@ -361,6 +365,11 @@ serve(async (req) => {
       type: d.type,
       expiryDate: d.expiryDate,
       createdAt: d.createdAt,
+      owner: d.owner,
+      manager: d.manager,
+      registrant: d.registrant,
+      resolvedAddress: d.resolvedAddress,
+      resolver: d.resolver,
       chain: 'ethereum',
       isEnsDomain: true,
     }));
