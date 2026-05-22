@@ -170,7 +170,8 @@ serve(async (req) => {
         const d = j?.data?.domains?.[0];
         const reg = j?.data?.registrations?.[0];
         if (!d) {
-          return new Response(JSON.stringify({ domain: null }), {
+          const directDomain = await getDirectEnsDomain(name);
+          return new Response(JSON.stringify({ domain: directDomain }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
@@ -196,7 +197,11 @@ serve(async (req) => {
         });
       } catch (e) {
         console.error('Single domain fetch failed:', e);
-        return new Response(JSON.stringify({ domain: null, error: String(e) }), {
+        const directDomain = await getDirectEnsDomain(name).catch((directError) => {
+          console.error('Direct ENS fallback failed:', directError);
+          return null;
+        });
+        return new Response(JSON.stringify({ domain: directDomain, error: directDomain ? undefined : String(e) }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
