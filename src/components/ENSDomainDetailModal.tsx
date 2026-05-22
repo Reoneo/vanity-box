@@ -23,22 +23,20 @@ interface ENSDomainDetailProps {
 
 const shortAddr = (a?: string) => (a && a.length > 10 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a || '');
 
+const toDateMs = (value?: string | number | null) => {
+  if (!value) return null;
+  const numeric = typeof value === 'string' ? Number.parseInt(value, 10) : Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  return numeric > 10_000_000_000 ? numeric : numeric * 1000;
+};
+
 export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDetailProps) => {
   const [copied, setCopied] = useState(false);
 
   if (!domain) return null;
 
-  const expiryTimestamp = domain.expiryDate 
-    ? typeof domain.expiryDate === 'string' 
-      ? parseInt(domain.expiryDate) * 1000 
-      : domain.expiryDate * 1000
-    : null;
-  
-  const createdTimestamp = domain.createdAt
-    ? typeof domain.createdAt === 'string'
-      ? parseInt(domain.createdAt) * 1000
-      : domain.createdAt * 1000
-    : null;
+  const expiryTimestamp = toDateMs(domain.expiryDate);
+  const createdTimestamp = toDateMs(domain.createdAt);
 
   const expiryDate = expiryTimestamp ? new Date(expiryTimestamp) : null;
   const createdDate = createdTimestamp ? new Date(createdTimestamp) : null;

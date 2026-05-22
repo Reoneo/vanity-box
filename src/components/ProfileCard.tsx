@@ -1012,6 +1012,22 @@ export const ProfileCard = ({
     return `https://${raw}`;
   };
 
+  const getEnsExpiryMs = (domain: any) => {
+    const raw = domain?.expiryDate ?? domain?.expiration_date ?? domain?.expiresAt;
+    if (!raw) return null;
+    const numeric = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number(raw);
+    if (!Number.isFinite(numeric) || numeric <= 0) return null;
+    return numeric > 10_000_000_000 ? numeric : numeric * 1000;
+  };
+
+  const getEnsBorderClass = (domain: any) => {
+    const expiryMs = getEnsExpiryMs(domain);
+    const graceMs = 90 * 24 * 60 * 60 * 1000;
+    if (expiryMs && expiryMs + graceMs < Date.now()) return 'border-2 border-emerald-500 hover:border-emerald-400';
+    if (expiryMs && expiryMs < Date.now()) return 'border-2 border-red-500 hover:border-red-400';
+    return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
+  };
+
   const searchedChainLabel = useMemo(() => {
     const normalized = searchedIdentity?.toLowerCase() || '';
     if (normalized.endsWith('.eth')) return 'ENS';
@@ -1131,6 +1147,10 @@ export const ProfileCard = ({
     setIotaTokens([]);
     setIotaTransactions([]);
     setIotaNfts([]);
+    setEnsDomains([]);
+    setEnsDomainsFetched(false);
+    setEnsDomainsLoading(true);
+    setSelectedEnsDomain(null);
   }, [searchedIdentity, currentWalletAddress, effectiveEvmWallet, iotaOwnerAddressForFetch]);
 
   // Fetch all data on profile load for button visibility
@@ -1298,6 +1318,9 @@ export const ProfileCard = ({
             setEnsDomainsLoading(false);
             setEnsDomainsFetched(true);
           }
+        } else if ((searchedIdentity || '').toLowerCase().trim().endsWith('.eth')) {
+          setEnsDomainsLoading(false);
+          setEnsDomainsFetched(true);
         } else {
           setEnsDomainsLoading(false);
           setEnsDomainsFetched(true);
@@ -2533,7 +2556,26 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {/* ENS Domains and Basenames buttons removed — using OpenSea collections instead */}
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (ensDomainsLoading || ensDomains.length > 0) && (
+                              <button onClick={() => setNftCategory('ensdomains')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="text-left flex-1 min-w-0 mr-3">
+                                    <h4 className="font-medium text-black text-base">{renderCollectionLabel('ENS Domains')}</h4>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'name' : 'names'}`}</p>
+                                      {ensDomains.length > 0 && (
+                                        <div className="flex -space-x-2">
+                                          {ensDomains.slice(0, 3).map((domain: any, idx: number) => (
+                                            <img key={idx} src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
 
                             {/* IOTA Collection Buttons - separate per collection */}
                             {(nftChainFilter === 'all' || nftChainFilter === 'iota') && isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
@@ -2667,7 +2709,7 @@ export const ProfileCard = ({
                             {nftCategory === 'ensdomains' && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 {ensDomains.map((domain: any) => (
-                                  <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3">
+                                  <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3 ${getEnsBorderClass(domain)}`}>
                                     <div className="flex flex-col items-center gap-2">
                                       {domain.avatar ? (
                                         <img src={domain.avatar} alt={domain.name} className="w-12 h-12 rounded-full object-cover" />
@@ -3410,7 +3452,29 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {/* ENS Domains and Basenames buttons removed — using OpenSea collections instead */}
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (ensDomainsLoading || ensDomains.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('ensdomains')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-left flex-1 min-w-0 mr-3">
+                              <h4 className="font-medium text-black text-base">{renderCollectionLabel('ENS Domains')}</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'name' : 'names'}`}</p>
+                                {ensDomains.length > 0 && (
+                                  <div className="flex -space-x-2">
+                                    {ensDomains.slice(0, 3).map((domain: any, idx: number) => (
+                                      <img key={idx} src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
 
                       {/* IOTA Collection Buttons - separate per collection */}
                       {(nftChainFilter === 'all' || nftChainFilter === 'iota') && isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
@@ -3721,18 +3785,7 @@ export const ProfileCard = ({
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
                           {ensDomains.map((domain: any, index: number) => {
-                            const expiryMs = domain.expiryDate
-                              ? (typeof domain.expiryDate === 'string' ? parseInt(domain.expiryDate) : domain.expiryDate) * 1000
-                              : null;
-                            const now = Date.now();
-                            const graceMs = 90 * 24 * 60 * 60 * 1000;
-                            const isExpired = !!expiryMs && expiryMs < now;
-                            const isGraceEnded = !!expiryMs && (expiryMs + graceMs) < now;
-                            const borderClass = isGraceEnded
-                              ? 'border-2 border-emerald-500 hover:border-emerald-400'
-                              : isExpired
-                              ? 'border-2 border-red-500 hover:border-red-400'
-                              : 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
+                            const borderClass = getEnsBorderClass(domain);
                             return (
                             <div
                               key={`ens-${domain.name}-${index}`}
