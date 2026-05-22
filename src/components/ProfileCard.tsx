@@ -1012,6 +1012,22 @@ export const ProfileCard = ({
     return `https://${raw}`;
   };
 
+  const getEnsExpiryMs = (domain: any) => {
+    const raw = domain?.expiryDate ?? domain?.expiration_date ?? domain?.expiresAt;
+    if (!raw) return null;
+    const numeric = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number(raw);
+    if (!Number.isFinite(numeric) || numeric <= 0) return null;
+    return numeric > 10_000_000_000 ? numeric : numeric * 1000;
+  };
+
+  const getEnsBorderClass = (domain: any) => {
+    const expiryMs = getEnsExpiryMs(domain);
+    const graceMs = 90 * 24 * 60 * 60 * 1000;
+    if (expiryMs && expiryMs + graceMs < Date.now()) return 'border-2 border-emerald-500 hover:border-emerald-400';
+    if (expiryMs && expiryMs < Date.now()) return 'border-2 border-red-500 hover:border-red-400';
+    return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
+  };
+
   const searchedChainLabel = useMemo(() => {
     const normalized = searchedIdentity?.toLowerCase() || '';
     if (normalized.endsWith('.eth')) return 'ENS';
