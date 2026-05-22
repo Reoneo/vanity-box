@@ -239,6 +239,10 @@ serve(async (req) => {
             labelName
             labelhash
             owner { id }
+            registrant { id }
+            wrappedOwner { id }
+            resolvedAddress { id }
+            resolver { address }
             createdAt
             expiryDate
           }
@@ -263,6 +267,10 @@ serve(async (req) => {
             name
             labelName
             owner { id }
+            registrant { id }
+            wrappedOwner { id }
+            resolvedAddress { id }
+            resolver { address }
             createdAt
             expiryDate
           }
@@ -297,6 +305,10 @@ serve(async (req) => {
           createdAt: d.createdAt,
           expiryDate: d.expiryDate,
           owner: d.owner?.id,
+          manager: d.owner?.id,
+          registrant: d.registrant?.id,
+          resolvedAddress: d.resolvedAddress?.id,
+          resolver: d.resolver?.address,
         });
       }
     });
@@ -311,6 +323,10 @@ serve(async (req) => {
           type: 'wrapped',
           expiryDate: d.expiryDate,
           owner: d.owner?.id,
+          manager: existing?.manager,
+          registrant: existing?.registrant,
+          resolvedAddress: existing?.resolvedAddress,
+          resolver: existing?.resolver,
         });
       }
     });
