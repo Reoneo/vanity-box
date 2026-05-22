@@ -2709,7 +2709,7 @@ export const ProfileCard = ({
                             {nftCategory === 'ensdomains' && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 {ensDomains.map((domain: any) => (
-                                  <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3">
+                                  <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3 ${getEnsBorderClass(domain)}`}>
                                     <div className="flex flex-col items-center gap-2">
                                       {domain.avatar ? (
                                         <img src={domain.avatar} alt={domain.name} className="w-12 h-12 rounded-full object-cover" />
@@ -3785,18 +3785,7 @@ export const ProfileCard = ({
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
                           {ensDomains.map((domain: any, index: number) => {
-                            const expiryMs = domain.expiryDate
-                              ? (typeof domain.expiryDate === 'string' ? parseInt(domain.expiryDate) : domain.expiryDate) * 1000
-                              : null;
-                            const now = Date.now();
-                            const graceMs = 90 * 24 * 60 * 60 * 1000;
-                            const isExpired = !!expiryMs && expiryMs < now;
-                            const isGraceEnded = !!expiryMs && (expiryMs + graceMs) < now;
-                            const borderClass = isGraceEnded
-                              ? 'border-2 border-emerald-500 hover:border-emerald-400'
-                              : isExpired
-                              ? 'border-2 border-red-500 hover:border-red-400'
-                              : 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
+                            const borderClass = getEnsBorderClass(domain);
                             return (
                             <div
                               key={`ens-${domain.name}-${index}`}
