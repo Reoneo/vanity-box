@@ -1147,6 +1147,10 @@ export const ProfileCard = ({
     setIotaTokens([]);
     setIotaTransactions([]);
     setIotaNfts([]);
+    setEnsDomains([]);
+    setEnsDomainsFetched(false);
+    setEnsDomainsLoading(true);
+    setSelectedEnsDomain(null);
   }, [searchedIdentity, currentWalletAddress, effectiveEvmWallet, iotaOwnerAddressForFetch]);
 
   // Fetch all data on profile load for button visibility
