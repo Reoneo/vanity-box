@@ -1314,6 +1314,9 @@ export const ProfileCard = ({
             setEnsDomainsLoading(false);
             setEnsDomainsFetched(true);
           }
+        } else if ((searchedIdentity || '').toLowerCase().trim().endsWith('.eth')) {
+          setEnsDomainsLoading(false);
+          setEnsDomainsFetched(true);
         } else {
           setEnsDomainsLoading(false);
           setEnsDomainsFetched(true);
