@@ -303,6 +303,7 @@ export const ProfileCard = ({
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const injectedEnsNameRef = useRef<string | null>(null);
   const [tokensFetched, setTokensFetched] = useState(false);
   const [transactionsFetched, setTransactionsFetched] = useState(false);
   const [showTalentModal, setShowTalentModal] = useState(false);
