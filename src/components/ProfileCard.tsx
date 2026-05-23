@@ -1153,6 +1153,7 @@ export const ProfileCard = ({
     setEnsDomains([]);
     setEnsDomainsFetched(false);
     setEnsDomainsLoading(true);
+    injectedEnsNameRef.current = null;
     setSelectedEnsDomain(null);
   }, [searchedIdentity, currentWalletAddress, effectiveEvmWallet, iotaOwnerAddressForFetch]);
 
