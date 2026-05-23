@@ -1025,9 +1025,13 @@ export const ProfileCard = ({
 
   const getEnsBorderClass = (domain: any) => {
     const expiryMs = getEnsExpiryMs(domain);
+    if (!expiryMs) return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
+    const now = Date.now();
     const graceMs = 90 * 24 * 60 * 60 * 1000;
-    if (expiryMs && expiryMs + graceMs < Date.now()) return 'border-2 border-emerald-500 hover:border-emerald-400';
-    if (expiryMs && expiryMs < Date.now()) return 'border-2 border-red-500 hover:border-red-400';
+    const monthMs = 30 * 24 * 60 * 60 * 1000;
+    if (expiryMs + graceMs < now) return 'border-2 border-emerald-500 hover:border-emerald-400';
+    if (expiryMs < now) return 'border-2 border-red-500 hover:border-red-400';
+    if (expiryMs - now <= monthMs) return 'border-2 border-orange-500 hover:border-orange-400';
     return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
   };
 
