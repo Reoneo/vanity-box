@@ -657,8 +657,8 @@ export const ProfileCard = ({
   useEffect(() => {
     const name = (searchedIdentity || '').toLowerCase().trim();
     if (!name.endsWith('.eth')) return;
-    if (!ensDomainsFetched) return;
-    if (ensDomains.some((d: any) => (d?.name || '').toLowerCase() === name)) return;
+    if (injectedEnsNameRef.current === name) return;
+    injectedEnsNameRef.current = name;
     let cancelled = false;
     (async () => {
       try {
@@ -671,15 +671,17 @@ export const ProfileCard = ({
           body: JSON.stringify({ domainName: name }),
         });
         const j = await res.json();
-        if (!cancelled && j?.domain) {
-          setEnsDomains((prev) => prev.some((d: any) => (d?.name || '').toLowerCase() === name) ? prev : [j.domain, ...prev]);
-        }
+        console.log('[ProfileCard] searched ENS injection result for', name, j);
+        if (cancelled || !j?.domain) return;
+        setEnsDomains((prev) => prev.some((d: any) => (d?.name || '').toLowerCase() === name) ? prev : [j.domain, ...prev]);
+        setEnsDomainsFetched(true);
+        setEnsDomainsLoading(false);
       } catch (e) {
         console.warn('[ProfileCard] searched ENS injection failed:', e);
       }
     })();
     return () => { cancelled = true; };
-  }, [searchedIdentity, ensDomainsFetched, ensDomains]);
+  }, [searchedIdentity]);
 
 
 
