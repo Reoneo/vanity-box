@@ -127,6 +127,30 @@ const CHAIN_MEDIA = {
   sui: { icon: suiLogoBlue, label: 'Sui', alt: 'Sui' },
 } as const;
 
+const ENS_REGISTRAR_CONTRACT = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
+const ENS_NAME_WRAPPER_CONTRACT = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
+const SUPABASE_ANON_AUTH_HEADER = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE';
+
+const getEnsNameFromItem = (item: any): string | null => {
+  const raw = String(item?.name || item?.identifier || '').toLowerCase().trim();
+  const match = raw.match(/(?:^|\s)([^\s,]+\.eth)\b/i);
+  return match?.[1]?.replace(/[),.;]+$/g, '') || (raw.endsWith('.eth') ? raw : null);
+};
+
+const isEnsNftLike = (item: any): boolean => {
+  const collection = String(item?.collection || item?.collection_name || '').toLowerCase();
+  const contract = String(item?.contract || item?.contract_address || '').toLowerCase();
+  return !!getEnsNameFromItem(item) || collection === 'ens' || collection.includes('ethereum name service') || contract === ENS_REGISTRAR_CONTRACT || contract === ENS_NAME_WRAPPER_CONTRACT;
+};
+
+const getTraitValue = (item: any, traitNames: string[]) => {
+  const traits = item?.traits || item?.metadata?.attributes || item?.attributes || [];
+  if (!Array.isArray(traits)) return null;
+  const wanted = traitNames.map((name) => name.toLowerCase());
+  const trait = traits.find((entry: any) => wanted.includes(String(entry?.trait_type || entry?.type || entry?.name || '').trim().toLowerCase()));
+  return trait?.value ?? null;
+};
+
 // Chain icon helper function for activity feed
 const getChainIcon = (chain: string, size: number = 18) => {
   const chainLower = (chain || 'ethereum').toLowerCase();
@@ -304,6 +328,8 @@ export const ProfileCard = ({
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const injectedEnsNameRef = useRef<string | null>(null);
+  const [ensExpiryOverrides, setEnsExpiryOverrides] = useState<Record<string, string | number>>({});
+  const fetchedEnsExpiryNamesRef = useRef<Set<string>>(new Set());
   const [tokensFetched, setTokensFetched] = useState(false);
   const [transactionsFetched, setTransactionsFetched] = useState(false);
   const [showTalentModal, setShowTalentModal] = useState(false);
@@ -684,6 +710,37 @@ export const ProfileCard = ({
     return () => { cancelled = true; };
   }, [searchedIdentity]);
 
+  const visibleOpenSeaEnsNames = useMemo(() => {
+    return Array.from(new Set(nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[]));
+  }, [nfts]);
+
+  useEffect(() => {
+    const missingNames = visibleOpenSeaEnsNames.filter((name) => !fetchedEnsExpiryNamesRef.current.has(name));
+    if (missingNames.length === 0) return;
+    missingNames.forEach((name) => fetchedEnsExpiryNamesRef.current.add(name));
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.allSettled(missingNames.map(async (domainName) => {
+        const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
+          body: JSON.stringify({ domainName }),
+        });
+        const data = await res.json();
+        return { domainName, expiryDate: data?.domain?.expiryDate };
+      }));
+      if (cancelled) return;
+      setEnsExpiryOverrides((prev) => {
+        const next = { ...prev };
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value.expiryDate) next[result.value.domainName] = result.value.expiryDate;
+        });
+        return next;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [visibleOpenSeaEnsNames]);
+
 
 
   // Step B: Fetch EVM social links from Web3.bio AFTER linked ENS domains are resolved
@@ -1016,7 +1073,12 @@ export const ProfileCard = ({
   };
 
   const getEnsExpiryMs = (domain: any) => {
-    const raw = domain?.expiryDate ?? domain?.expiration_date ?? domain?.expiresAt;
+    const ensName = getEnsNameFromItem(domain);
+    const raw = (ensName ? ensExpiryOverrides[ensName] : null) ??
+      domain?.expiryDate ??
+      domain?.expiration_date ??
+      domain?.expiresAt ??
+      getTraitValue(domain, ['Expiration Date', 'Namewrapper Expiry Date']);
     if (!raw) return null;
     const numeric = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number(raw);
     if (!Number.isFinite(numeric) || numeric <= 0) return null;
@@ -1030,11 +1092,11 @@ export const ProfileCard = ({
     const graceMs = 90 * 24 * 60 * 60 * 1000;
     const monthMs = 30 * 24 * 60 * 60 * 1000;
     // Grace period ended (expired more than 90 days ago) → green (released)
-    if (expiryMs + graceMs < now) return 'border-4 border-emerald-500 ring-2 ring-emerald-500/40 hover:border-emerald-400';
+    if (expiryMs + graceMs < now) return 'ens-status-tile ens-status-released';
     // Expired (within grace period) → red
-    if (expiryMs < now) return 'border-4 border-red-500 ring-2 ring-red-500/40 hover:border-red-400';
+    if (expiryMs < now) return 'ens-status-tile ens-status-expired';
     // Expiring within 30 days → orange
-    if (expiryMs - now <= monthMs) return 'border-4 border-orange-500 ring-2 ring-orange-500/40 hover:border-orange-400';
+    if (expiryMs - now <= monthMs) return 'ens-status-tile ens-status-expiring';
     return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
   };
 
@@ -1160,6 +1222,8 @@ export const ProfileCard = ({
     setEnsDomains([]);
     setEnsDomainsFetched(false);
     setEnsDomainsLoading(true);
+    setEnsExpiryOverrides({});
+    fetchedEnsExpiryNamesRef.current.clear();
     injectedEnsNameRef.current = null;
     setSelectedEnsDomain(null);
   }, [searchedIdentity, currentWalletAddress, effectiveEvmWallet, iotaOwnerAddressForFetch]);
@@ -2829,7 +2893,7 @@ export const ProfileCard = ({
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {(openSeaGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
-                                      <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                      <div key={`${nft.contract}-${nft.identifier}-${index}`} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : 'border border-[#D4AF37]/20 hover:border-[#D4AF37]/50'}`} onClick={() => setSelectedNft(nft)}>
                                         <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                                       </div>
                                     ))}
@@ -3651,7 +3715,7 @@ export const ProfileCard = ({
                             const isVideo = animationUrl && (animationUrl.toLowerCase().includes('.mp4') || animationUrl.toLowerCase().includes('.webm') || animationUrl.toLowerCase().includes('video'));
                             const isAudio = animationUrl && (animationUrl.toLowerCase().includes('.mp3') || animationUrl.toLowerCase().includes('.wav') || animationUrl.toLowerCase().includes('audio'));
                             return (
-                              <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                              <div key={`${nft.contract}-${nft.identifier}-${index}`} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : 'border border-[#D4AF37]/20 hover:border-[#D4AF37]/50'}`} onClick={() => setSelectedNft(nft)}>
                                 {isVideo ? (
                                   <video src={animationUrl} poster={nft.image_url || nft.display_image_url} muted loop playsInline onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} className="w-full aspect-square object-cover" />
                                 ) : (
@@ -4358,10 +4422,10 @@ export const ProfileCard = ({
                       </div>
                       
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                          {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
                           <div
                             key={`${nft.contract}-${nft.identifier}-${index}`}
-                            className="group relative overflow-hidden rounded-xl cursor-pointer active:opacity-90 transition-opacity flex-shrink-0 touch-action-manipulation"
+                            className={`group relative overflow-hidden rounded-xl cursor-pointer active:opacity-90 transition-opacity flex-shrink-0 touch-action-manipulation ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : ''}`}
                             onClick={() => setSelectedNft(nft)}
                           >
                             <div className="aspect-square relative overflow-hidden bg-black/20">
