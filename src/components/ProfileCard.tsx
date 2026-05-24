@@ -1073,7 +1073,12 @@ export const ProfileCard = ({
   };
 
   const getEnsExpiryMs = (domain: any) => {
-    const raw = domain?.expiryDate ?? domain?.expiration_date ?? domain?.expiresAt;
+    const ensName = getEnsNameFromItem(domain);
+    const raw = (ensName ? ensExpiryOverrides[ensName] : null) ??
+      domain?.expiryDate ??
+      domain?.expiration_date ??
+      domain?.expiresAt ??
+      getTraitValue(domain, ['Expiration Date', 'Namewrapper Expiry Date']);
     if (!raw) return null;
     const numeric = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number(raw);
     if (!Number.isFinite(numeric) || numeric <= 0) return null;
@@ -1087,11 +1092,11 @@ export const ProfileCard = ({
     const graceMs = 90 * 24 * 60 * 60 * 1000;
     const monthMs = 30 * 24 * 60 * 60 * 1000;
     // Grace period ended (expired more than 90 days ago) → green (released)
-    if (expiryMs + graceMs < now) return 'border-4 border-emerald-500 ring-2 ring-emerald-500/40 hover:border-emerald-400';
+    if (expiryMs + graceMs < now) return 'ens-status-tile ens-status-released';
     // Expired (within grace period) → red
-    if (expiryMs < now) return 'border-4 border-red-500 ring-2 ring-red-500/40 hover:border-red-400';
+    if (expiryMs < now) return 'ens-status-tile ens-status-expired';
     // Expiring within 30 days → orange
-    if (expiryMs - now <= monthMs) return 'border-4 border-orange-500 ring-2 ring-orange-500/40 hover:border-orange-400';
+    if (expiryMs - now <= monthMs) return 'ens-status-tile ens-status-expiring';
     return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
   };
 
