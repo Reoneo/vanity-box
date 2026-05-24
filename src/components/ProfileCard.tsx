@@ -710,6 +710,37 @@ export const ProfileCard = ({
     return () => { cancelled = true; };
   }, [searchedIdentity]);
 
+  const visibleOpenSeaEnsNames = useMemo(() => {
+    return Array.from(new Set(nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[]));
+  }, [nfts]);
+
+  useEffect(() => {
+    const missingNames = visibleOpenSeaEnsNames.filter((name) => !fetchedEnsExpiryNamesRef.current.has(name));
+    if (missingNames.length === 0) return;
+    missingNames.forEach((name) => fetchedEnsExpiryNamesRef.current.add(name));
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.allSettled(missingNames.map(async (domainName) => {
+        const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
+          body: JSON.stringify({ domainName }),
+        });
+        const data = await res.json();
+        return { domainName, expiryDate: data?.domain?.expiryDate };
+      }));
+      if (cancelled) return;
+      setEnsExpiryOverrides((prev) => {
+        const next = { ...prev };
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value.expiryDate) next[result.value.domainName] = result.value.expiryDate;
+        });
+        return next;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [visibleOpenSeaEnsNames]);
+
 
 
   // Step B: Fetch EVM social links from Web3.bio AFTER linked ENS domains are resolved
