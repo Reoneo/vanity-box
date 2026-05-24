@@ -1029,9 +1029,12 @@ export const ProfileCard = ({
     const now = Date.now();
     const graceMs = 90 * 24 * 60 * 60 * 1000;
     const monthMs = 30 * 24 * 60 * 60 * 1000;
-    if (expiryMs + graceMs < now) return 'border-2 border-emerald-500 hover:border-emerald-400';
-    if (expiryMs < now) return 'border-2 border-red-500 hover:border-red-400';
-    if (expiryMs - now <= monthMs) return 'border-2 border-orange-500 hover:border-orange-400';
+    // Grace period ended (expired more than 90 days ago) → green (released)
+    if (expiryMs + graceMs < now) return 'border-4 border-emerald-500 ring-2 ring-emerald-500/40 hover:border-emerald-400';
+    // Expired (within grace period) → red
+    if (expiryMs < now) return 'border-4 border-red-500 ring-2 ring-red-500/40 hover:border-red-400';
+    // Expiring within 30 days → orange
+    if (expiryMs - now <= monthMs) return 'border-4 border-orange-500 ring-2 ring-orange-500/40 hover:border-orange-400';
     return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
   };
 
