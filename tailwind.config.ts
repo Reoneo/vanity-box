@@ -3,6 +3,11 @@ import type { Config } from "tailwindcss";
 export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  safelist: [
+    'border-4', 'border-orange-500', 'border-red-500', 'border-emerald-500',
+    'hover:border-orange-400', 'hover:border-red-400', 'hover:border-emerald-400',
+    'ring-2', 'ring-orange-500/40', 'ring-red-500/40', 'ring-emerald-500/40',
+  ],
   prefix: "",
   theme: {
     container: {
