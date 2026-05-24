@@ -4422,10 +4422,10 @@ export const ProfileCard = ({
                       </div>
                       
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                          {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
                           <div
                             key={`${nft.contract}-${nft.identifier}-${index}`}
-                            className="group relative overflow-hidden rounded-xl cursor-pointer active:opacity-90 transition-opacity flex-shrink-0 touch-action-manipulation"
+                            className={`group relative overflow-hidden rounded-xl cursor-pointer active:opacity-90 transition-opacity flex-shrink-0 touch-action-manipulation ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : ''}`}
                             onClick={() => setSelectedNft(nft)}
                           >
                             <div className="aspect-square relative overflow-hidden bg-black/20">
