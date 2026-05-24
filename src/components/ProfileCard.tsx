@@ -1222,6 +1222,8 @@ export const ProfileCard = ({
     setEnsDomains([]);
     setEnsDomainsFetched(false);
     setEnsDomainsLoading(true);
+    setEnsExpiryOverrides({});
+    fetchedEnsExpiryNamesRef.current.clear();
     injectedEnsNameRef.current = null;
     setSelectedEnsDomain(null);
   }, [searchedIdentity, currentWalletAddress, effectiveEvmWallet, iotaOwnerAddressForFetch]);
@@ -2891,7 +2893,7 @@ export const ProfileCard = ({
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {(openSeaGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
-                                      <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                                      <div key={`${nft.contract}-${nft.identifier}-${index}`} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : 'border border-[#D4AF37]/20 hover:border-[#D4AF37]/50'}`} onClick={() => setSelectedNft(nft)}>
                                         <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                                       </div>
                                     ))}
@@ -3713,7 +3715,7 @@ export const ProfileCard = ({
                             const isVideo = animationUrl && (animationUrl.toLowerCase().includes('.mp4') || animationUrl.toLowerCase().includes('.webm') || animationUrl.toLowerCase().includes('video'));
                             const isAudio = animationUrl && (animationUrl.toLowerCase().includes('.mp3') || animationUrl.toLowerCase().includes('.wav') || animationUrl.toLowerCase().includes('audio'));
                             return (
-                              <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
+                              <div key={`${nft.contract}-${nft.identifier}-${index}`} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : 'border border-[#D4AF37]/20 hover:border-[#D4AF37]/50'}`} onClick={() => setSelectedNft(nft)}>
                                 {isVideo ? (
                                   <video src={animationUrl} poster={nft.image_url || nft.display_image_url} muted loop playsInline onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} className="w-full aspect-square object-cover" />
                                 ) : (
