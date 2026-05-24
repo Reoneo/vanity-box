@@ -127,6 +127,30 @@ const CHAIN_MEDIA = {
   sui: { icon: suiLogoBlue, label: 'Sui', alt: 'Sui' },
 } as const;
 
+const ENS_REGISTRAR_CONTRACT = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
+const ENS_NAME_WRAPPER_CONTRACT = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
+const SUPABASE_ANON_AUTH_HEADER = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE';
+
+const getEnsNameFromItem = (item: any): string | null => {
+  const raw = String(item?.name || item?.identifier || '').toLowerCase().trim();
+  const match = raw.match(/(?:^|\s)([^\s,]+\.eth)\b/i);
+  return match?.[1]?.replace(/[),.;]+$/g, '') || (raw.endsWith('.eth') ? raw : null);
+};
+
+const isEnsNftLike = (item: any): boolean => {
+  const collection = String(item?.collection || item?.collection_name || '').toLowerCase();
+  const contract = String(item?.contract || item?.contract_address || '').toLowerCase();
+  return !!getEnsNameFromItem(item) || collection === 'ens' || collection.includes('ethereum name service') || contract === ENS_REGISTRAR_CONTRACT || contract === ENS_NAME_WRAPPER_CONTRACT;
+};
+
+const getTraitValue = (item: any, traitNames: string[]) => {
+  const traits = item?.traits || item?.metadata?.attributes || item?.attributes || [];
+  if (!Array.isArray(traits)) return null;
+  const wanted = traitNames.map((name) => name.toLowerCase());
+  const trait = traits.find((entry: any) => wanted.includes(String(entry?.trait_type || entry?.type || entry?.name || '').trim().toLowerCase()));
+  return trait?.value ?? null;
+};
+
 // Chain icon helper function for activity feed
 const getChainIcon = (chain: string, size: number = 18) => {
   const chainLower = (chain || 'ethereum').toLowerCase();
