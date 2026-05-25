@@ -67,6 +67,7 @@ import CredentialsCarousel from "./CredentialsCarousel";
 import { BioTicker } from "./BioTicker";
 import { ChronologicalPoapGrid } from "./ChronologicalPoapGrid";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { extractLabel, labelhash, labelhashToTokenId } from "@/lib/ens";
 
 import {
   DropdownMenu,
