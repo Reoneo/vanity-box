@@ -67,6 +67,7 @@ import CredentialsCarousel from "./CredentialsCarousel";
 import { BioTicker } from "./BioTicker";
 import { ChronologicalPoapGrid } from "./ChronologicalPoapGrid";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { extractLabel, labelhash, labelhashToTokenId } from "@/lib/ens";
 
 import {
   DropdownMenu,
@@ -149,6 +150,25 @@ const getTraitValue = (item: any, traitNames: string[]) => {
   const wanted = traitNames.map((name) => name.toLowerCase());
   const trait = traits.find((entry: any) => wanted.includes(String(entry?.trait_type || entry?.type || entry?.name || '').trim().toLowerCase()));
   return trait?.value ?? null;
+};
+
+const parseEnsTimestampMs = (value: unknown): number | null => {
+  if (value == null || value === '') return null;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value <= 100_000_000) return null;
+    return value > 10_000_000_000 ? value : value * 1000;
+  }
+
+  const text = String(value).trim();
+  if (!text) return null;
+  if (/^\d+(\.\d+)?$/.test(text)) {
+    const numeric = Number(text);
+    if (!Number.isFinite(numeric) || numeric <= 100_000_000) return null;
+    return numeric > 10_000_000_000 ? numeric : numeric * 1000;
+  }
+
+  const parsed = Date.parse(text);
+  return Number.isNaN(parsed) ? null : parsed;
 };
 
 // Chain icon helper function for activity feed
@@ -328,7 +348,7 @@ export const ProfileCard = ({
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const injectedEnsNameRef = useRef<string | null>(null);
-  const [ensExpiryOverrides, setEnsExpiryOverrides] = useState<Record<string, string | number>>({});
+  const [ensDomainOverrides, setEnsDomainOverrides] = useState<Record<string, any>>({});
   const fetchedEnsExpiryNamesRef = useRef<Set<string>>(new Set());
   const [tokensFetched, setTokensFetched] = useState(false);
   const [transactionsFetched, setTransactionsFetched] = useState(false);
@@ -682,7 +702,9 @@ export const ProfileCard = ({
 
   // Inject the searched .eth name into the ENS collection even if the resolved address doesn't own it
   useEffect(() => {
-    const name = (searchedIdentity || '').toLowerCase().trim();
+    const name = [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]
+      .map((value) => String(value || '').toLowerCase().trim())
+      .find((value) => value.endsWith('.eth')) || '';
     if (!name.endsWith('.eth')) return;
     if (injectedEnsNameRef.current === name) return;
     injectedEnsNameRef.current = name;
@@ -708,7 +730,7 @@ export const ProfileCard = ({
       }
     })();
     return () => { cancelled = true; };
-  }, [searchedIdentity]);
+  }, [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]);
 
   const visibleOpenSeaEnsNames = useMemo(() => {
     return Array.from(new Set(nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[]));
@@ -727,13 +749,13 @@ export const ProfileCard = ({
           body: JSON.stringify({ domainName }),
         });
         const data = await res.json();
-        return { domainName, expiryDate: data?.domain?.expiryDate };
+        return { domainName, domain: data?.domain };
       }));
       if (cancelled) return;
-      setEnsExpiryOverrides((prev) => {
+      setEnsDomainOverrides((prev) => {
         const next = { ...prev };
         results.forEach((result) => {
-          if (result.status === 'fulfilled' && result.value.expiryDate) next[result.value.domainName] = result.value.expiryDate;
+          if (result.status === 'fulfilled' && result.value.domain) next[result.value.domainName] = result.value.domain;
         });
         return next;
       });
@@ -1072,17 +1094,34 @@ export const ProfileCard = ({
     return `https://${raw}`;
   };
 
-  const getEnsExpiryMs = (domain: any) => {
+  const ensDomainsByName = useMemo(() => {
+    const map = new Map<string, any>();
+    ensDomains.forEach((domain: any) => {
+      const name = getEnsNameFromItem(domain);
+      if (name) map.set(name, domain);
+    });
+    Object.entries(ensDomainOverrides).forEach(([name, domain]) => {
+      if (domain) map.set(name.toLowerCase(), domain);
+    });
+    return map;
+  }, [ensDomains, ensDomainOverrides]);
+
+  const getEnsDomainData = (domain: any) => {
     const ensName = getEnsNameFromItem(domain);
-    const raw = (ensName ? ensExpiryOverrides[ensName] : null) ??
-      domain?.expiryDate ??
-      domain?.expiration_date ??
-      domain?.expiresAt ??
-      getTraitValue(domain, ['Expiration Date', 'Namewrapper Expiry Date']);
-    if (!raw) return null;
-    const numeric = typeof raw === 'string' ? Number.parseInt(raw, 10) : Number(raw);
-    if (!Number.isFinite(numeric) || numeric <= 0) return null;
-    return numeric > 10_000_000_000 ? numeric : numeric * 1000;
+    return ensName ? ensDomainsByName.get(ensName) : null;
+  };
+
+  const getEnsExpiryMs = (domain: any) => {
+    const override = getEnsDomainData(domain);
+    const raw = override?.expiryDate ??
+      (domain?.isEnsDomain ? domain?.expiryDate : null) ??
+      getTraitValue(domain, ['Expiration Date', 'Expiration', 'Expires', 'Expiry', 'Expiry Date', 'Name Expires']);
+    return parseEnsTimestampMs(raw);
+  };
+
+  const getEnsNftWithDomainData = (nft: any) => {
+    const domain = getEnsDomainData(nft);
+    return domain ? { ...nft, ...domain, image_url: nft.image_url || domain.image_url, display_image_url: nft.display_image_url || domain.display_image_url, collection: nft.collection || 'ENS Domains' } : nft;
   };
 
   const getEnsBorderClass = (domain: any) => {
@@ -1090,13 +1129,10 @@ export const ProfileCard = ({
     if (!expiryMs) return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
     const now = Date.now();
     const graceMs = 90 * 24 * 60 * 60 * 1000;
-    const monthMs = 30 * 24 * 60 * 60 * 1000;
     // Grace period ended (expired more than 90 days ago) → green (released)
-    if (expiryMs + graceMs < now) return 'ens-status-tile ens-status-released';
+    if (expiryMs + graceMs <= now) return 'ens-status-tile ens-status-released';
     // Expired (within grace period) → red
-    if (expiryMs < now) return 'ens-status-tile ens-status-expired';
-    // Expiring within 30 days → orange
-    if (expiryMs - now <= monthMs) return 'ens-status-tile ens-status-expiring';
+    if (expiryMs <= now) return 'ens-status-tile ens-status-expired';
     return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
   };
 
@@ -1222,7 +1258,7 @@ export const ProfileCard = ({
     setEnsDomains([]);
     setEnsDomainsFetched(false);
     setEnsDomainsLoading(true);
-    setEnsExpiryOverrides({});
+    setEnsDomainOverrides({});
     fetchedEnsExpiryNamesRef.current.clear();
     injectedEnsNameRef.current = null;
     setSelectedEnsDomain(null);
@@ -1590,7 +1626,8 @@ export const ProfileCard = ({
 
     // Add regular NFTs (OpenSea only)
     filteredNfts.forEach(nft => {
-      const rawCollection = nft.collection || 'Unknown Collection';
+      const enrichedNft = isEnsNftLike(nft) ? getEnsNftWithDomainData(nft) : nft;
+      const rawCollection = enrichedNft.collection || 'Unknown Collection';
       const lower = String(rawCollection).toLowerCase();
       const isUd = lower.includes('unstoppable') || lower.includes('ud.me');
       let collection = rawCollection;
@@ -1603,14 +1640,22 @@ export const ProfileCard = ({
       if (!groups[collection]) {
         groups[collection] = [];
       }
-      groups[collection].push(nft);
+      groups[collection].push(enrichedNft);
+    });
+
+    ensDomains.forEach((domain: any) => {
+      const collection = 'ENS Domains';
+      if (!groups[collection]) groups[collection] = [];
+      const name = getEnsNameFromItem(domain);
+      if (!name || groups[collection].some((item: any) => getEnsNameFromItem(item) === name)) return;
+      groups[collection].push(domain);
     });
 
     // Sort collections by NFT count
     return Object.fromEntries(
       Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
     );
-  }, [filteredNfts]);
+  }, [filteredNfts, ensDomains, ensDomainsByName]);
 
   // Promoted top-level OpenSea collection buttons — domain-like collections first
   const openSeaTopLevelEntries = useMemo<[string, any[]][]>(() => {
