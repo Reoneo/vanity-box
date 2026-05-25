@@ -1091,15 +1091,36 @@ export const ProfileCard = ({
     return `https://${raw}`;
   };
 
-  const getEnsExpiryMs = (domain: any) => {
+  const ensDomainsByName = useMemo(() => {
+    const map = new Map<string, any>();
+    ensDomains.forEach((domain: any) => {
+      const name = getEnsNameFromItem(domain);
+      if (name) map.set(name, domain);
+    });
+    Object.entries(ensDomainOverrides).forEach(([name, domain]) => {
+      if (domain) map.set(name.toLowerCase(), domain);
+    });
+    return map;
+  }, [ensDomains, ensDomainOverrides]);
+
+  const getEnsDomainData = (domain: any) => {
     const ensName = getEnsNameFromItem(domain);
-    const override = ensName ? ensDomainOverrides[ensName] : null;
+    return ensName ? ensDomainsByName.get(ensName) : null;
+  };
+
+  const getEnsExpiryMs = (domain: any) => {
+    const override = getEnsDomainData(domain);
     const raw = override?.expiryDate ??
       domain?.expiryDate ??
       domain?.expiration_date ??
       domain?.expiresAt ??
-      getTraitValue(domain, ['Expiration Date', 'Namewrapper Expiry Date']);
+      getTraitValue(domain, ['Expiration Date', 'Expiration', 'Expires', 'Expiry', 'Expiry Date', 'Name Expires']);
     return parseEnsTimestampMs(raw);
+  };
+
+  const getEnsNftWithDomainData = (nft: any) => {
+    const domain = getEnsDomainData(nft);
+    return domain ? { ...nft, ...domain, image_url: nft.image_url || domain.image_url, display_image_url: nft.display_image_url || domain.display_image_url, collection: nft.collection || 'ENS Domains' } : nft;
   };
 
   const getEnsBorderClass = (domain: any) => {
