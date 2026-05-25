@@ -177,12 +177,12 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     });
 
   const expiryAttr = findAttr(['Expiration Date', 'Expiration', 'Expires', 'Expiry', 'Expiry Date', 'Name Expires']);
-  const rawExpiry = expiryAttr?.value ?? expiryAttr?.display_value;
+  const rawExpiry = expiryAttr?.value ?? expiryAttr?.display_value ?? nft.expiryDate ?? nft.expiration_date ?? nft.expiresAt;
   const expiryDate = parseEnsDateValue(rawExpiry) || ensExpiryDate;
   const expiryExpired = expiryDate ? isPast(expiryDate) : false;
 
   const regAttr = findAttr(['Registration Date', 'Created Date', 'Created']);
-  const rawReg = regAttr?.value ?? regAttr?.display_value;
+  const rawReg = regAttr?.value ?? regAttr?.display_value ?? nft.createdAt ?? nft.registrationDate;
   const registrationDate = parseEnsDateValue(rawReg);
   const ensLabel = nameLower.endsWith('.eth') ? extractLabel(nameLower) : (nft.name || '').toString().replace(/\.eth$/i, '');
   const domainFullName = isBasenameNft ? (nft.name || '').toString() : `${ensLabel}.eth`;
