@@ -1625,7 +1625,8 @@ export const ProfileCard = ({
 
     // Add regular NFTs (OpenSea only)
     filteredNfts.forEach(nft => {
-      const rawCollection = nft.collection || 'Unknown Collection';
+      const enrichedNft = isEnsNftLike(nft) ? getEnsNftWithDomainData(nft) : nft;
+      const rawCollection = enrichedNft.collection || 'Unknown Collection';
       const lower = String(rawCollection).toLowerCase();
       const isUd = lower.includes('unstoppable') || lower.includes('ud.me');
       let collection = rawCollection;
@@ -1638,14 +1639,22 @@ export const ProfileCard = ({
       if (!groups[collection]) {
         groups[collection] = [];
       }
-      groups[collection].push(nft);
+      groups[collection].push(enrichedNft);
+    });
+
+    ensDomains.forEach((domain: any) => {
+      const collection = 'ENS Domains';
+      if (!groups[collection]) groups[collection] = [];
+      const name = getEnsNameFromItem(domain);
+      if (!name || groups[collection].some((item: any) => getEnsNameFromItem(item) === name)) return;
+      groups[collection].push(domain);
     });
 
     // Sort collections by NFT count
     return Object.fromEntries(
       Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
     );
-  }, [filteredNfts]);
+  }, [filteredNfts, ensDomains, ensDomainsByName]);
 
   // Promoted top-level OpenSea collection buttons — domain-like collections first
   const openSeaTopLevelEntries = useMemo<[string, any[]][]>(() => {
