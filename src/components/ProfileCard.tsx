@@ -151,6 +151,25 @@ const getTraitValue = (item: any, traitNames: string[]) => {
   return trait?.value ?? null;
 };
 
+const parseEnsTimestampMs = (value: unknown): number | null => {
+  if (value == null || value === '') return null;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value <= 100_000_000) return null;
+    return value > 10_000_000_000 ? value : value * 1000;
+  }
+
+  const text = String(value).trim();
+  if (!text) return null;
+  if (/^\d+(\.\d+)?$/.test(text)) {
+    const numeric = Number(text);
+    if (!Number.isFinite(numeric) || numeric <= 100_000_000) return null;
+    return numeric > 10_000_000_000 ? numeric : numeric * 1000;
+  }
+
+  const parsed = Date.parse(text);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
 // Chain icon helper function for activity feed
 const getChainIcon = (chain: string, size: number = 18) => {
   const chainLower = (chain || 'ethereum').toLowerCase();
