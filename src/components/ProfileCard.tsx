@@ -1236,7 +1236,7 @@ export const ProfileCard = ({
     setEnsDomains([]);
     setEnsDomainsFetched(false);
     setEnsDomainsLoading(true);
-    setEnsExpiryOverrides({});
+    setEnsDomainOverrides({});
     fetchedEnsExpiryNamesRef.current.clear();
     injectedEnsNameRef.current = null;
     setSelectedEnsDomain(null);
