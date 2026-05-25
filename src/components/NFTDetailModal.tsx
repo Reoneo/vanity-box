@@ -443,10 +443,10 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                     <span className="text-xs">Grace period ends</span>
                   </div>
                   <div className="text-right">
-                    <div className={`text-xs font-semibold ${graceEnded ? 'text-red-500' : 'text-amber-500'}`}>
+                    <div className={`text-xs font-semibold ${graceEnded ? 'text-emerald-500' : 'text-amber-500'}`}>
                       {format(graceEndDate, 'MMM d, yyyy')}
                     </div>
-                    <div className={`text-[10px] ${graceEnded ? 'text-red-400' : 'text-muted-foreground'}`}>
+                    <div className={`text-[10px] ${graceEnded ? 'text-emerald-500' : 'text-muted-foreground'}`}>
                       {graceEnded
                         ? `Ended ${formatDistanceToNow(graceEndDate)} ago`
                         : `in ${formatDistanceToNow(graceEndDate)}`}
