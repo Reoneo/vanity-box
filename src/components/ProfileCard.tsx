@@ -1110,11 +1110,7 @@ export const ProfileCard = ({
 
   const getEnsExpiryMs = (domain: any) => {
     const override = getEnsDomainData(domain);
-    const raw = override?.expiryDate ??
-      domain?.expiryDate ??
-      domain?.expiration_date ??
-      domain?.expiresAt ??
-      getTraitValue(domain, ['Expiration Date', 'Expiration', 'Expires', 'Expiry', 'Expiry Date', 'Name Expires']);
+    const raw = override?.expiryDate ?? (domain?.isEnsDomain ? domain?.expiryDate : null);
     return parseEnsTimestampMs(raw);
   };
 
