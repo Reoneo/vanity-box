@@ -69,6 +69,11 @@ const getChainIcon = (chain: string, size: number = 16) => {
 const normalizeEnsAttrKey = (value: unknown) =>
   String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
+const shortAddr = (address?: string) => {
+  const value = String(address || '');
+  return value.length > 12 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value;
+};
+
 const parseEnsDateValue = (value: unknown): Date | null => {
   if (value == null || value === '') return null;
   const numeric = typeof value === 'number' ? value : Number(value);
@@ -183,6 +188,12 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const domainFullName = isBasenameNft ? (nft.name || '').toString() : `${ensLabel}.eth`;
   const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
   const graceEnded = graceEndDate ? isPast(graceEndDate) : false;
+  const ensRoles: { label: string; address?: string }[] = [
+    { label: 'Owner', address: nft.owner },
+    { label: 'Manager', address: nft.manager },
+    { label: 'Registrant', address: nft.registrant },
+    { label: 'ETH record', address: nft.resolvedAddress },
+  ].filter((role) => /^0x[a-fA-F0-9]{40}$/.test(String(role.address || '')));
 
   return (
     <div
@@ -443,6 +454,25 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {isEnsNft && ensRoles.length > 0 && (
+            <div className="space-y-2 bg-muted/30 rounded-xl p-3 border border-[#D4AF37]/15">
+              <h3 className="text-xs font-semibold text-foreground">Roles</h3>
+              {ensRoles.map((role) => (
+                <div key={role.label} className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">{role.label}</span>
+                  <button
+                    type="button"
+                    onClick={() => window.open(`https://etherscan.io/address/${role.address}`, '_blank')}
+                    className="text-xs font-mono text-foreground hover:text-[#D4AF37] transition-colors"
+                    title={role.address}
+                  >
+                    {shortAddr(role.address)}
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
