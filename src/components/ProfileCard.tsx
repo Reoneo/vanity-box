@@ -701,7 +701,9 @@ export const ProfileCard = ({
 
   // Inject the searched .eth name into the ENS collection even if the resolved address doesn't own it
   useEffect(() => {
-    const name = (searchedIdentity || '').toLowerCase().trim();
+    const name = [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]
+      .map((value) => String(value || '').toLowerCase().trim())
+      .find((value) => value.endsWith('.eth')) || '';
     if (!name.endsWith('.eth')) return;
     if (injectedEnsNameRef.current === name) return;
     injectedEnsNameRef.current = name;
@@ -727,7 +729,7 @@ export const ProfileCard = ({
       }
     })();
     return () => { cancelled = true; };
-  }, [searchedIdentity]);
+  }, [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]);
 
   const visibleOpenSeaEnsNames = useMemo(() => {
     return Array.from(new Set(nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[]));
