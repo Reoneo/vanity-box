@@ -442,24 +442,24 @@ All colors MUST be HSL. */
   }
 
   .ens-status-tile {
-    border-width: 6px !important;
+    border-width: 3px !important;
     border-style: solid !important;
     background-clip: padding-box;
   }
 
   .ens-status-expiring {
     border-color: hsl(28 96% 50%) !important;
-    box-shadow: 0 0 0 3px hsl(28 96% 50% / 0.45), 0 0 18px hsl(28 96% 50% / 0.5) !important;
+    box-shadow: 0 0 0 1.5px hsl(28 96% 50% / 0.45), 0 0 9px hsl(28 96% 50% / 0.5) !important;
   }
 
   .ens-status-expired {
     border-color: hsl(0 84% 60%) !important;
-    box-shadow: 0 0 0 3px hsl(0 84% 60% / 0.45), 0 0 18px hsl(0 84% 60% / 0.5) !important;
+    box-shadow: 0 0 0 1.5px hsl(0 84% 60% / 0.45), 0 0 9px hsl(0 84% 60% / 0.5) !important;
   }
 
   .ens-status-released {
     border-color: hsl(142 76% 36%) !important;
-    box-shadow: 0 0 0 3px hsl(142 76% 36% / 0.45), 0 0 18px hsl(142 76% 36% / 0.5) !important;
+    box-shadow: 0 0 0 1.5px hsl(142 76% 36% / 0.45), 0 0 9px hsl(142 76% 36% / 0.5) !important;
   }
 }
 
