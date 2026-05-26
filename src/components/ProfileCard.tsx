@@ -3125,6 +3125,13 @@ export const ProfileCard = ({
                     );
                   })()}
 
+                  {/* Bio - centered, full text, gold quote (mobile) */}
+                  {web3BioProfile?.description && (
+                    <p className="max-w-[420px] mx-auto px-2 text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
+                      {web3BioProfile.description}
+                      <span className="text-[#D4AF37] ml-1 font-serif">”</span>
+                    </p>
+                  )}
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
                   {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
@@ -3148,42 +3155,33 @@ export const ProfileCard = ({
                     </div>
                   )}
 
-                  {/* Email/Website/Bio - Only show if user has email, website, or bio */}
-                  {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
-                    <div className="flex flex-col items-center gap-1.5">
-                      {/* Email and Website row */}
-                      {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                        <div className="flex items-center justify-center gap-4 flex-wrap">
-                          {web3BioProfile?.email && (
-                            <a 
-                              href={`mailto:${web3BioProfile.email}`} 
-                              className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
-                            >
-                              <Mail className="w-4 h-4 text-black dark:text-white" />
-                              {web3BioProfile.email}
-                            </a>
-                          )}
-                          
-                          {(web3BioProfile?.website || web3BioProfile?.url) && (
-                            <a
-                              href={web3BioProfile.website || web3BioProfile.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
-                            >
-                              <Globe className="w-4 h-4 text-black dark:text-white" />
-                              <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
-                            </a>
-                          )}
-                        </div>
+                  {/* Email/Website */}
+                  {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                      {web3BioProfile?.email && (
+                        <a 
+                          href={`mailto:${web3BioProfile.email}`} 
+                          className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
+                        >
+                          <Mail className="w-4 h-4 text-black dark:text-white" />
+                          {web3BioProfile.email}
+                        </a>
                       )}
                       
-                      {/* Bio ticker row - same width as pills */}
-                      {web3BioProfile?.description && (
-                        <BioTicker bio={web3BioProfile.description} />
+                      {(web3BioProfile?.website || web3BioProfile?.url) && (
+                        <a
+                          href={web3BioProfile.website || web3BioProfile.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
+                        >
+                          <Globe className="w-4 h-4 text-black dark:text-white" />
+                          <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
+                        </a>
                       )}
                     </div>
                   )}
+
 
                   {/* Profile Action Pills - Horizontal Layout (Mobile) */}
                   {(() => {
