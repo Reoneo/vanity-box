@@ -508,19 +508,25 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           {isEnsNft && ensRoles.length > 0 && (
             <div className="space-y-2 bg-muted/30 rounded-xl p-3 border border-[#D4AF37]/15">
               <h3 className="text-xs font-semibold text-foreground">Roles</h3>
-              {ensRoles.map((role) => (
-                <div key={role.label} className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-muted-foreground">{role.label}</span>
-                  <button
-                    type="button"
-                    onClick={() => window.open(`https://etherscan.io/address/${role.address}`, '_blank')}
-                    className="text-xs font-mono text-foreground hover:text-[#D4AF37] transition-colors"
-                    title={role.address}
-                  >
-                    {shortAddr(role.address)}
-                  </button>
-                </div>
-              ))}
+              {ensRoles.map((role) => {
+                const addr = String(role.address || '').toLowerCase();
+                const ensName = reverseNames[addr];
+                const target = ensName || addr;
+                const display = ensName || shortAddr(role.address);
+                return (
+                  <div key={role.label} className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground">{role.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => { window.location.href = `/${target}`; }}
+                      className="text-xs font-mono text-foreground hover:text-[#D4AF37] transition-colors truncate max-w-[55%] text-right"
+                      title={`Open ${target} on vanity.box`}
+                    >
+                      {display}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
