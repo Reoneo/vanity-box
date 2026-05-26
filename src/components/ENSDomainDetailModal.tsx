@@ -213,19 +213,25 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
           {roles.length > 0 && (
             <div className="space-y-2 bg-muted/30 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-foreground mb-2">Roles</h3>
-              {roles.map((r) => (
-                <div key={r.label} className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-muted-foreground">{r.label}</span>
-                  <button
-                    type="button"
-                    onClick={() => window.open(`https://etherscan.io/address/${r.address}`, '_blank')}
-                    className="text-sm font-mono text-foreground hover:text-[#5298FF] transition-colors"
-                    title={r.address}
-                  >
-                    {shortAddr(r.address)}
-                  </button>
-                </div>
-              ))}
+              {roles.map((r) => {
+                const addr = String(r.address || '').toLowerCase();
+                const ensName = reverseNames[addr];
+                const target = ensName || addr;
+                const display = ensName || shortAddr(r.address);
+                return (
+                  <div key={r.label} className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">{r.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => { onOpenChange(false); window.location.href = `/${target}`; }}
+                      className="text-sm font-mono text-foreground hover:text-[#5298FF] transition-colors truncate max-w-[55%] text-right"
+                      title={`Open ${target} on vanity.box`}
+                    >
+                      {display}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
