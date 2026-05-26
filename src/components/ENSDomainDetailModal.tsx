@@ -32,6 +32,40 @@ const toDateMs = (value?: string | number | null) => {
 
 export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDetailProps) => {
   const [copied, setCopied] = useState(false);
+  const [reverseNames, setReverseNames] = useState<Record<string, string>>({});
+
+  const roles: { label: string; address?: string }[] = [
+    { label: 'Owner', address: domain?.owner },
+    { label: 'Manager', address: domain?.manager },
+    { label: 'Registrant', address: domain?.registrant },
+    { label: 'ETH record', address: domain?.resolvedAddress },
+  ].filter((r) => /^0x[a-fA-F0-9]{40}$/.test(String(r.address || '')));
+
+  useEffect(() => {
+    if (!open || roles.length === 0) return;
+    let cancelled = false;
+    const SUPABASE_URL = 'https://gdjjboorqviobvvygpca.supabase.co';
+    const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE';
+    const addrs = Array.from(new Set(roles.map((r) => String(r.address).toLowerCase())));
+    (async () => {
+      const map: Record<string, string> = {};
+      await Promise.all(addrs.map(async (addr) => {
+        try {
+          const r = await fetch(`${SUPABASE_URL}/functions/v1/get-web3bio-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}`, apikey: ANON },
+            body: JSON.stringify({ handle: addr }),
+          });
+          const data = await r.json();
+          const name: string | undefined = data?.identity || data?.displayName;
+          if (name && typeof name === 'string' && name.includes('.')) map[addr] = name;
+        } catch {}
+      }));
+      if (!cancelled) setReverseNames(map);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, domain?.owner, domain?.manager, domain?.registrant, domain?.resolvedAddress]);
 
   if (!domain) return null;
 
@@ -46,12 +80,7 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
   const isGraceEnded = graceEndDate ? isPast(graceEndDate) : false;
   const isExpiringSoon = expiryDate && !isExpired ? isPast(addDays(new Date(), -90)) && expiryDate < addDays(new Date(), 90) : false;
 
-  const roles: { label: string; address?: string }[] = [
-    { label: 'Owner', address: domain.owner },
-    { label: 'Manager', address: domain.manager },
-    { label: 'Registrant', address: domain.registrant },
-    { label: 'ETH record', address: domain.resolvedAddress },
-  ].filter((r) => !!r.address);
+
 
 
   const handleCopy = async () => {
