@@ -733,8 +733,10 @@ export const ProfileCard = ({
   }, [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]);
 
   const visibleOpenSeaEnsNames = useMemo(() => {
-    return Array.from(new Set(nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[]));
-  }, [nfts]);
+    const fromNfts = nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[];
+    const fromDomains = ensDomains.map((d: any) => getEnsNameFromItem(d)).filter(Boolean) as string[];
+    return Array.from(new Set([...fromNfts, ...fromDomains]));
+  }, [nfts, ensDomains]);
 
   useEffect(() => {
     const missingNames = visibleOpenSeaEnsNames.filter((name) => !fetchedEnsExpiryNamesRef.current.has(name));
