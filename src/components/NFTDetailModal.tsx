@@ -89,6 +89,8 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const audioRef = useRef<HTMLAudioElement>(null);
   const [ensAttrs, setEnsAttrs] = useState<any[] | null>(null);
   const [ensExpiryDate, setEnsExpiryDate] = useState<Date | null>(null);
+  const [ensDomainInfo, setEnsDomainInfo] = useState<any | null>(null);
+  const [reverseNames, setReverseNames] = useState<Record<string, string>>({});
 
   // Lock body scroll when open
   useEffect(() => {
@@ -103,11 +105,13 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     };
   }, [isOpen, onClose]);
 
-  // Fetch ENS metadata directly (always includes Expiration Date)
+  // Fetch ENS metadata + on-chain role data
   useEffect(() => {
     if (!isOpen || !nft) return;
     setEnsAttrs(null);
     setEnsExpiryDate(null);
+    setEnsDomainInfo(null);
+    setReverseNames({});
     const ensContract = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
     const wrapperContract = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
     const c = (nft.contract || '').toLowerCase();
@@ -132,8 +136,51 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         })
         .catch(() => {});
     }
+
+    // Fetch full role data + reverse-resolve names via edge functions
+    if (nm.endsWith('.eth')) {
+      const SUPABASE_URL = 'https://gdjjboorqviobvvygpca.supabase.co';
+      const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE';
+      fetch(`${SUPABASE_URL}/functions/v1/get-ens-domains`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}` },
+        body: JSON.stringify({ domainName: nm }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then(async (j) => {
+          if (cancelled || !j?.domain) return;
+          setEnsDomainInfo(j.domain);
+          const addresses = Array.from(new Set(
+            [j.domain.owner, j.domain.manager, j.domain.registrant, j.domain.resolvedAddress]
+              .filter((a: any) => /^0x[a-fA-F0-9]{40}$/.test(String(a || '')))
+              .map((a: string) => a.toLowerCase())
+          ));
+          // Reverse-resolve each address to an ENS name via Web3.bio (cheap, cached upstream)
+          const entries = await Promise.all(addresses.map(async (addr) => {
+            try {
+              const r = await fetch(`${SUPABASE_URL}/functions/v1/get-web3bio-profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}`, apikey: ANON },
+                body: JSON.stringify({ handle: addr }),
+              });
+              const data = await r.json();
+              const name: string | undefined = data?.identity || data?.displayName;
+              if (name && typeof name === 'string' && name.includes('.')) return [addr, name] as const;
+            } catch {}
+            return [addr, ''] as const;
+          }));
+          if (cancelled) return;
+          const map: Record<string, string> = {};
+          for (const [addr, name] of entries) if (name) map[addr] = name;
+          setReverseNames(map);
+        })
+        .catch(() => {});
+    }
+
     return () => { cancelled = true; };
   }, [isOpen, nft]);
+
+
 
 
   if (!isOpen || !nft) return null;
@@ -189,11 +236,12 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
   const graceEnded = graceEndDate ? isPast(graceEndDate) : false;
   const ensRoles: { label: string; address?: string }[] = [
-    { label: 'Owner', address: nft.owner },
-    { label: 'Manager', address: nft.manager },
-    { label: 'Registrant', address: nft.registrant },
-    { label: 'ETH record', address: nft.resolvedAddress },
+    { label: 'Owner', address: nft.owner || ensDomainInfo?.owner },
+    { label: 'Manager', address: nft.manager || ensDomainInfo?.manager },
+    { label: 'Registrant', address: nft.registrant || ensDomainInfo?.registrant },
+    { label: 'ETH record', address: nft.resolvedAddress || ensDomainInfo?.resolvedAddress },
   ].filter((role) => /^0x[a-fA-F0-9]{40}$/.test(String(role.address || '')));
+
 
   return (
     <div
@@ -460,19 +508,25 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           {isEnsNft && ensRoles.length > 0 && (
             <div className="space-y-2 bg-muted/30 rounded-xl p-3 border border-[#D4AF37]/15">
               <h3 className="text-xs font-semibold text-foreground">Roles</h3>
-              {ensRoles.map((role) => (
-                <div key={role.label} className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-muted-foreground">{role.label}</span>
-                  <button
-                    type="button"
-                    onClick={() => window.open(`https://etherscan.io/address/${role.address}`, '_blank')}
-                    className="text-xs font-mono text-foreground hover:text-[#D4AF37] transition-colors"
-                    title={role.address}
-                  >
-                    {shortAddr(role.address)}
-                  </button>
-                </div>
-              ))}
+              {ensRoles.map((role) => {
+                const addr = String(role.address || '').toLowerCase();
+                const ensName = reverseNames[addr];
+                const target = ensName || addr;
+                const display = ensName || shortAddr(role.address);
+                return (
+                  <div key={role.label} className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground">{role.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => { window.location.href = `/${target}`; }}
+                      className="text-xs font-mono text-foreground hover:text-[#D4AF37] transition-colors truncate max-w-[55%] text-right"
+                      title={`Open ${target} on vanity.box`}
+                    >
+                      {display}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

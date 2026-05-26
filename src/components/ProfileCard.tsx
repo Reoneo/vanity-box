@@ -733,8 +733,10 @@ export const ProfileCard = ({
   }, [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]);
 
   const visibleOpenSeaEnsNames = useMemo(() => {
-    return Array.from(new Set(nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[]));
-  }, [nfts]);
+    const fromNfts = nfts.filter(isEnsNftLike).map(getEnsNameFromItem).filter(Boolean) as string[];
+    const fromDomains = ensDomains.map((d: any) => getEnsNameFromItem(d)).filter(Boolean) as string[];
+    return Array.from(new Set([...fromNfts, ...fromDomains]));
+  }, [nfts, ensDomains]);
 
   useEffect(() => {
     const missingNames = visibleOpenSeaEnsNames.filter((name) => !fetchedEnsExpiryNamesRef.current.has(name));
@@ -2165,14 +2167,14 @@ export const ProfileCard = ({
                       className="block w-full h-full object-cover"
                     />
                   </div>
-                  {/* Share button - top-left of header image (traditional share icon) */}
+                  {/* Share button - clears gold side border on desktop */}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
                     aria-label="Share profile"
-                    className="absolute top-3 left-3 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-transparent backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60"
+                    className="absolute top-4 left-6 z-40 w-11 h-11 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md"
                   >
-                    <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
+                    <Share2 className="w-5 h-5 text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
                   {/* Avatar positioned absolutely to overlay header - centered on left half */}
                   <div 
@@ -2239,6 +2241,14 @@ export const ProfileCard = ({
                         );
                       })()}
 
+                      {/* Bio - centered, full text, gold quotes at end */}
+                      {web3BioProfile?.description && (
+                        <p className="max-w-[420px] mx-auto text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
+                          {web3BioProfile.description}
+                          <span className="text-[#D4AF37] ml-1 font-serif">”</span>
+                        </p>
+                      )}
+
                       {/* Following/Followers */}
                       {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
                         <div className="flex justify-center items-center gap-2 text-sm">
@@ -2273,15 +2283,6 @@ export const ProfileCard = ({
                         </div>
                       )}
 
-                      {/* Bio with label - inline on same row */}
-                      {web3BioProfile?.description && (
-                        <div className="flex items-start justify-center gap-2 max-w-[380px] mx-auto">
-                          <span className="text-sm font-semibold text-foreground flex-shrink-0">Bio:</span>
-                          <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-left">
-                            {web3BioProfile.description}
-                          </p>
-                        </div>
-                      )}
                       {/* Desktop action pills - control right panel */}
                       {(() => {
                         const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
@@ -3046,12 +3047,12 @@ export const ProfileCard = ({
                     />
                     {/* No gradient overlay – matches desktop */}
                   </div>
-                  {/* Share button - top-left of header image (traditional share icon, mobile) */}
+                  {/* Share button - clears gold side border (mobile) */}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
                     aria-label="Share profile"
-                    className="absolute top-3 left-3 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/40 border border-gray-300 dark:border-transparent backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/60"
+                    className="absolute top-3 left-5 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md"
                   >
                     <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
@@ -3126,6 +3127,13 @@ export const ProfileCard = ({
                     );
                   })()}
 
+                  {/* Bio - centered, full text, gold quote (mobile) */}
+                  {web3BioProfile?.description && (
+                    <p className="max-w-[420px] mx-auto px-2 text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
+                      {web3BioProfile.description}
+                      <span className="text-[#D4AF37] ml-1 font-serif">”</span>
+                    </p>
+                  )}
 
                   {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
                   {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
@@ -3149,48 +3157,39 @@ export const ProfileCard = ({
                     </div>
                   )}
 
-                  {/* Email/Website/Bio - Only show if user has email, website, or bio */}
-                  {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url || web3BioProfile?.description) && (
-                    <div className="flex flex-col items-center gap-1.5">
-                      {/* Email and Website row */}
-                      {(web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                        <div className="flex items-center justify-center gap-4 flex-wrap">
-                          {web3BioProfile?.email && (
-                            <a 
-                              href={`mailto:${web3BioProfile.email}`} 
-                              className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
-                            >
-                              <Mail className="w-4 h-4 text-black dark:text-white" />
-                              {web3BioProfile.email}
-                            </a>
-                          )}
-                          
-                          {(web3BioProfile?.website || web3BioProfile?.url) && (
-                            <a
-                              href={web3BioProfile.website || web3BioProfile.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
-                            >
-                              <Globe className="w-4 h-4 text-black dark:text-white" />
-                              <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
-                            </a>
-                          )}
-                        </div>
+                  {/* Email/Website */}
+                  {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                      {web3BioProfile?.email && (
+                        <a 
+                          href={`mailto:${web3BioProfile.email}`} 
+                          className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
+                        >
+                          <Mail className="w-4 h-4 text-black dark:text-white" />
+                          {web3BioProfile.email}
+                        </a>
                       )}
                       
-                      {/* Bio ticker row - same width as pills */}
-                      {web3BioProfile?.description && (
-                        <BioTicker bio={web3BioProfile.description} />
+                      {(web3BioProfile?.website || web3BioProfile?.url) && (
+                        <a
+                          href={web3BioProfile.website || web3BioProfile.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
+                        >
+                          <Globe className="w-4 h-4 text-black dark:text-white" />
+                          <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
+                        </a>
                       )}
                     </div>
                   )}
+
 
                   {/* Profile Action Pills - Horizontal Layout (Mobile) */}
                   {(() => {
                     const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                     const hasTonNfts = tonNftsLoading || tonNftCount > 0;
-                    const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || hasTonNfts || suinsCount > 0 || suinsLoading;
+                    const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || hasTonNfts || suinsCount > 0 || suinsLoading || ensDomains.length > 0 || basenames.length > 0;
                     const hasTokens = portfolioTokens.length > 0;
                     const hasSocials = mergedSocialLinks.length > 0;
                     const hasTransactions = transactions.length > 0;
