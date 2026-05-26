@@ -2239,6 +2239,14 @@ export const ProfileCard = ({
                         );
                       })()}
 
+                      {/* Bio - centered, full text, gold quotes at end */}
+                      {web3BioProfile?.description && (
+                        <p className="max-w-[420px] mx-auto text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
+                          {web3BioProfile.description}
+                          <span className="text-[#D4AF37] ml-1 font-serif">”</span>
+                        </p>
+                      )}
+
                       {/* Following/Followers */}
                       {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
                         <div className="flex justify-center items-center gap-2 text-sm">
@@ -2273,15 +2281,6 @@ export const ProfileCard = ({
                         </div>
                       )}
 
-                      {/* Bio with label - inline on same row */}
-                      {web3BioProfile?.description && (
-                        <div className="flex items-start justify-center gap-2 max-w-[380px] mx-auto">
-                          <span className="text-sm font-semibold text-foreground flex-shrink-0">Bio:</span>
-                          <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-left">
-                            {web3BioProfile.description}
-                          </p>
-                        </div>
-                      )}
                       {/* Desktop action pills - control right panel */}
                       {(() => {
                         const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
