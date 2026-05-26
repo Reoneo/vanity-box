@@ -236,11 +236,12 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
   const graceEnded = graceEndDate ? isPast(graceEndDate) : false;
   const ensRoles: { label: string; address?: string }[] = [
-    { label: 'Owner', address: nft.owner },
-    { label: 'Manager', address: nft.manager },
-    { label: 'Registrant', address: nft.registrant },
-    { label: 'ETH record', address: nft.resolvedAddress },
+    { label: 'Owner', address: nft.owner || ensDomainInfo?.owner },
+    { label: 'Manager', address: nft.manager || ensDomainInfo?.manager },
+    { label: 'Registrant', address: nft.registrant || ensDomainInfo?.registrant },
+    { label: 'ETH record', address: nft.resolvedAddress || ensDomainInfo?.resolvedAddress },
   ].filter((role) => /^0x[a-fA-F0-9]{40}$/.test(String(role.address || '')));
+
 
   return (
     <div
