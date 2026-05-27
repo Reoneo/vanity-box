@@ -139,10 +139,53 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         .catch(() => {});
     }
 
-    // Fetch full role data + reverse-resolve names via edge functions
+    // Fetch full role data + reverse-resolve names + ens text records via edge functions
     if (nm.endsWith('.eth')) {
       const SUPABASE_URL = 'https://gdjjboorqviobvvygpca.supabase.co';
       const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE';
+      const lookupEnsName = async (addr: string): Promise<string> => {
+        try {
+          const r = await fetch(`${SUPABASE_URL}/functions/v1/get-web3bio-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}`, apikey: ANON },
+            body: JSON.stringify({ handle: addr }),
+          });
+          const data = await r.json();
+          const arr = Array.isArray(data) ? data : (data ? [data] : []);
+          for (const p of arr) {
+            const n = p?.identity || p?.displayName;
+            if (n && typeof n === 'string' && n.endsWith('.eth')) return n;
+          }
+          for (const p of arr) {
+            const n = p?.identity || p?.displayName;
+            if (n && typeof n === 'string' && n.includes('.')) return n;
+          }
+        } catch {}
+        return '';
+      };
+      // Fetch ENS text records for the domain itself
+      (async () => {
+        try {
+          const r = await fetch(`${SUPABASE_URL}/functions/v1/get-web3bio-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}`, apikey: ANON },
+            body: JSON.stringify({ handle: nm }),
+          });
+          const data = await r.json();
+          const p = Array.isArray(data) ? data[0] : data;
+          if (cancelled || !p) return;
+          const recs: { key: string; value: string; href?: string }[] = [];
+          if (p.description) recs.push({ key: 'description', value: String(p.description) });
+          if (p.email) recs.push({ key: 'email', value: String(p.email), href: `mailto:${p.email}` });
+          const links = p.links || {};
+          for (const [k, v] of Object.entries<any>(links)) {
+            const handle = v?.handle || v?.identity;
+            const url = v?.link || v?.url;
+            if (handle || url) recs.push({ key: k, value: handle || url, href: url });
+          }
+          setEnsRecords(recs);
+        } catch {}
+      })();
       fetch(`${SUPABASE_URL}/functions/v1/get-ens-domains`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}` },
@@ -157,19 +200,9 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
               .filter((a: any) => /^0x[a-fA-F0-9]{40}$/.test(String(a || '')))
               .map((a: string) => a.toLowerCase())
           ));
-          // Reverse-resolve each address to an ENS name via Web3.bio (cheap, cached upstream)
           const entries = await Promise.all(addresses.map(async (addr) => {
-            try {
-              const r = await fetch(`${SUPABASE_URL}/functions/v1/get-web3bio-profile`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}`, apikey: ANON },
-                body: JSON.stringify({ handle: addr }),
-              });
-              const data = await r.json();
-              const name: string | undefined = data?.identity || data?.displayName;
-              if (name && typeof name === 'string' && name.includes('.')) return [addr, name] as const;
-            } catch {}
-            return [addr, ''] as const;
+            const name = await lookupEnsName(addr);
+            return [addr, name] as const;
           }));
           if (cancelled) return;
           const map: Record<string, string> = {};
