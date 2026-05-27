@@ -154,11 +154,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           const arr = Array.isArray(data) ? data : (data ? [data] : []);
           for (const p of arr) {
             const n = p?.identity || p?.displayName;
-            if (n && typeof n === 'string' && n.endsWith('.eth')) return n;
-          }
-          for (const p of arr) {
-            const n = p?.identity || p?.displayName;
-            if (n && typeof n === 'string' && n.includes('.')) return n;
+            if (n && typeof n === 'string' && (n.endsWith('.eth') || n.endsWith('.box'))) return n;
           }
         } catch {}
         return '';
