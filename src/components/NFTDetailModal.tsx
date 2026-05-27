@@ -564,6 +564,30 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
               })}
             </div>
           )}
+
+          {isEnsNft && ensRecords.length > 0 && (
+            <div className="space-y-2 bg-muted/30 rounded-xl p-3 border border-[#D4AF37]/15">
+              <h3 className="text-xs font-semibold text-foreground">ENS records</h3>
+              {ensRecords.map((rec) => (
+                <div key={rec.key} className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground capitalize">{rec.key.replace(/^com\.|^org\./, '')}</span>
+                  {rec.href ? (
+                    <a
+                      href={rec.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-foreground hover:text-[#D4AF37] transition-colors truncate max-w-[60%] text-right"
+                      title={rec.value}
+                    >
+                      {rec.value}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-foreground truncate max-w-[60%] text-right" title={rec.value}>{rec.value}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action */}
