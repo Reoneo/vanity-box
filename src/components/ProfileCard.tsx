@@ -3970,7 +3970,7 @@ export const ProfileCard = ({
                     ) : (
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {ensDomains.map((domain: any, index: number) => {
+                          {displayedEnsDomains.map((domain: any, index: number) => {
                             const borderClass = getEnsBorderClass(domain);
                             return (
                             <div
@@ -3995,6 +3995,12 @@ export const ProfileCard = ({
                             </div>
                             );
                           })}
+                          {isWrapperEnsProfile && displayedEnsDomains.length < sortedEnsDomains.length && (
+                            <div ref={ensLoadMoreRef} className="col-span-full flex justify-center py-4">
+                              <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />
+                            </div>
+                          )}
+
 
                         </div>
                       </div>
