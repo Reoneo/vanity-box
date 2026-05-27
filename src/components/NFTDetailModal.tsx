@@ -235,9 +235,9 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const domainFullName = isBasenameNft ? (nft.name || '').toString() : `${ensLabel}.eth`;
   const graceEndDate = expiryDate ? addDays(expiryDate, 90) : null;
   const graceEnded = graceEndDate ? isPast(graceEndDate) : false;
+  // Display Manager as "Owner" (the controller of the name); drop redundant registry Owner
   const ensRoles: { label: string; address?: string }[] = [
-    { label: 'Owner', address: nft.owner || ensDomainInfo?.owner },
-    { label: 'Manager', address: nft.manager || ensDomainInfo?.manager },
+    { label: 'Owner', address: nft.manager || ensDomainInfo?.manager || nft.owner || ensDomainInfo?.owner },
     { label: 'Registrant', address: nft.registrant || ensDomainInfo?.registrant },
     { label: 'ETH record', address: nft.resolvedAddress || ensDomainInfo?.resolvedAddress },
   ].filter((role) => /^0x[a-fA-F0-9]{40}$/.test(String(role.address || '')));
