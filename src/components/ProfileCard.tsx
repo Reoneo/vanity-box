@@ -2890,7 +2890,7 @@ export const ProfileCard = ({
                             
                             {nftCategory === 'ensdomains' && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {ensDomains.map((domain: any) => (
+                                {displayedEnsDomains.map((domain: any) => (
                                   <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3 ${getEnsBorderClass(domain)}`}>
                                     <div className="flex flex-col items-center gap-2">
                                       {domain.avatar ? (
@@ -2904,8 +2904,14 @@ export const ProfileCard = ({
                                     </div>
                                   </div>
                                 ))}
+                                {isWrapperEnsProfile && displayedEnsDomains.length < sortedEnsDomains.length && (
+                                  <div ref={ensLoadMoreRef} className="col-span-full flex justify-center py-4">
+                                    <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />
+                                  </div>
+                                )}
                               </div>
                             )}
+
                             
                             {nftCategory === 'basenames' && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
