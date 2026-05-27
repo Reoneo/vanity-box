@@ -113,6 +113,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
     setEnsExpiryDate(null);
     setEnsDomainInfo(null);
     setReverseNames({});
+    setEnsRecords([]);
     const ensContract = '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85';
     const wrapperContract = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
     const c = (nft.contract || '').toLowerCase();
