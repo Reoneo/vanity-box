@@ -741,23 +741,36 @@ export const ProfileCard = ({
   useEffect(() => {
     const missingNames = visibleOpenSeaEnsNames.filter((name) => !fetchedEnsExpiryNamesRef.current.has(name));
     if (missingNames.length === 0) return;
-    missingNames.forEach((name) => fetchedEnsExpiryNamesRef.current.add(name));
     let cancelled = false;
-    (async () => {
-      const results = await Promise.allSettled(missingNames.map(async (domainName) => {
+    const fetchOne = async (domainName: string, attempt = 0): Promise<{ domainName: string; domain: any } | null> => {
+      try {
         const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
           body: JSON.stringify({ domainName }),
         });
+        if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
-        return { domainName, domain: data?.domain };
-      }));
+        if (!data?.domain) throw new Error('no domain');
+        return { domainName, domain: data.domain };
+      } catch {
+        if (attempt < 2 && !cancelled) {
+          await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+          return fetchOne(domainName, attempt + 1);
+        }
+        return null;
+      }
+    };
+    (async () => {
+      const results = await Promise.all(missingNames.map((n) => fetchOne(n)));
       if (cancelled) return;
       setEnsDomainOverrides((prev) => {
         const next = { ...prev };
-        results.forEach((result) => {
-          if (result.status === 'fulfilled' && result.value.domain) next[result.value.domainName] = result.value.domain;
+        results.forEach((r) => {
+          if (r?.domain) {
+            next[r.domainName] = r.domain;
+            fetchedEnsExpiryNamesRef.current.add(r.domainName);
+          }
         });
         return next;
       });
