@@ -57,8 +57,13 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
             body: JSON.stringify({ handle: addr }),
           });
           const data = await r.json();
-          const name: string | undefined = data?.identity || data?.displayName;
-          if (name && typeof name === 'string' && name.includes('.')) map[addr] = name;
+          const arr = Array.isArray(data) ? data : (data ? [data] : []);
+          let pick = '';
+          for (const p of arr) {
+            const n = p?.identity || p?.displayName;
+            if (n && typeof n === 'string' && (n.endsWith('.eth') || n.endsWith('.box'))) { pick = n; break; }
+          }
+          if (pick) map[addr] = pick;
         } catch {}
       }));
       if (!cancelled) setReverseNames(map);
