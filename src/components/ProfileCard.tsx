@@ -1151,6 +1151,54 @@ export const ProfileCard = ({
     return 'border border-[#5298FF]/20 hover:border-[#5298FF]/50';
   };
 
+  // Wrapper.ens.eth special profile: paginate ENS domains in batches of 20, prioritise post-grace
+  const isWrapperEnsProfile = useMemo(() => {
+    const candidates = [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]
+      .map((v) => String(v || '').toLowerCase().trim());
+    return candidates.includes('wrapper.ens.eth');
+  }, [searchedIdentity, web3BioProfile?.identity, web3BioProfile?.displayName]);
+
+  const sortedEnsDomains = useMemo(() => {
+    if (!isWrapperEnsProfile) return ensDomains;
+    const now = Date.now();
+    const graceMs = 90 * 24 * 60 * 60 * 1000;
+    const rank = (d: any) => {
+      const exp = getEnsExpiryMs(d);
+      if (!exp) return 3;
+      if (exp + graceMs <= now) return 0; // grace ended (priority)
+      if (exp <= now) return 1; // in grace
+      return 2;
+    };
+    return [...ensDomains].sort((a, b) => {
+      const ra = rank(a), rb = rank(b);
+      if (ra !== rb) return ra - rb;
+      const ea = getEnsExpiryMs(a) || 0;
+      const eb = getEnsExpiryMs(b) || 0;
+      return ea - eb;
+    });
+  }, [ensDomains, isWrapperEnsProfile, ensDomainOverrides]);
+
+  const [ensVisibleCount, setEnsVisibleCount] = useState(20);
+  useEffect(() => { setEnsVisibleCount(20); }, [isWrapperEnsProfile, ensDomains.length]);
+  const displayedEnsDomains = useMemo(
+    () => (isWrapperEnsProfile ? sortedEnsDomains.slice(0, ensVisibleCount) : sortedEnsDomains),
+    [isWrapperEnsProfile, sortedEnsDomains, ensVisibleCount]
+  );
+  const ensLoadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isWrapperEnsProfile) return;
+    const el = ensLoadMoreRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) {
+        setEnsVisibleCount((c) => Math.min(c + 20, sortedEnsDomains.length));
+      }
+    }, { rootMargin: '200px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [isWrapperEnsProfile, sortedEnsDomains.length, displayedEnsDomains.length]);
+
+
   const searchedChainLabel = useMemo(() => {
     const normalized = searchedIdentity?.toLowerCase() || '';
     if (normalized.endsWith('.eth')) return 'ENS';
