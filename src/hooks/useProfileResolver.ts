@@ -790,6 +790,7 @@ export function useProfileResolver() {
       const isWalletAddress = isEvmWalletAddress || isIotaWalletAddress;
       const isVetDomain = normalized.endsWith('.vet');
       const isIotaDomain = normalized.endsWith('.iota');
+      const isSuiDomain = normalized.endsWith('.sui');
 
       const isEthDomain = normalized.endsWith('.eth') && !normalized.endsWith('.base.eth');
       const isBoxDomain = /\.box$/i.test(normalized);
@@ -798,7 +799,7 @@ export function useProfileResolver() {
       const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
-      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
+      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isSuiDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
 
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
