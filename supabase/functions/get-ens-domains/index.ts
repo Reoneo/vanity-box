@@ -384,6 +384,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       domains: formattedDomains,
       count: formattedDomains.length,
+      page: { first, skip, hasMore: formattedDomains.length >= first },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
