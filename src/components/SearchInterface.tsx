@@ -1333,10 +1333,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     const isIotaAddr = isValidIotaAddress(trimmedQuery);
     const isWalletAddress = isEvmWallet || isIotaAddr;
 
-    // If query has no dot and is not a wallet address, open UD search without changing the current screen
+    // If query has no dot and is not a wallet address, route long inputs (20+ chars)
+    // as raw profile lookups (e.g. wallet addresses without 0x prefix); otherwise open UD search.
     if (!hasDot && !isWalletAddress) {
-      window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}`, '_blank');
-      return;
+      if (trimmedQuery.length < 20) {
+        window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}`, '_blank');
+        return;
+      }
+      // else: fall through and treat as a profile lookup
     }
 
     console.log("Search start", { query: trimmedQuery });
