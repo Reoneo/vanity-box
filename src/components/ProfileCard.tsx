@@ -1477,19 +1477,23 @@ export const ProfileCard = ({
 
         if (isEvm && evmWalletAddress) {
           try {
+            // For wallets owning huge ENS portfolios (e.g. wrapper.ens.eth), fetch in small batches
+            const initialFirst = isWrapperEnsProfile ? 20 : 100;
             const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: evmWalletAddress }),
+              body: JSON.stringify({ walletAddress: evmWalletAddress, first: initialFirst, skip: 0 }),
             });
             const ensData = await ensRes.json();
-            console.log('ENS Domains response:', ensData);
+            console.log('ENS Domains response:', { count: ensData?.count, page: ensData?.page });
             if (ensData.domains) setEnsDomains(ensData.domains);
-          } catch (e) { 
-            console.error('ENS Domains fetch error:', e); 
+            setEnsDomainsHasMore(!!ensData?.page?.hasMore);
+          } catch (e) {
+            console.error('ENS Domains fetch error:', e);
+            setEnsDomainsHasMore(false);
           } finally {
             setEnsDomainsLoading(false);
             setEnsDomainsFetched(true);
