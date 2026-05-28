@@ -336,6 +336,47 @@ async function fetchIotaReverseProfile(address: string): Promise<any | null> {
 }
 
 /**
+ * Resolve a SuiNS name (.sui) → Sui address via Sui mainnet JSON-RPC.
+ * Docs: https://docs.suins.io/developer/sdk
+ * Method: suix_resolveNameServiceAddress
+ */
+async function fetchSuiProfile(name: string): Promise<ResolvedProfile | null> {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized.endsWith('.sui')) return null;
+  try {
+    const res = await fetchWithTimeout('https://fullnode.mainnet.sui.io', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 1,
+        method: 'suix_resolveNameServiceAddress',
+        params: [normalized],
+      }),
+    }, 8000);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const address: string | null = json?.result || null;
+    if (!address || typeof address !== 'string') return null;
+    console.log(`✅ SuiNS resolved: ${normalized} -> ${address}`);
+    return {
+      address,
+      identity: normalized,
+      platform: 'sui',
+      displayName: normalized,
+      avatar: null,
+      description: null,
+      header: null,
+      website: null,
+      url: null,
+      links: {},
+    };
+  } catch (err: any) {
+    console.error('❌ SuiNS resolve failed:', err?.message || err);
+    return null;
+  }
+}
+
+/**
  * Resolve .vet domain using vet.domains public API
  */
 async function fetchVetProfile(domain: string): Promise<any | null> {
