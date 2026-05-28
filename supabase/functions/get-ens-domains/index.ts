@@ -134,7 +134,9 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { walletAddress, domainName } = body || {};
+    const { walletAddress, domainName, first: firstRaw, skip: skipRaw } = body || {};
+    const first = Math.max(1, Math.min(Number(firstRaw) || 100, 200));
+    const skip = Math.max(0, Number(skipRaw) || 0);
 
     // --- Single domain lookup by name (used to surface a searched .eth name) ---
     if (domainName && typeof domainName === 'string') {
