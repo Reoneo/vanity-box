@@ -864,6 +864,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     return () => { cancelled = true; };
   }, [displayQuery, web3BioProfile?.address]);
 
+  // .sui domains: the resolver returns a Sui address as profile.address.
+  // Surface it as linkedSuiAddress so the existing Sui assets UI activates.
+  useEffect(() => {
+    if (web3BioProfile?.platform === 'sui' && typeof web3BioProfile.address === 'string' && web3BioProfile.address.startsWith('0x')) {
+      setLinkedSuiAddress(web3BioProfile.address);
+    }
+  }, [web3BioProfile?.platform, web3BioProfile?.address]);
+
+
   const isProfileTransitionLoading = (isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs)) || (Boolean(web3BioProfile) && (isResolvingLinkedEvm || resolvingLinkedWallets));
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
