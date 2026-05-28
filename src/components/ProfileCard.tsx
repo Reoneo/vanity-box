@@ -1181,24 +1181,65 @@ export const ProfileCard = ({
   }, [ensDomains, isWrapperEnsProfile, ensDomainOverrides]);
 
   const [ensVisibleCount, setEnsVisibleCount] = useState(20);
-  useEffect(() => { setEnsVisibleCount(20); }, [isWrapperEnsProfile, ensDomains.length]);
+  useEffect(() => { setEnsVisibleCount(20); }, [isWrapperEnsProfile]);
   const displayedEnsDomains = useMemo(
     () => (isWrapperEnsProfile ? sortedEnsDomains.slice(0, ensVisibleCount) : sortedEnsDomains),
     [isWrapperEnsProfile, sortedEnsDomains, ensVisibleCount]
   );
   const ensLoadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // Load next page from the subgraph when we run out of locally-cached domains
+  const loadMoreWrapperEns = useCallback(async () => {
+    if (!isWrapperEnsProfile) return;
+    if (!ensDomainsHasMore || ensDomainsLoadingMore) return;
+    if (!effectiveEvmWallet) return;
+    setEnsDomainsLoadingMore(true);
+    try {
+      const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
+        body: JSON.stringify({ walletAddress: effectiveEvmWallet, first: 20, skip: ensDomains.length }),
+      });
+      const data = await res.json();
+      const next: any[] = Array.isArray(data?.domains) ? data.domains : [];
+      if (next.length > 0) {
+        setEnsDomains((prev) => {
+          const seen = new Set(prev.map((d: any) => (d?.name || '').toLowerCase()));
+          const merged = [...prev];
+          for (const d of next) {
+            const n = (d?.name || '').toLowerCase();
+            if (n && !seen.has(n)) { merged.push(d); seen.add(n); }
+          }
+          return merged;
+        });
+      }
+      setEnsDomainsHasMore(!!data?.page?.hasMore && next.length > 0);
+    } catch (e) {
+      console.warn('[ProfileCard] wrapper ENS load-more failed', e);
+    } finally {
+      setEnsDomainsLoadingMore(false);
+    }
+  }, [isWrapperEnsProfile, ensDomainsHasMore, ensDomainsLoadingMore, effectiveEvmWallet, ensDomains.length]);
+
   useEffect(() => {
     if (!isWrapperEnsProfile) return;
     const el = ensLoadMoreRef.current;
     if (!el) return;
     const obs = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting) {
-        setEnsVisibleCount((c) => Math.min(c + 20, sortedEnsDomains.length));
+      if (!entries[0]?.isIntersecting) return;
+      // Reveal another 20 from cached batch, or fetch the next page from the server
+      setEnsVisibleCount((c) => {
+        if (c < sortedEnsDomains.length) return Math.min(c + 20, sortedEnsDomains.length);
+        return c;
+      });
+      if (ensVisibleCount >= sortedEnsDomains.length && ensDomainsHasMore) {
+        loadMoreWrapperEns();
       }
     }, { rootMargin: '200px' });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [isWrapperEnsProfile, sortedEnsDomains.length, displayedEnsDomains.length]);
+  }, [isWrapperEnsProfile, sortedEnsDomains.length, displayedEnsDomains.length, ensVisibleCount, ensDomainsHasMore, loadMoreWrapperEns]);
+
 
 
   const searchedChainLabel = useMemo(() => {
