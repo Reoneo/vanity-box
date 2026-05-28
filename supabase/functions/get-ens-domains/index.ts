@@ -229,9 +229,10 @@ serve(async (req) => {
     // Also query domains where this address is the resolver target
     const graphqlQuery = {
       query: `
-        query GetUserDomains($address: String!) {
+        query GetUserDomains($address: String!, $first: Int!, $skip: Int!) {
           domains(
-            first: 100
+            first: $first
+            skip: $skip
             orderBy: createdAt
             orderDirection: desc
             where: { owner: $address }
@@ -249,7 +250,8 @@ serve(async (req) => {
             expiryDate
           }
           wrappedDomains(
-            first: 100
+            first: $first
+            skip: $skip
             orderBy: expiryDate
             orderDirection: desc
             where: { owner: $address }
@@ -260,7 +262,8 @@ serve(async (req) => {
             owner { id }
           }
           resolvedDomains: domains(
-            first: 50
+            first: $first
+            skip: $skip
             orderBy: createdAt
             orderDirection: desc
             where: { resolvedAddress: $address }
@@ -280,6 +283,8 @@ serve(async (req) => {
       `,
       variables: {
         address: normalizedAddress,
+        first,
+        skip,
       },
     };
 
