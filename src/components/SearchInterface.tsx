@@ -206,7 +206,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Function to remove underscores from input
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value.replace(/_/g, ""));
+    setSearchQuery(value.replace(/\s+/g, "").replace(/_/g, ""));
   };
   const [displayQuery, setDisplayQuery] = useState(""); // The actual searched query for display
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
