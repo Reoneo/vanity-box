@@ -336,6 +336,47 @@ async function fetchIotaReverseProfile(address: string): Promise<any | null> {
 }
 
 /**
+ * Resolve a SuiNS name (.sui) → Sui address via Sui mainnet JSON-RPC.
+ * Docs: https://docs.suins.io/developer/sdk
+ * Method: suix_resolveNameServiceAddress
+ */
+async function fetchSuiProfile(name: string): Promise<ResolvedProfile | null> {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized.endsWith('.sui')) return null;
+  try {
+    const res = await fetchWithTimeout('https://fullnode.mainnet.sui.io', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 1,
+        method: 'suix_resolveNameServiceAddress',
+        params: [normalized],
+      }),
+    }, 8000);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const address: string | null = json?.result || null;
+    if (!address || typeof address !== 'string') return null;
+    console.log(`✅ SuiNS resolved: ${normalized} -> ${address}`);
+    return {
+      address,
+      identity: normalized,
+      platform: 'sui',
+      displayName: normalized,
+      avatar: null,
+      description: null,
+      header: null,
+      website: null,
+      url: null,
+      links: {},
+    };
+  } catch (err: any) {
+    console.error('❌ SuiNS resolve failed:', err?.message || err);
+    return null;
+  }
+}
+
+/**
  * Resolve .vet domain using vet.domains public API
  */
 async function fetchVetProfile(domain: string): Promise<any | null> {
@@ -749,6 +790,7 @@ export function useProfileResolver() {
       const isWalletAddress = isEvmWalletAddress || isIotaWalletAddress;
       const isVetDomain = normalized.endsWith('.vet');
       const isIotaDomain = normalized.endsWith('.iota');
+      const isSuiDomain = normalized.endsWith('.sui');
 
       const isEthDomain = normalized.endsWith('.eth') && !normalized.endsWith('.base.eth');
       const isBoxDomain = /\.box$/i.test(normalized);
@@ -757,7 +799,7 @@ export function useProfileResolver() {
       const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
-      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
+      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isSuiDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
 
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
@@ -805,6 +847,18 @@ export function useProfileResolver() {
           resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
         } else {
           resolverResult = { ok: false, source: 'iota', profile: null, notFound: true };
+        }
+      }
+      // Route 1b: .sui domains — resolve via Sui JSON-RPC
+      else if (isSuiDomain) {
+        debug.tried.push('sui');
+        const suiStart = Date.now();
+        const suiProfile = await fetchSuiProfile(normalized);
+        debug.timingsMs.sui = Date.now() - suiStart;
+        if (suiProfile) {
+          resolverResult = { ok: true, source: 'fallback', profile: suiProfile };
+        } else {
+          resolverResult = { ok: false, source: 'fallback', profile: null, notFound: true };
         }
       }
       // Route 2: .vet domains
@@ -1090,6 +1144,7 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
     const isWalletAddress = isEvmWalletAddress || isIotaWalletAddress;
     const isVetDomain = normalized.endsWith('.vet');
     const isIotaDomain = normalized.endsWith('.iota');
+    const isSuiDomain = normalized.endsWith('.sui');
 
     const isEthDomain = normalized.endsWith('.eth') && !normalized.endsWith('.base.eth');
     const isBoxDomain = /\.box$/i.test(normalized);
@@ -1098,7 +1153,7 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
     const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
     const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
-    const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
+    const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isSuiDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
 
     let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
@@ -1126,6 +1181,18 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
         resolverResult = { ok: true, source: 'iota', profile: iotaProfile };
       } else {
         resolverResult = { ok: false, source: 'iota', profile: null, notFound: true };
+      }
+    }
+    // Route 1b: .sui domains — resolve via Sui JSON-RPC
+    else if (isSuiDomain) {
+      debug.tried.push('sui');
+      const suiStart = Date.now();
+      const suiProfile = await fetchSuiProfile(normalized);
+      debug.timingsMs.sui = Date.now() - suiStart;
+      if (suiProfile) {
+        resolverResult = { ok: true, source: 'fallback', profile: suiProfile };
+      } else {
+        resolverResult = { ok: false, source: 'fallback', profile: null, notFound: true };
       }
     }
     // Route 2: .vet domains

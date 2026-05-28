@@ -206,7 +206,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
   // Function to remove underscores from input
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value.replace(/_/g, ""));
+    setSearchQuery(value.replace(/\s+/g, "").replace(/_/g, ""));
   };
   const [displayQuery, setDisplayQuery] = useState(""); // The actual searched query for display
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -864,6 +864,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     return () => { cancelled = true; };
   }, [displayQuery, web3BioProfile?.address]);
 
+  // .sui domains: the resolver returns a Sui address as profile.address.
+  // Surface it as linkedSuiAddress so the existing Sui assets UI activates.
+  useEffect(() => {
+    if (web3BioProfile?.platform === 'sui' && typeof web3BioProfile.address === 'string' && web3BioProfile.address.startsWith('0x')) {
+      setLinkedSuiAddress(web3BioProfile.address);
+    }
+  }, [web3BioProfile?.platform, web3BioProfile?.address]);
+
+
   const isProfileTransitionLoading = (isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs)) || (Boolean(web3BioProfile) && (isResolvingLinkedEvm || resolvingLinkedWallets));
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
@@ -1333,10 +1342,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     const isIotaAddr = isValidIotaAddress(trimmedQuery);
     const isWalletAddress = isEvmWallet || isIotaAddr;
 
-    // If query has no dot and is not a wallet address, open UD search without changing the current screen
+    // If query has no dot and is not a wallet address, route long inputs (20+ chars)
+    // as raw profile lookups (e.g. wallet addresses without 0x prefix); otherwise open UD search.
     if (!hasDot && !isWalletAddress) {
-      window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}`, '_blank');
-      return;
+      if (trimmedQuery.length < 20) {
+        window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmedQuery)}`, '_blank');
+        return;
+      }
+      // else: fall through and treat as a profile lookup
     }
 
     console.log("Search start", { query: trimmedQuery });

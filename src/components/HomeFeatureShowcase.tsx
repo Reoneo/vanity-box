@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 const PLACEHOLDER_TEXTS = [
   'Claim your Name',
@@ -13,8 +13,6 @@ const PLACEHOLDER_TEXTS = [
 
 /**
  * Home hero for the .vanity TLD landing.
- * Vertically centered. Search supports profile lookups (names with TLD)
- * and falls back to Unstoppable Domains search for bare names.
  */
 export const HomeFeatureShowcase: React.FC = () => {
   const { t } = useLanguage();
@@ -22,7 +20,6 @@ export const HomeFeatureShowcase: React.FC = () => {
   const [value, setValue] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
-  // Rotate placeholder text every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDER_TEXTS.length);
@@ -34,13 +31,19 @@ export const HomeFeatureShowcase: React.FC = () => {
     const trimmed = value.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
     if (!trimmed) return;
 
-    // If the name contains a dot (has a TLD), treat as profile lookup
+    // Names with a TLD → profile lookup
     if (trimmed.includes('.')) {
       navigate(`/${trimmed}`);
       return;
     }
 
-    // No TLD — open Unstoppable Domains search
+    // 20+ characters with no dot → treat as raw wallet address lookup
+    if (trimmed.length >= 20) {
+      navigate(`/${trimmed}`);
+      return;
+    }
+
+    // No TLD short name — open Unstoppable Domains search
     window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmed)}`, '_blank');
   };
 
@@ -73,20 +76,32 @@ export const HomeFeatureShowcase: React.FC = () => {
           <label htmlFor="vanity-hero-search" className="sr-only">
             {PLACEHOLDER_TEXTS[placeholderIndex]}
           </label>
-          <Input
-            id="vanity-hero-search"
-            type="text"
-            inputMode="text"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder={PLACEHOLDER_TEXTS[placeholderIndex]}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSubmit();
-            }}
-            className="h-12 w-full max-w-md rounded-xl bg-white text-black placeholder-black/60 border-2 border-black dark:border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base text-center"
-          />
+          <div className="relative w-full max-w-md">
+            <Input
+              id="vanity-hero-search"
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={PLACEHOLDER_TEXTS[placeholderIndex]}
+              value={value}
+              onChange={(e) => setValue(e.target.value.replace(/\s+/g, ''))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSubmit();
+              }}
+              className="h-12 w-full rounded-xl bg-white text-black placeholder-black/60 border-2 border-black dark:border-[#D4AF37]/40 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] text-base text-center px-10"
+            />
+            {value && (
+              <button
+                type="button"
+                onClick={() => setValue('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-black/5 transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4 text-black" />
+              </button>
+            )}
+          </div>
 
           <button
             type="button"

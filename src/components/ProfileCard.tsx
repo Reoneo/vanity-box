@@ -25,7 +25,7 @@ const isDomainLikeCollection = (name?: string): boolean => {
 import { SocialIcon } from "./SocialIcon";
 import { normalizeSocialUrl } from "@/lib/socialLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PoapDetailModal } from "./PoapDetailModal";
 import { NFTDetailModal } from "./NFTDetailModal";
@@ -329,6 +329,8 @@ export const ProfileCard = ({
   const [ensDomains, setEnsDomains] = useState<any[]>([]);
   const [ensDomainsLoading, setEnsDomainsLoading] = useState(true);
   const [ensDomainsFetched, setEnsDomainsFetched] = useState(false);
+  const [ensDomainsHasMore, setEnsDomainsHasMore] = useState(false);
+  const [ensDomainsLoadingMore, setEnsDomainsLoadingMore] = useState(false);
   const [selectedEnsDomain, setSelectedEnsDomain] = useState<any>(null);
   const [basenames, setBasenames] = useState<any[]>([]);
   const [basenamesLoading, setBasenamesLoading] = useState(true);
@@ -1179,24 +1181,65 @@ export const ProfileCard = ({
   }, [ensDomains, isWrapperEnsProfile, ensDomainOverrides]);
 
   const [ensVisibleCount, setEnsVisibleCount] = useState(20);
-  useEffect(() => { setEnsVisibleCount(20); }, [isWrapperEnsProfile, ensDomains.length]);
+  useEffect(() => { setEnsVisibleCount(20); }, [isWrapperEnsProfile]);
   const displayedEnsDomains = useMemo(
     () => (isWrapperEnsProfile ? sortedEnsDomains.slice(0, ensVisibleCount) : sortedEnsDomains),
     [isWrapperEnsProfile, sortedEnsDomains, ensVisibleCount]
   );
   const ensLoadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // Load next page from the subgraph when we run out of locally-cached domains
+  const loadMoreWrapperEns = useCallback(async () => {
+    if (!isWrapperEnsProfile) return;
+    if (!ensDomainsHasMore || ensDomainsLoadingMore) return;
+    if (!effectiveEvmWallet) return;
+    setEnsDomainsLoadingMore(true);
+    try {
+      const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
+        body: JSON.stringify({ walletAddress: effectiveEvmWallet, first: 20, skip: ensDomains.length }),
+      });
+      const data = await res.json();
+      const next: any[] = Array.isArray(data?.domains) ? data.domains : [];
+      if (next.length > 0) {
+        setEnsDomains((prev) => {
+          const seen = new Set(prev.map((d: any) => (d?.name || '').toLowerCase()));
+          const merged = [...prev];
+          for (const d of next) {
+            const n = (d?.name || '').toLowerCase();
+            if (n && !seen.has(n)) { merged.push(d); seen.add(n); }
+          }
+          return merged;
+        });
+      }
+      setEnsDomainsHasMore(!!data?.page?.hasMore && next.length > 0);
+    } catch (e) {
+      console.warn('[ProfileCard] wrapper ENS load-more failed', e);
+    } finally {
+      setEnsDomainsLoadingMore(false);
+    }
+  }, [isWrapperEnsProfile, ensDomainsHasMore, ensDomainsLoadingMore, effectiveEvmWallet, ensDomains.length]);
+
   useEffect(() => {
     if (!isWrapperEnsProfile) return;
     const el = ensLoadMoreRef.current;
     if (!el) return;
     const obs = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting) {
-        setEnsVisibleCount((c) => Math.min(c + 20, sortedEnsDomains.length));
+      if (!entries[0]?.isIntersecting) return;
+      // Reveal another 20 from cached batch, or fetch the next page from the server
+      setEnsVisibleCount((c) => {
+        if (c < sortedEnsDomains.length) return Math.min(c + 20, sortedEnsDomains.length);
+        return c;
+      });
+      if (ensVisibleCount >= sortedEnsDomains.length && ensDomainsHasMore) {
+        loadMoreWrapperEns();
       }
     }, { rootMargin: '200px' });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [isWrapperEnsProfile, sortedEnsDomains.length, displayedEnsDomains.length]);
+  }, [isWrapperEnsProfile, sortedEnsDomains.length, displayedEnsDomains.length, ensVisibleCount, ensDomainsHasMore, loadMoreWrapperEns]);
+
 
 
   const searchedChainLabel = useMemo(() => {
@@ -1475,19 +1518,38 @@ export const ProfileCard = ({
 
         if (isEvm && evmWalletAddress) {
           try {
+            // For wallets owning huge ENS portfolios (e.g. wrapper.ens.eth), fetch in small batches
+            const initialFirst = isWrapperEnsProfile ? 20 : 100;
             const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
               },
-              body: JSON.stringify({ walletAddress: evmWalletAddress }),
+              body: JSON.stringify({ walletAddress: evmWalletAddress, first: initialFirst, skip: 0 }),
             });
             const ensData = await ensRes.json();
-            console.log('ENS Domains response:', ensData);
-            if (ensData.domains) setEnsDomains(ensData.domains);
-          } catch (e) { 
-            console.error('ENS Domains fetch error:', e); 
+            console.log('ENS Domains response:', { count: ensData?.count, page: ensData?.page });
+            if (ensData.domains) {
+              // Merge with any previously injected entries (e.g. the searched .eth name)
+              setEnsDomains((prev) => {
+                const seen = new Set<string>();
+                const merged: any[] = [];
+                for (const d of prev) {
+                  const n = String(d?.name || '').toLowerCase();
+                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                }
+                for (const d of ensData.domains) {
+                  const n = String(d?.name || '').toLowerCase();
+                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                }
+                return merged;
+              });
+            }
+            setEnsDomainsHasMore(!!ensData?.page?.hasMore);
+          } catch (e) {
+            console.error('ENS Domains fetch error:', e);
+            setEnsDomainsHasMore(false);
           } finally {
             setEnsDomainsLoading(false);
             setEnsDomainsFetched(true);
@@ -2904,7 +2966,7 @@ export const ProfileCard = ({
                                     </div>
                                   </div>
                                 ))}
-                                {isWrapperEnsProfile && displayedEnsDomains.length < sortedEnsDomains.length && (
+                                {isWrapperEnsProfile && (displayedEnsDomains.length < sortedEnsDomains.length || ensDomainsHasMore) && (
                                   <div ref={ensLoadMoreRef} className="col-span-full flex justify-center py-4">
                                     <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />
                                   </div>
@@ -3995,7 +4057,7 @@ export const ProfileCard = ({
                             </div>
                             );
                           })}
-                          {isWrapperEnsProfile && displayedEnsDomains.length < sortedEnsDomains.length && (
+                          {isWrapperEnsProfile && (displayedEnsDomains.length < sortedEnsDomains.length || ensDomainsHasMore) && (
                             <div ref={ensLoadMoreRef} className="col-span-full flex justify-center py-4">
                               <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />
                             </div>

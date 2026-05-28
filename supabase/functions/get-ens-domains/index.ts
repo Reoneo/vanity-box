@@ -134,7 +134,9 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { walletAddress, domainName } = body || {};
+    const { walletAddress, domainName, first: firstRaw, skip: skipRaw } = body || {};
+    const first = Math.max(1, Math.min(Number(firstRaw) || 100, 200));
+    const skip = Math.max(0, Number(skipRaw) || 0);
 
     // --- Single domain lookup by name (used to surface a searched .eth name) ---
     if (domainName && typeof domainName === 'string') {
@@ -227,9 +229,10 @@ serve(async (req) => {
     // Also query domains where this address is the resolver target
     const graphqlQuery = {
       query: `
-        query GetUserDomains($address: String!) {
+        query GetUserDomains($address: String!, $first: Int!, $skip: Int!) {
           domains(
-            first: 100
+            first: $first
+            skip: $skip
             orderBy: createdAt
             orderDirection: desc
             where: { owner: $address }
@@ -247,7 +250,8 @@ serve(async (req) => {
             expiryDate
           }
           wrappedDomains(
-            first: 100
+            first: $first
+            skip: $skip
             orderBy: expiryDate
             orderDirection: desc
             where: { owner: $address }
@@ -258,7 +262,8 @@ serve(async (req) => {
             owner { id }
           }
           resolvedDomains: domains(
-            first: 50
+            first: $first
+            skip: $skip
             orderBy: createdAt
             orderDirection: desc
             where: { resolvedAddress: $address }
@@ -278,6 +283,8 @@ serve(async (req) => {
       `,
       variables: {
         address: normalizedAddress,
+        first,
+        skip,
       },
     };
 
@@ -377,6 +384,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       domains: formattedDomains,
       count: formattedDomains.length,
+      page: { first, skip, hasMore: formattedDomains.length >= first },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
