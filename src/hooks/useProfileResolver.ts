@@ -849,6 +849,18 @@ export function useProfileResolver() {
           resolverResult = { ok: false, source: 'iota', profile: null, notFound: true };
         }
       }
+      // Route 1b: .sui domains — resolve via Sui JSON-RPC
+      else if (isSuiDomain) {
+        debug.tried.push('sui');
+        const suiStart = Date.now();
+        const suiProfile = await fetchSuiProfile(normalized);
+        debug.timingsMs.sui = Date.now() - suiStart;
+        if (suiProfile) {
+          resolverResult = { ok: true, source: 'fallback', profile: suiProfile };
+        } else {
+          resolverResult = { ok: false, source: 'fallback', profile: null, notFound: true };
+        }
+      }
       // Route 2: .vet domains
       else if (isVetDomain) {
         debug.tried.push('vet');
