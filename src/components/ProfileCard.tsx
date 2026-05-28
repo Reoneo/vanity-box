@@ -1530,7 +1530,22 @@ export const ProfileCard = ({
             });
             const ensData = await ensRes.json();
             console.log('ENS Domains response:', { count: ensData?.count, page: ensData?.page });
-            if (ensData.domains) setEnsDomains(ensData.domains);
+            if (ensData.domains) {
+              // Merge with any previously injected entries (e.g. the searched .eth name)
+              setEnsDomains((prev) => {
+                const seen = new Set<string>();
+                const merged: any[] = [];
+                for (const d of prev) {
+                  const n = String(d?.name || '').toLowerCase();
+                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                }
+                for (const d of ensData.domains) {
+                  const n = String(d?.name || '').toLowerCase();
+                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                }
+                return merged;
+              });
+            }
             setEnsDomainsHasMore(!!ensData?.page?.hasMore);
           } catch (e) {
             console.error('ENS Domains fetch error:', e);
