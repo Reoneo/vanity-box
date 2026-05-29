@@ -2962,20 +2962,32 @@ export const ProfileCard = ({
                             
                             {nftCategory === 'ensdomains' && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {displayedEnsDomains.map((domain: any) => (
-                                  <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3 ${getEnsBorderClass(domain)}`}>
-                                    <div className="flex flex-col items-center gap-2">
-                                      {domain.avatar ? (
-                                        <img src={domain.avatar} alt={domain.name} className="w-12 h-12 rounded-full object-cover" />
-                                      ) : (
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                                          {domain.name?.charAt(0).toUpperCase()}
+                                {displayedEnsDomains.map((domain: any, index: number) => {
+                                  const avatarSrc = domain.avatar || domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`;
+                                  return (
+                                    <div key={`ens-m-${domain.name}-${index}`} onClick={() => setSelectedEnsDomain(domain)} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all bg-gradient-to-br from-[#5298FF]/15 to-[#3370CC]/15 p-3 ${getEnsBorderClass(domain)}`}>
+                                      <div className="flex flex-col items-center gap-2">
+                                        <div className="relative w-12 h-12">
+                                          <img
+                                            src={avatarSrc}
+                                            alt={domain.name}
+                                            className="w-12 h-12 rounded-full object-cover bg-white"
+                                            onError={(e) => {
+                                              const el = e.currentTarget as HTMLImageElement;
+                                              el.style.display = 'none';
+                                              const fb = el.nextElementSibling as HTMLElement | null;
+                                              if (fb) fb.classList.remove('hidden');
+                                            }}
+                                          />
+                                          <div className="hidden absolute inset-0 w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center overflow-hidden">
+                                            <img src={ensLogo} alt="ENS" className="w-8 h-8 object-contain" />
+                                          </div>
                                         </div>
-                                      )}
-                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{domain.name}</p>
+                                        <p className="text-foreground text-sm font-medium truncate max-w-full">{domain.name}</p>
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                                 {isWrapperEnsProfile && (displayedEnsDomains.length < sortedEnsDomains.length || ensDomainsHasMore) && (
                                   <div ref={ensLoadMoreRef} className="col-span-full flex justify-center py-4">
                                     <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />
