@@ -1745,14 +1745,16 @@ export const ProfileCard = ({
     });
   }, [nfts, selectedCollections]);
 
-  // Group OpenSea NFTs by collection (excluding POAPs)
+  // Group OpenSea NFTs by collection (excluding POAPs and ENS).
+  // ENS is rendered through the dedicated, fast "ENS Domains" category powered by the
+  // ENS subgraph + on-chain reads (see https://docs.ens.domains/). Skipping ENS here
+  // removes a slow, duplicate OpenSea collection button while keeping the UI identical.
   const openSeaGroupedNfts = useMemo(() => {
     const groups: Record<string, any[]> = {};
 
-    // Add regular NFTs (OpenSea only)
     filteredNfts.forEach(nft => {
-      const enrichedNft = isEnsNftLike(nft) ? getEnsNftWithDomainData(nft) : nft;
-      const rawCollection = enrichedNft.collection || 'Unknown Collection';
+      if (isEnsNftLike(nft)) return; // handled by ENS Domains category
+      const rawCollection = nft.collection || 'Unknown Collection';
       const lower = String(rawCollection).toLowerCase();
       const isUd = lower.includes('unstoppable') || lower.includes('ud.me');
       let collection = rawCollection;
@@ -1762,25 +1764,14 @@ export const ProfileCard = ({
           ? 'Unstoppable Domains: Base'
           : 'Unstoppable Domains: Polygon';
       }
-      if (!groups[collection]) {
-        groups[collection] = [];
-      }
-      groups[collection].push(enrichedNft);
-    });
-
-    ensDomains.forEach((domain: any) => {
-      const collection = 'ENS Domains';
       if (!groups[collection]) groups[collection] = [];
-      const name = getEnsNameFromItem(domain);
-      if (!name || groups[collection].some((item: any) => getEnsNameFromItem(item) === name)) return;
-      groups[collection].push(domain);
+      groups[collection].push(nft);
     });
 
-    // Sort collections by NFT count
     return Object.fromEntries(
       Object.entries(groups).sort(([, a], [, b]) => b.length - a.length)
     );
-  }, [filteredNfts, ensDomains, ensDomainsByName]);
+  }, [filteredNfts]);
 
   // Promoted top-level OpenSea collection buttons — domain-like collections first
   const openSeaTopLevelEntries = useMemo<[string, any[]][]>(() => {
