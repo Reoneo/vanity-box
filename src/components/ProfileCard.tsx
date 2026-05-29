@@ -41,6 +41,7 @@ import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
 import ethPlusDark from '@/assets/eth-plus-dark.png';
+import ensLogo from '@/assets/ens-logo.png';
 import ensCollectionLogo from '@/assets/ens-collection-logo.png';
 import basenamesCollectionLogo from '@/assets/basenames-collection-logo.png';
 import unstoppableCollectionLogo from '@/assets/unstoppable-collection-logo.png';
@@ -1530,43 +1531,45 @@ export const ProfileCard = ({
         }
 
         if (isEvm && evmWalletAddress) {
-          try {
-            // For wallets owning huge ENS portfolios (e.g. wrapper.ens.eth), fetch in small batches
-            const initialFirst = isWrapperEnsProfile ? 20 : 100;
-            const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-              },
-              body: JSON.stringify({ walletAddress: evmWalletAddress, first: initialFirst, skip: 0 }),
-            });
-            const ensData = await ensRes.json();
-            console.log('ENS Domains response:', { count: ensData?.count, page: ensData?.page });
-            if (ensData.domains) {
-              // Merge with any previously injected entries (e.g. the searched .eth name)
-              setEnsDomains((prev) => {
-                const seen = new Set<string>();
-                const merged: any[] = [];
-                for (const d of prev) {
-                  const n = String(d?.name || '').toLowerCase();
-                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
-                }
-                for (const d of ensData.domains) {
-                  const n = String(d?.name || '').toLowerCase();
-                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
-                }
-                return merged;
+          // Fire-and-forget so the ENS Domains collection appears as soon as the subgraph
+          // responds, without waiting on the other sequential NFT/portfolio fetches.
+          (async () => {
+            try {
+              const initialFirst = isWrapperEnsProfile ? 20 : 50;
+              const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+                },
+                body: JSON.stringify({ walletAddress: evmWalletAddress, first: initialFirst, skip: 0 }),
               });
+              const ensData = await ensRes.json();
+              console.log('ENS Domains response:', { count: ensData?.count, page: ensData?.page });
+              if (ensData.domains) {
+                setEnsDomains((prev) => {
+                  const seen = new Set<string>();
+                  const merged: any[] = [];
+                  for (const d of prev) {
+                    const n = String(d?.name || '').toLowerCase();
+                    if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                  }
+                  for (const d of ensData.domains) {
+                    const n = String(d?.name || '').toLowerCase();
+                    if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                  }
+                  return merged;
+                });
+              }
+              setEnsDomainsHasMore(!!ensData?.page?.hasMore);
+            } catch (e) {
+              console.error('ENS Domains fetch error:', e);
+              setEnsDomainsHasMore(false);
+            } finally {
+              setEnsDomainsLoading(false);
+              setEnsDomainsFetched(true);
             }
-            setEnsDomainsHasMore(!!ensData?.page?.hasMore);
-          } catch (e) {
-            console.error('ENS Domains fetch error:', e);
-            setEnsDomainsHasMore(false);
-          } finally {
-            setEnsDomainsLoading(false);
-            setEnsDomainsFetched(true);
-          }
+          })();
         } else if ((searchedIdentity || '').toLowerCase().trim().endsWith('.eth')) {
           setEnsDomainsLoading(false);
           setEnsDomainsFetched(true);
@@ -2735,6 +2738,31 @@ export const ProfileCard = ({
                               </button>
                             )}
 
+                            {/* ENS Domains - pinned at top of EVM collection list */}
+                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (ensDomainsLoading || ensDomains.length > 0) && (
+                              <button onClick={() => setNftCategory('ensdomains')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
+                                    <img src={ensLogo} alt="ENS" className="w-9 h-9 rounded-full bg-white p-1 border border-black/10 flex-shrink-0 object-contain" />
+                                    <div className="text-left flex-1 min-w-0">
+                                      <h4 className="font-medium text-black text-base">ENS</h4>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'name' : 'names'}`}</p>
+                                        {ensDomains.length > 0 && (
+                                          <div className="flex -space-x-2">
+                                            {ensDomains.slice(0, 3).map((domain: any, idx: number) => (
+                                              <img key={idx} src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`} onError={(e) => { (e.currentTarget as HTMLImageElement).src = ensLogo; }} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover bg-white" />
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                                </div>
+                              </button>
+                            )}
+
                             {/* OpenSea collections — promoted as individual top-level buttons (domain collections first) */}
                             {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
                               <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between">
@@ -2804,26 +2832,6 @@ export const ProfileCard = ({
                               </button>
                             )}
 
-                            {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (ensDomainsLoading || ensDomains.length > 0) && (
-                              <button onClick={() => setNftCategory('ensdomains')} className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98]">
-                                <div className="flex items-center justify-between h-full">
-                                  <div className="text-left flex-1 min-w-0 mr-3">
-                                    <h4 className="font-medium text-black text-base">{renderCollectionLabel('ENS Domains')}</h4>
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'name' : 'names'}`}</p>
-                                      {ensDomains.length > 0 && (
-                                        <div className="flex -space-x-2">
-                                          {ensDomains.slice(0, 3).map((domain: any, idx: number) => (
-                                            <img key={idx} src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                                </div>
-                              </button>
-                            )}
 
                             {/* IOTA Collection Buttons - separate per collection */}
                             {(nftChainFilter === 'all' || nftChainFilter === 'iota') && isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
@@ -2956,20 +2964,32 @@ export const ProfileCard = ({
                             
                             {nftCategory === 'ensdomains' && (
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {displayedEnsDomains.map((domain: any) => (
-                                  <div key={domain.name} onClick={() => setSelectedEnsDomain(domain)} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-3 ${getEnsBorderClass(domain)}`}>
-                                    <div className="flex flex-col items-center gap-2">
-                                      {domain.avatar ? (
-                                        <img src={domain.avatar} alt={domain.name} className="w-12 h-12 rounded-full object-cover" />
-                                      ) : (
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                                          {domain.name?.charAt(0).toUpperCase()}
+                                {displayedEnsDomains.map((domain: any, index: number) => {
+                                  const avatarSrc = domain.avatar || domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`;
+                                  return (
+                                    <div key={`ens-m-${domain.name}-${index}`} onClick={() => setSelectedEnsDomain(domain)} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all bg-gradient-to-br from-[#5298FF]/15 to-[#3370CC]/15 p-3 ${getEnsBorderClass(domain)}`}>
+                                      <div className="flex flex-col items-center gap-2">
+                                        <div className="relative w-12 h-12">
+                                          <img
+                                            src={avatarSrc}
+                                            alt={domain.name}
+                                            className="w-12 h-12 rounded-full object-cover bg-white"
+                                            onError={(e) => {
+                                              const el = e.currentTarget as HTMLImageElement;
+                                              el.style.display = 'none';
+                                              const fb = el.nextElementSibling as HTMLElement | null;
+                                              if (fb) fb.classList.remove('hidden');
+                                            }}
+                                          />
+                                          <div className="hidden absolute inset-0 w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center overflow-hidden">
+                                            <img src={ensLogo} alt="ENS" className="w-8 h-8 object-contain" />
+                                          </div>
                                         </div>
-                                      )}
-                                      <p className="text-foreground text-sm font-medium truncate max-w-full">{domain.name}</p>
+                                        <p className="text-foreground text-sm font-medium truncate max-w-full">{domain.name}</p>
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                                 {isWrapperEnsProfile && (displayedEnsDomains.length < sortedEnsDomains.length || ensDomainsHasMore) && (
                                   <div ref={ensLoadMoreRef} className="col-span-full flex justify-center py-4">
                                     <Loader2 className="w-5 h-5 animate-spin text-[#D4AF37]" />
@@ -3581,6 +3601,34 @@ export const ProfileCard = ({
                         </button>
                       )}
 
+                      {/* ENS Domains - pinned at the top of the EVM collection list (fast subgraph data) */}
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (ensDomainsLoading || ensDomains.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('ensdomains')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
+                              <img src={ensLogo} alt="ENS" className="w-9 h-9 rounded-full bg-white p-1 border border-black/10 flex-shrink-0 object-contain" />
+                              <div className="text-left flex-1 min-w-0">
+                                <h4 className="font-medium text-black text-base">ENS</h4>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'name' : 'names'}`}</p>
+                                  {ensDomains.length > 0 && (
+                                    <div className="flex -space-x-2">
+                                      {ensDomains.slice(0, 3).map((domain: any, idx: number) => (
+                                        <img key={idx} src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`} onError={(e) => { (e.currentTarget as HTMLImageElement).src = ensLogo; }} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover bg-white" />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
                       {/* OpenSea collections — promoted as individual top-level buttons (domain collections first) */}
                       {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
                         <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between">
@@ -3704,29 +3752,6 @@ export const ProfileCard = ({
                         </button>
                       )}
 
-                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (ensDomainsLoading || ensDomains.length > 0) && (
-                        <button
-                          onClick={() => setNftCategory('ensdomains')}
-                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
-                        >
-                          <div className="flex items-center justify-between h-full">
-                            <div className="text-left flex-1 min-w-0 mr-3">
-                              <h4 className="font-medium text-black text-base">{renderCollectionLabel('ENS Domains')}</h4>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'name' : 'names'}`}</p>
-                                {ensDomains.length > 0 && (
-                                  <div className="flex -space-x-2">
-                                    {ensDomains.slice(0, 3).map((domain: any, idx: number) => (
-                                      <img key={idx} src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover" />
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
-                          </div>
-                        </button>
-                      )}
 
                       {/* IOTA Collection Buttons - separate per collection */}
                       {(nftChainFilter === 'all' || nftChainFilter === 'iota') && isIotaProfile && (iotaLoading || iotaNfts.length > 0) && (
@@ -4044,19 +4069,25 @@ export const ProfileCard = ({
                               className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all w-full ${borderClass}`}
                               onClick={() => setSelectedEnsDomain(domain)}
                             >
-                              <div className="aspect-square bg-gradient-to-br from-[#5298FF]/10 to-[#3370CC]/10 overflow-hidden">
+                              <div className="aspect-square bg-white overflow-hidden relative">
                                 <img
                                   src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`}
                                   alt={domain.name}
+                                  loading="lazy"
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                    const el = e.currentTarget as HTMLImageElement;
+                                    el.style.display = 'none';
+                                    const fb = el.nextElementSibling as HTMLElement | null;
+                                    if (fb) fb.classList.remove('hidden');
                                   }}
                                 />
-                                <div className="hidden w-full h-full bg-gradient-to-br from-[#5298FF] to-[#3370CC] flex items-center justify-center">
-                                  <span className="text-white font-bold text-2xl">ENS</span>
+                                <div className="hidden absolute inset-0 w-full h-full bg-white flex items-center justify-center p-4">
+                                  <img src={ensLogo} alt="ENS" className="max-w-[70%] max-h-[70%] object-contain" />
                                 </div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-gradient-to-t from-black/70 to-transparent">
+                                <p className="text-white text-xs font-medium truncate">{domain.name}</p>
                               </div>
                             </div>
                             );
