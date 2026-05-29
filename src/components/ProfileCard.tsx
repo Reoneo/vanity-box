@@ -3582,6 +3582,34 @@ export const ProfileCard = ({
                         </button>
                       )}
 
+                      {/* ENS Domains - pinned at the top of the EVM collection list (fast subgraph data) */}
+                      {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (ensDomainsLoading || ensDomains.length > 0) && (
+                        <button
+                          onClick={() => setNftCategory('ensdomains')}
+                          className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.98] touch-action-manipulation"
+                        >
+                          <div className="flex items-center justify-between h-full">
+                            <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
+                              <img src={ensLogo} alt="ENS" className="w-9 h-9 rounded-full bg-white p-1 border border-black/10 flex-shrink-0 object-contain" />
+                              <div className="text-left flex-1 min-w-0">
+                                <h4 className="font-medium text-black text-base">ENS</h4>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-black/70">{ensDomainsLoading ? 'Loading…' : `${ensDomains.length} ${ensDomains.length === 1 ? 'name' : 'names'}`}</p>
+                                  {ensDomains.length > 0 && (
+                                    <div className="flex -space-x-2">
+                                      {ensDomains.slice(0, 3).map((domain: any, idx: number) => (
+                                        <img key={idx} src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`} onError={(e) => { (e.currentTarget as HTMLImageElement).src = ensLogo; }} alt="" className="w-5 h-5 rounded-full border border-black/20 object-cover bg-white" />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-black -rotate-90 flex-shrink-0" />
+                          </div>
+                        </button>
+                      )}
+
                       {/* OpenSea collections — promoted as individual top-level buttons (domain collections first) */}
                       {(nftChainFilter === 'all' || nftChainFilter === 'evm') && (!isIotaProfile || !!linkedEvmAddress) && nftLoading && nfts.length === 0 && (
                         <div className="w-full h-16 px-5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F4E4BC] text-black flex items-center justify-between">
