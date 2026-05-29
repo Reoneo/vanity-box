@@ -4067,19 +4067,25 @@ export const ProfileCard = ({
                               className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all w-full ${borderClass}`}
                               onClick={() => setSelectedEnsDomain(domain)}
                             >
-                              <div className="aspect-square bg-gradient-to-br from-[#5298FF]/10 to-[#3370CC]/10 overflow-hidden">
+                              <div className="aspect-square bg-white overflow-hidden relative">
                                 <img
                                   src={domain.image_url || `https://metadata.ens.domains/mainnet/avatar/${domain.name}`}
                                   alt={domain.name}
+                                  loading="lazy"
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                    const el = e.currentTarget as HTMLImageElement;
+                                    el.style.display = 'none';
+                                    const fb = el.nextElementSibling as HTMLElement | null;
+                                    if (fb) fb.classList.remove('hidden');
                                   }}
                                 />
-                                <div className="hidden w-full h-full bg-gradient-to-br from-[#5298FF] to-[#3370CC] flex items-center justify-center">
-                                  <span className="text-white font-bold text-2xl">ENS</span>
+                                <div className="hidden absolute inset-0 w-full h-full bg-white flex items-center justify-center p-4">
+                                  <img src={ensLogo} alt="ENS" className="max-w-[70%] max-h-[70%] object-contain" />
                                 </div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-gradient-to-t from-black/70 to-transparent">
+                                <p className="text-white text-xs font-medium truncate">{domain.name}</p>
                               </div>
                             </div>
                             );
