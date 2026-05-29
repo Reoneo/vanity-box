@@ -776,6 +776,19 @@ export const ProfileCard = ({
         });
         return next;
       });
+      // Also merge into the rendered ENS Domains list so any ENS NFT seen via OpenSea
+      // surfaces in the dedicated ENS Domains category (fast subgraph data).
+      setEnsDomains((prev) => {
+        const seen = new Set(prev.map((d: any) => String(d?.name || '').toLowerCase()).filter(Boolean));
+        const merged = [...prev];
+        results.forEach((r) => {
+          if (r?.domain) {
+            const n = String(r.domain.name || '').toLowerCase();
+            if (n && !seen.has(n)) { seen.add(n); merged.push(r.domain); }
+          }
+        });
+        return merged;
+      });
     })();
     return () => { cancelled = true; };
   }, [visibleOpenSeaEnsNames]);
