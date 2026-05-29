@@ -1531,43 +1531,45 @@ export const ProfileCard = ({
         }
 
         if (isEvm && evmWalletAddress) {
-          try {
-            // For wallets owning huge ENS portfolios (e.g. wrapper.ens.eth), fetch in small batches
-            const initialFirst = isWrapperEnsProfile ? 20 : 100;
-            const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-              },
-              body: JSON.stringify({ walletAddress: evmWalletAddress, first: initialFirst, skip: 0 }),
-            });
-            const ensData = await ensRes.json();
-            console.log('ENS Domains response:', { count: ensData?.count, page: ensData?.page });
-            if (ensData.domains) {
-              // Merge with any previously injected entries (e.g. the searched .eth name)
-              setEnsDomains((prev) => {
-                const seen = new Set<string>();
-                const merged: any[] = [];
-                for (const d of prev) {
-                  const n = String(d?.name || '').toLowerCase();
-                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
-                }
-                for (const d of ensData.domains) {
-                  const n = String(d?.name || '').toLowerCase();
-                  if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
-                }
-                return merged;
+          // Fire-and-forget so the ENS Domains collection appears as soon as the subgraph
+          // responds, without waiting on the other sequential NFT/portfolio fetches.
+          (async () => {
+            try {
+              const initialFirst = isWrapperEnsProfile ? 20 : 50;
+              const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
+                },
+                body: JSON.stringify({ walletAddress: evmWalletAddress, first: initialFirst, skip: 0 }),
               });
+              const ensData = await ensRes.json();
+              console.log('ENS Domains response:', { count: ensData?.count, page: ensData?.page });
+              if (ensData.domains) {
+                setEnsDomains((prev) => {
+                  const seen = new Set<string>();
+                  const merged: any[] = [];
+                  for (const d of prev) {
+                    const n = String(d?.name || '').toLowerCase();
+                    if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                  }
+                  for (const d of ensData.domains) {
+                    const n = String(d?.name || '').toLowerCase();
+                    if (n && !seen.has(n)) { seen.add(n); merged.push(d); }
+                  }
+                  return merged;
+                });
+              }
+              setEnsDomainsHasMore(!!ensData?.page?.hasMore);
+            } catch (e) {
+              console.error('ENS Domains fetch error:', e);
+              setEnsDomainsHasMore(false);
+            } finally {
+              setEnsDomainsLoading(false);
+              setEnsDomainsFetched(true);
             }
-            setEnsDomainsHasMore(!!ensData?.page?.hasMore);
-          } catch (e) {
-            console.error('ENS Domains fetch error:', e);
-            setEnsDomainsHasMore(false);
-          } finally {
-            setEnsDomainsLoading(false);
-            setEnsDomainsFetched(true);
-          }
+          })();
         } else if ((searchedIdentity || '').toLowerCase().trim().endsWith('.eth')) {
           setEnsDomainsLoading(false);
           setEnsDomainsFetched(true);
