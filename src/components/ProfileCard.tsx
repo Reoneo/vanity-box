@@ -41,6 +41,7 @@ import wldLogo from '@/assets/wld-logo-dark.svg';
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
 import ethPlusDark from '@/assets/eth-plus-dark.png';
+import ensLogo from '@/assets/ens-logo.png';
 import ensCollectionLogo from '@/assets/ens-collection-logo.png';
 import basenamesCollectionLogo from '@/assets/basenames-collection-logo.png';
 import unstoppableCollectionLogo from '@/assets/unstoppable-collection-logo.png';
