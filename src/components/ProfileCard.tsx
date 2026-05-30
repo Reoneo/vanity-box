@@ -2364,9 +2364,10 @@ export const ProfileCard = ({
                         );
                       })()}
 
-                      {/* Bio - centered, full text, gold quotes at end */}
+                      {/* Bio - centered, full text, gold quotes at both ends */}
                       {web3BioProfile?.description && (
                         <p className="max-w-[420px] mx-auto text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
+                          <span className="text-[#D4AF37] mr-1 font-serif">”</span>
                           {web3BioProfile.description}
                           <span className="text-[#D4AF37] ml-1 font-serif">”</span>
                         </p>
@@ -3256,9 +3257,10 @@ export const ProfileCard = ({
                     );
                   })()}
 
-                  {/* Bio - centered, full text, gold quote (mobile) */}
+                  {/* Bio - centered, full text, gold quotes at both ends (mobile) */}
                   {web3BioProfile?.description && (
                     <p className="max-w-[420px] mx-auto px-2 text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
+                      <span className="text-[#D4AF37] mr-1 font-serif">”</span>
                       {web3BioProfile.description}
                       <span className="text-[#D4AF37] ml-1 font-serif">”</span>
                     </p>
