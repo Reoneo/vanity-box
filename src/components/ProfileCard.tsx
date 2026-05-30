@@ -3164,7 +3164,7 @@ export const ProfileCard = ({
             ) : (
               /* Mobile: Original stacked layout - black with gold gradient in dark mode */
               <div className="space-y-2 pb-40 bg-background min-h-full">
-                {/* Header - Always visible */}
+                {/* Header and Avatar with Verified Badge - Always visible */}
                 <div className="relative flex-shrink-0">
                   <div 
                     className="w-full aspect-[3.3/1] lg:aspect-[5.5/1] overflow-hidden cursor-pointer"
@@ -3175,201 +3175,207 @@ export const ProfileCard = ({
                       alt="Header"
                       className="block w-full h-full object-cover"
                     />
+                    {/* No gradient overlay – matches desktop */}
                   </div>
-                </div>
-
-                {/* Share button - positioned just below the header image (mobile) */}
-                <div className="px-5 mt-2 mb-1">
+                  {/* Share button - clears gold side border (mobile) */}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
                     aria-label="Share profile"
-                    className="w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md"
+                    className="absolute top-3 left-5 z-40 w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md"
                   >
                     <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
+
+                  <div className="flex justify-center absolute -bottom-14 left-0 right-0">
+                    <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
+                      <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
+                        <AvatarImage 
+                          src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
+                          alt={web3BioProfile?.displayName || 'User'}
+                          className="object-cover rounded-2xl"
+                        />
+                        <AvatarFallback className="rounded-2xl text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                          {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Verified Badge - Only show when user has human verification */}
+                      {isHumanVerified && (
+                        <div
+                          className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center"
+                          title="Verified Builder"
+                        >
+                          <div className="relative">
+                            <svg viewBox="0 0 24 24" className="w-9 h-9 drop-shadow-lg">
+                              <defs>
+                                <linearGradient id="badge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                  <stop offset="0%" stopColor="#3B82F6" />
+                                  <stop offset="100%" stopColor="#1D4ED8" />
+                                </linearGradient>
+                              </defs>
+                              <path 
+                                d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
+                                fill="url(#badge-gradient)" 
+                              />
+                              <path 
+                                d="M9.5 12.5L11 14L14.5 10.5" 
+                                stroke="white" 
+                                strokeWidth="2" 
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill="none"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                      {/* Share button moved to top-left of header image (see above) */}
+                    </div>
+                  </div>
                 </div>
 
-                {/* 70:30 split: avatar + info on the left, action buttons stacked on the right */}
-                <div className="flex gap-3 px-4 pt-2">
-                  <div className="w-[70%] space-y-2 min-w-0">
-                    <div className="flex justify-start">
-                      <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
-                        <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
-                          <AvatarImage 
-                            src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
-                            alt={web3BioProfile?.displayName || 'User'}
-                            className="object-cover rounded-2xl"
-                          />
-                          <AvatarFallback className="rounded-2xl text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
-                            {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        {isHumanVerified && (
-                          <div
-                            className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center"
-                            title="Verified Builder"
-                          >
-                            <div className="relative">
-                              <svg viewBox="0 0 24 24" className="w-9 h-9 drop-shadow-lg">
-                                <defs>
-                                  <linearGradient id="badge-gradient-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#3B82F6" />
-                                    <stop offset="100%" stopColor="#1D4ED8" />
-                                  </linearGradient>
-                                </defs>
-                                <path 
-                                  d="M12 1L14.5 3.5L18 3L18.5 6.5L21.5 8.5L20 12L21.5 15.5L18.5 17.5L18 21L14.5 20.5L12 23L9.5 20.5L6 21L5.5 17.5L2.5 15.5L4 12L2.5 8.5L5.5 6.5L6 3L9.5 3.5L12 1Z" 
-                                  fill="url(#badge-gradient-mobile)" 
-                                />
-                                <path 
-                                  d="M9.5 12.5L11 14L14.5 10.5" 
-                                  stroke="white" 
-                                  strokeWidth="2" 
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  fill="none"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                <div className="p-4 pt-[72px] space-y-2 flex-shrink-0">
+
+                  {/* Display name with refined typography */}
+                  <h2 className="text-2xl font-bold text-center text-foreground tracking-tight">
+                    {getDisplayName()}
+                  </h2>
+
+                  {/* Wallet Address — show shortened single address when not multi-chain */}
+                  {linkedWalletOptions.length < 2 && (() => {
+                    const addr = linkedWalletOptions[0]?.address || web3BioProfile?.address || iotaOwnerAddress || currentWalletAddress;
+                    if (!addr) return null;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => { try { navigator.clipboard.writeText(addr); toast.success('Copied'); } catch {} }}
+                        className="mx-auto block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors"
+                        aria-label="Copy wallet address"
+                      >
+                        {shortenAddress(addr)}
+                      </button>
+                    );
+                  })()}
+
+                  {/* Bio - centered, full text, gold quotes at both ends (mobile) */}
+                  {web3BioProfile?.description && (
+                    <p className="max-w-[420px] mx-auto px-2 text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
+                      <span className="text-[#D4AF37] mr-1 font-serif">“</span>
+                      {web3BioProfile.description}
+                      <span className="text-[#D4AF37] ml-1 font-serif">”</span>
+                    </p>
+                  )}
+
+                  {/* Following/Followers - Only render container if EFP stats exist with counts > 0 */}
+                  {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
+                    <div className="flex justify-center items-center gap-1.5 text-sm">
+                      <button
+                        onClick={onFollowingClick}
+                        className="flex items-center gap-1 hover:opacity-80 transition-colors"
+                      >
+                        <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
+                        <span className="text-black dark:text-white">Following</span>
+                      </button>
+                      <img src={ethPlusGold} alt="" className="w-8 h-8 object-contain hidden dark:inline-block" />
+                      <img src={ethPlusDark} alt="" className="w-8 h-8 object-contain dark:hidden inline-block" />
+                      <button
+                        onClick={onFollowersClick}
+                        className="flex items-center gap-1 hover:opacity-80 transition-colors"
+                      >
+                        <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
+                        <span className="text-black dark:text-white">Followers</span>
+                      </button>
                     </div>
+                  )}
 
-                    <h2 className="text-2xl font-bold text-left text-foreground tracking-tight break-words">
-                      {getDisplayName()}
-                    </h2>
-
-                    {linkedWalletOptions.length < 2 && (() => {
-                      const addr = linkedWalletOptions[0]?.address || web3BioProfile?.address || iotaOwnerAddress || currentWalletAddress;
-                      if (!addr) return null;
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => { try { navigator.clipboard.writeText(addr); toast.success('Copied'); } catch {} }}
-                          className="block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors text-left"
-                          aria-label="Copy wallet address"
+                  {/* Email/Website */}
+                  {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                      {web3BioProfile?.email && (
+                        <a 
+                          href={`mailto:${web3BioProfile.email}`} 
+                          className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
                         >
-                          {shortenAddress(addr)}
-                        </button>
-                      );
-                    })()}
-
-                    {web3BioProfile?.description && (
-                      <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-left break-words">
-                        <span className="text-[#D4AF37] mr-1 font-serif">“</span>
-                        {web3BioProfile.description}
-                        <span className="text-[#D4AF37] ml-1 font-serif">”</span>
-                      </p>
-                    )}
-
-                    {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
-                      <div className="flex justify-start items-center gap-1.5 text-sm flex-wrap">
-                        <button
-                          onClick={onFollowingClick}
-                          className="flex items-center gap-1 hover:opacity-80 transition-colors"
+                          <Mail className="w-4 h-4 text-black dark:text-white" />
+                          {web3BioProfile.email}
+                        </a>
+                      )}
+                      
+                      {(web3BioProfile?.website || web3BioProfile?.url) && (
+                        <a
+                          href={web3BioProfile.website || web3BioProfile.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
                         >
-                          <span className="font-semibold text-[#D4AF37]">{efpStats.following_count || 0}</span>
-                          <span className="text-black dark:text-white">Following</span>
-                        </button>
-                        <img src={ethPlusGold} alt="" className="w-8 h-8 object-contain hidden dark:inline-block" />
-                        <img src={ethPlusDark} alt="" className="w-8 h-8 object-contain dark:hidden inline-block" />
-                        <button
-                          onClick={onFollowersClick}
-                          className="flex items-center gap-1 hover:opacity-80 transition-colors"
-                        >
-                          <span className="font-semibold text-[#D4AF37]">{efpStats.followers_count || 0}</span>
-                          <span className="text-black dark:text-white">Followers</span>
-                        </button>
-                      </div>
-                    )}
-
-                    {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                      <div className="flex items-center justify-start gap-4 flex-wrap">
-                        {web3BioProfile?.email && (
-                          <a 
-                            href={`mailto:${web3BioProfile.email}`} 
-                            className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
-                          >
-                            <Mail className="w-4 h-4 text-black dark:text-white" />
-                            {web3BioProfile.email}
-                          </a>
-                        )}
-                        {(web3BioProfile?.website || web3BioProfile?.url) && (
-                          <a
-                            href={web3BioProfile.website || web3BioProfile.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-black dark:text-[#D4AF37] hover:underline"
-                          >
-                            <Globe className="w-4 h-4 text-black dark:text-white" />
-                            <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
-                          </a>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-start gap-2 text-sm text-muted-foreground min-h-[24px]">
-                      {firstTransactionDate ? (
-                        <>
-                          <Calendar className="w-4 h-4" />
-                          <span>
-                            On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
-                              month: 'short',
-                              year: 'numeric',
-                              day: 'numeric'
-                            })}
-                          </span>
-                        </>
-                      ) : null}
+                          <Globe className="w-4 h-4 text-black dark:text-white" />
+                          <span>{(web3BioProfile.website || web3BioProfile.url)?.replace(/^https?:\/\//, '')}</span>
+                        </a>
+                      )}
                     </div>
+                  )}
+
+
+                  {/* Profile Action Pills - Horizontal Layout (Mobile) */}
+                  {(() => {
+                    const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
+                    const hasTonNfts = tonNftsLoading || tonNftCount > 0;
+                    const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || hasTonNfts || suinsCount > 0 || suinsLoading || ensDomains.length > 0 || basenames.length > 0;
+                    const hasTokens = portfolioTokens.length > 0;
+                    const hasSocials = mergedSocialLinks.length > 0;
+                    const hasTransactions = transactions.length > 0;
+                    const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
+
+                    const buttons: { title: string; onClick: () => void }[] = [];
+                    if (hasTransactions) buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
+                    if (hasNfts) buttons.push({
+                      title: 'NFTs',
+                      onClick: () => { setShowNftsOverlay(true); onEnsureOpenSeaNfts?.(); }
+                    });
+                    if (hasSocials) buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
+                    if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
+                    if (hasReputation) buttons.push({
+                      title: 'Reputation',
+                      onClick: () => setShowReputationModal(true),
+                    });
+                    if (linkedWalletOptions.length >= 2) buttons.push({ title: 'Wallets', onClick: () => setShowWalletsOverlay(true) });
+
+                    buttons.sort((a, b) => a.title.localeCompare(b.title));
+                    if (buttons.length === 0) return null;
+
+                    return (
+                      <div className="flex flex-wrap items-center justify-center gap-2 px-4">
+                        {buttons.map((btn) => (
+                          <button
+                            key={btn.title}
+                            onClick={btn.onClick}
+                            className="dock-item py-2 px-4 rounded-xl text-sm font-semibold whitespace-nowrap text-[#D4AF37]"
+                            style={{ width: 'auto', height: 'auto' }}
+                          >
+                            {btn.title}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* On-chain date - Always render with fixed height */}
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground min-h-[24px]">
+                    {firstTransactionDate ? (
+                      <>
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          On-chain since {new Date(firstTransactionDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            year: 'numeric',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </>
+                    ) : null}
                   </div>
 
-                  {/* Right column: action buttons stacked vertically (30%) */}
-                  <div className="w-[30%] flex-shrink-0">
-                    {(() => {
-                      const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
-                      const hasTonNfts = tonNftsLoading || tonNftCount > 0;
-                      const hasNfts = (nfts && nfts.length > 0) || poaps.length > 0 || magicEdenNfts.length > 0 || hasWorldchainNfts || hlNfts.length > 0 || hasTonNfts || suinsCount > 0 || suinsLoading || ensDomains.length > 0 || basenames.length > 0;
-                      const hasTokens = portfolioTokens.length > 0;
-                      const hasSocials = mergedSocialLinks.length > 0;
-                      const hasTransactions = transactions.length > 0;
-                      const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
-
-                      const buttons: { title: string; onClick: () => void }[] = [];
-                      if (hasTransactions) buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
-                      if (hasNfts) buttons.push({
-                        title: 'NFTs',
-                        onClick: () => { setShowNftsOverlay(true); onEnsureOpenSeaNfts?.(); }
-                      });
-                      if (hasSocials) buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
-                      if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
-                      if (hasReputation) buttons.push({
-                        title: 'Reputation',
-                        onClick: () => setShowReputationModal(true),
-                      });
-                      if (linkedWalletOptions.length >= 2) buttons.push({ title: 'Wallets', onClick: () => setShowWalletsOverlay(true) });
-
-                      buttons.sort((a, b) => a.title.localeCompare(b.title));
-                      if (buttons.length === 0) return null;
-
-                      return (
-                        <div className="flex flex-col items-stretch gap-2">
-                          {buttons.map((btn) => (
-                            <button
-                              key={btn.title}
-                              onClick={btn.onClick}
-                              className="dock-item py-2 px-3 rounded-xl text-sm font-semibold whitespace-nowrap text-[#D4AF37] w-full"
-                              style={{ height: 'auto' }}
-                            >
-                              {btn.title}
-                            </button>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
+                  {/* Inline CredentialsCarousel removed — moved to Reputation action pill. */}
                 </div>
               </div>
             )}
