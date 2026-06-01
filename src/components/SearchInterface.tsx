@@ -904,7 +904,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     supabase.functions.invoke('get-efp-stats', {
       body: { address: linkedEvmAddress }
     }).then(({ data: efpData }) => {
-      if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+      if (efpData) {
         console.log('✅ EFP stats loaded for .iota linked EVM:', efpData);
         setEfpStats(efpData);
       }
