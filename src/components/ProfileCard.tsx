@@ -3178,22 +3178,12 @@ export const ProfileCard = ({
                   </div>
                 </div>
 
-                {/* Share button - positioned just below the header image (mobile) */}
-                <div className="px-5 mt-2 mb-1">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
-                    aria-label="Share profile"
-                    className="w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md"
-                  >
-                    <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
-                  </button>
-                </div>
 
                 {/* 70:30 split: avatar + info on the left, action buttons stacked on the right */}
                 <div className="flex gap-3 px-4 pt-2">
-                  <div className="w-[70%] space-y-2 min-w-0">
-                    <div className="flex justify-start">
+                  <div className="w-[70%] space-y-2 min-w-0 flex flex-col items-center text-center">
+                    <div className="flex justify-center w-full">
+
                       <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
                         <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
                           <AvatarImage 
@@ -3237,7 +3227,7 @@ export const ProfileCard = ({
                       </div>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-left text-foreground tracking-tight break-words">
+                    <h2 className="text-2xl font-bold text-center text-foreground tracking-tight break-words">
                       {getDisplayName()}
                     </h2>
 
@@ -3248,7 +3238,7 @@ export const ProfileCard = ({
                         <button
                           type="button"
                           onClick={() => { try { navigator.clipboard.writeText(addr); toast.success('Copied'); } catch {} }}
-                          className="block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors text-left"
+                          className="block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors text-center"
                           aria-label="Copy wallet address"
                         >
                           {shortenAddress(addr)}
@@ -3257,7 +3247,7 @@ export const ProfileCard = ({
                     })()}
 
                     {web3BioProfile?.description && (
-                      <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-left break-words">
+                      <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
                         <span className="text-[#D4AF37] mr-1 font-serif">“</span>
                         {web3BioProfile.description}
                         <span className="text-[#D4AF37] ml-1 font-serif">”</span>
@@ -3265,7 +3255,7 @@ export const ProfileCard = ({
                     )}
 
                     {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
-                      <div className="flex justify-start items-center gap-1.5 text-sm flex-wrap">
+                      <div className="flex justify-center items-center gap-1.5 text-sm flex-wrap">
                         <button
                           onClick={onFollowingClick}
                           className="flex items-center gap-1 hover:opacity-80 transition-colors"
@@ -3286,7 +3276,7 @@ export const ProfileCard = ({
                     )}
 
                     {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                      <div className="flex items-center justify-start gap-4 flex-wrap">
+                      <div className="flex items-center justify-center gap-4 flex-wrap">
                         {web3BioProfile?.email && (
                           <a 
                             href={`mailto:${web3BioProfile.email}`} 
@@ -3310,7 +3300,7 @@ export const ProfileCard = ({
                       </div>
                     )}
 
-                    <div className="flex items-center justify-start gap-2 text-sm text-muted-foreground min-h-[24px]">
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground min-h-[24px]">
                       {firstTransactionDate ? (
                         <>
                           <Calendar className="w-4 h-4" />
@@ -3326,8 +3316,17 @@ export const ProfileCard = ({
                     </div>
                   </div>
 
-                  {/* Right column: action buttons stacked vertically (30%) */}
-                  <div className="w-[30%] flex-shrink-0">
+                  {/* Right column: share button + action buttons stacked vertically (30%) */}
+                  <div className="w-[30%] flex-shrink-0 flex flex-col items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
+                      aria-label="Share profile"
+                      className="w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md"
+                    >
+                      <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
+                    </button>
+
                     {(() => {
                       const hasWorldchainNfts = worldchainNftsLoading || worldchainNftCount > 0;
                       const hasTonNfts = tonNftsLoading || tonNftCount > 0;
