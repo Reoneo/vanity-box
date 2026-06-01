@@ -699,7 +699,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         supabase.functions.invoke('get-efp-stats', {
           body: { address: evmAddress }
         }).then(({ data: efpData }) => {
-          if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+          if (efpData) {
             console.log('✅ EFP stats loaded for linked EVM:', efpData);
             setEfpStats(efpData);
           }
