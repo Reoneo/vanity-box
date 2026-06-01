@@ -3227,7 +3227,7 @@ export const ProfileCard = ({
                       </div>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-left text-foreground tracking-tight break-words">
+                    <h2 className="text-2xl font-bold text-center text-foreground tracking-tight break-words">
                       {getDisplayName()}
                     </h2>
 
@@ -3238,7 +3238,7 @@ export const ProfileCard = ({
                         <button
                           type="button"
                           onClick={() => { try { navigator.clipboard.writeText(addr); toast.success('Copied'); } catch {} }}
-                          className="block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors text-left"
+                          className="block text-xs font-mono text-black/70 dark:text-white/70 hover:text-[#D4AF37] transition-colors text-center"
                           aria-label="Copy wallet address"
                         >
                           {shortenAddress(addr)}
@@ -3247,7 +3247,7 @@ export const ProfileCard = ({
                     })()}
 
                     {web3BioProfile?.description && (
-                      <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-left break-words">
+                      <p className="text-sm text-foreground dark:text-[#D4AF37] leading-relaxed text-center break-words">
                         <span className="text-[#D4AF37] mr-1 font-serif">“</span>
                         {web3BioProfile.description}
                         <span className="text-[#D4AF37] ml-1 font-serif">”</span>
@@ -3255,7 +3255,7 @@ export const ProfileCard = ({
                     )}
 
                     {efpStats && (efpStats.following_count > 0 || efpStats.followers_count > 0) && (
-                      <div className="flex justify-start items-center gap-1.5 text-sm flex-wrap">
+                      <div className="flex justify-center items-center gap-1.5 text-sm flex-wrap">
                         <button
                           onClick={onFollowingClick}
                           className="flex items-center gap-1 hover:opacity-80 transition-colors"
@@ -3276,7 +3276,7 @@ export const ProfileCard = ({
                     )}
 
                     {web3BioProfile && (web3BioProfile?.email || web3BioProfile?.website || web3BioProfile?.url) && (
-                      <div className="flex items-center justify-start gap-4 flex-wrap">
+                      <div className="flex items-center justify-center gap-4 flex-wrap">
                         {web3BioProfile?.email && (
                           <a 
                             href={`mailto:${web3BioProfile.email}`} 
@@ -3300,7 +3300,7 @@ export const ProfileCard = ({
                       </div>
                     )}
 
-                    <div className="flex items-center justify-start gap-2 text-sm text-muted-foreground min-h-[24px]">
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground min-h-[24px]">
                       {firstTransactionDate ? (
                         <>
                           <Calendar className="w-4 h-4" />
