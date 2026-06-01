@@ -3181,8 +3181,9 @@ export const ProfileCard = ({
 
                 {/* 70:30 split: avatar + info on the left, action buttons stacked on the right */}
                 <div className="flex gap-3 px-4 pt-2">
-                  <div className="w-[70%] space-y-2 min-w-0">
-                    <div className="flex justify-start">
+                  <div className="w-[70%] space-y-2 min-w-0 flex flex-col items-center text-center">
+                    <div className="flex justify-center w-full">
+
                       <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
                         <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
                           <AvatarImage 
