@@ -3178,17 +3178,6 @@ export const ProfileCard = ({
                   </div>
                 </div>
 
-                {/* Share button - positioned just below the header image (mobile) */}
-                <div className="px-5 mt-2 mb-1">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
-                    aria-label="Share profile"
-                    className="w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md"
-                  >
-                    <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
-                  </button>
-                </div>
 
                 {/* 70:30 split: avatar + info on the left, action buttons stacked on the right */}
                 <div className="flex gap-3 px-4 pt-2">
