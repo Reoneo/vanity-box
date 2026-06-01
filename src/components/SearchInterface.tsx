@@ -1415,6 +1415,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setEnsResults([]);
     setWeb3BioProfile(null);
     setEfpStats(null);
+    setFollowingList([]);
+    setFollowersList([]);
+    setTotalFollowing(0);
+    setTotalFollowers(0);
     setEnsRecords(null);
     setEnsOverlay(null);
 
