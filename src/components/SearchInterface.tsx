@@ -1535,7 +1535,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             supabase.functions.invoke('get-efp-stats', {
               body: { address: normalizedAddress }
             }).then(({ data: efpData }) => {
-              if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+              if (efpData) {
                 setEfpStats(efpData);
               }
             }).catch(() => {});
