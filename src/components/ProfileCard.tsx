@@ -3336,31 +3336,24 @@ export const ProfileCard = ({
                       const hasSocials = mergedSocialLinks.length > 0;
                       const hasTransactions = transactions.length > 0;
                       const hasReputation = hasTalentData || hasPolymarketData || udBadges.length > 0;
+                      const hasWallets = linkedWalletOptions.length >= 2;
 
-                      const buttons: { title: string; onClick: () => void }[] = [];
-                      if (hasTransactions) buttons.push({ title: 'Activity', onClick: () => setShowActivityOverlay(true) });
-                      if (hasNfts) buttons.push({
-                        title: 'NFTs',
-                        onClick: () => { setShowNftsOverlay(true); onEnsureOpenSeaNfts?.(); }
-                      });
-                      if (hasSocials) buttons.push({ title: 'Social', onClick: () => setShowAllSocials(true) });
-                      if (hasTokens) buttons.push({ title: 'Tokens', onClick: () => setShowTokensOverlay(true) });
-                      if (hasReputation) buttons.push({
-                        title: 'Reputation',
-                        onClick: () => setShowReputationModal(true),
-                      });
-                      if (linkedWalletOptions.length >= 2) buttons.push({ title: 'Wallets', onClick: () => setShowWalletsOverlay(true) });
-
-                      buttons.sort((a, b) => a.title.localeCompare(b.title));
-                      if (buttons.length === 0) return null;
+                      const buttons: { title: string; enabled: boolean; onClick: () => void }[] = [
+                        { title: 'Activity', enabled: hasTransactions, onClick: () => setShowActivityOverlay(true) },
+                        { title: 'NFTs', enabled: hasNfts, onClick: () => { setShowNftsOverlay(true); onEnsureOpenSeaNfts?.(); } },
+                        { title: 'Reputation', enabled: hasReputation, onClick: () => setShowReputationModal(true) },
+                        { title: 'Social', enabled: hasSocials, onClick: () => setShowAllSocials(true) },
+                        { title: 'Tokens', enabled: hasTokens, onClick: () => setShowTokensOverlay(true) },
+                        { title: 'Wallets', enabled: hasWallets, onClick: () => setShowWalletsOverlay(true) },
+                      ];
 
                       return (
                         <div className="flex flex-col items-stretch gap-2">
                           {buttons.map((btn) => (
                             <button
                               key={btn.title}
-                              onClick={btn.onClick}
-                              className="dock-item py-2 px-3 rounded-xl text-sm font-semibold whitespace-nowrap text-[#D4AF37] w-full"
+                              onClick={btn.enabled ? btn.onClick : () => toast(`No ${btn.title.toLowerCase()} data available for this profile`)}
+                              className={`dock-item py-2 px-3 rounded-xl text-sm font-semibold whitespace-nowrap text-[#D4AF37] w-full ${btn.enabled ? '' : 'dock-item-empty opacity-70'}`}
                               style={{ height: 'auto' }}
                             >
                               {btn.title}
