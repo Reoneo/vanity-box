@@ -699,7 +699,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         supabase.functions.invoke('get-efp-stats', {
           body: { address: evmAddress }
         }).then(({ data: efpData }) => {
-          if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+          if (efpData) {
             console.log('✅ EFP stats loaded for linked EVM:', efpData);
             setEfpStats(efpData);
           }
@@ -904,7 +904,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     supabase.functions.invoke('get-efp-stats', {
       body: { address: linkedEvmAddress }
     }).then(({ data: efpData }) => {
-      if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+      if (efpData) {
         console.log('✅ EFP stats loaded for .iota linked EVM:', efpData);
         setEfpStats(efpData);
       }
@@ -1415,6 +1415,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setEnsResults([]);
     setWeb3BioProfile(null);
     setEfpStats(null);
+    setFollowingList([]);
+    setFollowersList([]);
+    setTotalFollowing(0);
+    setTotalFollowers(0);
     setEnsRecords(null);
     setEnsOverlay(null);
 
@@ -1531,7 +1535,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             supabase.functions.invoke('get-efp-stats', {
               body: { address: normalizedAddress }
             }).then(({ data: efpData }) => {
-              if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+              if (efpData) {
                 setEfpStats(efpData);
               }
             }).catch(() => {});
@@ -1727,7 +1731,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           supabase.functions.invoke('get-efp-stats', {
             body: { address: profile.address }
           }).then(({ data: efpData }) => {
-            if (efpData && (efpData.followers_count > 0 || efpData.following_count > 0)) {
+            if (efpData) {
               console.log('✅ EFP stats loaded:', efpData);
               setEfpStats(efpData);
             }
