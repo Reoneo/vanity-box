@@ -3327,6 +3327,11 @@ export const ProfileCard = ({
 
                   {/* Right column: action buttons stacked vertically (30%) */}
                   <div className="w-[30%] flex-shrink-0 flex flex-col items-center gap-2">
+                    <div className="w-full rounded-md bg-muted dark:bg-white/10 px-2 py-1 text-center">
+                      <span className="text-xs font-semibold tracking-wide text-[#D4AF37]">Insights</span>
+                    </div>
+
+
 
 
                     {(() => {
