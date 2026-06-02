@@ -3190,7 +3190,7 @@ export const ProfileCard = ({
                     >
                       <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                     </button>
-                    <div className="flex justify-center w-full -mt-16">
+                    <div className="flex justify-center w-full">
 
                       <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
 
