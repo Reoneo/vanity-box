@@ -3190,7 +3190,7 @@ export const ProfileCard = ({
                     >
                       <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                     </button>
-                    <div className="flex justify-center w-full -mt-16">
+                    <div className="flex justify-center w-full -mt-24">
 
                       <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
 
@@ -3327,8 +3327,8 @@ export const ProfileCard = ({
 
                   {/* Right column: action buttons stacked vertically (30%) */}
                   <div className="w-[30%] flex-shrink-0 flex flex-col items-center gap-2">
-                    <div className="w-full rounded-md bg-muted dark:bg-white/10 px-2 py-1 text-center">
-                      <span className="text-xs font-semibold tracking-wide text-[#D4AF37]">Insights</span>
+                    <div className="w-full bg-muted dark:bg-white/10 py-1.5 text-center">
+                      <span className="text-sm font-semibold tracking-wide text-black dark:text-white">Insights</span>
                     </div>
 
 
