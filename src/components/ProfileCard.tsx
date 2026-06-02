@@ -3181,15 +3181,7 @@ export const ProfileCard = ({
 
                 {/* 70:30 split: avatar + info on the left, action buttons stacked on the right */}
                 <div className="flex gap-3 px-4 pt-2">
-                  <div className="relative w-[70%] space-y-2 min-w-0 flex flex-col items-center text-center">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
-                      aria-label="Share profile"
-                      className="absolute left-0 top-2 w-10 h-10 rounded-full bg-white/90 dark:bg-black/50 border border-[#D4AF37]/60 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-white dark:hover:bg-black/70 shadow-md z-10"
-                    >
-                      <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
-                    </button>
+                  <div className="w-[70%] space-y-2 min-w-0 flex flex-col items-center text-center">
                     <div className="flex justify-center w-full -mt-16">
 
                       <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
