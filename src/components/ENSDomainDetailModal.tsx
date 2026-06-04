@@ -70,7 +70,7 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
           let pick = '';
           for (const p of arr) {
             const n = p?.identity || p?.displayName;
-            if (n && typeof n === 'string' && (n.endsWith('.eth') || n.endsWith('.box'))) { pick = n; break; }
+            if (n && typeof n === 'string' && !isWrapperName(n) && (n.endsWith('.eth') || n.endsWith('.box'))) { pick = n; break; }
           }
           if (pick) map[addr] = pick;
         } catch {}
