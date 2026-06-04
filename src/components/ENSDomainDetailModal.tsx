@@ -23,6 +23,11 @@ interface ENSDomainDetailProps {
 
 const shortAddr = (a?: string) => (a && a.length > 10 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a || '');
 
+// ENS NameWrapper contract — when this is reported as owner, the real holder is the registrant
+const NAME_WRAPPER_ADDR = '0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401';
+const isWrapperAddr = (a?: string) => !!a && String(a).toLowerCase() === NAME_WRAPPER_ADDR;
+const isWrapperName = (n?: string) => !!n && String(n).toLowerCase() === 'wrapper.ens.eth';
+
 const toDateMs = (value?: string | number | null) => {
   if (!value) return null;
   const numeric = typeof value === 'string' ? Number.parseInt(value, 10) : Number(value);
@@ -34,12 +39,16 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
   const [copied, setCopied] = useState(false);
   const [reverseNames, setReverseNames] = useState<Record<string, string>>({});
 
+  // If owner/manager is the ENS NameWrapper contract, fall back to the registrant (real holder)
+  const effectiveOwner = isWrapperAddr(domain?.owner) ? (domain?.registrant || domain?.owner) : domain?.owner;
+  const effectiveManager = isWrapperAddr(domain?.manager) ? (domain?.registrant || domain?.manager) : domain?.manager;
+
   const roles: { label: string; address?: string }[] = [
-    { label: 'Owner', address: domain?.owner },
-    { label: 'Manager', address: domain?.manager },
+    { label: 'Owner', address: effectiveOwner },
+    { label: 'Manager', address: effectiveManager },
     { label: 'Registrant', address: domain?.registrant },
     { label: 'ETH record', address: domain?.resolvedAddress },
-  ].filter((r) => /^0x[a-fA-F0-9]{40}$/.test(String(r.address || '')));
+  ].filter((r) => /^0x[a-fA-F0-9]{40}$/.test(String(r.address || '')) && !isWrapperAddr(r.address));
 
   useEffect(() => {
     if (!open || roles.length === 0) return;
@@ -61,7 +70,7 @@ export const ENSDomainDetailModal = ({ domain, open, onOpenChange }: ENSDomainDe
           let pick = '';
           for (const p of arr) {
             const n = p?.identity || p?.displayName;
-            if (n && typeof n === 'string' && (n.endsWith('.eth') || n.endsWith('.box'))) { pick = n; break; }
+            if (n && typeof n === 'string' && !isWrapperName(n) && (n.endsWith('.eth') || n.endsWith('.box'))) { pick = n; break; }
           }
           if (pick) map[addr] = pick;
         } catch {}
