@@ -3521,17 +3521,51 @@ export const ProfileCard = ({
                                             : 'NFTs'}
                       </h3>
                     </div>
-                    <button
-                      onClick={() => {
-                        setShowNftsOverlay(false);
-                        setNftCategory('main');
-                        setExpandedCollection(null);
-                      }}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
-                      aria-label="Close NFTs"
-                    >
-                      <X className="w-4 h-4 text-black" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {nftCategory === 'ensdomains' && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setEnsFilterOpen((v) => !v)}
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                            aria-label="Filter ENS domains"
+                          >
+                            <Filter className="w-4 h-4 text-black" />
+                          </button>
+                          {ensFilterOpen && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setEnsFilterOpen(false)} />
+                              <div className="absolute right-0 mt-2 w-44 rounded-lg border border-[#D4AF37]/40 bg-background shadow-xl z-50 overflow-hidden">
+                                {([
+                                  { k: 'all', label: 'All', count: ensFilterCounts.all },
+                                  { k: 'grace', label: 'Grace', count: ensFilterCounts.grace },
+                                  { k: 'expired', label: 'Expired', count: ensFilterCounts.expired },
+                                ] as const).map((opt) => (
+                                  <button
+                                    key={opt.k}
+                                    onClick={() => { setEnsFilter(opt.k); setEnsFilterOpen(false); }}
+                                    className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-[#D4AF37]/10 transition-colors ${ensFilter === opt.k ? 'text-[#D4AF37] font-semibold' : 'text-foreground'}`}
+                                  >
+                                    <span>{opt.label}</span>
+                                    <span className="text-xs text-muted-foreground">{opt.count}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
+                          setShowNftsOverlay(false);
+                          setNftCategory('main');
+                          setExpandedCollection(null);
+                        }}
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                        aria-label="Close NFTs"
+                      >
+                        <X className="w-4 h-4 text-black" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
