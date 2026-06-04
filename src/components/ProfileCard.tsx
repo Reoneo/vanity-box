@@ -1182,11 +1182,38 @@ export const ProfileCard = ({
 
   const [ensVisibleCount, setEnsVisibleCount] = useState(20);
   useEffect(() => { setEnsVisibleCount(20); }, [isWrapperEnsProfile]);
+
+  // ENS filter: all | grace | expired (past grace period)
+  const [ensFilter, setEnsFilter] = useState<'all' | 'grace' | 'expired'>('all');
+  const [ensFilterOpen, setEnsFilterOpen] = useState(false);
+  const classifyEnsStatus = useCallback((d: any): 'active' | 'grace' | 'expired' => {
+    const exp = getEnsExpiryMs(d);
+    if (!exp) return 'active';
+    const now = Date.now();
+    const graceMs = 90 * 24 * 60 * 60 * 1000;
+    if (exp + graceMs <= now) return 'expired';
+    if (exp <= now) return 'grace';
+    return 'active';
+  }, [ensDomainOverrides]);
+  const ensFilterCounts = useMemo(() => {
+    let grace = 0, expired = 0;
+    for (const d of ensDomains) {
+      const s = classifyEnsStatus(d);
+      if (s === 'grace') grace++;
+      else if (s === 'expired') expired++;
+    }
+    return { all: ensDomains.length, grace, expired };
+  }, [ensDomains, classifyEnsStatus]);
+  const filteredSortedEnsDomains = useMemo(() => {
+    if (ensFilter === 'all') return sortedEnsDomains;
+    return sortedEnsDomains.filter((d: any) => classifyEnsStatus(d) === ensFilter);
+  }, [sortedEnsDomains, ensFilter, classifyEnsStatus]);
   const displayedEnsDomains = useMemo(
-    () => (isWrapperEnsProfile ? sortedEnsDomains.slice(0, ensVisibleCount) : sortedEnsDomains),
-    [isWrapperEnsProfile, sortedEnsDomains, ensVisibleCount]
+    () => (isWrapperEnsProfile ? filteredSortedEnsDomains.slice(0, ensVisibleCount) : filteredSortedEnsDomains),
+    [isWrapperEnsProfile, filteredSortedEnsDomains, ensVisibleCount]
   );
   const ensLoadMoreRef = useRef<HTMLDivElement | null>(null);
+
 
   // Load next page from the subgraph when we run out of locally-cached domains
   const loadMoreWrapperEns = useCallback(async () => {
