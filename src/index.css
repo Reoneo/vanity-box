@@ -453,8 +453,8 @@ All colors MUST be HSL. */
   }
 
   .ens-status-expired {
-    border-color: hsl(0 84% 60%) !important;
-    box-shadow: 0 0 0 1.5px hsl(0 84% 60% / 0.45), 0 0 9px hsl(0 84% 60% / 0.5) !important;
+    border-color: hsl(28 96% 50%) !important;
+    box-shadow: 0 0 0 1.5px hsl(28 96% 50% / 0.45), 0 0 9px hsl(28 96% 50% / 0.5) !important;
   }
 
   .ens-status-released {
