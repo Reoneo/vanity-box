@@ -1438,7 +1438,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setIotaNameObjectId(null);
     setIotaOwnerAddress(null);
     setIotaOnchainProfileLoading(false);
-    setProfileRevealLoading(true);
+    setProfileRevealLoadingKey(trimmedQuery.toLowerCase());
 
     // Update the display query to match what's being searched
     setDisplayQuery(trimmedQuery);
@@ -1509,7 +1509,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         // Check if this search is still current
         if (searchIdRef.current !== currentSearchId) {
           console.log('🚫 Search result discarded - newer search started');
-          setProfileRevealLoading(false);
+          setProfileRevealLoadingKey(null);
           return;
         }
         
@@ -1535,7 +1535,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               links: {},
             };
             setWeb3BioProfile(minimalProfile);
-            setProfileRevealLoading(false);
+            setProfileRevealLoadingKey(null);
             setEnsResults([]);
             
             // Fetch EFP stats and NFTs
@@ -1553,7 +1553,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           }
 
           // Not found (or other non-profile response) — stop the blocking loader.
-          setProfileRevealLoading(false);
+          setProfileRevealLoadingKey(null);
           if (searchIdRef.current === currentSearchId) setIsLoading(false);
           return;
         }
@@ -1594,7 +1594,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             }
           } finally {
             setWeb3BioProfile(profile);
-            setProfileRevealLoading(false);
+            setProfileRevealLoadingKey(null);
             setIotaOnchainProfileLoading(false);
           }
         } else if (
@@ -1609,10 +1609,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               setIotaNameObjectId(response.nameObjectId);
               setIotaOwnerAddress(response.ownerAddress);
             }
-            setProfileRevealLoading(false);
+            setProfileRevealLoadingKey(null);
             setIotaOnchainProfileLoading(false);
           }).catch(() => {
-            setProfileRevealLoading(false);
+            setProfileRevealLoadingKey(null);
             setIotaOnchainProfileLoading(false);
           });
 
@@ -1648,7 +1648,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               console.log('🔗 Cross-chain candidates for', normalizedQuery, ':', candidateList);
               if (candidateList.length === 0) {
                 setWeb3BioProfile(profile);
-                setProfileRevealLoading(false);
+                setProfileRevealLoadingKey(null);
                 return;
               }
 
@@ -1699,7 +1699,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               if (!iotaName) {
                 console.log('🔗 Cross-chain: no linked iota for', normalizedQuery);
                 setWeb3BioProfile(profile);
-                setProfileRevealLoading(false);
+                setProfileRevealLoadingKey(null);
                 return;
               }
 
@@ -1718,7 +1718,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               if (!isIotaName(iotaName)) {
                 console.log('🔗 Cross-chain: invalid iota name', iotaName);
                 setWeb3BioProfile(profile);
-                setProfileRevealLoading(false);
+                setProfileRevealLoadingKey(null);
                 return;
               }
 
@@ -1752,18 +1752,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 setDisplayQuery(iotaName);
                 setWeb3BioProfile(profile);
                 setIsLoading(false);
-                setProfileRevealLoading(false);
+                setProfileRevealLoadingKey(null);
                 setIotaOnchainProfileLoading(false);
               }
             } catch (err: any) {
               console.log('Cross-chain iota link lookup failed:', err?.message || err);
               setWeb3BioProfile(profile);
-              setProfileRevealLoading(false);
+              setProfileRevealLoadingKey(null);
             }
           })();
         } else {
           setWeb3BioProfile(profile);
-          setProfileRevealLoading(false);
+          setProfileRevealLoadingKey(null);
         }
 
         // Fetch additional data for Dock (non-blocking)
@@ -1805,7 +1805,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             links: {},
           };
           setWeb3BioProfile(minimalProfile);
-          setProfileRevealLoading(false);
+          setProfileRevealLoadingKey(null);
           setEnsResults([]);
           if (!isIotaAddr) fetchNfts(normalizedAddress, undefined);
         } else {
@@ -1813,7 +1813,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
 
         // Prevent the loading progress from getting stuck at 98%
-        setProfileRevealLoading(false);
+        setProfileRevealLoadingKey(null);
         if (searchIdRef.current === currentSearchId) setIsLoading(false);
         return;
       } finally {
@@ -1879,7 +1879,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setIsAvailable(!searchQuery.toLowerCase().includes("taken"));
     }
     setIsLoading(false);
-    setProfileRevealLoading(false);
+    setProfileRevealLoadingKey(null);
   };
 
 
