@@ -1750,6 +1750,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 setEnsOverlay(overlay);
                 setDisplayQuery(iotaName);
                 setWeb3BioProfile(profile);
+                setIsLoading(false);
                 setProfileRevealLoading(false);
                 setIotaOnchainProfileLoading(false);
               }
