@@ -193,6 +193,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const location = useLocation();
   const navigate = useNavigate();
   const searchIdRef = useRef(0); // Prevent stale searches
+  const activeSearchQueryRef = useRef<string | null>(null); // Prevent URL sync from restarting an in-flight search
   const [searchQuery, setSearchQuery] = useState("");
   
   // Get IOTA wallet state
@@ -254,6 +255,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showDetailView, setShowDetailView] = useState(false);
   const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
   const [showInitialResults, setShowInitialResults] = useState(false);
+  const [profileRevealLoadingKey, setProfileRevealLoadingKey] = useState<string | null>(null);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [hadPreviousProfile, setHadPreviousProfile] = useState(false);
   const [isHomepage, setIsHomepage] = useState(true);
@@ -873,8 +875,15 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.platform, web3BioProfile?.address]);
 
+  const isCrossChainProfilePending = !!ensOverlay && !iotaOnchainProfile && !showMyIDs;
+  const profileRevealLoading = !!profileRevealLoadingKey && profileRevealLoadingKey === activeSearchQueryRef.current;
+  const isProfileTransitionLoading = profileRevealLoading || (isLoading && !web3BioProfile) || isCrossChainProfilePending;
 
-  const isProfileTransitionLoading = (isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs)) || (Boolean(web3BioProfile) && (isResolvingLinkedEvm || resolvingLinkedWallets));
+  useEffect(() => {
+    if (profileRevealLoading && ensOverlay && iotaOnchainProfile && !iotaOnchainProfileLoading) {
+      setProfileRevealLoadingKey(null);
+    }
+  }, [profileRevealLoading, ensOverlay, iotaOnchainProfile, iotaOnchainProfileLoading]);
 
   // Preload NFTs in background when profile loads (use linkedEvmAddress for IOTA)
   useEffect(() => {
@@ -1026,6 +1035,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       const urlProfile = username.toLowerCase();
       
       if (currentProfile !== urlProfile) {
+        if (activeSearchQueryRef.current === urlProfile) return;
         console.log('🔗 URL profile detected:', username);
         setSearchQuery(username);
         setIsHomepage(false);
@@ -1035,6 +1045,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     } else if (location.pathname === '/') {
       // Back button to home — reset state
       if (displayQuery || web3BioProfile || isSearchActive) {
+        activeSearchQueryRef.current = null;
         setShowSearchBar(false);
         setHadPreviousProfile(false);
         setWeb3BioProfile(null);
@@ -1354,6 +1365,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
 
     console.log("Search start", { query: trimmedQuery });
+    activeSearchQueryRef.current = trimmedQuery.toLowerCase();
     setShowFilterDropdown(false);
     setShowSearchBar(false); // Close search overlay immediately when search begins
     setIsHomepage(false);
@@ -1422,6 +1434,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setTotalFollowers(0);
     setEnsRecords(null);
     setEnsOverlay(null);
+    setIotaOnchainProfile(null);
+    setIotaNameObjectId(null);
+    setIotaOwnerAddress(null);
+    setIotaOnchainProfileLoading(false);
+    setProfileRevealLoadingKey(trimmedQuery.toLowerCase());
 
     // Update the display query to match what's being searched
     setDisplayQuery(trimmedQuery);
@@ -1480,6 +1497,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         let iotaOnchainPromise: Promise<any> | null = null;
         if (isIotaName(normalizedQuery)) {
           // Always fetch fresh .iota profile
+          setIotaOnchainProfileLoading(true);
           iotaOnchainPromise = fetchIotaOnchainProfile(normalizedQuery);
         }
         
@@ -1488,23 +1506,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           timeoutPromise.then(() => { throw new Error('timeout'); })
         ]);
 
-        // If we started a parallel IOTA onchain fetch, apply results now
-        if (iotaOnchainPromise) {
-          iotaOnchainPromise.then(response => {
-            if (response?.success) {
-              // No caching for .iota profiles
-              setIotaOnchainProfile(response.profile);
-              setIotaOnchainProfile(response.profile);
-              setIotaNameObjectId(response.nameObjectId);
-              setIotaOwnerAddress(response.ownerAddress);
-              setIotaOnchainProfileLoading(false);
-            }
-          });
-        }
-        
         // Check if this search is still current
         if (searchIdRef.current !== currentSearchId) {
           console.log('🚫 Search result discarded - newer search started');
+          setProfileRevealLoadingKey(null);
           return;
         }
         
@@ -1530,6 +1535,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               links: {},
             };
             setWeb3BioProfile(minimalProfile);
+            setProfileRevealLoadingKey(null);
             setEnsResults([]);
             
             // Fetch EFP stats and NFTs
@@ -1547,6 +1553,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           }
 
           // Not found (or other non-profile response) — stop the blocking loader.
+          setProfileRevealLoadingKey(null);
           if (searchIdRef.current === currentSearchId) setIsLoading(false);
           return;
         }
@@ -1559,7 +1566,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           address: profile.address 
         });
         
-        setWeb3BioProfile(profile);
         setEnsResults([]);
         
         if (profile.ensRecords) {
@@ -1578,8 +1584,20 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
         // IOTA reverse-lookup branch: query was an IOTA address and resolver
         // surfaced a .iota name. No overlay; just hydrate the IOTA profile.
-        if (
-          !iotaOnchainPromise &&
+        if (iotaOnchainPromise) {
+          try {
+            const response = await iotaOnchainPromise;
+            if (response?.success) {
+              setIotaOnchainProfile(response.profile);
+              setIotaNameObjectId(response.nameObjectId);
+              setIotaOwnerAddress(response.ownerAddress);
+            }
+          } finally {
+            setWeb3BioProfile(profile);
+            setProfileRevealLoadingKey(null);
+            setIotaOnchainProfileLoading(false);
+          }
+        } else if (
           profile.iotaDomain &&
           isIotaName(profile.iotaDomain) &&
           (queryIsIotaName || queryIsIotaAddr)
@@ -1591,18 +1609,23 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               setIotaNameObjectId(response.nameObjectId);
               setIotaOwnerAddress(response.ownerAddress);
             }
+            setProfileRevealLoadingKey(null);
             setIotaOnchainProfileLoading(false);
-          }).catch(() => setIotaOnchainProfileLoading(false));
+          }).catch(() => {
+            setProfileRevealLoadingKey(null);
+            setIotaOnchainProfileLoading(false);
+          });
 
           const iotaPath = `/${encodeURIComponent(profile.iotaDomain)}`;
           if (location.pathname !== iotaPath) {
             navigate(iotaPath, { replace: true });
           }
+          setWeb3BioProfile(profile);
           setDisplayQuery(profile.iotaDomain);
         } else if (!queryIsIotaName && !queryIsIotaAddr) {
           // Cross-chain overlay path. Build candidate EVM addresses from every
           // place the resolver might have stashed one.
-          (async () => {
+          await (async () => {
             try {
               const candidates = new Set<string>();
               const pushIfEvm = (v: any) => {
@@ -1623,7 +1646,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
               const candidateList = Array.from(candidates);
               console.log('🔗 Cross-chain candidates for', normalizedQuery, ':', candidateList);
-              if (candidateList.length === 0) return;
+              if (candidateList.length === 0) {
+                setWeb3BioProfile(profile);
+                setProfileRevealLoadingKey(null);
+                return;
+              }
 
               // Set the overlay BEFORE awaiting so it survives stale-search aborts.
               const overlay = {
@@ -1671,6 +1698,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
               if (!iotaName) {
                 console.log('🔗 Cross-chain: no linked iota for', normalizedQuery);
+                setWeb3BioProfile(profile);
+                setProfileRevealLoadingKey(null);
                 return;
               }
 
@@ -1682,11 +1711,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 console.log(`🔗 Cross-chain: ${normalizedQuery} -> passkey iota wallet ${iotaName}`);
                 setEnsOverlay(overlay);
                 setIotaOwnerAddress(iotaName.toLowerCase());
+                setWeb3BioProfile(profile);
                 return;
               }
 
               if (!isIotaName(iotaName)) {
                 console.log('🔗 Cross-chain: invalid iota name', iotaName);
+                setWeb3BioProfile(profile);
+                setProfileRevealLoadingKey(null);
                 return;
               }
 
@@ -1696,13 +1728,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               // do NOT bail on stale-search here — the linked .iota name is
               // deterministic for this searched ENS, so even a "late" result is
               // still correct for the user's current view.
-              setEnsOverlay(overlay);
-              setDisplayQuery(iotaName);
               setIotaOnchainProfileLoading(true);
               try {
                 const response = await fetchIotaOnchainProfile(iotaName);
                 if (response?.success) {
-                  setIotaOnchainProfile(response.profile);
+                  setIotaOnchainProfile(response.profile || {});
                   setIotaNameObjectId(response.nameObjectId);
                   setIotaOwnerAddress(response.ownerAddress);
                   console.log('🔗 Overlay applied:', {
@@ -1718,12 +1748,22 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   });
                 }
               } finally {
+                setEnsOverlay(overlay);
+                setDisplayQuery(iotaName);
+                setWeb3BioProfile(profile);
+                setIsLoading(false);
+                setProfileRevealLoadingKey(null);
                 setIotaOnchainProfileLoading(false);
               }
             } catch (err: any) {
               console.log('Cross-chain iota link lookup failed:', err?.message || err);
+              setWeb3BioProfile(profile);
+              setProfileRevealLoadingKey(null);
             }
           })();
+        } else {
+          setWeb3BioProfile(profile);
+          setProfileRevealLoadingKey(null);
         }
 
         // Fetch additional data for Dock (non-blocking)
@@ -1765,6 +1805,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             links: {},
           };
           setWeb3BioProfile(minimalProfile);
+          setProfileRevealLoadingKey(null);
           setEnsResults([]);
           if (!isIotaAddr) fetchNfts(normalizedAddress, undefined);
         } else {
@@ -1772,6 +1813,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
 
         // Prevent the loading progress from getting stuck at 98%
+        setProfileRevealLoadingKey(null);
         if (searchIdRef.current === currentSearchId) setIsLoading(false);
         return;
       } finally {
@@ -1837,6 +1879,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       setIsAvailable(!searchQuery.toLowerCase().includes("taken"));
     }
     setIsLoading(false);
+    setProfileRevealLoadingKey(null);
   };
 
 
@@ -2476,7 +2519,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             {(() => { (window as any).__vanityIsEditOpen = showIotaEditModal; return null; })()}
 
             {/* Profile Dock - separate from profile container for proper z-index stacking */}
-            {web3BioProfile && !showMyIDs && (
+            {web3BioProfile && !showMyIDs && !isProfileTransitionLoading && (
               <Dock
                 items={(() => {
                   const guard = (action: () => void) => {
@@ -2892,7 +2935,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Home Screen Dock - Show when no profile and not My ID's (including when results are shown) */}
-            {!web3BioProfile && !showMyIDs && (
+            {!web3BioProfile && !showMyIDs && !isProfileTransitionLoading && (
               <div className="fixed bottom-4 left-0 right-0 z-[10001] flex items-center justify-center">
                 <Dock
                   items={[
@@ -2985,7 +3028,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
 
             {/* No Results State */}
             <div className="w-full sm:max-w-3xl sm:mx-auto px-4">
-              {!isHomepage && hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !showMyIDs && (
+              {!isHomepage && hasSearched && ensResults.length === 0 && !web3BioProfile && !isLoading && !isProfileTransitionLoading && !showMyIDs && (
                 <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-500">
                   <h3 className="text-xl font-semibold text-foreground mb-2">{t('no_results_found')}</h3>
                   <p className="text-sm text-muted-foreground max-w-xs mb-4">{t('try_different_query')}</p>
