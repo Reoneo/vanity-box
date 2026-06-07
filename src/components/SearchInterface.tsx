@@ -119,6 +119,7 @@ import { loadVaultFromStorage } from "@/lib/identity/vault";
 
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { LoadingProgress } from "@/components/LoadingProgress";
+import { ProfileCardSkeleton } from "@/components/ProfileCardSkeleton";
 
 export interface FilterState {
   protocol: string[];
@@ -2216,13 +2217,14 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               banner={web3BioProfile?.header}
             />
             
-            {/* Loading Progress Bar */}
-            <LoadingProgress
-              isLoading={isProfileTransitionLoading}
-              title={ensOverlay ? 'Loading linked profile' : 'Loading profile'}
-              primaryLabel={displayQuery || web3BioProfile?.identity || null}
-              secondaryLabel={ensOverlay ? (iotaOnchainProfile?.identity || ensOverlay.identity || 'Linked IOTA profile') : null}
-            />
+            {/* Profile skeleton while loading (replaces full-screen progress overlay) */}
+            {isProfileTransitionLoading && !showMyIDs && (
+              <div className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]">
+                <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+                  <ProfileCardSkeleton />
+                </div>
+              </div>
+            )}
             
             {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && !isLoading && (
@@ -2325,7 +2327,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs ? (
+            {web3BioProfile && !showMyIDs && !isProfileTransitionLoading && !(ensOverlay && !iotaOnchainProfile) ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
