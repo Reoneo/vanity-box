@@ -2327,7 +2327,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs ? (
+            {web3BioProfile && !showMyIDs && !isProfileTransitionLoading && !(ensOverlay && !iotaOnchainProfile) ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
