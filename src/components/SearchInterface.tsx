@@ -255,7 +255,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showDetailView, setShowDetailView] = useState(false);
   const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
   const [showInitialResults, setShowInitialResults] = useState(false);
-  const [profileRevealLoading, setProfileRevealLoading] = useState(false);
+  const [profileRevealLoadingKey, setProfileRevealLoadingKey] = useState<string | null>(null);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [hadPreviousProfile, setHadPreviousProfile] = useState(false);
   const [isHomepage, setIsHomepage] = useState(true);
@@ -876,11 +876,12 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   }, [web3BioProfile?.platform, web3BioProfile?.address]);
 
   const isCrossChainProfilePending = !!ensOverlay && !iotaOnchainProfile && !showMyIDs;
+  const profileRevealLoading = !!profileRevealLoadingKey && profileRevealLoadingKey === activeSearchQueryRef.current;
   const isProfileTransitionLoading = profileRevealLoading || (isLoading && !web3BioProfile) || isCrossChainProfilePending;
 
   useEffect(() => {
     if (profileRevealLoading && ensOverlay && iotaOnchainProfile && !iotaOnchainProfileLoading) {
-      setProfileRevealLoading(false);
+      setProfileRevealLoadingKey(null);
     }
   }, [profileRevealLoading, ensOverlay, iotaOnchainProfile, iotaOnchainProfileLoading]);
 
