@@ -1731,7 +1731,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               try {
                 const response = await fetchIotaOnchainProfile(iotaName);
                 if (response?.success) {
-                  setIotaOnchainProfile(response.profile);
+                  setIotaOnchainProfile(response.profile || {});
                   setIotaNameObjectId(response.nameObjectId);
                   setIotaOwnerAddress(response.ownerAddress);
                   console.log('🔗 Overlay applied:', {
