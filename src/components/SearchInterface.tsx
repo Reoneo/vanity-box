@@ -876,7 +876,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   }, [web3BioProfile?.platform, web3BioProfile?.address]);
 
   const isCrossChainProfilePending = !!ensOverlay && !iotaOnchainProfile && !showMyIDs;
-  const isProfileTransitionLoading = profileRevealLoading || (isLoading && !web3BioProfile) || (((isIotaName(displayQuery) || !!ensOverlay) && iotaOnchainProfileLoading && !iotaOnchainProfile && !!web3BioProfile && !showMyIDs)) || isCrossChainProfilePending;
+  const isProfileTransitionLoading = profileRevealLoading || (isLoading && !web3BioProfile) || isCrossChainProfilePending;
 
   useEffect(() => {
     if (profileRevealLoading && ensOverlay && iotaOnchainProfile && !iotaOnchainProfileLoading) {
