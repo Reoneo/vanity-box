@@ -119,6 +119,7 @@ import { loadVaultFromStorage } from "@/lib/identity/vault";
 
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { LoadingProgress } from "@/components/LoadingProgress";
+import { ProfileCardSkeleton } from "@/components/ProfileCardSkeleton";
 
 export interface FilterState {
   protocol: string[];
