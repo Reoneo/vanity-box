@@ -1508,6 +1508,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         // Check if this search is still current
         if (searchIdRef.current !== currentSearchId) {
           console.log('🚫 Search result discarded - newer search started');
+          setProfileRevealLoading(false);
           return;
         }
         
