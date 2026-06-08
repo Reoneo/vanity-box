@@ -116,6 +116,8 @@ interface ProfileCardProps {
   // When set (cross-chain overlay), forces IOTA-side fetches (NFTs/tokens/tx) to use this address
   iotaOwnerAddressForFetch?: string | null;
   onEditIotaProfile?: () => void;
+  /** When true, render the avatar as a skeleton until the correct one is ready (cross-chain). */
+  avatarPending?: boolean;
 }
 
 // Official IOTA icon URL
@@ -291,6 +293,7 @@ export const ProfileCard = ({
   iotaOwnerAddress,
   iotaOwnerAddressForFetch,
   onEditIotaProfile,
+  avatarPending = false,
 }: ProfileCardProps) => {
   const [copied, setCopied] = useState(false);
   const [selectedPoap, setSelectedPoap] = useState<any>(null);
@@ -2332,16 +2335,20 @@ export const ProfileCard = ({
                     onClick={openAvatarGallery}
                   >
                     <div className="relative group">
-                      <Avatar className="h-44 w-44 rounded-2xl shadow-xl">
-                        <AvatarImage 
-                          src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
-                          alt={web3BioProfile?.displayName || 'User'}
-                          className="object-cover rounded-2xl"
-                        />
-                        <AvatarFallback className="rounded-2xl text-6xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
-                          {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      {avatarPending ? (
+                        <div className="h-44 w-44 rounded-2xl shadow-xl bg-muted animate-pulse" />
+                      ) : (
+                        <Avatar className="h-44 w-44 rounded-2xl shadow-xl">
+                          <AvatarImage 
+                            src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
+                            alt={web3BioProfile?.displayName || 'User'}
+                            className="object-cover rounded-2xl"
+                          />
+                          <AvatarFallback className="rounded-2xl text-6xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                            {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       {isHumanVerified && (
                         <div className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center" title="Verified Builder">
                           <div className="relative">
@@ -3213,16 +3220,20 @@ export const ProfileCard = ({
 
                       <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
 
-                        <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
-                          <AvatarImage 
-                            src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
-                            alt={web3BioProfile?.displayName || 'User'}
-                            className="object-cover rounded-2xl"
-                          />
-                          <AvatarFallback className="rounded-2xl text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
-                            {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        {avatarPending ? (
+                          <div className="relative h-28 w-28 rounded-2xl shadow-xl bg-muted animate-pulse" />
+                        ) : (
+                          <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
+                            <AvatarImage 
+                              src={normalizeMediaUrl(iotaOnchainProfile?.avatarUrl) || web3BioProfile?.avatar} 
+                              alt={web3BioProfile?.displayName || 'User'}
+                              className="object-cover rounded-2xl"
+                            />
+                            <AvatarFallback className="rounded-2xl text-4xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] font-bold">
+                              {(searchedIdentity?.split('.')[0]?.charAt(0) || web3BioProfile?.displayName?.charAt(0) || '?').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
                         {isHumanVerified && (
                           <div
                             className="absolute -bottom-1 -right-1 w-9 h-9 flex items-center justify-center"
