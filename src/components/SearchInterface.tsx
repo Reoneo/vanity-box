@@ -192,8 +192,9 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const { username } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const initialUrlProfile = username?.toLowerCase() || null;
   const searchIdRef = useRef(0); // Prevent stale searches
-  const activeSearchQueryRef = useRef<string | null>(null); // Prevent URL sync from restarting an in-flight search
+  const activeSearchQueryRef = useRef<string | null>(initialUrlProfile); // Prevent URL sync from restarting an in-flight search
   const [searchQuery, setSearchQuery] = useState("");
   
   // Get IOTA wallet state
@@ -228,7 +229,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [web3BioProfile, setWeb3BioProfile] = useState<Web3BioProfile | null>(null);
   const [efpStats, setEfpStats] = useState<EFPStats | null>(null);
   const [ensRecords, setEnsRecords] = useState<ENSRecords | null>(null);
-  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(!!initialUrlProfile);
   const [userDomains, setUserDomains] = useState<string[]>([]);
   const [showFollowersList, setShowFollowersList] = useState(false);
   const [showFollowingList, setShowFollowingList] = useState(false);
@@ -255,10 +256,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [showDetailView, setShowDetailView] = useState(false);
   const [detailViewResult, setDetailViewResult] = useState<ENSResult | null>(null);
   const [showInitialResults, setShowInitialResults] = useState(false);
-  const [profileRevealLoadingKey, setProfileRevealLoadingKey] = useState<string | null>(null);
+  const [profileRevealLoadingKey, setProfileRevealLoadingKey] = useState<string | null>(initialUrlProfile);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [hadPreviousProfile, setHadPreviousProfile] = useState(false);
-  const [isHomepage, setIsHomepage] = useState(true);
+  const [isHomepage, setIsHomepage] = useState(!initialUrlProfile && location.pathname === '/');
   
   // Dock panel states
   const [activeDockSection, setActiveDockSection] = useState<'profile' | 'socials' | 'nfts' | 'farcaster'>('profile');
