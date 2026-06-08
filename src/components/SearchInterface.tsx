@@ -2343,7 +2343,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 {!isSearchActive ? (
                   <>
                     {/* Vanity Hero — pinned directly under the page header, no scroll */}
-                    {isHomepage && !web3BioProfile && !showSearchBar && (
+                    {isHomepage && !isProfileTransitionLoading && !web3BioProfile && !showSearchBar && (
                       <div
                         className="fixed left-0 right-0 z-[9996] overflow-hidden bg-background"
                         style={{
