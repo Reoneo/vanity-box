@@ -194,7 +194,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const navigate = useNavigate();
   const initialUrlProfile = username?.toLowerCase() || null;
   const searchIdRef = useRef(0); // Prevent stale searches
-  const activeSearchQueryRef = useRef<string | null>(initialUrlProfile); // Prevent URL sync from restarting an in-flight search
+  const activeSearchQueryRef = useRef<string | null>(null); // Prevent URL sync from restarting an in-flight search
   const [searchQuery, setSearchQuery] = useState("");
   
   // Get IOTA wallet state
@@ -877,7 +877,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   }, [web3BioProfile?.platform, web3BioProfile?.address]);
 
   const isCrossChainProfilePending = !!ensOverlay && !iotaOnchainProfile && !showMyIDs;
-  const profileRevealLoading = !!profileRevealLoadingKey && profileRevealLoadingKey === activeSearchQueryRef.current;
+  const profileRevealLoading = !!profileRevealLoadingKey && (
+    profileRevealLoadingKey === activeSearchQueryRef.current ||
+    (!activeSearchQueryRef.current && profileRevealLoadingKey === initialUrlProfile)
+  );
   const isProfileTransitionLoading = profileRevealLoading || (isLoading && !web3BioProfile) || isCrossChainProfilePending;
 
   useEffect(() => {
