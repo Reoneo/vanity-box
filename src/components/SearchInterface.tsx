@@ -2260,8 +2260,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               banner={web3BioProfile?.header}
             />
             
-            {/* Profile skeleton while loading (replaces full-screen progress overlay) */}
-            {(isProfileTransitionLoading || (!!ensOverlay && !iotaOnchainProfile && !showMyIDs)) && !showMyIDs && (
+            {/* Profile skeleton only while we have NO profile data at all.
+                Once web3BioProfile (or ensOverlay) is available we render the card
+                progressively and only the avatar shows a skeleton until ready. */}
+            {(isProfileTransitionLoading && !web3BioProfile && !ensOverlay) && !showMyIDs && (
               <div className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]">
                 <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
                   <ProfileCardSkeleton />
@@ -2370,7 +2372,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
             )}
 
             {/* Profile Card - fixed positioning regardless of search bar */}
-            {web3BioProfile && !showMyIDs && !isProfileTransitionLoading && !(ensOverlay && !iotaOnchainProfile) ? (
+            {web3BioProfile && !showMyIDs ? (
               <div
                 className="fixed left-0 right-0 top-[80px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]"
               >
@@ -2469,6 +2471,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     iotaNameObjectId={iotaNameObjectId}
                     iotaOwnerAddress={iotaOwnerAddress}
                     onEditIotaProfile={() => setShowIotaEditModal(true)}
+                    avatarPending={!!ensOverlay && !iotaOnchainProfile}
                   />
                 </div>
               </div>
