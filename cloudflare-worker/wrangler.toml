@@ -2,8 +2,10 @@ name = "vanity-box-og-injector"
 main = "og-injector.js"
 compatibility_date = "2025-01-01"
 
-# Bind to both apex and www so crawlers hit the Worker no matter which host they request.
+# Bind to apex, www, AND wildcard so per-subdomain Bluesky handles
+# (e.g. mrs.vanity.box) are handled by the Worker.
 routes = [
   { pattern = "vanity.box/*", zone_name = "vanity.box" },
   { pattern = "www.vanity.box/*", zone_name = "vanity.box" },
+  { pattern = "*.vanity.box/*", zone_name = "vanity.box" },
 ]

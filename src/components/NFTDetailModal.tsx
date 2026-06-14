@@ -4,6 +4,11 @@ import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react
 import { useEffect, useRef, useState } from "react";
 import { format, formatDistanceToNow, isPast, addDays } from "date-fns";
 import { extractLabel, labelhash, labelhashToTokenId } from "@/lib/ens";
+import { useAccount } from "wagmi";
+import { useIotaWallet } from "@/contexts/IotaWalletContext";
+import { BlueskyHandleModal } from "@/components/BlueskyHandleModal";
+import blueskyIcon from "@/assets/bluesky-icon.svg";
+
 
 
 // Import network logos for chain icons
@@ -92,6 +97,9 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const [ensDomainInfo, setEnsDomainInfo] = useState<any | null>(null);
   const [reverseNames, setReverseNames] = useState<Record<string, string>>({});
   const [ensRecords, setEnsRecords] = useState<{ key: string; value: string; href?: string }[]>([]);
+  const [blueskyOpen, setBlueskyOpen] = useState(false);
+  const { isConnected: ethConnected } = useAccount();
+  const { isConnected: iotaConnected } = useIotaWallet() as any;
 
   // Lock body scroll when open
   useEffect(() => {
@@ -242,7 +250,9 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const isUnstoppableNft =
     collectionLower.includes('unstoppable') ||
     collectionLower.includes('ud.me') ||
-    /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic)$/i.test(nameLower);
+    /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic|vanity)$/i.test(nameLower);
+  const isVanityNft = nameLower.endsWith('.vanity');
+  const canShowBluesky = isVanityNft && ethConnected && iotaConnected;
   const unstoppableChainLower = (nft.chain || '').toLowerCase().includes('base') ? 'base' : 'polygon';
 
   const attributes: any[] =
@@ -455,6 +465,17 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                     <img src={openseaLogomark} alt="OpenSea" className="w-4 h-4 object-contain" />
                   </a>
                 )}
+                {canShowBluesky && (
+                  <button
+                    type="button"
+                    onClick={() => setBlueskyOpen(true)}
+                    aria-label="Use as Bluesky handle"
+                    title="Use as Bluesky handle"
+                    className="w-7 h-7 rounded-full bg-white border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity overflow-hidden"
+                  >
+                    <img src={blueskyIcon} alt="Bluesky" className="w-4 h-4 object-contain" />
+                  </button>
+                )}
               </div>
             ) : (
               nft.collection && nft.collection !== nft.name && (
@@ -601,6 +622,13 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         )}
       </div>
       </div>
+      {isVanityNft && (
+        <BlueskyHandleModal
+          vanityName={nameLower}
+          isOpen={blueskyOpen}
+          onClose={() => setBlueskyOpen(false)}
+        />
+      )}
     </div>
   );
 };
