@@ -93,9 +93,8 @@ export const BlueskyHandleModal = ({ vanityName, isOpen, onClose }: BlueskyHandl
         `ts: ${timestamp}`,
       ].join("\n");
 
-      // Use wagmi sign directly to match the message format exactly.
-      const { signMessageAsync } = await import("wagmi/actions").then(() => ({ signMessageAsync: null as any })).catch(() => ({ signMessageAsync: null as any }));
-      // Fallback: use window.ethereum personal_sign
+      // Use the connected EVM provider's personal_sign so the message bytes
+      // match exactly what the server reconstructs.
       let signature: string;
       const eth = (window as any).ethereum;
       if (eth?.request) {
