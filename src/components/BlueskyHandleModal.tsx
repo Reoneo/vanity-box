@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { useAccount } from "wagmi";
-import { useWalletSign } from "@/hooks/useWalletSign";
 import { useIotaWallet } from "@/contexts/IotaWalletContext";
 import { supabase } from "@/integrations/supabase/client";
 import blueskyIcon from "@/assets/bluesky-icon.svg";
