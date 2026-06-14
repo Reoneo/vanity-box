@@ -250,7 +250,9 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const isUnstoppableNft =
     collectionLower.includes('unstoppable') ||
     collectionLower.includes('ud.me') ||
-    /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic)$/i.test(nameLower);
+    /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic|vanity)$/i.test(nameLower);
+  const isVanityNft = nameLower.endsWith('.vanity');
+  const canShowBluesky = isVanityNft && ethConnected && iotaConnected;
   const unstoppableChainLower = (nft.chain || '').toLowerCase().includes('base') ? 'base' : 'polygon';
 
   const attributes: any[] =
