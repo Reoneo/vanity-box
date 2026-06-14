@@ -38,9 +38,26 @@ function titleCase(name) {
     .join('.');
 }
 
+const ATPROTO_DID = 'did:plc:bqycbmr2vb3cx5r7i5nr46fl';
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+
+    // Bluesky AT Protocol handle verification.
+    // Serve the DID as plain text at /.well-known/atproto-did so that
+    // vanity.box can be used as a Bluesky handle.
+    if (url.pathname === '/.well-known/atproto-did') {
+      return new Response(ATPROTO_DID + '\n', {
+        status: 200,
+        headers: {
+          'content-type': 'text/plain; charset=utf-8',
+          'cache-control': 'public, max-age=300',
+          'access-control-allow-origin': '*',
+        },
+      });
+    }
+
     const ua = request.headers.get('user-agent') || '';
     const isCrawler = CRAWLER_REGEX.test(ua);
     const isProfile = isProfilePath(url.pathname);
