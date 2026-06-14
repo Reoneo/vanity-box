@@ -465,6 +465,17 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
                     <img src={openseaLogomark} alt="OpenSea" className="w-4 h-4 object-contain" />
                   </a>
                 )}
+                {canShowBluesky && (
+                  <button
+                    type="button"
+                    onClick={() => setBlueskyOpen(true)}
+                    aria-label="Use as Bluesky handle"
+                    title="Use as Bluesky handle"
+                    className="w-7 h-7 rounded-full bg-white border border-border/40 flex items-center justify-center hover:opacity-90 transition-opacity overflow-hidden"
+                  >
+                    <img src={blueskyIcon} alt="Bluesky" className="w-4 h-4 object-contain" />
+                  </button>
+                )}
               </div>
             ) : (
               nft.collection && nft.collection !== nft.name && (
