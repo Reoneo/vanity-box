@@ -60,3 +60,29 @@ Edit `CRAWLER_REGEX` in `og-injector.js` and redeploy.
 
 Edit `RESERVED_PATHS` in `og-injector.js` to exclude any new top-level
 non-profile routes (e.g. `/messages`, `/privacy`).
+
+## Wildcard subdomains (Bluesky handles)
+
+`*.vanity.box` is now bound to the Worker as well so any `.vanity` owner
+can use `<name>.vanity.box` as a Bluesky handle.
+
+For this to work you need:
+
+1. A **wildcard DNS record** in Cloudflare DNS for the zone:
+   - Type: `CNAME`
+   - Name: `*`
+   - Target: `vanity.box`
+   - Proxy status: **Proxied (orange cloud)** — required so the Worker can
+     intercept the request and so Cloudflare terminates TLS for every
+     subdomain (no per-name certificate needed).
+2. Universal SSL with the **"Always Use HTTPS"** + wildcard certificate
+   enabled (default on Cloudflare).
+3. Redeploy the Worker (`wrangler deploy`) after editing `wrangler.toml` so
+   the new `*.vanity.box/*` route is picked up.
+
+The Worker then:
+- Serves `https://<sub>.vanity.box/.well-known/atproto-did` as plain text
+  by calling the public `get-bluesky-did` Supabase function.
+- Returns the apex SPA shell for any other path on `<sub>.vanity.box`. The
+  SPA's `main.tsx` then redirects to `vanity.box/<sub>.vanity` so the
+  matching profile loads.
