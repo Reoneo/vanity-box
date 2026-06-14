@@ -97,6 +97,9 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
   const [ensDomainInfo, setEnsDomainInfo] = useState<any | null>(null);
   const [reverseNames, setReverseNames] = useState<Record<string, string>>({});
   const [ensRecords, setEnsRecords] = useState<{ key: string; value: string; href?: string }[]>([]);
+  const [blueskyOpen, setBlueskyOpen] = useState(false);
+  const { isConnected: ethConnected } = useAccount();
+  const { isConnected: iotaConnected } = useIotaWallet() as any;
 
   // Lock body scroll when open
   useEffect(() => {
