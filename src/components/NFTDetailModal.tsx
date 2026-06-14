@@ -622,6 +622,13 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         )}
       </div>
       </div>
+      {isVanityNft && (
+        <BlueskyHandleModal
+          vanityName={nameLower}
+          isOpen={blueskyOpen}
+          onClose={() => setBlueskyOpen(false)}
+        />
+      )}
     </div>
   );
 };
