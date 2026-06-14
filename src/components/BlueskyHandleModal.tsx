@@ -22,7 +22,7 @@ export const BlueskyHandleModal = ({ vanityName, isOpen, onClose }: BlueskyHandl
 
   const { address: ethAddress } = useAccount();
   const { iotaAddress, isConnected: iotaConnected } = useIotaWallet() as any;
-  const { signForOperation } = useWalletSign();
+  
 
   const [did, setDid] = useState("");
   const [loading, setLoading] = useState(false);
