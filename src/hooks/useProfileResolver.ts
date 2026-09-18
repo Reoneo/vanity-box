@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, fallback } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { iotaJsonRpc, isValidIotaAddress } from '@/lib/iota/client';
@@ -113,8 +113,22 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: 
  */
 const ensClient = createPublicClient({
   chain: mainnet,
-  transport: http('https://eth.llamarpc.com'),
+  transport: fallback(
+    [
+      http('https://ethereum-rpc.publicnode.com'),
+      http('https://eth.drpc.org'),
+      http('https://rpc.ankr.com/eth'),
+      http('https://cloudflare-eth.com'),
+      http('https://eth.llamarpc.com'),
+    ],
+    { rank: false, retryCount: 1 }
+  ),
 });
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const isUsableAddress = (addr?: string | null) =>
+  !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr) && addr.toLowerCase() !== ZERO_ADDRESS;
 
 /**
  * Resolve .eth domain directly via viem (Universal Resolver on-chain)
@@ -127,20 +141,37 @@ async function fetchEnsDirectProfile(name: string): Promise<any | null> {
     const normalizedName = normalize(name);
 
     // Batch all calls in parallel for speed
-    const [address, avatar, description, url, twitter, github, discord, email, displayName] =
-      await Promise.all([
-        ensClient.getEnsAddress({ name: normalizedName }).catch(() => null),
-        ensClient.getEnsAvatar({ name: normalizedName }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'description' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'url' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'com.twitter' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'com.github' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'com.discord' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'email' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'name' }).catch(() => null),
-      ]);
+    const [
+      address,
+      avatar,
+      avatarText,
+      header,
+      description,
+      url,
+      twitter,
+      github,
+      discord,
+      telegram,
+      email,
+      location,
+      displayName,
+    ] = await Promise.all([
+      ensClient.getEnsAddress({ name: normalizedName }).catch(() => null),
+      ensClient.getEnsAvatar({ name: normalizedName }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'avatar' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'header' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'description' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'url' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'com.twitter' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'com.github' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'com.discord' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'org.telegram' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'email' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'location' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'name' }).catch(() => null),
+    ]);
 
-    if (!address) {
+    if (!isUsableAddress(address)) {
       console.log('⚠️ Direct ENS: No address resolved for', name);
       return null;
     }
@@ -152,21 +183,27 @@ async function fetchEnsDirectProfile(name: string): Promise<any | null> {
     if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
     if (github) links.github = { link: `https://github.com/${github}`, handle: github };
     if (discord) links.discord = { link: discord, handle: discord };
+    if (telegram) links.telegram = { link: `https://t.me/${telegram.replace(/^@/, '')}`, handle: telegram };
     if (url) links.website = { link: url };
+
+    const ipfsToHttp = (v?: string | null) =>
+      v
+        ? v.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/').replace(/^ipns:\/\//, 'https://ipfs.io/ipns/')
+        : null;
 
     return {
       address,
       identity: name,
       platform: 'ens',
       displayName: displayName || name,
-      avatar: avatar || null,
+      avatar: avatar || ipfsToHttp(avatarText) || null,
       description: description || null,
-      header: null,
+      header: ipfsToHttp(header),
       website: url || null,
       url: url || null,
       links,
       email: email || null,
-      location: null,
+      location: location || null,
     };
   } catch (err: any) {
     console.error('❌ Direct ENS resolution error:', err.message);
@@ -186,6 +223,12 @@ async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
     });
 
     if (!error && data?.profile) {
+      // Web3.bio sometimes returns the zero address for names it can't actually
+      // resolve (common for .box). Treat that as a miss so on-chain wins.
+      if (data.profile.address && !isUsableAddress(data.profile.address)) {
+        console.log('⚠️ Web3.bio returned zero address for', identity);
+        return { notFound: true };
+      }
       return data.profile;
     }
 
@@ -224,12 +267,19 @@ async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
 
   // Web3.bio returns an array of profiles
   if (Array.isArray(data) && data.length > 0) {
-    // Pick the primary profile (ENS > Farcaster > others)
+    // Pick the primary profile (ENS > Farcaster > others), ignoring entries
+    // whose address is empty/zero (Web3.bio does this for unresolvable names).
+    const usable = data.filter((p: any) => isUsableAddress(p?.address));
+    if (usable.length === 0) {
+      console.log('⚠️ Web3.bio: no usable address for', identity);
+      return { notFound: true };
+    }
+
     const platformPriority = ['ens', 'farcaster', 'lens', 'dotbit', 'unstoppabledomains'];
-    let primaryProfile = data[0];
+    let primaryProfile = usable[0];
 
     for (const platform of platformPriority) {
-      const found = data.find((p: any) => p.platform === platform);
+      const found = usable.find((p: any) => p.platform === platform);
       if (found) {
         primaryProfile = found;
         break;
