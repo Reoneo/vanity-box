@@ -223,6 +223,12 @@ async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
     });
 
     if (!error && data?.profile) {
+      // Web3.bio sometimes returns the zero address for names it can't actually
+      // resolve (common for .box). Treat that as a miss so on-chain wins.
+      if (data.profile.address && !isUsableAddress(data.profile.address)) {
+        console.log('⚠️ Web3.bio returned zero address for', identity);
+        return { notFound: true };
+      }
       return data.profile;
     }
 
