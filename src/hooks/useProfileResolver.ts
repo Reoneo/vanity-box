@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, fallback } from 'viem';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { iotaJsonRpc, isValidIotaAddress } from '@/lib/iota/client';
