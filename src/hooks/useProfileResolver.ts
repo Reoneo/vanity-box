@@ -183,21 +183,27 @@ async function fetchEnsDirectProfile(name: string): Promise<any | null> {
     if (twitter) links.twitter = { link: `https://twitter.com/${twitter}`, handle: twitter };
     if (github) links.github = { link: `https://github.com/${github}`, handle: github };
     if (discord) links.discord = { link: discord, handle: discord };
+    if (telegram) links.telegram = { link: `https://t.me/${telegram.replace(/^@/, '')}`, handle: telegram };
     if (url) links.website = { link: url };
+
+    const ipfsToHttp = (v?: string | null) =>
+      v
+        ? v.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/').replace(/^ipns:\/\//, 'https://ipfs.io/ipns/')
+        : null;
 
     return {
       address,
       identity: name,
       platform: 'ens',
       displayName: displayName || name,
-      avatar: avatar || null,
+      avatar: avatar || ipfsToHttp(avatarText) || null,
       description: description || null,
-      header: null,
+      header: ipfsToHttp(header),
       website: url || null,
       url: url || null,
       links,
       email: email || null,
-      location: null,
+      location: location || null,
     };
   } catch (err: any) {
     console.error('❌ Direct ENS resolution error:', err.message);
