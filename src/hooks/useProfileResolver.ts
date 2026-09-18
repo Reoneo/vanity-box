@@ -141,20 +141,37 @@ async function fetchEnsDirectProfile(name: string): Promise<any | null> {
     const normalizedName = normalize(name);
 
     // Batch all calls in parallel for speed
-    const [address, avatar, description, url, twitter, github, discord, email, displayName] =
-      await Promise.all([
-        ensClient.getEnsAddress({ name: normalizedName }).catch(() => null),
-        ensClient.getEnsAvatar({ name: normalizedName }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'description' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'url' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'com.twitter' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'com.github' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'com.discord' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'email' }).catch(() => null),
-        ensClient.getEnsText({ name: normalizedName, key: 'name' }).catch(() => null),
-      ]);
+    const [
+      address,
+      avatar,
+      avatarText,
+      header,
+      description,
+      url,
+      twitter,
+      github,
+      discord,
+      telegram,
+      email,
+      location,
+      displayName,
+    ] = await Promise.all([
+      ensClient.getEnsAddress({ name: normalizedName }).catch(() => null),
+      ensClient.getEnsAvatar({ name: normalizedName }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'avatar' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'header' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'description' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'url' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'com.twitter' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'com.github' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'com.discord' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'org.telegram' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'email' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'location' }).catch(() => null),
+      ensClient.getEnsText({ name: normalizedName, key: 'name' }).catch(() => null),
+    ]);
 
-    if (!address) {
+    if (!isUsableAddress(address)) {
       console.log('⚠️ Direct ENS: No address resolved for', name);
       return null;
     }
