@@ -267,12 +267,19 @@ async function fetchWeb3BioProfile(identity: string): Promise<any | null> {
 
   // Web3.bio returns an array of profiles
   if (Array.isArray(data) && data.length > 0) {
-    // Pick the primary profile (ENS > Farcaster > others)
+    // Pick the primary profile (ENS > Farcaster > others), ignoring entries
+    // whose address is empty/zero (Web3.bio does this for unresolvable names).
+    const usable = data.filter((p: any) => isUsableAddress(p?.address));
+    if (usable.length === 0) {
+      console.log('⚠️ Web3.bio: no usable address for', identity);
+      return { notFound: true };
+    }
+
     const platformPriority = ['ens', 'farcaster', 'lens', 'dotbit', 'unstoppabledomains'];
-    let primaryProfile = data[0];
+    let primaryProfile = usable[0];
 
     for (const platform of platformPriority) {
-      const found = data.find((p: any) => p.platform === platform);
+      const found = usable.find((p: any) => p.platform === platform);
       if (found) {
         primaryProfile = found;
         break;
