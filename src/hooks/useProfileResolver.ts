@@ -113,8 +113,22 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: 
  */
 const ensClient = createPublicClient({
   chain: mainnet,
-  transport: http('https://eth.llamarpc.com'),
+  transport: fallback(
+    [
+      http('https://ethereum-rpc.publicnode.com'),
+      http('https://eth.drpc.org'),
+      http('https://rpc.ankr.com/eth'),
+      http('https://cloudflare-eth.com'),
+      http('https://eth.llamarpc.com'),
+    ],
+    { rank: false, retryCount: 1 }
+  ),
 });
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const isUsableAddress = (addr?: string | null) =>
+  !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr) && addr.toLowerCase() !== ZERO_ADDRESS;
 
 /**
  * Resolve .eth domain directly via viem (Universal Resolver on-chain)
