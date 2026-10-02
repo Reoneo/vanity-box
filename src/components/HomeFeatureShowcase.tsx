@@ -27,25 +27,30 @@ export const HomeFeatureShowcase: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // === SEARCH DISABLED (per Reon, Oct 2026) — do not delete, restore when re-enabling ===
+  // const handleSubmit = () => {
+  //   const trimmed = value.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  //   if (!trimmed) return;
+  //
+  //   // Names with a TLD → profile lookup
+  //   if (trimmed.includes('.')) {
+  //     navigate(`/${trimmed}`);
+  //     return;
+  //   }
+  //
+  //   // 20+ characters with no dot → treat as raw wallet address lookup
+  //   if (trimmed.length >= 20) {
+  //     navigate(`/${trimmed}`);
+  //     return;
+  //   }
+  //
+  //   // No TLD short name — open Unstoppable Domains search
+  //   window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmed)}`, '_blank');
+  // };
   const handleSubmit = () => {
-    const trimmed = value.trim().toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-    if (!trimmed) return;
-
-    // Names with a TLD → profile lookup
-    if (trimmed.includes('.')) {
-      navigate(`/${trimmed}`);
-      return;
-    }
-
-    // 20+ characters with no dot → treat as raw wallet address lookup
-    if (trimmed.length >= 20) {
-      navigate(`/${trimmed}`);
-      return;
-    }
-
-    // No TLD short name — open Unstoppable Domains search
-    window.open(`https://get.unstoppabledomains.com/vanity/?searchTerm=${encodeURIComponent(trimmed)}`, '_blank');
+    // Disabled until re-enabled by user
   };
+  // === END SEARCH DISABLED ===
 
   return (
     <section
@@ -106,8 +111,10 @@ export const HomeFeatureShowcase: React.FC = () => {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!value.trim()}
-            className="dock-item h-12 px-10 rounded-xl bg-[#D4AF37] text-black font-semibold text-base disabled:opacity-60 flex items-center gap-2"
+            disabled
+            aria-disabled="true"
+            title="Search coming soon"
+            className="dock-item h-12 px-10 rounded-xl bg-[#D4AF37] text-black font-semibold text-base disabled:opacity-60 flex items-center gap-2 cursor-not-allowed"
             style={{ width: 'auto' }}
           >
             <Search className="w-4 h-4" />
