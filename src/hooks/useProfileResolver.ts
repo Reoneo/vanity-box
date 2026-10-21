@@ -981,12 +981,16 @@ export function useProfileResolver() {
           resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
         }
       }
-      // Route 4: Web3.bio-compatible TLDs (.box, .sol, etc.) and wallet addresses
+      // Route 4: Web3.bio-compatible TLDs (.sol, etc.) and wallet addresses
       else if (isWeb3BioCompatible || isWalletAddress) {
-        debug.tried.push('web3bio');
-        const w3Start = Date.now();
-        const web3Profile = await fetchWeb3BioProfile(normalized);
-        debug.timingsMs.web3bio = Date.now() - w3Start;
+        // IOTA wallets are not EVM identities — skip the slow Web3.bio lookup entirely.
+        let web3Profile: any = null;
+        if (!isIotaWalletAddress) {
+          debug.tried.push('web3bio');
+          const w3Start = Date.now();
+          web3Profile = await fetchWeb3BioProfile(normalized);
+          debug.timingsMs.web3bio = Date.now() - w3Start;
+        }
 
         if (web3Profile && !web3Profile.notFound) {
           // For EVM wallet addresses, try .vet reverse
@@ -1314,12 +1318,16 @@ export async function resolveProfileDirect(identity: string): Promise<ResolverRe
         resolverResult = { ok: false, source: 'web3bio', profile: null, notFound: true };
       }
     }
-    // Route 4: Web3.bio-compatible TLDs (.box, .sol, etc.) and wallet addresses
+    // Route 4: Web3.bio-compatible TLDs (.sol, etc.) and wallet addresses
     else if (isWeb3BioCompatible || isWalletAddress) {
-      debug.tried.push('web3bio');
-      const w3Start = Date.now();
-      const web3Profile = await fetchWeb3BioProfile(normalized);
-      debug.timingsMs.web3bio = Date.now() - w3Start;
+      // IOTA wallets are not EVM identities — skip the slow Web3.bio lookup entirely.
+      let web3Profile: any = null;
+      if (!isIotaWalletAddress) {
+        debug.tried.push('web3bio');
+        const w3Start = Date.now();
+        web3Profile = await fetchWeb3BioProfile(normalized);
+        debug.timingsMs.web3bio = Date.now() - w3Start;
+      }
 
       if (web3Profile && !web3Profile.notFound) {
         // For EVM wallet addresses, try .vet reverse
