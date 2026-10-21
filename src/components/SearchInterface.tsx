@@ -2295,6 +2295,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       setDisplayQuery('');
                       setSearchQuery('');
                       setIsHomepage(true);
+                      resetCrossChainState();
                       navigate('/', { replace: false });
                     },
                     isActive: false,
@@ -2962,6 +2963,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                           setActiveDockSection('profile');
                           setShowSearchBar(false);
                           setIsHomepage(true);
+                          resetCrossChainState();
                           navigate('/', { replace: false });
                         },
                         isActive: false,
@@ -3022,6 +3024,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                         // Reset detail view state to fix glitch
                         setShowDetailView(false);
                         setDetailViewResult(null);
+                        resetCrossChainState();
                         navigate('/', { replace: false });
                       },
                       isActive: false,
