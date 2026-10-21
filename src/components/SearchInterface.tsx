@@ -1010,6 +1010,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     const loadIotaOnchainProfile = async () => {
       const name = displayQuery?.toLowerCase()?.trim();
 
+      // Raw passkey wallets have IPFS profiles and owner addresses too.
+      // Do not erase cross-chain hydration just because the identifier has no .iota suffix.
+      if (/^0x[a-f0-9]{64}$/i.test(name || '') || ensOverlay) return;
+
       // Works for ALL .iota names + subdomains
       if (!isIotaName(name)) {
         setIotaOnchainProfile(null);
