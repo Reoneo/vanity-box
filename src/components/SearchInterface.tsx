@@ -1107,6 +1107,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         setIsHomepage(true);
         setShowDetailView(false);
         setDetailViewResult(null);
+        resetCrossChainState();
       }
     }
   }, [username, location.pathname]);
@@ -2625,6 +2626,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                       // Reset detail view state to fix glitch
                       setShowDetailView(false);
                       setDetailViewResult(null);
+                      resetCrossChainState();
                       navigate('/', { replace: false });
                       });
                     },
