@@ -844,12 +844,14 @@ export function useProfileResolver() {
 
       const isEthDomain = normalized.endsWith('.eth') && !normalized.endsWith('.base.eth');
       const isBoxDomain = /\.box$/i.test(normalized);
+      // .box names are ENS names (DNSSEC-enabled) — resolve them exactly like .eth.
+      const isEnsDomain = isEthDomain || isBoxDomain;
 
-      // Web3.bio-compatible TLDs (public API) — .eth handled separately via direct resolution
-      const web3BioTLDs = ['.box', '.sol', '.world.id', '.base.eth'];
+      // Web3.bio-compatible TLDs (public API) — ENS names (.eth/.box) handled separately via direct resolution
+      const web3BioTLDs = ['.sol', '.world.id', '.base.eth'];
       const isWeb3BioCompatible = web3BioTLDs.some((tld) => normalized.endsWith(tld));
 
-      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isSuiDomain && !isEthDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
+      const isUdDomain = !isWalletAddress && !isVetDomain && !isIotaDomain && !isSuiDomain && !isEnsDomain && !isWeb3BioCompatible && isUnstoppableDomain(normalized);
 
       let resolverResult: ResolverResult = { ok: false, source: 'fallback', profile: null };
 
@@ -946,10 +948,10 @@ export function useProfileResolver() {
           resolverResult = { ok: false, source: 'vet', profile: null, notFound: true };
         }
       }
-      // Route 3: .eth domains — race direct ENS resolution against Web3.bio (whichever wins).
+      // Route 3: ENS domains (.eth and .box) — race direct ENS resolution against Web3.bio (whichever wins).
       // Many ENS names use CCIP-read offchain resolvers (e.g. poap.eth) which can be slow
       // through public RPCs; Web3.bio handles those server-side. Run both in parallel.
-      else if (isEthDomain) {
+      else if (isEnsDomain) {
         debug.tried.push('ens-direct', 'web3bio');
         const raceStart = Date.now();
 
