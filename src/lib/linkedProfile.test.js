@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { firstOwnedUdName } from './linkedProfile';
+import { firstOwnedUdName } from './linkedProfile.ts';
 
 describe('linked wallet display identity', () => {
   it('uses the first owned UD domain, Mrs.Vanity, rather than an unrelated NFT', () => {
