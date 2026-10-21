@@ -496,14 +496,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Reset detail view to fix glitch when loading new profile
       setShowDetailView(false);
       setDetailViewResult(null);
-      // Reset linked EVM address
-      setLinkedEvmAddress(null);
-      linkedEvmResolverRef.current = null;
-      // Reset linked TON address
-      setLinkedTonAddress(null);
-      linkedTonResolverRef.current = null;
-      setLinkedSuiAddress(null);
-      linkedSuiResolverRef.current = null;
+      // Wallet links are reset at search start, not when profile enrichment arrives.
     }
   }, [web3BioProfile]);
 
@@ -909,10 +902,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     
     if (isValidAddress && nfts.length === 0 && !nftLoading) {
       console.log('🔄 Background: Preloading OpenSea NFTs for address:', address);
-      const timer = setTimeout(() => {
-        fetchNfts(address, undefined);
-      }, 1000);
-      return () => clearTimeout(timer);
+      fetchNfts(address, undefined);
     }
   }, [web3BioProfile?.address, linkedEvmAddress, displayQuery]);
 
@@ -2496,7 +2486,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}
                     onEnsureOpenSeaNfts={() => {
-                      const isIota = isIotaName(displayQuery);
+                      const isIota = isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test(displayQuery || '') || !!iotaOwnerAddress;
 
                       // For IOTA profiles, use linkedEvmAddress if available
                       if (isIota && linkedEvmAddress && !openseaAttempted && !nftLoading) {
