@@ -24,6 +24,7 @@ import { SiDiscord } from "react-icons/si";
 import { supabase } from "@/integrations/supabase/client";
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { isValidIotaAddress } from '@/lib/iota/client';
+import { firstOwnedUdName } from '@/lib/linkedProfile';
 import { mainnet } from 'viem/chains';
 import { normalize } from 'viem/ens';
 import { useParams, useLocation, useNavigate } from "react-router-dom";
@@ -495,14 +496,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Reset detail view to fix glitch when loading new profile
       setShowDetailView(false);
       setDetailViewResult(null);
-      // Reset linked EVM address
-      setLinkedEvmAddress(null);
-      linkedEvmResolverRef.current = null;
-      // Reset linked TON address
-      setLinkedTonAddress(null);
-      linkedTonResolverRef.current = null;
-      setLinkedSuiAddress(null);
-      linkedSuiResolverRef.current = null;
+      // Wallet links are reset at search start, not when profile enrichment arrives.
     }
   }, [web3BioProfile]);
 
@@ -575,11 +569,18 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
     if (!key) return;
     let cancelled = false;
+    const profileKey = key;
+    setIotaOnchainProfileLoading(true);
     import('@/lib/iota/vanityProfile').then(({ fetchProfileFromIPFS }) =>
-      fetchProfileFromIPFS(key!).then(({ profile }) => {
+      fetchProfileFromIPFS(profileKey).then(({ profile }) => {
         if (!cancelled && profile) setIotaOnchainProfile(profile as any);
       }).catch(() => {})
-    );
+    ).finally(() => {
+      if (!cancelled) {
+        setIotaOnchainProfileLoading(false);
+        setProfileRevealLoadingKey(null);
+      }
+    });
     return () => { cancelled = true; };
   }, [displayQuery, iotaOwnerAddress, web3BioProfile?.identity, connectedWalletType, walletAddress]);
 
@@ -901,12 +902,31 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     
     if (isValidAddress && nfts.length === 0 && !nftLoading) {
       console.log('🔄 Background: Preloading OpenSea NFTs for address:', address);
-      const timer = setTimeout(() => {
-        fetchNfts(address, undefined);
-      }, 1000);
-      return () => clearTimeout(timer);
+      fetchNfts(address, undefined);
     }
   }, [web3BioProfile?.address, linkedEvmAddress, displayQuery]);
+
+  // Raw wallet entry points use the first owned UD NFT, not an unrelated reverse record.
+  useEffect(() => {
+    if (!/^0x[a-f0-9]{64}$/i.test(activeSearchQueryRef.current || '') || !linkedEvmAddress || ensOverlay) return;
+    const domain = firstOwnedUdName(nfts);
+    if (!domain) return;
+    let cancelled = false;
+    const searchedWallet = activeSearchQueryRef.current;
+    import('@/hooks/useProfileResolver').then(({ resolveProfileDirect }) => resolveProfileDirect(domain)).then(result => {
+      if (cancelled || activeSearchQueryRef.current !== searchedWallet || !result.ok || !result.profile) return;
+      const profile = result.profile;
+      setEnsOverlay({
+        identity: domain,
+        displayName: profile.displayName || domain,
+        avatar: profile.avatar || null,
+        header: profile.header || null,
+        platform: profile.platform,
+      });
+      setIotaOwnerAddress(searchedWallet);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [nfts, linkedEvmAddress, ensOverlay]);
 
   // Fetch EFP stats for .iota profiles when linkedEvmAddress resolves
   useEffect(() => {
@@ -989,6 +1009,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   useEffect(() => {
     const loadIotaOnchainProfile = async () => {
       const name = displayQuery?.toLowerCase()?.trim();
+
+      // Raw passkey wallets have IPFS profiles and owner addresses too.
+      // Do not erase cross-chain hydration just because the identifier has no .iota suffix.
+      if (/^0x[a-f0-9]{64}$/i.test(name || '') || ensOverlay) return;
 
       // Works for ALL .iota names + subdomains
       if (!isIotaName(name)) {
@@ -1438,6 +1462,16 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     setTotalFollowers(0);
     setEnsRecords(null);
     setEnsOverlay(null);
+    setLinkedEvmAddress(null);
+    setLinkedTonAddress(null);
+    setLinkedSuiAddress(null);
+    linkedEvmResolverRef.current = null;
+    setNfts([]);
+    setNftNextCursor(null);
+    setOpenseaAttempted(false);
+    setPoapTokens([]);
+    setPoapCount(0);
+    setPoapTotalCount(0);
     setIotaOnchainProfile(null);
     setIotaNameObjectId(null);
     setIotaOwnerAddress(null);
@@ -1715,7 +1749,10 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 console.log(`🔗 Cross-chain: ${normalizedQuery} -> passkey iota wallet ${iotaName}`);
                 setEnsOverlay(overlay);
                 setIotaOwnerAddress(iotaName.toLowerCase());
+                setDisplayQuery(iotaName.toLowerCase());
+                setIotaOnchainProfileLoading(true);
                 setWeb3BioProfile(profile);
+                setProfileRevealLoadingKey(null);
                 return;
               }
 
@@ -1771,7 +1808,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         }
 
         // Fetch additional data for Dock (non-blocking)
-        if (profile.address) {
+        if (isValidEvmAddress(profile.address)) {
           // Fetch EFP stats
           supabase.functions.invoke('get-efp-stats', {
             body: { address: profile.address }
@@ -2414,15 +2451,19 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                               avatar: ensOverlay.avatar || web3BioProfile.avatar,
                               header: ensOverlay.header || web3BioProfile.header,
                             }
-                          : web3BioProfile
+                          : iotaOwnerAddress || /^0x[a-f0-9]{64}$/i.test(displayQuery || '')
+                            ? { ...web3BioProfile, platform: 'iota', address: iotaOwnerAddress || web3BioProfile.address }
+                            : web3BioProfile
                     }
                     currentWalletAddress={
-                      (isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
+                      iotaOwnerAddress || /^0x[a-f0-9]{64}$/i.test(displayQuery || '')
+                        ? (iotaOwnerAddress || displayQuery)
+                        : (isIotaName(displayQuery) || (ensOverlay && (iotaOnchainProfile || iotaOnchainProfileLoading))) && iotaOnchainProfile
                         ? (iotaOwnerAddress || web3BioProfile.address)
                         : web3BioProfile.address
                     }
                     iotaOwnerAddressForFetch={
-                      ensOverlay && iotaOwnerAddress ? iotaOwnerAddress : null
+                      iotaOwnerAddress || (/^0x[a-f0-9]{64}$/i.test(displayQuery || '') ? displayQuery : null)
                     }
                     connectedWalletAddress={
                       isIotaName(displayQuery) && isIotaConnected && iotaWalletAddress
@@ -2449,7 +2490,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                     onFollowersClick={handleFollowersClick}
                     onLoadMoreNfts={handleLoadMoreNfts}
                     onEnsureOpenSeaNfts={() => {
-                      const isIota = isIotaName(displayQuery);
+                      const isIota = isIotaName(displayQuery) || /^0x[a-f0-9]{64}$/i.test(displayQuery || '') || !!iotaOwnerAddress;
 
                       // For IOTA profiles, use linkedEvmAddress if available
                       if (isIota && linkedEvmAddress && !openseaAttempted && !nftLoading) {
