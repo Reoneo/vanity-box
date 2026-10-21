@@ -877,7 +877,24 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
     }
   }, [web3BioProfile?.platform, web3BioProfile?.address]);
 
-  const isCrossChainProfilePending = !!ensOverlay && !iotaOnchainProfile && !showMyIDs;
+  // Clears all cross-chain/IOTA overlay state. Used by every "go home" path so
+  // a stale overlay can never hold the page in a blank loading state.
+  const resetCrossChainState = () => {
+    setEnsOverlay(null);
+    setIotaOnchainProfile(null);
+    setIotaOnchainProfileLoading(false);
+    setIotaOwnerAddress(null);
+    setIotaNameObjectId(null);
+    setProfileRevealLoadingKey(null);
+    setLinkedEvmAddress(null);
+    setLinkedTonAddress(null);
+    setLinkedSuiAddress(null);
+    setIsLoading(false);
+  };
+
+  // "Pending" only while an overlay fetch is actually in flight — an overlay
+  // with no on-chain profile must not block the UI forever.
+  const isCrossChainProfilePending = !!ensOverlay && !iotaOnchainProfile && iotaOnchainProfileLoading && !showMyIDs;
   const profileRevealLoading = !!profileRevealLoadingKey && (
     profileRevealLoadingKey === activeSearchQueryRef.current ||
     (!activeSearchQueryRef.current && profileRevealLoadingKey === initialUrlProfile)
