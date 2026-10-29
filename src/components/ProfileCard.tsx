@@ -361,6 +361,7 @@ export const ProfileCard = ({
   const [showTalentModal, setShowTalentModal] = useState(false);
   const [showPolymarketModal, setShowPolymarketModal] = useState(false);
   const [showReputationModal, setShowReputationModal] = useState(false);
+  const anySectionOpen = showAllSocials || showNftsOverlay || showWalletsOverlay || showTokensOverlay || showActivityOverlay || showReputationModal;
   const [udBadges, setUdBadges] = useState<UdBadgeItem[]>([]);
   const [udBadgesLoading, setUdBadgesLoading] = useState(false);
   const [udBadgesFetched, setUdBadgesFetched] = useState(false);
