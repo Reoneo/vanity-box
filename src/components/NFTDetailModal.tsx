@@ -1,3 +1,4 @@
+import { fetchEnsDomains } from "@/lib/ensDomainsFetch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Play, Volume2, ChevronDown, X, Clock } from "lucide-react";
@@ -190,7 +191,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
           setEnsRecords(recs);
         } catch {}
       })();
-      fetch(`${SUPABASE_URL}/functions/v1/get-ens-domains`, {
+      fetchEnsDomains(`${SUPABASE_URL}/functions/v1/get-ens-domains`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON}` },
         body: JSON.stringify({ domainName: nm }),
