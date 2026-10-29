@@ -2221,7 +2221,7 @@ export const ProfileCard = ({
 
     if (panel === 'tokens') {
       return (
-        <div className="h-full overflow-y-auto px-6 py-3 pb-32">
+        <div className="h-full overflow-y-auto px-6 py-3 pb-6">
           {portfolioLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
@@ -2282,7 +2282,7 @@ export const ProfileCard = ({
 
     if (panel === 'activity') {
       return (
-        <div className="h-full overflow-y-auto px-6 py-3 pb-32">
+        <div className="h-full overflow-y-auto px-6 py-3 pb-6">
           {transactionsLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
