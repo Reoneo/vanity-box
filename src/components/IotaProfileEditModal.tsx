@@ -239,7 +239,7 @@ export function IotaProfileEditModal({
 
   return (
     <div
-      className="fixed left-0 right-0 top-[80px] bottom-[120px] md:bottom-[140px] z-[9999] flex items-start justify-center px-3 pt-3 sm:pt-6 animate-fade-in pointer-events-none"
+      className="fixed left-0 right-0 top-[40px] bottom-[120px] md:bottom-[140px] z-[9999] flex items-start justify-center px-3 pt-3 sm:pt-6 animate-fade-in pointer-events-none"
       role="dialog"
       aria-modal="true"
     >

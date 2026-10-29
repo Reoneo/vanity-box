@@ -146,19 +146,19 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
         <link rel="preload" as="image" href={vanityLogo} />
 
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
+        <div className="relative z-10 container mx-auto px-4 h-10 flex items-center justify-between">
           {hasProfile ? (
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handleLogoSync}
                 aria-label="Vanity.box"
-                className="relative flex items-center justify-center h-20 -ml-2 bg-transparent"
+                className="relative flex items-center justify-center h-10 -ml-2 bg-transparent"
               >
                 <img
                   src={vanityLogo}
                   alt="Vanity.box Logo"
-                  className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                  className="h-9 w-9 object-cover rounded-lg"
                   loading="eager"
                   fetchPriority="high"
                 />
@@ -200,12 +200,12 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   type="button"
                   onClick={handleLogoSync}
                   aria-label="Vanity.box"
-                  className="relative flex items-center justify-center h-20 bg-transparent"
+                  className="relative flex items-center justify-center h-10 bg-transparent"
                 >
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                    className="h-9 w-9 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -289,12 +289,12 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   type="button"
                   onClick={handleLogoSync}
                   aria-label="Vanity.box"
-                  className="relative flex items-center justify-center h-20 bg-transparent"
+                  className="relative flex items-center justify-center h-10 bg-transparent"
                 >
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                    className="h-9 w-9 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -345,12 +345,12 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
               type="button"
               onClick={handleLogoSync}
               aria-label="Vanity.box"
-              className="relative flex items-center justify-center h-20 bg-transparent"
+              className="relative flex items-center justify-center h-10 bg-transparent"
             >
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                className="h-9 w-9 object-cover rounded-lg"
                 loading="eager"
                 fetchPriority="high"
               />
