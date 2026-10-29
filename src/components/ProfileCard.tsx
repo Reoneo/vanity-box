@@ -2625,13 +2625,13 @@ export const ProfileCard = ({
                     </div>
                     
                     {/* Panel content */}
-                    <div className="flex-1 overflow-y-auto pb-32 min-h-0">
+                    <div className="flex-1 overflow-y-auto pb-6 min-h-0">
                     {desktopActivePanel === 'social' && renderDesktopPanelContent('social')}
                     {desktopActivePanel === 'tokens' && renderDesktopPanelContent('tokens')}
                     {desktopActivePanel === 'activity' && renderDesktopPanelContent('activity')}
                     {desktopActivePanel === 'wallets' && renderDesktopPanelContent('wallets')}
                     {desktopActivePanel === 'reputation' && (
-                      <div className="h-full overflow-y-auto px-6 py-3 pb-32">
+                      <div className="h-full overflow-y-auto px-6 py-3 pb-6">
                         {desktopReputationCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {hasTalentData && (
@@ -2743,7 +2743,7 @@ export const ProfileCard = ({
                     )}
                     {desktopActivePanel === 'nfts' && (
                       /* Desktop NFTs inline panel - reuses existing NFT rendering */
-                      <div className="h-full overflow-y-auto px-6 py-3 pb-32">
+                      <div className="h-full overflow-y-auto px-6 py-3 pb-6">
                         {nftCategory === 'main' ? (
                           <div className="space-y-3 max-w-xl mx-auto">
                             {/* Chain filter icons */}
