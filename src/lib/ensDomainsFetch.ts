@@ -6,11 +6,28 @@ const cache = new Map<string, { at: number; res: Response }>();
 const TTL_MS = 60_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+const MAX_CONCURRENT = 3;
+let active = 0;
+const queue: Array<() => void> = [];
+async function limitedFetch(url: string, init?: RequestInit): Promise<Response> {
+  if (active >= MAX_CONCURRENT) await new Promise<void>((r) => queue.push(r));
+  active++;
+  try {
+    return await fetch(url, init);
+  } catch {
+    // Network failures resolve to a 503 so callers never get an unhandled rejection
+    return new Response(JSON.stringify({ error: 'network' }), { status: 503 });
+  } finally {
+    active--;
+    queue.shift()?.();
+  }
+}
+
 async function fetchWithRetry(url: string, init?: RequestInit): Promise<Response> {
-  let res = await fetch(url, init);
+  let res = await limitedFetch(url, init);
   for (let attempt = 0; res.status === 429 && attempt < 4; attempt++) {
     await sleep(1000 * 2 ** attempt + Math.random() * 300);
-    res = await fetch(url, init);
+    res = await limitedFetch(url, init);
   }
   return res;
 }
