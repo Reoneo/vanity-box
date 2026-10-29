@@ -1,3 +1,4 @@
+import { fetchEnsDomains } from "@/lib/ensDomainsFetch";
 import './Dock.css';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -685,7 +686,7 @@ export const ProfileCard = ({
     const fetchLinkedEvmEns = async () => {
       try {
         console.log('[ProfileCard] Fetching ENS domains for linked EVM wallet:', linkedEvmAddress);
-        const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+        const ensRes = await fetchEnsDomains('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -716,7 +717,7 @@ export const ProfileCard = ({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+        const res = await fetchEnsDomains('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -749,7 +750,7 @@ export const ProfileCard = ({
     let cancelled = false;
     const fetchOne = async (domainName: string, attempt = 0): Promise<{ domainName: string; domain: any } | null> => {
       try {
-        const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+        const res = await fetchEnsDomains('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
           body: JSON.stringify({ domainName }),
@@ -1225,7 +1226,7 @@ export const ProfileCard = ({
     if (!effectiveEvmWallet) return;
     setEnsDomainsLoadingMore(true);
     try {
-      const res = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+      const res = await fetchEnsDomains('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
         body: JSON.stringify({ walletAddress: effectiveEvmWallet, first: 20, skip: ensDomains.length }),
@@ -1550,7 +1551,7 @@ export const ProfileCard = ({
           try {
             // For wallets owning huge ENS portfolios (e.g. wrapper.ens.eth), fetch in small batches
             const initialFirst = isWrapperEnsProfile ? 20 : 100;
-            const ensRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+            const ensRes = await fetchEnsDomains('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
