@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { WalletConnection } from "./WalletConnection";
 import { SpotifyPauseButton } from "./SpotifyPauseButton";
-import vanityLogo from "../assets/vanity-v-wallet-logo.png";
+import vanityLogo from "../assets/vanity-v-header-logo.png";
 import vanityContactIcon from "../assets/vanity-contact-icon.png";
 import worldAppIcon from "@/assets/world-app-icon.png";
 import telegramIcon from "@/assets/telegram-icon.png";
@@ -158,7 +158,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                 <img
                   src={vanityLogo}
                   alt="Vanity.box Logo"
-                  className="h-7 w-7 object-cover rounded-lg"
+                  className="h-8 w-8 object-contain"
                   loading="eager"
                   fetchPriority="high"
                 />
@@ -205,7 +205,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-7 w-7 object-cover rounded-lg"
+                    className="h-8 w-8 object-contain"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -294,7 +294,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-7 w-7 object-cover rounded-lg"
+                    className="h-8 w-8 object-contain"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -350,7 +350,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-7 w-7 object-cover rounded-lg"
+                className="h-8 w-8 object-contain"
                 loading="eager"
                 fetchPriority="high"
               />
