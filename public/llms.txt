@@ -14,4 +14,3 @@ Vanity Wallet and Vanity ID describe Vanity's wallet and digital identity experi
 ## Supported
 ENS (.eth, .box), Basenames, IOTA names, Unstoppable Domains (.vanity, .x), TON, Sui, Aptos, World Chain.
 
-Support for TON wallets and existing TON profiles does not mean Vanity.ton names are available to claim.
