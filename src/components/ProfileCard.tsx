@@ -2587,11 +2587,11 @@ export const ProfileCard = ({
                           if (nftCategory === 'main') {
                             title = 'NFTs';
                           } else if (nftCategory === 'poaps') {
-                            title = renderCollectionLabel('POAPs', "h-6 w-auto inline-block align-middle");
+                            title = 'POAPs';
                             total = poapTotalCount || formattedPoaps.length;
                           } else if (nftCategory === 'opensea') {
                             if (expandedCollection) {
-                              title = renderCollectionLabel(expandedCollection);
+                              title = collectionHeaderText(expandedCollection);
                               total = openSeaGroupedNfts[expandedCollection]?.length || 0;
                             } else {
                               title = 'OpenSea';
@@ -2599,7 +2599,7 @@ export const ProfileCard = ({
                             }
                           } else if (nftCategory === 'magiceden') {
                             if (expandedCollection) {
-                              title = renderCollectionLabel(expandedCollection);
+                              title = collectionHeaderText(expandedCollection);
                               total = magicEdenGroupedNfts[expandedCollection]?.length || 0;
                             } else {
                               title = 'EVM';
@@ -2618,11 +2618,11 @@ export const ProfileCard = ({
                             total = basenames.length;
                           } else if (nftCategory.startsWith('iota:')) {
                             const col = nftCategory.replace('iota:', '');
-                            title = renderCollectionLabel(col);
+                            title = collectionHeaderText(col);
                             total = (iotaGroupedNfts[col] || []).length;
                           } else if (nftCategory.startsWith('ton:')) {
                             const col = nftCategory.replace('ton:', '');
-                            title = renderCollectionLabel(col);
+                            title = collectionHeaderText(col);
                             total = (tonCollections.find(c => c.collectionName === col)?.nfts || []).length;
                           }
                           return (
