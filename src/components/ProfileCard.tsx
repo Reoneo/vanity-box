@@ -3418,17 +3418,17 @@ export const ProfileCard = ({
             {showAllSocials && isMobile && (
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
-                    <div className="w-10" />
-                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-lg font-bold text-black dark:text-white">Social Links</h3>
+                <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                    <div className="w-7" />
+                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-sm font-bold text-black dark:text-white">Social Links</h3>
                     </div>
                     <button
                       onClick={() => setShowAllSocials(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black" />
+                      <X className="w-3.5 h-3.5 text-black" />
                     </button>
                   </div>
                 </div>
@@ -3489,8 +3489,8 @@ export const ProfileCard = ({
             {showNftsOverlay && (
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header — mirrors Activity overlay style */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
+                <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
                     {/* Back button when inside a sub-view, otherwise spacer */}
                     {nftCategory !== 'main' ? (
                       <button
@@ -3498,22 +3498,22 @@ export const ProfileCard = ({
                           setNftCategory('main');
                           setExpandedCollection(null);
                         }}
-                        className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                        className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                         aria-label="Back to NFT collections"
                       >
-                        <ChevronDown className="w-4 h-4 text-black rotate-90" />
+                        <ChevronDown className="w-3.5 h-3.5 text-black rotate-90" />
                       </button>
                     ) : (
-                      <div className="w-9" />
+                      <div className="w-7" />
                     )}
-                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
-                      <h3 className="text-lg font-bold text-black dark:text-white truncate">
+                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
+                      <h3 className="text-sm font-bold text-black dark:text-white truncate">
                         {nftCategory === 'main'
                           ? 'NFTs'
                           : expandedCollection
-                            ? renderCollectionLabel(expandedCollection, "h-10 w-auto inline-block align-middle")
+                            ? renderCollectionLabel(expandedCollection, "h-5 w-auto inline-block align-middle")
                             : nftCategory === 'poaps'
-                              ? renderCollectionLabel('POAPs', "h-10 w-auto inline-block align-middle")
+                              ? renderCollectionLabel('POAPs', "h-5 w-auto inline-block align-middle")
                               : nftCategory === 'magiceden'
                                 ? 'Magic Eden'
                                 : nftCategory === 'hyperliquid'
@@ -3536,10 +3536,10 @@ export const ProfileCard = ({
                         <div className="relative">
                           <button
                             onClick={() => setEnsFilterOpen((v) => !v)}
-                            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                             aria-label="Filter ENS domains"
                           >
-                            <Filter className="w-4 h-4 text-black" />
+                            <Filter className="w-3.5 h-3.5 text-black" />
                           </button>
                           {ensFilterOpen && (
                             <>
@@ -3570,10 +3570,10 @@ export const ProfileCard = ({
                           setNftCategory('main');
                           setExpandedCollection(null);
                         }}
-                        className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                        className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                         aria-label="Close NFTs"
                       >
-                        <X className="w-4 h-4 text-black" />
+                        <X className="w-3.5 h-3.5 text-black" />
                       </button>
                     </div>
                   </div>
@@ -4234,17 +4234,17 @@ export const ProfileCard = ({
             {showTokensOverlay && (
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
-                    <div className="w-10" />
-                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-lg font-bold text-black dark:text-white">Tokens</h3>
+                <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                    <div className="w-7" />
+                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-sm font-bold text-black dark:text-white">Tokens</h3>
                     </div>
                     <button
                       onClick={() => setShowTokensOverlay(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black" />
+                      <X className="w-3.5 h-3.5 text-black" />
                     </button>
                   </div>
                 </div>
@@ -4318,17 +4318,17 @@ export const ProfileCard = ({
             {showActivityOverlay && (
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
-                    <div className="w-10" />
-                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-lg font-bold text-black dark:text-white">Activity</h3>
+                <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                    <div className="w-7" />
+                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-sm font-bold text-black dark:text-white">Activity</h3>
                     </div>
                     <button
                       onClick={() => setShowActivityOverlay(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black" />
+                      <X className="w-3.5 h-3.5 text-black" />
                     </button>
                   </div>
                 </div>
@@ -4378,17 +4378,17 @@ export const ProfileCard = ({
             {showWalletsOverlay && (
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
-                    <div className="w-10" />
-                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-lg font-bold text-black dark:text-white">Wallets</h3>
+                <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                    <div className="w-7" />
+                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-sm font-bold text-black dark:text-white">Wallets</h3>
                     </div>
                     <button
                       onClick={() => setShowWalletsOverlay(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-4 h-4 text-black" />
+                      <X className="w-3.5 h-3.5 text-black" />
                     </button>
                   </div>
                 </div>
