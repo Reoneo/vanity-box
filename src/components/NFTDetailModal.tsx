@@ -287,74 +287,47 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
 
   return (
     <div
-      className="fixed left-0 right-0 bg-background dark:bg-black z-[9999] animate-fade-in flex flex-col overscroll-contain"
-      style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}
+      className="fixed left-px right-px bg-background z-[9999] animate-fade-in flex flex-col overscroll-contain"
+      style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 38px)', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 38px)' }}
       role="dialog"
       aria-modal="true"
+      aria-label="NFT details"
     >
-      {/* Banner header — mirrors NFT collection overlay style */}
+      {/* Item header uses the same dimensions as its parent section. */}
       <div
-        className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
+        className="relative h-10 w-full shrink-0 overflow-hidden bg-background bg-cover bg-center"
         style={{ backgroundImage: `url(${headerImage || iotaHeaderPattern})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
-          <button
+        <div className="absolute inset-0 flex items-center justify-between gap-2 px-4">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            aria-label="Back"
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+            aria-label="Back to collection"
+            className="h-9 w-9 shrink-0 rounded-full bg-background/80 text-foreground backdrop-blur-sm hover:bg-background"
           >
-            <ChevronDown className="w-4 h-4 text-black rotate-90" />
-          </button>
-          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%] flex items-center justify-center">
-            {(() => {
-              const chainLower = (nft.chain || '').toLowerCase();
-              const isUnstoppable =
-                collectionLower.includes('unstoppable') ||
-                collectionLower.includes('ud.me') ||
-                /\.(crypto|wallet|nft|x|bitcoin|dao|888|blockchain|polygon|klever|hi|kresus|anime|manga|binanceus|altimist|pudgy|austin|bay|benji|farms|ge|metropolis|witg|ws|stepn|secret|raiin|smobler|tball|unstoppable|pog|clay|propykeys|com|go|emir|kryptic)$/i.test(nameLower);
-              if (isEnsNft) {
-                return <img src={ensCollectionLogo} alt="ENS" className="h-10 w-auto object-contain" />;
-              }
-              if (collectionLower.includes('doodles') && collectionLower.includes('certified') && collectionLower.includes('viral')) {
-                return <img src={doodlesCertifiedViralLogo} alt="Doodles Certified Viral" className="h-10 w-auto object-contain" />;
-              }
-              if (collectionLower === 'basenames' || collectionLower === 'basename' || collectionLower === 'base names') {
-                return <img src={basenamesCollectionLogo} alt="Basenames" className="h-10 w-auto object-contain" />;
-              }
-              if (isUnstoppable) {
-                const chainIcon = chainLower === 'base'
-                  ? <img src={baseSquareBlue} alt="Base" className="h-5 w-5 object-contain" style={{ borderRadius: 4 }} />
-                  : <img src={polygonIcon} alt="Polygon" className="h-5 w-5 rounded-full" />;
-                return (
-                  <div className="flex items-center gap-2">
-                    <img src={unstoppableCollectionLogo} alt="Unstoppable Domains" className="h-10 w-auto object-contain" />
-                    {chainIcon}
-                  </div>
-                );
-              }
-              return (
-                <h3 className="text-lg font-bold text-black dark:text-white truncate">
-                  {nft.name || `NFT #${nft.identifier}`}
-                </h3>
-              );
-            })()}
-          </div>
-          <button
+            <ChevronDown className="h-[18px] w-[18px] rotate-90" />
+          </Button>
+          <h3 className="min-w-0 max-w-[70%] truncate rounded-full bg-background/80 px-4 py-1.5 text-base font-bold text-foreground backdrop-blur-sm">
+            {isEnsNft ? 'ENS Domains' : isBasenameNft ? 'Basenames' : isUnstoppableNft ? 'Unstoppable Domains' : nft.collection || nft.name || 'NFT'}
+          </h3>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            aria-label="Close"
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+            aria-label="Close item"
+            className="h-9 w-9 shrink-0 rounded-full bg-background/80 text-foreground backdrop-blur-sm hover:bg-background"
           >
-            <X className="w-4 h-4 text-black" />
-          </button>
+            <X className="h-[18px] w-[18px]" />
+          </Button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
-      <div className="mx-auto w-full max-w-2xl px-4 py-4 pb-28">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div className="mx-auto w-full max-w-2xl px-4 py-4 pb-24">
         {/* Media — square, fully contained, no overflow */}
-        <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-black/40 to-black/10 border border-[#D4AF37]/20">
+        <div className="relative mx-auto w-full max-w-[240px] sm:max-w-[320px] aspect-square overflow-hidden rounded-lg bg-muted border border-border">
           {mediaType === 'video' && animationUrl ? (
             <video
               ref={videoRef}
@@ -401,7 +374,7 @@ export const NFTDetailModal = ({ nft, isOpen, onClose, headerImage }: NFTDetailM
         </div>
 
         {/* Metadata */}
-        <div className="pt-5 space-y-3">
+        <div className="pt-4 space-y-3">
           {!isEnsNft && (
             <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
               {nft.name || `NFT #${nft.identifier}`}
