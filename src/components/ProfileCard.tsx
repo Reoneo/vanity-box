@@ -3425,15 +3425,15 @@ export const ProfileCard = ({
                 {/* Header with ENS image banner */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
-                    <div className="w-7" />
-                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-sm font-bold text-black dark:text-white">Social Links</h3>
+                    <div className="w-9" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-base font-bold text-black dark:text-white">Social Links</h3>
                     </div>
                     <button
                       onClick={() => setShowAllSocials(false)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-3.5 h-3.5 text-black" />
+                      <X className="w-[18px] h-[18px] text-black" />
                     </button>
                   </div>
                 </div>
@@ -3503,22 +3503,22 @@ export const ProfileCard = ({
                           setNftCategory('main');
                           setExpandedCollection(null);
                         }}
-                        className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                         aria-label="Back to NFT collections"
                       >
-                        <ChevronDown className="w-3.5 h-3.5 text-black rotate-90" />
+                        <ChevronDown className="w-[18px] h-[18px] text-black rotate-90" />
                       </button>
                     ) : (
-                      <div className="w-7" />
+                      <div className="w-9" />
                     )}
-                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
-                      <h3 className="text-sm font-bold text-black dark:text-white truncate">
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
+                      <h3 className="text-base font-bold text-black dark:text-white truncate">
                         {nftCategory === 'main'
                           ? 'NFTs'
                           : expandedCollection
-                            ? renderCollectionLabel(expandedCollection, "h-5 w-auto inline-block align-middle")
+                            ? renderCollectionLabel(expandedCollection, "h-6 w-auto inline-block align-middle")
                             : nftCategory === 'poaps'
-                              ? renderCollectionLabel('POAPs', "h-5 w-auto inline-block align-middle")
+                              ? renderCollectionLabel('POAPs', "h-6 w-auto inline-block align-middle")
                               : nftCategory === 'magiceden'
                                 ? 'Magic Eden'
                                 : nftCategory === 'hyperliquid'
@@ -3541,10 +3541,10 @@ export const ProfileCard = ({
                         <div className="relative">
                           <button
                             onClick={() => setEnsFilterOpen((v) => !v)}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                             aria-label="Filter ENS domains"
                           >
-                            <Filter className="w-3.5 h-3.5 text-black" />
+                            <Filter className="w-[18px] h-[18px] text-black" />
                           </button>
                           {ensFilterOpen && (
                             <>
@@ -3575,10 +3575,10 @@ export const ProfileCard = ({
                           setNftCategory('main');
                           setExpandedCollection(null);
                         }}
-                        className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                         aria-label="Close NFTs"
                       >
-                        <X className="w-3.5 h-3.5 text-black" />
+                        <X className="w-[18px] h-[18px] text-black" />
                       </button>
                     </div>
                   </div>
@@ -4241,15 +4241,15 @@ export const ProfileCard = ({
                 {/* Header with ENS image banner */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
-                    <div className="w-7" />
-                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-sm font-bold text-black dark:text-white">Tokens</h3>
+                    <div className="w-9" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-base font-bold text-black dark:text-white">Tokens</h3>
                     </div>
                     <button
                       onClick={() => setShowTokensOverlay(false)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-3.5 h-3.5 text-black" />
+                      <X className="w-[18px] h-[18px] text-black" />
                     </button>
                   </div>
                 </div>
@@ -4325,15 +4325,15 @@ export const ProfileCard = ({
                 {/* Header */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
-                    <div className="w-7" />
-                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-sm font-bold text-black dark:text-white">Activity</h3>
+                    <div className="w-9" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-base font-bold text-black dark:text-white">Activity</h3>
                     </div>
                     <button
                       onClick={() => setShowActivityOverlay(false)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-3.5 h-3.5 text-black" />
+                      <X className="w-[18px] h-[18px] text-black" />
                     </button>
                   </div>
                 </div>
@@ -4385,15 +4385,15 @@ export const ProfileCard = ({
                 {/* Header */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
-                    <div className="w-7" />
-                    <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
-                      <h3 className="text-sm font-bold text-black dark:text-white">Wallets</h3>
+                    <div className="w-9" />
+                    <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+                      <h3 className="text-base font-bold text-black dark:text-white">Wallets</h3>
                     </div>
                     <button
                       onClick={() => setShowWalletsOverlay(false)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
                     >
-                      <X className="w-3.5 h-3.5 text-black" />
+                      <X className="w-[18px] h-[18px] text-black" />
                     </button>
                   </div>
                 </div>
