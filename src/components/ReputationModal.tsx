@@ -82,7 +82,7 @@ export const ReputationModal = ({
         className="relative w-full h-10 bg-cover bg-center flex-shrink-0 overflow-hidden"
         style={headerImageUrl ? { backgroundImage: `url(${headerImageUrl})` } : undefined}
       >
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+        <div className="absolute inset-0 flex items-center justify-between px-4">
           {category !== "main" ? (
             <button
               onClick={() => setCategory("main")}
