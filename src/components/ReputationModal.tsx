@@ -71,7 +71,7 @@ export const ReputationModal = ({
 
   return (
     <div
-      className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col"
+      className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col"
       style={{ backfaceVisibility: "hidden", top: "calc(env(safe-area-inset-top, 0px) + 64px)", bottom: 0 }}
       role="dialog"
       aria-modal="true"
