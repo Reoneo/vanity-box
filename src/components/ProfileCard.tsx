@@ -768,7 +768,25 @@ export const ProfileCard = ({
       }
     };
     (async () => {
-      const results = await Promise.all(missingNames.map((n) => fetchOne(n)));
+      // Batch names (100 per request) to avoid bursting the edge function rate limit
+      const results: Array<{ domainName: string; domain: any } | null> = [];
+      for (let i = 0; i < missingNames.length && !cancelled; i += 100) {
+        const chunk = missingNames.slice(i, i + 100);
+        try {
+          const res = await fetchEnsDomains('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-ens-domains', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': SUPABASE_ANON_AUTH_HEADER },
+            body: JSON.stringify({ domainNames: chunk }),
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          const data = await res.json();
+          const byName = new Map<string, any>((data?.domains || []).map((d: any) => [String(d.name).toLowerCase(), d]));
+          chunk.forEach((n) => { const d = byName.get(n.toLowerCase()); if (d) results.push({ domainName: n, domain: d }); });
+        } catch {
+          // Batch failed: fall back to a few single lookups only
+          for (const n of chunk.slice(0, 5)) results.push(await fetchOne(n));
+        }
+      }
       if (cancelled) return;
       setEnsDomainOverrides((prev) => {
         const next = { ...prev };
