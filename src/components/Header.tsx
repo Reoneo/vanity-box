@@ -158,7 +158,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                 <img
                   src={vanityLogo}
                   alt="Vanity.box Logo"
-                  className="h-9 w-9 object-cover rounded-lg"
+                  className="h-7 w-7 object-cover rounded-lg"
                   loading="eager"
                   fetchPriority="high"
                 />
@@ -205,7 +205,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-9 w-9 object-cover rounded-lg"
+                    className="h-7 w-7 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -294,7 +294,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-9 w-9 object-cover rounded-lg"
+                    className="h-7 w-7 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -350,7 +350,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-9 w-9 object-cover rounded-lg"
+                className="h-7 w-7 object-cover rounded-lg"
                 loading="eager"
                 fetchPriority="high"
               />
