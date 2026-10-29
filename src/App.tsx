@@ -3,9 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { HelmetProvider } from "react-helmet-async";
+import { Helmet, HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetraWalletProvider } from "@/contexts/PetraWalletContext";
 import { TonConnectProvider } from "@/contexts/TonConnectContext";
@@ -50,8 +50,14 @@ import UdRedirect from "./pages/UdRedirect";
 
 const queryClient = new QueryClient();
 
+const PageCanonical = () => {
+  const { pathname } = useLocation();
+  return <Helmet><link rel="canonical" href={`https://vanity.box${pathname}`} /></Helmet>;
+};
+
 const AppRoutes = () => (
   <BrowserRouter>
+    <PageCanonical />
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/messages" element={<Messages />} />
