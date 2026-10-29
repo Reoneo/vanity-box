@@ -4880,7 +4880,7 @@ export const ProfileCard = ({
         onClose={() => setShowReputationModal(false)}
         identity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
         avatarUrl={web3BioProfile?.avatar || null}
-        headerImageUrl={web3BioProfile?.header || null}
+        headerImageUrl={web3BioProfile?.header || iotaHeaderPattern}
         hasTalent={hasTalentData}
         talentScore={talentScore}
         talentCreatorScore={talentCreatorScore}
