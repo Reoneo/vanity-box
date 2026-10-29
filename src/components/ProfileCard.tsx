@@ -361,6 +361,7 @@ export const ProfileCard = ({
   const [showTalentModal, setShowTalentModal] = useState(false);
   const [showPolymarketModal, setShowPolymarketModal] = useState(false);
   const [showReputationModal, setShowReputationModal] = useState(false);
+  const anySectionOpen = showAllSocials || showNftsOverlay || showWalletsOverlay || showTokensOverlay || showActivityOverlay || showReputationModal;
   const [udBadges, setUdBadges] = useState<UdBadgeItem[]>([]);
   const [udBadgesLoading, setUdBadgesLoading] = useState(false);
   const [udBadgesFetched, setUdBadgesFetched] = useState(false);
@@ -2351,6 +2352,7 @@ export const ProfileCard = ({
                     />
                   </div>
                   {/* Share button - clears gold side border on desktop */}
+                  {!anySectionOpen && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
@@ -2359,6 +2361,7 @@ export const ProfileCard = ({
                   >
                     <Share2 className="w-5 h-5 text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
+                  )}
                   {/* Avatar positioned absolutely to overlay header - centered on left half */}
                   <div 
                     className="absolute -bottom-20 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
@@ -3220,6 +3223,7 @@ export const ProfileCard = ({
                     />
                   </div>
                   {/* Share button - top-left of header image, same as desktop */}
+                  {!anySectionOpen && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
@@ -3228,6 +3232,7 @@ export const ProfileCard = ({
                   >
                     <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
+                  )}
                 </div>
 
 
@@ -3419,7 +3424,7 @@ export const ProfileCard = ({
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                  <div className="absolute inset-0 flex items-center justify-between px-4">
                     <div className="w-7" />
                     <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
                       <h3 className="text-sm font-bold text-black dark:text-white">Social Links</h3>
@@ -3490,7 +3495,7 @@ export const ProfileCard = ({
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header — mirrors Activity overlay style */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                  <div className="absolute inset-0 flex items-center justify-between px-4">
                     {/* Back button when inside a sub-view, otherwise spacer */}
                     {nftCategory !== 'main' ? (
                       <button
@@ -4235,7 +4240,7 @@ export const ProfileCard = ({
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                  <div className="absolute inset-0 flex items-center justify-between px-4">
                     <div className="w-7" />
                     <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
                       <h3 className="text-sm font-bold text-black dark:text-white">Tokens</h3>
@@ -4319,7 +4324,7 @@ export const ProfileCard = ({
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                  <div className="absolute inset-0 flex items-center justify-between px-4">
                     <div className="w-7" />
                     <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
                       <h3 className="text-sm font-bold text-black dark:text-white">Activity</h3>
@@ -4379,7 +4384,7 @@ export const ProfileCard = ({
               <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1">
+                  <div className="absolute inset-0 flex items-center justify-between px-4">
                     <div className="w-7" />
                     <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm">
                       <h3 className="text-sm font-bold text-black dark:text-white">Wallets</h3>
