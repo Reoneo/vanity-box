@@ -3434,7 +3434,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Social Icons Grid */}
-                <div className="flex-1 overflow-y-auto px-4 py-4">
+                <div className="flex-1 overflow-y-auto px-4 py-4 bg-background dark:bg-black">
                   <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
                     {mergedSocialLinks.map(({ platform, linkData, source, entryId }) => {
                         const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
@@ -3580,7 +3580,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* NFTs Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40 bg-background dark:bg-black">
                   {nftCategory === 'main' ? (
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
@@ -4250,7 +4250,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Tokens Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40 bg-background dark:bg-black">
                   {portfolioLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -4334,7 +4334,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Activity Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40 bg-background dark:bg-black">
                   {transactionsLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -4392,7 +4392,7 @@ export const ProfileCard = ({
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto px-4 py-6">
+                <div className="flex-1 overflow-y-auto px-4 py-6 bg-background dark:bg-black">
                   <div className="max-w-md mx-auto space-y-3">
                     {linkedWalletOptions.map((option) => (
                       <button

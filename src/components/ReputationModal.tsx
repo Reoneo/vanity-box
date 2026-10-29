@@ -112,7 +112,7 @@ export const ReputationModal = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 py-3 pb-24 bg-background dark:bg-black">
         {category === "main" ? (
           <div className="space-y-2 max-w-lg mx-auto">
             {hasTalent && (
