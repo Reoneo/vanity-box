@@ -138,6 +138,55 @@ serve(async (req) => {
     const first = Math.max(1, Math.min(Number(firstRaw) || 100, 200));
     const skip = Math.max(0, Number(skipRaw) || 0);
 
+    // --- Batch lookup by names (one subgraph query for many visible domains) ---
+    if (Array.isArray(body?.domainNames)) {
+      const names = [...new Set((body.domainNames as unknown[])
+        .filter((n): n is string => typeof n === 'string' && n.length > 0 && n.length < 256)
+        .map((n) => n.toLowerCase().trim()))].slice(0, 100);
+      if (names.length === 0) {
+        return new Response(JSON.stringify({ domains: [] }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const batchQuery = {
+        query: `
+          query GetDomainsByNames($names: [String!]!) {
+            domains(first: 100, where: { name_in: $names }) {
+              id name labelName
+              owner { id } registrant { id } wrappedOwner { id } resolvedAddress { id }
+              resolver { address }
+              createdAt expiryDate
+              registration { registrationDate expiryDate registrant { id } }
+            }
+          }
+        `,
+        variables: { names },
+      };
+      try {
+        const r = await fetchWithRetry(ENS_SUBGRAPH_URLS, JSON.stringify(batchQuery));
+        const j = await r.json();
+        const domains = (j?.data?.domains || []).map((d: any) => ({
+          identifier: d.name,
+          name: d.name,
+          collection: 'ENS Domains',
+          image_url: `https://metadata.ens.domains/mainnet/avatar/${d.name}`,
+          display_image_url: `https://metadata.ens.domains/mainnet/avatar/${d.name}`,
+          type: d.wrappedOwner?.id ? 'wrapped' : 'owned',
+          expiryDate: d.registration?.expiryDate || d.expiryDate,
+          createdAt: d.registration?.registrationDate || d.createdAt,
+          owner: d.wrappedOwner?.id || d.owner?.id,
+          manager: d.owner?.id,
+          registrant: d.registration?.registrant?.id || d.registrant?.id,
+          resolvedAddress: d.resolvedAddress?.id,
+          resolver: d.resolver?.address,
+          chain: 'ethereum',
+          isEnsDomain: true,
+        }));
+        return new Response(JSON.stringify({ domains }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (e) {
+        console.error('Batch domain fetch failed:', e);
+        return new Response(JSON.stringify({ domains: [], error: String(e) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
     // --- Single domain lookup by name (used to surface a searched .eth name) ---
     if (domainName && typeof domainName === 'string') {
       const name = domainName.toLowerCase().trim();
