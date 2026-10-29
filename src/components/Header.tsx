@@ -146,7 +146,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
         <link rel="preload" as="image" href={vanityLogo} />
 
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 h-10 flex items-center justify-between">
+        <div className="relative z-10 container mx-auto px-4 h-[38px] flex items-center justify-between">
           {hasProfile ? (
             <div className="flex items-center gap-1">
               <button
@@ -158,7 +158,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                 <img
                   src={vanityLogo}
                   alt="Vanity.box Logo"
-                  className="h-9 w-9 object-cover rounded-lg"
+                  className="h-7 w-7 object-cover rounded-lg"
                   loading="eager"
                   fetchPriority="high"
                 />
@@ -170,9 +170,9 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   className="w-10 h-10 flex items-center justify-center bg-transparent"
                 >
                   <div className="relative w-5 h-5">
-                    <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                    <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                    <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-0 w-5 h-px bg-black" />
+                    <span className="absolute left-0 top-2 w-5 h-px bg-black" />
+                    <span className="absolute left-0 top-4 w-5 h-px bg-black" />
                   </div>
                 </button>
               </TriggerOrClose>
@@ -205,7 +205,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-9 w-9 object-cover rounded-lg"
+                    className="h-7 w-7 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -221,9 +221,9 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
                 >
                   <div className="relative w-5 h-5">
-                    <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                    <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                    <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-0 w-5 h-px bg-black" />
+                    <span className="absolute left-0 top-2 w-5 h-px bg-black" />
+                    <span className="absolute left-0 top-4 w-5 h-px bg-black" />
                   </div>
                 </button>
               </TriggerOrClose>
@@ -257,9 +257,9 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                     className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
                   >
                     <div className="relative w-5 h-5">
-                      <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                      <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                      <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                      <span className="absolute left-0 top-0 w-5 h-px bg-black" />
+                      <span className="absolute left-0 top-2 w-5 h-px bg-black" />
+                      <span className="absolute left-0 top-4 w-5 h-px bg-black" />
                     </div>
                   </button>
                 </TriggerOrClose>
@@ -294,7 +294,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                   <img
                     src={vanityLogo}
                     alt="Vanity.box Logo"
-                    className="h-9 w-9 object-cover rounded-lg"
+                    className="h-7 w-7 object-cover rounded-lg"
                     loading="eager"
                     fetchPriority="high"
                   />
@@ -313,9 +313,9 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
                 className="w-10 h-10 flex items-center justify-center bg-transparent transition-all duration-300"
               >
                 <div className="relative w-5 h-5">
-                  <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
-                  <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                  <span className="absolute left-0 top-0 w-5 h-px bg-black" />
+                  <span className="absolute left-0 top-2 w-5 h-px bg-black" />
+                  <span className="absolute left-0 top-4 w-5 h-px bg-black" />
                 </div>
               </button>
             </TriggerOrClose>
@@ -350,7 +350,7 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
               <img
                 src={vanityLogo}
                 alt="Vanity.box Logo"
-                className="h-9 w-9 object-cover rounded-lg"
+                className="h-7 w-7 object-cover rounded-lg"
                 loading="eager"
                 fetchPriority="high"
               />
