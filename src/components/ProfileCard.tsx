@@ -3431,7 +3431,7 @@ export const ProfileCard = ({
 
             {/* Flip Card for All Social Links */}
             {showAllSocials && isMobile && (
-              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 38px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
@@ -3502,7 +3502,7 @@ export const ProfileCard = ({
 
             {/* NFTs Overlay - Fits within gold borders */}
             {showNftsOverlay && (
-              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 38px)', bottom: 0 }}>
                 {/* Header — mirrors Activity overlay style */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
@@ -4247,7 +4247,7 @@ export const ProfileCard = ({
 
             {/* Tokens Overlay */}
             {showTokensOverlay && (
-              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 38px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
@@ -4331,7 +4331,7 @@ export const ProfileCard = ({
 
             {/* Activity Overlay */}
             {showActivityOverlay && (
-              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 38px)', bottom: 0 }}>
                 {/* Header */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
@@ -4391,7 +4391,7 @@ export const ProfileCard = ({
 
             {/* Wallets Overlay */}
             {showWalletsOverlay && (
-              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 38px)', bottom: 0 }}>
                 {/* Header */}
                 <div className="relative w-full h-10 flex-shrink-0 overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-between px-4">
