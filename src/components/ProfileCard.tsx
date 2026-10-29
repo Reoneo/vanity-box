@@ -1780,8 +1780,19 @@ export const ProfileCard = ({
     const groups: Record<string, any[]> = {};
 
     // Add regular NFTs (OpenSea only)
+    const ensSeen = new Set<string>();
     filteredNfts.forEach(nft => {
-      const enrichedNft = isEnsNftLike(nft) ? getEnsNftWithDomainData(nft) : nft;
+      const isEns = isEnsNftLike(nft);
+      const enrichedNft = isEns ? getEnsNftWithDomainData(nft) : nft;
+      if (isEns) {
+        // Merge every ENS variant (registrar, NameWrapper, etc.) into one collection
+        const name = getEnsNameFromItem(enrichedNft) || String(enrichedNft.identifier || enrichedNft.name || '').toLowerCase();
+        if (name && ensSeen.has(name)) return;
+        if (name) ensSeen.add(name);
+        if (!groups['ENS Domains']) groups['ENS Domains'] = [];
+        groups['ENS Domains'].push({ ...enrichedNft, collection: 'ENS Domains' });
+        return;
+      }
       const rawCollection = enrichedNft.collection || 'Unknown Collection';
       const lower = String(rawCollection).toLowerCase();
       const isUd = lower.includes('unstoppable') || lower.includes('ud.me');
@@ -1799,11 +1810,11 @@ export const ProfileCard = ({
     });
 
     ensDomains.forEach((domain: any) => {
-      const collection = 'ENS Domains';
-      if (!groups[collection]) groups[collection] = [];
       const name = getEnsNameFromItem(domain);
-      if (!name || groups[collection].some((item: any) => getEnsNameFromItem(item) === name)) return;
-      groups[collection].push(domain);
+      if (!name || ensSeen.has(name)) return;
+      ensSeen.add(name);
+      if (!groups['ENS Domains']) groups['ENS Domains'] = [];
+      groups['ENS Domains'].push(domain);
     });
 
     // Sort collections by NFT count
