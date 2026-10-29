@@ -1962,6 +1962,16 @@ export const ProfileCard = ({
     return formatCollectionName(name);
   };
 
+  // Professional plain-text label for section headers (no logo images)
+  const collectionHeaderText = (name: string): string => {
+    if (isEnsCollection(name)) return 'ENS Domains';
+    if (isPoapCollection(name)) return 'POAPs';
+    if (isBasenamesCollection(name)) return 'Basenames';
+    if (isUnstoppableCollection(name)) return 'Unstoppable Domains';
+    if (isDoodlesCertifiedViralCollection(name)) return 'Doodles Certified Viral';
+    return formatCollectionName(name);
+  };
+
   const getRarityLabel = (score: number) => {
     if (score >= 80) return { label: 'Legendary', color: 'text-purple-400' };
     if (score >= 60) return { label: 'Epic', color: 'text-blue-400' };
@@ -2577,11 +2587,11 @@ export const ProfileCard = ({
                           if (nftCategory === 'main') {
                             title = 'NFTs';
                           } else if (nftCategory === 'poaps') {
-                            title = renderCollectionLabel('POAPs', "h-6 w-auto inline-block align-middle");
+                            title = 'POAPs';
                             total = poapTotalCount || formattedPoaps.length;
                           } else if (nftCategory === 'opensea') {
                             if (expandedCollection) {
-                              title = renderCollectionLabel(expandedCollection);
+                              title = collectionHeaderText(expandedCollection);
                               total = openSeaGroupedNfts[expandedCollection]?.length || 0;
                             } else {
                               title = 'OpenSea';
@@ -2589,7 +2599,7 @@ export const ProfileCard = ({
                             }
                           } else if (nftCategory === 'magiceden') {
                             if (expandedCollection) {
-                              title = renderCollectionLabel(expandedCollection);
+                              title = collectionHeaderText(expandedCollection);
                               total = magicEdenGroupedNfts[expandedCollection]?.length || 0;
                             } else {
                               title = 'EVM';
@@ -2608,11 +2618,11 @@ export const ProfileCard = ({
                             total = basenames.length;
                           } else if (nftCategory.startsWith('iota:')) {
                             const col = nftCategory.replace('iota:', '');
-                            title = renderCollectionLabel(col);
+                            title = collectionHeaderText(col);
                             total = (iotaGroupedNfts[col] || []).length;
                           } else if (nftCategory.startsWith('ton:')) {
                             const col = nftCategory.replace('ton:', '');
-                            title = renderCollectionLabel(col);
+                            title = collectionHeaderText(col);
                             total = (tonCollections.find(c => c.collectionName === col)?.nfts || []).length;
                           }
                           return (
@@ -3516,9 +3526,9 @@ export const ProfileCard = ({
                         {nftCategory === 'main'
                           ? 'NFTs'
                           : expandedCollection
-                            ? renderCollectionLabel(expandedCollection, "h-6 w-auto inline-block align-middle")
+                            ? collectionHeaderText(expandedCollection)
                             : nftCategory === 'poaps'
-                              ? renderCollectionLabel('POAPs', "h-6 w-auto inline-block align-middle")
+                              ? 'POAPs'
                               : nftCategory === 'magiceden'
                                 ? 'Magic Eden'
                                 : nftCategory === 'hyperliquid'
@@ -3530,9 +3540,9 @@ export const ProfileCard = ({
                                       : nftCategory === 'basenames'
                                         ? 'Basenames'
                                         : nftCategory.startsWith('iota:')
-                                          ? renderCollectionLabel(nftCategory.slice(5))
+                                          ? collectionHeaderText(nftCategory.slice(5))
                                           : nftCategory.startsWith('ton:')
-                                            ? renderCollectionLabel(nftCategory.slice(4))
+                                            ? collectionHeaderText(nftCategory.slice(4))
                                             : 'NFTs'}
                       </h3>
                     </div>
