@@ -147,6 +147,45 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 h-20 flex items-center justify-between">
+          {hasProfile ? (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleLogoSync}
+                aria-label="Vanity.box"
+                className="relative flex items-center justify-center h-20 -ml-2 bg-transparent"
+              >
+                <img
+                  src={vanityLogo}
+                  alt="Vanity.box Logo"
+                  className="h-[4.5rem] w-[4.5rem] object-cover rounded-lg"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </button>
+              <TriggerOrClose asChild>
+                <button
+                  type="button"
+                  aria-label="Toggle menu"
+                  className="w-10 h-10 flex items-center justify-center bg-transparent"
+                >
+                  <div className="relative w-5 h-5">
+                    <span className="absolute left-0 top-0 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-2 w-5 h-0.5 bg-black" />
+                    <span className="absolute left-0 top-4 w-5 h-0.5 bg-black" />
+                  </div>
+                </button>
+              </TriggerOrClose>
+              <button
+                type="button"
+                aria-label="Search"
+                onClick={toggleSearchBar}
+                className="w-10 h-10 flex items-center justify-center bg-transparent hover:bg-black/10 rounded-md"
+              >
+                <Search className="w-5 h-5 text-black" />
+              </button>
+            </div>
+          ) : (<>
           {/* Mobile: Show left-aligned controls when wallet is connected */}
           {isWalletConnected && (
             <div className="flex items-center gap-1 md:hidden">
@@ -319,8 +358,10 @@ export const Header: React.FC<{ accentColor?: string }> = ({ accentColor = "#D4A
           </div>
 
 
-          {/* Wallet Connection - Right Side */}
-          <div className="flex items-center">
+          </>)}
+
+          {/* Wallet Connection - Right Side (hidden on profiles, kept mounted for wallet state) */}
+          <div className={cn("flex items-center", hasProfile && "hidden")}>
             <WalletConnection />
           </div>
         </div>
