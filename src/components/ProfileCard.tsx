@@ -2765,7 +2765,7 @@ export const ProfileCard = ({
                             {/* Chain filter icons */}
                             <div className="flex items-center justify-center gap-3 pb-2">
                               {([
-                                { key: 'evm', icon: ethLogoBlue, alt: 'Ethereum / EVM', ring: 'ring-[#D4AF37]', has: (nfts.length + poaps.length + magicEdenNfts.length + worldchainNftCount + hlNfts.length + ensDomains.length + basenames.length) > 0 },
+                                { key: 'evm', icon: ETH_TOKEN_ICON_URL, alt: 'Ethereum / EVM', ring: 'ring-[#D4AF37]', has: (nfts.length + poaps.length + magicEdenNfts.length + worldchainNftCount + hlNfts.length + ensDomains.length + basenames.length) > 0 },
                                 { key: 'iota', icon: iotaLogoBlue, alt: 'IOTA', ring: 'ring-[#00BFA5]', has: iotaNfts.length > 0 },
                                 { key: 'ton', icon: tonIconBlue, alt: 'TON', ring: 'ring-[#0098EA]', has: tonNftCount > 0 },
                                 { key: 'sui', icon: suiLogoBlue, alt: 'Sui', ring: 'ring-[#4DA2FF]', has: suinsCount > 0 },
