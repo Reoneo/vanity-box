@@ -15,13 +15,15 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   avatar,
   banner,
 }) => {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://vanity.box";
+  const origin = "https://vanity.box";
   const supabaseUrl = "https://gdjjboorqviobvvygpca.supabase.co";
 
-  const title = username ? `${displayName || username} - Vanity.box` : "Vanity.box - Premium Web3 Identity";
+  const title = username ? `${displayName || username} — Vanity ID | Web3 Profile` : "Vanity.box — Blockchain Wallet & Decentralised Web3 ID";
 
-  const desc = description || `View ${displayName || username}'s Web3 identity on Vanity.box`;
-  const currentUrl = username ? `${origin}/${username}` : origin;
+  const desc = description || (username
+    ? `Explore ${displayName || username}'s Vanity ID: linked blockchain wallets, social links, NFTs and Web3 activity on Vanity.box.`
+    : "Vanity connects blockchain wallets, readable names and digital ID profiles. Explore decentralised Web3 identity, tokens, NFTs and wallet activity.");
+  const currentUrl = `${origin}${typeof window !== "undefined" ? window.location.pathname : "/"}`;
 
   // Use edge function to generate dynamic OG image
   // og-image resolves avatar server-side from the username, so social-preview
@@ -36,7 +38,7 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
       <meta name="description" content={desc} />
 
       {/* Open Graph */}
-      <meta property="og:type" content="profile" />
+      <meta property="og:type" content={username ? "profile" : "website"} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={desc} />
       <meta property="og:url" content={currentUrl} />
@@ -50,8 +52,6 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
       <meta name="twitter:description" content={desc} />
       <meta name="twitter:image" content={ogImageUrl} />
 
-      {/* Canonical URL */}
-      <link rel="canonical" href={currentUrl} />
     </Helmet>
   );
 };

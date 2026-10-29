@@ -25,7 +25,7 @@ const SUPABASE_BLUESKY_GET = `https://${SUPABASE_PROJECT}.supabase.co/functions/
 const CRAWLER_REGEX = /(twitterbot|facebookexternalhit|facebot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|pinterest|redditbot|applebot|vkshare|w3c_validator|bingpreview|yandexbot|googlebot|google-inspectiontool|baiduspider|duckduckbot|mj12bot|embedly|nuzzel|outbrain|quora link preview|showyoubot|tumblr|bitlybot|flipboard|qwantify|chatgpt-user|gptbot|perplexitybot|claudebot|imessagebot|signal)/i;
 
 const RESERVED_PATHS = new Set([
-  '', 'messages', 'privacy', 'terms', 'profile', 'settings',
+  '', 'messages', 'privacy', 'terms', 'privacy-policy', 'terms-of-use', 'ud', 'profile', 'settings',
   'identity', 'subdomain', 'ud-redirect', 'redirect', 'about',
 ]);
 
@@ -53,6 +53,12 @@ function titleCase(name) {
     .join('.');
 }
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character]);
+}
+
 function parseSubdomain(host) {
   const h = (host || "").toLowerCase();
   if (APEX_HOSTS.has(h)) return null;
@@ -77,10 +83,12 @@ async function fetchSubdomainDid(sub) {
 
 async function rewriteCrawler(originResponse, requestUrl, username) {
   const display = titleCase(username);
-  const canonical = `https://vanity.box/${username}`;
+  const canonical = APEX_HOSTS.has(requestUrl.hostname)
+    ? `https://vanity.box${requestUrl.pathname}`
+    : `${requestUrl.origin}${requestUrl.pathname}`;
   const ogImage = `${SUPABASE_OG_BASE}?username=${encodeURIComponent(username)}&displayName=${encodeURIComponent(display)}`;
-  const title = `${display} - Vanity.box`;
-  const desc = `View ${display}'s Web3 identity on Vanity.box`;
+  const title = `${display} — Vanity ID | Web3 Profile`;
+  const desc = `Explore ${display}'s Vanity ID: linked blockchain wallets, social links, NFTs and Web3 activity on Vanity.box.`;
 
   const rewriter = new HTMLRewriter()
     .on('title', { element(el) { el.setInnerContent(title); } })
@@ -92,17 +100,17 @@ async function rewriteCrawler(originResponse, requestUrl, username) {
       element(el) {
         const tags = [
           `<meta property="og:type" content="profile" />`,
-          `<meta property="og:title" content="${title}" />`,
-          `<meta property="og:description" content="${desc}" />`,
-          `<meta property="og:url" content="${canonical}" />`,
-          `<meta property="og:image" content="${ogImage}" />`,
+          `<meta property="og:title" content="${escapeHtml(title)}" />`,
+          `<meta property="og:description" content="${escapeHtml(desc)}" />`,
+          `<meta property="og:url" content="${escapeHtml(canonical)}" />`,
+          `<meta property="og:image" content="${escapeHtml(ogImage)}" />`,
           `<meta property="og:image:width" content="1200" />`,
           `<meta property="og:image:height" content="630" />`,
           `<meta name="twitter:card" content="summary_large_image" />`,
-          `<meta name="twitter:title" content="${title}" />`,
-          `<meta name="twitter:description" content="${desc}" />`,
-          `<meta name="twitter:image" content="${ogImage}" />`,
-          `<link rel="canonical" href="${canonical}" />`,
+          `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
+          `<meta name="twitter:description" content="${escapeHtml(desc)}" />`,
+          `<meta name="twitter:image" content="${escapeHtml(ogImage)}" />`,
+          `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
         ].join('');
         el.append(tags, { html: true });
       },
