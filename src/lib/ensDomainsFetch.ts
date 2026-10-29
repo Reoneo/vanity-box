@@ -1,18 +1,27 @@
 // Shared fetch for the get-ens-domains edge function.
-// Dedupes identical in-flight requests, briefly caches results, and retries 429s
-// so bursts of profile/modal loads don't trip the edge function rate limit.
+// Dedupes identical in-flight requests, briefly caches results, throttles the
+// request rate, and retries 429s so bursts of profile/modal loads never trip
+// the edge function gateway rate limit (which the preview surfaces as a
+// screen-blanking runtime error).
 const inflight = new Map<string, Promise<Response>>();
 const cache = new Map<string, { at: number; res: Response }>();
 const TTL_MS = 60_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const MAX_CONCURRENT = 3;
+const MAX_CONCURRENT = 2;
+// Minimum gap between real network requests so we never burst the gateway.
+const MIN_INTERVAL_MS = 500;
 let active = 0;
+let lastSentAt = 0;
 const queue: Array<() => void> = [];
+
 async function limitedFetch(url: string, init?: RequestInit): Promise<Response> {
   if (active >= MAX_CONCURRENT) await new Promise<void>((r) => queue.push(r));
   active++;
   try {
+    const wait = lastSentAt + MIN_INTERVAL_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastSentAt = Date.now();
     return await fetch(url, init);
   } catch {
     // Network failures resolve to a 503 so callers never get an unhandled rejection
@@ -25,8 +34,9 @@ async function limitedFetch(url: string, init?: RequestInit): Promise<Response> 
 
 async function fetchWithRetry(url: string, init?: RequestInit): Promise<Response> {
   let res = await limitedFetch(url, init);
-  for (let attempt = 0; res.status === 429 && attempt < 4; attempt++) {
-    await sleep(1000 * 2 ** attempt + Math.random() * 300);
+  // The gateway asks us to "re-try in 1 second" — always wait at least that long.
+  for (let attempt = 0; res.status === 429 && attempt < 6; attempt++) {
+    await sleep(Math.max(1000, 1000 * 2 ** attempt) + Math.random() * 300);
     res = await limitedFetch(url, init);
   }
   return res;
