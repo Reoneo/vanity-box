@@ -86,26 +86,26 @@ export const ReputationModal = ({
           {category !== "main" ? (
             <button
               onClick={() => setCategory("main")}
-              className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
               aria-label="Back to reputation"
             >
-              <ChevronDown className="w-3.5 h-3.5 text-black rotate-90" />
+              <ChevronDown className="w-[18px] h-[18px] text-black rotate-90" />
             </button>
           ) : (
-            <div className="w-7" />
+            <div className="w-9" />
           )}
-          <div className="px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
-            <h3 className="text-sm font-bold text-black dark:text-white truncate">{headerTitle}</h3>
+          <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm max-w-[60%]">
+            <h3 className="text-base font-bold text-black dark:text-white truncate">{headerTitle}</h3>
           </div>
           <button
             onClick={() => {
               setCategory("main");
               onClose();
             }}
-            className="w-7 h-7 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-background/80 hover:bg-background dark:bg-[#D4AF37] dark:hover:bg-[#B8860B] transition-all backdrop-blur-sm"
             aria-label="Close Reputation"
           >
-            <X className="w-3.5 h-3.5 text-black" />
+            <X className="w-[18px] h-[18px] text-black" />
           </button>
         </div>
       </div>
