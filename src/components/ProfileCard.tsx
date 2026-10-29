@@ -124,6 +124,9 @@ interface ProfileCardProps {
 // Official IOTA icon URL
 const IOTA_ICON_URL = iotaLogoBlue;
 
+// Same Ethereum icon used by the Tokens list (Zerion CDN)
+const ETH_TOKEN_ICON_URL = 'https://cdn.zerion.io/eth.png';
+
 const CHAIN_MEDIA = {
   ethereum: { icon: ethLogoBlue, label: 'Ethereum', alt: 'Ethereum' },
   iota: { icon: iotaLogoBlue, label: 'IOTA', alt: 'IOTA' },
@@ -184,7 +187,7 @@ const getChainIcon = (chain: string, size: number = 18) => {
       return <img src={IOTA_ICON_URL} alt="IOTA" width={size} height={size} className={iconClass} />;
     case 'ethereum':
     case 'eth':
-      return <img src={ethLogoBlue} alt="Ethereum" width={size} height={size} className={iconClass} />;
+      return <img src={ETH_TOKEN_ICON_URL} alt="Ethereum" width={size} height={size} className={iconClass} />;
     case 'worldchain':
     case 'world':
       return <img src={wldLogo} alt="World Chain" width={size} height={size} className={iconClass} />;
@@ -3602,7 +3605,7 @@ export const ProfileCard = ({
                       {/* Chain filter icons */}
                       <div className="flex items-center justify-center gap-3 pb-2">
                         {([
-                          { key: 'evm', icon: ethLogoBlue, alt: 'Ethereum / EVM', ring: 'ring-[#D4AF37]', has: (nfts.length + poaps.length + magicEdenNfts.length + worldchainNftCount + hlNfts.length + ensDomains.length + basenames.length) > 0 },
+                          { key: 'evm', icon: ETH_TOKEN_ICON_URL, alt: 'Ethereum / EVM', ring: 'ring-[#D4AF37]', has: (nfts.length + poaps.length + magicEdenNfts.length + worldchainNftCount + hlNfts.length + ensDomains.length + basenames.length) > 0 },
                           { key: 'iota', icon: iotaLogoBlue, alt: 'IOTA', ring: 'ring-[#00BFA5]', has: iotaNfts.length > 0 },
                           { key: 'ton', icon: tonIconBlue, alt: 'TON', ring: 'ring-[#0098EA]', has: tonNftCount > 0 },
                           { key: 'sui', icon: suiLogoBlue, alt: 'Sui', ring: 'ring-[#4DA2FF]', has: suinsCount > 0 },
@@ -4378,7 +4381,12 @@ export const ProfileCard = ({
                             </div>
                             <div className="flex items-center justify-between text-sm text-muted-foreground">
                               <span className="truncate">{tx.hash?.slice(0, 10)}...</span>
-                              <span className="text-xs uppercase">{tx.chain}</span>
+                              <span className="flex items-center gap-1 text-xs uppercase">
+                                {(tx.chain === 'ethereum' || tx.chain === 'eth') && (
+                                  <img src={ETH_TOKEN_ICON_URL} alt="Ethereum" className="w-3.5 h-3.5 rounded-full" />
+                                )}
+                                {tx.chain}
+                              </span>
                             </div>
                           </div>
                         </div>
