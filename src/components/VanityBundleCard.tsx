@@ -7,7 +7,6 @@ import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
 import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
 import vanityIotaAvatar from "@/assets/vanity-iota-avatar.png";
-import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 import vanityVetAvatar from "@/assets/vanity-vet-avatar.png";
 import suiLogo from "@/assets/sui-logo.png";
 
@@ -25,7 +24,6 @@ type BundleItem = {
 const bundleItems: BundleItem[] = [
   { id: "iota", avatar: vanityIotaAvatar, base: "Vanity.iota" },
   { id: "box", avatar: vanityBoxAvatar, base: "Vanity.box" },
-  { id: "ton", avatar: vanityTonAvatar, base: "Vanity.ton" },
   { id: "vet", avatar: vanityVetAvatar, base: "Vanity.vet" },
   { id: "sui", avatar: suiLogo, base: "Vanity.sui" },
   { id: "apt", avatar: vanityAptAvatar, base: "Vanity.apt" },

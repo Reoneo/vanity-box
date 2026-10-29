@@ -1,12 +1,17 @@
 # Vanity.box
 
-> Vanity.box (also known as Vanity, Vanity Wallet, Vanity ID, Vanity Web3) turns long crypto wallet addresses into one readable vanity name and a unified cross-chain Web3 profile.
+> Vanity.box (Vanity) connects blockchain wallet addresses, readable names and digital ID profiles for a unified Web3 identity.
+
+## About Vanity
+Vanity Wallet and Vanity ID describe Vanity's wallet and digital identity experience. Users can link wallets and view decentralised identity profiles with social links, tokens, NFTs and blockchain activity. ENS names, including .eth and .box, resolve to Web3 profiles.
 
 ## Key pages
-- [Home](https://vanity.box/): search any name and view Web3 profiles
+- [Home](https://vanity.box/): Vanity's blockchain wallet and Web3 digital ID application
 - [Vanity.box profile](https://vanity.box/vanity.box)
 - [Privacy Policy](https://vanity.box/privacy-policy)
 - [Terms of Use](https://vanity.box/terms-of-use)
 
 ## Supported
 ENS (.eth, .box), Basenames, IOTA names, Unstoppable Domains (.vanity, .x), TON, Sui, Aptos, World Chain.
+
+Support for TON wallets and existing TON profiles does not mean Vanity.ton names are available to claim.

@@ -103,7 +103,6 @@ import sanAndreasAvatar from "@/assets/sanandreas-avatar.png";
 import guavapayAvatar from "@/assets/guavapay-avatar.png";
 import mexipayAvatar from "@/assets/mexipay-avatar.png";
 import tonLogo from "@/assets/ton-logo.png";
-import vanityTonAvatar from "@/assets/vanity-ton-avatar.png";
 import vanityBoxAvatar from "@/assets/vanity-box-avatar.png";
 import vanityAptAvatar from "@/assets/vanity-apt-avatar.jpeg";
 import vanityHlAvatar from "@/assets/vanity-hl-avatar.png";
@@ -1225,16 +1224,6 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         price: 5,
         category: ["ENS", "DNS"],
         club: ["Crypto", "DeFi"],
-        enabled: false,
-      },
-      {
-        name: "Vanity.ton",
-        description: "Telegram-native Web3 identity on TON blockchain",
-        imageUrl: vanityTonAvatar,
-        price: 5,
-        category: ["TON"],
-        club: ["Personal"],
-        selectable: true,
         enabled: false,
       },
       {
