@@ -2352,6 +2352,7 @@ export const ProfileCard = ({
                     />
                   </div>
                   {/* Share button - clears gold side border on desktop */}
+                  {!anySectionOpen && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
@@ -2360,6 +2361,7 @@ export const ProfileCard = ({
                   >
                     <Share2 className="w-5 h-5 text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
+                  )}
                   {/* Avatar positioned absolutely to overlay header - centered on left half */}
                   <div 
                     className="absolute -bottom-20 left-[25%] transform -translate-x-1/2 z-30 cursor-pointer"
@@ -3221,6 +3223,7 @@ export const ProfileCard = ({
                     />
                   </div>
                   {/* Share button - top-left of header image, same as desktop */}
+                  {!anySectionOpen && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleShareProfile(); }}
@@ -3229,6 +3232,7 @@ export const ProfileCard = ({
                   >
                     <Share2 className="w-[18px] h-[18px] text-black dark:text-[#D4AF37]" strokeWidth={2} />
                   </button>
+                  )}
                 </div>
 
 
