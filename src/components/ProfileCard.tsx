@@ -3416,9 +3416,9 @@ export const ProfileCard = ({
 
             {/* Flip Card for All Social Links */}
             {showAllSocials && isMobile && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -3434,7 +3434,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Social Icons Grid */}
-                <div className="flex-1 overflow-y-auto px-4 py-4">
+                <div className="flex-1 overflow-y-auto px-4 py-4 bg-background dark:bg-black">
                   <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
                     {mergedSocialLinks.map(({ platform, linkData, source, entryId }) => {
                         const rawUrl = typeof linkData === 'string' ? linkData : linkData?.link;
@@ -3487,9 +3487,9 @@ export const ProfileCard = ({
 
             {/* NFTs Overlay - Fits within gold borders */}
             {showNftsOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header — mirrors Activity overlay style */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     {/* Back button when inside a sub-view, otherwise spacer */}
                     {nftCategory !== 'main' ? (
@@ -3580,7 +3580,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* NFTs Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40 bg-background dark:bg-black">
                   {nftCategory === 'main' ? (
                     // Main category selection
                     <div className="space-y-2 max-w-lg mx-auto">
@@ -4232,9 +4232,9 @@ export const ProfileCard = ({
 
             {/* Tokens Overlay */}
             {showTokensOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -4250,7 +4250,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Tokens Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40 bg-background dark:bg-black">
                   {portfolioLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -4316,9 +4316,9 @@ export const ProfileCard = ({
 
             {/* Activity Overlay */}
             {showActivityOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -4334,7 +4334,7 @@ export const ProfileCard = ({
                 </div>
 
                 {/* Activity Content */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40">
+                <div className="flex-1 overflow-y-auto px-4 py-3 pb-40 bg-background dark:bg-black">
                   {transactionsLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
@@ -4376,9 +4376,9 @@ export const ProfileCard = ({
 
             {/* Wallets Overlay */}
             {showWalletsOverlay && (
-              <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
+              <div className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
-                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -4392,7 +4392,7 @@ export const ProfileCard = ({
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto px-4 py-6">
+                <div className="flex-1 overflow-y-auto px-4 py-6 bg-background dark:bg-black">
                   <div className="max-w-md mx-auto space-y-3">
                     {linkedWalletOptions.map((option) => (
                       <button

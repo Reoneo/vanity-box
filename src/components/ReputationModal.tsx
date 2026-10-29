@@ -71,7 +71,7 @@ export const ReputationModal = ({
 
   return (
     <div
-      className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col"
+      className="fixed left-0 right-0 z-[9998] animate-fade-in flex flex-col"
       style={{ backfaceVisibility: "hidden", top: "calc(env(safe-area-inset-top, 0px) + 64px)", bottom: 0 }}
       role="dialog"
       aria-modal="true"
@@ -82,7 +82,6 @@ export const ReputationModal = ({
         className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
         style={headerImageUrl ? { backgroundImage: `url(${headerImageUrl})` } : undefined}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
           {category !== "main" ? (
             <button
@@ -112,7 +111,7 @@ export const ReputationModal = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 py-3 pb-24 bg-background dark:bg-black">
         {category === "main" ? (
           <div className="space-y-2 max-w-lg mx-auto">
             {hasTalent && (
