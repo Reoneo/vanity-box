@@ -3418,13 +3418,7 @@ export const ProfileCard = ({
             {showAllSocials && isMobile && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
-                <div 
-                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ 
-                    backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})`
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -3495,11 +3489,7 @@ export const ProfileCard = ({
             {showNftsOverlay && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header — mirrors Activity overlay style */}
-                <div
-                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     {/* Back button when inside a sub-view, otherwise spacer */}
                     {nftCategory !== 'main' ? (
@@ -4244,13 +4234,7 @@ export const ProfileCard = ({
             {showTokensOverlay && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header with ENS image banner */}
-                <div 
-                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ 
-                    backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})`
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -4334,11 +4318,7 @@ export const ProfileCard = ({
             {showActivityOverlay && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
-                <div 
-                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -4398,11 +4378,7 @@ export const ProfileCard = ({
             {showWalletsOverlay && (
               <div className="fixed left-0 right-0 bg-background dark:bg-black z-[9998] animate-fade-in flex flex-col" style={{ backfaceVisibility: 'hidden', top: 'calc(env(safe-area-inset-top, 0px) + 64px)', bottom: 0 }}>
                 {/* Header */}
-                <div 
-                  className="relative w-full h-20 bg-cover bg-center flex-shrink-0 overflow-hidden"
-                  style={{ backgroundImage: `url(${web3BioProfile?.header || iotaHeaderPattern})` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80 dark:to-background/90" />
+                <div className="relative w-full h-20 flex-shrink-0 overflow-hidden bg-background dark:bg-black">
                   <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2">
                     <div className="w-10" />
                     <div className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
@@ -4852,7 +4828,7 @@ export const ProfileCard = ({
           nft={selectedNft}
           isOpen={!!selectedNft}
           onClose={() => setSelectedNft(null)}
-          headerImage={web3BioProfile?.header || iotaHeaderPattern}
+          headerImage={null}
         />
       )}
 
@@ -4880,7 +4856,7 @@ export const ProfileCard = ({
         onClose={() => setShowReputationModal(false)}
         identity={searchedIdentity || web3BioProfile?.identity || web3BioProfile?.displayName}
         avatarUrl={web3BioProfile?.avatar || null}
-        headerImageUrl={web3BioProfile?.header || iotaHeaderPattern}
+        headerImageUrl={null}
         hasTalent={hasTalentData}
         talentScore={talentScore}
         talentCreatorScore={talentCreatorScore}
