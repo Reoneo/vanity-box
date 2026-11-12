@@ -1,123 +1,94 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
-
+// Wallet activity across Ethereum L1 + L2s via Etherscan V2 multichain API.
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+const CHAINS: { id: number; name: string; symbol: string }[] = [
+  { id: 1, name: 'ethereum', symbol: 'ETH' },
+  { id: 8453, name: 'base', symbol: 'ETH' },
+  { id: 10, name: 'optimism', symbol: 'ETH' },
+  { id: 42161, name: 'arbitrum', symbol: 'ETH' },
+  { id: 137, name: 'polygon', symbol: 'POL' },
+  { id: 59144, name: 'linea', symbol: 'ETH' },
+  { id: 534352, name: 'scroll', symbol: 'ETH' },
+  { id: 480, name: 'world', symbol: 'ETH' },
+];
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const json = (b: unknown, status = 200) =>
+  new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+async function call(key: string, chainid: number, action: string, address: string, n: number) {
+  const url = `https://api.etherscan.io/v2/api?chainid=${chainid}&module=account&action=${action}&address=${address}&page=1&offset=${n}&sort=desc&apikey=${key}`;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(url);
+      const d = await r.json();
+      if (Array.isArray(d.result)) return d.result;
+      if (typeof d.result === 'string' && /rate limit/i.test(d.result)) { await sleep(600 * (i + 1)); continue; }
+      return [];
+    } catch { await sleep(400); }
+  }
+  return [];
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
     const { walletAddress, limit = 50 } = await req.json();
+    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) return json({ error: 'Invalid EVM address', transactions: [] }, 400);
+    const key = (Deno.env.get('ETHERSCAN_API_KEY') || '').trim();
+    if (!key) return json({ error: 'ETHERSCAN_API_KEY not configured', transactions: [] }, 500);
+    const addr = walletAddress.toLowerCase();
+    const per = 25;
+    const all: any[] = [];
 
-    if (!walletAddress) {
-      return new Response(
-        JSON.stringify({ error: 'walletAddress is required', transactions: [] }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Free tier: 3 req/sec — process chains sequentially, two calls per chain.
+    for (const c of CHAINS) {
+      const [normal, tokens] = await Promise.all([
+        call(key, c.id, 'txlist', addr, per),
+        call(key, c.id, 'tokentx', addr, per),
+      ]);
+      const byHash = new Map<string, any>();
+      for (const t of normal) {
+        const v = Number(t.value) / 1e18;
+        const out = t.from?.toLowerCase() === addr;
+        const fee = (Number(t.gasUsed) * Number(t.gasPrice)) / 1e18;
+        byHash.set(t.hash, {
+          id: `${c.name}-${t.hash}`,
+          hash: t.hash,
+          status: t.isError === '1' ? 'failed' : 'confirmed',
+          type: t.functionName ? (t.functionName.split('(')[0] || (out ? 'send' : 'receive')) : (out ? 'send' : 'receive'),
+          minedAt: new Date(Number(t.timeStamp) * 1000).toISOString(),
+          sentFrom: t.from, sentTo: t.to,
+          fee: { value: out ? fee : 0, symbol: c.symbol },
+          transfers: v > 0 ? [{ type: out ? 'out' : 'in', quantity: v, symbol: c.symbol, name: c.symbol === 'ETH' ? 'Ethereum' : c.symbol }] : [],
+          chain: c.name,
+        });
+      }
+      for (const t of tokens) {
+        const out = t.from?.toLowerCase() === addr;
+        const q = Number(t.value) / Math.pow(10, Number(t.tokenDecimal || 18));
+        const tr = { type: out ? 'out' : 'in', quantity: q, symbol: t.tokenSymbol, name: t.tokenName };
+        const ex = byHash.get(t.hash);
+        if (ex) { ex.transfers.push(tr); if (/^(transfer|send|receive)$/i.test(ex.type)) ex.type = out ? 'send' : 'receive'; continue; }
+        byHash.set(t.hash, {
+          id: `${c.name}-${t.hash}`, hash: t.hash, status: 'confirmed',
+          type: out ? 'send' : 'receive',
+          minedAt: new Date(Number(t.timeStamp) * 1000).toISOString(),
+          sentFrom: t.from, sentTo: t.to, fee: { value: 0, symbol: c.symbol },
+          transfers: [tr], chain: c.name,
+        });
+      }
+      all.push(...byHash.values());
+      await sleep(350);
     }
 
-    // Validate EVM address format
-    if (!/^0x[a-fA-F0-9]{40}$/i.test(walletAddress)) {
-      console.log(`Invalid EVM address format: ${walletAddress}`);
-      return new Response(
-        JSON.stringify({ error: 'Invalid EVM address format', transactions: [] }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get and clean the API key
-    const rawKey = Deno.env.get('ZERION_API_KEY') || '';
-    const ZERION_API_KEY = rawKey.trim().replace(/[\r\n\t]/g, '');
-    
-    if (!ZERION_API_KEY) {
-      console.error('ZERION_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'Zerion API key not configured', transactions: [] }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`Fetching transactions for wallet: ${walletAddress}`);
-
-    // Use Deno's base64 encoder for reliability
-    const credentials = `${ZERION_API_KEY}:`;
-    const encoder = new TextEncoder();
-    const credentialsBytes = encoder.encode(credentials);
-    const base64Credentials = base64Encode(credentialsBytes);
-    const authHeader = `Basic ${base64Credentials}`;
-
-    // Fetch transactions from Zerion
-    const transactionsUrl = `https://api.zerion.io/v1/wallets/${walletAddress}/transactions/?currency=usd&page[size]=${limit}&filter[trash]=only_non_trash`;
-    
-    const response = await fetch(transactionsUrl, {
-      headers: {
-        'Authorization': authHeader,
-        'Accept': 'application/json',
-      },
-    });
-
-    console.log(`Zerion API response status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Zerion transactions error: ${response.status} - ${errorText}`);
-      
-      return new Response(
-        JSON.stringify({ 
-          transactions: [], 
-          error: `Zerion API error: ${response.status}`,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    console.log(`Found ${data.data?.length || 0} transactions`);
-
-    const transactions = (data.data || []).map((tx: any) => {
-      const attributes = tx.attributes;
-      const transfers = attributes?.transfers || [];
-      
-      return {
-        id: tx.id,
-        hash: attributes?.hash,
-        status: attributes?.status,
-        type: attributes?.operation_type,
-        minedAt: attributes?.mined_at,
-        sentFrom: attributes?.sent_from,
-        sentTo: attributes?.sent_to,
-        fee: {
-          value: attributes?.fee?.value,
-          symbol: attributes?.fee?.fungible_info?.symbol,
-        },
-        transfers: transfers.map((transfer: any) => ({
-          type: transfer.direction,
-          value: transfer.value,
-          quantity: transfer.quantity?.float,
-          symbol: transfer.fungible_info?.symbol,
-          name: transfer.fungible_info?.name,
-          icon: transfer.fungible_info?.icon?.url,
-        })),
-        chain: tx.relationships?.chain?.data?.id,
-      };
-    });
-
-    console.log(`Returning ${transactions.length} transactions`);
-
-    return new Response(
-      JSON.stringify({ transactions, total: transactions.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error in get-wallet-transactions:', error);
-    return new Response(
-      JSON.stringify({ error: error.message, transactions: [] }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    all.sort((a, b) => (a.minedAt < b.minedAt ? 1 : -1));
+    const transactions = all.slice(0, Math.min(Number(limit) || 50, 200));
+    return json({ transactions, total: transactions.length });
+  } catch (e) {
+    return json({ error: (e as Error).message, transactions: [] }, 500);
   }
 });
