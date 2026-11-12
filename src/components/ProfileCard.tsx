@@ -581,37 +581,36 @@ export const ProfileCard = ({
     }
   }, [iotaTokens, evmTokensForIota, evmTotalForIota, tonTokens, tonTotalValue, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
 
-  // Fetch EVM transactions when linkedEvmAddress becomes available for .iota profiles
+  // Activity starts independently of portfolio/NFT lookups and reveals each chain batch.
   useEffect(() => {
-    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
-                   web3BioProfile?.platform === 'iota';
-    if (!isIota || !linkedEvmAddress || evmTxFetchedForIota) return;
-    if (!/^0x[a-fA-F0-9]{40}$/i.test(linkedEvmAddress)) return;
-
-    const fetchEvmTxForIota = async () => {
+    let cancelled = false;
+    setEvmTxForIota([]);
+    setTransactions([]);
+    if (!effectiveEvmWallet) { setTransactionsFetched(true); return; }
+    setTransactionsLoading(true);
+    setTransactionsFetched(false);
+    (async () => {
+      const merged = new Map<string, any>();
       try {
-        console.log('[ProfileCard] Fetching Zerion EVM transactions for linked wallet:', linkedEvmAddress);
-        const txRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-          },
-          body: JSON.stringify({ walletAddress: linkedEvmAddress }),
-        });
-        const txData = await txRes.json();
-        console.log('[ProfileCard] Zerion EVM transactions for IOTA profile:', txData);
-        if (txData.transactions && txData.transactions.length > 0) {
-          setEvmTxForIota(txData.transactions);
+        let chainOffset: number | null = 0;
+        while (chainOffset !== null && !cancelled) {
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-wallet-transactions`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+            body: JSON.stringify({ walletAddress: effectiveEvmWallet, chainOffset, limit: 50 }),
+          });
+          const data = await response.json();
+          if (!response.ok || data.error) throw new Error(data.error || 'Activity unavailable');
+          if (cancelled) return;
+          for (const tx of data.transactions || []) merged.set(`${tx.chain}:${tx.hash}`, tx);
+          setEvmTxForIota([...merged.values()]);
+          if (merged.size) setTransactionsLoading(false);
+          chainOffset = typeof data.nextChainOffset === 'number' ? data.nextChainOffset : null;
         }
-      } catch (e) {
-        console.error('[ProfileCard] Zerion EVM tx fetch for IOTA profile error:', e);
-      } finally {
-        setEvmTxFetchedForIota(true);
-      }
-    };
-    fetchEvmTxForIota();
-  }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform, evmTxFetchedForIota]);
+      } catch (error) { if (!cancelled) console.warn('Activity lookup failed', error); }
+      finally { if (!cancelled) { setTransactionsLoading(false); setTransactionsFetched(true); } }
+    })();
+    return () => { cancelled = true; };
+  }, [effectiveEvmWallet, searchedIdentity]);
 
   // Fetch Hyperliquid NFTs/tokens for the LINKED EVM wallet on .iota profiles
   useEffect(() => {
@@ -648,25 +647,11 @@ export const ProfileCard = ({
     return () => { cancelled = true; };
   }, [linkedEvmAddress, searchedIdentity, web3BioProfile?.platform]);
 
-  // Merge IOTA + EVM transactions once both are available (mirrors token merge pattern)
   useEffect(() => {
-    const isIota = searchedIdentity?.toLowerCase().endsWith('.iota') || 
-                   web3BioProfile?.platform === 'iota';
-    if (!isIota) return;
-    if (!iotaFetched) return;
-    
-    // Merge: always start with IOTA transactions, then add EVM if available
-    const merged = [...iotaTransactions, ...evmTxForIota.map((t: any) => ({ ...t, _fromEvmMerge: true }))];
-    if (merged.length > 0) {
-      merged.sort((a: any, b: any) => {
-        const ta = new Date(a.timestamp || a.minedAt || a.mined_at || 0).getTime();
-        const tb = new Date(b.timestamp || b.minedAt || b.mined_at || 0).getTime();
-        return tb - ta;
-      });
-      console.log('[ProfileCard] Merged IOTA+EVM transactions:', iotaTransactions.length, '+', evmTxForIota.length, '=', merged.length);
-      setTransactions(merged);
-    }
-  }, [iotaTransactions, evmTxForIota, iotaFetched, searchedIdentity, web3BioProfile?.platform]);
+    const merged = new Map<string, any>();
+    for (const tx of [...iotaTransactions, ...evmTxForIota]) merged.set(`${tx.chain}:${tx.hash || tx.id}`, tx);
+    setTransactions([...merged.values()].sort((a, b) => new Date(b.timestamp || b.minedAt || 0).getTime() - new Date(a.timestamp || a.minedAt || 0).getTime()));
+  }, [iotaTransactions, evmTxForIota]);
 
   // Reset EVM social state when profile target changes
   useEffect(() => {
@@ -1492,6 +1477,8 @@ export const ProfileCard = ({
           setTransactionsFetched(true);
         }
 
+        const tasks: Promise<void>[] = [];
+        tasks.push((async () => {
         if (isEvm && evmWalletAddress) {
           try {
             const tokenRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-portfolio', {
@@ -1512,27 +1499,10 @@ export const ProfileCard = ({
             setTokensFetched(true);
           }
         }
+        })());
 
-        if (isEvm && evmWalletAddress) {
-          try {
-            const txRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-wallet-transactions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdkampib29ycXZpb2J2dnlncGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDY1NDIsImV4cCI6MjA3MzEyMjU0Mn0.88t9gQHYr2kWB3P0Prd1ehRTsP3hYemV6PEkOLQa7tE',
-              },
-              body: JSON.stringify({ walletAddress: evmWalletAddress }),
-            });
-            const txData = await txRes.json();
-            console.log('Transactions API response:', txData);
-            if (txData.transactions) setTransactions(txData.transactions);
-          } catch (e) { 
-            console.error('Transactions fetch error:', e); 
-          } finally {
-            setTransactionsFetched(true);
-          }
-        }
 
+        tasks.push((async () => {
         if (isEvm && evmWalletAddress) {
           try {
             const meRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-magiceden-nfts', {
@@ -1547,7 +1517,9 @@ export const ProfileCard = ({
             if (meData.nfts) setMagicEdenNfts(meData.nfts);
           } catch (e) { console.error('Magic Eden fetch error:', e); }
         }
+        })());
 
+        tasks.push((async () => {
         if (isEvm && evmWalletAddress) {
           setHlLoading(true);
           try {
@@ -1569,7 +1541,9 @@ export const ProfileCard = ({
             setHlLoading(false);
           }
         }
+        })());
 
+        tasks.push((async () => {
         if (isEvm && evmWalletAddress) {
           try {
             // For wallets owning huge ENS portfolios (e.g. wrapper.ens.eth), fetch in small batches
@@ -1615,7 +1589,9 @@ export const ProfileCard = ({
           setEnsDomainsLoading(false);
           setEnsDomainsFetched(true);
         }
+        })());
 
+        tasks.push((async () => {
         if (isEvm && evmWalletAddress) {
           try {
             const baseRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-basenames', {
@@ -1639,7 +1615,9 @@ export const ProfileCard = ({
           setBasenamesLoading(false);
           setBasenamesFetched(true);
         }
+        })());
 
+        tasks.push((async () => {
         if (!isIota && isEvm && evmWalletAddress) {
           try {
             const polyRes = await fetch('https://gdjjboorqviobvvygpca.supabase.co/functions/v1/get-polymarket-data', {
@@ -1665,9 +1643,11 @@ export const ProfileCard = ({
             console.error('Polymarket fetch error:', e); 
           }
         }
+        })());
 
         // Fetch IOTA data via native IOTA RPC (tokens, NFTs, transactions in parallel)
         // Also runs in cross-chain overlay mode when an IOTA owner address is available.
+        tasks.push((async () => {
         const iotaFetchAddress = iotaOwnerAddressForFetch || currentWalletAddress;
         if ((isIota || !!iotaOwnerAddressForFetch) && iotaFetchAddress) {
           setIotaLoading(true);
@@ -1727,7 +1707,7 @@ export const ProfileCard = ({
             if (nftsData.nfts) setIotaNfts(nftsData.nfts);
             if (txData.transactions) {
               setIotaTransactions(txData.transactions);
-              if (isIota) setTransactions(txData.transactions);
+              // The shared activity merge preserves EVM transactions.
             }
           } catch (e) {
             console.error('IOTA fetch error:', e);
@@ -1743,6 +1723,8 @@ export const ProfileCard = ({
             }
           }
         }
+        })());
+        await Promise.all(tasks);
       };
       
       // Start other data fetch in parallel
@@ -1755,6 +1737,12 @@ export const ProfileCard = ({
     if (web3BioProfile?.hlNfts?.length > 0) setHlNfts(web3BioProfile.hlNfts);
     if (web3BioProfile?.hlTokens?.length > 0) setHlTokens(web3BioProfile.hlTokens);
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
+
+  const nftContinuation = nftNextCursor ? (
+    <Button variant="outline" className="w-full" disabled={nftLoading} onClick={onLoadMoreNfts}>
+      {nftLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load more NFTs'}
+    </Button>
+  ) : null;
 
   // Auto-select default desktop panel based on data availability (priority: Socials → Tokens → Activity → NFTs)
   useEffect(() => {
@@ -2298,7 +2286,7 @@ export const ProfileCard = ({
     if (panel === 'activity') {
       return (
         <div className="h-full overflow-y-auto px-6 py-3 pb-6">
-          {transactionsLoading ? (
+          {transactionsLoading && transactions.length === 0 ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-10 h-10 animate-spin text-[#D4AF37]" />
             </div>
@@ -2310,7 +2298,7 @@ export const ProfileCard = ({
           ) : (
             <div className="space-y-3 max-w-xl mx-auto">
               {transactions.map((tx: any, index: number) => (
-                <ActivityRow key={tx.id || tx.hash || `tx-${index}`} tx={tx} chainIcon={getChainIcon(tx.chain, 14)} iotaIcon={IOTA_ICON_URL} ethIcon={ETH_TOKEN_ICON_URL} />
+                <ActivityRow key={tx.id || tx.hash || `tx-${index}`} tx={tx} chainIcon={getChainIcon(tx.chain, 14)} iotaIcon={IOTA_ICON_URL} ethIcon={ETH_TOKEN_ICON_URL} tokens={portfolioTokens} />
               ))}
             </div>
           )}
@@ -3102,13 +3090,14 @@ export const ProfileCard = ({
                               )
                             )}
 
+                            {nftContinuation}
                             {nftCategory === 'opensea' && (
                               expandedCollection ? (
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {(openSeaGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className={`group relative overflow-hidden rounded-xl cursor-pointer transition-all ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : 'border border-[#D4AF37]/20 hover:border-[#D4AF37]/50'}`} onClick={() => setSelectedNft(nft)}>
-                                        <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                        <img loading="lazy" decoding="async" src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                                       </div>
                                     ))}
                                   </div>
@@ -3139,7 +3128,7 @@ export const ProfileCard = ({
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {(magicEdenGroupedNfts[expandedCollection] || []).slice(0, displayLimit).map((nft: any, index: number) => (
                                       <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                                        <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                        <img loading="lazy" decoding="async" src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                                       </div>
                                     ))}
                                   </div>
@@ -3886,6 +3875,7 @@ export const ProfileCard = ({
                         </div>
                       )}
 
+                      {nftContinuation}
                       {/* Loading skeleton when fetching */}
                       {(nftLoading || magicEdenLoading || worldchainNftsLoading || ensDomainsLoading || basenamesLoading) && 
                        poaps.length === 0 && 
@@ -3915,8 +3905,9 @@ export const ProfileCard = ({
                     // OpenSea collections
                     expandedCollection ? (
                       <div className="space-y-4 max-w-2xl mx-auto">
+                        {nftContinuation}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => {
+                          {openSeaGroupedNfts[expandedCollection]?.slice(0, displayLimit).map((nft: any, index: number) => {
                             const animationUrl = nft.animation_url || nft.metadata?.animation_url;
                             const isVideo = animationUrl && (animationUrl.toLowerCase().includes('.mp4') || animationUrl.toLowerCase().includes('.webm') || animationUrl.toLowerCase().includes('video'));
                             const isAudio = animationUrl && (animationUrl.toLowerCase().includes('.mp3') || animationUrl.toLowerCase().includes('.wav') || animationUrl.toLowerCase().includes('audio'));
@@ -3925,7 +3916,7 @@ export const ProfileCard = ({
                                 {isVideo ? (
                                   <video src={animationUrl} poster={nft.image_url || nft.display_image_url} muted loop playsInline onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} className="w-full aspect-square object-cover" />
                                 ) : (
-                                  <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                                  <img loading="lazy" decoding="async" src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                                 )}
                                 {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
                                 {(isVideo || isAudio) && <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">{isVideo ? '▶' : '♪'}</div>}
@@ -3933,6 +3924,9 @@ export const ProfileCard = ({
                             );
                           })}
                         </div>
+                        {(openSeaGroupedNfts[expandedCollection]?.length || 0) > displayLimit && (
+                          <Button variant="outline" className="w-full" onClick={() => setDisplayLimit(n => n + 25)}>Load 25 more</Button>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-2 max-w-lg mx-auto">
@@ -3972,13 +3966,16 @@ export const ProfileCard = ({
                     ) : expandedCollection ? (
                       <div className="space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 justify-items-center">
-                          {magicEdenGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                          {magicEdenGroupedNfts[expandedCollection]?.slice(0, displayLimit).map((nft: any, index: number) => (
                             <div key={`${nft.contract}-${nft.identifier}-${index}`} className="group relative overflow-hidden rounded-xl cursor-pointer border border-[#D4AF37]/20 hover:border-[#D4AF37]/50 transition-all" onClick={() => setSelectedNft(nft)}>
-                              <img src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
+                              <img loading="lazy" decoding="async" src={nft.image_url || nft.display_image_url} alt={nft.name} className="w-full aspect-square object-cover" />
                               {nft.quantity && nft.quantity > 1 && <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">x{nft.quantity}</div>}
                             </div>
                           ))}
                         </div>
+                        {(magicEdenGroupedNfts[expandedCollection]?.length || 0) > displayLimit && (
+                          <Button variant="outline" className="w-full" onClick={() => setDisplayLimit(n => n + 25)}>Load 25 more</Button>
+                        )}
                       </div>
                     ) : magicEdenNfts.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground">
@@ -4332,7 +4329,7 @@ export const ProfileCard = ({
 
                 {/* Activity Content */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 pb-40 bg-background dark:bg-black">
-                  {transactionsLoading ? (
+                  {transactionsLoading && transactions.length === 0 ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#D4AF37]" />
                     </div>
@@ -4344,7 +4341,7 @@ export const ProfileCard = ({
                   ) : (
                     <div className="space-y-3 max-w-lg mx-auto">
                       {transactions.map((tx: any, index: number) => (
-                        <ActivityRow key={tx.id || tx.hash || `tx-${index}`} tx={tx} chainIcon={getChainIcon(tx.chain, 14)} iotaIcon={IOTA_ICON_URL} ethIcon={ETH_TOKEN_ICON_URL} />
+                        <ActivityRow key={tx.id || tx.hash || `tx-${index}`} tx={tx} chainIcon={getChainIcon(tx.chain, 14)} iotaIcon={IOTA_ICON_URL} ethIcon={ETH_TOKEN_ICON_URL} tokens={portfolioTokens} />
                       ))}
                     </div>
                   )}
@@ -4601,7 +4598,7 @@ export const ProfileCard = ({
                       </div>
                       
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {openSeaGroupedNfts[expandedCollection]?.map((nft: any, index: number) => (
+                          {openSeaGroupedNfts[expandedCollection]?.slice(0, displayLimit).map((nft: any, index: number) => (
                           <div
                             key={`${nft.contract}-${nft.identifier}-${index}`}
                             className={`group relative overflow-hidden rounded-xl cursor-pointer active:opacity-90 transition-opacity flex-shrink-0 touch-action-manipulation ${isEnsNftLike(nft) ? getEnsBorderClass(nft) : ''}`}
