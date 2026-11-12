@@ -39,6 +39,7 @@ import iotaHeaderPattern from '@/assets/iota-header-pattern.png';
 import vanityBoxAvatar from '@/assets/vanity-box-default-avatar.png';
 import ethLogoBlue from '@/assets/eth-logo-blue-circle.png';
 import wldLogo from '@/assets/wld-logo-dark.svg';
+import { ActivityRow } from "@/components/activity/ActivityRow";
 import iotaTokenIcon from '@/assets/iota-token-icon.png';
 import ethPlusGold from '@/assets/eth-plus-gold.png';
 import ethPlusDark from '@/assets/eth-plus-dark.png';
@@ -2309,29 +2310,7 @@ export const ProfileCard = ({
           ) : (
             <div className="space-y-3 max-w-xl mx-auto">
               {transactions.map((tx: any, index: number) => (
-                <div 
-                  key={tx.id || `tx-${index}`}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 transition-all hover:shadow-md"
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${tx.type === 'receive' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                    <span className="text-xl font-bold">{tx.type === 'receive' ? '↓' : '↑'}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-black dark:text-white truncate capitalize text-base">{tx.type || 'Transaction'}</span>
-                      <span className="text-sm text-black/50 dark:text-white/50">
-                        {tx.minedAt ? formatDistanceToNow(new Date(tx.minedAt), { addSuffix: true }) : ''}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-black/50 dark:text-white/50 mt-0.5">
-                      <span className="truncate font-mono">{tx.hash?.slice(0, 12)}...</span>
-                      <div className="flex items-center gap-1.5 bg-black/10 dark:bg-white/10 px-2 py-0.5 rounded">
-                        {getChainIcon(tx.chain, 14)}
-                        <span className="text-xs uppercase font-medium text-black/70 dark:text-white/70">{tx.chain}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ActivityRow key={tx.id || tx.hash || `tx-${index}`} tx={tx} chainIcon={getChainIcon(tx.chain, 14)} iotaIcon={IOTA_ICON_URL} ethIcon={ETH_TOKEN_ICON_URL} />
               ))}
             </div>
           )}
@@ -4365,31 +4344,7 @@ export const ProfileCard = ({
                   ) : (
                     <div className="space-y-3 max-w-lg mx-auto">
                       {transactions.map((tx: any, index: number) => (
-                        <div 
-                          key={tx.id || `tx-${index}`}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-card/30 border border-border/30 hover:border-[#D4AF37]/30 transition-all"
-                        >
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'receive' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                            <span className="text-lg">{tx.type === 'receive' ? '↓' : '↑'}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-foreground truncate capitalize">{tx.type || 'Transaction'}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {tx.minedAt ? formatDistanceToNow(new Date(tx.minedAt), { addSuffix: true }) : ''}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm text-muted-foreground">
-                              <span className="truncate">{tx.hash?.slice(0, 10)}...</span>
-                              <span className="flex items-center gap-1 text-xs uppercase">
-                                {(tx.chain === 'ethereum' || tx.chain === 'eth') && (
-                                  <img src={ETH_TOKEN_ICON_URL} alt="Ethereum" className="w-3.5 h-3.5 rounded-full" />
-                                )}
-                                {tx.chain}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                        <ActivityRow key={tx.id || tx.hash || `tx-${index}`} tx={tx} chainIcon={getChainIcon(tx.chain, 14)} iotaIcon={IOTA_ICON_URL} ethIcon={ETH_TOKEN_ICON_URL} />
                       ))}
                     </div>
                   )}
