@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import sharingImage from "@/assets/vanity-sharing.jpg.asset.json";
 
 interface DynamicMetaTagsProps {
   username?: string;
@@ -18,7 +19,7 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   const origin = "https://vanity.box";
   const supabaseUrl = "https://gdjjboorqviobvvygpca.supabase.co";
 
-  const title = username ? `${displayName || username} — Vanity ID | Web3 Profile` : "Vanity.box — Blockchain Wallet & Decentralised Web3 ID";
+  const title = username ? `${displayName || username} — Vanity ID | Web3 Profile` : "Wallet iD's & Blockchain Profiles";
 
   const desc = description || (username
     ? `Explore ${displayName || username}'s Vanity ID: linked blockchain wallets, social links, NFTs and Web3 activity on Vanity.box.`
@@ -30,7 +31,7 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
   // crawlers (which don't execute JS) get the correct image for any deep link.
   const ogImageUrl = username
     ? `${supabaseUrl}/functions/v1/og-image?username=${encodeURIComponent(username)}${displayName ? `&displayName=${encodeURIComponent(displayName)}` : ""}`
-    : `${origin}/vanity-meta-image.jpeg`;
+    : `${origin}${sharingImage.url}`;
 
   return (
     <Helmet>

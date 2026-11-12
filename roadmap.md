@@ -7,3 +7,7 @@
 - [x] Remove Vanity.ton claiming information from search results and ID bundles while retaining TON wallet support.
 - [x] Verify metadata, sitemap and the unchanged homepage in the preview.
 - [ ] Make search changes live: requires frontend publishing and deployment of the updated Cloudflare worker; deployment access is not configured in this task.
+
+# Sharing and search appearance
+- [x] Set supplied landscape sharing image and exact preview title.
+- [x] Set supplied square image as the search favicon and verify delivered metadata.
