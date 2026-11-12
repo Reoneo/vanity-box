@@ -108,15 +108,21 @@ Deno.serve(async (req) => {
             const cached = metadataCache.get(k);
             if (cached && cached.expires > Date.now()) { iconMap.set(k, cached.data); return; }
             const r = await fetch(`https://api.opensea.io/api/v2/chain/${ch}/payment_token/${addr}`, { signal: AbortSignal.timeout(2500), headers: { 'X-API-KEY': osKey, Accept: 'application/json' } });
-            if (r.ok) { const d = await r.json(); iconMap.set(k, d); metadataCache.set(k, { expires: Date.now() + 60000, data: d }); } else await r.text();
+            if (r.ok) { const d = await r.json(); iconMap.set(k, d); metadataCache.set(k, { expires: Date.now() + 60000, data: d }); } else { console.warn('OpenSea metadata', ch, r.status, await r.text()); }
           } catch { /* skip */ }
         }));
       }
     }
+    // Native asset fallback when OpenSea has no payment-token price.
+    let nativePrices: Record<string, any> = {};
+    try {
+      const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum,pol-ex-matic&vs_currencies=usd', { signal: AbortSignal.timeout(2000) });
+      if (r.ok) nativePrices = await r.json(); else await r.text();
+    } catch { /* Never fabricate a missing quote. */ }
     for (const tx of transactions) for (const tr of tx.transfers) {
       const metadata = iconMap.get(`${tr.osChain}:${tr.contract}`);
       tr.icon = metadata?.image || metadata?.image_url || (tr.native && tr.symbol === 'ETH' ? 'https://cdn.zerion.io/eth.png' : null);
-      const price = Number(metadata?.price?.usd ?? metadata?.usd_price ?? metadata?.price_usd);
+      const price = Number(metadata?.price?.usd ?? metadata?.usd_price ?? metadata?.price_usd ?? (tr.native ? nativePrices[tr.symbol === 'ETH' ? 'ethereum' : 'pol-ex-matic']?.usd : undefined));
       tr.priceUsd = Number.isFinite(price) && price > 0 ? price : null;
       tr.usdValue = tr.priceUsd === null ? null : tr.quantity * tr.priceUsd;
       if (tr.native) delete tr.contract;
