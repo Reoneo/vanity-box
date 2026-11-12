@@ -1,12 +1,14 @@
 import { formatDistanceToNow } from "date-fns";
 import { ArrowDownLeft, ArrowUpRight, ExternalLink, Repeat } from "lucide-react";
 import type { ReactNode } from "react";
+import { transactionUsdValue } from '@/lib/activityValue';
 
 type Props = {
   tx: any;
   chainIcon: ReactNode;
   iotaIcon: string;
   ethIcon: string;
+  tokens?: any[];
 };
 
 const short = (a?: string | null) => (a && a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a || "");
@@ -23,7 +25,8 @@ const chainLabel = (c?: string) => {
   return m[l] || (c ? c.charAt(0).toUpperCase() + c.slice(1) : "");
 };
 
-export function ActivityRow({ tx, chainIcon, iotaIcon, ethIcon }: Props) {
+export function ActivityRow({ tx, chainIcon, iotaIcon, ethIcon, tokens = [] }: Props) {
+  const usdValue = transactionUsdValue(tx, tokens);
   const isIota = (tx.chain || "").toLowerCase() === "iota";
   const when = tx.minedAt || tx.timestamp;
   const typeRaw = String(tx.type || "transaction").toLowerCase();
@@ -90,6 +93,9 @@ export function ActivityRow({ tx, chainIcon, iotaIcon, ethIcon }: Props) {
         </div>
       </div>
       <div className="mt-2 pt-2 border-t border-[#D4AF37]/10 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+        <span className="col-span-2 text-sm font-medium text-foreground" title="Estimate using current token prices, not the price at the transaction time">
+          {usdValue === null ? 'USD value unavailable' : `≈ ${usdValue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })} USD`}
+        </span>
         {counterparty && <span className="truncate">{dir === "in" ? "From" : "To"}: <span className="font-mono">{short(counterparty)}</span></span>}
         {feeVal > 0 && <span className="truncate">Fee: {fmtQty(feeVal)} {feeSym}</span>}
         {when && <span className="truncate">{new Date(when).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>}

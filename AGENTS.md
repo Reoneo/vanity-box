@@ -5,3 +5,5 @@
 - Keep the homepage sharing image in sync between static HTML and client metadata using the uploaded asset pointer; favicons stay real files in public so crawlers can fetch them.
 - AppRoutes owns the single client-rendered canonical tag using the primary domain and actual pathname; profile metadata must not add a second canonical, so identity enrichment cannot rewrite the searched page's identity.
 - Keep static homepage metadata accurate and align profile descriptions in DynamicMetaTags and the Cloudflare worker; never add invisible keyword-targeted content as an SEO substitute for visitor-visible content.
+- Fetch activity independently in progressive chain batches and merge by chain plus hash; show current-price USD estimates explicitly and leave unknown prices unavailable.
+- OpenSea NFT requests return bounded cursor pages; merge by chain, contract, and token ID, preserving continuation without waiting for whole portfolios.
