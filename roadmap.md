@@ -11,3 +11,11 @@
 # Sharing and search appearance
 - [x] Set supplied landscape sharing image and exact preview title.
 - [x] Set supplied square image as the search favicon and verify delivered metadata.
+# November activity and collection improvements
+- [x] Review branded AI Overview eligibility: Google controls query-specific inclusion; no Search Console connection is available.
+- [x] Display current-price USD estimates or explicit unavailable values for all activity; verified Ethereum estimates on desktop.
+- [x] Load activity independently and progressively across chains; verified real-wallet responses without runtime errors.
+- [x] Display NFT pages progressively, preserving complete collections and deduplication; verified 533 first-page items in 3.3 seconds and 474 next-page items with no overlap.
+- [x] Deploy and verify real-wallet activity and large NFT collections.
+- [ ] Numeric USD values for every token: blocked where market providers have no price; show unavailable instead.
+- [ ] Make frontend activity/NFT layout live: requires publishing.

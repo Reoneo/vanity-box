@@ -1,9 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { z } from 'npm:zod@3';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -107,130 +105,54 @@ serve(async (req) => {
       );
     }
 
-    // OpenSea supported chains
-    const chains = ["ethereum", "polygon", "arbitrum", "optimism", "base", "avalanche", "bsc", "klaytn", "zora"];
-
-    debug.attemptedChains = chains;
-
+    const chains = ["ethereum", "polygon", "arbitrum", "optimism", "base", "avalanche", "bsc", "zora"];
+    const parsed = z.object({ limit: z.number().int().min(1).max(200).default(100), next: z.string().max(12000).optional() }).safeParse(body);
+    if (!parsed.success) return new Response(JSON.stringify({ error: 'Invalid NFT page request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    let positions: Record<string, string | null> = Object.fromEntries(chains.map(c => [c, null]));
+    if (parsed.data.next) {
+      try {
+        const cursor = JSON.parse(parsed.data.next);
+        if (cursor.wallet !== walletAddress.toLowerCase() || !cursor.positions || Object.keys(cursor.positions).some(c => !chains.includes(c)) || Object.values(cursor.positions).some(v => v !== null && (typeof v !== 'string' || v.length > 2000))) throw new Error('Invalid cursor');
+        positions = cursor.positions;
+      } catch {
+        return new Response(JSON.stringify({ error: 'Invalid NFT cursor' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+    debug.attemptedChains = Object.keys(positions);
     let allNfts: any[] = [];
     const errorsByChain: Record<string, string> = {};
     const fetchedChains: string[] = [];
-
-    const MAX_TOTAL_NFTS = Number.MAX_SAFE_INTEGER; // Effectively uncapped per user request
-    const MAX_PAGES_PER_CHAIN = 100; // Allow large collections to fully paginate
-    const LIMIT_PER_REQUEST = 200; // OpenSea max
-    const INTER_CHAIN_DELAY = 150;
-
-    for (const chain of chains) {
-      if (allNfts.length >= MAX_TOTAL_NFTS) {
-        console.log(`⚠️ Reached max NFT limit (${MAX_TOTAL_NFTS}), stopping fetch`);
-        break;
-      }
-
-      let chainCursor: string | null = null;
-      let hasMore = true;
-      let pageCount = 0;
-      let retryCount = 0;
-      const MAX_RETRIES = 3;
-
-      while (hasMore && pageCount < MAX_PAGES_PER_CHAIN && allNfts.length < MAX_TOTAL_NFTS) {
+    const pending = Object.entries(positions);
+    // One page per chain, three requests at a time. Subsequent pages retain every cursor.
+    for (let i = 0; i < pending.length; i += 3) {
+      await Promise.all(pending.slice(i, i + 3).map(async ([chain, cursor]) => {
+        const url = new URL(`https://api.opensea.io/api/v2/chain/${chain}/account/${walletAddress}/nfts`);
+        url.searchParams.set('limit', String(parsed.data.limit));
+        if (cursor) url.searchParams.set('next', cursor);
         try {
-          let url = `https://api.opensea.io/api/v2/chain/${chain}/account/${walletAddress}/nfts?limit=${LIMIT_PER_REQUEST}`;
-          if (chainCursor) url += `&next=${encodeURIComponent(chainCursor)}`;
-
-          console.log(`📡 Fetching from OpenSea (${chain}) page ${pageCount + 1}...`);
-
-          const response = await fetch(url, {
-            headers: {
-              accept: "application/json",
-              "x-api-key": OPENSEA_API_KEY,
-            },
-          });
-
-          if (response.ok) {
+          for (let attempt = 0; attempt < 2; attempt++) {
+            const response = await fetch(url, { signal: AbortSignal.timeout(6000), headers: { accept: 'application/json', 'x-api-key': OPENSEA_API_KEY } });
+            if (response.status === 429 && attempt === 0) { await response.text(); await sleep(1000); continue; }
+            if (!response.ok) {
+              errorsByChain[chain] = `HTTP ${response.status}: ${await response.text()}`;
+              if ([400, 401, 403, 404].includes(response.status)) delete positions[chain];
+              return;
+            }
             const data = await response.json();
             fetchedChains.push(chain);
-
-            if (Array.isArray(data?.nfts) && data.nfts.length > 0) {
-              const nftsWithChain = data.nfts
-                .filter((nft: any) => {
-                  const isPoapV2 =
-                    nft.contract?.toLowerCase() === "0x22c1f6050e56d2876009903609a2cc3fef83b415" ||
-                    nft.collection?.toLowerCase().includes("poap");
-                  return !isPoapV2;
-                })
-                .map((nft: any) => {
-                  let rarityScore = 0;
-                  let rarityRank = null;
-
-                  if (nft.metadata?.attributes && Array.isArray(nft.metadata.attributes)) {
-                    const traitCount = nft.metadata.attributes.length;
-                    rarityScore = Math.max(0, 100 - traitCount * 5);
-
-                    const uniqueTraits = nft.metadata.attributes.filter(
-                      (trait: any) => trait.rarity || trait.trait_count < 10,
-                    );
-                    rarityScore += uniqueTraits.length * 10;
-                  }
-
-                  return {
-                    ...nft,
-                    chain,
-                    rarity_score: rarityScore,
-                    rarity_rank: rarityRank,
-                    floor_price: nft.collection?.floor_price,
-                    total_supply: nft.collection?.total_supply,
-                    created_date: nft.created_at,
-                  };
-                });
-
-              allNfts = [...allNfts, ...nftsWithChain];
-              console.log(
-                `✅ ${chain} page ${pageCount + 1}: fetched ${nftsWithChain.length} NFTs (total: ${allNfts.length})`,
-              );
-            }
-
-            if (data?.next) {
-              chainCursor = data.next;
-              pageCount++;
-            } else {
-              hasMore = false;
-            }
-
-            retryCount = 0;
-          } else if (response.status === 429 && retryCount < MAX_RETRIES) {
-            retryCount++;
-            const retryAfter = response.headers.get("retry-after");
-            const waitMs = retryAfter ? Math.min(15000, Number(retryAfter) * 1000) : 1200 * retryCount;
-
-            console.log(`⚠️ ${chain}: Rate limited (429), retry ${retryCount}/${MAX_RETRIES}, waiting ${waitMs}ms...`);
-            await sleep(waitMs);
-            continue;
-          } else {
-            const bodyText = await response.text().catch(() => "");
-            const snippet = bodyText ? bodyText.slice(0, 500) : "";
-            const errorMsg = `HTTP ${response.status}${snippet ? ` - ${snippet}` : ""}`;
-
-            console.log(`⚠️ ${chain}: OpenSea error`, {
-              status: response.status,
-              snippet,
+            const page = (Array.isArray(data.nfts) ? data.nfts : []).filter((n: any) => {
+              const collection = typeof n.collection === 'string' ? n.collection : n.collection?.slug || '';
+              return n.contract?.toLowerCase() !== '0x22c1f6050e56d2876009903609a2cc3fef83b415' && !collection.toLowerCase().includes('poap');
             });
-
-            errorsByChain[chain] = errorMsg;
-            hasMore = false;
+            allNfts.push(...page.map((n: any) => ({ ...n, chain })));
+            if (data.next) positions[chain] = data.next;
+            else delete positions[chain];
+            return;
           }
-        } catch (chainError: any) {
-          const errorMsg = chainError?.message || "Unknown error";
-          console.log(`⚠️ Error fetching from ${chain}:`, errorMsg);
-          errorsByChain[chain] = errorMsg;
-          hasMore = false;
-        }
-      }
-
-      if (chains.indexOf(chain) < chains.length - 1) {
-        await sleep(INTER_CHAIN_DELAY);
-      }
+        } catch (error) { errorsByChain[chain] = String(error); }
+      }));
     }
+    const next = Object.keys(positions).length ? JSON.stringify({ wallet: walletAddress.toLowerCase(), positions }) : null;
 
     debug.fetchedChains = fetchedChains;
     debug.totalFetchedBeforeDedupe = allNfts.length;
@@ -289,6 +211,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         nfts: deduplicatedNfts,
+        next,
         attempted,
         status,
         message,
