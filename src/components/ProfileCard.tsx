@@ -1739,7 +1739,7 @@ export const ProfileCard = ({
   }, [web3BioProfile?.hlNfts, web3BioProfile?.hlTokens]);
 
   const nftContinuation = nftNextCursor ? (
-    <Button variant="outline" className="w-full" disabled={nftLoading} onClick={onLoadMoreNfts}>
+    <Button variant="outline" className="w-full bg-primary/10 text-primary border-primary/30 hover:bg-primary/20" disabled={nftLoading} onClick={onLoadMoreNfts}>
       {nftLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load more NFTs'}
     </Button>
   ) : null;
