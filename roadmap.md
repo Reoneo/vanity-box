@@ -11,3 +11,9 @@
 # Sharing and search appearance
 - [x] Set supplied landscape sharing image and exact preview title.
 - [x] Set supplied square image as the search favicon and verify delivered metadata.
+# November activity and collection improvements
+- [ ] Review branded AI Overview eligibility without promising Google placement.
+- [ ] Display reliable USD estimates or explicit unavailable values for all activity.
+- [ ] Load activity independently and progressively across chains.
+- [ ] Display NFT pages progressively, preserving complete collections and deduplication.
+- [ ] Deploy and verify real-wallet activity and large NFT collections.
