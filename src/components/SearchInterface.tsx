@@ -278,6 +278,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
   const [efpFollowingUsers, setEfpFollowingUsers] = useState<EFPUser[]>([]);
   const [nfts, setNfts] = useState<any[]>([]);
   const [nftLoading, setNftLoading] = useState(false);
+  const nftRequestsRef = useRef(new Set<string>());
   const [nftNextCursor, setNftNextCursor] = useState<string | null>(null);
   const [openseaAttempted, setOpenseaAttempted] = useState(false);
   const [openseaHasErrors, setOpenseaHasErrors] = useState(false);
@@ -1974,6 +1975,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       return;
     }
 
+    const requestKey = `${addressString.toLowerCase()}:${sanitizedNext || 'first'}`;
+    if (nftRequestsRef.current.has(requestKey)) return;
+    nftRequestsRef.current.add(requestKey);
+    const queryAtStart = activeSearchQueryRef.current;
+    setNftLoading(true);
     console.log('Fetching NFTs with valid EVM address:', addressString);
     
     try {
@@ -1988,7 +1994,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       // Build request body with sanitized next parameter
       const requestBody: any = {
         walletAddress: addressString,
-        limit: 20,
+        limit: 100,
       };
       
       // Only add next if it's a valid string
@@ -2022,7 +2028,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
       }
       
       const data = await response.json();
-      
+      if (activeSearchQueryRef.current !== queryAtStart) return;
       // Sanitize the next cursor from the response
       const responseNext = data.next;
       const sanitizedResponseNext = 
@@ -2037,7 +2043,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
           : undefined;
       
       if (next) {
-        setNfts((prev) => [...prev, ...data.nfts]);
+        setNfts((prev) => [...new Map([...prev, ...(data.nfts || [])].map(n => [`${n.chain}:${String(n.contract).toLowerCase()}:${n.identifier}`, n])).values()]);
       } else {
         setNfts(data.nfts || []);
       }
@@ -2062,7 +2068,8 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
         console.error('Unexpected NFT fetch error:', err);
       }
     } finally {
-      setNftLoading(false);
+      nftRequestsRef.current.delete(requestKey);
+      if (activeSearchQueryRef.current === queryAtStart) setNftLoading(false);
     }
   };
 
