@@ -7,10 +7,10 @@ const CHAINS: { id: number; name: string; symbol: string; os?: string; explorer:
   { id: 8453, name: 'base', symbol: 'ETH', os: 'base', explorer: 'https://basescan.org' },
   { id: 10, name: 'optimism', symbol: 'ETH', os: 'optimism', explorer: 'https://optimistic.etherscan.io' },
   { id: 42161, name: 'arbitrum', symbol: 'ETH', os: 'arbitrum', explorer: 'https://arbiscan.io' },
-  { id: 137, name: 'polygon', symbol: 'POL', os: 'matic', explorer: 'https://polygonscan.com' },
-  { id: 59144, name: 'linea', symbol: 'ETH', os: 'linea', explorer: 'https://lineascan.build' },
-  { id: 534352, name: 'scroll', symbol: 'ETH', os: 'scroll', explorer: 'https://scrollscan.com' },
-  { id: 480, name: 'world', symbol: 'ETH', os: 'world', explorer: 'https://worldscan.org' },
+  { id: 137, name: 'polygon', symbol: 'POL', os: 'polygon', explorer: 'https://polygonscan.com' },
+  { id: 59144, name: 'linea', symbol: 'ETH', explorer: 'https://lineascan.build' },
+  { id: 534352, name: 'scroll', symbol: 'ETH', explorer: 'https://scrollscan.com' },
+  { id: 480, name: 'world', symbol: 'ETH', explorer: 'https://worldscan.org' },
 ];
 
 const metadataCache = new Map<string, { expires: number; data: any }>();
@@ -95,6 +95,17 @@ Deno.serve(async (req) => {
     // Token icons from OpenSea (payment token metadata), deduped and capped.
     const osKey = (Deno.env.get('OPENSEA_API_KEY') || '').trim();
     const iconMap = new Map<string, any>();
+    // Account token data covers tokens beyond OpenSea's payment-token registry.
+    const accountPrices = new Map<string, any>();
+    if (osKey) {
+      try {
+        const r = await fetch(`https://api.opensea.io/api/v2/account/${addr}/tokens?limit=100`, { signal: AbortSignal.timeout(2500), headers: { 'X-API-KEY': osKey, Accept: 'application/json' } });
+        if (r.ok) {
+          const data = await r.json();
+          for (const token of data.token_balances || []) accountPrices.set(`${token.chain}:${String(token.address).toLowerCase()}`, token);
+        } else await r.text();
+      } catch { /* Payment-token quotes and portfolio prices remain available. */ }
+    }
     const wanted: string[] = [];
     for (const tx of transactions) for (const tr of tx.transfers) {
       if (tr.contract && tr.osChain) { const k = `${tr.osChain}:${tr.contract}`; if (!iconMap.has(k)) { iconMap.set(k, null); wanted.push(k); } }
@@ -121,8 +132,9 @@ Deno.serve(async (req) => {
     } catch { /* Never fabricate a missing quote. */ }
     for (const tx of transactions) for (const tr of tx.transfers) {
       const metadata = iconMap.get(`${tr.osChain}:${tr.contract}`);
-      tr.icon = metadata?.image || metadata?.image_url || (tr.native && tr.symbol === 'ETH' ? 'https://cdn.zerion.io/eth.png' : null);
-      const price = Number(metadata?.price?.usd ?? metadata?.usd_price ?? metadata?.price_usd ?? (tr.native ? nativePrices[tr.symbol === 'ETH' ? 'ethereum' : 'pol-ex-matic']?.usd : undefined));
+      const accountToken = accountPrices.get(`${tr.osChain || tx.chain}:${tr.contract}`);
+      tr.icon = metadata?.image || metadata?.image_url || accountToken?.image_url || (tr.native && tr.symbol === 'ETH' ? 'https://cdn.zerion.io/eth.png' : null);
+      const price = Number(metadata?.price?.usd ?? metadata?.usd_price ?? metadata?.price_usd ?? accountToken?.usd_price ?? (tr.native ? nativePrices[tr.symbol === 'ETH' ? 'ethereum' : 'pol-ex-matic']?.usd : undefined));
       tr.priceUsd = Number.isFinite(price) && price > 0 ? price : null;
       tr.usdValue = tr.priceUsd === null ? null : tr.quantity * tr.priceUsd;
       if (tr.native) delete tr.contract;

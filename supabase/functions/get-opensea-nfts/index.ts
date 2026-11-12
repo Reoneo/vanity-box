@@ -105,7 +105,7 @@ serve(async (req) => {
       );
     }
 
-    const chains = ["ethereum", "polygon", "arbitrum", "optimism", "base", "avalanche", "bsc", "klaytn", "zora"];
+    const chains = ["ethereum", "polygon", "arbitrum", "optimism", "base", "avalanche", "bsc", "zora"];
     const parsed = z.object({ limit: z.number().int().min(1).max(200).default(100), next: z.string().max(12000).optional() }).safeParse(body);
     if (!parsed.success) return new Response(JSON.stringify({ error: 'Invalid NFT page request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     let positions: Record<string, string | null> = Object.fromEntries(chains.map(c => [c, null]));
@@ -133,7 +133,11 @@ serve(async (req) => {
           for (let attempt = 0; attempt < 2; attempt++) {
             const response = await fetch(url, { signal: AbortSignal.timeout(6000), headers: { accept: 'application/json', 'x-api-key': OPENSEA_API_KEY } });
             if (response.status === 429 && attempt === 0) { await response.text(); await sleep(1000); continue; }
-            if (!response.ok) { errorsByChain[chain] = `HTTP ${response.status}: ${await response.text()}`; return; }
+            if (!response.ok) {
+              errorsByChain[chain] = `HTTP ${response.status}: ${await response.text()}`;
+              if ([400, 401, 403, 404].includes(response.status)) delete positions[chain];
+              return;
+            }
             const data = await response.json();
             fetchedChains.push(chain);
             const page = (Array.isArray(data.nfts) ? data.nfts : []).filter((n: any) => {
