@@ -1,4 +1,5 @@
 # Linked-wallet profiles
+<!-- Existing tasks retained below. -->
 - [x] Unify raw IOTA and linked-domain identity and asset resolution.
 - [x] Verify Mrs.Vanity and its linked IOTA wallet in the running app: matching 3 NFTs, Ethereum/IOTA wallets, avatar, bio and activity.
 
@@ -7,3 +8,7 @@
 - [x] Remove Vanity.ton claiming information from search results and ID bundles while retaining TON wallet support.
 - [x] Verify metadata, sitemap and the unchanged homepage in the preview.
 - [ ] Make search changes live: requires frontend publishing and deployment of the updated Cloudflare worker; deployment access is not configured in this task.
+
+# Sharing and search appearance
+- [ ] Set supplied landscape sharing image and exact preview title.
+- [ ] Set supplied square image as the search favicon and verify delivered metadata.
