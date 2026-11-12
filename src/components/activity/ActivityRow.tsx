@@ -38,7 +38,7 @@ export function ActivityRow({ tx, chainIcon, iotaIcon, ethIcon }: Props) {
       ? "out"
       : "other";
   const main = transfers[0];
-  const mainIcon = main?.icon || (main?.symbol?.toUpperCase() === "IOTA" ? iotaIcon : main?.symbol?.toUpperCase() === "ETH" ? ethIcon : null) || (isIota ? iotaIcon : null);
+  const mainIcon = main?.icon || (main?.symbol?.toUpperCase() === "IOTA" ? iotaIcon : main?.symbol?.toUpperCase() === "ETH" ? ethIcon : null) || (isIota ? iotaIcon : !main && /^(eth|ethereum)$/i.test(tx.chain || "") ? ethIcon : null);
   const counterparty = dir === "in" ? tx.sentFrom || tx.from : tx.sentTo || tx.to;
   const feeVal = Number(tx.fee?.value ?? tx.fee ?? 0);
   const feeSym = tx.fee?.symbol || (isIota ? "IOTA" : "ETH");
