@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
       }
     }
     for (const tx of transactions) for (const tr of tx.transfers) {
-      if (tr.native) tr.icon = 'https://cdn.zerion.io/eth.png';
+      if (tr.native) tr.icon = tr.symbol === 'ETH' ? 'https://cdn.zerion.io/eth.png' : null;
       else if (tr.contract) tr.icon = iconMap.get(`${tr.osChain}:${tr.contract}`) || null;
       delete tr.osChain;
     }
