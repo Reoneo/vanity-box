@@ -10,4 +10,4 @@
 
 # Sharing and search appearance
 - [x] Set supplied landscape sharing image and exact preview title.
-- [ ] Set supplied square image as the search favicon and verify delivered metadata.
+- [x] Set supplied square image as the search favicon and verify delivered metadata.
