@@ -10,6 +10,7 @@ import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useWalletConnect } from "@/contexts/WalletConnectContext";
 import { NetworkIcon } from "@/components/NetworkIcon";
+import { syncVanityDns } from "@/lib/vanityDnsSync";
 
 const Index = () => {
   const { theme, setTheme } = useTheme();
@@ -38,38 +39,9 @@ const Index = () => {
     };
   }, []);
 
-  // Auto-backfill www CNAMEs for any new .vanity names registered since last sync.
-  // Throttled to once every 6 hours per browser to avoid hammering Dune/Cloudflare.
+  // Shared, non-blocking maintenance with the header's background sync.
   useEffect(() => {
-    const KEY = "vanity_www_autosync_at";
-    const SIX_HOURS = 6 * 60 * 60 * 1000;
-    try {
-      const last = Number(localStorage.getItem(KEY) || "0");
-      if (Date.now() - last < SIX_HOURS) return;
-    } catch { /* localStorage unavailable */ }
-
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-vanity-dns`;
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    // Fire-and-forget; user never sees this
-    fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-      },
-      body: JSON.stringify({ action: "sync-quick" }),
-    })
-      .then(async (r) => {
-        if (r.ok) {
-          try { localStorage.setItem(KEY, String(Date.now())); } catch { /* ignore */ }
-          const j = await r.json().catch(() => null);
-          if (j?.wwwCnames?.created > 0) {
-            console.log(`[vanity auto-sync] ${j.message}`);
-          }
-        }
-      })
-      .catch(() => { /* silent — background task */ });
+    void syncVanityDns();
   }, []);
 
   return (

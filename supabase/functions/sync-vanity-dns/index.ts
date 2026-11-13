@@ -1,32 +1,11 @@
+import { DuneResultsUnavailable, fetchDuneResults } from "./dune.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 const CF_BASE = "https://api.cloudflare.com/client/v4";
-
-/** Fetch all .vanity domains from Dune query 7320928 */
-async function fetchDuneResults(apiKey: string): Promise<string[]> {
-  const allRows: any[] = [];
-  let offset = 0;
-  const limit = 1000;
-  while (true) {
-    const res = await fetch(
-      `https://api.dune.com/api/v1/query/7320928/results?limit=${limit}&offset=${offset}`,
-      { headers: { "X-Dune-API-Key": apiKey } }
-    );
-    if (!res.ok) throw new Error(`Dune API error [${res.status}]: ${await res.text()}`);
-    const data = await parseJsonSafe(res);
-    const rows = data?.result?.rows ?? [];
-    allRows.push(...rows);
-    if (rows.length < limit) break;
-    offset += limit;
-  }
-  console.log(`Dune total: ${allRows.length}`);
-  return allRows
-    .map((r) => String(r.domain || r.name || "").replace(/\.vanity$/i, "").trim().toLowerCase())
-    .filter((d) => d.length > 0);
-}
 
 /** Ensure wildcard DNS records exist (proxied) for both *.vanity.box and *.*.vanity.box */
 async function ensureWildcardDNS(token: string, zoneId: string): Promise<Record<string, string>> {
@@ -483,8 +462,8 @@ Deno.serve(async (req) => {
     if (action === "sync-quick") {
       const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
       if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
-      const totalTls = await ensureTotalTlsEnabled(CF_API_TOKEN, ZONE_ID);
       const names = await fetchDuneResults(DUNE_API_KEY);
+      const totalTls = await ensureTotalTlsEnabled(CF_API_TOKEN, ZONE_ID);
       const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
       const certStatus = await getCertStatus(CF_API_TOKEN, ZONE_ID);
       return new Response(
@@ -594,6 +573,8 @@ Deno.serve(async (req) => {
     // === SYNC ACTION (default) ===
     const DUNE_API_KEY = Deno.env.get("DUNE_API_KEY");
     if (!DUNE_API_KEY) throw new Error("DUNE_API_KEY not configured");
+    // Validate the upstream snapshot before changing any Cloudflare configuration.
+    const names = await fetchDuneResults(DUNE_API_KEY);
 
     // 1. Ensure wildcard DNS record
     const dnsStatus = await ensureWildcardDNS(CF_API_TOKEN, ZONE_ID);
@@ -617,7 +598,6 @@ Deno.serve(async (req) => {
     console.log("Total TLS:", totalTlsStatus);
 
     // 6. Fetch all vanity names from Dune and create www CNAME records
-    const names = await fetchDuneResults(DUNE_API_KEY);
     console.log(`Fetched ${names.length} names from Dune`);
     const wwwCnames = await ensureWwwCNAMEs(CF_API_TOKEN, ZONE_ID, names);
     console.log("WWW CNAMEs:", JSON.stringify(wwwCnames));
@@ -652,6 +632,13 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {
+    if (err instanceof DuneResultsUnavailable) {
+      console.warn("DNS sync deferred: Dune results unavailable");
+      return new Response(
+        JSON.stringify({ status: "deferred", code: "DUNE_RESULTS_UNAVAILABLE", retryAfterSeconds: 900, message: err.message }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "900" } },
+      );
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("sync-vanity-dns error:", message);
     return new Response(

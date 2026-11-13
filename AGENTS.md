@@ -7,3 +7,6 @@
 - Keep static homepage metadata accurate and align profile descriptions in DynamicMetaTags and the Cloudflare worker; never add invisible keyword-targeted content as an SEO substitute for visitor-visible content.
 - Fetch activity independently in progressive chain batches and merge by chain plus hash; show current-price USD estimates explicitly and leave unknown prices unavailable.
 - OpenSea NFT requests return bounded cursor pages; merge by chain, contract, and token ID, preserving continuation without waiting for whole portfolios.
+
+# DNS maintenance
+- Validate completed Dune results before Cloudflare writes; missing executions defer sync without starting billable queries, and shared browser sync deduplicates attempts so maintenance never blocks navigation.
