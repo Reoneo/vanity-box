@@ -1,3 +1,7 @@
+# Gold cursor and profile loading
+- [ ] Remove Hyperspeed and profile skeleton from loading.
+- [ ] Fix gold splash cursor positioning and lifecycle; verify profile loading and pointer interaction.
+
 # Linked-wallet profiles
 - [x] Unify raw IOTA and linked-domain identity and asset resolution.
 - [x] Verify Mrs.Vanity and its linked IOTA wallet in the running app: matching 3 NFTs, Ethereum/IOTA wallets, avatar, bio and activity.
