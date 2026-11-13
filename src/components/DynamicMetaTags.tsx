@@ -35,7 +35,7 @@ export const DynamicMetaTags: React.FC<DynamicMetaTagsProps> = ({
 
   return (
     <Helmet>
-      <title>{username ? title : "Vanity.box | Wallet iD's &amp; Blockchain Profiles".replace("&amp;","&")}</title>
+      <title>{username ? title : "Vanity.box | Wallet iD's & Blockchain Profiles"}</title>
       <meta name="description" content={desc} />
 
       {/* Open Graph */}
