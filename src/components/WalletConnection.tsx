@@ -569,6 +569,10 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
     : user?.username || formatAddress(user?.walletAddress || '');
   const displayUsername = /^passke/i.test(rawDisplayUsername) ? formatAddress(user?.walletAddress || displayAddress) : rawDisplayUsername;
   const walletIcon = walletType === 'petra' ? petraIcon : walletType === 'iota' ? iotaLogo : wldLogo;
+  // Ethereum (WalletConnect) wallets get the same ETH mark used in the Tokens list
+  const ETH_TOKEN_ICON_URL = 'https://cdn.zerion.io/eth.png';
+  const headerWalletIcon =
+    walletType === 'walletconnect' ? ETH_TOKEN_ICON_URL : walletIcon;
 
   return (
     <DropdownMenu onOpenChange={(open) => {
