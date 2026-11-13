@@ -514,3 +514,15 @@ All colors MUST be HSL. */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* Profile loading: the skeleton sits over the golden hyperspeed backdrop,
+   so its own panel background is dropped and the placeholder blocks become
+   translucent gold instead of solid muted grey. */
+.profile-loading-skeleton .bg-background {
+  background-color: transparent;
+}
+
+.profile-loading-skeleton .animate-pulse {
+  background-color: rgba(212, 175, 55, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.28);
+}

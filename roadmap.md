@@ -1,7 +1,3 @@
-# Gold cursor and profile loading
-- [x] Remove Hyperspeed and profile skeleton from loading; use a small gold loading indicator.
-- [x] Fix gold splash cursor positioning and lifecycle; verified gold pointer trails and Softmod.eth loading on desktop/mobile without browser errors.
-
 # Linked-wallet profiles
 - [x] Unify raw IOTA and linked-domain identity and asset resolution.
 - [x] Verify Mrs.Vanity and its linked IOTA wallet in the running app: matching 3 NFTs, Ethereum/IOTA wallets, avatar, bio and activity.
