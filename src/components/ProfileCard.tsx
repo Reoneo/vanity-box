@@ -2,6 +2,7 @@ import { fetchEnsDomains } from "@/lib/ensDomainsFetch";
 import './Dock.css';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -2348,8 +2349,7 @@ export const ProfileCard = ({
                   >
                     <div className="relative group">
                       {avatarPending ? (
-                        // Space reserved for the avatar; nothing is drawn until it is ready.
-                        <div className="h-44 w-44 rounded-2xl" aria-hidden="true" />
+                        <div className="h-44 w-44 rounded-2xl shadow-xl bg-muted animate-pulse" />
                       ) : (
                         <Avatar className="h-44 w-44 rounded-2xl shadow-xl">
                           <AvatarImage 
@@ -3225,8 +3225,7 @@ export const ProfileCard = ({
                       <div className="relative group cursor-pointer" onClick={openAvatarGallery}>
 
                         {avatarPending ? (
-                          // Space reserved for the avatar; nothing is drawn until it is ready.
-                          <div className="relative h-28 w-28 rounded-2xl" aria-hidden="true" />
+                          <div className="relative h-28 w-28 rounded-2xl shadow-xl bg-muted animate-pulse" />
                         ) : (
                           <Avatar className="relative h-28 w-28 rounded-2xl shadow-xl">
                             <AvatarImage 
@@ -3877,6 +3876,20 @@ export const ProfileCard = ({
                       )}
 
                       {nftContinuation}
+                      {/* Loading skeleton when fetching */}
+                      {(nftLoading || magicEdenLoading || worldchainNftsLoading || ensDomainsLoading || basenamesLoading) && 
+                       poaps.length === 0 && 
+                       nfts.length === 0 && 
+                       magicEdenNfts.length === 0 &&
+                       worldchainNftCount === 0 &&
+                       ensDomains.length === 0 &&
+                       basenames.length === 0 && (
+                        <div className="space-y-2">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="w-full h-16 rounded-2xl bg-muted/40 animate-pulse" />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : nftCategory === 'poaps' ? (
                     // POAPs chronological grid
