@@ -1,5 +1,9 @@
-import Hyperspeed from "@/components/Hyperspeed";
+import { lazy, Suspense } from "react";
 import { ProfileCardSkeleton } from "@/components/ProfileCardSkeleton";
+
+// Loaded as its own chunk so the 3D library never weighs down the first paint;
+// the skeleton is already on screen while this chunk arrives.
+const Hyperspeed = lazy(() => import("@/components/Hyperspeed"));
 
 /**
  * Profile loading screen: the golden hyperspeed backdrop with the
