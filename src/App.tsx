@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense, useMemo } from "react";
+import { useEffect, lazy, Suspense, useMemo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,21 +26,6 @@ const { networkConfig: suiNetworkConfig } = createNetworkConfig({
 // Lazy load SplashCursor
 const SplashCursor = lazy(() => import("@/components/SplashCursor"));
 
-// Hook: enable splash cursor on touchscreen devices (coarse pointer)
-const useTouchDevice = () => {
-  const [touch, setTouch] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-  });
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(pointer: coarse)');
-    const handler = (e: MediaQueryListEvent) => setTouch(e.matches || 'ontouchstart' in window);
-    mq.addEventListener?.('change', handler);
-    return () => mq.removeEventListener?.('change', handler);
-  }, []);
-  return touch;
-};
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -71,7 +56,6 @@ const AppRoutes = () => (
 );
 
 const AppContent = () => {
-  const hasFinePointer = useTouchDevice();
   useEffect(() => {
     document.body.style.overscrollBehavior = "none";
     return () => {
@@ -88,8 +72,7 @@ const AppContent = () => {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      {/* Global gold SplashCursor for desktop only */}
-      {hasFinePointer && (
+      {/* One global gold cursor for pointer and touch input. */}
         <Suspense fallback={null}>
           <SplashCursor 
             enabled={true}
@@ -98,7 +81,6 @@ const AppContent = () => {
             PRESSURE_ITERATIONS={splashSettings.PRESSURE_ITERATIONS}
           />
         </Suspense>
-      )}
       <CryptoPriceProvider>
         <LanguageProvider>
           <TonConnectProvider>
