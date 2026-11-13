@@ -7,7 +7,7 @@ import { ProfileCardSkeleton } from "@/components/ProfileCardSkeleton";
  * goes blank while a profile is being resolved.
  */
 export const ProfileLoadingScreen = () => (
-  <div className="fixed left-0 right-0 top-[38px] bottom-0 md:bottom-[140px] z-[9997] flex flex-col overflow-hidden bg-black">
+  <div className="fixed left-0 right-0 top-[38px] bottom-0 z-[9997] flex flex-col overflow-hidden bg-black">
     <div className="absolute inset-0">
       <Hyperspeed
         curve="racing"
@@ -23,7 +23,7 @@ export const ProfileLoadingScreen = () => (
       />
     </div>
     <div
-      className="profile-loading-skeleton relative flex-1 overflow-hidden"
+      className="profile-loading-skeleton relative flex-1 overflow-hidden pb-0 md:pb-[140px]"
       style={{ minHeight: 0 }}
     >
       <ProfileCardSkeleton />
