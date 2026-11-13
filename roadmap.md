@@ -1,6 +1,6 @@
 # Gold cursor and profile loading
-- [ ] Remove Hyperspeed and profile skeleton from loading.
-- [ ] Fix gold splash cursor positioning and lifecycle; verify profile loading and pointer interaction.
+- [x] Remove Hyperspeed and profile skeleton from loading; use a small gold loading indicator.
+- [x] Fix gold splash cursor positioning and lifecycle; verified gold pointer trails and Softmod.eth loading on desktop/mobile without browser errors.
 
 # Linked-wallet profiles
 - [x] Unify raw IOTA and linked-domain identity and asset resolution.
