@@ -13,18 +13,20 @@ const Hyperspeed = lazy(() => import("@/components/Hyperspeed"));
 export const ProfileLoadingScreen = () => (
   <div className="fixed left-0 right-0 top-[38px] bottom-0 z-[9997] flex flex-col overflow-hidden bg-black">
     <div className="absolute inset-0">
-      <Hyperspeed
-        curve="racing"
-        roadWidth={9}
-        density={30}
-        poles={50}
-        tailColors={["#eec02f", "#8d6919", "#eab308"]}
-        headColors={["#f1eece", "#e6e2b1", "#dfd98a"]}
-        poleColors={["#f1eece"]}
-        interactive={false}
-        boosting
-        className="h-full w-full"
-      />
+      <Suspense fallback={null}>
+        <Hyperspeed
+          curve="racing"
+          roadWidth={9}
+          density={30}
+          poles={50}
+          tailColors={["#eec02f", "#8d6919", "#eab308"]}
+          headColors={["#f1eece", "#e6e2b1", "#dfd98a"]}
+          poleColors={["#f1eece"]}
+          interactive={false}
+          boosting
+          className="h-full w-full"
+        />
+      </Suspense>
     </div>
     <div
       className="profile-loading-skeleton relative flex-1 overflow-hidden pb-0 md:pb-[140px]"
