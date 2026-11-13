@@ -1,5 +1,7 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+
+const DEFAULT_BACK_COLOR = { r: 0.5, g: 0, b: 0 };
 
 // Check for reduced motion preference
 const prefersReducedMotion = typeof window !== 'undefined' 
@@ -19,23 +21,18 @@ function SplashCursor({
   SPLAT_FORCE = 6000,
   SHADING = true,
   COLOR_UPDATE_SPEED = 10,
-  BACK_COLOR = { r: 0.5, g: 0, b: 0 },
+  BACK_COLOR = DEFAULT_BACK_COLOR,
   TRANSPARENT = true,
   enabled = true,
   targetFPS = 30  // Frame rate limiter for performance
 }) {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
   
-  // Respect prefers-reduced-motion
-  if (prefersReducedMotion) {
-    return null;
-  }
-
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !enabled || prefersReducedMotion) return;
 
     function pointerPrototype() {
       this.id = -1;
@@ -70,7 +67,9 @@ function SplashCursor({
 
     let pointers = [new pointerPrototype()];
 
-    const { gl, ext } = getWebGLContext(canvas);
+    const context = getWebGLContext(canvas);
+    if (!context) return;
+    const { gl, ext } = context;
     if (!ext.supportLinearFiltering) {
       config.DYE_RESOLUTION = 256;
       config.SHADING = false;
@@ -87,6 +86,7 @@ function SplashCursor({
       let gl = canvas.getContext('webgl2', params);
       const isWebGL2 = !!gl;
       if (!isWebGL2) gl = canvas.getContext('webgl', params) || canvas.getContext('experimental-webgl', params);
+      if (!gl) return null;
 
       let halfFloat;
       let supportLinearFiltering;
@@ -721,7 +721,7 @@ function SplashCursor({
     function calcDeltaTime() {
       let now = Date.now();
       let dt = (now - lastUpdateTime) / 1000;
-      dt = Math.min(dt, 0.016666);
+      dt = Math.min(dt, 0.05);
       lastUpdateTime = now;
       return dt;
     }
@@ -827,6 +827,11 @@ function SplashCursor({
     }
 
     function drawDisplay(target) {
+      if (target == null) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      }
       let width = target == null ? gl.drawingBufferWidth : target.width;
       let height = target == null ? gl.drawingBufferHeight : target.height;
       displayMaterial.bind();
@@ -1001,52 +1006,45 @@ function SplashCursor({
       return hash;
     }
 
-    // Touch-only: mouse listeners intentionally removed so the splash effect
-    // only appears when the screen is touched, never on cursor movement.
+    function pointerPosition(e: PointerEvent) {
+      const rect = canvas.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return null;
+      return {
+        x: scaleByPixelRatio(e.clientX - rect.left),
+        y: scaleByPixelRatio(e.clientY - rect.top),
+      };
+    }
 
-    document.body.addEventListener('touchstart', function handleFirstTouchStart(e) {
-      const touches = e.targetTouches;
-      let pointer = pointers[0];
-      for (let i = 0; i < touches.length; i++) {
-        let posX = scaleByPixelRatio(touches[i].clientX);
-        let posY = scaleByPixelRatio(touches[i].clientY);
-        updateFrame();
-        updatePointerDownData(pointer, touches[i].identifier, posX, posY);
+    function handlePointerDown(e: PointerEvent) {
+      const pos = pointerPosition(e);
+      if (!pos) return;
+      updatePointerDownData(pointers[0], e.pointerId, pos.x, pos.y);
+      clickSplat(pointers[0]);
+    }
+
+    function handlePointerMove(e: PointerEvent) {
+      const pos = pointerPosition(e);
+      const pointer = pointers[0];
+      if (!pos) {
+        pointer.id = -1;
+        pointer.moved = false;
+        return;
       }
-      document.body.removeEventListener('touchstart', handleFirstTouchStart);
-    });
-
-    window.addEventListener('touchstart', e => {
-      const touches = e.targetTouches;
-      let pointer = pointers[0];
-      for (let i = 0; i < touches.length; i++) {
-        let posX = scaleByPixelRatio(touches[i].clientX);
-        let posY = scaleByPixelRatio(touches[i].clientY);
-        updatePointerDownData(pointer, touches[i].identifier, posX, posY);
+      if (pointer.id !== e.pointerId) {
+        updatePointerDownData(pointer, e.pointerId, pos.x, pos.y);
+        return;
       }
-    });
+      updatePointerMoveData(pointer, pos.x, pos.y, pointer.color);
+    }
 
-    window.addEventListener(
-      'touchmove',
-      e => {
-        const touches = e.targetTouches;
-        let pointer = pointers[0];
-        for (let i = 0; i < touches.length; i++) {
-          let posX = scaleByPixelRatio(touches[i].clientX);
-          let posY = scaleByPixelRatio(touches[i].clientY);
-          updatePointerMoveData(pointer, posX, posY, pointer.color);
-        }
-      },
-      false
-    );
+    function handlePointerUp() {
+      updatePointerUpData(pointers[0]);
+    }
 
-    window.addEventListener('touchend', e => {
-      const touches = e.changedTouches;
-      let pointer = pointers[0];
-      for (let i = 0; i < touches.length; i++) {
-        updatePointerUpData(pointer);
-      }
-    });
+    window.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerup', handlePointerUp, { passive: true });
+    window.addEventListener('pointercancel', handlePointerUp, { passive: true });
 
     // Visibility change handler - pause when tab is hidden
     function handleVisibilityChange() {
@@ -1063,13 +1061,20 @@ function SplashCursor({
     
     // Cleanup on unmount
     return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (animationFrameRef.current) {
+      if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    enabled,
+    targetFPS,
     SIM_RESOLUTION,
     DYE_RESOLUTION,
     CAPTURE_RESOLUTION,
@@ -1086,33 +1091,16 @@ function SplashCursor({
     TRANSPARENT
   ]);
 
-  if (!enabled) {
+  if (!enabled || prefersReducedMotion) {
     return null;
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        // Constrain inside the gold chrome: below header (h-20 = 80px),
-        // above footer (~32px), inside left/right gold borders (2px each)
-        top: 80,
-        bottom: 32,
-        left: 2,
-        right: 2,
-        zIndex: 2147483647,
-        pointerEvents: 'none',
-        overflow: 'hidden',
-      }}
-    >
+    <div aria-hidden="true" className="fixed top-[38px] bottom-[38px] left-[2px] right-[2px] z-[9998] pointer-events-none overflow-hidden">
       <canvas
         ref={canvasRef}
         id="fluid"
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block'
-        }}
+        className="block h-full w-full"
       />
     </div>
   );
