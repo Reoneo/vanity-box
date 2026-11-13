@@ -595,9 +595,19 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({ className })
         <Button
           variant="outline"
           size="sm"
-          className={cn("h-10 px-4 bg-black text-white border-2 border-black hover:bg-black hover:border-black hover:text-white transition-all duration-300 font-semibold flex items-center gap-2", className)}
+          aria-label={`Connected wallet ${displayUsername}`}
+          className={cn(
+            "h-7 max-w-[10.5rem] gap-1.5 rounded-full border border-black/20 bg-black px-2.5 text-[11px] leading-none font-semibold text-white shadow-sm hover:bg-black/85 hover:text-white transition-all duration-300",
+            className
+          )}
         >
-          <span className="font-bold text-white truncate max-w-48">
+          <img
+            src={headerWalletIcon}
+            alt=""
+            aria-hidden="true"
+            className="h-3.5 w-3.5 shrink-0 rounded-full object-contain"
+          />
+          <span className="min-w-0 truncate font-bold text-white">
             {displayUsername}
           </span>
         </Button>
