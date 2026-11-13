@@ -16,7 +16,7 @@ import { Link } from "react-router-dom";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { isTelegramWebView } from "@/lib/telegram";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { syncVanityDns } from "@/lib/vanityDnsSync";
 
 export const Header: React.FC<{ accentColor?: string; accentLight?: string }> = ({ accentColor = "#D4AF37", accentLight = "#F4E4BC" }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,9 +30,7 @@ export const Header: React.FC<{ accentColor?: string; accentLight?: string }> = 
     lastSyncClickRef.current = now;
     setIsSyncing(true);
     try {
-      await supabase.functions.invoke("sync-vanity-dns", {
-        body: { action: "sync-quick" },
-      });
+      await syncVanityDns();
     } catch (e) {
       console.error("[logo-sync] error", e);
     } finally {
