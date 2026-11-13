@@ -10,3 +10,6 @@
 
 # DNS maintenance
 - Validate completed Dune results before Cloudflare writes; missing executions defer sync without starting billable queries, and shared browser sync deduplicates attempts so maintenance never blocks navigation.
+
+# Bundle weight
+- Load heavy rendering libraries (for example the 3D/WebGL stack behind animated backgrounds) through a lazy chunk so first paint and profile resolution never wait on them; the fallback UI must already be on screen.
