@@ -119,7 +119,6 @@ import { loadVaultFromStorage } from "@/lib/identity/vault";
 
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { LoadingProgress } from "@/components/LoadingProgress";
-import { ProfileLoadingScreen } from "@/components/ProfileLoadingScreen";
 
 export interface FilterState {
   protocol: string[];
@@ -2316,12 +2315,11 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
               banner={web3BioProfile?.header}
             />
             
-            {/* Profile skeleton only while we have NO profile data at all.
-                Once web3BioProfile (or ensOverlay) is available we render the card
-                progressively and only the avatar shows a skeleton until ready. */}
-            {(isProfileTransitionLoading && !web3BioProfile && !ensOverlay) && !showMyIDs && (
-              <ProfileLoadingScreen />
-            )}
+            {/* While a profile is still resolving, nothing is drawn here: no
+                skeleton blocks and no loading animation. The homepage hero and
+                the no-results panel are both gated on isProfileTransitionLoading,
+                so the gold-bordered surface simply stays empty until the profile
+                is ready, then the profile card appears. */}
             
             {/* Search bar and header - conditional rendering based on search state */}
             {!showMyIDs && !isLoading && (
@@ -2408,16 +2406,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                   </>
                 ) : (
                   <>
-                    {/* Remove h1 header when showing user profile */}
-                    {!web3BioProfile && (
-                      <div className="mt-2">
-                        {isLoading ? (
-                          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2">
-                            <span className="text-black dark:text-white animate-pulse">{t('loading')}</span>
-                          </h1>
-                        ) : null}
-                      </div>
-                    )}
+                    {/* No loading text or pulsing placeholder while resolving. */}
                    </>
                 )}
               </>
