@@ -1,17 +1,14 @@
 import { lazy, Suspense } from "react";
-import { ProfileCardSkeleton } from "@/components/ProfileCardSkeleton";
 
-// Loaded as its own chunk so the 3D library never weighs down the first paint;
-// the skeleton is already on screen while this chunk arrives.
+// Loaded as its own chunk so the 3D library never weighs down the first paint.
 const Hyperspeed = lazy(() => import("@/components/Hyperspeed"));
 
 /**
- * Profile loading screen: the golden hyperspeed backdrop with the
- * layout-matched profile skeleton floating over it, so the page never
- * goes blank while a profile is being resolved.
+ * Profile loading screen: the golden hyperspeed animation on its own, shown
+ * while a profile is being resolved so the page never goes blank.
  */
 export const ProfileLoadingScreen = () => (
-  <div className="fixed left-0 right-0 top-[38px] bottom-0 z-[9997] flex flex-col overflow-hidden bg-black">
+  <div className="fixed left-0 right-0 top-[38px] bottom-0 z-[9997] overflow-hidden bg-black">
     <div className="absolute inset-0">
       <Suspense fallback={null}>
         <Hyperspeed
@@ -27,12 +24,6 @@ export const ProfileLoadingScreen = () => (
           className="h-full w-full"
         />
       </Suspense>
-    </div>
-    <div
-      className="profile-loading-skeleton relative flex-1 overflow-hidden pb-0 md:pb-[140px]"
-      style={{ minHeight: 0 }}
-    >
-      <ProfileCardSkeleton />
     </div>
   </div>
 );
