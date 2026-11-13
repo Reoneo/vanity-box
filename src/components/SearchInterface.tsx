@@ -119,7 +119,7 @@ import { loadVaultFromStorage } from "@/lib/identity/vault";
 
 import { PoapCarousel } from "@/components/PoapCarousel";
 import { LoadingProgress } from "@/components/LoadingProgress";
-import { ProfileCardSkeleton } from "@/components/ProfileCardSkeleton";
+import { ProfileLoadingScreen } from "@/components/ProfileLoadingScreen";
 
 export interface FilterState {
   protocol: string[];
@@ -2320,11 +2320,7 @@ export const SearchInterface = ({ onSearchClick, onClearSearch }: SearchInterfac
                 Once web3BioProfile (or ensOverlay) is available we render the card
                 progressively and only the avatar shows a skeleton until ready. */}
             {(isProfileTransitionLoading && !web3BioProfile && !ensOverlay) && !showMyIDs && (
-              <div className="fixed left-0 right-0 top-[38px] bottom-0 md:bottom-[140px] px-0 pt-0 flex flex-col z-[9997]">
-                <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-                  <ProfileCardSkeleton />
-                </div>
-              </div>
+              <ProfileLoadingScreen />
             )}
             
             {/* Search bar and header - conditional rendering based on search state */}
