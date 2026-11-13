@@ -828,6 +828,7 @@ function SplashCursor({
 
     function drawDisplay(target) {
       if (target == null) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
       }
